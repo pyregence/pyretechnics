@@ -1,0 +1,73 @@
+#+TITLE: The PyreFire Fire Behavior Model
+#+AUTHOR: Gary W. Johnson, Chris Lautenberger
+#+DATE: Copyright © 2023 Spatial Informatics Group, LLC
+#+OPTIONS: ^:{} toc:nil h:3
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [11pt]
+#+LATEX_HEADER: \usepackage{amsmath}
+#+LATEX_HEADER: \usepackage{amsfonts}
+#+LATEX_HEADER: \usepackage{amssymb}
+#+LATEX_HEADER: \usepackage{fancyhdr}
+#+LATEX_HEADER: \usepackage[top=1in,bottom=1in,left=0.75in,right=0.75in]{geometry}
+#+LATEX_HEADER: \usepackage{geometry}
+#+LATEX_HEADER: \pagestyle{fancyplain}
+#+LATEX_HEADER: \usepackage{wrapfig}
+#+LATEX_HEADER: \usepackage{subfigure}
+#+LATEX_HEADER: \usepackage{setspace}
+#+LATEX_HEADER: \usepackage{epsfig}
+#+LATEX_HEADER: \usepackage{color}
+#+LATEX_HEADER: \usepackage[round,comma]{natbib}
+#+LATEX_HEADER: \usepackage{tikz}
+#+LATEX_HEADER: \usetikzlibrary{calc}
+#+LATEX_HEADER: \usepackage{cancel}
+#+LATEX_HEADER: \setlength{\headheight}{13.6pt}
+#+LATEX_HEADER: \hypersetup{
+#+LATEX_HEADER:     colorlinks=true,
+#+LATEX_HEADER:     citecolor=black,
+#+LATEX_HEADER:     linkbordercolor=black,
+#+LATEX_HEADER:     linkcolor=black}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \graphicspath{{pics/}}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{394}{$\Delta$}
+#+LATEX_HEADER: \DeclareUnicodeCharacter{3C7}{$\chi$}
+
+* Preface
+
+This document is a Literate
+Program[fn::https://en.wikipedia.org/wiki/Literate_programming],
+containing both the source code of the software it describes as well
+as the rationale used in each step of its design and implementation.
+The purpose of this approach is to enable anyone sufficiently
+experienced in programming to easily retrace the author's footsteps as
+they read through the text and code. By the time they have reached the
+end of this document, the reader should have just as strong a grasp of
+the system as the original programmer.
+
+To execute the code illustrated within this document, you will need to
+install several pieces of software, all of which are open source
+and/or freely available for all major operating systems. These
+programs are listed in Table [[tab:required-software]] along with their
+minimum required versions and URLs from which they may be downloaded.
+
+#+NAME: tab:required-software
+#+CAPTION: Software necessary to evaluate the code in this document
+#+ATTR_LATEX: :align |l|r|l| :font \small
+|--------+---------+-----------------------------------|
+| Name   | Version | URL                               |
+|--------+---------+-----------------------------------|
+| Python |     3.x | https://www.python.org/downloads/ |
+|--------+---------+-----------------------------------|
+
+* Fire Model
+
+#+begin_src python :results value
+import sys
+x = 10
+a,b,*_ = (1,2,3,4)
+#return (1, 2) ==  (1, 2, -1)
+result = "Positive" if x > 0 else "Negative"
+print(result)
+#+end_src
+
+#+RESULTS:
+: None
