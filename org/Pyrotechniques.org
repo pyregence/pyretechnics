@@ -1,6 +1,6 @@
-#+TITLE: The PyreFire Fire Behavior Model
-#+AUTHOR: Gary W. Johnson, Chris Lautenberger
-#+DATE: Copyright © 2023 Spatial Informatics Group, LLC
+#+TITLE: The Pyrotechniques Fire Behavior Library
+#+AUTHOR: Gary W. Johnson, Valentin Waeselynck, Chris Lautenberger
+#+DATE: Copyright © 2023-2024 Spatial Informatics Group, LLC
 #+OPTIONS: ^:{} toc:nil h:3
 #+LATEX_CLASS: article
 #+LATEX_CLASS_OPTIONS: [11pt]
@@ -58,16 +58,6 @@ minimum required versions and URLs from which they may be downloaded.
 | Python |     3.x | https://www.python.org/downloads/ |
 |--------+---------+-----------------------------------|
 
-* Fire Model
+* Fire Spread
 
-#+begin_src python :results value
-import sys
-x = 10
-a,b,*_ = (1,2,3,4)
-#return (1, 2) ==  (1, 2, -1)
-result = "Positive" if x > 0 else "Negative"
-print(result)
-#+end_src
-
-#+RESULTS:
-: None
+...To Be Written...
