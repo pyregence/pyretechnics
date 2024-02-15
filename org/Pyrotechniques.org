@@ -55,9 +55,234 @@ minimum required versions and URLs from which they may be downloaded.
 |--------+---------+-----------------------------------|
 | Name   | Version | URL                               |
 |--------+---------+-----------------------------------|
-| Python |     3.x | https://www.python.org/downloads/ |
+| Python | 3.x     | https://www.python.org/downloads/ |
+| Numpy  | LATEST  | https://numpy.org                 |
 |--------+---------+-----------------------------------|
 
-* Fire Spread
+* Fire Spread Functions
 
-...To Be Written...
+#+begin_src python
+import numpy as np
+
+#=======================================================
+# Lazy-Loading Multi-Resolution Array Lookup Functions
+#=======================================================
+
+def translate_coords_2d(coords_2d, simulation_shape_2d, layer_shape_2d, chunk_shape_2d):
+    """
+    Given row y and column x on the simulation grid, return chunk
+    row cy, chunk column cx, subchunk row c_y, and subchunk row c_x on
+    the chunk grid.
+    NOTE: simulation_shape_2d must not be lower resolution than layer_shape_2d.
+    """
+    (y, x) = coords_2d
+    (simulation_rows, simulation_cols) = simulation_shape_2d
+    (layer_rows, layer_cols) = layer_shape_2d
+    (chunk_rows, chunk_cols) = chunk_shape_2d
+    ly = y // (simulation_rows // layer_rows)
+    lx = x // (simulation_cols // layer_cols)
+    cy  = ly // chunk_rows
+    cx  = lx // chunk_cols
+    c_y = ly % chunk_rows
+    c_x = lx % chunk_cols
+    return (cy, cx, c_y, c_x)
+
+def translate_coords_3d(coords_3d, simulation_shape_3d, layer_shape_3d, chunk_shape_3d):
+    """
+    Given band z, row y, and column x on the simulation grid,
+    return chunk band cz, chunk row cy, chunk column cx, subchunk band
+    c_z, subchunk row c_y, and subchunk row c_x on the chunk grid.
+    NOTE: simulation_shape_3d must not be lower resolution than layer_shape_3d.
+    """
+    (z, y, x) = coords_3d
+    (simulation_bands, simulation_rows, simulation_cols) = simulation_shape_3d
+    (layer_bands, layer_rows, layer_cols) = layer_shape_3d
+    (chunk_bands, chunk_rows, chunk_cols) = chunk_shape_3d
+    lz = z // (simulation_bands // layer_bands)
+    ly = y // (simulation_rows // layer_rows)
+    lx = x // (simulation_cols // layer_cols)
+    cz  = lz // chunk_bands
+    cy  = ly // chunk_rows
+    cx  = lx // chunk_cols
+    c_z = lz % chunk_bands
+    c_y = ly % chunk_rows
+    c_x = lx % chunk_cols
+    return (cz, cy, cx, c_z, c_y, c_x)
+
+def get_or_load_chunk_2d(chunked_layer_2d, cy, cx, load_chunk_2d):
+    """
+    """
+    chunk_2d = chunked_layer_2d[cy, cx]
+    if (type(chunk_2d) == np.ndarray):
+        return chunk_2d
+    else:
+        chunk_2d = load_chunk_2d(cy, cx)
+        chunked_layer_2d[cy, cx] = chunk_2d
+        return chunk_2d
+
+def get_or_load_chunk_3d(chunked_layer_3d, cz, cy, cx, load_chunk_3d):
+    """
+    """
+    chunk_3d = chunked_layer_3d[cz, cy, cx]
+    if (type(chunk_3d) == np.ndarray):
+        return chunk_3d
+    else:
+        chunk_3d = load_chunk_3d(cz, cy, cx)
+        chunked_layer_3d[cz, cy, cx] = chunk_3d
+        return chunk_3d
+
+def at_coords_2d(coords_2d, simulation_shape_2d, layer_shape_2d, chunk_shape_2d, chunked_layer_2d, load_chunk_2d):
+    """
+    Given row y and column x on the simulation grid, return the
+    value at that index in the underlying chunked layer.
+    """
+    (cy, cx, c_y, c_x) = translate_coords_2d(coords_2d, simulation_shape_2d, layer_shape_2d, chunk_shape_2d)
+    chunk_2d = get_or_load_chunk_2d(chunked_layer_2d, cy, cx, load_chunk_2d)
+    return chunk_2d[c_y, c_x]
+
+def at_coords_3d(coords_3d, simulation_shape_3d, layer_shape_3d, chunk_shape_3d, chunked_layer_3d, load_chunk_3d):
+    """
+    Given band z, row y, and column x on the simulation grid,
+    return the value at that index in the underlying chunked layer.
+    """
+    (cz, cy, cx, c_z, c_y, c_x) = translate_coords_3d(coords_3d, simulation_shape_3d, layer_shape_3d, chunk_shape_3d)
+    chunk_3d = get_or_load_chunk_3d(chunked_layer_3d, cz, cy, cx, load_chunk_3d)
+    return chunk_3d[c_z, c_y, c_x]
+
+def make_at_coords_2d(simulation_shape_2d, layer_shape_2d, chunk_shape_2d, load_chunk_2d):
+    """
+    NOTE: simulation_shape_2d >= layer_shape_2d >= chunk_shape_2d
+    """
+    (layer_rows, layer_cols) = layer_shape_2d
+    (chunk_rows, chunk_cols) = chunk_shape_2d
+    chunked_layer_2d = np.empty((layer_rows // chunk_rows,
+                                 layer_cols // chunk_cols),
+                                dtype=object)
+    return lambda y, x: at_coords_2d((y, x),
+                                     simulation_shape_2d,
+                                     layer_shape_2d,
+                                     chunk_shape_2d,
+                                     chunked_layer_2d,
+                                     load_chunk_2d)
+
+def make_at_coords_3d(simulation_shape_3d, layer_shape_3d, chunk_shape_3d, load_chunk_3d):
+    """
+    NOTE: simulation_shape_3d >= layer_shape_3d >= chunk_shape_3d
+    """
+    (layer_bands, layer_rows, layer_cols) = layer_shape_3d
+    (chunk_bands, chunk_rows, chunk_cols) = chunk_shape_3d
+    chunked_layer_3d = np.empty((layer_bands // chunk_bands,
+                                 layer_rows // chunk_rows,
+                                 layer_cols // chunk_cols),
+                                dtype=object)
+    return lambda z, y, x: at_coords_3d((z, y, x),
+                                        simulation_shape_3d,
+                                        layer_shape_3d,
+                                        chunk_shape_3d,
+                                        chunked_layer_3d,
+                                        load_chunk_3d)
+
+def make_load_chunk_2d(layer_2d, chunk_shape_2d):
+    (chunk_rows, chunk_cols) = chunk_shape_2d
+    return lambda cy, cx: layer_2d[cy * chunk_rows : (cy + 1) * chunk_rows,
+                                   cx * chunk_cols : (cx + 1) * chunk_cols]
+
+def make_load_chunk_3d(layer_3d, chunk_shape_3d):
+    (chunk_bands, chunk_rows, chunk_cols) = chunk_shape_3d
+    return lambda cz, cy, cx: layer_3d[cz * chunk_bands : (cz + 1) * chunk_bands,
+                                       cy * chunk_rows  : (cy + 1) * chunk_rows,
+                                       cx * chunk_cols  : (cx + 1) * chunk_cols]
+
+#=======================================================
+# Raw Data - managed by the caller
+#=======================================================
+
+# 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
+elevation_layer           = np.arange(0,1000000).reshape(1000,1000)
+slope_layer               = np.arange(0,1000000).reshape(1000,1000)
+aspect_layer              = np.arange(0,1000000).reshape(1000,1000)
+fuel_model_layer          = np.arange(0,1000000).reshape(1000,1000)
+canopy_height_layer       = np.arange(0,1000000).reshape(1000,1000)
+canopy_base_height_layer  = np.arange(0,1000000).reshape(1000,1000)
+canopy_cover_layer        = np.arange(0,1000000).reshape(1000,1000)
+canopy_bulk_density_layer = np.arange(0,1000000).reshape(1000,1000)
+
+# 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
+temperature_layer                   = np.arange(240000).reshape(24,100,100)
+relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
+wind_speed_layer                    = np.arange(240000).reshape(24,100,100)
+wind_direction_layer                = np.arange(240000).reshape(24,100,100)
+fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
+fuel_moisture_dead_10hr_layer       = np.arange(240000).reshape(24,100,100)
+fuel_moisture_dead_100hr_layer      = np.arange(240000).reshape(24,100,100)
+fuel_moisture_live_herbaceous_layer = np.arange(240000).reshape(24,100,100)
+fuel_moisture_live_woody_layer      = np.arange(240000).reshape(24,100,100)
+
+#=======================================================
+# Layers Dictionary
+#=======================================================
+
+layers_dict = {
+    # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
+    "elevation"          : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(elevation_layer, (100,100))),
+    "slope"              : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(slope_layer, (100,100))),
+    "aspect"             : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(aspect_layer, (100,100))),
+    "fuel_model"         : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(fuel_model_layer, (100,100))),
+    "canopy_height"      : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(canopy_height_layer, (100,100))),
+    "canopy_base_height" : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(canopy_base_height_layer, (100,100))),
+    "canopy_cover"       : make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(canopy_cover_layer, (100,100))),
+    "canopy_bulk_density": make_at_coords_2d((1000,1000), (1000,1000), (100,100),
+                                             make_load_chunk_2d(canopy_bulk_density_layer, (100,100))),
+
+    # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
+    "temperature"                  : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(temperature_layer, (1,10,10))),
+    "relative_humidity"            : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(relative_humidity_layer, (1,10,10))),
+    "wind_speed"                   : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(wind_speed_layer, (1,10,10))),
+    "wind_direction"               : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(wind_direction_layer, (1,10,10))),
+    "fuel_moisture_dead_1hr"       : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(fuel_moisture_dead_1hr_layer, (1,10,10))),
+    "fuel_moisture_dead_10hr"      : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(fuel_moisture_dead_10hr_layer, (1,10,10))),
+    "fuel_moisture_dead_100hr"     : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(fuel_moisture_dead_100hr_layer, (1,10,10))),
+    "fuel_moisture_live_herbaceous": make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(fuel_moisture_live_herbaceous_layer, (1,10,10))),
+    "fuel_moisture_live_woody"     : make_at_coords_3d((24,1000,1000), (24,100,100), (1,10,10),
+                                                       make_load_chunk_3d(fuel_moisture_live_woody_layer, (1,10,10))),
+}
+
+#=======================================================
+# Fire Spread Functions
+#=======================================================
+
+def burn_cells(layer_dict, ignited_cells_set, outputs_list):
+    """
+    1. Load data for the ignited area without a buffer
+    2. Burn all the ignited cells
+    3. Return a dictionary of the output strings to their corresponding 2D matrices
+    """
+    return None
+
+def spread(layer_dict, ignited_cells_set, outputs_list, stop_condition):
+    """
+    1. Load data for the ignited area plus a buffer size (user-specified?)
+    2. Perform constant spread out over the landscape in all directions
+       - Run surface, crown, and spot equations per ignited cell
+    3. Record the time-of-arrival (ignition-time) in each cell as it spreads
+    4. Load more data whenever the buffer extent is exceeded or stop spreading if no more data is available
+    5. Continue until a stop condition is met
+    6. Return a dictionary of the output strings to their corresponding 2D matrices (start with time-of-arrival)
+    """
+    return None
+#+end_src
