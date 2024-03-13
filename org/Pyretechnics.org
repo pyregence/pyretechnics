@@ -56,7 +56,7 @@ minimum required versions and URLs from which they may be downloaded.
 | Name   | Version | URL                               |
 |--------+---------+-----------------------------------|
 | Python | 3.x     | https://www.python.org/downloads/ |
-| Numpy  | LATEST  | https://numpy.org                 |
+| Numpy  | LATEST  | https://numpy.org/                |
 |--------+---------+-----------------------------------|
 
 * Data Model
@@ -223,14 +223,16 @@ from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
 #==============================================================
 
 # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
-elevation_layer           = np.arange(0,1000000).reshape(1000,1000)
-slope_layer               = np.arange(0,1000000).reshape(1000,1000)
-aspect_layer              = np.arange(0,1000000).reshape(1000,1000)
-fuel_model_layer          = np.arange(0,1000000).reshape(1000,1000)
-canopy_cover_layer        = np.arange(0,1000000).reshape(1000,1000)
-canopy_height_layer       = np.arange(0,1000000).reshape(1000,1000)
-canopy_base_height_layer  = np.arange(0,1000000).reshape(1000,1000)
-canopy_bulk_density_layer = np.arange(0,1000000).reshape(1000,1000)
+elevation_layer                    = np.arange(0,1000000).reshape(1000,1000)
+slope_layer                        = np.arange(0,1000000).reshape(1000,1000)
+aspect_layer                       = np.arange(0,1000000).reshape(1000,1000)
+fuel_model_layer                   = np.arange(0,1000000).reshape(1000,1000)
+canopy_cover_layer                 = np.arange(0,1000000).reshape(1000,1000)
+canopy_height_layer                = np.arange(0,1000000).reshape(1000,1000)
+canopy_base_height_layer           = np.arange(0,1000000).reshape(1000,1000)
+canopy_bulk_density_layer          = np.arange(0,1000000).reshape(1000,1000)
+time_of_arrival_layer              = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
+suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
 
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
@@ -274,7 +276,7 @@ def make_load_chunk_3d(layer_3d, chunk_shape_3d):
 # Creating the Dictionary of Layer Names to Lookup Functions
 #==============================================================
 
-#                      bands, rows, cols
+#--------------------  bands, rows, cols
 simulation_shape_2d = (       1000, 1000)
 layer_shape_2d      = (       1000, 1000)
 chunk_shape_2d      = (        100,  100)
@@ -299,14 +301,16 @@ def make_lookup_fn_3d_for_layer(layer_3d):
 # Layer Dictionary
 layer_lookup = {
     # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
-    "elevation"          : make_lookup_fn_2d_for_layer(elevation_layer),
-    "slope"              : make_lookup_fn_2d_for_layer(slope_layer),
-    "aspect"             : make_lookup_fn_2d_for_layer(aspect_layer),
-    "fuel_model"         : make_lookup_fn_2d_for_layer(fuel_model_layer),
-    "canopy_cover"       : make_lookup_fn_2d_for_layer(canopy_cover_layer),
-    "canopy_height"      : make_lookup_fn_2d_for_layer(canopy_height_layer),
-    "canopy_base_height" : make_lookup_fn_2d_for_layer(canopy_base_height_layer),
-    "canopy_bulk_density": make_lookup_fn_2d_for_layer(canopy_bulk_density_layer),
+    "elevation"                    : make_lookup_fn_2d_for_layer(elevation_layer),
+    "slope"                        : make_lookup_fn_2d_for_layer(slope_layer),
+    "aspect"                       : make_lookup_fn_2d_for_layer(aspect_layer),
+    "fuel_model"                   : make_lookup_fn_2d_for_layer(fuel_model_layer),
+    "canopy_cover"                 : make_lookup_fn_2d_for_layer(canopy_cover_layer),
+    "canopy_height"                : make_lookup_fn_2d_for_layer(canopy_height_layer),
+    "canopy_base_height"           : make_lookup_fn_2d_for_layer(canopy_base_height_layer),
+    "canopy_bulk_density"          : make_lookup_fn_2d_for_layer(canopy_bulk_density_layer),
+    "time_of_arrival"              : make_lookup_fn_2d_for_layer(time_of_arrival_layer),              # Optional Layer
+    "suppression_difficulty_index" : make_lookup_fn_2d_for_layer(suppression_difficulty_index_layer), # Optional Layer
 
     # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
     "temperature"                  : make_lookup_fn_3d_for_layer(temperature_layer),
@@ -334,6 +338,8 @@ cc_100_100   = layer_lookup["canopy_cover"](100,100)
 ch_100_100   = layer_lookup["canopy_height"](100,100)
 cbh_100_100  = layer_lookup["canopy_base_height"](100,100)
 cbd_100_100  = layer_lookup["canopy_bulk_density"](100,100)
+toa_100_100  = layer_lookup["time_of_arrival"](100,100)
+sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)
 
 # NOTE: 3D coords should be provided as (z,y,x) in simulation space.
 
@@ -356,24 +362,47 @@ mlw_12_100_100   = layer_lookup["fuel_moisture_live_woody"](12,100,100)
 #==============================================================
 
 # FIXME: stub
-def burn_cells(layer_dict, ignited_cells_set, outputs_list):
+def burn_cells(config_dict, layer_dict, ignited_cells_set, outputs_list):
     """
-    1. Load data for the ignited area without a buffer
-    2. Burn all the ignited cells
-    3. Return a dictionary of the output strings to their corresponding 2D matrices
+    1. Validate inputs
+       - Make sure that all required parameters are present in config_dict (like spec-checking config.edn)
+         - simulation-shape (z,y,x)
+         - cell-height
+         - cell-width
+         - RESUME HERE: [[file:~/code/sig-gis/gridfire/src/gridfire/core.clj::inputs/add-misc-params][add-misc-params]]
+       - Make sure that all required entries are present in layer_dict
+       - Document raster layer units
+         - include metric/imperial units and relevant multipliers
+         - user has to get these right, no checking!
+         - don't forget to remind them about angular corrections to wind and aspect if the projection isn't oriented to due North
+       - Check for entries in layer_dict for output layers; if present, copy/use as new output layers
+       - Use time of arrival raster to identify the burn scar(s); if missing, we are simulating point ignitions
+       - Specify 3D space-time points in ignited_cells_set
+    2. Create input parameter dictionary
+       - load rasters
+       - load ignitions
+       - compute samples
+       - apply perturbations
+       - load ignition/weather start times and burn periods
+       - load suppression parameters
+       - add spread rate adjustment factors
+    3. Load data for the ignited area without a buffer
+    4. Burn all the ignited cells
+    5. Return a dictionary of the output strings to their corresponding 2D matrices
     """
     return None
 
 # FIXME: stub
 def spread(layer_dict, ignited_cells_set, outputs_list, stop_condition):
     """
-    1. Load data for the ignited area plus a buffer size (user-specified?)
-    2. Perform constant spread out over the landscape in all directions
+    1. Validate inputs
+    2. Load data for the ignited area plus a buffer size (user-specified?)
+    3. Perform constant spread out over the landscape in all directions
        - Run surface, crown, and spot equations per ignited cell
-    3. Record the time-of-arrival (ignition-time) in each cell as it spreads
-    4. Load more data whenever the buffer extent is exceeded or stop spreading if no more data is available
-    5. Continue until a stop condition is met
-    6. Return a dictionary of the output strings to their corresponding 2D matrices (start with time-of-arrival)
+    4. Record the time-of-arrival (ignition-time) in each cell as it spreads
+    5. Load more data whenever the buffer extent is exceeded or stop spreading if no more data is available
+    6. Continue until a stop condition is met (max burn duration or max fire size)
+    7. Return a dictionary of the output strings to their corresponding 2D matrices (start with time-of-arrival)
     """
     return None
 #+end_src
