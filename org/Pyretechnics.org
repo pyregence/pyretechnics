@@ -1,4 +1,4 @@
-#+TITLE: The Pyrotechniques Fire Behavior Library
+#+TITLE: The Pyretechnics Fire Behavior Library
 #+AUTHOR: Gary W. Johnson, Valentin Waeselynck, Chris Lautenberger
 #+DATE: Copyright © 2023-2024 Spatial Informatics Group, LLC
 #+OPTIONS: ^:{} toc:nil h:3
@@ -62,7 +62,7 @@ minimum required versions and URLs from which they may be downloaded.
 * Data Model
 ** Lazy-Loading Multi-Resolution Array Lookup Functions
 
-#+begin_src python :tangle ../src/pyrotechniques/lazy_array.py
+#+begin_src python :tangle ../src/pyretechnics/lazy_array.py
 import numpy as np
 
 #==============================================================
@@ -214,9 +214,9 @@ def make_lookup_fn_3d(simulation_shape_3d, layer_shape_3d, chunk_shape_3d, load_
 
 ** Lazy Array Usage Examples
 
-#+begin_src python :tangle ../test/pyrotechniques/lazy_array_test.py
+#+begin_src python :tangle ../test/pyretechnics/lazy_array_test.py
 import numpy as np
-from pyrotechniques.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
+from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
 
 #==============================================================
 # Raw Data - managed by the caller
@@ -350,7 +350,7 @@ mlw_12_100_100   = layer_lookup["fuel_moisture_live_woody"](12,100,100)
 
 * Fire Spread Functions
 
-#+begin_src python :tangle ../src/pyrotechniques/fire_spread.py
+#+begin_src python :tangle ../src/pyretechnics/fire_spread.py
 #==============================================================
 # Fire Spread Functions
 #==============================================================

@@ -1,0 +1,38 @@
+* Pyretechnics
+
+A Python library for simulating fire behavior in a variety of ways.
+
+** Usage
+
+Pyretechnics has been coded as a [[https://en.wikipedia.org/wiki/Literate_programming][literate program]] using Emacs
+[[http://orgmode.org/worg/org-contrib/babel/][org-mode]]. Full documentation of the current system can always be found
+in the [[file:org][org]] directory within this repository:
+
+- [[file:org/Pyretechnics.org][org/Pyretechnics.org]]: Literate Program Source Code
+- [[file:org/Pyretechnics.pdf][org/Pyretechnics.pdf]]: Woven Documentation
+
+All source code files within this repository are generated directly
+from [[file:org/Pyretechnics.org][org/Pyretechnics.org]].
+
+** Contact
+*** Authors
+
+- Gary W. Johnson, PhD
+  - Email: gjohnson@sig-gis.com
+  - Web: https://sig-gis.com
+
+- Valentin Waeselynck
+  - Email: vwaeselynck@sig-gis.com
+  - Web: https://sig-gis.com
+
+- Chris Lautenberger, PhD, PE
+  - Email: chris@cloudfire.ai
+  - Web: https://cloudfire.ai
+
+** License
+
+Copyright © 2023-2024 Spatial Informatics Group, LLC.
+
+Pyretechnics is distributed by Spatial Informatics Group, LLC. under
+the terms of the Eclipse Public License version 2.0 (EPLv2). See
+[[file:LICENSE.txt][LICENSE.txt]] in this directory for more information.
