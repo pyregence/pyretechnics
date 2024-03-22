@@ -378,7 +378,9 @@ within the fire spread algorithm.
 
 *** Inputs
 
-These are the inputs to the ~grow_fire~ function:
+The ~grow_fire~ function takes a single =world_state= dictionary as input with these fields:
+
+- simulation_clock :: a float specifying the number of minutes from the start time of the simulated space-time cube to begin the simulation
 
 - config_dict :: a dictionary of parameter names to their values with the following types:
 
@@ -388,7 +390,6 @@ These are the inputs to the ~grow_fire~ function:
   | simulation_shape          | Tuple (int, int, int)       | (num timesteps, num rows, num cols)                                                       |           |         |
   | simulation_resolution     | Tuple (float, float, float) | (minutes per timestep, meters per row, meters per column)                                 |           |         |
   | simulation_north_angle    | float                       | degrees clockwise from the top of the circle                                              | Yes       | 0.0     |
-  | simulation_start_time     | float                       | minutes from the start time of the simulated space-time cube                              | Yes       | 0.0     |
   | simulation_stop_condition | Dictionary {string: float}  | either {'max_burn_duration': minutes} or {'max_burned_area': square_meters}               | Yes       | None    |
   | random_seed               | number or string            | the seed value to initialize the random number generator                                  | Yes       | None    |
   | overwrite_outputs         | boolean                     | True or False, whether to mutate or copy the Numpy arrays provided in *output_layer_dict* | Yes       | False   |
@@ -415,8 +416,6 @@ These are the inputs to the ~grow_fire~ function:
   | sdi_containment_overwhelming_area_growth_rate | float | TODO: find units range             |
   | sdi_reference_suppression_speed               | float | TODO: find units range             |
   |-----------------------------------------------+-------+------------------------------------|
-
-- ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
 
 - input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions for accessing the numeric values at each =(y,x)= or =(z,y,x)= coordinate in the simulated space-time cube:
 
@@ -466,42 +465,34 @@ These are the inputs to the ~grow_fire~ function:
   | time_of_arrival              | 2D float array | minutes from the start time of the simulated space-time cube                 | Yes       |
   |------------------------------+----------------+------------------------------------------------------------------------------+-----------|
 
+- ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
+
 *** Outputs
 
 The ~grow_fire~ function will return a dictionary with these fields:
 
-- simulation_stop_time :: minutes from the start time of the simulated space-time cube
+- simulation_clock :: a float specifying the number of minutes from the start time of the simulated space-time cube at which the simulation stopped
 
 - simulation_stop_condition_encountered :: max_burn_duration | max_burned_area | no_burnable_fuel | end_of_temporal_data | fully_suppressed
 
+- config_dict :: a dictionary of parameter names to their values as defined in section [[Inputs]] above
+
+- input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions as defined in section [[Inputs]] above
+
+- output_layer_dict :: a dictionary of layer names to 2D Numpy arrays as defined in section [[Inputs]] above
+
 - ignited_cells_set :: set of cells that are actively burning at the simulation stop time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
 
-- output_layer_dict :: a dictionary of layer names to 2D Numpy arrays with the following units:
+Note that =config_dict= and =input_layer_dict= will be unchanged from
+the input dictionary that was provided to ~grow_fire~. All other
+fields will contain values updated by the fire spread simulation.
 
-  |------------------------------+----------------+------------------------------------------------------------------------------|
-  | Parameter Name               | Type           | Units                                                                        |
-  |------------------------------+----------------+------------------------------------------------------------------------------|
-  | surface_spread_rate          | 2D float array | meters/second                                                                |
-  | crown_spread_rate            | 2D float array | meters/second                                                                |
-  | dominant_spread_rate         | 2D float array | meters/second                                                                |
-  | spread_direction             | 2D float array | degrees clockwise from North                                                 |
-  | surface_flame_length         | 2D float array | meters                                                                       |
-  | crown_flame_length           | 2D float array | meters                                                                       |
-  | combined_flame_length        | 2D float array | meters                                                                       |
-  | surface_fire_line_intensity  | 2D float array | kilowatts/meter                                                              |
-  | crown_fire_line_intensity    | 2D float array | kilowatts/meter                                                              |
-  | combined_fire_line_intensity | 2D float array | kilowatts/meter                                                              |
-  | fire_type                    | 2D float array | 0 = no_fire, 1 = surface_fire, 2 = passive_crown_fire, 3 = active_crown_fire |
-  | ember_count                  | 2D float array | number of embers landing in each cell                                        |
-  | time_of_arrival              | 2D float array | minutes from the start time of the simulated space-time cube                 |
-  |------------------------------+----------------+------------------------------------------------------------------------------|
-
-*** Play/Pause/Continue Semantics
+*** Play/Pause/Continue Workflow
 
 The inputs and outputs of ~grow_fire~ are structured so as to enable
-you to simulate fire spread from =simulation_start_time= (or 0) until
-a stop condition is encountered and then to easily resume the fire
-spread simulation from =simulation_stop_time= until the next stop
+you to simulate fire spread from =simulation_clock= until a stop
+condition is encountered and then to easily resume the fire spread
+simulation from the output =simulation_clock= until the next stop
 condition is met. Here is an example of how to do this.
 
 #+begin_src python
@@ -509,51 +500,50 @@ condition is met. Here is an example of how to do this.
 # Phase 1: Initial fire simulation - first 12 hours
 #=======================================================
 
-config_dict = {
-    "simulation_shape"         : (24, 1000, 1000),
-    "simulation_resolution"    : (60, 30, 30),
-    "simulation_start_time"    : 0.0,
-    "simulation_stop_condition": {"max_burn_duration": 720.0},
+world_state = {
+    simulation_clock: 0.0,
+
+    config_dict: {
+        "simulation_shape"         : (24, 1000, 1000),
+        "simulation_resolution"    : (60, 30, 30),
+        "simulation_stop_condition": {"max_burn_duration": 720.0},
+    },
+
+    input_layer_dict: {
+        # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
+        "elevation"                    : lambda y,x: 0.0,
+        "slope"                        : lambda y,x: 0.0,
+        "aspect"                       : lambda y,x: 0.0,
+        "fuel_model"                   : lambda y,x: 100,
+        "canopy_cover"                 : lambda y,x: 0.0,
+        "canopy_height"                : lambda y,x: 0.0,
+        "canopy_base_height"           : lambda y,x: 0.0,
+        "canopy_bulk_density"          : lambda y,x: 0.0,
+        # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
+        "temperature"                  : lambda z,y,x: 10.0,
+        "relative_humidity"            : lambda z,y,x: 10.0,
+        "wind_speed"                   : lambda z,y,x: 0.0,
+        "wind_direction"               : lambda z,y,x: 0.0,
+        "fuel_moisture_dead_1hr"       : lambda z,y,x: 10.0,
+        "fuel_moisture_dead_10hr"      : lambda z,y,x: 10.0,
+        "fuel_moisture_dead_100hr"     : lambda z,y,x: 10.0,
+        "fuel_moisture_live_herbaceous": lambda z,y,x: 10.0,
+        "fuel_moisture_live_woody"     : lambda z,y,x: 10.0,
+        "foliar_moisture"              : lambda z,y,x: 10.0,
+    },
+
+    output_layer_dict: {}, # Don't pre-populate the output layers
+
+    ignited_cells_set: set([(0, 100, 100)]),
 }
 
-ignited_cells_set = set([(0, 100, 100)])
-
-input_layer_dict = {
-    # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
-    "elevation"                    : lambda y,x: 0.0,
-    "slope"                        : lambda y,x: 0.0,
-    "aspect"                       : lambda y,x: 0.0,
-    "fuel_model"                   : lambda y,x: 100,
-    "canopy_cover"                 : lambda y,x: 0.0,
-    "canopy_height"                : lambda y,x: 0.0,
-    "canopy_base_height"           : lambda y,x: 0.0,
-    "canopy_bulk_density"          : lambda y,x: 0.0,
-    # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
-    "temperature"                  : lambda z,y,x: 10.0,
-    "relative_humidity"            : lambda z,y,x: 10.0,
-    "wind_speed"                   : lambda z,y,x: 0.0,
-    "wind_direction"               : lambda z,y,x: 0.0,
-    "fuel_moisture_dead_1hr"       : lambda z,y,x: 10.0,
-    "fuel_moisture_dead_10hr"      : lambda z,y,x: 10.0,
-    "fuel_moisture_dead_100hr"     : lambda z,y,x: 10.0,
-    "fuel_moisture_live_herbaceous": lambda z,y,x: 10.0,
-    "fuel_moisture_live_woody"     : lambda z,y,x: 10.0,
-    "foliar_moisture"              : lambda z,y,x: 10.0,
-}
-
-output_dict1 = grow_fire(config_dict, ignited_cells_set, input_layer_dict)
+world_state2 = grow_fire(world_state)
 
 #=======================================================
 # Phase 2: Continued fire simulation - second 12 hours
 #=======================================================
 
-config_dict["simulation_start_time"] = output_dict1["simulation_stop_time"]
-
-ignited_cells_set = output_dict1["ignited_cells_set"]
-
-output_layer_dict = output_dict1["output_layer_dict"]
-
-output_dict2 = grow_fire(config_dict, ignited_cells_set, input_layer_dict, output_layer_dict)
+world_state3 = grow_fire(world_state2)
 #+end_src
 
 ** burn_cells
