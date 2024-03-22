@@ -1,0 +1,204 @@
+
+The goal of this doc is to showcase usage patterns that I imagine for pyrotechnics.
+I don't meant mean to be prescriptive on superficial details like naming: the semantics is what's important to me.
+
+* Example usage as I imagine it
+
+#+BEGIN_SRC python
+import numpy
+
+import pyrotechnics as pyrt
+#+END_SRC
+
+** Creating a World (a.k.a registering inputs)
+
+The 1st step it to create a pyrotechnics World object.
+This object tells pyrotechnics how to resolve the environmental conditions in which the fire evolves.
+A World is not a Simulation - there is a one-to-many relationship between a World and the Simulations evolving in it.
+
+#+BEGIN_SRC python
+from my_pyretechnics_helpers import constant_fetch_chunk_fn
+from my_script_inputs import fetch_my_fuels, fetch_my_m1hr, fetch_my_wind_speed
+
+my_world = pyrt.World(
+    pixel_side_m = 30.0, # pixels have to be square
+    band_length_s = 3600.0,
+    sim_grid_shape = (24 * 7, 1200, 1600), # number of bands, rows, columns in the simulation grid.
+    input_variables = {
+        'fuel_model': dict( # In this example, this input is temporally constant and spatially as fine as the simulation grid.
+            fetch_chunk_fn = fetch_my_fuels, # this is the callback function invoked by pyretechnics to resolve a chunk of fuel inputs. See below for implementation.
+            grid_shape = (1, None, None) # this says that the fuel model is constant in time and maximally fine in space.
+            # None means "as in the simulation grid":
+            # pyretechnics will understand from the above that the `fetch_my_fuels` reads from a grid of shape (1, 1200, 1600).
+            # NOTE: fuels are allowed to vary with time. This lets modelers simulate things like suppression operations competing with the fire spread.
+        ),
+        'fuel_moisture_dead1hr': dict( # In this example, this input is temporally variable and spatially constant.
+            grid_shape = (None, 1, 1),
+            fetch_chunk_fn = fetch_my_m1hr
+        ),
+        'temperature_c': dict( # In this example, this input is constant in space and time.
+            grid_shape = (1, 1, 1),
+            fetch_chunk_fn = constant_fetch_chunk_fn(25.2)
+        ),
+        # [...] of course there are a lot more inputs - e.g. canopy cover, wind direction, burn period etc.
+        'wind_speed_20ft': dict( # This input varies more coarsely than the simulation grid.
+            grid_shape = (-3, -40, -40), # Negative dimensions are interpreted differently: -3 means "3 times coarser". I know, that's a shocking suggestion, we're mixing apples and oranges, but it seems like a good move to me. Alternatively, we might use Python Rationals (https://docs.python.org/3/library/numbers.html#numbers.Rational) with an enforced numerator=1.
+            # By default pyretechnics uses a 'nearest' interpolation strategy, but some inputs might allow a smoother one:
+            time_interp = 'linear',
+            space_interp = 'bilinear',
+            fetch_chunk_fn = fetch_my_wind_speed
+        )
+    }
+    # NOTE that I have not specified ignitions. The way I see it, ignitions don't belong here.
+)
+#+END_SRC
+
+
+** Creating and running a Simulation
+
+*** Creating from a World
+
+A Simulation object is created from a World and holds simulation state: it's kind of like a cursor in one possible unfolding of events in that World.
+
+#+BEGIN_SRC python
+my_sim = pyrt.Simulation(
+    world = my_world,
+    sim_time = 8795.8, # A number in seconds (default to 0), the time since grid beginning from which the simulation will run.
+    randomness_seeds = { # Seeds for pseudo-random number generators.
+        #We can specify only one of them ('default_seed'):
+        'default_seed': 86766,
+        # ... but it makes sense to specify also for narrower lines of randomness, this helps with reproducing behavior across version changes:
+        'pyrotechnics_embers': 90889655678
+    }
+)
+#+END_SRC
+
+*** Hitting the play button
+
+The above returns instantly.
+
+There is no fire on the landscape yet; even so, we can push the play button:
+
+#+BEGIN_SRC python
+my_sim.run_until({ # Conditions for the simulation to stop.
+    'stopping_time': 8795.8 + 12*3600
+     # NOTE I'm not sure a dict is a good way to combine stop conditions - is it an AND, is in an OR?
+     # From ElasticSearch experience, this can quickly turn a into nightmarish query language.
+})
+#+END_SRC
+
+The simulation has run even though there is no fire on the landscape yet.
+This is OK and it's important that this use case be supported - a bit like allowing the number 0 in arithmetic.
+
+*** Igniting
+
+The simplest way to ignite is to set 1 pixel on fire by providing its grid coordinates:
+
+#+BEGIN_SRC python
+my_sim.ignite((243, 768))
+#+END_SRC
+
+The above only starts one pixel. The φ state field (for the Level-Set Method) now has value 1 at that pixel and -1 everywhere else in the landscape.
+
+We can burn more pixels by providing a 2D array:
+
+#+BEGIN_SRC python
+my_sim.ignite(
+    top_left=(243, 768), # The 1st argument is now interpreted as the top-left corner of the ignited area.
+    ign_field=numpy.array([ # A diamond shape ignition.
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 1, 0]
+    ], dtype=numpy.float)
+    # The default update strategy is φ += 2*ign_field.
+    # Maybe users will want to specify another strategy like φ := max(φ, 2*ign_field - 1).
+)
+#+END_SRC
+
+*** Spreading
+
+We can now hit play again:
+
+#+BEGIN_SRC python
+my_sim.run_until({
+    'pyretechnics_cannot_spread': True  # Either there's no fuel left to spread to, or we hit the maximum simulation time.
+})
+#+END_SRC
+
+** Simulation results
+
+When this call has completed, we can query the state of the simulation about what happened:
+
+#+BEGIN_SRC python
+my_sim.get_stop_reason()
+# => "pyretechnics_nowhere_to_spread"
+#+END_SRC
+
+We can also request some results:
+
+#+BEGIN_SRC python
+my_results = my_sim.get_results([
+    'time_of_arrival_s', # will yield A 2D array, the time at which the fire burned this pixel, and NaN elsewhere.
+    'flame_length_ft', # A 2D array, the flame length at this pixel, and NaN if not burned.
+    'fireline_intensity', # ... you got the gist.
+    'ros_vec', # A 3D array of shape (rows, cols, 2). The last axis yields the i, j coordinates of the Rate-of-Spread vector, in m/s.
+    ],
+    # By default, pyretechnics will only return results in the spatial bounding box of the area affected by fire spread.
+    # The result dictionary will contain a key 'sim_topleft' to tell you where this bounding box is located (in grid coordinates).
+    # This can make things much less cumbersome for everyone.
+    # If want the entire grid, you can specify:
+    span_entire_grid=True)
+#+END_SRC
+
+The returned ~my_results~ is a Python dict.
+
+We can keep playing after this, but be careful, the returned results might get mutated.
+
+
+** Forking a Simulation
+
+You can /fork/ a Simulation object in order to experiment with alternative scenarios:
+
+#+BEGIN_SRC python
+my_sim2 = my_sim.fork()
+#+END_SRC
+
+Running or modifying ~my_sim2~ will leave ~my_sim~ unaffected, and vice-versa.
+
+The forking operation may have some cost as state needs to be copied.
+
+Forking is useful when you want to compare different evolutions from the same initial state.
+
+In particular:
+
+** Altering randomness seeds
+
+One thing you can do is alter the randomness state of the simulation:
+
+#+BEGIN_SRC python
+my_sim2.scramble_randomness({
+    'pyrotechnics_embers': numpy.random.randint(0, 2**32)
+})
+#+END_SRC
+
+This will ensure that ~my_sim~ and ~my_sim2~ will cast their embers differently.
+
+
+** Details about fetch_chunk_fn
+
+This example shows how a ~fetch_chunk_fn~ callback function must be implemented:
+
+#+BEGIN_SRC python
+# Say we fetched a 2D array from a raster:
+my_fuels_arr2d = gdal.Open('my_fuel_model.tif').getBand(1).ReadAsArray() # IIRC how gdal works
+# We'll find it convenient to reshape this to 3D:
+my_fuels_arr3d = my_fuels_arr2d.reshape(1, *my_fuels_arr2d.shape) 
+
+def fetch_my_fuels(_t_bounds, i_bounds, j_bounds, _opts):
+    i_min, i_max = i_bounds
+    j_min, j_max = j_bounds
+    # In this case we already know the _t_bounds will be (0, 1) so we don't need to destructure them.
+    return my_fuels_array[:, i_min:i_max, j_min:j_max]
+    # We haven't used _opts in the above, it will be a dict of additional argument that might be useful for random perturbations.
+#+END_SRC
+
