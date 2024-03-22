@@ -395,6 +395,7 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | overwrite_outputs         | boolean                     | True or False, whether to mutate or copy the Numpy arrays provided in *output_layer_dict* | Yes       | False   |
   | alpha_suppression         | Dictionary {string: float}  | parameters for the *alpha* suppression algorithm (see table below)                        | Yes       | None    |
   | sdi_suppression           | Dictionary {string: float}  | parameters for the *sdi* suppression algorithm (see table below)                          | Yes       | None    |
+  | spotting                  | Dictionary {string: float}  | parameters for the spotting algorithm (see table below)                                   | Yes       | None    |
   |---------------------------+-----------------------------+-------------------------------------------------------------------------------------------+-----------+---------|
 
   - alpha_suppression :: a dictionary of parameter names to their values for the *alpha* suppression algorithm:
@@ -416,6 +417,14 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | sdi_containment_overwhelming_area_growth_rate | float | TODO: find units range             |
   | sdi_reference_suppression_speed               | float | TODO: find units range             |
   |-----------------------------------------------+-------+------------------------------------|
+
+  - spotting :: a dictionary of parameter names to their values for the spotting algorithm:
+
+  |--------------------+------+-------|
+  | Parameter Name     | Type | Units |
+  |--------------------+------+-------|
+  | TODO: Fill this in |      |       |
+  |--------------------+------+-------|
 
 - input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions for accessing the numeric values at each =(y,x)= or =(z,y,x)= coordinate in the simulated space-time cube:
 
@@ -447,23 +456,25 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 
 - output_layer_dict :: an *optional* dictionary of layer names to 2D Numpy arrays with the following units to pre-populate the simulation output arrays:
 
-  |------------------------------+----------------+------------------------------------------------------------------------------+-----------|
-  | Parameter Name               | Type           | Units                                                                        | Optional? |
-  |------------------------------+----------------+------------------------------------------------------------------------------+-----------|
-  | surface_spread_rate          | 2D float array | meters/second                                                                | Yes       |
-  | crown_spread_rate            | 2D float array | meters/second                                                                | Yes       |
-  | dominant_spread_rate         | 2D float array | meters/second                                                                | Yes       |
-  | spread_direction             | 2D float array | degrees clockwise from North                                                 | Yes       |
-  | surface_flame_length         | 2D float array | meters                                                                       | Yes       |
-  | crown_flame_length           | 2D float array | meters                                                                       | Yes       |
-  | combined_flame_length        | 2D float array | meters                                                                       | Yes       |
-  | surface_fire_line_intensity  | 2D float array | kilowatts/meter                                                              | Yes       |
-  | crown_fire_line_intensity    | 2D float array | kilowatts/meter                                                              | Yes       |
-  | combined_fire_line_intensity | 2D float array | kilowatts/meter                                                              | Yes       |
-  | fire_type                    | 2D float array | 0 = no_fire, 1 = surface_fire, 2 = passive_crown_fire, 3 = active_crown_fire | Yes       |
-  | ember_count                  | 2D float array | number of embers landing in each cell                                        | Yes       |
-  | time_of_arrival              | 2D float array | minutes from the start time of the simulated space-time cube                 | Yes       |
-  |------------------------------+----------------+------------------------------------------------------------------------------+-----------|
+  |---------------------------------+--------------------------+------------------------------------------------------------------------------+-----------|
+  | Parameter Name                  | Type                     | Units                                                                        | Optional? |
+  |---------------------------------+--------------------------+------------------------------------------------------------------------------+-----------|
+  | time_of_arrival                 | 2D chunked float array   | minutes from the start time of the simulated space-time cube                 | Yes       |
+  | max_surface_spread_rate         | 2D chunked float array   | meters/second                                                                | Yes       |
+  | max_crown_spread_rate           | 2D chunked float array   | meters/second                                                                | Yes       |
+  | perimeter_spread_rate           | 2D chunked float array   | meters/second                                                                | Yes       |
+  | max_surface_spread_direction    | 2D chunked float array   | degrees clockwise from North                                                 | Yes       |
+  | max_crown_spread_direction      | 2D chunked float array   | degrees clockwise from North                                                 | Yes       |
+  | perimeter_spread_direction      | 2D chunked float array   | degrees clockwise from North                                                 | Yes       |
+  | surface_eccentricity            | 2D chunked float array   | degrees clockwise from North                                                 | Yes       |
+  | crown_eccentricity              | 2D chunked float array   | degrees clockwise from North                                                 | Yes       |
+  | max_surface_fire_line_intensity | 2D chunked float array   | kilowatts/meter                                                              | Yes       |
+  | max_crown_fire_line_intensity   | 2D chunked float array   | kilowatts/meter                                                              | Yes       |
+  | perimeter_fire_line_intensity   | 2D chunked float array   | kilowatts/meter                                                              | Yes       |
+  | fire_type                       | 2D chunked float array   | 0 = no_fire, 1 = surface_fire, 2 = passive_crown_fire, 3 = active_crown_fire | Yes       |
+  | ember_count                     | 2D chunked float array   | number of embers landing in each cell                                        | Yes       |
+  | ember_ignition                  | 2D chunked boolean array | True for cells ignited by embers, False otherwise                            | Yes       |
+  |---------------------------------+--------------------------+------------------------------------------------------------------------------+-----------|
 
 - ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
 
@@ -552,75 +563,64 @@ TODO: stub
 
 * Fire Spread Functions
 
-# RESUME HERE: [[file:~/code/sig-gis/gridfire/src/gridfire/simulations.clj::(defn run-simulation!]]
+# TODO: How do I want to memoize the no_wind_no_slope_surface_fire_min values?
+
+#       - IDEA: We can just save max_spread_rate,
+#       - max_spread_direction, eccentricity, and fire_line_intensity
+#       - for surface and crown conditions (plus crown_fire_type) in
+#       - chunked arrays. When combined with a fire-line normal
+#       - direction multiplier, you can just multiply max_spread_rate
+#       - and fire_line_intensity by it to get the fire-line normal
+#       - spread rate and fire-line intensity. Also, don't store flame
+#       - length during the simulation. Compute it at the end in
+#       - postprocessing.
+
+# TODO: Consider implementing a chunked array class and using it to store intermediate/output arrays as well
 
 #+begin_src python :tangle ../src/pyretechnics/fire_spread.py
+import random
+
 # FIXME: stub
-def grow_fire(config_dict, ignited_cells_set, input_layer_dict, output_layer_dict = {}):
+def grow_fire(world_state):
     """
     1. Validate inputs
-    2. Load data for the ignited area plus a buffer size (user-specified?)
+       - Make sure that all required parameters are present in config_dict
+       - Make sure that all required entries are present in layer_dict
+       - Check for entries in output_layer_dict; if present, copy/use as new output layers
+         - Use time of arrival raster to identify the burn scar(s); if missing, we are simulating point ignitions
+       - Make sure that ignited_cells_set is a set of integer 3-tuples
+    2. Iterate through all cells in ignited_cells_set, compute the perimeter-oriented spread rate and severity values, and store them in output arrays
     3. Perform constant spread out over the landscape in all directions
        - Run surface, crown, and spot equations per ignited cell
-    4. Record the time-of-arrival (ignition-time) in each cell as it spreads
-    5. Load more data whenever the buffer extent is exceeded or stop spreading if no more data is available
-    6. Continue until a stop condition is met (e.g., max_burn_duration or max_burned_area)
-    7. Return a dictionary of the outputs
+    4. Record the time-of-arrival in each cell as it spreads
+    5. Continue until a stop condition is met (e.g., max_burn_duration or max_burned_area)
+    6. Return a dictionary of the outputs
     """
+    simulation_clock  = world_state["simulation_clock"]
+    config_dict       = world_state["config_dict"]
+    input_layer_dict  = world_state["input_layer_dict"]
+    output_layer_dict = world_state.get("output_layer_dict", {})
+    ignited_cells_set = world_state["ignited_cells_set"]
+
+    if config_dict.get("random_seed"):
+        random.seed(config_dict.get("random_seed"))
+
+    # RESUME HERE: [[file:~/code/sig-gis/gridfire/src/gridfire/fire_spread.clj::(defn run-fire-spread]]
+
     return None
 
 # FIXME: stub
 def burn_cells(config_dict, input_layer_dict, output_layer_dict, ignited_cells_set):
     """
     1. Validate inputs
-       - Make sure that all required parameters are present in config_dict (like spec-checking config.edn)
-         - simulation_shape (z,y,x) = (int bands, int rows, int cols)
-         - simulation_resolution (z,y,x) = (minutes, meters, meters)
-         - simulation_north_angle (default: 0)
-         - simulation_start_time (minute)
-         - simulation_stop_condition (max_burn_duration: mins, max_burned_area: m^2)
-         - random_generator (MUTABLE!)
-         - ellipse_adjustment_factor (not needed by ELMFIRE)
-         - alpha_suppression:
-           - suppression_dt
-           - suppression_coefficient
-         - sdi_suppression:
-           - suppression_dt
-           - sdi_sensitivity_to_difficulty
-           - sdi_containment_overwhelming_area_growth_rate
-           - sdi_reference_suppression_speed
-         - modify_outputs (True, False)
+       - Make sure that all required parameters are present in config_dict
        - Make sure that all required entries are present in layer_dict
-         - Document raster layer units
-           - include metric/imperial units and relevant multipliers
-           - user has to get these right, no checking!
-           - don't forget to remind them about angular corrections to wind and aspect if the projection isn't oriented to due North
-         - Check for entries in output_layer_dict; if present, copy/use as new output layers
+       - Check for entries in output_layer_dict; if present, copy/use as new output layers
          - Use time of arrival raster to identify the burn scar(s); if missing, we are simulating point ignitions
-       - Specify 3D space-time points in ignited_cells_set = (minute, row, col)
-       - The simulation will return a dictionary with these fields:
-         - simulation_stop_time (minute)
-         - simulation_stop_condition_encountered (max_burn_duration, max_burned_area, no_burnable_fuel, end_of_temporal_data, fully_suppressed)
-         - ignited_cells_set (returning the actively burning cells allows someone to restart the simulation from this point)
-         - output_layer_dict: (should we split up surface and crown matrices or combine them?)
-           - spread_rate_matrix
-           - spread_direction_matrix
-           - flame_length_matrix
-           - fire_line_intensity_matrix
-           - fire_type_matrix
-           - ember_count_matrix
-           - time_of_arrival_matrix
-    2. Create input parameter dictionary
-       - load rasters
-       - load ignitions
-       - compute samples
-       - apply perturbations
-       - load ignition/weather start times and burn periods
-       - load suppression parameters
-       - add spread rate adjustment factors
-    3. Load data for the ignited area without a buffer
-    4. Burn all the ignited cells
-    5. Return a dictionary of the output strings to their corresponding 2D matrices
+       - Make sure that ignited_cells_set is a set of integer 3-tuples
+    2. Iterate through all cells in (rows, cols), compute the maximum spread rate and severity values, and store them in output arrays
+       - Run surface and crown equations per cell
+    3. Return a dictionary of the outputs
     """
     return None
 #+end_src
