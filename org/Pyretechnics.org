@@ -231,9 +231,8 @@ canopy_cover_layer                 = np.arange(0,1000000).reshape(1000,1000)
 canopy_height_layer                = np.arange(0,1000000).reshape(1000,1000)
 canopy_base_height_layer           = np.arange(0,1000000).reshape(1000,1000)
 canopy_bulk_density_layer          = np.arange(0,1000000).reshape(1000,1000)
-time_of_arrival_layer              = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
-suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
 fuel_spread_adjustment_layer       = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
+suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
 
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
@@ -312,9 +311,8 @@ layer_lookup = {
     "canopy_height"                : make_lookup_fn_2d_for_layer(canopy_height_layer),
     "canopy_base_height"           : make_lookup_fn_2d_for_layer(canopy_base_height_layer),
     "canopy_bulk_density"          : make_lookup_fn_2d_for_layer(canopy_bulk_density_layer),
-    "time_of_arrival"              : make_lookup_fn_2d_for_layer(time_of_arrival_layer),              # Optional Layer
-    "suppression_difficulty_index" : make_lookup_fn_2d_for_layer(suppression_difficulty_index_layer), # Optional Layer
     "fuel_spread_adjustment"       : make_lookup_fn_2d_for_layer(fuel_spread_adjustment_layer),       # Optional Layer
+    "suppression_difficulty_index" : make_lookup_fn_2d_for_layer(suppression_difficulty_index_layer), # Optional Layer
 
     # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
     "temperature"                  : make_lookup_fn_3d_for_layer(temperature_layer),
@@ -344,9 +342,8 @@ cc_100_100   = layer_lookup["canopy_cover"](100,100)
 ch_100_100   = layer_lookup["canopy_height"](100,100)
 cbh_100_100  = layer_lookup["canopy_base_height"](100,100)
 cbd_100_100  = layer_lookup["canopy_bulk_density"](100,100)
-toa_100_100  = layer_lookup["time_of_arrival"](100,100)                  # Optional Layer
-sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)     # Optional Layer
 fsa_100_100  = layer_lookup["fuel_spread_adjustment"](100,100)           # Optional Layer
+sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)     # Optional Layer
 
 # NOTE: 3D coords should be provided as (z,y,x) in simulation space.
 
@@ -384,6 +381,9 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 
 - config_dict :: a dictionary of parameter names to their values with the following types:
 
+  *TODO*: Determine whether rectangular cells will work for the GridFire and ELMFIRE spread algorithms. If not, eliminate this degree of freedom from the API.
+  *TODO*: Add interpolation options to the gridded data source class
+
   |---------------------------+-----------------------------+-------------------------------------------------------------------------------------------+-----------+---------|
   | Parameter Name            | Type                        | Units                                                                                     | Optional? | Default |
   |---------------------------+-----------------------------+-------------------------------------------------------------------------------------------+-----------+---------|
@@ -420,54 +420,68 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 
   - spotting :: a dictionary of parameter names to their values for the spotting algorithm:
 
-  |------------------------------+-------+--------------------------------------------------|
-  | Parameter Name               | Type  | Units                                            |
-  |------------------------------+-------+--------------------------------------------------|
-  | firebrands_per_cell          | int   | number of embers to cast from each spotting cell |
-  | decay_constant               | float | TODO: find units range                           |
-  | mean_distance                | float | TODO: find units range                           |
-  | flin_exp                     | float | TODO: find units range                           |
-  | ws_exp                       | float | TODO: find units range                           |
-  | normalized_distance_variance | float | TODO: find units range                           |
-  | delta_y_sigma                | float | TODO: find units range                           |
-  |------------------------------+-------+--------------------------------------------------|
+  |--------------------------------+---------+--------------------------------------------------+------------|
+  | Parameter Name                 | Type    | Units                                            | Fire Model |
+  |--------------------------------+---------+--------------------------------------------------+------------|
+  | firebrands_per_cell            | int     | number of embers to cast from each spotting cell | GridFire   |
+  | decay_constant                 | float   | TODO: find units range                           | GridFire   |
+  | mean_distance                  | float   | TODO: find units range                           | GridFire   |
+  | flin_exp                       | float   | TODO: find units range                           | GridFire   |
+  | ws_exp                         | float   | TODO: find units range                           | GridFire   |
+  | normalized_distance_variance   | float   | TODO: find units range                           | GridFire   |
+  | delta_y_sigma                  | float   | TODO: find units range                           | GridFire   |
+  |--------------------------------+---------+--------------------------------------------------+------------|
+  | ember_gr                       | int     | TODO: find units range                           | ELMFIRE    |
+  | pign                           | float   | percent [0-100]                                  | ELMFIRE    |
+  | pign_max                       | float   | percent [0-100]                                  | ELMFIRE    |
+  | pign_min                       | float   | percent [0-100]                                  | ELMFIRE    |
+  | tau_embergen                   | float   | TODO: find units range                           | ELMFIRE    |
+  | use_umd_spotting_model         | boolean | True or False                                    | ELMFIRE    |
+  | p_eps                          | float   | TODO: find units range                           | ELMFIRE    |
+  | use_physical_spotting_duration | boolean | True or False                                    | ELMFIRE    |
+  | use_physical_ember_number      | boolean | True or False                                    | ELMFIRE    |
+  | ember_sampling_factor          | float   | TODO: find units range                           | ELMFIRE    |
+  | use_superseded_spotting        | boolean | True or False                                    | ELMFIRE    |
+  |--------------------------------+---------+--------------------------------------------------+------------|
 
 - input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions for accessing the numeric values at each =(y,x)= or =(z,y,x)= coordinate in the simulated space-time cube:
 
-  |--------------------------------------+-------+--------------------------------------------------------+-----------+-------|
-  | Layer Name                           | Type  | Units                                                  | Optional? | Arity |
-  |--------------------------------------+-------+--------------------------------------------------------+-----------+-------|
-  | elevation                            | float | meters                                                 |           |     2 |
-  | slope                                | float | percent [0-100+] (vertical meters/horizontal meters)   |           |     2 |
-  | aspect                               | float | degrees clockwise from North [0-360)                   |           |     2 |
-  | fuel_model                           | int   | fuel model numbers [1-256]                             |           |     2 |
-  | canopy_cover                         | float | percent [0-100]                                        |           |     2 |
-  | canopy_height                        | float | meters                                                 |           |     2 |
-  | canopy_base_height                   | float | meters                                                 |           |     2 |
-  | canopy_bulk_density                  | float | kilograms/meters^3                                     |           |     2 |
-  | suppression_difficulty_index         | float | integer >= 0  (TODO: What is the correct value range?) | Yes       |     2 |
-  | fuel_spread_adjustment               | float | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     2 |
-  | surface_spotting_fire_line_intensity | float | kilowatts/meter                                        | Yes       |     2 |
-  | surface_spotting_percent             | float | percent [0-100]                                        | Yes       |     2 |
-  | crown_spotting_percent               | float | percent [0-100]                                        | Yes       |     2 |
-  | temperature                          | float | degrees Celsius                                        |           |     3 |
-  | relative_humidity                    | float | percent [0-100+]                                       |           |     3 |
-  | wind_speed                           | float | meters/second                                          |           |     3 |
-  | wind_direction                       | float | degrees clockwise from North [0-360)                   |           |     3 |
-  | fuel_moisture_dead_1hr               | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_dead_10hr              | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_dead_100hr             | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_live_herbaceous        | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_live_woody             | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | foliar_moisture                      | float | percent [0-100+] grams moisture/grams ovendry foliage  |           |     3 |
-  | weather_spread_adjustment            | float | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     3 |
-  |--------------------------------------+-------+--------------------------------------------------------+-----------+-------|
+  |--------------------------------------------+-------+--------------------------------------------------------+-----------+-------|
+  | Layer Name                                 | Type  | Units                                                  | Optional? | Arity |
+  |--------------------------------------------+-------+--------------------------------------------------------+-----------+-------|
+  | elevation                                  | float | meters                                                 |           |     2 |
+  | slope                                      | float | percent [0-100+] (vertical meters/horizontal meters)   |           |     2 |
+  | aspect                                     | float | degrees clockwise from North [0-360)                   |           |     2 |
+  | fuel_model                                 | int   | fuel model numbers [1-256]                             |           |     2 |
+  | canopy_cover                               | float | percent [0-100]                                        |           |     2 |
+  | canopy_height                              | float | meters                                                 |           |     2 |
+  | canopy_base_height                         | float | meters                                                 |           |     2 |
+  | canopy_bulk_density                        | float | kilograms/meters^3                                     |           |     2 |
+  | fuel_spread_adjustment                     | float | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     2 |
+  | suppression_difficulty_index               | float | integer >= 0  (TODO: What is the correct value range?) | Yes       |     2 |
+  | surface_spotting_fire_line_intensity       | float | kilowatts/meter                                        | Yes       |     2 |
+  | surface_spotting_percent (TODO: min, max?) | float | percent [0-100]                                        | Yes       |     2 |
+  | crown_spotting_percent   (TODO: min, max?) | float | percent [0-100]                                        | Yes       |     2 |
+  | temperature                                | float | degrees Celsius                                        | Yes       |     3 |
+  | relative_humidity                          | float | percent [0-100+]                                       | Yes       |     3 |
+  | wind_speed                                 | float | meters/second                                          |           |     3 |
+  | wind_direction                             | float | degrees clockwise from North [0-360)                   |           |     3 |
+  | fuel_moisture_dead_1hr                     | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
+  | fuel_moisture_dead_10hr                    | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
+  | fuel_moisture_dead_100hr                   | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
+  | fuel_moisture_live_herbaceous              | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
+  | fuel_moisture_live_woody                   | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
+  | foliar_moisture                            | float | percent [0-100+] grams moisture/grams ovendry foliage  |           |     3 |
+  | weather_spread_adjustment                  | float | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     3 |
+  |--------------------------------------------+-------+--------------------------------------------------------+-----------+-------|
 
 - output_layer_dict :: an *optional* dictionary of layer names to 2D Numpy arrays with the following units to pre-populate the simulation output arrays:
+  *TODO* Consider whether some of these layers should be kept as internal state and not returned to the user.
 
   |---------------------------------+---------+------------------------------------------------------------------------------+-----------|
   | Parameter Name                  | Type    | Units                                                                        | Optional? |
   |---------------------------------+---------+------------------------------------------------------------------------------+-----------|
+  | eulerian_level_set_phi_field    | float16 | TODO: find units range                                                       | No        |
   | time_of_arrival                 | float32 | minutes from the start time of the simulated space-time cube                 | Yes       |
   | max_surface_spread_direction    | float16 | degrees clockwise from North                                                 | Yes       |
   | max_crown_spread_direction      | float16 | degrees clockwise from North                                                 | Yes       |
@@ -519,6 +533,8 @@ simulation from the output =simulation_clock= until the next stop
 condition is met. Here is an example of how to do this.
 
 #+begin_src python
+import numpy as np
+
 #=======================================================
 # Phase 1: Initial fire simulation - first 12 hours
 #=======================================================
@@ -555,7 +571,9 @@ world_state = {
         "foliar_moisture"              : lambda z,y,x: 10.0,
     },
 
-    output_layer_dict: {}, # Don't pre-populate the output layers
+    output_layer_dict: {
+        "eulerian_level_set_phi_field" : np.full((1000, 1000), 0.0, dtype="float16"),
+    },
 
     ignited_cells_set: set([(0, 100, 100)]),
 }
@@ -590,6 +608,7 @@ TODO: stub
 # TODO: Consider implementing a chunked array class and using it to store intermediate/output arrays as well
 
 #+begin_src python :tangle ../src/pyretechnics/fire_spread.py
+# TODO: Compare this with numpy.random (is there a generator object that I can use here?)
 import random
 import numpy as np
 
@@ -721,6 +740,7 @@ def grow_fire(world_state):
     overwrite_outputs = config_dict["overwrite_outputs"]
 
     output_layer_dict = {
+        "eulerian_level_set_phi_field"   : supply_layer(output_layer_dict, "eulerian_level_set_phi_field"   , layer_shape, "float16", np.nan, overwrite_outputs),
         "time_of_arrival"                : supply_layer(output_layer_dict, "time_of_arrival"                , layer_shape, "float32", np.nan, overwrite_outputs),
         "max_surface_spread_direction"   : supply_layer(output_layer_dict, "max_surface_spread_direction"   , layer_shape, "float16", np.nan, overwrite_outputs),
         "max_crown_spread_direction"     : supply_layer(output_layer_dict, "max_crown_spread_direction"     , layer_shape, "float16", np.nan, overwrite_outputs),
@@ -741,5 +761,111 @@ def grow_fire(world_state):
         "ember_ignition"                 : supply_layer(output_layer_dict, "ember_ignition"                 , layer_shape, "bool8"  ,  False, overwrite_outputs),
     }
 
+    # RESUME at [[file:~/code/sig-gis/gridfire/src/gridfire/fire_spread.clj::(defn- run-loop]]
+    # TODO: Investigate ELMFIRE's inputs to determine if we are missing anything needed by its API.
+
     return None
 #+end_src
+
+
+** ELMFIRE Inputs
+
+This section lists the full set of inputs used in any =elmfire.data= or =elmfire.data.in= file in:
+
+- the current =main= branch of the =elmfire= repository located here: https://github.com/lautenberger/elmfire
+- the current =main= branch of the =runway-scripts= repository located here: https://gitlab.sig-gis.com/sig-gis/runway-scripts
+
+The following table contains the current mapping from ELMFIRE parameters to Pyretechnics parameters:
+
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| ELMFIRE                                  | Pyretechnics Group                    | Pyretechnics Parameter                  |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| DT_METEOROLOGY                           | config_dict                           | simulation_resolution[0]                |
+| COMPUTATIONAL_DOMAIN_CELLSIZE            | config_dict                           | simulation_resolution[1:]               |
+| SIMULATION_TSTART                        |                                       | ?                                       |
+| SIMULATION_TSTOP                         | config_dict.simulation_stop_condition | max_burn_duration                       |
+| EMBER_GR                                 | config_dict.spotting                  | ember_gr                                |
+| EMBER_SAMPLING_FACTOR                    | config_dict.spotting                  | ember_sampling_factor                   |
+| ENABLE_SPOTTING                          | config_dict.spotting                  | Enabled if dictionary is present        |
+| P_EPS                                    | config_dict.spotting                  | p_eps                                   |
+| PIGN                                     | config_dict.spotting                  | pign                                    |
+| PIGN_MAX                                 | config_dict.spotting                  | pign_max                                |
+| PIGN_MIN                                 | config_dict.spotting                  | pign_min                                |
+| TAU_EMBERGEN                             | config_dict.spotting                  | tau_embergen                            |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| DEM_FILENAME                             | input_layer_dict                      | elevation                               |
+| SLP_FILENAME                             | input_layer_dict                      | slope                                   |
+| ASP_FILENAME                             | input_layer_dict                      | aspect                                  |
+| FBFM_FILENAME                            | input_layer_dict                      | fuel_model                              |
+| CC_FILENAME                              | input_layer_dict                      | canopy_cover                            |
+| CH_FILENAME                              | input_layer_dict                      | canopy_height                           |
+| CBH_FILENAME                             | input_layer_dict                      | canopy_base_height                      |
+| CBD_FILENAME                             | input_layer_dict                      | canopy_bulk_density                     |
+| ADJ_FILENAME                             | input_layer_dict                      | fuel_spread_adjustment                  |
+| CRITICAL_SPOTTING_FIRELINE_INTENSITY(:)  | input_layer_dict                      | surface_spotting_fire_line_intensity    |
+| GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MAX | input_layer_dict                      | surface_spotting_percent                |
+| GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MIN | input_layer_dict                      | surface_spotting_percent                |
+| WS_FILENAME                              | input_layer_dict                      | wind_speed                              |
+| WD_FILENAME                              | input_layer_dict                      | wind_direction                          |
+| M1_FILENAME                              | input_layer_dict                      | fuel_moisture_dead_1hr                  |
+| M10_FILENAME                             | input_layer_dict                      | fuel_moisture_dead_10hr                 |
+| M100_FILENAME                            | input_layer_dict                      | fuel_moisture_dead_100hr                |
+| MLH_FILENAME                             | input_layer_dict                      | fuel_moisture_live_herbaceous           |
+| MLW_FILENAME                             | input_layer_dict                      | fuel_moisture_live_woody                |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| PHI_FILENAME                             | output_layer_dict                     | eulerian_level_set_phi_field            |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| T_IGN(1)                                 | ignited_cells_set                     | (t, _, _)                               |
+| Y_IGN(1)                                 | ignited_cells_set                     | (_, y, _)                               |
+| X_IGN(1)                                 | ignited_cells_set                     | (_, _, x)                               |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| BANDTHICKNESS                            |                                       | ?                                       |
+| METEOROLOGY_BAND_SKIP_INTERVAL           |                                       | ?                                       |
+| METEOROLOGY_BAND_START                   |                                       | ?                                       |
+| METEOROLOGY_BAND_STOP                    |                                       | ?                                       |
+| NUM_METEOROLOGY_TIMES                    |                                       | ?                                       |
+| CROWN_FIRE_MODEL                         |                                       | ?                                       |
+| MODE                                     |                                       | ?                                       |
+| SIMULATION_DT                            |                                       | ?                                       |
+| SIMULATION_DTMAX                         |                                       | ?                                       |
+| TARGET_CFL                               |                                       | ?                                       |
+| USE_BLDG_SPREAD_MODEL                    |                                       | ?                                       |
+| USE_EULERIAN_FRAMEWORK                   |                                       | ?                                       |
+| USE_PHYSICAL_EMBER_NUMBER                |                                       | ?                                       |
+| USE_PHYSICAL_SPOTTING_DURATION           |                                       | ?                                       |
+| USE_SUPERSEDED_SPOTTING                  |                                       | ?                                       |
+| USE_UMD_SPOTTING_MODEL                   |                                       | ?                                       |
+| WX_BILINEAR_INTERPOLATION                |                                       | ?                                       |
+| ALLOW_MULTIPLE_IGNITIONS_AT_A_PIXEL      |                                       | ?                                       |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
+| FUELS_AND_TOPOGRAPHY_DIRECTORY           | N/A                                   | Input reading managed externally        |
+| A_SRS                                    | N/A                                   | GIS operations managed externally       |
+| LATITUDE                                 | N/A                                   | GIS operations managed externally       |
+| LONGITUDE                                | N/A                                   | GIS operations managed externally       |
+| COMPUTATIONAL_DOMAIN_XLLCORNER           | N/A                                   | GIS operations managed externally       |
+| COMPUTATIONAL_DOMAIN_YLLCORNER           | N/A                                   | GIS operations managed externally       |
+| FORECAST_START_HOUR                      | N/A                                   | GIS operations managed externally       |
+| UTC_OFFSET_HOURS                         | N/A                                   | GIS operations managed externally       |
+| CURRENT_YEAR                             | N/A                                   | GIS operations managed externally       |
+| HOUR_OF_YEAR                             | N/A                                   | GIS operations managed externally       |
+| PATH_TO_GDAL                             | N/A                                   | GIS operations managed externally       |
+| NUM_ENSEMBLE_MEMBERS                     | N/A                                   | Random sampling managed externally      |
+| NUM_IGNITIONS                            | N/A                                   | Random sampling managed externally      |
+| RANDOM_IGNITIONS                         | N/A                                   | Random sampling managed externally      |
+| USE_IGNITION_MASK                        | N/A                                   | Random sampling managed externally      |
+| USE_CONSTANT_LH                          | N/A                                   | Replaced by abstract gridded datasource |
+| USE_CONSTANT_LW                          | N/A                                   | Replaced by abstract gridded datasource |
+| LH_MOISTURE_CONTENT                      | N/A                                   | Replaced by abstract gridded datasource |
+| LW_MOISTURE_CONTENT                      | N/A                                   | Replaced by abstract gridded datasource |
+| OUTPUTS_DIRECTORY                        | N/A                                   | Output writing managed externally       |
+| SCRATCH                                  | N/A                                   | Output writing managed externally       |
+| CONVERT_TO_GEOTIFF                       | N/A                                   | Output writing managed externally       |
+| DTDUMP                                   | N/A                                   | Output writing managed externally       |
+| DT_DUMP_EMBER_FLUX                       | N/A                                   | Output writing managed externally       |
+| DUMP_EMBER_FLUX_UMD                      | N/A                                   | Output writing managed externally       |
+| DUMP_FLAME_LENGTH                        | N/A                                   | Output writing managed externally       |
+| DUMP_FLIN                                | N/A                                   | Output writing managed externally       |
+| DUMP_SPOTTING_OUTPUTS                    | N/A                                   | Output writing managed externally       |
+| DUMP_SPREAD_RATE                         | N/A                                   | Output writing managed externally       |
+| DUMP_TIME_OF_ARRIVAL                     | N/A                                   | Output writing managed externally       |
+|------------------------------------------+---------------------------------------+-----------------------------------------|
