@@ -381,8 +381,8 @@ suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # O
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
 relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
-wind_speed_layer                    = np.arange(240000).reshape(24,100,100)
-wind_direction_layer                = np.arange(240000).reshape(24,100,100)
+wind_speed_x_layer                  = np.arange(240000).reshape(24,100,100)
+wind_speed_y_layer                  = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_10hr_layer       = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_100hr_layer      = np.arange(240000).reshape(24,100,100)
@@ -461,8 +461,8 @@ layer_lookup = {
     # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
     "temperature"                  : make_lookup_fn_3d_for_layer(temperature_layer),
     "relative_humidity"            : make_lookup_fn_3d_for_layer(relative_humidity_layer),
-    "wind_speed"                   : make_lookup_fn_3d_for_layer(wind_speed_layer),
-    "wind_direction"               : make_lookup_fn_3d_for_layer(wind_direction_layer),
+    "wind_speed_x"                 : make_lookup_fn_3d_for_layer(wind_speed_x_layer),
+    "wind_speed_y"                 : make_lookup_fn_3d_for_layer(wind_speed_y_layer),
     "fuel_moisture_dead_1hr"       : make_lookup_fn_3d_for_layer(fuel_moisture_dead_1hr_layer),
     "fuel_moisture_dead_10hr"      : make_lookup_fn_3d_for_layer(fuel_moisture_dead_10hr_layer),
     "fuel_moisture_dead_100hr"     : make_lookup_fn_3d_for_layer(fuel_moisture_dead_100hr_layer),
@@ -493,8 +493,8 @@ sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)     # Optio
 
 temp_12_100_100  = layer_lookup["temperature"](12,100,100)
 rh_12_100_100    = layer_lookup["relative_humidity"](12,100,100)
-wsp_12_100_100   = layer_lookup["wind_speed"](12,100,100)
-wd_12_100_100    = layer_lookup["wind_direction"](12,100,100)
+wspx_12_100_100  = layer_lookup["wind_speed_x"](12,100,100)
+wspy_12_100_100  = layer_lookup["wind_speed_y"](12,100,100)
 md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"](12,100,100)
 md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"](12,100,100)
 md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"](12,100,100)
@@ -608,8 +608,8 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | crown_spotting_percent   (TODO: min, max?) | float | percent [0-100]                                        | Yes       |     2 |
   | temperature                                | float | degrees Celsius                                        | Yes       |     3 |
   | relative_humidity                          | float | percent [0-100+]                                       | Yes       |     3 |
-  | wind_speed                                 | float | meters/second                                          |           |     3 |
-  | wind_direction                             | float | degrees clockwise from North [0-360)                   |           |     3 |
+  | wind_speed_10m_x                           | float | meters/second                                          |           |     3 |
+  | wind_speed_10m_y                           | float | meters/second                                          |           |     3 |
   | fuel_moisture_dead_1hr                     | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
   | fuel_moisture_dead_10hr                    | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
   | fuel_moisture_dead_100hr                   | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
@@ -705,8 +705,8 @@ world_state = {
         # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
         "temperature"                  : lambda z,y,x: 10.0,
         "relative_humidity"            : lambda z,y,x: 10.0,
-        "wind_speed"                   : lambda z,y,x: 0.0,
-        "wind_direction"               : lambda z,y,x: 0.0,
+        "wind_speed_x"                 : lambda z,y,x: 0.0,
+        "wind_speed_y"                 : lambda z,y,x: 0.0,
         "fuel_moisture_dead_1hr"       : lambda z,y,x: 10.0,
         "fuel_moisture_dead_10hr"      : lambda z,y,x: 10.0,
         "fuel_moisture_dead_100hr"     : lambda z,y,x: 10.0,
@@ -911,7 +911,6 @@ def grow_fire(world_state):
     return None
 #+end_src
 
-
 ** ELMFIRE Inputs
 
 This section lists the full set of inputs used in any =elmfire.data= or =elmfire.data.in= file in:
@@ -949,8 +948,8 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | CRITICAL_SPOTTING_FIRELINE_INTENSITY(:)  | input_layer_dict                      | surface_spotting_fire_line_intensity    |
 | GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MAX | input_layer_dict                      | surface_spotting_percent                |
 | GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MIN | input_layer_dict                      | surface_spotting_percent                |
-| WS_FILENAME                              | input_layer_dict                      | wind_speed                              |
-| WD_FILENAME                              | input_layer_dict                      | wind_direction                          |
+| WS_FILENAME                              | input_layer_dict                      | wind_speed_x, wind_speed_y              |
+| WD_FILENAME                              | input_layer_dict                      | wind_speed_x, wind_speed_y              |
 | M1_FILENAME                              | input_layer_dict                      | fuel_moisture_dead_1hr                  |
 | M10_FILENAME                             | input_layer_dict                      | fuel_moisture_dead_10hr                 |
 | M100_FILENAME                            | input_layer_dict                      | fuel_moisture_dead_100hr                |
