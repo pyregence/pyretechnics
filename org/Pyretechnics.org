@@ -31,6 +31,13 @@
 #+LATEX_HEADER: \DeclareUnicodeCharacter{394}{$\Delta$}
 #+LATEX_HEADER: \DeclareUnicodeCharacter{3C7}{$\chi$}
 
+# Global Settings
+#+PROPERTY: header-args:python+ :results silent
+#+PROPERTY: header-args:python+ :exports code
+#+PROPERTY: header-args:python+ :no-expand
+#+PROPERTY: header-args:python+ :padline no
+#+PROPERTY: header-args:python+ :comments link
+
 * Preface
 
 This document is a Literate
