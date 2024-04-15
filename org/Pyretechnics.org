@@ -60,6 +60,143 @@ minimum required versions and URLs from which they may be downloaded.
 |--------+---------+-----------------------------------|
 
 * Data Model
+** Working in a 3D Space-Time Cube
+
+In Pyretechnics, a fire is viewed as a three-dimensional event
+occurring within a bounded region of space-time =(T, Y, X)=. In this
+mental model, the environment in which a fire develops can be
+visualized as a cube in which space is described in 2D by the =X= and
+=Y= dimensions and time projects this 2D world into 3D along the =T=
+dimension.
+
+Note, in particular, that this is not the same thing as a
+three-dimensional model of fire behavior that incorporates surface
+elevation as the third dimension. Although terrain data (such as
+elevation, slope, and aspect) and tree cover characteristics (such as
+canopy height and canopy base height) are incorporated into the
+implemented spread equations in order to determine the rate,
+direction, and mode of fire spread, the outputs of the fire behavior
+algorithms in Pyretechnics currently only use two dimensions to
+describe spatial heterogeneity within the simulation environment. The
+third dimension is instead reserved for temporal variations in the
+model outputs.
+
+** Fires as Conical Shapes in Space-Time
+
+All fire events begin from an ignition somewhere in space-time. As
+combustion and propagation occur in burnable fuels, the burned area
+(a.k.a "burn scar") of a fire spreads monotonically outward in space.
+Viewed from the lens of our 3D space-time cube, these monotonically
+expanding burn scars form conical solids within the simulation
+environment, with the bottom point of the cone representing the
+initial ignition point and the upper edge of the cone representing the
+actively burning fire perimeter. Of course, we only expect idealized
+fire cones to appear in environments with homogeneous topography,
+weather, fuels, and fuel moisture. As these inputs become more
+heterogenous throughout the burned region of space-time, these
+idealized cones will become distorted in the directions of faster or
+slower spread and their perimeters will become more finely dissected.
+However, we use this conical shape description of fire events within
+the simulated space-time cube to convey both their monotonically
+increasing spatial area over time as well as to provide the foundation
+for a more visually intuitive understanding of the effect of
+temporally varying environmental conditions on the behavior (and thus
+shape) of fires.
+
+** Support for Input Datasets of Varying Dimensionality and Resolution
+
+At the beginning of a fire behavior simulation, our 3D space-time cube
+is populated with all of the information that describes the
+environment and will remain effectively static as the fire event
+unfolds. This includes (but is not limited to) topography, weather,
+fuels, and fuel moisture. In many common simulation scenarios, we
+expect that topography and fuels will probably vary in space but not
+in time, and weather and fuel moisture may vary in both space and
+time. However, we use "may" in these statements because the data model
+within Pyretechnics is flexibly designed to allow any of these
+environmental input variables to take on any of these forms:
+
+- constant in space and time
+- constant in space but variable in time
+- variable in space but constant in time
+- variable in space and time
+
+This is accomplished by representing each such input value as an
+abstract datatype with a 3D space-time look-up function. From within
+our fire behavior algorithms, we should always be able to call the
+look-up function for any environmental input variable with a 3D
+space-time coordinate =(t, y, x)= and get back the correct value for
+that location. Moreover, such look-ups must be referentially
+transparent, so as to ensure that subsequent look-ups with the same
+coordinate will always yield the same values.
+
+Note, that for performance reasons, input values that are constant in
+either space or time will not be broadcast into these constant
+dimensions when stored in memory. Instead, their native
+representations will be preserved, and the 3D look-up function
+assigned to that input will correctly map the 3D space-time coordinate
+into the corresponding index within the native dataset.
+
+Similarly, input datasets may be provided at different resolutions
+from one another, provided that:
+
+1. All spatial and temporal extents must match
+2. All spatial and temporal resolutions must be exact multiples of one another
+3. All spatially varying datasets must share the same projection
+
+Provided that these conditions are met, the 3D look-up function for
+each input will also be able to automatically translate the 3D
+space-time coordinate it receives into the correct coordinate for the
+underlying dataset's native resolution and dimensionality.
+
+** Lazy Loading of Space-Time Chunks
+
+In order to avoid the need to fully load all of the 3D space-time
+cube's environmental datasets into memory at the beginning of a fire
+behavior simulation, Pyretechnics implements a lazy-loading mechanism
+that works as follows:
+
+1. The 3D space-time cube is assigned a *simulation shape* $(T_s, Y_s,
+   X_s)$, which describes the number of timesteps, rows, and columns
+   it contains. This must be an exact multiple (in every dimension) of
+   the *layer shapes* described below.
+
+2. Each input dataset is assigned a *layer shape* $(T_l, Y_l, X_l)$,
+   which describes the number of timesteps, rows, and columns it
+   contains.
+
+3. Each input dataset is assigned a *chunk shape* $(T_c, Y_c,
+   X_c)$, which describes the number of timesteps, rows, and columns
+   to be loaded from the corresponding layer when requesting a new
+   chunk of data within its spatio-temporal extent. All chunk
+   dimensions must exactly divide their corresponding layer
+   dimensions.
+
+4. Each input dataset is assigned a *chunk cache* with shape
+   $(T_l/T_c, Y_l/Y_c, X_l/X_c)$. This is represented in memory as a
+   3D array of pointers, initialized to nulls.
+
+5. Each input dataset is assigned a 3D look-up function to be used in
+   fire behavior calculations.
+
+   1. Whenever this function is called on a space-time coordinate
+      which has no value in the *chunk cache*, a call is first made
+      automatically to load the array chunk containing this coordinate
+      from the underlying input dataset into the *chunk cache*, and
+      then the coordinate value is looked up and returned.
+
+   2. Whenever this function is called on a space-time coordinate
+      which has a value in the *chunk cache*, it is looked up and
+      returned.
+
+The net effect of this chunked data model approach is that
+Pyretechnics only needs to load into memory those space-time chunks
+which are intersected by the expanding conical burn scar. In
+simulations of fires that are small relative to the extent of the full
+3D space-time environment, these memory savings may be substantial and
+may make it possible to run simulations over larger extents and/or
+finer resolutions than have been used previously.
+
 ** Lazy-Loading Multi-Resolution Array Lookup Functions
 
 #+begin_src python :tangle ../src/pyretechnics/lazy_array.py
