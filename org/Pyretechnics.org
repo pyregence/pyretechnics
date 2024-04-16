@@ -1171,4 +1171,177 @@ fuel_models = {
     203 : ["SB3", 1.2, 25, 8, [0.2525, 0.1263, 0.1377, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
     204 : ["SB4", 2.7, 25, 8, [0.2410, 0.1607, 0.2410, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
 }
+
+
+def is_dynamic_fuel_model_number(fuel_model_number):
+    return fuel_model_number > 100
+
+
+def compute_fuel_model(fuel_model_number):
+    [name, delta, M_x_dead, h, w_o, sigma] = fuel_models[fuel_model_number]
+    [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, w_o_live_herbaceous, w_o_live_woody] = w_o
+    [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, sigma_live_herbaceous, sigma_live_woody] = sigma
+    M_x_dead = M_x_dead * 0.01
+    h        = h * 1000.0
+    fuel_model = {
+        "name"  : name,
+        "number": fuel_model_number,
+        "delta" : delta,
+        "M_x"   : [M_x_dead, M_x_dead, M_x_dead, 0.0, 0.0, 0.0],
+        "w_o"   : [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, 0.0, w_o_live_herbaceous, w_o_live_woody],
+        "sigma" : [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, 0.0, sigma_live_herbaceous, sigma_live_woody],
+        "h"     : [h, h, h, h, h, h],
+        "rho_p" : [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
+        "S_T"   : [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
+        "S_e"   : [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+    }
+    if is_dynamic_fuel_model_number(fuel_model_number) and (w_o_live_herbaceous > 0.0):
+        # Set dead_herbaceous values
+        fuel_model["M_x"][3] = M_x_dead
+        fuel_model["sigma"][3] = sigma_live_herbaceous
+        return fuel_model
+    else:
+        # No dead_herbaceous values
+        return fuel_model
+
+
+fuel_models_precomputed = {k: compute_fuel_model(k) for k in fuel_models.keys()}
+
+
+def is_burnable_fuel_model_number(fuel_model_number):
+    return (fuel_model_number > 0) and not (91 <= fuel_model_number <= 99)
 #+end_src
+
+Once fuel moisture is added to the base fuel model definitions, they
+will each contain values for the following six fuel size classes:
+
+#+ATTR_LATEX: :options \setlength{\itemsep}{-3mm}
+1. Dead 1 hour ($<$ 1/4" diameter)
+2. Dead 10 hour (1/4"--1" diameter)
+3. Dead 100 hour (1"--3" diameter)
+4. Dead herbaceous (dynamic fuel models only)
+5. Live herbaceous
+6. Live woody
+
+In order to more easily encode mathematical operations over these size
+classes, we define a collection of utility functions that will later
+be used in both the fuel moisture and fire spread algorithms.
+
+#+name: fuel-category-and-size-class-functions
+#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+def map_category(f):
+    return [f(0), f(1)]
+
+def map_size_class(f):
+    return [f(0), f(1), f(2), f(3), f(4), f(5)]
+
+def category_sum(f):
+    return f(0) + f(1)
+
+def size_class_sum(f):
+    return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
+#+end_src
+
+Although most fuel model properties are static with respect to
+environmental conditions, the fuel moisture content can have two
+significant impacts on a fuel model's burning potential:
+
+#+ATTR_LATEX: :options \setlength{\itemsep}{-3mm}
+1. Dynamic fuel loading
+2. Live moisture of extinction
+
+These two topics are discussed in the remainder of this section.
+
+*** Dynamic Fuel Loading
+
+All of the Scott & Burgan 40 fuel models with a live herbaceous
+component are considered dynamic. In these models, a fraction of the
+live herbaceous load is transferred to a new dead herbaceous category
+as a function of live herbaceous moisture content (see equation
+below).\citep{Burgan1979} The dead herbaceous category uses the dead 1
+hour moisture content, dead moisture of extinction, and live
+herbaceous surface-area-to-volume-ratio. In the following formula,
+$M_{f}^{lh}$ is the live herbaceous moisture content.
+
+\begin{align*}
+  \textrm{FractionGreen} &= \left\{
+    \begin{array}{lr}
+      0 & M_{f}^{lh} \le 0.3 \\
+      1 & M_{f}^{lh} \ge 1.2 \\
+      \frac{M_{f}^{lh}}{0.9} - \frac{1}{3} & \textrm{else}
+    \end{array}
+  \right. \\
+  \textrm{FractionCured} &= 1 - \textrm{FractionGreen}
+\end{align*}
+
+#+name: add-dynamic-fuel-loading
+#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+def add_dynamic_fuel_loading(fuel_model, M_f):
+    number               = fuel_model["number"]
+    w_o                  = fuel_model["w_o"]
+    live_herbaceous_load = w_o[4] # 4 = live_herbaceous
+    if is_dynamic_fuel_model_number(number) and live_herbaceous_load > 0:
+        # dynamic fuel model
+        fraction_green            = max(0.0, min(1.0, (M_f[4] / 0.9) - 0.3333333333333333)) # 4 = live_herbaceous
+        fraction_cured            = 1.0 - fraction_green
+        dynamic_M_f               = M_f.copy() # shallow copy
+        dynamic_M_f[3]            = M_f[0]     # 0 = dead_1hr, 3 = dead_herbaceous
+        dynamic_fuel_model        = fuel_model.copy() # shallow copy
+        dynamic_fuel_model["M_f"] = dynamic_M_f
+        dynamic_fuel_model["w_o"] = [
+            w_o[0],
+            w_o[1],
+            w_o[2],
+            live_herbaceous_load * fraction_cured,
+            live_herbaceous_load * fraction_green,
+            w_o[5]
+        ]
+        return dynamic_fuel_model
+    else:
+        # static fuel model
+        static_fuel_model = fuel_model.copy()
+        static_fuel_model["M_f"] = M_f
+        return static_fuel_model
+#+end_src
+
+Once the dynamic fuel loading is applied, we can compute the size
+class weighting factors expressed in equations 53-57 in Rothermel
+1972\citep{Rothermel1972}. For brevity, these formulas are elided from
+this text.
+
+#+name: add-weighting-factors
+#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+def add_weighting_factors(fuel_model):
+    w_o                  = fuel_model["w_o"]
+    sigma                = fuel_model["sigma"]
+    rho_p                = fuel_model["rho_p"]
+    A_ij                 = map_size_class(lambda i: (sigma[i] * w_o[i]) / rho_p[i])
+    A_i                  = size_class_sum(lambda i: A_ij[i])
+    A_T                  = category_sum(lambda i: A_i[i])
+    f_ij                 = map_size_class(lambda i: (lambda A: (A_ij[i] / A) if A > 0.0 else 0.0)(A_i[i//4]))
+    f_i                  = map_category(lambda i: (A_i[i] / A_T) if A_T > 0.0 else 0.0)
+    firemod_size_classes = map_size_class(lambda i: (lambda s:
+                                                     1 if (s >= 1200.0)
+                                                     else 2 if (s >= 192.0)
+                                                     else 3 if (s >= 96.0)
+                                                     else 4 if (s >= 48.0)
+                                                     else 5 if (s >= 16.0)
+                                                     else 6
+                                                     )(sigma[i]))
+    g_ij                 = map_size_class(lambda i: (lambda c:
+                                                     ((f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
+                                                      + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
+                                                      + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
+                                                      + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
+                                                     if (i < 4) else
+                                                     ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
+                                                      + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0))
+                                                     )(firemod_size_classes[i]))
+    weighted_fuel_model = fuel_model.copy() # shallow copy
+    weighted_fuel_model["f_ij"] = f_ij
+    weighted_fuel_model["f_i"] = f_i
+    weighted_fuel_model["g_ij"] = g_ij
+    return weighted_fuel_model
+#+end_src
+
+RESUME AT: [[file:~/code/sig-gis/gridfire/org/GridFire.org::*Live Moisture of Extinction][Live Moisture of Extinction]]
