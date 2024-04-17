@@ -190,4 +190,30 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
     }
+
+# Test with:
+# - moisturize(fuel_models_precomputed[1], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50])   # non-dynamic fuel model
+# - moisturize(fuel_models_precomputed[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 # rothermel-surface-fire-spread-no-wind-no-slope ends here
+# [[file:../../org/Pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
+from math import log, sqrt
+
+def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
+    """
+    fuel_bed_depth :: ft
+    canopy_height  :: ft
+    canopy_cover   :: 0-100
+    """
+    if (canopy_cover > 0.0) and (canopy_height > 0.0):
+        # sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)
+        A = sqrt((canopy_cover / 300.0) * canopy_height)
+        B = log((20.0 + 0.36 * canopy_height) / (0.13 * canopy_height))
+        return 0.555 / (A * B)
+    elif (fuel_bed_depth > 0.0):
+        # unsheltered: equation 6 H_F = H (Andrews 2012)
+        A = log((20.0 + 0.36 * fuel_bed_depth) / (0.13 * fuel_bed_depth))
+        return 1.83 / A # 1.83 truncated from 1.8328795184533409
+    else:
+        # non-burnable fuel model
+        return 0.0
+# wind-adjustment-factor ends here

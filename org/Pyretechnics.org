@@ -1649,6 +1649,71 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
     }
+
+# Test with:
+# - moisturize(fuel_models_precomputed[1], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50])   # non-dynamic fuel model
+# - moisturize(fuel_models_precomputed[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 #+end_src
 
+Later, this no-wind-no-slope value is used to compute the maximum
+spread rate and direction for the leading edge of the surface fire
+under analysis. Since Rothermel's original equations assume that the
+wind direction and slope are aligned, the effects of cross-slope winds
+must be taken into effect. To accomplish this, Pyretechnics implements
+the vector addition procedure defined in Rothermel 1983 that combines
+the wind-only and slope-only spread rates independently to calculate
+the effective fire spread direction and
+magnitude.\citep{Peterson2011,Peterson2009,Rothermel1983}
+
+A minor wrinkle is introduced when putting these calculations into
+practice because Rothermel's formulas all expect a measure of midflame
+wind speed. However, wind speed data is often collected at a height 20
+feet above either unsheltered ground or a tree canopy layer if
+present. To convert this 20-ft wind speed to the required midflame
+wind speed value, Pyretechnics uses the *wind adjustment factor*
+formula from Albini & Baughman 1979, parameterized as in BehavePlus,
+FARSITE, FlamMap, FSPro, and FPA according to Andrews
+2012\citep{Albini1979,Andrews2012}. This formula is shown below:
+
+\begin{displaymath}
+  WAF = \left\{
+    \begin{array}{lr}
+      \frac{1.83}{ \ln(\frac{20.0 + 0.36 FBD}{0.13 FBD}) } & CC = 0 \\
+      \frac{0.555}{ \sqrt(CH (CC/300.0)) \ln(\frac{20 + 0.36 CH}{0.13 CH}) } & CC > 0
+    \end{array}
+  \right.
+\end{displaymath}
+
+where WAF is the unitless wind adjustment factor, FBD is the fuel bed
+depth in feet, CH is the canopy height in ft, and CC is the canopy
+cover percentage (0-100).
+
+#+name: wind-adjustment-factor
+#+begin_src python :tangle ../src/pyretechnics/surface_fire.py
+from math import log, sqrt
+
+def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
+    """
+    fuel_bed_depth :: ft
+    canopy_height  :: ft
+    canopy_cover   :: 0-100
+    """
+    if (canopy_cover > 0.0) and (canopy_height > 0.0):
+        # sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)
+        A = sqrt((canopy_cover / 300.0) * canopy_height)
+        B = log((20.0 + 0.36 * canopy_height) / (0.13 * canopy_height))
+        return 0.555 / (A * B)
+    elif (fuel_bed_depth > 0.0):
+        # unsheltered: equation 6 H_F = H (Andrews 2012)
+        A = log((20.0 + 0.36 * fuel_bed_depth) / (0.13 * fuel_bed_depth))
+        return 1.83 / A # 1.83 truncated from 1.8328795184533409
+    else:
+        # non-burnable fuel model
+        return 0.0
+#+end_src
+
+
+
 # from conversion import deg2rad, rad2deg
+
+
