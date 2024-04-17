@@ -1,30 +1,35 @@
+# [[file:../../org/Pyretechnics.org::*Lazy Array Usage Examples][Lazy Array Usage Examples:1]]
 import numpy as np
-from pyrotechniques.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
+from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
 
 #==============================================================
 # Raw Data - managed by the caller
 #==============================================================
 
 # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
-elevation_layer           = np.arange(0,1000000).reshape(1000,1000)
-slope_layer               = np.arange(0,1000000).reshape(1000,1000)
-aspect_layer              = np.arange(0,1000000).reshape(1000,1000)
-fuel_model_layer          = np.arange(0,1000000).reshape(1000,1000)
-canopy_cover_layer        = np.arange(0,1000000).reshape(1000,1000)
-canopy_height_layer       = np.arange(0,1000000).reshape(1000,1000)
-canopy_base_height_layer  = np.arange(0,1000000).reshape(1000,1000)
-canopy_bulk_density_layer = np.arange(0,1000000).reshape(1000,1000)
+elevation_layer                    = np.arange(0,1000000).reshape(1000,1000)
+slope_layer                        = np.arange(0,1000000).reshape(1000,1000)
+aspect_layer                       = np.arange(0,1000000).reshape(1000,1000)
+fuel_model_layer                   = np.arange(0,1000000).reshape(1000,1000)
+canopy_cover_layer                 = np.arange(0,1000000).reshape(1000,1000)
+canopy_height_layer                = np.arange(0,1000000).reshape(1000,1000)
+canopy_base_height_layer           = np.arange(0,1000000).reshape(1000,1000)
+canopy_bulk_density_layer          = np.arange(0,1000000).reshape(1000,1000)
+fuel_spread_adjustment_layer       = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
+suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # Optional Layer
 
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
 relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
-wind_speed_layer                    = np.arange(240000).reshape(24,100,100)
-wind_direction_layer                = np.arange(240000).reshape(24,100,100)
+wind_speed_x_layer                  = np.arange(240000).reshape(24,100,100)
+wind_speed_y_layer                  = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_10hr_layer       = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_100hr_layer      = np.arange(240000).reshape(24,100,100)
 fuel_moisture_live_herbaceous_layer = np.arange(240000).reshape(24,100,100)
 fuel_moisture_live_woody_layer      = np.arange(240000).reshape(24,100,100)
+foliar_moisture_layer               = np.arange(240000).reshape(24,100,100)
+weather_spread_adjustment_layer     = np.arange(240000).reshape(24,100,100) # Optional Layer
 
 #==============================================================
 # Chunk Loading Functions
@@ -57,7 +62,7 @@ def make_load_chunk_3d(layer_3d, chunk_shape_3d):
 # Creating the Dictionary of Layer Names to Lookup Functions
 #==============================================================
 
-#                      bands, rows, cols
+#--------------------  bands, rows, cols
 simulation_shape_2d = (       1000, 1000)
 layer_shape_2d      = (       1000, 1000)
 chunk_shape_2d      = (        100,  100)
@@ -82,25 +87,29 @@ def make_lookup_fn_3d_for_layer(layer_3d):
 # Layer Dictionary
 layer_lookup = {
     # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
-    "elevation"          : make_lookup_fn_2d_for_layer(elevation_layer),
-    "slope"              : make_lookup_fn_2d_for_layer(slope_layer),
-    "aspect"             : make_lookup_fn_2d_for_layer(aspect_layer),
-    "fuel_model"         : make_lookup_fn_2d_for_layer(fuel_model_layer),
-    "canopy_cover"       : make_lookup_fn_2d_for_layer(canopy_cover_layer),
-    "canopy_height"      : make_lookup_fn_2d_for_layer(canopy_height_layer),
-    "canopy_base_height" : make_lookup_fn_2d_for_layer(canopy_base_height_layer),
-    "canopy_bulk_density": make_lookup_fn_2d_for_layer(canopy_bulk_density_layer),
+    "elevation"                    : make_lookup_fn_2d_for_layer(elevation_layer),
+    "slope"                        : make_lookup_fn_2d_for_layer(slope_layer),
+    "aspect"                       : make_lookup_fn_2d_for_layer(aspect_layer),
+    "fuel_model"                   : make_lookup_fn_2d_for_layer(fuel_model_layer),
+    "canopy_cover"                 : make_lookup_fn_2d_for_layer(canopy_cover_layer),
+    "canopy_height"                : make_lookup_fn_2d_for_layer(canopy_height_layer),
+    "canopy_base_height"           : make_lookup_fn_2d_for_layer(canopy_base_height_layer),
+    "canopy_bulk_density"          : make_lookup_fn_2d_for_layer(canopy_bulk_density_layer),
+    "fuel_spread_adjustment"       : make_lookup_fn_2d_for_layer(fuel_spread_adjustment_layer),       # Optional Layer
+    "suppression_difficulty_index" : make_lookup_fn_2d_for_layer(suppression_difficulty_index_layer), # Optional Layer
 
     # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
     "temperature"                  : make_lookup_fn_3d_for_layer(temperature_layer),
     "relative_humidity"            : make_lookup_fn_3d_for_layer(relative_humidity_layer),
-    "wind_speed"                   : make_lookup_fn_3d_for_layer(wind_speed_layer),
-    "wind_direction"               : make_lookup_fn_3d_for_layer(wind_direction_layer),
+    "wind_speed_x"                 : make_lookup_fn_3d_for_layer(wind_speed_x_layer),
+    "wind_speed_y"                 : make_lookup_fn_3d_for_layer(wind_speed_y_layer),
     "fuel_moisture_dead_1hr"       : make_lookup_fn_3d_for_layer(fuel_moisture_dead_1hr_layer),
     "fuel_moisture_dead_10hr"      : make_lookup_fn_3d_for_layer(fuel_moisture_dead_10hr_layer),
     "fuel_moisture_dead_100hr"     : make_lookup_fn_3d_for_layer(fuel_moisture_dead_100hr_layer),
     "fuel_moisture_live_herbaceous": make_lookup_fn_3d_for_layer(fuel_moisture_live_herbaceous_layer),
     "fuel_moisture_live_woody"     : make_lookup_fn_3d_for_layer(fuel_moisture_live_woody_layer),
+    "foliar_moisture"              : make_lookup_fn_3d_for_layer(foliar_moisture_layer),
+    "weather_spread_adjustment"    : make_lookup_fn_3d_for_layer(weather_spread_adjustment_layer),    # Optional Layer
 }
 
 #==============================================================
@@ -117,15 +126,20 @@ cc_100_100   = layer_lookup["canopy_cover"](100,100)
 ch_100_100   = layer_lookup["canopy_height"](100,100)
 cbh_100_100  = layer_lookup["canopy_base_height"](100,100)
 cbd_100_100  = layer_lookup["canopy_bulk_density"](100,100)
+fsa_100_100  = layer_lookup["fuel_spread_adjustment"](100,100)           # Optional Layer
+sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)     # Optional Layer
 
 # NOTE: 3D coords should be provided as (z,y,x) in simulation space.
 
 temp_12_100_100  = layer_lookup["temperature"](12,100,100)
 rh_12_100_100    = layer_lookup["relative_humidity"](12,100,100)
-wsp_12_100_100   = layer_lookup["wind_speed"](12,100,100)
-wd_12_100_100    = layer_lookup["wind_direction"](12,100,100)
+wspx_12_100_100  = layer_lookup["wind_speed_x"](12,100,100)
+wspy_12_100_100  = layer_lookup["wind_speed_y"](12,100,100)
 md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"](12,100,100)
 md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"](12,100,100)
 md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"](12,100,100)
 mlh_12_100_100   = layer_lookup["fuel_moisture_live_herbaceous"](12,100,100)
 mlw_12_100_100   = layer_lookup["fuel_moisture_live_woody"](12,100,100)
+fm_12_100_100    = layer_lookup["foliar_moisture"](12,100,100)
+wsa_12_100_100   = layer_lookup["weather_spread_adjustment"](12,100,100) # Optional Layer
+# Lazy Array Usage Examples:1 ends here
