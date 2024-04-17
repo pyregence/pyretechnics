@@ -1309,6 +1309,8 @@ class weighting factors expressed in equations 53-57 in Rothermel
 1972\citep{Rothermel1972}. For brevity, these formulas are elided from
 this text.
 
+TODO: Test whether =g_ij= below creates different values for any fuel models if we simply compare =i= to [0,1,2,3].
+
 #+name: add-weighting-factors
 #+begin_src python :tangle ../src/pyretechnics/fuel_models.py
 def add_weighting_factors(fuel_model):
@@ -1344,4 +1346,68 @@ def add_weighting_factors(fuel_model):
     return weighted_fuel_model
 #+end_src
 
-RESUME AT: [[file:~/code/sig-gis/gridfire/org/GridFire.org::*Live Moisture of Extinction][Live Moisture of Extinction]]
+*** Live Moisture of Extinction
+
+The live moisture of extinction for each fuel model is determined from
+the dead fuel moisture content, the dead moisture of extinction, and
+the ratio of dead fuel loading to live fuel loading using Equation 88
+from Rothermel 1972, adjusted according to Albini 1976 Appendix III to
+match the behavior of Albini's original FIREMODS
+library.\citep{Rothermel1972,Albini1976} Whenever the fuel moisture
+content becomes greater than or equal to the moisture of extinction, a
+fire will no longer spread through that fuel. Here are the formulas
+referenced above:
+
+\begin{align*}
+  M_{x}^{l} &= \max(M_{x}^{d}, 2.9 \, W' \, (1 - \frac{M_{f}^{d}}{M_{x}^{d}}) - 0.226) \\
+  W' &= \frac{\sum_{c \in D}{w_{o}^{c} \> e^{-138/\sigma^{c}}}}{\sum_{c \in L}{w_{o}^{c} \> e^{-500/\sigma^{c}}}} \\
+  M_{f}^{d} &= \frac{\sum_{c \in D}{w_{o}^{c} \> M_{f}^{c} \> e^{-138/\sigma^{c}}}}{\sum_{c \in D}{w_{o}^{c} \> e^{-138/\sigma^{c}}}}
+\end{align*}
+
+where $M_{x}^{l}$ is the live moisture of extinction, $M_{x}^{d}$ is
+the dead moisture of extinction, $D$ is the set of dead fuel size
+classes (1hr, 10hr, 100hr, herbaceous), $L$ is the set of live fuel
+size classes (herbaceous, woody), $w_{o}^{c}$ is the dry weight
+loading of size class $c$, $\sigma^{c}$ is the surface area to volume
+ratio of size class $c$, and $M_{f}^{c}$ is the moisture content of
+size class $c$.
+
+#+name: add-live-moisture-of-extinction
+#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+import math
+
+def add_live_moisture_of_extinction(fuel_model):
+    """Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III."""
+    w_o                    = fuel_model["w_o"]
+    sigma                  = fuel_model["sigma"]
+    M_f                    = fuel_model["M_f"]
+    M_x                    = fuel_model["M_x"]
+    loading_factors        = map_size_class(lambda i:
+                                            (lambda sigma, A:
+                                             w_o[i] * math.exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
+                                             )(sigma[i], -138.0 if (i < 4) else -500.0))
+    [dead_loading_factor
+     live_loading_factor]  = size_class_sum(lambda i: loading_factors[i])
+    [dead_moisture_factor] = size_class_sum(lambda i: M_f[i] * loading_factors[i])
+    dead_to_live_ratio     = (dead_loading_factor / live_loading_factor) if (live_loading_factor > 0.0) else None
+    dead_fuel_moisture     = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
+    M_x_dead               = M_x[0]
+    M_x_live               = max(M_x_dead,
+                                 (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226
+                                 ) if (live_loading_factor > 0.0) else M_x_dead
+    moisturized_fuel_model = fuel_model.copy() # shallow copy
+    moisturized_fuel_model["M_x"] = [M_x[0]
+                                     M_x[1]
+                                     M_x[2]
+                                     M_x[3]
+                                     M_x_live
+                                     M_x_live]
+    return moisturized_fuel_model
+
+
+# TODO: If these functions aren't called anywhere else, create a copy of the fuel model here and mutate it in the called functions
+def moisturize(fuel_model, fuel_moisture):
+    return add_live_moisture_of_extinction(add_weighting_factors(add_dynamic_fuel_loading(fuel_model, fuel_moisture)))
+#+end_src
+
+This concludes our coverage of fuel models and and fuel moisture.
