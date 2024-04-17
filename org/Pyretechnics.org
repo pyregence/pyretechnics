@@ -1378,29 +1378,29 @@ import math
 
 def add_live_moisture_of_extinction(fuel_model):
     """Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III."""
-    w_o                    = fuel_model["w_o"]
-    sigma                  = fuel_model["sigma"]
-    M_f                    = fuel_model["M_f"]
-    M_x                    = fuel_model["M_x"]
-    loading_factors        = map_size_class(lambda i:
-                                            (lambda sigma, A:
-                                             w_o[i] * math.exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
-                                             )(sigma[i], -138.0 if (i < 4) else -500.0))
-    [dead_loading_factor
-     live_loading_factor]  = size_class_sum(lambda i: loading_factors[i])
-    [dead_moisture_factor] = size_class_sum(lambda i: M_f[i] * loading_factors[i])
-    dead_to_live_ratio     = (dead_loading_factor / live_loading_factor) if (live_loading_factor > 0.0) else None
-    dead_fuel_moisture     = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
-    M_x_dead               = M_x[0]
-    M_x_live               = max(M_x_dead,
-                                 (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226
-                                 ) if (live_loading_factor > 0.0) else M_x_dead
-    moisturized_fuel_model = fuel_model.copy() # shallow copy
-    moisturized_fuel_model["M_x"] = [M_x[0]
-                                     M_x[1]
-                                     M_x[2]
-                                     M_x[3]
-                                     M_x_live
+    w_o                       = fuel_model["w_o"]
+    sigma                     = fuel_model["sigma"]
+    M_f                       = fuel_model["M_f"]
+    M_x                       = fuel_model["M_x"]
+    loading_factors           = map_size_class(lambda i:
+                                               (lambda sigma_ij, A:
+                                                w_o[i] * math.exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
+                                                )(sigma[i], -138.0 if (i < 4) else -500.0))
+    [dead_loading_factor,
+     live_loading_factor]     = size_class_sum(lambda i: loading_factors[i])
+    [dead_moisture_factor, _] = size_class_sum(lambda i: M_f[i] * loading_factors[i])
+    dead_to_live_ratio        = (dead_loading_factor / live_loading_factor) if (live_loading_factor > 0.0) else None
+    dead_fuel_moisture        = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
+    M_x_dead                  = M_x[0]
+    M_x_live                  = max(M_x_dead,
+                                    (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226
+                                    ) if (live_loading_factor > 0.0) else M_x_dead
+    moisturized_fuel_model    = fuel_model.copy() # shallow copy
+    moisturized_fuel_model["M_x"] = [M_x[0],
+                                     M_x[1],
+                                     M_x[2],
+                                     M_x[3],
+                                     M_x_live,
                                      M_x_live]
     return moisturized_fuel_model
 
