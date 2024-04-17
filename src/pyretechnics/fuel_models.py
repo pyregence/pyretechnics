@@ -195,7 +195,7 @@ def add_weighting_factors(fuel_model):
     return weighted_fuel_model
 # add-weighting-factors ends here
 # [[file:../../org/Pyretechnics.org::add-live-moisture-of-extinction][add-live-moisture-of-extinction]]
-import math
+from math import exp
 
 def add_live_moisture_of_extinction(fuel_model):
     """Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III."""
@@ -205,7 +205,7 @@ def add_live_moisture_of_extinction(fuel_model):
     M_x                       = fuel_model["M_x"]
     loading_factors           = map_size_class(lambda i:
                                                (lambda sigma_ij, A:
-                                                w_o[i] * math.exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
+                                                w_o[i] * exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
                                                 )(sigma[i], -138.0 if (i < 4) else -500.0))
     [dead_loading_factor,
      live_loading_factor]     = size_class_sum(lambda i: loading_factors[i])

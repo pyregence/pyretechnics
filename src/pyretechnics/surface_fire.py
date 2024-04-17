@@ -1,5 +1,5 @@
 # [[file:../../org/Pyretechnics.org::rothermel-surface-fire-spread-no-wind-no-slope][rothermel-surface-fire-spread-no-wind-no-slope]]
-import math
+from math import exp
 from fuel_models import map_category, map_size_class, category_sum, size_class_sum
 
 def calc_mineral_damping_coefficients(f_ij, S_e):
@@ -57,7 +57,7 @@ def calc_optimum_reaction_velocity(beta, sigma_prime, beta_op):
     # Maximum reaction velocity (1/min)
     Gamma_prime_max = B / (495.0 + 0.0594 * B)
     # Optimum reaction velocity (1/min)
-    return Gamma_prime_max * (C ** A) * math.exp(A * (1.0 - C))
+    return Gamma_prime_max * (C ** A) * exp(A * (1.0 - C))
 
 
 def calc_heat_per_unit_area(eta_S_i, eta_M_i, h_i, W_n_i):
@@ -69,7 +69,7 @@ def calc_reaction_intensity(Gamma_prime, Btus):
 
 
 def calc_propagating_flux_ratio(beta, sigma_prime):
-    return math.exp((0.792 + 0.681 * (sigma_prime ** 0.5)) * (beta + 0.1)) / (192.0 + 0.2595 * sigma_prime)
+    return exp((0.792 + 0.681 * (sigma_prime ** 0.5)) * (beta + 0.1)) / (192.0 + 0.2595 * sigma_prime)
 
 
 def calc_heat_of_preignition(M_f):
@@ -79,7 +79,7 @@ def calc_heat_of_preignition(M_f):
 def calc_heat_distribution(sigma, Q_ig, f_ij):
     return size_class_sum(lambda i:
                           (lambda sigma:
-                           f_ij[i] * math.exp(-138.0 / sigma) * Q_ig[i] if (sigma > 0.0) else 0.0
+                           f_ij[i] * exp(-138.0 / sigma) * Q_ig[i] if (sigma > 0.0) else 0.0
                            )(sigma[i]))
 
 
@@ -174,8 +174,8 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     R              = calc_surface_fire_spread_rate(I_R, xi, rho_b, epsilon)     # (ft/min)
     t_res          = calc_residence_time(sigma_prime)
     B              = 0.02526 * (sigma_prime ** 0.54)
-    C              = 7.47 * math.exp(-0.133 * (sigma_prime ** 0.55))
-    E              = 0.715 * math.exp(-3.59 * (sigma_prime / 10000.0))
+    C              = 7.47 * exp(-0.133 * (sigma_prime ** 0.55))
+    E              = 0.715 * exp(-3.59 * (sigma_prime / 10000.0))
     F              = (beta / beta_op) ** E
     get_phi_S      = get_phi_S_fn(beta)
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
