@@ -1750,30 +1750,6 @@ def almost_zero(x):
     return abs(x) < 0.000001
 
 
-def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, phi_max):
-    """
-    Warning: Mutates spread_properties
-    """
-    effective_wind_speed = spread_properties["effective_wind_speed"]
-    if (effective_wind_speed > max_wind_speed):
-        spread_properties["max_spread_rate"]      = spread_rate * (1.0 + phi_max)
-        spread_properties["effective_wind_speed"] = max_wind_speed
-        return spread_properties
-    else:
-        return spread_properties
-
-
-def add_eccentricity(spread_properties):
-    """
-    Warning: Mutates spread_properties
-    """
-    effective_wind_speed = spread_properties["effective_wind_speed"]
-    length_width_ratio   = 1.0 + 0.002840909 * effective_wind_speed
-    eccentricity         = sqrt((length_width_ratio ** 2.0) - 1.0) / length_width_ratio
-    spread_properties["eccentricity"] = eccentricity
-    return spread_properties
-
-
 def smallest_angle_between(theta1, theta2):
   """
   Computes the absolute difference between two angles as an angle between 0° and 180°.
@@ -1889,6 +1865,30 @@ def get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind
         case "wind_blows_across_slope":
             return spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
                                                            slope_direction, get_wind_speed)
+
+
+def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, phi_max):
+    """
+    Warning: Mutates spread_properties
+    """
+    effective_wind_speed = spread_properties["effective_wind_speed"]
+    if (effective_wind_speed > max_wind_speed):
+        spread_properties["max_spread_rate"]      = spread_rate * (1.0 + phi_max)
+        spread_properties["effective_wind_speed"] = max_wind_speed
+        return spread_properties
+    else:
+        return spread_properties
+
+
+def add_eccentricity(spread_properties):
+    """
+    Warning: Mutates spread_properties
+    """
+    effective_wind_speed = spread_properties["effective_wind_speed"]
+    length_width_ratio   = 1.0 + 0.002840909 * effective_wind_speed
+    eccentricity         = sqrt((length_width_ratio ** 2.0) - 1.0) / length_width_ratio
+    spread_properties["eccentricity"] = eccentricity
+    return spread_properties
 
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
