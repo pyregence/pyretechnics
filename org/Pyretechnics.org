@@ -1663,7 +1663,7 @@ must be taken into effect. To accomplish this, Pyretechnics implements
 the vector addition procedure defined in Rothermel 1983 that combines
 the wind-only and slope-only spread rates independently to calculate
 the effective fire spread direction and
-magnitude.\citep{Peterson2011,Peterson2009,Rothermel1983}
+magnitude.\citep{Rothermel1983}
 
 A minor wrinkle is introduced when putting these calculations into
 practice because Rothermel's formulas all expect a measure of midflame
@@ -1719,32 +1719,29 @@ III of Albini 1976, these midflame wind speeds are all limited to $0.9
 I_{R}$.\citep{Albini1976}
 
 Next, the effective wind speed is used to compute the length to width
-ratio $\frac{L}{W}$ of an ellipse that approximates the fire front
-using equation 9 from Rothermel 1991.\citep{Rothermel1991} This length
-to width ratio is then converted into an eccentricity measure of the
-ellipse using equation 8 from Albini and Chase 1980.\citep{Albini1980}
-Finally, this eccentricity $E$ is used to project the maximum spread
-rate to any point along the fire front. Here are the formulas used:
+ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
+front using equation 9 from Rothermel 1991.\citep{Rothermel1991} This
+length to width ratio is then converted into an eccentricity measure
+of the ellipse using equation 8 from Albini and Chase
+1980.\citep{Albini1980} Finally, this eccentricity $E$ is used to
+project the maximum spread rate to any point along the fire front.
+Here are the formulas used:
 
 \begin{align*}
-  \frac{L}{W} &= 1 + 0.002840909 \, U_{\textrm{eff}} \\
+  \frac{L}{W} &= 1 + 0.25 \, U_{\textrm{eff}} \\
   E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align*}
 
-where \theta is the angular offset from the direction of maximum fire
-spread, R_{max} is the maximum spread rate, and R_{\theta} is the
-spread rate in direction \theta.
-
-*Note:* The coefficient 0.002840909 in the $\frac{L}{W}$ formula is in
-units of min/ft. The original equation from Rothermel 1991 used 0.25
-in units of hr/mi, so this was converted to match Pyretechnic's use of
-ft/min for $U_{\textrm{eff}}$.
+where U_{eff} is the effective wind speed in mph, \theta is the
+angular offset from the direction of maximum fire spread, R_{max} is
+the maximum spread rate, and R_{\theta} is the spread rate in
+direction \theta.
 
 #+name: rothermel-surface-fire-spread-max-and-any
 #+begin_src python :tangle ../src/pyretechnics/surface_fire.py
-from math import sin, cos, asin
-from conversion import deg2rad, rad2deg
+from conversion import deg2rad, rad2deg, fpm2mph
+from math import sin, cos, asin, exp, sqrt
 
 def almost_zero(x):
     return abs(x) < 0.000001
@@ -1880,14 +1877,55 @@ def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_spee
         return spread_properties
 
 
+# FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
+def surface_length_to_width_ratio(effective_wind_speed):
+    """
+    Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
+    Rothermel 1991 given:
+    - effective_wind_speed (ft/min)
+
+    L/W = 1 + 0.25 * Ueff_mph
+    """
+    effective_wind_speed_mph = fpm2mph(effective_wind_speed)
+    return 1.0 + 0.25 * effective_wind_speed_mph
+
+
+# FIXME: unused
+def surface_length_to_width_ratio_elmfire(effective_wind_speed):
+    """
+    Calculate the length_to_width_ratio of the surface fire front given:
+    - effective_wind_speed (ft/min)
+
+    L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
+    """
+    effective_wind_speed_mph = fpm2mph(effective_wind_speed)
+    return min((0.936 * exp(0.2566 * effective_wind_speed_mph))
+               +
+               (0.461 * exp(-0.1548 * effective_wind_speed_mph))
+               -
+               0.397,
+               8.0)
+
+
+def surface_fire_eccentricity(effective_wind_speed):
+    """
+    Calculate the eccentricity (E) of the surface fire front using eq. 9 from
+    Rothermel 1991 and eq. 8 from Albini and Chase 1980 given:
+    - effective_wind_speed (ft/min)
+
+    L/W = 1 + 0.25 * Ueff_mph
+    E = sqrt( L/W^2 - 1 ) / L/W
+    """
+    length_width_ratio = surface_length_to_width_ratio(effective_wind_speed)
+    return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
+
+
 def add_eccentricity(spread_properties):
     """
     Warning: Mutates spread_properties
     """
-    effective_wind_speed = spread_properties["effective_wind_speed"]
-    length_width_ratio   = 1.0 + 0.002840909 * effective_wind_speed
-    eccentricity         = sqrt((length_width_ratio ** 2.0) - 1.0) / length_width_ratio
-    spread_properties["eccentricity"] = eccentricity
+    effective_wind_speed              = spread_properties["effective_wind_speed"] # ft/min
+    spread_properties["eccentricity"] = surface_fire_eccentricity(effective_wind_speed)
     return spread_properties
 
 
