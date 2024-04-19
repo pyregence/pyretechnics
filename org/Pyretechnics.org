@@ -2184,3 +2184,88 @@ lb/ft^{3}, $Z$ is the canopy height in ft, $Z_{b}$ is the canopy base
 height in ft, $h$ is the fuel model heat of combustion (generally 8000
 Btu/lb), $L_{c}$ is the crown flame length in ft, and $I$ is the
 surface fire line intensity in Btu/ft/s.
+
+#+name: crown-fire-line-intensity
+#+begin_src python :tangle ../src/pyretechnics/crown_fire.py
+# NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
+# NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
+def crown_fire_line_intensity(crown_spread_rate, crown_bulk_density, canopy_height_difference, heat_of_combustion):
+    """
+    Returns the crown_fire_line_intensity in Btu/ft*s OR kW/m, given:
+    - crown_spread_rate (ft/min OR m/min)
+    - crown_bulk_density (lb/ft^3 OR kg/m^3)
+    - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
+    - heat_of_combustion (Btu/lb OR kJ/kg)
+
+    (ft/min * lb/ft^3 * ft * Btu/lb)/60 = (Btu/ft*min)/60 = Btu/ft*s
+    OR
+    (m/min * kg/m^3 * m * kJ/kg)/60 = (kJ/m*min)/60 = kJ/m*s = kW/m
+    """
+    return (crown_spread_rate * crown_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
+#+end_src
+
+As with surface fire spread, the wind speed (this time the 20-ft wind
+speed in mph $U_{20}$) is used to compute the length to width ratio
+$\frac{L}{W}$ of an ellipse that approximates the crown fire front
+using equation 9 from Rothermel 1991.\citep{Rothermel1991} This length
+to width ratio is then converted into an eccentricity measure of the
+ellipse using equation 8 from Albini and Chase 1980.\citep{Albini1980}
+Finally, this eccentricity $E$ is used to project the maximum spread
+rate to any point along the fire front. Here are the formulas used:
+
+\begin{align*}
+  \frac{L}{W} &= 1 + 0.125 \, U_{20} \\
+  E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
+  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
+\end{align*}
+
+where \theta is the angular offset from the direction of maximum fire
+spread, R_{max} is the maximum spread rate, and R_{\theta} is the
+spread rate in direction \theta.
+
+#+name: crown-eccentricity
+#+begin_src python :tangle ../src/pyretechnics/crown_fire.py
+from math import sqrt
+
+# NOTE: No longer takes ellipse_adjustment_factor argument
+# FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
+def crown_length_to_width_ratio(wind_speed_20ft):
+    """
+    Calculate the length_to_width_ratio of the crown fire front using eq. 9 from
+    Rothermel 1991 given:
+    - wind_speed_20ft (mph)
+
+    L/W = 1 + 0.125 * U20_mph
+    """
+    return 1.0 + 0.125 * wind_speed_20ft
+
+
+# FIXME: unused
+def crown_length_to_width_ratio_elmfire(wind_speed_20ft, max_length_to_width_ratio):
+    """
+    Calculate the length_to_width_ratio of the crown fire front using eq. 9 from
+    Rothermel 1991 given:
+    - wind_speed_20ft (mph)
+    - max_length_to_width_ratio (int > 0)
+
+    L/W = min(1.0 + 0.125 * U20_mph, L/W_max)
+    """
+    return min((1.0 + 0.125 * wind_speed_20ft), max_length_to_width_ratio)
+
+
+# NOTE: No longer takes ellipse_adjustment_factor argument
+def crown_fire_eccentricity(wind_speed_20ft):
+    """
+    Calculate the eccentricity (E) of the crown fire front using eq. 9 from
+    Rothermel 1991 and eq. 8 from Albini and Chase 1980 given:
+    - wind_speed_20ft (mph)
+
+    L/W = 1 + 0.125 * U20_mph
+    E = sqrt( L/W^2 - 1 ) / L/W
+    """
+    length_width_ratio = crown_length_to_width_ratio(wind_speed_20ft)
+    return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
+#+end_src
+
+This concludes our discussion of the crown fire behavior formulas used
+in Pyretechnics.
