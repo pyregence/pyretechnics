@@ -184,8 +184,6 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
         "unadj_spread_rate" : R,
         "reaction_intensity": I_R,
         "residence_time"    : t_res,
-        "fuel_bed_depth"    : delta,
-        "heat_of_combustion": h[0],
         "get_phi_S"         : get_phi_S,
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
@@ -218,8 +216,8 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
         return 0.0
 # wind-adjustment-factor ends here
 # [[file:../../org/Pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
-from math import sin, cos, asin
-from conversion import deg2rad, rad2deg
+from conversion import deg_to_rad, rad_to_deg, fpm_to_mph
+from math import sin, cos, asin, exp, sqrt
 
 def almost_zero(x):
     return abs(x) < 0.000001
@@ -300,7 +298,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
                                             slope_direction, get_wind_speed):
     wind_magnitude     = spread_rate * phi_W
     slope_magnitude    = spread_rate * phi_S
-    difference_angle   = deg2rad((wind_to_direction - slope_direction) % 360.0)
+    difference_angle   = deg_to_rad((wind_to_direction - slope_direction) % 360.0)
     x                  = slope_magnitude + wind_magnitude * cos(difference_angle)
     y                  = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x * x + y * y)
@@ -314,7 +312,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
     else:
         max_spread_rate      = spread_rate + combined_magnitude
         phi_combined         = (max_spread_rate / spread_rate) - 1.0
-        offset               = rad2deg(asin(abs(y) / combined_magnitude))
+        offset               = rad_to_deg(asin(abs(y) / combined_magnitude))
         offset_prime         = get_offset_prime(x, y, offset)
         max_spread_direction = (slope_direction + offset_prime) % 360.0
         effective_wind_speed = get_wind_speed(phi_combined)
@@ -355,14 +353,55 @@ def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_spee
         return spread_properties
 
 
+# FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
+def surface_length_to_width_ratio(effective_wind_speed):
+    """
+    Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
+    Rothermel 1991 given:
+    - effective_wind_speed (ft/min)
+
+    L/W = 1 + 0.25 * Ueff_mph
+    """
+    effective_wind_speed_mph = fpm_to_mph(effective_wind_speed)
+    return 1.0 + 0.25 * effective_wind_speed_mph
+
+
+# FIXME: unused
+def surface_length_to_width_ratio_elmfire(effective_wind_speed):
+    """
+    Calculate the length_to_width_ratio of the surface fire front given:
+    - effective_wind_speed (ft/min)
+
+    L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
+    """
+    effective_wind_speed_mph = fpm_to_mph(effective_wind_speed)
+    return min((0.936 * exp(0.2566 * effective_wind_speed_mph))
+               +
+               (0.461 * exp(-0.1548 * effective_wind_speed_mph))
+               -
+               0.397,
+               8.0)
+
+
+def surface_fire_eccentricity(effective_wind_speed):
+    """
+    Calculate the eccentricity (E) of the surface fire front using eq. 9 from
+    Rothermel 1991 and eq. 8 from Albini and Chase 1980 given:
+    - effective_wind_speed (ft/min)
+
+    L/W = 1 + 0.25 * Ueff_mph
+    E = sqrt( L/W^2 - 1 ) / L/W
+    """
+    length_width_ratio = surface_length_to_width_ratio(effective_wind_speed)
+    return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
+
+
 def add_eccentricity(spread_properties):
     """
     Warning: Mutates spread_properties
     """
-    effective_wind_speed = spread_properties["effective_wind_speed"]
-    length_width_ratio   = 1.0 + 0.002840909 * effective_wind_speed
-    eccentricity         = sqrt((length_width_ratio ** 2.0) - 1.0) / length_width_ratio
-    spread_properties["eccentricity"] = eccentricity
+    effective_wind_speed              = spread_properties["effective_wind_speed"] # ft/min
+    spread_properties["eccentricity"] = surface_fire_eccentricity(effective_wind_speed)
     return spread_properties
 
 
@@ -391,7 +430,7 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
     if almost_zero(eccentricity) or almost_zero(theta):
         return max_spread_rate
     else:
-        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(deg2rad(theta)))
+        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(deg_to_rad(theta)))
 # rothermel-surface-fire-spread-max-and-any ends here
 # [[file:../../org/Pyretechnics.org::surface-fire-intensity-formulas][surface-fire-intensity-formulas]]
 def anderson_flame_depth(spread_rate, residence_time):
