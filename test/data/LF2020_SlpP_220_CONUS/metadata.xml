@@ -1,0 +1,228 @@
+<metadata>
+  <idinfo>
+    <citation>
+      <citeinfo>
+        <origin>LANDFIRE, Earth Resources Observation and Science Center (EROS), U.S. Geological Survey</origin>
+        <pubdate>20220131</pubdate>
+        <title>LANDFIRE 2020 Slope Percent (SlpP) CONUS</title>
+        <edition>LF 2020</edition>
+        <geoform>raster digital data</geoform>
+        <pubinfo>
+          <pubplace>Sioux Falls, SD</pubplace>
+          <publish>Earth Resources Observation and Science Center (EROS), U.S. Geological Survey</publish>
+        </pubinfo>
+        <onlink>https://www.landfire.gov</onlink>
+      </citeinfo>
+    </citation>
+    <descript>
+      <abstract>In late 2021 the LANDFIRE (LF) team responded to feedback and created new topographic products (Elevation, Slope, and Aspect) for the Conterminous US, Alaska, Hawaii, and Puerto Rico and the Virgin Islands to release in early 2022. After the LF 2020 Elevation product was projected to Albers (see Elevation metadata abstract), slope (both degree and percent rise) was calculated using the geodesic option in ArcGIS Desktop 10.6.1 (ArcGIS). A persistent processing artifact consisting of numerous, obviously errant pixel values along the boundary of UTM Zones 15 and 16 was rectified by filling an approximately 15km wide swath with slope values calculated for Elevation in the UTM projection using the planar option in ArcGIS. The file was then converted to unsigned 16-bit using the Copy Raster tool in ArcGIS and clipped to the LF boundary using the Extract by Mask tool in ArcGIS. For Slope percent rise, percent slope values above 400 were reclassified to 400. Several NoData areas were assigned value zero (0) that overlap the LF data extent which includes a 3 nautical mile buffer along coastal areas. Otherwise, 65535 indicates NoData.</abstract>
+      <purpose>LANDFIRE 2020 Update (LF 2020) represents circa 2020 ground conditions and is designed to produce vegetation, disturbance, and fuels products that inform wildland fire and ecological decision systems. LF 2020 is an update to the new base map, LF 2016 Remap (LF Remap), which improved past methodologies and processes to incorporate current satellite imagery, contemporary data sources, and the latest software and hardware technologies. LF 2020 utilizes the most recent and relevant geospatial data available to offer products that reflect current conditions.
+
+LF 2020 products are designed to facilitate national and regional level strategic fire and resource management planning and reporting of management activities. The principal purposes of the products include providing, 1) national level, landscape scale geospatial products to support fire and fuels management planning, and 2) consistent fuels products to support fire planning, analysis, and budgeting to evaluate fire management alternatives. 
+
+Products are created at a 30 meter raster; however, the applicability of products varies by location and specific use. LF products were designed to support 1) national (all states) strategic planning, 2) regional (single large states or groups of smaller states), and 3) strategic/tactical planning for large sub regional landscapes and Fire Management Units (FMUs) (such as significant portions of states or multiple federal administrative entities). The applicability of LF products to support fire and land management planning on smaller areas will vary by product, location, and specific use. Managers and planners must evaluate LF products according to the scale and requirements specific to their needs.
+
+</purpose>
+      <supplinf> As of January 2022 LF Slope is now available in both percent and degrees. 
+
+</supplinf>
+    </descript>
+    <timeperd>
+      <timeinfo>
+        <sngdate>
+          <caldate>2020</caldate>
+        </sngdate>
+      </timeinfo>
+      <current>ground condition</current>
+    </timeperd>
+    <status>
+      <progress>Complete</progress>
+      <update>Biennially</update>
+    </status>
+    <spdom>
+      <bounding>
+        <westbc>-72.6555</westbc>
+        <eastbc>-72.4909</eastbc>
+        <northbc>44.4821</northbc>
+        <southbc>44.3413</southbc>
+      </bounding>
+    </spdom>
+    <keywords>
+      <theme>
+        <themekt>ISO 19115 Topic Category</themekt>
+        <themekey>biota</themekey>
+      </theme>
+      <theme>
+        <themekt>USGS Thesaurus</themekt>
+        <themekey>fires</themekey>
+        <themekey>hazard preparedness</themekey>
+        <themekey>remote sensing</themekey>
+        <themekey>image collections</themekey>
+        <themekey>geospatial datasets</themekey>
+        <themekey>geographic information systems</themekey>
+      </theme>
+      <theme>
+        <themekt>None</themekt>
+        <themekey>raster digital data </themekey>
+        <themekey>Slope</themekey>
+        <themekey>topo</themekey>
+        <themekey>U.S. Geological Survey (USGS)</themekey>
+        <themekey>LANDFIRE 2020</themekey>
+        <themekey>topography</themekey>
+      </theme>
+      <place>
+        <placekt>Common geographic areas</placekt>
+        <placekey>US</placekey>
+        <placekey>CONUS</placekey>
+        <placekey>United States</placekey>
+        <placekey>Continental U.S.</placekey>
+        <placekey>Conterminous United States</placekey>
+      </place>
+    </keywords>
+    <accconst>None</accconst>
+    <useconst>None </useconst>
+    <ptcontac>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>LANDFIRE, Earth Resources Observation and Science Center (EROS), U.S. Geological Survey</cntorg>
+        </cntorgp>
+        <cntpos>Customer Service Representative</cntpos>
+        <cntaddr>
+          <addrtype>physical</addrtype>
+          <address>47914 252nd Street</address>
+          <city>Sioux Falls</city>
+          <state>SD</state>
+          <postal>57198</postal>
+          <country>U.S.</country>
+        </cntaddr>
+        <cntvoice>605-594-6151</cntvoice>
+        <cntemail>helpdesk@landfire.gov</cntemail>
+      </cntinfo>
+    </ptcontac>
+    <datacred>These products were created by the LF team at USGS EROS, Sioux Falls, SD. Refer to the contact information throughout this metadata to contact the LF team.</datacred>
+    <secinfo>
+<secsys>None in place</secsys>
+<secclass>Unclassified</secclass>
+<sechandl>If there is ever doubt, contact the LF Help Desk at helpdesk@landfire.gov</sechandl>
+</secinfo>
+    <native>Microsoft Windows 10; ESRI ArcCatalog 10.6.1</native>
+  </idinfo>
+  <dataqual>
+    <attracc>
+      <attraccr>Products were tested to ensure that each attribute is represented consistently across all data sets. Attributes were not validated against in person observations. </attraccr>
+    </attracc>
+    <logic>The products were pixel "truth" tested for consistency of land or water characteristics across all products. </logic>
+    <complete>Products were formally tested to ensure that valid data was produced for all pixels. Each product was then validated and tested for duplicates, omissions, and errors.</complete>
+    <lineage>
+      <procstep>
+        <procdesc>Beginning in 2016 LF Remap products were created using recent advances in image compositing, tiling algorithms, and faster computing hardware to ensure that LF products remained relevant. LF Remap leveraged the Landsat archive, lidar data, and user contributed field plot data compiled into the LF Reference Database (LFRDB), to create new base map vegetation products. Reference resources included, but were not limited to, Forest Inventory and Analysis (FIA) program plot data (USFS https://fia.fs.fed.us/), Landsat Dynamic Surface Water Extent [(DSWE) USGS https://www.usgs.gov/landsat-missions], the National Land Cover Dataset [(NLCD) USGS https://www.mrlc.gov/data], and National Agricultural Statistics Service [(NASS) USDA - https://www.nass.usda.gov/]. To read more about LF reference resources go to https://www.landfire.gov/reference.php. Information about LF Remap product testing is available by request or via the website at https://www.landfire.gov.</procdesc>
+        <procdate>20220131</procdate>
+      </procstep>
+    </lineage>
+  </dataqual>
+  <spdoinfo>
+    <direct>Raster</direct>
+    <rastinfo>
+      <rasttype>Grid Cell</rasttype>
+      <rowcount>20729</rowcount>
+      <colcount>24853</colcount>
+    </rastinfo>
+  </spdoinfo>
+  <spref>
+    <horizsys>
+      <planar>
+        <mapproj>
+          <mapprojn>Albers Conical Equal Area</mapprojn>
+          <albers>
+            <stdparll>29.5</stdparll>
+            <stdparll>45.5</stdparll>
+            <longcm>-96.0</longcm>
+            <latprjo>23.0</latprjo>
+            <feast>0</feast>
+            <fnorth>0</fnorth>
+          </albers>
+        </mapproj>
+        <planci>
+          <plance>row and column</plance>
+          <coordrep>
+            <absres>30</absres>
+            <ordres>30</ordres>
+          </coordrep>
+          <plandu>meters</plandu>
+        </planci>
+      </planar>
+      <geodetic>
+        <horizdn>North American Datum of 1983 (NAD 83)</horizdn>
+        <ellips>Geodetic Reference System 1980</ellips>
+        <semiaxis>6378137.000000</semiaxis>
+        <denflat>298.257222</denflat>
+      </geodetic>
+    </horizsys>
+    <vertdef />
+  </spref>
+  <eainfo>
+    <overview>
+      <eaover>LANDFIRE (LF) 2020 Slope CONUS. An Attribute Table is included with each product download as a .dbf and embedded in the metadata. The Attribute Data Dictionary (ADD) can be found at https://www.landfire.gov/.</eaover>
+      <eadetcit>https://landfire.gov/slope.php</eadetcit>
+    </overview>
+  </eainfo>
+  <distinfo>
+    <distrib>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>LANDFIRE, Earth Resources Observation and Science Center (EROS), U.S. Geological Survey</cntorg>
+        </cntorgp>
+        <cntpos>Customer Service Representative</cntpos>
+        <cntaddr>
+          <addrtype>physical</addrtype>
+          <address>47914 252nd Street</address>
+          <city>Sioux Falls</city>
+          <state>SD</state>
+          <postal>57198</postal>
+          <country>U.S.</country>
+        </cntaddr>
+        <cntvoice>605-594-6151</cntvoice>
+        <cntemail>helpdesk@landfire.gov</cntemail>
+      </cntinfo>
+    </distrib>
+    <distliab>This product is reproduced from geospatial information prepared by the U.S. Department of the Interior (DOI) USGS EROS. By removing the contents of this package or taking receipt of these files via electronic file transfer methods, you understand that the data stored on this media can be updated at any time. Represented features may not be in an accurate geographic location. USGS EROS makes no expressed or implied warranty, including warranty of merchantability and fitness, with respect to the character, function, or capabilities of the data or their appropriateness for any user's purposes. USGS EROS reserves the right to correct, update, modify, or replace this geospatial information without notification.</distliab>
+    <stdorder>
+      <digform><digtinfo>
+<formname>ARCG</formname>
+<formverd>20220131</formverd> 
+<formspec>LF 2020</formspec>
+</digtinfo>
+<digtopt><onlinopt><computer><networka><networkr>https://www.landfire.gov</networkr></networka></computer></onlinopt></digtopt></digform>
+      <fees>none</fees>
+    </stdorder>
+  </distinfo>
+  <metainfo>
+    <metd>20220131</metd>
+    <metc>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>LANDFIRE, Earth Resources Observation and Science Center (EROS), U.S. Geological Survey</cntorg>
+        </cntorgp>
+        <cntpos>Customer Service Representative</cntpos>
+        <cntaddr>
+          <addrtype>physical</addrtype>
+          <address>47914 252nd Street</address>
+          <city>Sioux Falls</city>
+          <state>SD</state>
+          <postal>57198</postal>
+          <country>U.S.</country>
+        </cntaddr>
+        <cntvoice>605-594-6151</cntvoice>
+        <cntemail>helpdesk@landfire.gov</cntemail>
+      </cntinfo>
+    </metc>
+    <metstdn>FGDC Content Standard for Digital Geospatial Metadata</metstdn>
+    <metstdv>FGDC-STD-001-1998</metstdv>
+    <mettc>local time</mettc>
+    <metsi>
+<metscs>None</metscs>
+<metsc>Unclassified</metsc>
+<metshd>None</metshd>
+</metsi>
+  </metainfo>
+</metadata>
