@@ -56,15 +56,17 @@ and/or freely available for all major operating systems. These
 programs are listed in Table [[tab:required-software]] along with their
 minimum required versions and URLs from which they may be downloaded.
 
-#+NAME: tab:required-software
-#+CAPTION: Software necessary to evaluate the code in this document
-#+ATTR_LATEX: :align |l|r|l| :font \small
-|--------+---------+-----------------------------------|
-| Name   | Version | URL                               |
-|--------+---------+-----------------------------------|
-| Python | 3.10+   | https://www.python.org/downloads/ |
-| Numpy  | LATEST  | https://numpy.org/                |
-|--------+---------+-----------------------------------|
+#+name: tab:required-software
+#+caption: Software necessary to evaluate the code in this document
+#+attr_latex: :align |l|r|l| :font \small
+|----------+---------+---------------------------------------|
+| Name     | Version | URL                                   |
+|----------+---------+---------------------------------------|
+| Python   |  3.10.7 | https://www.python.org/               |
+| Numpy    |  1.23.2 | https://numpy.org/                    |
+| Rasterio |   1.3.7 | https://github.com/rasterio/rasterio/ |
+| GDAL     |   3.6.1 | https://gdal.org/                     |
+|----------+---------+---------------------------------------|
 
 * Data Model
 ** Working in a 3D Space-Time Cube
@@ -591,34 +593,34 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 
 - input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions for accessing the numeric values at each =(y,x)= or =(z,y,x)= coordinate in the simulated space-time cube:
 
-  |--------------------------------------------+-------+--------------------------------------------------------+-----------+-------|
-  | Layer Name                                 | Type  | Units                                                  | Optional? | Arity |
-  |--------------------------------------------+-------+--------------------------------------------------------+-----------+-------|
-  | elevation                                  | float | meters                                                 |           |     2 |
-  | slope                                      | float | percent [0-100+] (vertical meters/horizontal meters)   |           |     2 |
-  | aspect                                     | float | degrees clockwise from North [0-360)                   |           |     2 |
-  | fuel_model                                 | int   | fuel model numbers [1-256]                             |           |     2 |
-  | canopy_cover                               | float | percent [0-100]                                        |           |     2 |
-  | canopy_height                              | float | meters                                                 |           |     2 |
-  | canopy_base_height                         | float | meters                                                 |           |     2 |
-  | canopy_bulk_density                        | float | kilograms/meters^3                                     |           |     2 |
-  | fuel_spread_adjustment                     | float | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     2 |
-  | suppression_difficulty_index               | float | integer >= 0  (TODO: What is the correct value range?) | Yes       |     2 |
-  | surface_spotting_fire_line_intensity       | float | kilowatts/meter                                        | Yes       |     2 |
-  | surface_spotting_percent (TODO: min, max?) | float | percent [0-100]                                        | Yes       |     2 |
-  | crown_spotting_percent   (TODO: min, max?) | float | percent [0-100]                                        | Yes       |     2 |
-  | temperature                                | float | degrees Celsius                                        | Yes       |     3 |
-  | relative_humidity                          | float | percent [0-100+]                                       | Yes       |     3 |
-  | wind_speed_10m_x                           | float | meters/second                                          |           |     3 |
-  | wind_speed_10m_y                           | float | meters/second                                          |           |     3 |
-  | fuel_moisture_dead_1hr                     | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_dead_10hr                    | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_dead_100hr                   | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_live_herbaceous              | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | fuel_moisture_live_woody                   | float | percent [0-100+] grams moisture/grams ovendry wood     |           |     3 |
-  | foliar_moisture                            | float | percent [0-100+] grams moisture/grams ovendry foliage  |           |     3 |
-  | weather_spread_adjustment                  | float | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     3 |
-  |--------------------------------------------+-------+--------------------------------------------------------+-----------+-------|
+  |--------------------------------------------+---------+--------------------------------------------------------+-----------+-------|
+  | Layer Name                                 | Type    | Units                                                  | Optional? | Arity |
+  |--------------------------------------------+---------+--------------------------------------------------------+-----------+-------|
+  | elevation                                  | float32 | meters above sea level [0-8850]                        |           |     2 |
+  | slope                                      | float32 | meters rise / meters run [0-4]                         |           |     2 |
+  | aspect                                     | int16   | degrees clockwise from North [0-359)                   |           |     2 |
+  | fuel_model                                 | int16   | integer classes [1-204]                                |           |     2 |
+  | canopy_cover                               | float32 | canopy area / total area [0-0.95]                      |           |     2 |
+  | canopy_height                              | float32 | meters  [0-51]                                         |           |     2 |
+  | canopy_base_height                         | float32 | meters  [0-10]                                         |           |     2 |
+  | canopy_bulk_density                        | float32 | kilograms/meters^3 [0-0.45]                            |           |     2 |
+  | fuel_spread_adjustment                     | float   | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     2 |
+  | suppression_difficulty_index               | float   | integer >= 0  (TODO: What is the correct value range?) | Yes       |     2 |
+  | surface_spotting_fire_line_intensity       | float   | kilowatts/meter                                        | Yes       |     2 |
+  | surface_spotting_percent (TODO: min, max?) | float   | percent [0-100]                                        | Yes       |     2 |
+  | crown_spotting_percent   (TODO: min, max?) | float   | percent [0-100]                                        | Yes       |     2 |
+  | temperature                                | float   | degrees Celsius                                        | Yes       |     3 |
+  | relative_humidity                          | float   | percent [0-100+]                                       | Yes       |     3 |
+  | wind_speed_10m_x                           | float   | meters/second                                          |           |     3 |
+  | wind_speed_10m_y                           | float   | meters/second                                          |           |     3 |
+  | fuel_moisture_dead_1hr                     | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
+  | fuel_moisture_dead_10hr                    | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
+  | fuel_moisture_dead_100hr                   | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
+  | fuel_moisture_live_herbaceous              | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
+  | fuel_moisture_live_woody                   | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
+  | foliar_moisture                            | float   | ratio [0-1+] grams moisture/grams ovendry foliage      |           |     3 |
+  | weather_spread_adjustment                  | float   | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     3 |
+  |--------------------------------------------+---------+--------------------------------------------------------+-----------+-------|
 
 - output_layer_dict :: an *optional* dictionary of layer names to 2D Numpy arrays with the following units to pre-populate the simulation output arrays:
   *TODO* Consider whether some of these layers should be kept as internal state and not returned to the user.
@@ -1643,8 +1645,6 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
         "unadj_spread_rate" : R,
         "reaction_intensity": I_R,
         "residence_time"    : t_res,
-        "fuel_bed_depth"    : delta,
-        "heat_of_combustion": h[0],
         "get_phi_S"         : get_phi_S,
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
@@ -2269,3 +2269,281 @@ def crown_fire_eccentricity(wind_speed_20ft):
 
 This concludes our discussion of the crown fire behavior formulas used
 in Pyretechnics.
+
+* Burning All Cells as a Head-Fire (similar to FLAMMAP)
+
+#+name: burn-cells
+#+begin_src python :tangle ../src/pyretechnics/burn_cells.py
+from math import sqrt, atan2, degrees
+from fuel_models import fuel_models_precomputed, moisturize
+import surface_fire as sf
+from conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, mps_to_fpm
+
+# NOTE: Name change (no more !)
+# NOTE: Make inputs["fuel_spread_adjustment"] and inputs["weather_spread_adjustment"] default to a function that always returns 1.0
+# NOTE: The wind layers are now using cartesian rather than polar coordinates
+def compute_max_in_situ_values(inputs, outputs, t, i, j):
+    """
+    Computes and saves fire-spread behavior values for the space-time cell at location (t, i, j).
+    """
+    # 2D Inputs
+    slope                         = inputs["slope"](i, j)
+    aspect                        = inputs["aspect"](i, j)
+    fuel_model_number             = inputs["fuel_model"](i, j)
+    canopy_cover                  = inputs["canopy_cover"](i, j)
+    canopy_height                 = inputs["canopy_height"](i, j)
+    canopy_base_height            = inputs["canopy_base_height"](i, j)
+    canopy_bulk_density           = inputs["canopy_bulk_density"](i, j)
+    fuel_spread_adjustment        = inputs["fuel_spread_adjustment"](i, j)
+    # 3D Inputs
+    wind_speed_10m_x              = inputs["wind_speed_10m_x"](t, i, j)
+    wind_speed_10m_y              = inputs["wind_speed_10m_y"](t, i, j)
+    fuel_moisture_dead_1hr        = inputs["fuel_moisture_dead_1hr"](t, i, j)
+    fuel_moisture_dead_10hr       = inputs["fuel_moisture_dead_10hr"](t, i, j)
+    fuel_moisture_dead_100hr      = inputs["fuel_moisture_dead_100hr"](t, i, j)
+    fuel_moisture_live_herbaceous = inputs["fuel_moisture_live_herbaceous"](t, i, j)
+    fuel_moisture_live_woody      = inputs["fuel_moisture_live_woody"](t, i, j)
+    foliar_moisture               = inputs["foliar_moisture"](t, i, j)
+    weather_spread_adjustment     = inputs["weather_spread_adjustment"](t, i, j)
+    # 2D Output Arrays (FIXME: match these to output_layer_dict)
+    max_spread_rate_matrix        = outputs["max_spread_rate"]
+    max_spread_direction_matrix   = outputs["max_spread_direction"]
+    spread_rate_matrix            = outputs["spread_rate"]
+    flame_length_matrix           = outputs["flame_length"]
+    fire_line_intensity_matrix    = outputs["fire_line_intensity"]
+    fire_type_matrix              = outputs["fire_type"]
+    modified_time_matrix          = outputs["modified_time"]
+    eccentricity_matrix           = outputs["eccentricity"]
+    residence_time_matrix         = outputs["residence_time"]
+    reaction_intensity_matrix     = outputs["reaction_intensity"]
+    # Surface Fire Min (TODO: memoize rothermel_surface_fire_spread_no_wind_no_slope)
+    fuel_model                    = fuel_models_precomputed[fuel_model_number]
+    fuel_moisture                 = [fuel_moisture_dead_1hr,
+                                     fuel_moisture_dead_10hr,
+                                     fuel_moisture_dead_100hr,
+                                     0.0, # fuel_moisture_dead_herbaceous
+                                     fuel_moisture_live_herbaceous,
+                                     fuel_moisture_live_woody]
+    moisturized_fuel_model        = moisturize(fuel_model, fuel_moisture)
+    surface_fire_min              = sf.rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model)
+    # Midflame Wind Speed
+    wind_speed_10m                = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0)
+    wind_speed_20ft               = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m)
+    wind_from_direction           = (90.0 - degrees(atan2(wind_speed_10m_y, wind_speed_10m_x)) % 360.0) % 360.0
+    wind_adj_factor               = sf.wind_adjustment_factor(fuel_model["delta"], m_to_ft(canopy_height), canopy_cover)
+    midflame_wind_speed           = mps_to_fpm(wind_speed_20ft * wind_adj_factor)
+    # Surface Fire Max
+    spread_rate_adjustment        = fuel_spread_adjustment * weather_spread_adjustment
+    surface_fire_max              = sf.rothermel_surface_fire_spread_max(surface_fire_min,
+                                                                         midflame_wind_speed,
+                                                                         wind_from_direction,
+                                                                         slope,
+                                                                         aspect,
+                                                                         spread_rate_adjustment)
+    # Max Surface Intensity
+    max_spread_rate               = surface_fire_max["max_spread_rate"]
+    residence_time                = surface_fire_min["residence_time"]
+    reaction_intensity            = surface_fire_min["reaction_intensity"]
+    # max_spread_direction          = surface_fire_max["max_spread_direction"]
+    # eccentricity                  = surface_fire_max["eccentricity"]
+    #=======================================================================================
+    # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
+    #       Consider ending this function here and making another function to compute the
+    #       surface/crown values based on the provided perimeter spread direction.
+    #=======================================================================================
+    max_flame_depth               = anderson_flame_depth(max_spread_rate, residence_time)
+    max_surface_intensity         = byram_fire_line_intensity(reaction_intensity, max_flame_depth)
+    # ?
+    if van_wagner_crown_fire_initiation(canopy_cover,
+                                        canopy_base_height,
+                                        foliar_moisture,
+                                        max_surface_intensity):
+        crown_spread_max        = cruz_crown_fire_spread(wind_speed_20ft,
+                                                         canopy_bulk_density,
+                                                         fuel_moisture_dead_1hr)
+        crown_type              = 2.0 if (crown_spread_max < 0.0) else 3.0 # 2=passive, 3=active
+        crown_spread_max        = abs(crown_spread_max)
+        crown_eccentricity      = eccentricity if (max_spread_rate > crown_spread_max) else crown_fire_eccentricity(wind_speed_20ft)
+        #=======================================================================================
+        # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
+        #=======================================================================================
+        max_crown_intensity     = crown_fire_line_intensity(crown_spread_max,
+                                                            canopy_bulk_density,
+                                                            (canopy_height - canopy_base_height),
+                                                            fuel_model["h"][0])
+        tot_fire_line_intensity = surface_intensity + crown_intensity
+        max_spread_rate         = max(max_spread_rate, crown_spread_max)
+
+        # LET BODY: RESUME HERE
+        (t/mset! max_spread_rate_matrix i j max_spread_rate)
+        (t/mset! max_spread_direction_matrix i j max_spread_direction)
+        (t/mset! eccentricity_matrix i j crown_eccentricity)
+        (t/mset! modified_time_matrix i j (inc t))
+        # compute_directional_values?                      (:compute_directional_values? inputs)
+        (when compute_directional_values?
+          (t/mset! residence_time_matrix i j residence_time)
+          (t/mset! reaction_intensity_matrix i j reaction_intensity))
+        (store_if_max! spread_rate_matrix i j crown_fln_spread_rate)
+        (store_if_max! flame_length_matrix i j (byram_flame_length tot_fire_line_intensity))
+        (store_if_max! fire_line_intensity_matrix i j tot_fire_line_intensity)
+        (store_if_max! fire_type_matrix i j crown_type))
+      (do
+        (t/mset! max_spread_rate_matrix i j max_spread_rate)
+        (t/mset! max_spread_direction_matrix i j max_spread_direction)
+        (t/mset! eccentricity_matrix i j eccentricity)
+        (t/mset! modified_time_matrix i j (inc t))
+        (when compute_directional_values?
+          (t/mset! residence_time_matrix i j residence_time)
+          (t/mset! reaction_intensity_matrix i j reaction_intensity))
+        (store_if_max! spread_rate_matrix i j fireline_normal_spread_rate)
+        (store_if_max! flame_length_matrix i j (byram_flame_length surface_intensity))
+        (store_if_max! fire_line_intensity_matrix i j surface_intensity)
+        (store_if_max! fire_type_matrix i j 1.0)))))
+#+end_src
+
+* Loading LANDFIRE Inputs
+
+To test out the ~burn_cells~ function, we will need to populate a 3D
+space-time world cube with all of the values that it requires. In this
+section, we will provide the space-varying topography, fuels, and
+vegetation layers by using the latest 30m raster layers from the US
+LANDFIRE program.[fn::https://landfire.gov]
+
+#+name: tab:landfire-layers
+#+caption: 2022 LANDFIRE Raster Layers
+#+attr_latex: :align |l|l|l|r|r|r|l|l|l| :font \small
+|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
+| Layer Name          | Label  | Units                                    | Min |  Max | NoData | Notes         | Type  | SRID      | Cell Size |
+|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
+| Elevation           | DEM    | meters above sea level                   |   0 | 8850 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
+| Slope               | SLP    | percent (100 * meters rise / meters run) |   0 |  400 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
+| Aspect              | ASP    | degrees CW from North                    |   0 |  359 |  32767 | -1 = no slope | int16 | EPSG:5070 | 30m x 30m |
+| Fuel Model (S&B 40) | FBFM40 | integer classes                          |  91 |  204 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Cover        | CC     | percent (100 * canopy area / total area) |   0 |   95 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Height       | CH     | meters * 10                              |   0 |  510 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Base Height  | CBH    | meters * 10                              |   0 |  100 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Bulk Density | CBD    | kg/m^3 * 100                             |   0 |   45 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
+
+For testing purposes, we have downloaded these layers clipped to a
+small region in central Vermont and stored them in the [[file:../test/data/][../test/data/]]
+directory of this repository.
+
+#+name: load-landfire
+#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+import rasterio
+
+#================================================
+# Generic Raster Functions
+#================================================
+
+def raster_metadata(raster):
+    return {
+        "name"      : raster.name,
+        "bands"     : raster.count,
+        "rows"      : raster.height,
+        "cols"      : raster.width,
+        "band_types": {i: dtype for i, dtype in zip(raster.indexes, raster.dtypes)},
+        "nodata"    : raster.nodata,
+        "crs"       : raster.crs,
+        "bounds"    : raster.bounds,
+        "transform" : raster.transform,
+    }
+
+
+# NOTE: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
+def load_raster(file_path, dtype=None):
+    with rasterio.open(file_path, "r") as input_raster:
+        return {
+            "array"   : input_raster.read(out_dtype=dtype),
+            "metadata": raster_metadata(input_raster),
+        }
+
+
+def verify_same_dimensions(rasters):
+    dimensions = [
+        (r["metadata"]["bands"],
+         r["metadata"]["rows"],
+         r["metadata"]["cols"])
+        for r in rasters
+    ]
+    if len(set(dimensions)) == 1:
+        return True
+    else:
+        raise ValueError("All rasters do not share the same dimensions.")
+
+
+def verify_same_georeferences(rasters):
+    georeferences = [
+        (r["metadata"]["crs"],
+         r["metadata"]["bounds"],
+         r["metadata"]["transform"])
+        for r in rasters
+    ]
+    if len(set(georeferences)) == 1:
+        return True
+    else:
+        raise ValueError("All rasters do not share the same georeferences.")
+
+
+def verify_colocated_rasters(rasters):
+    return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
+
+
+# NOTE: This does not use the lazy chunking, multi-resolution functions defined earlier.
+def convert_rasters_to_2d_fns(raster_dict):
+    if verify_colocated_rasters(raster_dict.values()):
+        fn_dict = {}
+
+        for name, raster in raster_dict.items():
+            fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
+
+        return fn_dict
+
+#================================================
+# LANDFIRE Specific Functions
+#================================================
+
+landfire_array_conversions = {
+    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
+    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
+    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
+    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
+    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
+    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
+    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
+    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
+}
+
+
+def load_and_convert_landfire_rasters(landfire_file_paths):
+    landfire_rasters = {}
+
+    for name, path in landfire_file_paths.items():
+        (dtype, multiplier) = landfire_array_conversions[name]
+        landfire_rasters[name] = load_raster(path, dtype)
+        if multiplier != 1:
+            array  = landfire_rasters[name]["array"]
+            nodata = landfire_rasters[name]["metadata"]["nodata"]
+            array[array != nodata] *= multiplier
+
+    return landfire_rasters
+
+
+def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
+    return convert_rasters_to_2d_fns(
+        load_and_convert_landfire_rasters(landfire_file_paths)
+    )
+
+
+input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
+    "elevation"          : "../test/data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
+    "slope"              : "../test/data/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
+    "aspect"             : "../test/data/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
+    "fuel_model"         : "../test/data/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
+    "canopy_cover"       : "../test/data/LF2022_CC_230_CONUS/LC22_CC_230.tif",
+    "canopy_height"      : "../test/data/LF2022_CH_230_CONUS/LC22_CH_230.tif",
+    "canopy_base_height" : "../test/data/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
+    "canopy_bulk_density": "../test/data/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
+})
+#+end_src
