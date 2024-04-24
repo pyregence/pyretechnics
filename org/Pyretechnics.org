@@ -2425,11 +2425,20 @@ LANDFIRE program.[fn::https://landfire.gov]
 | Canopy Bulk Density | CBD    | kg/m^3 * 100                             |   0 |   45 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
 |---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
 
-For testing purposes, we have downloaded these layers clipped to a
+For testing purposes, we have downloaded these layers, clipped to a
 small region in central Vermont and stored them in the [[file:../test/data/][../test/data/]]
 directory of this repository.
 
-#+name: load-landfire
+** Loading Raster Files with Python Rasterio
+
+We will begin by defining a =load_raster= function that takes a path
+to a raster file (e.g., a GeoTIFF) and returns a dictionary containing
+these keys:
+
+- array :: raster data as a 3D Numpy array =(bands, rows, cols)= of the specified =dtype= (default: =float32=)
+- metadata :: dictionary of raster metadata values (e.g., number of bands/rows/cols, band dtypes, nodata value, georeferencing info)
+
+#+name: load-raster
 #+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 import rasterio
 
@@ -2451,15 +2460,29 @@ def raster_metadata(raster):
     }
 
 
-# NOTE: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
+# TODO: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
 def load_raster(file_path, dtype=None):
     with rasterio.open(file_path, "r") as input_raster:
         return {
             "array"   : input_raster.read(out_dtype=dtype),
             "metadata": raster_metadata(input_raster),
         }
+#+end_src
 
+** Verifying Raster Constraints
 
+In order to work with the Pyretechnics Fire Spread API, all rasters
+must meet certain requirements:
+
+*TODO: Extend this to support multi-resolution rasters.*
+
+1. All rasters must share the same array shape =(bands, rows, cols)=.
+2. All rasters must share the same spatial extent and projection.
+
+Below we implement functions to check these constraints:
+
+#+name: verify-colocated-rasters
+#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 def verify_same_dimensions(rasters):
     dimensions = [
         (r["metadata"]["bands"],
@@ -2488,9 +2511,25 @@ def verify_same_georeferences(rasters):
 
 def verify_colocated_rasters(rasters):
     return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
+#+end_src
 
+** Converting Rasters to 3D Lookup Functions
 
-# NOTE: This does not use the lazy chunking, multi-resolution functions defined earlier.
+Another requirement of the Pyretechnics Fire Spread API is that each
+input layer must be specified as a 3D space-time lookup function. This
+abstracts away the underlying data representation (e.g. an ND array, a
+single constant value, a random sampling function), allowing many
+different sources of information to interoperate through a simple
+unified interface.
+
+For our LANDFIRE use case, the following function converts a
+dictionary of single-band rasters =(1, rows, cols)= into a dictionary
+of 3D anonymous functions, that always return the same value for each
+=(t,y,x)= coordinate regardless of the time value =t= specified.
+
+#+name: convert-rasters-to-2d-fns
+#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+# TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
 def convert_rasters_to_2d_fns(raster_dict):
     if verify_colocated_rasters(raster_dict.values()):
         fn_dict = {}
@@ -2499,7 +2538,17 @@ def convert_rasters_to_2d_fns(raster_dict):
             fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
 
         return fn_dict
+#+end_src
 
+** Convert LANDFIRE Units and Datatypes
+
+The units and datatypes of our LANDFIRE GeoTIFFs are documented in
+Table [[tab:landfire-layers]]. In order to make them match those required
+by the Pyretechnics Fire Spread API, we need to apply some conversions
+during the layer loading process.
+
+#+name: load-and-convert-landfire-rasters
+#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 #================================================
 # LANDFIRE Specific Functions
 #================================================
@@ -2528,8 +2577,16 @@ def load_and_convert_landfire_rasters(landfire_file_paths):
             array[array != nodata] *= multiplier
 
     return landfire_rasters
+#+end_src
 
+** Putting It All Together
 
+By combining the functions defined in the previous sections, we can
+now read in a dictionary of layer names to file paths and transform it
+into a dictionary of layer names to 3D lookup functions.
+
+#+name: read-landfire-rasters-as-pyretechnics-inputs
+#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
     return convert_rasters_to_2d_fns(
         load_and_convert_landfire_rasters(landfire_file_paths)
