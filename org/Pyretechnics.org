@@ -1740,7 +1740,7 @@ direction \theta.
 
 #+name: rothermel-surface-fire-spread-max-and-any
 #+begin_src python :tangle ../src/pyretechnics/surface_fire.py
-from conversion import deg2rad, rad2deg, fpm2mph
+from conversion import deg_to_rad, rad_to_deg, fpm_to_mph
 from math import sin, cos, asin, exp, sqrt
 
 def almost_zero(x):
@@ -1822,7 +1822,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
                                             slope_direction, get_wind_speed):
     wind_magnitude     = spread_rate * phi_W
     slope_magnitude    = spread_rate * phi_S
-    difference_angle   = deg2rad((wind_to_direction - slope_direction) % 360.0)
+    difference_angle   = deg_to_rad((wind_to_direction - slope_direction) % 360.0)
     x                  = slope_magnitude + wind_magnitude * cos(difference_angle)
     y                  = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x * x + y * y)
@@ -1836,7 +1836,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
     else:
         max_spread_rate      = spread_rate + combined_magnitude
         phi_combined         = (max_spread_rate / spread_rate) - 1.0
-        offset               = rad2deg(asin(abs(y) / combined_magnitude))
+        offset               = rad_to_deg(asin(abs(y) / combined_magnitude))
         offset_prime         = get_offset_prime(x, y, offset)
         max_spread_direction = (slope_direction + offset_prime) % 360.0
         effective_wind_speed = get_wind_speed(phi_combined)
@@ -1886,7 +1886,7 @@ def surface_length_to_width_ratio(effective_wind_speed):
 
     L/W = 1 + 0.25 * Ueff_mph
     """
-    effective_wind_speed_mph = fpm2mph(effective_wind_speed)
+    effective_wind_speed_mph = fpm_to_mph(effective_wind_speed)
     return 1.0 + 0.25 * effective_wind_speed_mph
 
 
@@ -1898,7 +1898,7 @@ def surface_length_to_width_ratio_elmfire(effective_wind_speed):
 
     L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
     """
-    effective_wind_speed_mph = fpm2mph(effective_wind_speed)
+    effective_wind_speed_mph = fpm_to_mph(effective_wind_speed)
     return min((0.936 * exp(0.2566 * effective_wind_speed_mph))
                +
                (0.461 * exp(-0.1548 * effective_wind_speed_mph))
@@ -1954,7 +1954,7 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
     if almost_zero(eccentricity) or almost_zero(theta):
         return max_spread_rate
     else:
-        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(deg2rad(theta)))
+        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(deg_to_rad(theta)))
 #+end_src
 
 Using these surface fire spread rate and reaction intensity values, we
@@ -2041,7 +2041,7 @@ crown fire initiation occurs.
 
 #+name: van-wagner-crown-fire-initiation
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
-from conversion import ft2m, dec2percent, Btu_ft_s2kW_m
+from conversion import ft_to_m, dec_to_percent, Btu_ft_s_to_kW_m
 
 def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture):
     """
@@ -2081,9 +2081,9 @@ def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_mo
     - fire_line_intensity (Btu/ft*s)
     """
     return van_wagner_crown_fire_initiation_metric(canopy_cover,
-                                                   ft2m(canopy_base_height),
-                                                   dec2percent(foliar_moisture),
-                                                   Btu_ft_s2kW_m(fire_line_intensity))
+                                                   ft_to_m(canopy_base_height),
+                                                   dec_to_percent(foliar_moisture),
+                                                   Btu_ft_s_to_kW_m(fire_line_intensity))
 #+end_src
 
 If crowning occurs, then the active and passive crown fire spread
@@ -2107,7 +2107,7 @@ active, otherwise passive.
 
 #+name: cruz-crown-fire-spread
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
-from convert import m2ft, mph2km_hr, wind_speed_20ft2wind_speed_10m, lb_ft32kg_m3, dec2percent
+from conversion import m_to_ft, mph_to_km_hr, wind_speed_20ft_to_wind_speed_10m, lb_ft3_to_kg_m3, dec_to_percent
 from math import exp
 
 def cruz_active_crown_fire_spread(wind_speed_10m, crown_bulk_density, estimated_fine_fuel_moisture):
@@ -2161,11 +2161,11 @@ def cruz_crown_fire_spread(wind_speed_20ft, crown_bulk_density, estimated_fine_f
     NOTE: A positive spread-rate indicates active crowning.
           A negative spread-rate indicates passive crowning.
     """
-    return m2ft(
+    return m_to_ft(
         cruz_crown_fire_spread_metric(
-            wind_speed_20ft2wind_speed_10m(mph2km_hr(wind_speed_20ft)),
-            lb_ft32kg_m3(crown_bulk_density),
-            dec2percent(estimated_fine_fuel_moisture)))
+            wind_speed_20ft_to_wind_speed_10m(mph_to_km_hr(wind_speed_20ft)),
+            lb_ft3_to_kg_m3(crown_bulk_density),
+            dec_to_percent(estimated_fine_fuel_moisture)))
 #+end_src
 
 Once the crown fire spread rate is determined, the crown fire line
