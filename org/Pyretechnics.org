@@ -1642,7 +1642,7 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     return {
-        "unadj_spread_rate" : R,
+        "base_spread_rate"  : R,
         "reaction_intensity": I_R,
         "residence_time"    : t_res,
         "get_phi_S"         : get_phi_S,
@@ -1679,14 +1679,14 @@ FARSITE, FlamMap, FSPro, and FPA according to Andrews
   WAF = \left\{
     \begin{array}{lr}
       \frac{1.83}{ \ln(\frac{20.0 + 0.36 FBD}{0.13 FBD}) } & CC = 0 \\
-      \frac{0.555}{ \sqrt(CH (CC/300.0)) \ln(\frac{20 + 0.36 CH}{0.13 CH}) } & CC > 0
+      \frac{0.555}{ \sqrt(CH (CC/3.0)) \ln(\frac{20 + 0.36 CH}{0.13 CH}) } & CC > 0
     \end{array}
   \right.
 \end{displaymath}
 
 where WAF is the unitless wind adjustment factor, FBD is the fuel bed
 depth in feet, CH is the canopy height in ft, and CC is the canopy
-cover percentage (0-100).
+cover percentage (0-1).
 
 #+name: wind-adjustment-factor
 #+begin_src python :tangle ../src/pyretechnics/surface_fire.py
@@ -1696,11 +1696,11 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     """
     fuel_bed_depth :: ft
     canopy_height  :: ft
-    canopy_cover   :: 0-100
+    canopy_cover   :: 0-1
     """
     if (canopy_cover > 0.0) and (canopy_height > 0.0):
         # sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)
-        A = sqrt((canopy_cover / 300.0) * canopy_height)
+        A = sqrt((canopy_cover / 3.0) * canopy_height)
         B = log((20.0 + 0.36 * canopy_height) / (0.13 * canopy_height))
         return 0.555 / (A * B)
     elif (fuel_bed_depth > 0.0):
@@ -1932,7 +1932,7 @@ def add_eccentricity(spread_properties):
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 def rothermel_surface_fire_spread_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                       slope, aspect, spread_rate_adjustment=1.0):
-    spread_rate        = surface_fire_min["unadj_spread_rate"] * spread_rate_adjustment
+    spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
     reaction_intensity = surface_fire_min["reaction_intensity"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_phi_W          = surface_fire_min["get_phi_W"]
@@ -2041,49 +2041,33 @@ crown fire initiation occurs.
 
 #+name: van-wagner-crown-fire-initiation
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
-from conversion import ft_to_m, dec_to_percent, Btu_ft_s_to_kW_m
-
 def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture):
     """
     Ouputs the critical fire line intensity (kW/m) using:
     - canopy_base_height (m)
-    - foliar_moisture (0-100 %)
+    - foliar_moisture (0-1)
 
     Constants used:
     460.0 = heat-of-ignition (kJ/kg)
     0.01 = empirical estimate for C in eq. 4
     """
-    return ((foliar_moisture * 26.0 + 460.0) * 0.01 * canopy_base_height) ** 1.5
+    return ((foliar_moisture * 2600.0 + 460.0) * 0.01 * canopy_base_height) ** 1.5
 
 
-def van_wagner_crown_fire_initiation_metric(canopy_cover, canopy_base_height, foliar_moisture, fire_line_intensity):
+def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fire_line_intensity):
     """
-    - canopy_cover (0-100 %)
+    - canopy_cover (0-1)
     - canopy_base_height (m)
-    - foliar_moisture (0-100 %)
+    - foliar_moisture (0-1)
     - fire_line_intensity (kW/m)
     """
-    return ((canopy_cover > 40.0)
+    return ((canopy_cover > 0.4)
             and
             (fire_line_intensity > 0.0)
             and
             (canopy_base_height > 0.0)
             and
             (fire_line_intensity >= van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)))
-
-
-# NOTE: Name changed
-def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fire_line_intensity):
-    """
-    - canopy_cover (0-100 %)
-    - canopy_base_height (ft)
-    - foliar_moisture (0-1)
-    - fire_line_intensity (Btu/ft*s)
-    """
-    return van_wagner_crown_fire_initiation_metric(canopy_cover,
-                                                   ft_to_m(canopy_base_height),
-                                                   dec_to_percent(foliar_moisture),
-                                                   Btu_ft_s_to_kW_m(fire_line_intensity))
 #+end_src
 
 If crowning occurs, then the active and passive crown fire spread
@@ -2091,14 +2075,14 @@ rates are calculated from the formulas given in Cruz
 2005.\citep{Cruz2005}
 
 \begin{align*}
-  \textrm{CROS}_{A} &= 11.02 \> U_{10m}^{0.90} \> B_{m}^{0.19} \> e^{-0.17 \, \textrm{EFFM}} \\
+  \textrm{CROS}_{A} &= 11.02 \> U_{10m}^{0.90} \> B_{m}^{0.19} \> e^{-17 \, \textrm{EFFM}} \\
   \textrm{CROS}_{P} &= \textrm{CROS}_{A} \> e^{\frac{-\textrm{CROS}_{A}}{R^{*}}}
 \end{align*}
 
 where $\textrm{CROS}_{A}$ is the active crown fire spread rate in
 m/min, $U_{10m}$ is the 10 meter windspeed in km/hr, $B_{m}$ is the
 crown bulk density in kg/m^{3}, EFFM is the estimated fine fuel
-moisture as a percent (0-100), and $\textrm{CROS}_{P}$ is the passive
+moisture as a percent (0-1), and $\textrm{CROS}_{P}$ is the passive
 crown fire spread rate in m/min.
 
 If the active crown fire spread rate is greater than the critical
@@ -2107,20 +2091,19 @@ active, otherwise passive.
 
 #+name: cruz-crown-fire-spread
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
-from conversion import m_to_ft, mph_to_km_hr, wind_speed_20ft_to_wind_speed_10m, lb_ft3_to_kg_m3, dec_to_percent
-from math import exp
+from math import exp, prod
 
-def cruz_active_crown_fire_spread(wind_speed_10m, crown_bulk_density, estimated_fine_fuel_moisture):
+def cruz_active_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
     """
     Returns active spread-rate in m/min given:
     - wind_speed_10m (km/hr)
-    - crown_bulk_density (kg/m^3)
-    - estimated_fine_fuel_moisture (0-100 %)
+    - canopy_bulk_density (kg/m^3)
+    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
     """
-    return (11.02
-            ,* (wind_speed_10m ** 0.90)
-            ,* (crown_bulk_density ** 0.19)
-            ,* exp(-0.17 * estimated_fine_fuel_moisture))
+    return prod(11.02,
+                wind_speed_10m ** 0.90,
+                canopy_bulk_density ** 0.19,
+                exp(-17.0 * estimated_fine_fuel_moisture))
 
 
 def cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate):
@@ -2132,40 +2115,24 @@ def cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate):
     return active_spread_rate * exp(-1.0 * active_spread_rate / critical_spread_rate)
 
 
-def cruz_crown_fire_spread_metric(wind_speed_10m, crown_bulk_density, estimated_fine_fuel_moisture):
+def cruz_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
     """
     Returns spread-rate in m/min given:
     - wind_speed_10m (km/hr)
-    - crown_bulk_density (kg/m^3)
-    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-100 %)
+    - canopy_bulk_density (kg/m^3)
+    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
     NOTE: A positive spread-rate indicates active crowning.
           A negative spread-rate indicates passive crowning.
     """
     active_spread_rate   = cruz_active_crown_fire_spread(wind_speed_10m,
-                                                         crown_bulk_density,
+                                                         canopy_bulk_density,
                                                          estimated_fine_fuel_moisture)
-    critical_spread_rate = 3.0 / crown_bulk_density # m/min
+    critical_spread_rate = 3.0 / canopy_bulk_density # m/min
     if (active_spread_rate > critical_spread_rate):
         return active_spread_rate
     else:
         # NOTE: Use minus as passive flag
         return -1.0 * cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate)
-
-
-def cruz_crown_fire_spread(wind_speed_20ft, crown_bulk_density, estimated_fine_fuel_moisture):
-    """
-    Returns spread-rate in ft/min given:
-    - wind_speed_20ft (mph)
-    - crown_bulk_density (lb/ft^3)
-    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
-    NOTE: A positive spread-rate indicates active crowning.
-          A negative spread-rate indicates passive crowning.
-    """
-    return m_to_ft(
-        cruz_crown_fire_spread_metric(
-            wind_speed_20ft_to_wind_speed_10m(mph_to_km_hr(wind_speed_20ft)),
-            lb_ft3_to_kg_m3(crown_bulk_density),
-            dec_to_percent(estimated_fine_fuel_moisture)))
 #+end_src
 
 Once the crown fire spread rate is determined, the crown fire line
@@ -2189,11 +2156,11 @@ surface fire line intensity in Btu/ft/s.
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
 # NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
-def crown_fire_line_intensity(crown_spread_rate, crown_bulk_density, canopy_height_difference, heat_of_combustion):
+def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
     """
     Returns the crown_fire_line_intensity in Btu/ft*s OR kW/m, given:
     - crown_spread_rate (ft/min OR m/min)
-    - crown_bulk_density (lb/ft^3 OR kg/m^3)
+    - canopy_bulk_density (lb/ft^3 OR kg/m^3)
     - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
     - heat_of_combustion (Btu/lb OR kJ/kg)
 
@@ -2201,7 +2168,7 @@ def crown_fire_line_intensity(crown_spread_rate, crown_bulk_density, canopy_heig
     OR
     (m/min * kg/m^3 * m * kJ/kg)/60 = (kJ/m*min)/60 = kJ/m*s = kW/m
     """
-    return (crown_spread_rate * crown_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
+    return (crown_spread_rate * canopy_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
 #+end_src
 
 As with surface fire spread, the wind speed (this time the 20-ft wind
