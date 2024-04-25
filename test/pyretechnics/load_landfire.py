@@ -1,10 +1,6 @@
 # [[file:../../org/Pyretechnics.org::load-raster][load-raster]]
 import rasterio
 
-#================================================
-# Generic Raster Functions
-#================================================
-
 def raster_metadata(raster):
     return {
         "name"      : raster.name,
@@ -27,7 +23,36 @@ def load_raster(file_path, dtype=None):
             "metadata": raster_metadata(input_raster),
         }
 # load-raster ends here
-# [[file:../../org/Pyretechnics.org::verify-colocated-rasters][verify-colocated-rasters]]
+# [[file:../../org/Pyretechnics.org::load-and-convert-landfire-rasters][load-and-convert-landfire-rasters]]
+landfire_array_conversions = {
+    #==============================================================================
+    # Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
+    #==============================================================================
+    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
+    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
+    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
+    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
+    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
+    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
+    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
+    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
+}
+
+
+def load_and_convert_landfire_rasters(landfire_file_paths):
+    landfire_rasters = {}
+
+    for name, path in landfire_file_paths.items():
+        (dtype, multiplier) = landfire_array_conversions[name]
+        landfire_rasters[name] = load_raster(path, dtype)
+        if multiplier != 1:
+            array  = landfire_rasters[name]["array"]
+            nodata = landfire_rasters[name]["metadata"]["nodata"]
+            array[array != nodata] *= multiplier
+
+    return landfire_rasters
+# load-and-convert-landfire-rasters ends here
+# [[file:../../org/Pyretechnics.org::verify-raster-constraints][verify-raster-constraints]]
 def verify_same_dimensions(rasters):
     dimensions = [
         (r["metadata"]["bands"],
@@ -54,55 +79,24 @@ def verify_same_georeferences(rasters):
         raise ValueError("All rasters do not share the same georeferences.")
 
 
-def verify_colocated_rasters(rasters):
+def verify_raster_constraints(rasters):
     return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
-# verify-colocated-rasters ends here
+# verify-raster-constraints ends here
 # [[file:../../org/Pyretechnics.org::convert-rasters-to-2d-fns][convert-rasters-to-2d-fns]]
 # TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
 def convert_rasters_to_2d_fns(raster_dict):
-    if verify_colocated_rasters(raster_dict.values()):
-        fn_dict = {}
+    fn_dict = {}
 
-        for name, raster in raster_dict.items():
-            fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
+    for name, raster in raster_dict.items():
+        fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
 
-        return fn_dict
+    return fn_dict
 # convert-rasters-to-2d-fns ends here
-# [[file:../../org/Pyretechnics.org::load-and-convert-landfire-rasters][load-and-convert-landfire-rasters]]
-#================================================
-# LANDFIRE Specific Functions
-#================================================
-
-landfire_array_conversions = {
-    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
-    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
-    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
-    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
-    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
-    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
-    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
-    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
-}
-
-
-def load_and_convert_landfire_rasters(landfire_file_paths):
-    landfire_rasters = {}
-
-    for name, path in landfire_file_paths.items():
-        (dtype, multiplier) = landfire_array_conversions[name]
-        landfire_rasters[name] = load_raster(path, dtype)
-        if multiplier != 1:
-            array  = landfire_rasters[name]["array"]
-            nodata = landfire_rasters[name]["metadata"]["nodata"]
-            array[array != nodata] *= multiplier
-
-    return landfire_rasters
-# load-and-convert-landfire-rasters ends here
 # [[file:../../org/Pyretechnics.org::read-landfire-rasters-as-pyretechnics-inputs][read-landfire-rasters-as-pyretechnics-inputs]]
 def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
-    return convert_rasters_to_2d_fns(
-        load_and_convert_landfire_rasters(landfire_file_paths)
-    )
+    landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
+    if verify_raster_constraints(landfire_rasters.values()):
+        return convert_rasters_to_2d_fns(landfire_rasters)
 
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({

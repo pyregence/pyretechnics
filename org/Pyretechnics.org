@@ -2409,10 +2409,6 @@ these keys:
 #+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 import rasterio
 
-#================================================
-# Generic Raster Functions
-#================================================
-
 def raster_metadata(raster):
     return {
         "name"      : raster.name,
@@ -2436,6 +2432,44 @@ def load_raster(file_path, dtype=None):
         }
 #+end_src
 
+** Convert LANDFIRE Units and Datatypes
+
+The units and datatypes of our LANDFIRE GeoTIFFs are documented in
+Table [[tab:landfire-layers]]. In order to make them match those required
+by the Pyretechnics Fire Spread API, we need to apply some conversions
+during the layer loading process.
+
+#+name: load-and-convert-landfire-rasters
+#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+landfire_array_conversions = {
+    #==============================================================================
+    # Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
+    #==============================================================================
+    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
+    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
+    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
+    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
+    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
+    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
+    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
+    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
+}
+
+
+def load_and_convert_landfire_rasters(landfire_file_paths):
+    landfire_rasters = {}
+
+    for name, path in landfire_file_paths.items():
+        (dtype, multiplier) = landfire_array_conversions[name]
+        landfire_rasters[name] = load_raster(path, dtype)
+        if multiplier != 1:
+            array  = landfire_rasters[name]["array"]
+            nodata = landfire_rasters[name]["metadata"]["nodata"]
+            array[array != nodata] *= multiplier
+
+    return landfire_rasters
+#+end_src
+
 ** Verifying Raster Constraints
 
 In order to work with the Pyretechnics Fire Spread API, all rasters
@@ -2448,7 +2482,7 @@ must meet certain requirements:
 
 Below we implement functions to check these constraints:
 
-#+name: verify-colocated-rasters
+#+name: verify-raster-constraints
 #+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 def verify_same_dimensions(rasters):
     dimensions = [
@@ -2476,7 +2510,7 @@ def verify_same_georeferences(rasters):
         raise ValueError("All rasters do not share the same georeferences.")
 
 
-def verify_colocated_rasters(rasters):
+def verify_raster_constraints(rasters):
     return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
 #+end_src
 
@@ -2498,66 +2532,28 @@ of 3D anonymous functions, that always return the same value for each
 #+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 # TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
 def convert_rasters_to_2d_fns(raster_dict):
-    if verify_colocated_rasters(raster_dict.values()):
-        fn_dict = {}
+    fn_dict = {}
 
-        for name, raster in raster_dict.items():
-            fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
+    for name, raster in raster_dict.items():
+        fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
 
-        return fn_dict
-#+end_src
-
-** Convert LANDFIRE Units and Datatypes
-
-The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table [[tab:landfire-layers]]. In order to make them match those required
-by the Pyretechnics Fire Spread API, we need to apply some conversions
-during the layer loading process.
-
-#+name: load-and-convert-landfire-rasters
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
-#================================================
-# LANDFIRE Specific Functions
-#================================================
-
-landfire_array_conversions = {
-    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
-    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
-    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
-    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
-    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
-    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
-    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
-    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
-}
-
-
-def load_and_convert_landfire_rasters(landfire_file_paths):
-    landfire_rasters = {}
-
-    for name, path in landfire_file_paths.items():
-        (dtype, multiplier) = landfire_array_conversions[name]
-        landfire_rasters[name] = load_raster(path, dtype)
-        if multiplier != 1:
-            array  = landfire_rasters[name]["array"]
-            nodata = landfire_rasters[name]["metadata"]["nodata"]
-            array[array != nodata] *= multiplier
-
-    return landfire_rasters
+    return fn_dict
 #+end_src
 
 ** Putting It All Together
 
 By combining the functions defined in the previous sections, we can
-now read in a dictionary of layer names to file paths and transform it
-into a dictionary of layer names to 3D lookup functions.
+now read in a dictionary of layer names to file paths, load the
+associated rasters and apply the correct dtype and unit conversions,
+verify all of our raster constraints, and wrap each raster's array
+with a 3D lookup function.
 
 #+name: read-landfire-rasters-as-pyretechnics-inputs
 #+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
-    return convert_rasters_to_2d_fns(
-        load_and_convert_landfire_rasters(landfire_file_paths)
-    )
+    landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
+    if verify_raster_constraints(landfire_rasters.values()):
+        return convert_rasters_to_2d_fns(landfire_rasters)
 
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
