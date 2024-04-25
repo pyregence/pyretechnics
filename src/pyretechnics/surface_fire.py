@@ -181,7 +181,7 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     return {
-        "unadj_spread_rate" : R,
+        "base_spread_rate"  : R,
         "reaction_intensity": I_R,
         "residence_time"    : t_res,
         "get_phi_S"         : get_phi_S,
@@ -200,11 +200,11 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     """
     fuel_bed_depth :: ft
     canopy_height  :: ft
-    canopy_cover   :: 0-100
+    canopy_cover   :: 0-1
     """
     if (canopy_cover > 0.0) and (canopy_height > 0.0):
         # sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)
-        A = sqrt((canopy_cover / 300.0) * canopy_height)
+        A = sqrt((canopy_cover / 3.0) * canopy_height)
         B = log((20.0 + 0.36 * canopy_height) / (0.13 * canopy_height))
         return 0.555 / (A * B)
     elif (fuel_bed_depth > 0.0):
@@ -408,7 +408,7 @@ def add_eccentricity(spread_properties):
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 def rothermel_surface_fire_spread_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                       slope, aspect, spread_rate_adjustment=1.0):
-    spread_rate        = surface_fire_min["unadj_spread_rate"] * spread_rate_adjustment
+    spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
     reaction_intensity = surface_fire_min["reaction_intensity"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_phi_W          = surface_fire_min["get_phi_W"]
