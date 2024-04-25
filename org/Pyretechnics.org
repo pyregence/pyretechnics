@@ -2392,10 +2392,6 @@ LANDFIRE program.[fn::https://landfire.gov]
 | Canopy Bulk Density | CBD    | kg/m^3 * 100                             |   0 |   45 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
 |---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
 
-For testing purposes, we have downloaded these layers, clipped to a
-small region in central Vermont and stored them in the [[file:../test/data/][../test/data/]]
-directory of this repository.
-
 ** Loading Raster Files with Python Rasterio
 
 We will begin by defining a =load_raster= function that takes a path
@@ -2406,7 +2402,7 @@ these keys:
 - metadata :: dictionary of raster metadata values (e.g., number of bands/rows/cols, band dtypes, nodata value, georeferencing info)
 
 #+name: load-raster
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
 import rasterio
 
 def raster_metadata(raster):
@@ -2440,7 +2436,7 @@ by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 
 #+name: load-and-convert-landfire-rasters
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
 landfire_array_conversions = {
     #==============================================================================
     # Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
@@ -2483,7 +2479,7 @@ must meet certain requirements:
 Below we implement functions to check these constraints:
 
 #+name: verify-raster-constraints
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
 def verify_same_dimensions(rasters):
     dimensions = [
         (r["metadata"]["bands"],
@@ -2529,7 +2525,7 @@ of 3D anonymous functions, that always return the same value for each
 =(t,y,x)= coordinate regardless of the time value =t= specified.
 
 #+name: convert-rasters-to-2d-fns
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
 # TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
 def convert_rasters_to_2d_fns(raster_dict):
     fn_dict = {}
@@ -2549,12 +2545,31 @@ verify all of our raster constraints, and wrap each raster's array
 with a 3D lookup function.
 
 #+name: read-landfire-rasters-as-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
 def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
     landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
     if verify_raster_constraints(landfire_rasters.values()):
         return convert_rasters_to_2d_fns(landfire_rasters)
+#+end_src
 
+We will use this function to load a clipped set of LANDFIRE GeoTIFFs
+in section [[Testing burn_cells on Worcester, VT]].
+
+* Testing burn_cells on Worcester, VT
+
+For testing purposes, we have downloaded these layers, clipped to a
+small region in central Vermont and stored them in the [[file:../test/data/][../test/data/]]
+directory of this repository.
+
+** Loading Topography, Fuel Model, and Vegetation Inputs from LANDFIRE GeoTIFFs
+
+We begin by loading in the eight LANDFIRE GeoTIFFs that we downloaded
+from https://landfire.gov, using the function we defined in section
+[[Putting It All Together]].
+
+#+name: add-landfire-layers-to-pyretechnics-inputs
+#+begin_src python :tangle ../test/pyretechnics/burn_cells_test.py
+from load_landfire import read_landfire_rasters_as_pyretechnics_inputs
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
     "elevation"          : "../data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
@@ -2570,8 +2585,13 @@ input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
 
 ** Adding Constant Wind and Moisture Values
 
+In order to complete our input dataset for a test run of the
+~burn_cells~ function, we need to provide the remaining required wind
+and moisture layers as 3D lookup functions. The following example
+shows how we can easily set constant values for each of these layers:
+
 #+name: add-constant-wind-moisture-to-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics/load_landfire.py
+#+begin_src python :tangle ../test/pyretechnics/burn_cells_test.py
 input_layer_dict.update(
     {
         "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
@@ -2584,4 +2604,17 @@ input_layer_dict.update(
         "foliar_moisture"              : lambda t,y,x: 1.20, # ratio [0-1+] grams moisture/grams ovendry foliage
     }
 )
+#+end_src
+
+** Running Burn Cells on the Test Dataset
+
+#+name: test-burn-cells-on-pyretechnics-inputs
+#+begin_src python :tangle ../test/pyretechnics/burn_cells_test.py
+from burn_cells import compute_max_in_situ_values
+
+t = 0
+y = 0
+x = 0
+
+compute_max_in_situ_values(input_layer_dict, t, y, x)
 #+end_src
