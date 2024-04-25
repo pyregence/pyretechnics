@@ -1,5 +1,5 @@
 # [[file:../../org/Pyretechnics.org::burn-cells][burn-cells]]
-from conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, mps_to_fpm, Btu_ft_s_to_kW_m, mps_to_km_hr, mps_to_mph, ft_to_m, Btu_lb_to_kJ_kg
+from conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
 from fuel_models import fuel_models_precomputed, moisturize
 from math import sqrt, atan2, degrees
 import surface_fire as sf
@@ -51,13 +51,13 @@ def compute_max_in_situ_values(inputs, t, y, x):
     residence_time                = surface_fire_min["residence_time"] # min
     reaction_intensity            = surface_fire_min["reaction_intensity"] # Btu/ft^2*min
     # Midflame Wind Speed
-    wind_speed_10m                = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/s
-    wind_speed_20ft               = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/s
+    wind_speed_10m                = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/min
+    wind_speed_20ft               = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
     wind_from_direction           = (90.0 - degrees(atan2(wind_speed_10m_y, wind_speed_10m_x)) % 360.0) % 360.0 # deg
     wind_adj_factor               = sf.wind_adjustment_factor(fuel_model["delta"],
                                                               m_to_ft(canopy_height),
                                                               canopy_cover) # unitless
-    midflame_wind_speed           = mps_to_fpm(wind_speed_20ft * wind_adj_factor) # m/s
+    midflame_wind_speed           = m_to_ft(wind_speed_20ft * wind_adj_factor) # ft/min
     # Max Surface Spread Rate/Direction and Surface Eccentricity
     spread_rate_adjustment        = fuel_spread_adjustment * weather_spread_adjustment # unitless
     surface_fire_max              = sf.rothermel_surface_fire_spread_max(surface_fire_min,
@@ -84,14 +84,14 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                         foliar_moisture,
                                         max_surface_intensity):
         # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
-        max_crown_spread_rate = m_to_ft(cruz_crown_fire_spread(mps_to_km_hr(wind_speed_10m),
+        max_crown_spread_rate = m_to_ft(cruz_crown_fire_spread(m_min_to_km_hr(wind_speed_10m),
                                                                canopy_bulk_density,
                                                                fuel_moisture_dead_1hr)) # ft/min
         fire_type             = 2.0 if (max_crown_spread_rate < 0.0) else 3.0 # 2=passive crown, 3=active crown
         max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
         crown_eccentricity    = (surface_eccentricity
                                  if (max_surface_spread_rate > max_crown_spread_rate)
-                                 else crown_fire_eccentricity(mps_to_mph(wind_speed_20ft))) # unitless
+                                 else crown_fire_eccentricity(m_min_to_mph(wind_speed_20ft))) # unitless
         #=======================================================================================
         # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
         #=======================================================================================

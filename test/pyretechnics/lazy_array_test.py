@@ -21,8 +21,8 @@ suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # O
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
 relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
-wind_speed_x_layer                  = np.arange(240000).reshape(24,100,100)
-wind_speed_y_layer                  = np.arange(240000).reshape(24,100,100)
+wind_speed_10m_x_layer              = np.arange(240000).reshape(24,100,100)
+wind_speed_10m_y_layer              = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_10hr_layer       = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_100hr_layer      = np.arange(240000).reshape(24,100,100)
@@ -101,8 +101,8 @@ layer_lookup = {
     # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
     "temperature"                  : make_lookup_fn_3d_for_layer(temperature_layer),
     "relative_humidity"            : make_lookup_fn_3d_for_layer(relative_humidity_layer),
-    "wind_speed_x"                 : make_lookup_fn_3d_for_layer(wind_speed_x_layer),
-    "wind_speed_y"                 : make_lookup_fn_3d_for_layer(wind_speed_y_layer),
+    "wind_speed_10m_x"             : make_lookup_fn_3d_for_layer(wind_speed_10m_x_layer),
+    "wind_speed_10m_y"             : make_lookup_fn_3d_for_layer(wind_speed_10m_y_layer),
     "fuel_moisture_dead_1hr"       : make_lookup_fn_3d_for_layer(fuel_moisture_dead_1hr_layer),
     "fuel_moisture_dead_10hr"      : make_lookup_fn_3d_for_layer(fuel_moisture_dead_10hr_layer),
     "fuel_moisture_dead_100hr"     : make_lookup_fn_3d_for_layer(fuel_moisture_dead_100hr_layer),
@@ -133,8 +133,8 @@ sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)     # Optio
 
 temp_12_100_100  = layer_lookup["temperature"](12,100,100)
 rh_12_100_100    = layer_lookup["relative_humidity"](12,100,100)
-wspx_12_100_100  = layer_lookup["wind_speed_x"](12,100,100)
-wspy_12_100_100  = layer_lookup["wind_speed_y"](12,100,100)
+wspx_12_100_100  = layer_lookup["wind_speed_10m_x"](12,100,100)
+wspy_12_100_100  = layer_lookup["wind_speed_10m_y"](12,100,100)
 md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"](12,100,100)
 md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"](12,100,100)
 md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"](12,100,100)

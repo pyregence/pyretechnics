@@ -113,8 +113,8 @@ input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
 # [[file:../../org/Pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
 input_layer_dict.update(
     {
-        "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/second
-        "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/second
+        "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
+        "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/minute
         "fuel_moisture_dead_1hr"       : lambda t,y,x: 0.06, # ratio [0-1+] grams moisture/grams ovendry wood
         "fuel_moisture_dead_10hr"      : lambda t,y,x: 0.08, # ratio [0-1+] grams moisture/grams ovendry wood
         "fuel_moisture_dead_100hr"     : lambda t,y,x: 0.10, # ratio [0-1+] grams moisture/grams ovendry wood

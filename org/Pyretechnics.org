@@ -383,8 +383,8 @@ suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # O
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
 relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
-wind_speed_x_layer                  = np.arange(240000).reshape(24,100,100)
-wind_speed_y_layer                  = np.arange(240000).reshape(24,100,100)
+wind_speed_10m_x_layer              = np.arange(240000).reshape(24,100,100)
+wind_speed_10m_y_layer              = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_10hr_layer       = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_100hr_layer      = np.arange(240000).reshape(24,100,100)
@@ -463,8 +463,8 @@ layer_lookup = {
     # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
     "temperature"                  : make_lookup_fn_3d_for_layer(temperature_layer),
     "relative_humidity"            : make_lookup_fn_3d_for_layer(relative_humidity_layer),
-    "wind_speed_x"                 : make_lookup_fn_3d_for_layer(wind_speed_x_layer),
-    "wind_speed_y"                 : make_lookup_fn_3d_for_layer(wind_speed_y_layer),
+    "wind_speed_10m_x"             : make_lookup_fn_3d_for_layer(wind_speed_10m_x_layer),
+    "wind_speed_10m_y"             : make_lookup_fn_3d_for_layer(wind_speed_10m_y_layer),
     "fuel_moisture_dead_1hr"       : make_lookup_fn_3d_for_layer(fuel_moisture_dead_1hr_layer),
     "fuel_moisture_dead_10hr"      : make_lookup_fn_3d_for_layer(fuel_moisture_dead_10hr_layer),
     "fuel_moisture_dead_100hr"     : make_lookup_fn_3d_for_layer(fuel_moisture_dead_100hr_layer),
@@ -495,8 +495,8 @@ sdi_100_100  = layer_lookup["suppression_difficulty_index"](100,100)     # Optio
 
 temp_12_100_100  = layer_lookup["temperature"](12,100,100)
 rh_12_100_100    = layer_lookup["relative_humidity"](12,100,100)
-wspx_12_100_100  = layer_lookup["wind_speed_x"](12,100,100)
-wspy_12_100_100  = layer_lookup["wind_speed_y"](12,100,100)
+wspx_12_100_100  = layer_lookup["wind_speed_10m_x"](12,100,100)
+wspy_12_100_100  = layer_lookup["wind_speed_10m_y"](12,100,100)
 md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"](12,100,100)
 md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"](12,100,100)
 md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"](12,100,100)
@@ -607,12 +607,12 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | fuel_spread_adjustment                     | float   | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     2 |
   | suppression_difficulty_index               | float   | integer >= 0  (TODO: What is the correct value range?) | Yes       |     2 |
   | surface_spotting_fire_line_intensity       | float   | kilowatts/meter                                        | Yes       |     2 |
-  | surface_spotting_percent (TODO: min, max?) | float   | percent [0-100]                                        | Yes       |     2 |
-  | crown_spotting_percent   (TODO: min, max?) | float   | percent [0-100]                                        | Yes       |     2 |
+  | surface_spotting_percent (TODO: min, max?) | float   | percent [0-1]                                          | Yes       |     2 |
+  | crown_spotting_percent   (TODO: min, max?) | float   | percent [0-1]                                          | Yes       |     2 |
   | temperature                                | float   | degrees Celsius                                        | Yes       |     3 |
-  | relative_humidity                          | float   | percent [0-100+]                                       | Yes       |     3 |
-  | wind_speed_10m_x                           | float   | meters/second                                          |           |     3 |
-  | wind_speed_10m_y                           | float   | meters/second                                          |           |     3 |
+  | relative_humidity                          | float   | percent [0-1+]                                         | Yes       |     3 |
+  | wind_speed_10m_x                           | float   | meters/minute                                          |           |     3 |
+  | wind_speed_10m_y                           | float   | meters/minute                                          |           |     3 |
   | fuel_moisture_dead_1hr                     | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
   | fuel_moisture_dead_10hr                    | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
   | fuel_moisture_dead_100hr                   | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
@@ -708,8 +708,8 @@ world_state = {
         # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
         "temperature"                  : lambda z,y,x: 10.0,
         "relative_humidity"            : lambda z,y,x: 10.0,
-        "wind_speed_x"                 : lambda z,y,x: 0.0,
-        "wind_speed_y"                 : lambda z,y,x: 0.0,
+        "wind_speed_10m_x"             : lambda z,y,x: 0.0,
+        "wind_speed_10m_y"             : lambda z,y,x: 0.0,
         "fuel_moisture_dead_1hr"       : lambda z,y,x: 10.0,
         "fuel_moisture_dead_10hr"      : lambda z,y,x: 10.0,
         "fuel_moisture_dead_100hr"     : lambda z,y,x: 10.0,
@@ -951,8 +951,8 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | CRITICAL_SPOTTING_FIRELINE_INTENSITY(:)  | input_layer_dict                      | surface_spotting_fire_line_intensity    |
 | GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MAX | input_layer_dict                      | surface_spotting_percent                |
 | GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MIN | input_layer_dict                      | surface_spotting_percent                |
-| WS_FILENAME                              | input_layer_dict                      | wind_speed_x, wind_speed_y              |
-| WD_FILENAME                              | input_layer_dict                      | wind_speed_x, wind_speed_y              |
+| WS_FILENAME                              | input_layer_dict                      | wind_speed_10m_x, wind_speed_10m_y      |
+| WD_FILENAME                              | input_layer_dict                      | wind_speed_10m_x, wind_speed_10m_y      |
 | M1_FILENAME                              | input_layer_dict                      | fuel_moisture_dead_1hr                  |
 | M10_FILENAME                             | input_layer_dict                      | fuel_moisture_dead_10hr                 |
 | M100_FILENAME                            | input_layer_dict                      | fuel_moisture_dead_100hr                |
@@ -2241,7 +2241,7 @@ in Pyretechnics.
 
 #+name: burn-cells
 #+begin_src python :tangle ../src/pyretechnics/burn_cells.py
-from conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, mps_to_fpm, Btu_ft_s_to_kW_m, mps_to_km_hr, mps_to_mph, ft_to_m, Btu_lb_to_kJ_kg
+from conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
 from fuel_models import fuel_models_precomputed, moisturize
 from math import sqrt, atan2, degrees
 import surface_fire as sf
@@ -2293,13 +2293,13 @@ def compute_max_in_situ_values(inputs, t, y, x):
     residence_time                = surface_fire_min["residence_time"] # min
     reaction_intensity            = surface_fire_min["reaction_intensity"] # Btu/ft^2*min
     # Midflame Wind Speed
-    wind_speed_10m                = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/s
-    wind_speed_20ft               = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/s
+    wind_speed_10m                = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/min
+    wind_speed_20ft               = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
     wind_from_direction           = (90.0 - degrees(atan2(wind_speed_10m_y, wind_speed_10m_x)) % 360.0) % 360.0 # deg
     wind_adj_factor               = sf.wind_adjustment_factor(fuel_model["delta"],
                                                               m_to_ft(canopy_height),
                                                               canopy_cover) # unitless
-    midflame_wind_speed           = mps_to_fpm(wind_speed_20ft * wind_adj_factor) # m/s
+    midflame_wind_speed           = m_to_ft(wind_speed_20ft * wind_adj_factor) # ft/min
     # Max Surface Spread Rate/Direction and Surface Eccentricity
     spread_rate_adjustment        = fuel_spread_adjustment * weather_spread_adjustment # unitless
     surface_fire_max              = sf.rothermel_surface_fire_spread_max(surface_fire_min,
@@ -2326,14 +2326,14 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                         foliar_moisture,
                                         max_surface_intensity):
         # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
-        max_crown_spread_rate = m_to_ft(cruz_crown_fire_spread(mps_to_km_hr(wind_speed_10m),
+        max_crown_spread_rate = m_to_ft(cruz_crown_fire_spread(m_min_to_km_hr(wind_speed_10m),
                                                                canopy_bulk_density,
                                                                fuel_moisture_dead_1hr)) # ft/min
         fire_type             = 2.0 if (max_crown_spread_rate < 0.0) else 3.0 # 2=passive crown, 3=active crown
         max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
         crown_eccentricity    = (surface_eccentricity
                                  if (max_surface_spread_rate > max_crown_spread_rate)
-                                 else crown_fire_eccentricity(mps_to_mph(wind_speed_20ft))) # unitless
+                                 else crown_fire_eccentricity(m_min_to_mph(wind_speed_20ft))) # unitless
         #=======================================================================================
         # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
         #=======================================================================================
@@ -2574,8 +2574,8 @@ input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
 #+begin_src python :tangle ../test/pyretechnics/load_landfire.py
 input_layer_dict.update(
     {
-        "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/second
-        "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/second
+        "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
+        "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/minute
         "fuel_moisture_dead_1hr"       : lambda t,y,x: 0.06, # ratio [0-1+] grams moisture/grams ovendry wood
         "fuel_moisture_dead_10hr"      : lambda t,y,x: 0.08, # ratio [0-1+] grams moisture/grams ovendry wood
         "fuel_moisture_dead_100hr"     : lambda t,y,x: 0.10, # ratio [0-1+] grams moisture/grams ovendry wood
