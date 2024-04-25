@@ -110,3 +110,17 @@ input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
     "canopy_bulk_density": "../data/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
 })
 # read-landfire-rasters-as-pyretechnics-inputs ends here
+# [[file:../../org/Pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
+input_layer_dict.update(
+    {
+        "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/second
+        "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/second
+        "fuel_moisture_dead_1hr"       : lambda t,y,x: 0.06, # ratio [0-1+] grams moisture/grams ovendry wood
+        "fuel_moisture_dead_10hr"      : lambda t,y,x: 0.08, # ratio [0-1+] grams moisture/grams ovendry wood
+        "fuel_moisture_dead_100hr"     : lambda t,y,x: 0.10, # ratio [0-1+] grams moisture/grams ovendry wood
+        "fuel_moisture_live_herbaceous": lambda t,y,x: 0.75, # ratio [0-1+] grams moisture/grams ovendry wood
+        "fuel_moisture_live_woody"     : lambda t,y,x: 0.60, # ratio [0-1+] grams moisture/grams ovendry wood
+        "foliar_moisture"              : lambda t,y,x: 1.20, # ratio [0-1+] grams moisture/grams ovendry foliage
+    }
+)
+# add-constant-wind-moisture-to-pyretechnics-inputs ends here
