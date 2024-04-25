@@ -1,26 +1,7 @@
 #!/usr/bin/env -S emacs -Q --script
 
 ;;==========================================================
-;; First make sure that org-mode is installed
-;;==========================================================
-
-(require 'package)
-
-(setq package-selected-packages '(org)
-      package-archives          '(("gnu"          . "https://elpa.gnu.org/packages/")
-                                  ("marmalade"    . "https://marmalade-repo.org/packages/")
-                                  ("melpa-stable" . "https://stable.melpa.org/packages/")
-                                  ("melpa"        . "https://melpa.org/packages/")))
-
-(package-initialize)
-
-(unless package-archive-contents
-  (package-refresh-contents))
-
-(package-install-selected-packages)
-
-;;==========================================================
-;; Now load all files under the specified root-directory
+;; Load all files under the specified root-directory
 ;; and detangle each one back into Pyretechnics.org
 ;;==========================================================
 
