@@ -1,4 +1,5 @@
 #+TITLE: The Pyretechnics Fire Behavior Library
+#+SUBTITLE: Copyright © 2023-2024 Spatial Informatics Group, LLC
 #+AUTHOR: Gary W. Johnson, Valentin Waeselynck, Chris Lautenberger
 
 # ================================
@@ -9,6 +10,7 @@
 #+TOC: tables
 #+HTML_DOCTYPE: html5
 #+DESCRIPTION: A Python library for simulating fire behavior in a variety of ways.
+#+KEYWORDS: pyretechnics fire behavior model python library pyregence pyrecast
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics.css" />
 
 # ================================
