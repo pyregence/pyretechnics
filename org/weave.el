@@ -15,6 +15,7 @@
 ;; Now load pyretechnics.org and weave it into an HTML file
 ;;==========================================================
 
+(message "Exporting literate documentation to ../doc/pyretechnics.html")
 (find-file "pyretechnics.org")
 (org-html-export-to-html)
 
