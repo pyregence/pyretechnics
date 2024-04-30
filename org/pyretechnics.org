@@ -12,7 +12,8 @@
 #+HTML_DOCTYPE: html5
 #+DESCRIPTION: A Python library for simulating fire behavior in a variety of ways.
 #+KEYWORDS: pyretechnics fire behavior model python library pyregence pyrecast
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics.css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics-base.css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics-custom.css" />
 
 # ================================
 # Code Block Settings

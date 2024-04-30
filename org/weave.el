@@ -9,7 +9,8 @@
 (require 'htmlize)
 (require 'python)
 
-(setq python-indent-guess-indent-offset nil)
+(setq org-html-htmlize-output-type      'css
+      python-indent-guess-indent-offset nil)
 
 ;;==========================================================
 ;; Now load pyretechnics.org and weave it into an HTML file
