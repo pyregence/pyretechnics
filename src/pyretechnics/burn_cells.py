@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::burn-cells][burn-cells]]
+# [[file:../../org/pyretechnics.org::burn-cells][burn-cells]]
 from conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
 from fuel_models import fuel_models_precomputed, moisturize
 from math import sqrt, atan2, degrees

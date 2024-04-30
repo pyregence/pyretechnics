@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::rothermel-surface-fire-spread-no-wind-no-slope][rothermel-surface-fire-spread-no-wind-no-slope]]
+# [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-no-wind-no-slope][rothermel-surface-fire-spread-no-wind-no-slope]]
 from math import exp
 from fuel_models import map_category, map_size_class, category_sum, size_class_sum
 
@@ -193,7 +193,7 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
 # - moisturize(fuel_models_precomputed[1], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50])   # non-dynamic fuel model
 # - moisturize(fuel_models_precomputed[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 # rothermel-surface-fire-spread-no-wind-no-slope ends here
-# [[file:../../org/Pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
+# [[file:../../org/pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
 from math import log, sqrt
 
 def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
@@ -215,7 +215,7 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
         # non-burnable fuel model
         return 0.0
 # wind-adjustment-factor ends here
-# [[file:../../org/Pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
+# [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
 from conversion import deg_to_rad, rad_to_deg, fpm_to_mph
 from math import sin, cos, asin, exp, sqrt
 
@@ -432,7 +432,7 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
     else:
         return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(deg_to_rad(theta)))
 # rothermel-surface-fire-spread-max-and-any ends here
-# [[file:../../org/Pyretechnics.org::surface-fire-intensity-formulas][surface-fire-intensity-formulas]]
+# [[file:../../org/pyretechnics.org::surface-fire-intensity-formulas][surface-fire-intensity-formulas]]
 def anderson_flame_depth(spread_rate, residence_time):
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone

@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::add-landfire-layers-to-pyretechnics-inputs][add-landfire-layers-to-pyretechnics-inputs]]
+# [[file:../../org/pyretechnics.org::add-landfire-layers-to-pyretechnics-inputs][add-landfire-layers-to-pyretechnics-inputs]]
 from load_landfire import read_landfire_rasters_as_pyretechnics_inputs
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
@@ -12,7 +12,7 @@ input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
     "canopy_bulk_density": "../data/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
 })
 # add-landfire-layers-to-pyretechnics-inputs ends here
-# [[file:../../org/Pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
+# [[file:../../org/pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
 input_layer_dict.update(
     {
         "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
@@ -26,7 +26,7 @@ input_layer_dict.update(
     }
 )
 # add-constant-wind-moisture-to-pyretechnics-inputs ends here
-# [[file:../../org/Pyretechnics.org::test-burn-cells-on-pyretechnics-inputs][test-burn-cells-on-pyretechnics-inputs]]
+# [[file:../../org/pyretechnics.org::test-burn-cells-on-pyretechnics-inputs][test-burn-cells-on-pyretechnics-inputs]]
 from burn_cells import compute_max_in_situ_values
 
 t = 0

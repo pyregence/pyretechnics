@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::*Lazy Array Usage Examples][Lazy Array Usage Examples:1]]
+# [[file:../../org/pyretechnics.org::*Lazy Array Usage Examples][Lazy Array Usage Examples:1]]
 import numpy as np
 from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
 

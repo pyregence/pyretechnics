@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::fuel-model-definitions][fuel-model-definitions]]
+# [[file:../../org/pyretechnics.org::fuel-model-definitions][fuel-model-definitions]]
 # Lookup table including one entry for each of the Anderson 13 and
 # Scott & Burgan 40 fuel models. The fields have the following
 # meanings:
@@ -120,7 +120,7 @@ fuel_models_precomputed = {k: compute_fuel_model(k) for k in fuel_models.keys()}
 def is_burnable_fuel_model_number(fuel_model_number):
     return (fuel_model_number > 0) and not (91 <= fuel_model_number <= 99)
 # fuel-model-definitions ends here
-# [[file:../../org/Pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
+# [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
 def map_category(f):
     return [f(0), f(1)]
 
@@ -133,7 +133,7 @@ def category_sum(f):
 def size_class_sum(f):
     return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
 # fuel-category-and-size-class-functions ends here
-# [[file:../../org/Pyretechnics.org::add-dynamic-fuel-loading][add-dynamic-fuel-loading]]
+# [[file:../../org/pyretechnics.org::add-dynamic-fuel-loading][add-dynamic-fuel-loading]]
 def add_dynamic_fuel_loading(fuel_model, M_f):
     number               = fuel_model["number"]
     w_o                  = fuel_model["w_o"]
@@ -161,7 +161,7 @@ def add_dynamic_fuel_loading(fuel_model, M_f):
         static_fuel_model["M_f"] = M_f
         return static_fuel_model
 # add-dynamic-fuel-loading ends here
-# [[file:../../org/Pyretechnics.org::add-weighting-factors][add-weighting-factors]]
+# [[file:../../org/pyretechnics.org::add-weighting-factors][add-weighting-factors]]
 def add_weighting_factors(fuel_model):
     w_o                  = fuel_model["w_o"]
     sigma                = fuel_model["sigma"]
@@ -194,7 +194,7 @@ def add_weighting_factors(fuel_model):
     weighted_fuel_model["g_ij"] = g_ij
     return weighted_fuel_model
 # add-weighting-factors ends here
-# [[file:../../org/Pyretechnics.org::add-live-moisture-of-extinction][add-live-moisture-of-extinction]]
+# [[file:../../org/pyretechnics.org::add-live-moisture-of-extinction][add-live-moisture-of-extinction]]
 from math import exp
 
 def add_live_moisture_of_extinction(fuel_model):

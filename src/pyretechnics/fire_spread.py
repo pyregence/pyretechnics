@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::*Fire Spread Functions][Fire Spread Functions:1]]
+# [[file:../../org/pyretechnics.org::*Fire Spread Functions][Fire Spread Functions:1]]
 # TODO: Compare this with numpy.random (is there a generator object that I can use here?)
 import random
 import numpy as np

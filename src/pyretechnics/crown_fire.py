@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
+# [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
 def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture):
     """
     Ouputs the critical fire line intensity (kW/m) using:
@@ -27,7 +27,7 @@ def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_mo
             and
             (fire_line_intensity >= van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)))
 # van-wagner-crown-fire-initiation ends here
-# [[file:../../org/Pyretechnics.org::cruz-crown-fire-spread][cruz-crown-fire-spread]]
+# [[file:../../org/pyretechnics.org::cruz-crown-fire-spread][cruz-crown-fire-spread]]
 from math import exp, prod
 
 def cruz_active_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
@@ -71,7 +71,7 @@ def cruz_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_f
         # NOTE: Use minus as passive flag
         return -1.0 * cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate)
 # cruz-crown-fire-spread ends here
-# [[file:../../org/Pyretechnics.org::crown-fire-line-intensity][crown-fire-line-intensity]]
+# [[file:../../org/pyretechnics.org::crown-fire-line-intensity][crown-fire-line-intensity]]
 # NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
 def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
@@ -88,7 +88,7 @@ def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_hei
     """
     return (crown_spread_rate * canopy_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
 # crown-fire-line-intensity ends here
-# [[file:../../org/Pyretechnics.org::crown-eccentricity][crown-eccentricity]]
+# [[file:../../org/pyretechnics.org::crown-eccentricity][crown-eccentricity]]
 from math import sqrt
 
 # NOTE: No longer takes ellipse_adjustment_factor argument

@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::*Lazy-Loading Multi-Resolution Array Lookup Functions][Lazy-Loading Multi-Resolution Array Lookup Functions:1]]
+# [[file:../../org/pyretechnics.org::*Lazy-Loading Multi-Resolution Array Lookup Functions][Lazy-Loading Multi-Resolution Array Lookup Functions:1]]
 import numpy as np
 
 #==============================================================

@@ -1,4 +1,4 @@
-# [[file:../../org/Pyretechnics.org::load-raster][load-raster]]
+# [[file:../../org/pyretechnics.org::load-raster][load-raster]]
 import rasterio
 
 def raster_metadata(raster):
@@ -23,7 +23,7 @@ def load_raster(file_path, dtype=None):
             "metadata": raster_metadata(input_raster),
         }
 # load-raster ends here
-# [[file:../../org/Pyretechnics.org::load-and-convert-landfire-rasters][load-and-convert-landfire-rasters]]
+# [[file:../../org/pyretechnics.org::load-and-convert-landfire-rasters][load-and-convert-landfire-rasters]]
 landfire_array_conversions = {
     #==============================================================================
     # Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
@@ -52,7 +52,7 @@ def load_and_convert_landfire_rasters(landfire_file_paths):
 
     return landfire_rasters
 # load-and-convert-landfire-rasters ends here
-# [[file:../../org/Pyretechnics.org::verify-raster-constraints][verify-raster-constraints]]
+# [[file:../../org/pyretechnics.org::verify-raster-constraints][verify-raster-constraints]]
 def verify_same_dimensions(rasters):
     dimensions = [
         (r["metadata"]["bands"],
@@ -82,7 +82,7 @@ def verify_same_georeferences(rasters):
 def verify_raster_constraints(rasters):
     return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
 # verify-raster-constraints ends here
-# [[file:../../org/Pyretechnics.org::convert-rasters-to-2d-fns][convert-rasters-to-2d-fns]]
+# [[file:../../org/pyretechnics.org::convert-rasters-to-2d-fns][convert-rasters-to-2d-fns]]
 # TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
 def convert_rasters_to_2d_fns(raster_dict):
     fn_dict = {}
@@ -92,7 +92,7 @@ def convert_rasters_to_2d_fns(raster_dict):
 
     return fn_dict
 # convert-rasters-to-2d-fns ends here
-# [[file:../../org/Pyretechnics.org::read-landfire-rasters-as-pyretechnics-inputs][read-landfire-rasters-as-pyretechnics-inputs]]
+# [[file:../../org/pyretechnics.org::read-landfire-rasters-as-pyretechnics-inputs][read-landfire-rasters-as-pyretechnics-inputs]]
 def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
     landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
     if verify_raster_constraints(landfire_rasters.values()):
