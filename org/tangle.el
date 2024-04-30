@@ -5,7 +5,9 @@
 ;;==========================================================
 
 (require 'org)
-(require 'python-mode)
+(require 'python)
+
+(setq python-indent-guess-indent-offset nil)
 
 (find-file "pyretechnics.org")
 (org-babel-tangle)
