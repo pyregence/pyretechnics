@@ -1,37 +1,20 @@
 #+TITLE: The Pyretechnics Fire Behavior Library
 #+AUTHOR: Gary W. Johnson, Valentin Waeselynck, Chris Lautenberger
-#+DATE: Copyright © 2023-2024 Spatial Informatics Group, LLC
-#+OPTIONS: ^:{} toc:nil h:3
-#+LATEX_CLASS: article
-#+LATEX_CLASS_OPTIONS: [11pt]
-#+LATEX_HEADER: \usepackage{amsmath}
-#+LATEX_HEADER: \usepackage{amsfonts}
-#+LATEX_HEADER: \usepackage{amssymb}
-#+LATEX_HEADER: \usepackage{fancyhdr}
-#+LATEX_HEADER: \usepackage[top=1in,bottom=1in,left=0.75in,right=0.75in]{geometry}
-#+LATEX_HEADER: \usepackage{geometry}
-#+LATEX_HEADER: \pagestyle{fancyplain}
-#+LATEX_HEADER: \usepackage{wrapfig}
-#+LATEX_HEADER: \usepackage{subfigure}
-#+LATEX_HEADER: \usepackage{setspace}
-#+LATEX_HEADER: \usepackage{epsfig}
-#+LATEX_HEADER: \usepackage{color}
-#+LATEX_HEADER: \usepackage[round,comma]{natbib}
-#+LATEX_HEADER: \usepackage{tikz}
-#+LATEX_HEADER: \usetikzlibrary{calc}
-#+LATEX_HEADER: \usepackage{cancel}
-#+LATEX_HEADER: \setlength{\headheight}{13.6pt}
-#+LATEX_HEADER: \hypersetup{
-#+LATEX_HEADER:     colorlinks=true,
-#+LATEX_HEADER:     citecolor=black,
-#+LATEX_HEADER:     linkbordercolor=black,
-#+LATEX_HEADER:     linkcolor=black}
-#+LATEX_HEADER: \usepackage{graphicx}
-#+LATEX_HEADER: \graphicspath{{pics/}}
-#+LATEX_HEADER: \DeclareUnicodeCharacter{394}{$\Delta$}
-#+LATEX_HEADER: \DeclareUnicodeCharacter{3C7}{$\chi$}
 
-# Global Settings
+# ================================
+# HTML Export Settings
+# ================================
+
+#+OPTIONS: H:3 toc:t ^:{} <:nil date:nil timestamp:nil
+#+TOC: tables
+#+HTML_DOCTYPE: html5
+#+DESCRIPTION: A Python library for simulating fire behavior in a variety of ways.
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics.css" />
+
+# ================================
+# Code Block Settings
+# ================================
+
 #+PROPERTY: header-args:python+ :results silent
 #+PROPERTY: header-args:python+ :exports code
 #+PROPERTY: header-args:python+ :no-expand
@@ -58,7 +41,6 @@ minimum required versions and URLs from which they may be downloaded.
 
 #+name: tab:required-software
 #+caption: Software necessary to evaluate the code in this document
-#+attr_latex: :align |l|r|l| :font \small
 |----------+---------+---------------------------------------|
 | Name     | Version | URL                                   |
 |----------+---------+---------------------------------------|
@@ -1059,9 +1041,8 @@ is then assigned a set of representative values for each of the
 thermally relevant physical properties shown in Table
 [[tab:fuel-model-properties]].
 
-#+NAME: tab:fuel-model-properties
-#+CAPTION: Physical properties assigned to each fuel model
-#+ATTR_LATEX: :align |l|l|l| :font \small
+#+name: tab:fuel-model-properties
+#+caption: Physical properties assigned to each fuel model
 |----------+--------------------------------------------+-----------------------------------------|
 | Property | Description                                | Units                                   |
 |----------+--------------------------------------------+-----------------------------------------|
@@ -1218,7 +1199,6 @@ def is_burnable_fuel_model_number(fuel_model_number):
 Once fuel moisture is added to the base fuel model definitions, they
 will each contain values for the following six fuel size classes:
 
-#+ATTR_LATEX: :options \setlength{\itemsep}{-3mm}
 1. Dead 1 hour ($<$ 1/4" diameter)
 2. Dead 10 hour (1/4"--1" diameter)
 3. Dead 100 hour (1"--3" diameter)
@@ -1249,7 +1229,6 @@ Although most fuel model properties are static with respect to
 environmental conditions, the fuel moisture content can have two
 significant impacts on a fuel model's burning potential:
 
-#+ATTR_LATEX: :options \setlength{\itemsep}{-3mm}
 1. Dynamic fuel loading
 2. Live moisture of extinction
 
@@ -1426,18 +1405,17 @@ Predicting Fire Spread in Wildland Fuels''.\citep{Rothermel1972}
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
 
-\begin{displaymath}
+\[
 R = \frac{I_{R} \, \xi \, (1 + \phi_{W} + \phi_{S})}{\rho_{b} \, \epsilon \, Q_{ig}}
-\end{displaymath}
+\]
 
 where these terms have the meanings shown in Table
 [[tab:fire-spread-inputs]].
 
 *FIXME: fill in the units column for the table below.*
 
-#+NAME: tab:fire-spread-inputs
-#+CAPTION: Inputs to Rothermel's surface fire rate of spread equation
-#+ATTR_LATEX: :align |l|l| :font \small
+#+name: tab:fire-spread-inputs
+#+caption: Inputs to Rothermel's surface fire rate of spread equation
 |----------+--------------------------------+-------|
 | Term     | Description                    | Units |
 |----------+--------------------------------+-------|
@@ -1676,14 +1654,14 @@ formula from Albini & Baughman 1979, parameterized as in BehavePlus,
 FARSITE, FlamMap, FSPro, and FPA according to Andrews
 2012\citep{Albini1979,Andrews2012}. This formula is shown below:
 
-\begin{displaymath}
+\begin{align}
   WAF = \left\{
     \begin{array}{lr}
       \frac{1.83}{ \ln(\frac{20.0 + 0.36 FBD}{0.13 FBD}) } & CC = 0 \\
       \frac{0.555}{ \sqrt(CH (CC/3.0)) \ln(\frac{20 + 0.36 CH}{0.13 CH}) } & CC > 0
     \end{array}
   \right.
-\end{displaymath}
+\end{align}
 
 where WAF is the unitless wind adjustment factor, FBD is the fuel bed
 depth in feet, CH is the canopy height in ft, and CC is the canopy
@@ -2379,7 +2357,6 @@ LANDFIRE program.[fn::https://landfire.gov]
 
 #+name: tab:landfire-layers
 #+caption: 2022 LANDFIRE Raster Layers
-#+attr_latex: :align |l|l|l|r|r|r|l|l|l| :font \small
 |---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
 | Layer Name          | Label  | Units                                    | Min |  Max | NoData | Notes         | Type  | SRID      | Cell Size |
 |---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
@@ -2619,3 +2596,5 @@ x = 0
 
 compute_max_in_situ_values(input_layer_dict, t, y, x)
 #+end_src
+
+* Fire Spread on a Raster Grid
