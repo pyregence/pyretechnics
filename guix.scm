@@ -15,13 +15,24 @@
  ((gnu packages ssh)             #:select (openssh))
  ((gnu packages version-control) #:select (git))
  ((guix build-system python)     #:select (python-build-system))
+ ((guix gexp)                    #:select (local-file))
+ ((guix git-download)            #:select (git-predicate))
  ((guix licenses)                #:select (epl2.0))
- ((guix packages)                #:select (package)))
+ ((guix packages)                #:select (package))
+ ((guix utils)                   #:select (current-source-directory)))
+
+(define vcs-file?
+  ;; Return true if the given file is under version control.
+  (or (git-predicate (current-source-directory))
+      (const #t)))
 
 (package
  (name "python-pyretechnics")
  (version "2024.04.29")
- (source #f)
+ (source (local-file "."
+                     "pyretechnics-checkout"
+                     #:recursive? #t
+                     #:select?    vcs-file?))
  (build-system python-build-system)
  (native-inputs (list
                  ;; Shell utilities
