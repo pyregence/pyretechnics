@@ -2,7 +2,7 @@
 
 ;;==========================================================
 ;; Load all files under the specified root-directory
-;; and detangle each one back into Pyretechnics.org
+;; and detangle each one back into pyretechnics.org
 ;;==========================================================
 
 (require 'org)
@@ -28,12 +28,12 @@
     (let ((script-directory  (file-name-directory load-file-name))
           (files-to-detangle (seq-remove (lambda (file-name) (string-match-p "/target/\\|/classes/" file-name))
                                          (directory-files-recursively root-directory detangle-file-regexp))))
-      ;; Enter the org/ directory and set the current buffer to Pyretechnics.org so that (save-buffer) works later
+      ;; Enter the org/ directory and set the current buffer to pyretechnics.org so that (save-buffer) works later
       (cd script-directory)
-      (find-file "./Pyretechnics.org")
+      (find-file "./pyretechnics.org")
       (mapc (lambda (source-file)
               (org-babel-detangle source-file)
-              (save-buffer)) ; Save Pyretechnics.org after each detangling operation
+              (save-buffer)) ; Save pyretechnics.org after each detangling operation
             files-to-detangle))))
 
 ;;==========================================================

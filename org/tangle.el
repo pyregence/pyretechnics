@@ -1,13 +1,13 @@
 #!/usr/bin/env -S emacs -Q --script
 
 ;;==========================================================
-;; Load Pyretechnics.org and tangle its code blocks to disk
+;; Load pyretechnics.org and tangle its code blocks to disk
 ;;==========================================================
 
 (require 'org)
 (require 'python-mode)
 
-(find-file "Pyretechnics.org")
+(find-file "pyretechnics.org")
 (org-babel-tangle)
 
 ;;==========================================================

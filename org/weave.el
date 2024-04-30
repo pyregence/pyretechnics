@@ -9,16 +9,13 @@
 (require 'htmlize)
 (require 'python)
 
-;; TODO: Add source code highlighting settings from my init.el
-;; (setq org-src-fontify-natively t)
-
 (setq python-indent-guess-indent-offset nil)
 
 ;;==========================================================
-;; Now load Pyretechnics.org and weave it into an HTML file
+;; Now load pyretechnics.org and weave it into an HTML file
 ;;==========================================================
 
-(find-file "Pyretechnics.org")
+(find-file "pyretechnics.org")
 (org-html-export-to-html)
 
 ;;==========================================================
