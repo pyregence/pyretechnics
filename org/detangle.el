@@ -22,7 +22,7 @@
                                          (directory-files-recursively root-directory detangle-file-regexp))))
   ;; Enter the org/ directory and set the current buffer to pyretechnics.org so that (save-buffer) works later
   (cd script-directory)
-  (find-file "./pyretechnics.org")
+  (find-file "pyretechnics.org")
   (mapc (lambda (source-file)
           (message "Detangling %s" source-file)
           (org-babel-detangle source-file)

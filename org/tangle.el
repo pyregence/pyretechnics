@@ -9,8 +9,10 @@
 
 (setq python-indent-guess-indent-offset nil)
 
-(find-file "pyretechnics.org")
-(org-babel-tangle)
+(let ((script-directory (file-name-directory load-file-name)))
+  (cd script-directory)
+  (find-file "pyretechnics.org")
+  (org-babel-tangle))
 
 ;;==========================================================
 ;; Obligatory calling shell protection
