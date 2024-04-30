@@ -6,6 +6,7 @@
 # HTML Export Settings
 # ================================
 
+#+EXPORT_FILE_NAME: ../doc/pyretechnics.html
 #+OPTIONS: H:3 toc:t ^:{} <:nil date:nil timestamp:nil
 #+TOC: tables
 #+HTML_DOCTYPE: html5
