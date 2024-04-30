@@ -7,8 +7,8 @@ A Python library for simulating fire behavior in a variety of ways.
 
 To promote open review and encourage collaborative development of the
 various algorithms implemented in Pyretechnics, this library is
-released under a free and open source license. See the [[License]] section
-in this document for more information.
+released under a free and open source license. See the [[*License]]
+section in this document for more information.
 
 *** Reproducible Research
 
@@ -51,8 +51,8 @@ guix shell --container --network --link-profile -S /usr/bin/env=bin/env --share=
 On their first invocations, these commands will download the necessary
 software packages and install them under =/gnu/store=. When this is
 done, they will drop you into a shell environment in which the
-environment variables have been configured to point to these newly
-downloaded packages.
+environment variables have been automatically configured to point to
+these newly downloaded packages.
 
 On subsequent calls to ~guix shell~, you should be dropped directly
 into the shell environment without the need to install any new
