@@ -5,6 +5,7 @@
 
 (use-modules
  ((gnu packages base)            #:select (coreutils which))
+ ((gnu packages bash)            #:select (bash))
  ((gnu packages emacs)           #:select (emacs-minimal))
  ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
  ((gnu packages geo)             #:select (gdal))
@@ -24,6 +25,7 @@
  (build-system python-build-system)
  (native-inputs (list
                  ;; Shell utilities
+                 bash
                  coreutils
                  which
                  less
