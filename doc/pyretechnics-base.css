@@ -1502,12 +1502,6 @@
         /* trailing-whitespace */
         background-color: #ff0000;
       }
-      .org-treesit-explorer-anonymous-node {
-        /* treesit-explorer-anonymous-node */
-        color: #7f7f7f;
-      }
-      .org-treesit-explorer-field-name {
-      }
       .org-tty-menu-disabled {
         /* tty-menu-disabled-face */
         color: #d3d3d3;

@@ -8,7 +8,7 @@
 <meta name="description" content="A Python library for simulating fire behavior in a variety of ways." />
 <meta name="keywords" content="pyretechnics fire behavior model python library pyregence pyrecast" />
 <meta name="generator" content="Org Mode" />
-<style>
+<style type="text/css">
   #content { max-width: 60em; margin: auto; }
   .title  { text-align: center;
              margin-bottom: .2em; }
@@ -237,64 +237,64 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orga808690">1. Preface</a></li>
-<li><a href="#org476492e">2. Data Model</a>
+<li><a href="#orgbddb2d9">1. Preface</a></li>
+<li><a href="#org1aac9b9">2. Data Model</a>
 <ul>
-<li><a href="#orge3156b5">2.1. Working in a 3D Space-Time Cube</a></li>
-<li><a href="#orgdf3e48c">2.2. Fires as Conical Shapes in Space-Time</a></li>
-<li><a href="#orge037c2f">2.3. Support for Input Datasets of Varying Dimensionality and Resolution</a></li>
-<li><a href="#org8fc19f6">2.4. Lazy Loading of Space-Time Chunks</a></li>
-<li><a href="#orgef56bc9">2.5. Lazy-Loading Multi-Resolution Array Lookup Functions</a></li>
-<li><a href="#org9557ee2">2.6. Lazy Array Usage Examples</a></li>
+<li><a href="#org9a7efe3">2.1. Working in a 3D Space-Time Cube</a></li>
+<li><a href="#org2a44bf3">2.2. Fires as Conical Shapes in Space-Time</a></li>
+<li><a href="#org1ea33ac">2.3. Support for Input Datasets of Varying Dimensionality and Resolution</a></li>
+<li><a href="#org3ebb555">2.4. Lazy Loading of Space-Time Chunks</a></li>
+<li><a href="#org41c9fa7">2.5. Lazy-Loading Multi-Resolution Array Lookup Functions</a></li>
+<li><a href="#orgf2f36e2">2.6. Lazy Array Usage Examples</a></li>
 </ul>
 </li>
-<li><a href="#orgf9caa1a">3. Fire Spread API</a>
+<li><a href="#org6aebc13">3. Fire Spread API</a>
 <ul>
-<li><a href="#orga5183b9">3.1. grow_fire</a>
+<li><a href="#org4fa6c21">3.1. grow_fire</a>
 <ul>
-<li><a href="#org60dd4c2">3.1.1. Inputs</a></li>
-<li><a href="#org9a99332">3.1.2. Outputs</a></li>
-<li><a href="#orgc72a557">3.1.3. Play/Pause/Continue Workflow</a></li>
+<li><a href="#org35279c7">3.1.1. Inputs</a></li>
+<li><a href="#orgb9a272f">3.1.2. Outputs</a></li>
+<li><a href="#org7562158">3.1.3. Play/Pause/Continue Workflow</a></li>
 </ul>
 </li>
-<li><a href="#orgbc90ff8">3.2. burn_cells</a></li>
+<li><a href="#org78e4409">3.2. burn_cells</a></li>
 </ul>
 </li>
-<li><a href="#org4eca2c5">4. Fire Spread Functions</a>
+<li><a href="#orga1948cf">4. Fire Spread Functions</a>
 <ul>
-<li><a href="#org7416898">4.1. ELMFIRE Inputs</a></li>
+<li><a href="#orgd72b4eb">4.1. ELMFIRE Inputs</a></li>
 </ul>
 </li>
-<li><a href="#orgcc5c739">5. Fire Behavior Model</a>
+<li><a href="#org1ab24c0">5. Fire Behavior Model</a>
 <ul>
-<li><a href="#org2049667">5.1. Fuel Model Definitions</a>
+<li><a href="#org5bc1a23">5.1. Fuel Model Definitions</a>
 <ul>
-<li><a href="#org58350f5">5.1.1. Dynamic Fuel Loading</a></li>
-<li><a href="#org2225acf">5.1.2. Live Moisture of Extinction</a></li>
+<li><a href="#org127cef5">5.1.1. Dynamic Fuel Loading</a></li>
+<li><a href="#orge0fde3e">5.1.2. Live Moisture of Extinction</a></li>
 </ul>
 </li>
-<li><a href="#org102d5ee">5.2. Surface Fire Formulas</a></li>
-<li><a href="#org4fab144">5.3. Crown Fire Formulas</a></li>
+<li><a href="#orgdd13e91">5.2. Surface Fire Formulas</a></li>
+<li><a href="#org36d2b45">5.3. Crown Fire Formulas</a></li>
 </ul>
 </li>
-<li><a href="#orge290e98">6. Burning All Cells as a Head-Fire (similar to FLAMMAP)</a></li>
-<li><a href="#orgd467f0c">7. Loading LANDFIRE Inputs</a>
+<li><a href="#orge28d8d6">6. Burning All Cells as a Head-Fire (similar to FLAMMAP)</a></li>
+<li><a href="#org977c5de">7. Loading LANDFIRE Inputs</a>
 <ul>
-<li><a href="#org03ee2bf">7.1. Loading Raster Files with Python Rasterio</a></li>
-<li><a href="#org26ba8b1">7.2. Convert LANDFIRE Units and Datatypes</a></li>
-<li><a href="#org82eaea4">7.3. Verifying Raster Constraints</a></li>
-<li><a href="#org6e3e4bf">7.4. Converting Rasters to 3D Lookup Functions</a></li>
-<li><a href="#orgc32890d">7.5. Putting It All Together</a></li>
+<li><a href="#org5a9709a">7.1. Loading Raster Files with Python Rasterio</a></li>
+<li><a href="#org3095b08">7.2. Convert LANDFIRE Units and Datatypes</a></li>
+<li><a href="#org5303a72">7.3. Verifying Raster Constraints</a></li>
+<li><a href="#org9358e07">7.4. Converting Rasters to 3D Lookup Functions</a></li>
+<li><a href="#orge5e6103">7.5. Putting It All Together</a></li>
 </ul>
 </li>
-<li><a href="#orgba1b8f1">8. Testing burn_cells on Worcester, VT</a>
+<li><a href="#org4474977">8. Testing burn_cells on Worcester, VT</a>
 <ul>
-<li><a href="#orgba007b1">8.1. Loading Topography, Fuel Model, and Vegetation Inputs from LANDFIRE GeoTIFFs</a></li>
-<li><a href="#orgc197e80">8.2. Adding Constant Wind and Moisture Values</a></li>
-<li><a href="#org120d041">8.3. Running Burn Cells on the Test Dataset</a></li>
+<li><a href="#org6ad87f4">8.1. Loading Topography, Fuel Model, and Vegetation Inputs from LANDFIRE GeoTIFFs</a></li>
+<li><a href="#org824486e">8.2. Adding Constant Wind and Moisture Values</a></li>
+<li><a href="#orgea8ecdf">8.3. Running Burn Cells on the Test Dataset</a></li>
 </ul>
 </li>
-<li><a href="#org438c429">9. Fire Spread on a Raster Grid</a></li>
+<li><a href="#org31ccd1c">9. Fire Spread on a Raster Grid</a></li>
 </ul>
 </div>
 </div>
@@ -302,16 +302,16 @@
 <h2>List of Tables</h2>
 <div id="text-list-of-tables">
 <ul>
-<li><a href="#org6793636"><span class="table-number">Table 1:</span> Software necessary to evaluate the code in this document</a></li>
-<li><a href="#orgcb24619"><span class="table-number">Table 2:</span> Physical properties assigned to each fuel model</a></li>
-<li><a href="#orgd2380f7"><span class="table-number">Table 3:</span> Inputs to Rothermel's surface fire rate of spread equation</a></li>
-<li><a href="#orgc92f6ef"><span class="table-number">Table 4:</span> 2022 LANDFIRE Raster Layers</a></li>
+<li><a href="#org3e9fd20"><span class="table-number">Table 1:</span> Software necessary to evaluate the code in this document</a></li>
+<li><a href="#org6b4ab51"><span class="table-number">Table 2:</span> Physical properties assigned to each fuel model</a></li>
+<li><a href="#org5e3f54b"><span class="table-number">Table 3:</span> Inputs to Rothermel's surface fire rate of spread equation</a></li>
+<li><a href="#org8c88406"><span class="table-number">Table 4:</span> 2022 LANDFIRE Raster Layers</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orga808690" class="outline-2">
-<h2 id="orga808690"><span class="section-number-2">1.</span> Preface</h2>
+<div id="outline-container-orgbddb2d9" class="outline-2">
+<h2 id="orgbddb2d9"><span class="section-number-2">1.</span> Preface</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 This document is a Literate
@@ -329,11 +329,11 @@ the system as the original programmer.
 To execute the code illustrated within this document, you will need to
 install several pieces of software, all of which are open source
 and/or freely available for all major operating systems. These
-programs are listed in Table <a href="#org6793636">1</a> along with their
+programs are listed in Table <a href="#org3e9fd20">1</a> along with their
 minimum required versions and URLs from which they may be downloaded.
 </p>
 
-<table id="org6793636">
+<table id="org3e9fd20">
 <caption class="t-above"><span class="table-number">Table 1:</span> Software necessary to evaluate the code in this document</caption>
 
 <colgroup>
@@ -385,12 +385,12 @@ minimum required versions and URLs from which they may be downloaded.
 </div>
 </div>
 
-<div id="outline-container-org476492e" class="outline-2">
-<h2 id="org476492e"><span class="section-number-2">2.</span> Data Model</h2>
+<div id="outline-container-org1aac9b9" class="outline-2">
+<h2 id="org1aac9b9"><span class="section-number-2">2.</span> Data Model</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orge3156b5" class="outline-3">
-<h3 id="orge3156b5"><span class="section-number-3">2.1.</span> Working in a 3D Space-Time Cube</h3>
+<div id="outline-container-org9a7efe3" class="outline-3">
+<h3 id="org9a7efe3"><span class="section-number-3">2.1.</span> Working in a 3D Space-Time Cube</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 In Pyretechnics, a fire is viewed as a three-dimensional event
@@ -417,8 +417,8 @@ model outputs.
 </div>
 </div>
 
-<div id="outline-container-orgdf3e48c" class="outline-3">
-<h3 id="orgdf3e48c"><span class="section-number-3">2.2.</span> Fires as Conical Shapes in Space-Time</h3>
+<div id="outline-container-org2a44bf3" class="outline-3">
+<h3 id="org2a44bf3"><span class="section-number-3">2.2.</span> Fires as Conical Shapes in Space-Time</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 All fire events begin from an ignition somewhere in space-time. As
@@ -444,8 +444,8 @@ shape) of fires.
 </div>
 </div>
 
-<div id="outline-container-orge037c2f" class="outline-3">
-<h3 id="orge037c2f"><span class="section-number-3">2.3.</span> Support for Input Datasets of Varying Dimensionality and Resolution</h3>
+<div id="outline-container-org1ea33ac" class="outline-3">
+<h3 id="org1ea33ac"><span class="section-number-3">2.3.</span> Support for Input Datasets of Varying Dimensionality and Resolution</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 At the beginning of a fire behavior simulation, our 3D space-time cube
@@ -507,8 +507,8 @@ underlying dataset's native resolution and dimensionality.
 </div>
 </div>
 
-<div id="outline-container-org8fc19f6" class="outline-3">
-<h3 id="org8fc19f6"><span class="section-number-3">2.4.</span> Lazy Loading of Space-Time Chunks</h3>
+<div id="outline-container-org3ebb555" class="outline-3">
+<h3 id="org3ebb555"><span class="section-number-3">2.4.</span> Lazy Loading of Space-Time Chunks</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 In order to avoid the need to fully load all of the 3D space-time
@@ -566,8 +566,8 @@ finer resolutions than have been used previously.
 </div>
 </div>
 
-<div id="outline-container-orgef56bc9" class="outline-3">
-<h3 id="orgef56bc9"><span class="section-number-3">2.5.</span> Lazy-Loading Multi-Resolution Array Lookup Functions</h3>
+<div id="outline-container-org41c9fa7" class="outline-3">
+<h3 id="org41c9fa7"><span class="section-number-3">2.5.</span> Lazy-Loading Multi-Resolution Array Lookup Functions</h3>
 <div class="outline-text-3" id="text-2-5">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
@@ -722,8 +722,8 @@ finer resolutions than have been used previously.
 </div>
 </div>
 
-<div id="outline-container-org9557ee2" class="outline-3">
-<h3 id="org9557ee2"><span class="section-number-3">2.6.</span> Lazy Array Usage Examples</h3>
+<div id="outline-container-orgf2f36e2" class="outline-3">
+<h3 id="orgf2f36e2"><span class="section-number-3">2.6.</span> Lazy Array Usage Examples</h3>
 <div class="outline-text-3" id="text-2-6">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
@@ -875,16 +875,16 @@ finer resolutions than have been used previously.
 </div>
 </div>
 
-<div id="outline-container-orgf9caa1a" class="outline-2">
-<h2 id="orgf9caa1a"><span class="section-number-2">3.</span> Fire Spread API</h2>
+<div id="outline-container-org6aebc13" class="outline-2">
+<h2 id="org6aebc13"><span class="section-number-2">3.</span> Fire Spread API</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Pyretechnics provides two main functions for simulating fire behavior over a region of space-time:
 </p>
 </div>
 
-<div id="outline-container-orga5183b9" class="outline-3">
-<h3 id="orga5183b9"><span class="section-number-3">3.1.</span> grow_fire</h3>
+<div id="outline-container-org4fa6c21" class="outline-3">
+<h3 id="org4fa6c21"><span class="section-number-3">3.1.</span> grow_fire</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Simulates the growth of a fire over space and time starting from one
@@ -896,8 +896,8 @@ within the fire spread algorithm.
 </p>
 </div>
 
-<div id="outline-container-org60dd4c2" class="outline-4">
-<h4 id="org60dd4c2"><span class="section-number-4">3.1.1.</span> Inputs</h4>
+<div id="outline-container-org35279c7" class="outline-4">
+<h4 id="org35279c7"><span class="section-number-4">3.1.1.</span> Inputs</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <p>
 The <code>grow_fire</code> function takes a single <code>world_state</code> dictionary as input with these fields:
@@ -1640,8 +1640,8 @@ an <b>optional</b> dictionary of layer names to 2D Numpy arrays with the followi
 </div>
 </div>
 
-<div id="outline-container-org9a99332" class="outline-4">
-<h4 id="org9a99332"><span class="section-number-4">3.1.2.</span> Outputs</h4>
+<div id="outline-container-orgb9a272f" class="outline-4">
+<h4 id="orgb9a272f"><span class="section-number-4">3.1.2.</span> Outputs</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
 The <code>grow_fire</code> function will return a dictionary with these fields:
@@ -1652,11 +1652,11 @@ The <code>grow_fire</code> function will return a dictionary with these fields:
 
 <dt>simulation_stop_condition_encountered</dt><dd>max_burn_duration | max_burned_area | no_burnable_fuel | end_of_temporal_data | fully_suppressed</dd>
 
-<dt>config_dict</dt><dd>a dictionary of parameter names to their values as defined in section <a href="#org60dd4c2">3.1.1</a> above</dd>
+<dt>config_dict</dt><dd>a dictionary of parameter names to their values as defined in section <a href="#org35279c7">3.1.1</a> above</dd>
 
-<dt>input_layer_dict</dt><dd>a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions as defined in section <a href="#org60dd4c2">3.1.1</a> above</dd>
+<dt>input_layer_dict</dt><dd>a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions as defined in section <a href="#org35279c7">3.1.1</a> above</dd>
 
-<dt>output_layer_dict</dt><dd>a dictionary of layer names to 2D Numpy arrays as defined in section <a href="#org60dd4c2">3.1.1</a> above</dd>
+<dt>output_layer_dict</dt><dd>a dictionary of layer names to 2D Numpy arrays as defined in section <a href="#org35279c7">3.1.1</a> above</dd>
 
 <dt>ignited_cells_set</dt><dd>set of cells that are actively burning at the simulation stop time, specified as 3D coordinates <code>(z,y,x)</code> in the simulated space-time cube</dd>
 </dl>
@@ -1669,8 +1669,8 @@ fields will contain values updated by the fire spread simulation.
 </div>
 </div>
 
-<div id="outline-container-orgc72a557" class="outline-4">
-<h4 id="orgc72a557"><span class="section-number-4">3.1.3.</span> Play/Pause/Continue Workflow</h4>
+<div id="outline-container-org7562158" class="outline-4">
+<h4 id="org7562158"><span class="section-number-4">3.1.3.</span> Play/Pause/Continue Workflow</h4>
 <div class="outline-text-4" id="text-3-1-3">
 <p>
 The inputs and outputs of <code>grow_fire</code> are structured so as to enable
@@ -1739,8 +1739,8 @@ condition is met. Here is an example of how to do this.
 </div>
 </div>
 
-<div id="outline-container-orgbc90ff8" class="outline-3">
-<h3 id="orgbc90ff8"><span class="section-number-3">3.2.</span> burn_cells</h3>
+<div id="outline-container-org78e4409" class="outline-3">
+<h3 id="org78e4409"><span class="section-number-3">3.2.</span> burn_cells</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 TODO: stub
@@ -1749,8 +1749,8 @@ TODO: stub
 </div>
 </div>
 
-<div id="outline-container-org4eca2c5" class="outline-2">
-<h2 id="org4eca2c5"><span class="section-number-2">4.</span> Fire Spread Functions</h2>
+<div id="outline-container-orga1948cf" class="outline-2">
+<h2 id="orga1948cf"><span class="section-number-2">4.</span> Fire Spread Functions</h2>
 <div class="outline-text-2" id="text-4">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Compare this with numpy.random (is there a generator object that I can use here?)</span>
@@ -1914,8 +1914,8 @@ TODO: stub
 </div>
 </div>
 
-<div id="outline-container-org7416898" class="outline-3">
-<h3 id="org7416898"><span class="section-number-3">4.1.</span> ELMFIRE Inputs</h3>
+<div id="outline-container-orgd72b4eb" class="outline-3">
+<h3 id="orgd72b4eb"><span class="section-number-3">4.1.</span> ELMFIRE Inputs</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 This section lists the full set of inputs used in any <code>elmfire.data</code> or <code>elmfire.data.in</code> file in:
@@ -2456,8 +2456,8 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 </div>
 </div>
 
-<div id="outline-container-orgcc5c739" class="outline-2">
-<h2 id="orgcc5c739"><span class="section-number-2">5.</span> Fire Behavior Model</h2>
+<div id="outline-container-org1ab24c0" class="outline-2">
+<h2 id="org1ab24c0"><span class="section-number-2">5.</span> Fire Behavior Model</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 Pyretechnics implements the following fire behavior formulas from the
@@ -2489,8 +2489,8 @@ detail.
 </p>
 </div>
 
-<div id="outline-container-org2049667" class="outline-3">
-<h3 id="org2049667"><span class="section-number-3">5.1.</span> Fuel Model Definitions</h3>
+<div id="outline-container-org5bc1a23" class="outline-3">
+<h3 id="org5bc1a23"><span class="section-number-3">5.1.</span> Fuel Model Definitions</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 All fires ignite and travel through some form of burnable fuel.
@@ -2512,10 +2512,10 @@ cope with this, fuels are classified into categories called ``fuel
 models'' which share similar burning characteristics. Each fuel model
 is then assigned a set of representative values for each of the
 thermally relevant physical properties shown in Table
-<a href="#orgcb24619">2</a>.
+<a href="#org6b4ab51">2</a>.
 </p>
 
-<table id="orgcb24619">
+<table id="org6b4ab51">
 <caption class="t-above"><span class="table-number">Table 2:</span> Physical properties assigned to each fuel model</caption>
 
 <colgroup>
@@ -2611,7 +2611,7 @@ custom fuel models desired by the user.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org42a3924"><span class="org-comment-delimiter"># </span><span class="org-comment">Lookup table including one entry for each of the Anderson 13 and</span>
+<pre class="src src-python" id="org3c0e5ba"><span class="org-comment-delimiter"># </span><span class="org-comment">Lookup table including one entry for each of the Anderson 13 and</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Scott &amp; Burgan 40 fuel models. The fields have the following</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">meanings:</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">{fuel-model-number</span>
@@ -2755,7 +2755,7 @@ be used in both the fuel moisture and fire spread algorithms.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgcc21054"><span class="org-keyword">def</span> <span class="org-function-name">map_category</span>(f):
+<pre class="src src-python" id="orgf1f9891"><span class="org-keyword">def</span> <span class="org-function-name">map_category</span>(f):
     <span class="org-keyword">return</span> [f(0), f(1)]
 
 <span class="org-keyword">def</span> <span class="org-function-name">map_size_class</span>(f):
@@ -2785,8 +2785,8 @@ These two topics are discussed in the remainder of this section.
 </p>
 </div>
 
-<div id="outline-container-org58350f5" class="outline-4">
-<h4 id="org58350f5"><span class="section-number-4">5.1.1.</span> Dynamic Fuel Loading</h4>
+<div id="outline-container-org127cef5" class="outline-4">
+<h4 id="org127cef5"><span class="section-number-4">5.1.1.</span> Dynamic Fuel Loading</h4>
 <div class="outline-text-4" id="text-5-1-1">
 <p>
 All of the Scott &amp; Burgan 40 fuel models with a live herbaceous
@@ -2811,7 +2811,7 @@ herbaceous surface-area-to-volume-ratio. In the following formula,
 \end{align*}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org7fd8609"><span class="org-keyword">def</span> <span class="org-function-name">add_dynamic_fuel_loading</span>(fuel_model, M_f):
+<pre class="src src-python" id="org9c3626a"><span class="org-keyword">def</span> <span class="org-function-name">add_dynamic_fuel_loading</span>(fuel_model, M_f):
     <span class="org-variable-name">number</span>               <span class="org-operator">=</span> fuel_model[<span class="org-string">"number"</span>]
     <span class="org-variable-name">w_o</span>                  <span class="org-operator">=</span> fuel_model[<span class="org-string">"w_o"</span>]
     <span class="org-variable-name">live_herbaceous_load</span> <span class="org-operator">=</span> w_o[4] <span class="org-comment-delimiter"># </span><span class="org-comment">4 = live_herbaceous</span>
@@ -2852,7 +2852,7 @@ TODO: Test whether <code>g_ij</code> below creates different values for any fuel
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org81e96a6"><span class="org-keyword">def</span> <span class="org-function-name">add_weighting_factors</span>(fuel_model):
+<pre class="src src-python" id="org19d0a9d"><span class="org-keyword">def</span> <span class="org-function-name">add_weighting_factors</span>(fuel_model):
     <span class="org-variable-name">w_o</span>                  <span class="org-operator">=</span> fuel_model[<span class="org-string">"w_o"</span>]
     <span class="org-variable-name">sigma</span>                <span class="org-operator">=</span> fuel_model[<span class="org-string">"sigma"</span>]
     <span class="org-variable-name">rho_p</span>                <span class="org-operator">=</span> fuel_model[<span class="org-string">"rho_p"</span>]
@@ -2888,8 +2888,8 @@ TODO: Test whether <code>g_ij</code> below creates different values for any fuel
 </div>
 </div>
 
-<div id="outline-container-org2225acf" class="outline-4">
-<h4 id="org2225acf"><span class="section-number-4">5.1.2.</span> Live Moisture of Extinction</h4>
+<div id="outline-container-orge0fde3e" class="outline-4">
+<h4 id="orge0fde3e"><span class="section-number-4">5.1.2.</span> Live Moisture of Extinction</h4>
 <div class="outline-text-4" id="text-5-1-2">
 <p>
 The live moisture of extinction for each fuel model is determined from
@@ -2920,7 +2920,7 @@ size class \(c\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga2e1981"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp
+<pre class="src src-python" id="org4074ea0"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp
 
 <span class="org-keyword">def</span> <span class="org-function-name">add_live_moisture_of_extinction</span>(fuel_model):
     <span class="org-doc">"""Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III."""</span>
@@ -2964,8 +2964,8 @@ This concludes our coverage of fuel models and and fuel moisture.
 </div>
 </div>
 
-<div id="outline-container-org102d5ee" class="outline-3">
-<h3 id="org102d5ee"><span class="section-number-3">5.2.</span> Surface Fire Formulas</h3>
+<div id="outline-container-orgdd13e91" class="outline-3">
+<h3 id="orgdd13e91"><span class="section-number-3">5.2.</span> Surface Fire Formulas</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 To simulate fire behavior in as similar a way as possible to the US
@@ -2988,14 +2988,14 @@ R = \frac{I_{R} \, \xi \, (1 + \phi_{W} + \phi_{S})}{\rho_{b} \, \epsilon \, Q_{
 
 <p>
 where these terms have the meanings shown in Table
-<a href="#orgd2380f7">3</a>.
+<a href="#org5e3f54b">3</a>.
 </p>
 
 <p>
 <b>FIXME: fill in the units column for the table below.</b>
 </p>
 
-<table id="orgd2380f7">
+<table id="org5e3f54b">
 <caption class="t-above"><span class="table-number">Table 3:</span> Inputs to Rothermel's surface fire rate of spread equation</caption>
 
 <colgroup>
@@ -3076,7 +3076,7 @@ computed first without introducing the effects of wind and slope
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org5390e1b"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp
+<pre class="src src-python" id="org707d83e"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp
 <span class="org-keyword">from</span> fuel_models <span class="org-keyword">import</span> map_category, map_size_class, category_sum, size_class_sum
 
 <span class="org-keyword">def</span> <span class="org-function-name">calc_mineral_damping_coefficients</span>(f_ij, S_e):
@@ -3312,7 +3312,7 @@ cover percentage (0-1).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org4d11fa2"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> log, sqrt
+<pre class="src src-python" id="org958009c"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> log, sqrt
 
 <span class="org-keyword">def</span> <span class="org-function-name">wind_adjustment_factor</span>(fuel_bed_depth, canopy_height, canopy_cover):
     <span class="org-doc">"""</span>
@@ -3368,7 +3368,7 @@ direction &theta;.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga62eba2"><span class="org-keyword">from</span> conversion <span class="org-keyword">import</span> deg_to_rad, rad_to_deg, fpm_to_mph
+<pre class="src src-python" id="orgf02ecba"><span class="org-keyword">from</span> conversion <span class="org-keyword">import</span> deg_to_rad, rad_to_deg, fpm_to_mph
 <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sin, cos, asin, exp, sqrt
 
 <span class="org-keyword">def</span> <span class="org-function-name">almost_zero</span>(x):
@@ -3610,7 +3610,7 @@ the flame length in ft.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org6279f4c"><span class="org-keyword">def</span> <span class="org-function-name">anderson_flame_depth</span>(spread_rate, residence_time):
+<pre class="src src-python" id="orgab5c7eb"><span class="org-keyword">def</span> <span class="org-function-name">anderson_flame_depth</span>(spread_rate, residence_time):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns the depth, or front-to-back distance, of the actively flaming zone</span>
 <span class="org-doc">    of a free-spreading fire in ft given:</span>
@@ -3640,7 +3640,7 @@ the flame length in ft.
 
 <p>
 This concludes our coverage of the surface fire behavior equations
-implemented in Pyretechnics. In Section <a href="#org438c429">9</a>,
+implemented in Pyretechnics. In Section <a href="#org31ccd1c">9</a>,
 these formulas will be translated from one-dimension to
 two-dimensional spread on a raster grid. Before we move on to that,
 however, the following section explains how crown fire behavior
@@ -3649,8 +3649,8 @@ metrics are incorporated into our model.
 </div>
 </div>
 
-<div id="outline-container-org4fab144" class="outline-3">
-<h3 id="org4fab144"><span class="section-number-3">5.3.</span> Crown Fire Formulas</h3>
+<div id="outline-container-org36d2b45" class="outline-3">
+<h3 id="org36d2b45"><span class="section-number-3">5.3.</span> Crown Fire Formulas</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 In order to incorporate the effects of crown fire behavior,
@@ -3684,7 +3684,7 @@ crown fire initiation occurs.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga27bb4a"><span class="org-keyword">def</span> <span class="org-function-name">van_wagner_critical_fire_line_intensity</span>(canopy_base_height, foliar_moisture):
+<pre class="src src-python" id="org0035d65"><span class="org-keyword">def</span> <span class="org-function-name">van_wagner_critical_fire_line_intensity</span>(canopy_base_height, foliar_moisture):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Ouputs the critical fire line intensity (kW/m) using:</span>
 <span class="org-doc">    - canopy_base_height (m)</span>
@@ -3740,7 +3740,7 @@ active, otherwise passive.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgeb72fdc"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp, prod
+<pre class="src src-python" id="org44baf07"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp, prod
 
 <span class="org-keyword">def</span> <span class="org-function-name">cruz_active_crown_fire_spread</span>(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
     <span class="org-doc">"""</span>
@@ -3807,7 +3807,7 @@ surface fire line intensity in Btu/ft/s.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org9a2630f"><span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)</span>
+<pre class="src src-python" id="org868c656"><span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb</span>
 <span class="org-keyword">def</span> <span class="org-function-name">crown_fire_line_intensity</span>(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
     <span class="org-doc">"""</span>
@@ -3849,7 +3849,7 @@ spread rate in direction &theta;.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org8ea0a14"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+<pre class="src src-python" id="org33878ed"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: No longer takes ellipse_adjustment_factor argument</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.</span>
@@ -3900,11 +3900,11 @@ in Pyretechnics.
 </div>
 </div>
 
-<div id="outline-container-orge290e98" class="outline-2">
-<h2 id="orge290e98"><span class="section-number-2">6.</span> Burning All Cells as a Head-Fire (similar to FLAMMAP)</h2>
+<div id="outline-container-orge28d8d6" class="outline-2">
+<h2 id="orge28d8d6"><span class="section-number-2">6.</span> Burning All Cells as a Head-Fire (similar to FLAMMAP)</h2>
 <div class="outline-text-2" id="text-6">
 <div class="org-src-container">
-<pre class="src src-python" id="org0432bd5"><span class="org-keyword">from</span> conversion <span class="org-keyword">import</span> wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
+<pre class="src src-python" id="orgfb99c8f"><span class="org-keyword">from</span> conversion <span class="org-keyword">import</span> wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
 <span class="org-keyword">from</span> fuel_models <span class="org-keyword">import</span> fuel_models_precomputed, moisturize
 <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, atan2, degrees
 <span class="org-keyword">import</span> surface_fire <span class="org-keyword">as</span> sf
@@ -4034,8 +4034,8 @@ in Pyretechnics.
 </div>
 </div>
 
-<div id="outline-container-orgd467f0c" class="outline-2">
-<h2 id="orgd467f0c"><span class="section-number-2">7.</span> Loading LANDFIRE Inputs</h2>
+<div id="outline-container-org977c5de" class="outline-2">
+<h2 id="org977c5de"><span class="section-number-2">7.</span> Loading LANDFIRE Inputs</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 To test out the <code>burn_cells</code> function, we will need to populate a 3D
@@ -4045,7 +4045,7 @@ vegetation layers by using the latest 30m raster layers from the US
 LANDFIRE program.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup>
 </p>
 
-<table id="orgc92f6ef">
+<table id="org8c88406">
 <caption class="t-above"><span class="table-number">Table 4:</span> 2022 LANDFIRE Raster Layers</caption>
 
 <colgroup>
@@ -4191,8 +4191,8 @@ LANDFIRE program.<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backl
 </table>
 </div>
 
-<div id="outline-container-org03ee2bf" class="outline-3">
-<h3 id="org03ee2bf"><span class="section-number-3">7.1.</span> Loading Raster Files with Python Rasterio</h3>
+<div id="outline-container-org5a9709a" class="outline-3">
+<h3 id="org5a9709a"><span class="section-number-3">7.1.</span> Loading Raster Files with Python Rasterio</h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
 We will begin by defining a <code>load_raster</code> function that takes a path
@@ -4206,7 +4206,7 @@ these keys:
 </dl>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga1d56e4"><span class="org-keyword">import</span> rasterio
+<pre class="src src-python" id="orgc5d5f86"><span class="org-keyword">import</span> rasterio
 
 <span class="org-keyword">def</span> <span class="org-function-name">raster_metadata</span>(raster):
     <span class="org-keyword">return</span> {
@@ -4234,18 +4234,18 @@ these keys:
 </div>
 </div>
 
-<div id="outline-container-org26ba8b1" class="outline-3">
-<h3 id="org26ba8b1"><span class="section-number-3">7.2.</span> Convert LANDFIRE Units and Datatypes</h3>
+<div id="outline-container-org3095b08" class="outline-3">
+<h3 id="org3095b08"><span class="section-number-3">7.2.</span> Convert LANDFIRE Units and Datatypes</h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table <a href="#orgc92f6ef">4</a>. In order to make them match those required
+Table <a href="#org8c88406">4</a>. In order to make them match those required
 by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org9279204"><span class="org-variable-name">landfire_array_conversions</span> <span class="org-operator">=</span> {
+<pre class="src src-python" id="org1181519"><span class="org-variable-name">landfire_array_conversions</span> <span class="org-operator">=</span> {
     <span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Layer Name         : (New dtype, Mult), # New Units                [Min-Max]</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================================</span>
@@ -4277,8 +4277,8 @@ during the layer loading process.
 </div>
 </div>
 
-<div id="outline-container-org82eaea4" class="outline-3">
-<h3 id="org82eaea4"><span class="section-number-3">7.3.</span> Verifying Raster Constraints</h3>
+<div id="outline-container-org5303a72" class="outline-3">
+<h3 id="org5303a72"><span class="section-number-3">7.3.</span> Verifying Raster Constraints</h3>
 <div class="outline-text-3" id="text-7-3">
 <p>
 In order to work with the Pyretechnics Fire Spread API, all rasters
@@ -4299,7 +4299,7 @@ Below we implement functions to check these constraints:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0680abb"><span class="org-keyword">def</span> <span class="org-function-name">verify_same_dimensions</span>(rasters):
+<pre class="src src-python" id="org6cc15ee"><span class="org-keyword">def</span> <span class="org-function-name">verify_same_dimensions</span>(rasters):
     <span class="org-variable-name">dimensions</span> <span class="org-operator">=</span> [
         (r[<span class="org-string">"metadata"</span>][<span class="org-string">"bands"</span>],
          r[<span class="org-string">"metadata"</span>][<span class="org-string">"rows"</span>],
@@ -4332,8 +4332,8 @@ Below we implement functions to check these constraints:
 </div>
 </div>
 
-<div id="outline-container-org6e3e4bf" class="outline-3">
-<h3 id="org6e3e4bf"><span class="section-number-3">7.4.</span> Converting Rasters to 3D Lookup Functions</h3>
+<div id="outline-container-org9358e07" class="outline-3">
+<h3 id="org9358e07"><span class="section-number-3">7.4.</span> Converting Rasters to 3D Lookup Functions</h3>
 <div class="outline-text-3" id="text-7-4">
 <p>
 Another requirement of the Pyretechnics Fire Spread API is that each
@@ -4352,7 +4352,7 @@ of 3D anonymous functions, that always return the same value for each
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org032e0ae"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.</span>
+<pre class="src src-python" id="orgfed2e7b"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.</span>
 <span class="org-keyword">def</span> <span class="org-function-name">convert_rasters_to_2d_fns</span>(raster_dict):
     <span class="org-variable-name">fn_dict</span> <span class="org-operator">=</span> {}
 
@@ -4365,8 +4365,8 @@ of 3D anonymous functions, that always return the same value for each
 </div>
 </div>
 
-<div id="outline-container-orgc32890d" class="outline-3">
-<h3 id="orgc32890d"><span class="section-number-3">7.5.</span> Putting It All Together</h3>
+<div id="outline-container-orge5e6103" class="outline-3">
+<h3 id="orge5e6103"><span class="section-number-3">7.5.</span> Putting It All Together</h3>
 <div class="outline-text-3" id="text-7-5">
 <p>
 By combining the functions defined in the previous sections, we can
@@ -4377,7 +4377,7 @@ with a 3D lookup function.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org3ddae12"><span class="org-keyword">def</span> <span class="org-function-name">read_landfire_rasters_as_pyretechnics_inputs</span>(landfire_file_paths):
+<pre class="src src-python" id="org03c39d0"><span class="org-keyword">def</span> <span class="org-function-name">read_landfire_rasters_as_pyretechnics_inputs</span>(landfire_file_paths):
     <span class="org-variable-name">landfire_rasters</span> <span class="org-operator">=</span> load_and_convert_landfire_rasters(landfire_file_paths)
     <span class="org-keyword">if</span> verify_raster_constraints(landfire_rasters.values()):
         <span class="org-keyword">return</span> convert_rasters_to_2d_fns(landfire_rasters)
@@ -4386,14 +4386,14 @@ with a 3D lookup function.
 
 <p>
 We will use this function to load a clipped set of LANDFIRE GeoTIFFs
-in section <a href="#orgba1b8f1">8</a>.
+in section <a href="#org4474977">8</a>.
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgba1b8f1" class="outline-2">
-<h2 id="orgba1b8f1"><span class="section-number-2">8.</span> Testing burn_cells on Worcester, VT</h2>
+<div id="outline-container-org4474977" class="outline-2">
+<h2 id="org4474977"><span class="section-number-2">8.</span> Testing burn_cells on Worcester, VT</h2>
 <div class="outline-text-2" id="text-8">
 <p>
 For testing purposes, we have downloaded these layers, clipped to a
@@ -4402,17 +4402,17 @@ directory of this repository.
 </p>
 </div>
 
-<div id="outline-container-orgba007b1" class="outline-3">
-<h3 id="orgba007b1"><span class="section-number-3">8.1.</span> Loading Topography, Fuel Model, and Vegetation Inputs from LANDFIRE GeoTIFFs</h3>
+<div id="outline-container-org6ad87f4" class="outline-3">
+<h3 id="org6ad87f4"><span class="section-number-3">8.1.</span> Loading Topography, Fuel Model, and Vegetation Inputs from LANDFIRE GeoTIFFs</h3>
 <div class="outline-text-3" id="text-8-1">
 <p>
 We begin by loading in the eight LANDFIRE GeoTIFFs that we downloaded
 from <a href="https://landfire.gov">https://landfire.gov</a>, using the function we defined in section
-<a href="#orgc32890d">7.5</a>.
+<a href="#orge5e6103">7.5</a>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgf7126ee"><span class="org-keyword">from</span> load_landfire <span class="org-keyword">import</span> read_landfire_rasters_as_pyretechnics_inputs
+<pre class="src src-python" id="orgcd8951f"><span class="org-keyword">from</span> load_landfire <span class="org-keyword">import</span> read_landfire_rasters_as_pyretechnics_inputs
 
 <span class="org-variable-name">input_layer_dict</span> <span class="org-operator">=</span> read_landfire_rasters_as_pyretechnics_inputs({
     <span class="org-string">"elevation"</span>          : <span class="org-string">"../data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif"</span>,
@@ -4429,8 +4429,8 @@ from <a href="https://landfire.gov">https://landfire.gov</a>, using the function
 </div>
 </div>
 
-<div id="outline-container-orgc197e80" class="outline-3">
-<h3 id="orgc197e80"><span class="section-number-3">8.2.</span> Adding Constant Wind and Moisture Values</h3>
+<div id="outline-container-org824486e" class="outline-3">
+<h3 id="org824486e"><span class="section-number-3">8.2.</span> Adding Constant Wind and Moisture Values</h3>
 <div class="outline-text-3" id="text-8-2">
 <p>
 In order to complete our input dataset for a test run of the
@@ -4440,7 +4440,7 @@ shows how we can easily set constant values for each of these layers:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org9a2cb91">input_layer_dict.update(
+<pre class="src src-python" id="orge8d4b38">input_layer_dict.update(
     {
         <span class="org-string">"wind_speed_10m_x"</span>             : <span class="org-keyword">lambda</span> t,y,x: 0.00, <span class="org-comment-delimiter"># </span><span class="org-comment">meters/minute</span>
         <span class="org-string">"wind_speed_10m_y"</span>             : <span class="org-keyword">lambda</span> t,y,x: 0.00, <span class="org-comment-delimiter"># </span><span class="org-comment">meters/minute</span>
@@ -4457,11 +4457,11 @@ shows how we can easily set constant values for each of these layers:
 </div>
 </div>
 
-<div id="outline-container-org120d041" class="outline-3">
-<h3 id="org120d041"><span class="section-number-3">8.3.</span> Running Burn Cells on the Test Dataset</h3>
+<div id="outline-container-orgea8ecdf" class="outline-3">
+<h3 id="orgea8ecdf"><span class="section-number-3">8.3.</span> Running Burn Cells on the Test Dataset</h3>
 <div class="outline-text-3" id="text-8-3">
 <div class="org-src-container">
-<pre class="src src-python" id="orgab20483"><span class="org-keyword">from</span> burn_cells <span class="org-keyword">import</span> compute_max_in_situ_values
+<pre class="src src-python" id="orgdcc609d"><span class="org-keyword">from</span> burn_cells <span class="org-keyword">import</span> compute_max_in_situ_values
 
 <span class="org-variable-name">t</span> <span class="org-operator">=</span> 0
 <span class="org-variable-name">y</span> <span class="org-operator">=</span> 0
@@ -4474,8 +4474,8 @@ compute_max_in_situ_values(input_layer_dict, t, y, x)
 </div>
 </div>
 
-<div id="outline-container-org438c429" class="outline-2">
-<h2 id="org438c429"><span class="section-number-2">9.</span> Fire Spread on a Raster Grid</h2>
+<div id="outline-container-org31ccd1c" class="outline-2">
+<h2 id="org31ccd1c"><span class="section-number-2">9.</span> Fire Spread on a Raster Grid</h2>
 </div>
 <div id="footnotes">
 <h2 class="footnotes">Footnotes: </h2>
