@@ -7,8 +7,8 @@ A Python library for simulating fire behavior in a variety of ways.
 
 To promote open review and encourage collaborative development of the
 various algorithms implemented in Pyretechnics, this library is
-released under a free and open source license. See the [[*License]]
-section in this document for more information.
+released under a free and open source license. See the [[#License][License]] section
+in this document for more information.
 
 *** Reproducible Research
 
