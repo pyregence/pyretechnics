@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::add-landfire-layers-to-pyretechnics-inputs][add-landfire-layers-to-pyretechnics-inputs]]
-from load_landfire import read_landfire_rasters_as_pyretechnics_inputs
+from pyretechnics.load_landfire import read_landfire_rasters_as_pyretechnics_inputs
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
     "elevation"          : "../data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
@@ -27,7 +27,7 @@ input_layer_dict.update(
 )
 # add-constant-wind-moisture-to-pyretechnics-inputs ends here
 # [[file:../../org/pyretechnics.org::test-burn-cells-on-pyretechnics-inputs][test-burn-cells-on-pyretechnics-inputs]]
-from burn_cells import compute_max_in_situ_values
+from pyretechnics.burn_cells import compute_max_in_situ_values
 
 t = 0
 y = 0
