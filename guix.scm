@@ -10,7 +10,6 @@
  ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
  ((gnu packages geo)             #:select (gdal))
  ((gnu packages less)            #:select (less))
- ((gnu packages python)          #:select (python))
  ((gnu packages python-xyz)      #:select (python-numpy python-rasterio))
  ((gnu packages ssh)             #:select (openssh))
  ((gnu packages version-control) #:select (git))
@@ -33,7 +32,7 @@
                      "pyretechnics-checkout"
                      #:recursive? #t
                      #:select?    vcs-file?))
- (build-system python-build-system)
+ (build-system python-build-system) ; includes python-wrapper
  (native-inputs (list
                  ;; Shell utilities
                  bash
@@ -46,7 +45,6 @@
                  ;; GIS utilities
                  gdal
                  ;; Build tools
-                 python
                  emacs-minimal
                  emacs-htmlize))
  (propagated-inputs (list
