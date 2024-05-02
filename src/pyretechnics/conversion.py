@@ -1,10 +1,6 @@
 # [[file:../../org/pyretechnics.org::conversion][conversion]]
 from math import degrees, radians, tan, atan
 
-# Global constants
-square_feet_per_acre = 43560.0
-days_per_minute      = 0.000694444
-
 def F_to_K(degrees):
     """Convert fahrenheit to kelvin."""
     return (degrees + 459.67) * 0.5555555555555556
@@ -63,6 +59,26 @@ def mph_to_km_hr(mph):
 def km_hr_to_mph(km_hr):
     """Convert kilometers per hour to miles per hour."""
     return km_hr * 0.621371192237334
+
+
+def m_min_to_km_hr(m_min):
+    """Convert meters per minute to kilometers per hour."""
+    return m_min * 0.06
+
+
+def km_hr_to_m_min(km_hr):
+    """Convert kilometers per hour to meters per minute."""
+    return km_hr / 0.06
+
+
+def m_min_to_mph(m_min):
+    """Convert meters per minute to miles per hour."""
+    return m_min * 0.0372840909091
+
+
+def mph_to_m_min(mph):
+    """Convert miles per hour to meters per minute."""
+    return mph * 26.8210911307
 
 
 def mps_to_fpm(mps):
@@ -165,13 +181,12 @@ def min_to_hour(minutes):
     return int(minutes / 60.0)
 
 
+def day_to_min(days):
+    """Convert days to minutes."""
+    return days * 1440.0
+
+
 def min_to_day(minutes):
     """Convert minutes to days."""
-    return minutes * days_per_minute
-
-
-def cells_to_acres(cell_size, num_cells):
-    """Converts number of cells to acres."""
-    acres_per_cell = (cell_size ** 2.0) / square_feet_per_acre
-    return acres_per_cell * num_cells
+    return minutes / 1440.0
 # conversion ends here
