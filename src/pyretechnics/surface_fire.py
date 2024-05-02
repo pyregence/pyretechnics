@@ -1,6 +1,6 @@
 # [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-no-wind-no-slope][rothermel-surface-fire-spread-no-wind-no-slope]]
 from math import exp
-from fuel_models import map_category, map_size_class, category_sum, size_class_sum
+from pyretechnics.fuel_models import map_category, map_size_class, category_sum, size_class_sum
 
 def calc_mineral_damping_coefficients(f_ij, S_e):
     S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
@@ -216,8 +216,8 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
         return 0.0
 # wind-adjustment-factor ends here
 # [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
-from conversion import fpm_to_mph
 from math import sin, cos, asin, exp, sqrt, radians, degrees
+from pyretechnics.conversion import fpm_to_mph
 
 def almost_zero(x):
     return abs(x) < 0.000001
