@@ -216,8 +216,8 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
         return 0.0
 # wind-adjustment-factor ends here
 # [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
-from conversion import deg_to_rad, rad_to_deg, fpm_to_mph
-from math import sin, cos, asin, exp, sqrt
+from conversion import fpm_to_mph
+from math import sin, cos, asin, exp, sqrt, radians, degrees
 
 def almost_zero(x):
     return abs(x) < 0.000001
@@ -298,7 +298,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
                                             slope_direction, get_wind_speed):
     wind_magnitude     = spread_rate * phi_W
     slope_magnitude    = spread_rate * phi_S
-    difference_angle   = deg_to_rad((wind_to_direction - slope_direction) % 360.0)
+    difference_angle   = radians((wind_to_direction - slope_direction) % 360.0)
     x                  = slope_magnitude + wind_magnitude * cos(difference_angle)
     y                  = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x * x + y * y)
@@ -312,7 +312,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
     else:
         max_spread_rate      = spread_rate + combined_magnitude
         phi_combined         = (max_spread_rate / spread_rate) - 1.0
-        offset               = rad_to_deg(asin(abs(y) / combined_magnitude))
+        offset               = degrees(asin(abs(y) / combined_magnitude))
         offset_prime         = get_offset_prime(x, y, offset)
         max_spread_direction = (slope_direction + offset_prime) % 360.0
         effective_wind_speed = get_wind_speed(phi_combined)
@@ -430,7 +430,7 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
     if almost_zero(eccentricity) or almost_zero(theta):
         return max_spread_rate
     else:
-        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(deg_to_rad(theta)))
+        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
 # rothermel-surface-fire-spread-max-and-any ends here
 # [[file:../../org/pyretechnics.org::surface-fire-intensity-formulas][surface-fire-intensity-formulas]]
 def anderson_flame_depth(spread_rate, residence_time):
