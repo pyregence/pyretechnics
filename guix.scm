@@ -43,9 +43,9 @@
  ;; The 'check' phase runs this command:
  ;;   pytest -vv
  ;; See file:/run/current-system/profile/share/guile/site/3.0/guix/build/pyproject-build-system.scm for more info.
- (arguments '(#:configure-flags ()
-              #:test-backend    pytest
-              #:test-flags      ()))
+ (arguments `(#:configure-flags '()
+              #:test-backend    'pytest
+              #:test-flags      '()))
  (native-inputs (list
                  ;; Shell utilities
                  bash
