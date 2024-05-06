@@ -32,7 +32,7 @@ downloading and installing Guix onto your computer or into a VM.
 
 **** Creating a Reproducible Development Environment
 
-Once you have done so, you can tell Guix to download all the necessary
+Once installed, you can tell Guix to download all the necessary
 dependencies for Pyretechnics development and enter a shell in which
 they are available by running this command from the root directory of
 this repository:
@@ -80,10 +80,25 @@ You can always exit from the shell with this command:
 exit
 #+end_src
 
-Note that Guix will not install any packages globally onto your
-system. Everything that it downloads is placed under =/gnu/store=, and
-the ephemeral shell environments it creates are made to work correctly
-by using environment variables.
+**** Building and Installing the Pyretechnics Library with Guix
+
+To build the Pyretechnics library, including running its tests and
+constructing Python wheels, simply run this command:
+
+#+begin_src sh
+guix build -f guix.scm
+#+end_src
+
+Should you wish to install the package into your Guix profile, you can
+run this:
+
+#+begin_src sh
+guix install -f guix.scm
+#+end_src
+
+Log out and back in to activate your profile's default environment
+variables. You should now be able to import the library's modules from
+a Python interpreter with the usual ~import~ command.
 
 *** Literate Programming
 
