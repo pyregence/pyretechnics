@@ -2,14 +2,14 @@
 from pyretechnics.load_landfire import read_landfire_rasters_as_pyretechnics_inputs
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
-    "elevation"          : "../data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
-    "slope"              : "../data/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
-    "aspect"             : "../data/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
-    "fuel_model"         : "../data/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
-    "canopy_cover"       : "../data/LF2022_CC_230_CONUS/LC22_CC_230.tif",
-    "canopy_height"      : "../data/LF2022_CH_230_CONUS/LC22_CH_230.tif",
-    "canopy_base_height" : "../data/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
-    "canopy_bulk_density": "../data/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
+    "elevation"          : "test/data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
+    "slope"              : "test/data/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
+    "aspect"             : "test/data/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
+    "fuel_model"         : "test/data/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
+    "canopy_cover"       : "test/data/LF2022_CC_230_CONUS/LC22_CC_230.tif",
+    "canopy_height"      : "test/data/LF2022_CH_230_CONUS/LC22_CH_230.tif",
+    "canopy_base_height" : "test/data/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
+    "canopy_bulk_density": "test/data/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
 })
 # add-landfire-layers-to-pyretechnics-inputs ends here
 # [[file:../../org/pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
@@ -30,8 +30,8 @@ input_layer_dict.update(
 from pyretechnics.burn_cells import compute_max_in_situ_values
 
 t = 0
-y = 0
-x = 0
+y = 100
+x = 100
 
 compute_max_in_situ_values(input_layer_dict, t, y, x)
 # test-burn-cells-on-pyretechnics-inputs ends here
