@@ -1,11 +1,18 @@
 # [[file:../../org/pyretechnics.org::burn-cells][burn-cells]]
 from math import sqrt, atan2, degrees
-from pyretechnics.conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
+from pyretechnics.conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, kW_m_to_Btu_ft_s, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
 from pyretechnics.fuel_models import fuel_models_precomputed, moisturize
 import pyretechnics.surface_fire as sf
+import pyretechnics.crown_fire as cf
+
+def one_everywhere(t, y, x):
+    """
+    Return 1.0 for all t, y, x values.
+    """
+    return 1.0
+
 
 # NOTE: Name change (no more !)
-# NOTE: Make inputs["fuel_spread_adjustment"] and inputs["weather_spread_adjustment"] default to a function that always returns 1.0
 def compute_max_in_situ_values(inputs, t, y, x):
     """
     Returns the following fire behavior values for the space-time cell at location (t,y,x):
@@ -34,10 +41,10 @@ def compute_max_in_situ_values(inputs, t, y, x):
     fuel_moisture_live_woody      = inputs["fuel_moisture_live_woody"](t,y,x)
     foliar_moisture               = inputs["foliar_moisture"](t,y,x)
     # Spread Rate Adjustments
-    fuel_spread_adjustment        = inputs["fuel_spread_adjustment"](t,y,x)
-    weather_spread_adjustment     = inputs["weather_spread_adjustment"](t,y,x)
+    fuel_spread_adjustment        = inputs.get("fuel_spread_adjustment"   , one_everywhere)(t,y,x)
+    weather_spread_adjustment     = inputs.get("weather_spread_adjustment", one_everywhere)(t,y,x)
     # Moisturized Fuel Model
-    fuel_model                    = fuel_models_precomputed[fuel_model_number]
+    fuel_model                    = fuel_models_precomputed.get(fuel_model_number) # FIXME: Return 0 values if not burnable fuel_model_number
     fuel_moisture                 = [fuel_moisture_dead_1hr,
                                      fuel_moisture_dead_10hr,
                                      fuel_moisture_dead_100hr,
@@ -75,18 +82,18 @@ def compute_max_in_situ_values(inputs, t, y, x):
     #       Consider ending this function here and making another function to compute the
     #       surface/crown values based on the provided perimeter spread direction.
     #=======================================================================================
-    max_flame_depth               = anderson_flame_depth(max_surface_spread_rate, residence_time) # ft
-    max_surface_intensity         = Btu_ft_s_to_kW_m(byram_fire_line_intensity(reaction_intensity,
-                                                                               max_flame_depth)) # kW/m
+    max_flame_depth               = sf.anderson_flame_depth(max_surface_spread_rate, residence_time) # ft
+    max_surface_intensity         = Btu_ft_s_to_kW_m(sf.byram_fire_line_intensity(reaction_intensity,
+                                                                                  max_flame_depth)) # kW/m
     # Check for Crown Fire Initiation
-    if van_wagner_crown_fire_initiation(canopy_cover,
-                                        canopy_base_height,
-                                        foliar_moisture,
-                                        max_surface_intensity):
+    if cf.van_wagner_crown_fire_initiation(canopy_cover,
+                                           canopy_base_height,
+                                           foliar_moisture,
+                                           max_surface_intensity):
         # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
-        max_crown_spread_rate = m_to_ft(cruz_crown_fire_spread(m_min_to_km_hr(wind_speed_10m),
-                                                               canopy_bulk_density,
-                                                               fuel_moisture_dead_1hr)) # ft/min
+        max_crown_spread_rate = m_to_ft(cf.cruz_crown_fire_spread(m_min_to_km_hr(wind_speed_10m),
+                                                                  canopy_bulk_density,
+                                                                  fuel_moisture_dead_1hr)) # ft/min
         fire_type             = 2.0 if (max_crown_spread_rate < 0.0) else 3.0 # 2=passive crown, 3=active crown
         max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
         crown_eccentricity    = (surface_eccentricity
@@ -103,7 +110,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
         # Max Combined Spread Rate, Intensity, and Flame Length
         max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
         max_intensity         = max_surface_intensity + max_crown_intensity # kW/m
-        max_flame_length      = ft_to_m(byram_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
+        max_flame_length      = ft_to_m(sf.byram_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
         # Return Fire Behavior Values
         return {
             "max_spread_rate"        : max_spread_rate,      # m/min
@@ -115,7 +122,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
         }
     else:
         fire_type                = 1.0 # 1=surface
-        max_surface_flame_length = ft_to_m(byram_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
+        max_surface_flame_length = ft_to_m(sf.byram_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
         return {
             "max_spread_rate"        : ft_to_m(max_surface_spread_rate), # m/min
             "max_spread_direction"   : max_spread_direction,             # deg
