@@ -1,10 +1,22 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "pyretechnics"
 version = "2024.5.2"
+authors = [
+        {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
+        {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
+        {name="Chris Lautenberger, PhD, PE", email="chris@cloudfire.ai"},
+]
+description = "A Python library for simulating fire behavior in a variety of ways."
+readme = "README.org"
+requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/pyregence/pyretechnics"
+Issues = "https://github.com/pyregence/pyretechnics/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
