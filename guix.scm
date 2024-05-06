@@ -6,14 +6,16 @@
 (use-modules
  ((gnu packages base)            #:select (coreutils which))
  ((gnu packages bash)            #:select (bash))
+ ((gnu packages check)           #:select (python-pytest))
  ((gnu packages emacs)           #:select (emacs-minimal))
  ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
  ((gnu packages geo)             #:select (gdal))
  ((gnu packages less)            #:select (less))
+ ((gnu packages python-build)    #:select (python-hatchling))
  ((gnu packages python-xyz)      #:select (python-numpy python-rasterio))
  ((gnu packages ssh)             #:select (openssh))
  ((gnu packages version-control) #:select (git))
- ((guix build-system python)     #:select (python-build-system))
+ ((guix build-system pyproject)  #:select (pyproject-build-system))
  ((guix gexp)                    #:select (local-file))
  ((guix git-download)            #:select (git-predicate))
  ((guix licenses)                #:select (epl2.0))
@@ -32,7 +34,18 @@
                      "pyretechnics-checkout"
                      #:recursive? #t
                      #:select?    vcs-file?))
- (build-system python-build-system) ; includes python-wrapper
+ (build-system pyproject-build-system) ; includes python-toolchain
+ ;; The 'build' phase runs these commands:
+ ;;   import sys, importlib, json
+ ;;   config_settings = json.loads (sys.argv[3])
+ ;;   builder = importlib.import_module(sys.argv[1])
+ ;;   builder.build_wheel(sys.argv[2], config_settings=config_settings)
+ ;; The 'check' phase runs this command:
+ ;;   pytest -vv
+ ;; See file:/run/current-system/profile/share/guile/site/3.0/guix/build/pyproject-build-system.scm for more info.
+ (arguments '(#:configure-flags ()
+              #:test-backend    pytest
+              #:test-flags      ()))
  (native-inputs (list
                  ;; Shell utilities
                  bash
@@ -46,7 +59,9 @@
                  gdal
                  ;; Build tools
                  emacs-minimal
-                 emacs-htmlize))
+                 emacs-htmlize
+                 python-hatchling
+                 python-pytest))
  (propagated-inputs (list
                      ;; Python dependency libraries
                      python-numpy
