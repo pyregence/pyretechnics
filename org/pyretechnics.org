@@ -347,7 +347,7 @@ def make_lookup_fn_3d(simulation_shape_3d, layer_shape_3d, chunk_shape_3d, load_
 
 ** Lazy Array Usage Examples
 
-#+begin_src python :tangle ../test/pyretechnics_test/lazy_array_test.py
+#+begin_src python :tangle ../test/pyretechnics_test/test_lazy_array.py
 import numpy as np
 from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
 
@@ -2557,7 +2557,7 @@ from https://landfire.gov, using the function we defined in section
 [[Putting It All Together]].
 
 #+name: add-landfire-layers-to-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/burn_cells_test.py
+#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
 from pyretechnics.load_landfire import read_landfire_rasters_as_pyretechnics_inputs
 
 input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs({
@@ -2580,7 +2580,7 @@ and moisture layers as 3D lookup functions. The following example
 shows how we can easily set constant values for each of these layers:
 
 #+name: add-constant-wind-moisture-to-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/burn_cells_test.py
+#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
 input_layer_dict.update(
     {
         "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
@@ -2598,7 +2598,7 @@ input_layer_dict.update(
 ** Running Burn Cells on the Test Dataset
 
 #+name: test-burn-cells-on-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/burn_cells_test.py
+#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
 from pyretechnics.burn_cells import compute_max_in_situ_values
 
 t = 0
