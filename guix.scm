@@ -29,7 +29,7 @@
 
 (package
  (name "python-pyretechnics")
- (version "2024.5.2")
+ (version "2024.5.7")
  (source (local-file "."
                      "pyretechnics-checkout"
                      #:recursive? #t
