@@ -127,7 +127,7 @@ of open science than open source software alone.
 
 What this means practically is that the [org](org) directory in this
 software repository contains a single literate program document called
-[org/pyretechnics.org](org/pyretechnics.md), which is used to
+[org/pyretechnics.org](org/pyretechnics.org), which is used to
 automatically generate all of the other source code and documentation
 files within this repository.
 
@@ -136,7 +136,7 @@ files within this repository.
     The latest HTML documentation can always be found in
     [doc/pyretechnics.html](doc/pyretechnics.html).
     
-    After editing [org/pyretechnics.org](org/pyretechnics.md), you can
+    After editing [org/pyretechnics.org](org/pyretechnics.org), you can
     regenerate the HTML documentation by running this command:
 
     ```sh
@@ -145,7 +145,7 @@ files within this repository.
 
 2.  Regenerating the Source Code Tree
 
-    After editing [org/pyretechnics.org](org/pyretechnics.md), you can
+    After editing [org/pyretechnics.org](org/pyretechnics.org), you can
     regenerate all the source code files in this repository by running
     this command:
 
