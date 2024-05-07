@@ -80,6 +80,15 @@ You can always exit from the shell with this command:
 exit
 #+end_src
 
+**** Running the Test Suite
+
+You can run the Pyretechnics library's test suite by invoking ~pytest~
+through the Guix shell like so:
+
+#+begin_src sh
+guix shell -- pytest -vv
+#+end_src
+
 **** Building and Installing the Pyretechnics Library with Guix
 
 To build the Pyretechnics library, including running its tests and
