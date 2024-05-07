@@ -7,7 +7,7 @@ authors = [
         {name="Chris Lautenberger, PhD, PE", email="chris@cloudfire.ai"},
 ]
 description = "A Python library for simulating fire behavior in a variety of ways."
-readme = "README.org"
+readme = "README.md"
 requires-python = ">=3.10"
 
 [project.urls]
