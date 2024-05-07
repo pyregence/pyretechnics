@@ -30,7 +30,7 @@ def test_read_landfire_rasters():
     assert type(input_layer_dict) == dict
     assert input_layer_dict.keys() == landfire_file_paths.keys()
     assert all(map(lambda v: callable(v), input_layer_dict.values()))
-    input_layer_dict
+    return input_layer_dict
 # add-landfire-layers-to-pyretechnics-inputs ends here
 # [[file:../../org/pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
 def test_add_weather_functions():
@@ -39,16 +39,21 @@ def test_add_weather_functions():
     assert type(input_layer_dict) == dict
     assert set(input_layer_dict.keys()) == set(landfire_file_paths.keys()).union(set(weather_functions.keys()))
     assert all(map(lambda v: callable(v), input_layer_dict.values()))
-    input_layer_dict
+    return input_layer_dict
 # add-constant-wind-moisture-to-pyretechnics-inputs ends here
 # [[file:../../org/pyretechnics.org::test-burn-cells-on-pyretechnics-inputs][test-burn-cells-on-pyretechnics-inputs]]
 from pyretechnics.burn_cells import compute_max_in_situ_values
 
 def test_burn_one_cell():
     input_layer_dict = test_add_weather_functions()
-    t = 0
-    y = 100
-    x = 100
+    (t,y,x) = (0,100,100)
     result = compute_max_in_situ_values(input_layer_dict, t, y, x)
-    assert result == {}
+    assert result == {
+        'max_spread_rate'        : 0.32044995422500566,
+        'max_spread_direction'   : 41.0,
+        'max_flame_length'       : 0.35078585296988984,
+        'max_fire_line_intensity': 26.661398424207746,
+        'fire_type'              : 1.0,
+        'eccentricity'           : 0.5583790663230914,
+    }
 # test-burn-cells-on-pyretechnics-inputs ends here
