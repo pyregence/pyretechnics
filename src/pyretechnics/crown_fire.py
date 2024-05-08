@@ -28,7 +28,7 @@ def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_mo
             (fire_line_intensity >= van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)))
 # van-wagner-crown-fire-initiation ends here
 # [[file:../../org/pyretechnics.org::cruz-crown-fire-spread][cruz-crown-fire-spread]]
-from math import exp, prod
+from math import exp
 
 def cruz_active_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
     """
@@ -37,10 +37,10 @@ def cruz_active_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated
     - canopy_bulk_density (kg/m^3)
     - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
     """
-    return prod(11.02,
-                wind_speed_10m ** 0.90,
-                canopy_bulk_density ** 0.19,
-                exp(-17.0 * estimated_fine_fuel_moisture))
+    return (11.02
+            * wind_speed_10m ** 0.90
+            * canopy_bulk_density ** 0.19
+            * exp(-17.0 * estimated_fine_fuel_moisture))
 
 
 def cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate):

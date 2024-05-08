@@ -109,15 +109,15 @@ def compute_max_in_situ_values(inputs, t, y, x):
             max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
             crown_eccentricity    = (surface_eccentricity
                                      if (max_surface_spread_rate > max_crown_spread_rate)
-                                     else crown_fire_eccentricity(m_min_to_mph(wind_speed_20ft))) # unitless
+                                     else cf.crown_fire_eccentricity(m_min_to_mph(wind_speed_20ft))) # unitless
             #=======================================================================================
             # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
             #=======================================================================================
             # Max Crown Intensity
-            max_crown_intensity   = crown_fire_line_intensity(ft_to_m(max_crown_spread_rate),
-                                                              canopy_bulk_density,
-                                                              (canopy_height - canopy_base_height),
-                                                              Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
+            max_crown_intensity   = cf.crown_fire_line_intensity(ft_to_m(max_crown_spread_rate),
+                                                                 canopy_bulk_density,
+                                                                 (canopy_height - canopy_base_height),
+                                                                 Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity + max_crown_intensity # kW/m

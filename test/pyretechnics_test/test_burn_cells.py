@@ -30,6 +30,14 @@ landfire_file_paths = {
 }
 
 
+def test_read_landfire_rasters():
+    input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths)
+    assert type(input_layer_dict) == dict
+    assert input_layer_dict.keys() == landfire_file_paths.keys()
+    assert all(map(lambda v: callable(v), input_layer_dict.values()))
+    return input_layer_dict
+# add-landfire-layers-to-pyretechnics-inputs ends here
+# [[file:../../org/pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
 weather_functions = {
     "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
     "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/minute
@@ -42,14 +50,6 @@ weather_functions = {
 }
 
 
-def test_read_landfire_rasters():
-    input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths)
-    assert type(input_layer_dict) == dict
-    assert input_layer_dict.keys() == landfire_file_paths.keys()
-    assert all(map(lambda v: callable(v), input_layer_dict.values()))
-    return input_layer_dict
-# add-landfire-layers-to-pyretechnics-inputs ends here
-# [[file:../../org/pyretechnics.org::add-constant-wind-moisture-to-pyretechnics-inputs][add-constant-wind-moisture-to-pyretechnics-inputs]]
 def test_add_weather_functions():
     input_layer_dict = test_read_landfire_rasters()
     input_layer_dict.update(weather_functions)
@@ -58,7 +58,7 @@ def test_add_weather_functions():
     assert all(map(lambda v: callable(v), input_layer_dict.values()))
     return input_layer_dict
 # add-constant-wind-moisture-to-pyretechnics-inputs ends here
-# [[file:../../org/pyretechnics.org::test-burn-cells-on-pyretechnics-inputs][test-burn-cells-on-pyretechnics-inputs]]
+# [[file:../../org/pyretechnics.org::burn-single-cell-in-pyretechnics-inputs][burn-single-cell-in-pyretechnics-inputs]]
 from pyretechnics.burn_cells import compute_max_in_situ_values
 
 def test_burn_one_cell():
@@ -66,12 +66,48 @@ def test_burn_one_cell():
     (t,y,x) = (0,100,100)
     result = compute_max_in_situ_values(input_layer_dict, t, y, x)
     assert result == {
-        'max_spread_rate'        : 0.32044995422500566,
-        'max_spread_direction'   : 41.0,
-        'max_flame_length'       : 0.35078585296988984,
-        'max_fire_line_intensity': 26.661398424207746,
-        'fire_type'              : 1,
-        'eccentricity'           : 0.5583790663230914,
+        "max_spread_rate"        : 0.32044995422500566,
+        "max_spread_direction"   : 41.0,
+        "max_flame_length"       : 0.35078585296988984,
+        "max_fire_line_intensity": 26.661398424207746,
+        "fire_type"              : 1,
+        "eccentricity"           : 0.5583790663230914,
     }
     return result
-# test-burn-cells-on-pyretechnics-inputs ends here
+# burn-single-cell-in-pyretechnics-inputs ends here
+# [[file:../../org/pyretechnics.org::burn-all-cells-in-pyretechnics-inputs][burn-all-cells-in-pyretechnics-inputs]]
+import numpy as np
+
+def test_burn_all_cells():
+    # TODO: Extract these dimensions from the input layers
+    rows = 613
+    cols = 549
+
+    max_spread_rate_matrix         = np.zeros((rows, cols), dtype="float32")
+    max_spread_direction_matrix    = np.zeros((rows, cols), dtype="int16")
+    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
+    max_fire_line_intensity_matrix = np.zeros((rows, cols), dtype="float32")
+    fire_type_matrix               = np.zeros((rows, cols), dtype="uint8")
+    eccentricity_matrix            = np.zeros((rows, cols), dtype="float32")
+
+    input_layer_dict = test_add_weather_functions()
+
+    for y in range(rows):
+        for x in range(cols):
+            results                             = compute_max_in_situ_values(input_layer_dict, 0, y, x)
+            max_spread_rate_matrix[y,x]         = results["max_spread_rate"]
+            max_spread_direction_matrix[y,x]    = results["max_spread_direction"]
+            max_flame_length_matrix[y,x]        = results["max_flame_length"]
+            max_fire_line_intensity_matrix[y,x] = results["max_fire_line_intensity"]
+            fire_type_matrix[y,x]               = results["fire_type"]
+            eccentricity_matrix[y,x]            = results["eccentricity"]
+
+    return {
+        "max_spread_rate"        : max_spread_rate_matrix,
+        "max_spread_direction"   : max_spread_direction_matrix,
+        "max_flame_length"       : max_flame_length_matrix,
+        "max_fire_line_intensity": max_fire_line_intensity_matrix,
+        "fire_type"              : fire_type_matrix,
+        "eccentricity"           : eccentricity_matrix,
+    }
+# burn-all-cells-in-pyretechnics-inputs ends here
