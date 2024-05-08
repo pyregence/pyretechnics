@@ -118,7 +118,7 @@ fuel_models_precomputed = {k: compute_fuel_model(k) for k in fuel_models.keys()}
 
 
 def is_burnable_fuel_model_number(fuel_model_number):
-    return (fuel_model_number > 0) and not (91 <= fuel_model_number <= 99)
+    return fuel_models_precomputed.get(fuel_model_number) and not (91 <= fuel_model_number <= 99)
 # fuel-model-definitions ends here
 # [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
 def map_category(f):
