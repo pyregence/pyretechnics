@@ -53,7 +53,7 @@ def test_burn_one_cell():
         'max_spread_direction'   : 41.0,
         'max_flame_length'       : 0.35078585296988984,
         'max_fire_line_intensity': 26.661398424207746,
-        'fire_type'              : 1.0,
+        'fire_type'              : 1,
         'eccentricity'           : 0.5583790663230914,
     }
 # test-burn-cells-on-pyretechnics-inputs ends here
