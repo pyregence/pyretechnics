@@ -19,7 +19,8 @@
 # Code Block Settings
 # ================================
 
-#+PROPERTY: header-args:python+ :results silent
+#+PROPERTY: header-args:python+ :preamble "import sys\nsys.path.extend(['../src','../test'])"
+#+PROPERTY: header-args:python+ :results value
 #+PROPERTY: header-args:python+ :exports code
 #+PROPERTY: header-args:python+ :no-expand
 #+PROPERTY: header-args:python+ :padline no
