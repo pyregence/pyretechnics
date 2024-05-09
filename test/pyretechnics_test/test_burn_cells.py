@@ -19,14 +19,14 @@ project_root = get_project_root()
 
 
 landfire_file_paths = {
-    "elevation"          : project_root + "/test/data/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
-    "slope"              : project_root + "/test/data/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
-    "aspect"             : project_root + "/test/data/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
-    "fuel_model"         : project_root + "/test/data/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
-    "canopy_cover"       : project_root + "/test/data/LF2022_CC_230_CONUS/LC22_CC_230.tif",
-    "canopy_height"      : project_root + "/test/data/LF2022_CH_230_CONUS/LC22_CH_230.tif",
-    "canopy_base_height" : project_root + "/test/data/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
-    "canopy_bulk_density": project_root + "/test/data/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
+    "elevation"          : project_root + "/test/data/landfire_inputs/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
+    "slope"              : project_root + "/test/data/landfire_inputs/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
+    "aspect"             : project_root + "/test/data/landfire_inputs/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
+    "fuel_model"         : project_root + "/test/data/landfire_inputs/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
+    "canopy_cover"       : project_root + "/test/data/landfire_inputs/LF2022_CC_230_CONUS/LC22_CC_230.tif",
+    "canopy_height"      : project_root + "/test/data/landfire_inputs/LF2022_CH_230_CONUS/LC22_CH_230.tif",
+    "canopy_base_height" : project_root + "/test/data/landfire_inputs/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
+    "canopy_bulk_density": project_root + "/test/data/landfire_inputs/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
 }
 
 
@@ -111,3 +111,6 @@ def slow_test_burn_all_cells():
         "eccentricity"           : eccentricity_matrix,
     }
 # burn-all-cells-in-pyretechnics-inputs ends here
+# [[file:../../org/pyretechnics.org::load-flammap-outputs][load-flammap-outputs]]
+from pyretechnics.load_landfire import load_raster
+# load-flammap-outputs ends here
