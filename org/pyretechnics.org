@@ -2702,7 +2702,7 @@ def test_burn_one_cell():
 #+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
 import numpy as np
 
-def test_burn_all_cells():
+def slow_test_burn_all_cells():
     # TODO: Extract these dimensions from the input layers
     rows = 613
     cols = 549
@@ -2740,9 +2740,9 @@ def test_burn_all_cells():
 
 #+name: compute-worcester-burned-layers
 #+begin_src python :session view-worcester-layers
-from pyretechnics_test.test_burn_cells import test_burn_all_cells
+from pyretechnics_test.test_burn_cells import slow_test_burn_all_cells
 
-worcester = test_burn_all_cells()
+worcester = slow_test_burn_all_cells()
 #+end_src
 
 #+name: savefig

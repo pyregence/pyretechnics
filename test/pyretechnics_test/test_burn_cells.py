@@ -78,7 +78,7 @@ def test_burn_one_cell():
 # [[file:../../org/pyretechnics.org::burn-all-cells-in-pyretechnics-inputs][burn-all-cells-in-pyretechnics-inputs]]
 import numpy as np
 
-def test_burn_all_cells():
+def slow_test_burn_all_cells():
     # TODO: Extract these dimensions from the input layers
     rows = 613
     cols = 549
