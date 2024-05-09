@@ -2117,9 +2117,9 @@ def cruz_active_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated
     - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
     """
     return (11.02
-            ,* wind_speed_10m ** 0.90
-            ,* canopy_bulk_density ** 0.19
-            ,* exp(-17.0 * estimated_fine_fuel_moisture))
+            * wind_speed_10m ** 0.90
+            * canopy_bulk_density ** 0.19
+            * exp(-17.0 * estimated_fine_fuel_moisture))
 
 
 def cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate):
