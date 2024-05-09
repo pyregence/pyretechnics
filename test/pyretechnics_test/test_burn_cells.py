@@ -68,8 +68,8 @@ def test_burn_one_cell():
     assert result == {
         "max_spread_rate"        : 0.32044995422500566,
         "max_spread_direction"   : 41.0,
-        "max_flame_length"       : 0.35078585296988984,
         "max_fire_line_intensity": 26.661398424207746,
+        "max_flame_length"       : 0.35078585296988984,
         "fire_type"              : 1,
         "eccentricity"           : 0.5583790663230914,
     }
@@ -85,8 +85,8 @@ def test_burn_all_cells():
 
     max_spread_rate_matrix         = np.zeros((rows, cols), dtype="float32")
     max_spread_direction_matrix    = np.zeros((rows, cols), dtype="int16")
-    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
     max_fire_line_intensity_matrix = np.zeros((rows, cols), dtype="float32")
+    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
     fire_type_matrix               = np.zeros((rows, cols), dtype="uint8")
     eccentricity_matrix            = np.zeros((rows, cols), dtype="float32")
 
@@ -97,16 +97,16 @@ def test_burn_all_cells():
             results                             = compute_max_in_situ_values(input_layer_dict, 0, y, x)
             max_spread_rate_matrix[y,x]         = results["max_spread_rate"]
             max_spread_direction_matrix[y,x]    = results["max_spread_direction"]
-            max_flame_length_matrix[y,x]        = results["max_flame_length"]
             max_fire_line_intensity_matrix[y,x] = results["max_fire_line_intensity"]
+            max_flame_length_matrix[y,x]        = results["max_flame_length"]
             fire_type_matrix[y,x]               = results["fire_type"]
             eccentricity_matrix[y,x]            = results["eccentricity"]
 
     return {
         "max_spread_rate"        : max_spread_rate_matrix,
         "max_spread_direction"   : max_spread_direction_matrix,
-        "max_flame_length"       : max_flame_length_matrix,
         "max_fire_line_intensity": max_fire_line_intensity_matrix,
+        "max_flame_length"       : max_flame_length_matrix,
         "fire_type"              : fire_type_matrix,
         "eccentricity"           : eccentricity_matrix,
     }

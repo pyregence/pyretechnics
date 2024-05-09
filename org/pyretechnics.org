@@ -2688,8 +2688,8 @@ def test_burn_one_cell():
     assert result == {
         "max_spread_rate"        : 0.32044995422500566,
         "max_spread_direction"   : 41.0,
-        "max_flame_length"       : 0.35078585296988984,
         "max_fire_line_intensity": 26.661398424207746,
+        "max_flame_length"       : 0.35078585296988984,
         "fire_type"              : 1,
         "eccentricity"           : 0.5583790663230914,
     }
@@ -2709,8 +2709,8 @@ def test_burn_all_cells():
 
     max_spread_rate_matrix         = np.zeros((rows, cols), dtype="float32")
     max_spread_direction_matrix    = np.zeros((rows, cols), dtype="int16")
-    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
     max_fire_line_intensity_matrix = np.zeros((rows, cols), dtype="float32")
+    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
     fire_type_matrix               = np.zeros((rows, cols), dtype="uint8")
     eccentricity_matrix            = np.zeros((rows, cols), dtype="float32")
 
@@ -2721,20 +2721,88 @@ def test_burn_all_cells():
             results                             = compute_max_in_situ_values(input_layer_dict, 0, y, x)
             max_spread_rate_matrix[y,x]         = results["max_spread_rate"]
             max_spread_direction_matrix[y,x]    = results["max_spread_direction"]
-            max_flame_length_matrix[y,x]        = results["max_flame_length"]
             max_fire_line_intensity_matrix[y,x] = results["max_fire_line_intensity"]
+            max_flame_length_matrix[y,x]        = results["max_flame_length"]
             fire_type_matrix[y,x]               = results["fire_type"]
             eccentricity_matrix[y,x]            = results["eccentricity"]
 
     return {
         "max_spread_rate"        : max_spread_rate_matrix,
         "max_spread_direction"   : max_spread_direction_matrix,
-        "max_flame_length"       : max_flame_length_matrix,
         "max_fire_line_intensity": max_fire_line_intensity_matrix,
+        "max_flame_length"       : max_flame_length_matrix,
         "fire_type"              : fire_type_matrix,
         "eccentricity"           : eccentricity_matrix,
     }
 #+end_src
+
+** Visualizing the Burned Layers
+
+#+name: compute-worcester-burned-layers
+#+begin_src python :session view-worcester-layers
+from pyretechnics_test.test_burn_cells import test_burn_all_cells
+
+worcester = test_burn_all_cells()
+#+end_src
+
+#+name: savefig
+#+begin_src python :session view-worcester-layers :var title="" layer="" units="" colors="" :results value
+import matplotlib.figure as fig
+import matplotlib.pyplot as plt
+
+title     = "Worcester, VT - " + title
+file_name = "pics/worcester_" + layer + ".png"
+image     = plt.imshow(worcester[layer], cmap=colors)
+colorbar  = plt.colorbar(image, orientation="vertical")
+
+colorbar.set_label(units)
+plt.title(title)
+plt.savefig(file_name)
+plt.close("all")
+file_name
+#+end_src
+
+#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
+'<<savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")>>'
+#+end_src
+
+#+RESULTS:
+[[file:pics/worcester_max_spread_rate.png]]
+
+#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
+'<<savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")>>'
+#+end_src
+
+#+RESULTS:
+[[file:pics/worcester_max_spread_direction.png]]
+
+#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
+'<<savefig(title="Max Fire Line Intensity", layer="max_fire_line_intensity", units="kW/m", colors="hot")>>'
+#+end_src
+
+#+RESULTS:
+[[file:pics/worcester_max_fire_line_intensity.png]]
+
+#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
+'<<savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")>>'
+#+end_src
+
+#+RESULTS:
+[[file:pics/worcester_max_flame_length.png]]
+
+#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
+'<<savefig(title="Fire Type", layer="fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")>>'
+#+end_src
+
+#+RESULTS:
+[[file:pics/worcester_fire_type.png]]
+
+#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
+'<<savefig(title="Eccentricity", layer="eccentricity", units="0=circular,>0=elliptical", colors="viridis")>>'
+#+end_src
+
+#+RESULTS:
+[[file:pics/worcester_eccentricity.png]]
 
 * Fire Spread on a Raster Grid
 * Appendix: Units Conversion Functions
