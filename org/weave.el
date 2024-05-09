@@ -5,11 +5,17 @@
 ;;==========================================================
 
 (require 'org)
+(require 'ob-python)
 (require 'ox-html)
 (require 'htmlize)
 (require 'python)
 
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((python . t)))
+
 (setq org-html-htmlize-output-type      'css
+      org-confirm-babel-evaluate        nil
       python-indent-guess-indent-offset nil)
 
 ;;==========================================================

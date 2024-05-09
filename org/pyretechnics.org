@@ -20,7 +20,7 @@
 # ================================
 
 #+PROPERTY: header-args:python+ :preamble "import sys\nsys.path.extend(['../src','../test'])"
-#+PROPERTY: header-args:python+ :results value
+#+PROPERTY: header-args:python+ :results value verbatim pp replace
 #+PROPERTY: header-args:python+ :exports code
 #+PROPERTY: header-args:python+ :no-expand
 #+PROPERTY: header-args:python+ :padline no
@@ -2746,12 +2746,11 @@ worcester = test_burn_all_cells()
 #+end_src
 
 #+name: savefig
-#+begin_src python :session view-worcester-layers :var title="" layer="" units="" colors="" :results value
-import matplotlib.figure as fig
+#+begin_src python :session view-worcester-layers :var title="" layer="" units="" colors=""
 import matplotlib.pyplot as plt
 
 title     = "Worcester, VT - " + title
-file_name = "pics/worcester_" + layer + ".png"
+file_name = "../doc/pics/worcester_" + layer + ".png"
 image     = plt.imshow(worcester[layer], cmap=colors)
 colorbar  = plt.colorbar(image, orientation="vertical")
 
@@ -2762,47 +2761,41 @@ plt.close("all")
 file_name
 #+end_src
 
-#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
-'<<savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")>>'
+#+begin_src python :session view-worcester-layers :noweb eval :results file link
+<<savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")>>
 #+end_src
 
-#+RESULTS:
-[[file:pics/worcester_max_spread_rate.png]]
+[[file:../doc/pics/worcester_max_spread_rate.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
-'<<savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")>>'
+#+begin_src python :session view-worcester-layers :noweb eval :results file link
+<<savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")>>
 #+end_src
 
-#+RESULTS:
-[[file:pics/worcester_max_spread_direction.png]]
+[[file:../doc/pics/worcester_max_spread_direction.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
-'<<savefig(title="Max Fire Line Intensity", layer="max_fire_line_intensity", units="kW/m", colors="hot")>>'
+#+begin_src python :session view-worcester-layers :noweb eval :results file link
+<<savefig(title="Max Fire Line Intensity", layer="max_fire_line_intensity", units="kW/m", colors="hot")>>
 #+end_src
 
-#+RESULTS:
-[[file:pics/worcester_max_fire_line_intensity.png]]
+[[file:../doc/pics/worcester_max_fire_line_intensity.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
-'<<savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")>>'
+#+begin_src python :session view-worcester-layers :noweb eval :results file link
+<<savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")>>
 #+end_src
 
-#+RESULTS:
-[[file:pics/worcester_max_flame_length.png]]
+[[file:../doc/pics/worcester_max_flame_length.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
-'<<savefig(title="Fire Type", layer="fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")>>'
+#+begin_src python :session view-worcester-layers :noweb eval :results file link
+<<savefig(title="Fire Type", layer="fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")>>
 #+end_src
 
-#+RESULTS:
-[[file:pics/worcester_fire_type.png]]
+[[file:../doc/pics/worcester_fire_type.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results value file link :exports results
-'<<savefig(title="Eccentricity", layer="eccentricity", units="0=circular,>0=elliptical", colors="viridis")>>'
+#+begin_src python :session view-worcester-layers :noweb eval :results file link
+<<savefig(title="Eccentricity", layer="eccentricity", units="0=circular,>0=elliptical", colors="viridis")>>
 #+end_src
 
-#+RESULTS:
-[[file:pics/worcester_eccentricity.png]]
+[[file:../doc/pics/worcester_eccentricity.png]]
 
 * Fire Spread on a Raster Grid
 * Appendix: Units Conversion Functions
