@@ -20,7 +20,7 @@
 # ================================
 
 #+PROPERTY: header-args:python+ :preamble "import sys\nsys.path.extend(['../src','../test'])"
-#+PROPERTY: header-args:python+ :results value verbatim pp replace
+#+PROPERTY: header-args:python+ :results value verbatim pp silent
 #+PROPERTY: header-args:python+ :exports code
 #+PROPERTY: header-args:python+ :no-expand
 #+PROPERTY: header-args:python+ :padline no
@@ -2761,37 +2761,37 @@ plt.close("all")
 file_name
 #+end_src
 
-#+begin_src python :session view-worcester-layers :noweb eval :results file link
+#+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")>>
 #+end_src
 
 [[file:../doc/pics/worcester_max_spread_rate.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results file link
+#+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")>>
 #+end_src
 
 [[file:../doc/pics/worcester_max_spread_direction.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results file link
+#+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Fire Line Intensity", layer="max_fire_line_intensity", units="kW/m", colors="hot")>>
 #+end_src
 
 [[file:../doc/pics/worcester_max_fire_line_intensity.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results file link
+#+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")>>
 #+end_src
 
 [[file:../doc/pics/worcester_max_flame_length.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results file link
+#+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Fire Type", layer="fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")>>
 #+end_src
 
 [[file:../doc/pics/worcester_fire_type.png]]
 
-#+begin_src python :session view-worcester-layers :noweb eval :results file link
+#+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Eccentricity", layer="eccentricity", units="0=circular,>0=elliptical", colors="viridis")>>
 #+end_src
 
