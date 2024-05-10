@@ -31,6 +31,16 @@ def ratio_to_deg(ratio):
     return degrees(atan(ratio))
 
 
+def ch_to_m(ch):
+    """Convert chains to meters."""
+    return ch * 20.1168
+
+
+def m_to_ch(m):
+    """Convert meters to chains."""
+    return m * 0.0497097
+
+
 def m_to_ft(m):
     """Convert meters to feet."""
     return m * 3.281

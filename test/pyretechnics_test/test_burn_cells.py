@@ -112,5 +112,53 @@ def slow_test_burn_all_cells():
     }
 # burn-all-cells-in-pyretechnics-inputs ends here
 # [[file:../../org/pyretechnics.org::load-flammap-outputs][load-flammap-outputs]]
-from pyretechnics.load_landfire import load_raster
+import numpy as np
+from pyretechnics.load_landfire import load_raster, verify_raster_constraints
+
+flammap_file_paths = {
+    "max_spread_rate"        : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
+    "max_spread_direction"   : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
+    "max_fire_line_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
+    "max_flame_length"       : project_root + "/test/data/flammap_outputs/FL_ft.tif",
+    "fire_type"              : project_root + "/test/data/flammap_outputs/fire_type.tif",
+}
+
+
+flammap_array_conversions = {
+    #====================================================================================
+    # Layer Name             : (New dtype, Mult),                # In Units -> Out Units
+    #====================================================================================
+    "max_spread_rate"        : ("float32", 0.33528),             # ch/hr -> m/min
+    "max_spread_direction"   : ("int16"  , 1),                   # rad -> rad
+    "max_fire_line_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
+    "max_flame_length"       : ("float32", 0.30478512648582745), # ft -> m
+    "fire_type"              : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
+}
+
+
+def load_and_convert_flammap_rasters(flammap_file_paths):
+    flammap_rasters = {}
+
+    for name, path in flammap_file_paths.items():
+        (dtype, multiplier)   = flammap_array_conversions[name]
+        flammap_rasters[name] = load_raster(path, dtype)
+        array                 = flammap_rasters[name]["array"]
+        nodata                = flammap_rasters[name]["metadata"]["nodata"]
+        array[array == nodata] = 0
+        if multiplier != 1:
+            array[array != nodata] *= multiplier
+
+    return flammap_rasters
+
+
+def read_flammap_outputs(flammap_file_paths):
+    raster_dict = load_and_convert_flammap_rasters(flammap_file_paths)
+    if verify_raster_constraints(raster_dict.values()):
+        array_dict = {name: raster["array"] for name, raster in raster_dict.items()}
+        array_dict["max_spread_direction"] = np.rad2deg(array_dict["max_spread_direction"]) # rad -> deg
+        return array_dict
+
+
+def slow_test_read_flammap_outputs():
+    return read_flammap_outputs(flammap_file_paths)
 # load-flammap-outputs ends here
