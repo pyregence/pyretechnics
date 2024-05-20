@@ -1,7 +1,7 @@
 ;; The 'guix.scm' file for Pyretechnics, for use by 'guix shell'.
 ;; To isolate your development environment from the rest of your system, run:
 ;;
-;; $ guix shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
+;; $ guix time-machine -C channels.scm -- shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
 
 (use-modules
  ((gnu packages base)            #:select (coreutils which))

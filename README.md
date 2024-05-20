@@ -40,14 +40,14 @@ downloading and installing Guix onto your computer or into a VM.
     directory of this repository:
 
     ```sh
-    guix shell
+    guix time-machine -C channels.scm -- shell
     ```
 
     If you would like this shell environment to be isolated from your
     host machine within a container, you can use this command instead:
 
     ```sh
-    guix shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
+    guix time-machine -C channels.scm -- shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
     ```
 
     On their first invocations, these commands will download the
@@ -58,9 +58,8 @@ downloading and installing Guix onto your computer or into a VM.
     
     On subsequent calls to `guix shell`, you should be dropped
     directly into the shell environment without the need to install
-    any new software unless the [guix.scm](guix.scm) file has been
-    updated or you have updated your Guix version by running `guix
-    pull`.
+    any new software unless the [guix.scm](guix.scm) or
+    [channels.scm](channels.scm) files have been updated.
 
 2.  Authorizing Guix to Automatically Read guix.scm
 
@@ -89,7 +88,7 @@ downloading and installing Guix onto your computer or into a VM.
     `pytest` through the Guix shell like so:
 
     ```sh
-    guix shell -D -f guix.scm -- pytest -vv
+    guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv
     ```
 
 5.  Building and Installing the Pyretechnics Library with Guix
@@ -98,14 +97,14 @@ downloading and installing Guix onto your computer or into a VM.
     constructing Python wheels, simply run this command:
 
     ```sh
-    guix build -f guix.scm
+    guix time-machine -C channels.scm -- build -f guix.scm
     ```
 
     Should you wish to install the package into your Guix profile, you
     can run this:
 
     ```sh
-    guix install -f guix.scm
+    guix time-machine -C channels.scm -- install -L. python-pyretechnics
     ```
 
     Log out and back in to activate your profile's default environment
@@ -140,7 +139,7 @@ files within this repository.
     regenerate the HTML documentation by running this command:
 
     ```sh
-    guix shell -D -f guix.scm -- ./org/weave.el
+    guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/weave.el
     ```
 
 2.  Regenerating the Source Code Tree
@@ -150,7 +149,7 @@ files within this repository.
     this command:
 
     ```sh
-    guix shell -D -f guix.scm -- ./org/tangle.el
+    guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/tangle.el
     ```
 
 3.  Bringing Source Code File Edits Back into the Literate Program
@@ -160,7 +159,7 @@ files within this repository.
     running this command:
 
     ```sh
-    guix shell -D -f guix.scm -- ./org/detangle.el
+    guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/detangle.el
     ```
 
 ## Contact
