@@ -91,7 +91,7 @@ downloading and installing Guix onto your computer or into a VM.
     guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv
     ```
 
-5.  Building and Installing the Pyretechnics Library with Guix
+5.  Building the Pyretechnics Library with Guix
 
     To build the Pyretechnics library, including running its tests and
     constructing Python wheels, simply run this command:
@@ -100,16 +100,41 @@ downloading and installing Guix onto your computer or into a VM.
     guix time-machine -C channels.scm -- build -f guix.scm
     ```
 
-    Should you wish to install the package into your Guix profile, you
-    can run this:
+6.  Installing the Pyretechnics Library with Guix
+
+    In order to install the Pyretechnics library into your Guix
+    profile, you can run this command:
 
     ```sh
-    guix time-machine -C channels.scm -- install -L. python-pyretechnics
+    guix time-machine -C channels.scm -- install -L .guix/modules python python-pyretechnics
     ```
 
-    Log out and back in to activate your profile's default environment
-    variables. You should now be able to import the library's modules
-    from a Python interpreter with the usual `import` command.
+    **NOTE:** You must also install `python` into your Guix profile in
+    order for the correct environment variables to be made available.
+    The command above takes care of this.
+
+    Next, you will need to invoke the following Bash commands in your
+    shell to make the newly installed library available via
+    `$GUIX_PYTHONPATH`. This environment variable is referenced
+    automatically by the Guix-installed Python package.
+
+    ```sh
+    GUIX_PROFILE="$HOME/.guix-profile"
+    . "$GUIX_PROFILE/etc/profile"
+    ```
+
+    It is recommended that you add these two lines to your
+    `$HOME/.bash_profile`, so that they are run automatically each
+    time you login.
+
+7.  Using the Pyretechnics Library
+
+    Once you have installed the library into your Guix profile, you
+    should be able to launch `python` and load the library as follows:
+
+    ```python
+    import pyretechnics
+    ```
 
 ### Literate Programming
 
