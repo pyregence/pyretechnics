@@ -40,14 +40,14 @@ downloading and installing Guix onto your computer or into a VM.
     directory of this repository:
 
     ```sh
-    guix time-machine -C channels.scm -- shell
+    ./make.sh shell
     ```
 
     If you would like this shell environment to be isolated from your
     host machine within a container, you can use this command instead:
 
     ```sh
-    guix time-machine -C channels.scm -- shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
+    ./make.sh container-shell
     ```
 
     On their first invocations, these commands will download the
@@ -56,17 +56,17 @@ downloading and installing Guix onto your computer or into a VM.
     which the environment variables have been automatically configured
     to point to these newly downloaded packages.
     
-    On subsequent calls to `guix shell`, you should be dropped
+    On subsequent calls to `./make.sh shell`, you should be dropped
     directly into the shell environment without the need to install
     any new software unless the [guix.scm](guix.scm) or
     [channels.scm](channels.scm) files have been updated.
 
 2.  Authorizing Guix to Automatically Read guix.scm
 
-    The first time that you run `guix shell`, you will be prompted to
-    authorize Guix to read the [guix.scm](guix.scm) file in this
-    repository for instructions on what to download and how to set up
-    your ephemeral shell environment. Assuming you have set the
+    The first time that you run `./make.sh shell`, you will be
+    prompted to authorize Guix to read the [guix.scm](guix.scm) file
+    in this repository for instructions on what to download and how to
+    set up your ephemeral shell environment. Assuming you have set the
     `PYRETECHNICS_REPO` shell variable to the directory containing
     this repository, you can do so with this command:
 
@@ -88,7 +88,7 @@ downloading and installing Guix onto your computer or into a VM.
     `pytest` through the Guix shell like so:
 
     ```sh
-    guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv
+    ./make.sh test
     ```
 
 5.  Building the Pyretechnics Library with Guix
@@ -97,7 +97,7 @@ downloading and installing Guix onto your computer or into a VM.
     constructing Python wheels, simply run this command:
 
     ```sh
-    guix time-machine -C channels.scm -- build -f guix.scm
+    ./make.sh build
     ```
 
 6.  Installing the Pyretechnics Library with Guix
@@ -106,7 +106,7 @@ downloading and installing Guix onto your computer or into a VM.
     profile, you can run this command:
 
     ```sh
-    guix time-machine -C channels.scm -- install -L .guix/modules python python-pyretechnics
+    ./make.sh install
     ```
 
     **NOTE:** You must also install `python` into your Guix profile in
@@ -164,7 +164,7 @@ files within this repository.
     regenerate the HTML documentation by running this command:
 
     ```sh
-    guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/weave.el
+    ./make.sh weave
     ```
 
 2.  Regenerating the Source Code Tree
@@ -174,7 +174,7 @@ files within this repository.
     this command:
 
     ```sh
-    guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/tangle.el
+    ./make.sh tangle
     ```
 
 3.  Bringing Source Code File Edits Back into the Literate Program
@@ -184,7 +184,7 @@ files within this repository.
     running this command:
 
     ```sh
-    guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/detangle.el
+    ./make.sh detangle
     ```
 
 ## Contact
