@@ -49,7 +49,7 @@ case $1 in
         ;;
 
     "install")
-        guix time-machine -C channels.scm -- install -L .guix/modules python python-pyretechnics
+        guix time-machine -C channels.scm -- install -L .guix/modules python-wrapper python-pyretechnics
         ;;
 
     "weave")
