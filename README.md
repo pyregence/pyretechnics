@@ -29,8 +29,23 @@ development environments without requiring root privileges or
 interfering with the main package manager of the underlying operating
 system.
 
-Visit <https://guix.gnu.org/en/download/> to find instructions for
-downloading and installing Guix onto your computer or into a VM.
+If you are running a GNU/Linux distribution on your computer, the
+easiest way to install Guix is to simply follow the "Binary
+Installation" instructions in the manual here:
+
+https://guix.gnu.org/manual/en/html_node/Binary-Installation.html
+
+This will add the `guix` command as an auxiliary package, environment,
+and container manager on your machine.
+
+If you are not running GNU/Linux, you will need to run Guix System in
+a virtual machine. This is a complete GNU/Linux distribution that uses
+Guix as its package manager and Shepherd as its service manager. You
+can find instructions on getting this installed and running through
+QEMU in the "Running Guix in a Virtual Machine" section of the Guix
+manual here:
+
+https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
 
 1.  Creating a Reproducible Development Environment
 
