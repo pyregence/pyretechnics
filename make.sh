@@ -33,11 +33,11 @@ fi
 case $1 in
 
     "shell")
-        guix time-machine -C channels.scm -- shell $@
+        guix time-machine -C channels.scm -- shell
         ;;
 
     "container-shell")
-        guix time-machine -C channels.scm -- shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh $@
+        guix time-machine -C channels.scm -- shell --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
         ;;
 
     "test")
