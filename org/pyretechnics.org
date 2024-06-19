@@ -1749,10 +1749,10 @@ Here are the formulas used:
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align*}
 
-where U_{eff} is the effective wind speed in mph, \theta is the
-angular offset from the direction of maximum fire spread, R_{max} is
-the maximum spread rate, and R_{\theta} is the spread rate in
-direction \theta.
+where $U_{eff}$ is the effective wind speed in mph, $\theta$ is the
+angular offset from the direction of maximum fire spread, $R_{max}$ is
+the maximum spread rate, and $R_{\theta}$ is the spread rate in
+direction $\theta$.
 
 #+name: rothermel-surface-fire-spread-max-and-any
 #+begin_src python :tangle ../src/pyretechnics/surface_fire.py
@@ -2202,9 +2202,9 @@ rate to any point along the fire front. Here are the formulas used:
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align*}
 
-where \theta is the angular offset from the direction of maximum fire
-spread, R_{max} is the maximum spread rate, and R_{\theta} is the
-spread rate in direction \theta.
+where $\theta$ is the angular offset from the direction of maximum fire
+spread, $R_{max}$ is the maximum spread rate, and $R_{\theta}$ is the
+spread rate in direction $\theta$.
 
 #+name: crown-eccentricity
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
@@ -2882,36 +2882,36 @@ algorithms implemented thus far.
 
 *** Eulerian Level Set Method
 
-**** The \phi Field
+**** The $\phi$ Field
 
 In the Eulerian Level Set Method of fire spread, operationalized in
 Chris Lautenberger's ELMFire model\cite{?}, a continuous field called
-\phi fills the simulation space and is used to track the progression
+$\phi$ fills the simulation space and is used to track the progression
 of the fire front through space and time. Within Pyretechnics, the
-\phi field is discretized into grid cells with the following values:
+$\phi$ field is discretized into grid cells and initialized with the
+following values:
 
 - -1 :: cells that have already been burned and are inside the fire perimeter
-- 0 :: cells that are currently burning and coincide with the fire perimeter
 - 1 :: cells that have not been burned and are outside the fire perimeter
 
-At the start of the simulation, the \phi grid cells are initialized so
-as to identify the actively burning fire perimeter. If a point fire is
-being simulated, then a single \phi cell will be set to 0 and the
-remaining cells will have the value 1.
+If a fire is being simulated starting from an actively burning
+perimeter, the $\phi$ grid cells indicate the initially burning region.
+If a point fire is being simulated, then a single $\phi$ cell will be
+set to -1 and the remaining cells will have the value 1.
 
 **** Fire Front Normal Vector
 
 In this fire spread algorithm, the fire front only propagates normal
-to itself. Given a \phi raster, we can calculate the normal vector to
-the \phi field by using the following formula:
+to itself. Given a $\phi$ raster, we can calculate the normal vector to
+the $\phi$ field by using the following formula:
 
 \begin{align*}
 # TODO: Insert normal vector and gradient formulas from https://elmfire.io/tech_ref.html
 \end{align*}
 
-We begin by approximating the spatial gradients of the \phi field with
+We begin by approximating the spatial gradients of the $\phi$ field with
 node-centered central differences, represented by the values in the
-\phi raster's grid cells.
+$\phi$ raster's grid cells.
 
 \begin{align*}
 # TODO: Insert spatial gradient formulas from https://elmfire.io/tech_ref.html
@@ -2944,7 +2944,7 @@ def calc_dphi_dy_approx(phi, x, y, dy):
 #+end_src
 
 We can now combine these spatial gradients with the magnitude of the
-\phi field at any location on the grid to compute the fire front
+$\phi$ field at any location on the grid to compute the fire front
 normal vector as follows:
 
 #+name: phi-field-normal-vector
@@ -2979,7 +2979,7 @@ def calc_phi_normal_vector(phi, dx, dy, x, y):
 #+end_src
 
 Next, we can use the following geometrical relations to calculate the
-angle \theta (measured clockwise from North) to which the normal
+angle $\theta$ (measured clockwise from North) to which the normal
 vector points:
 
 \begin{align*}
@@ -3016,14 +3016,14 @@ spread rate in this direction by simply calculating the dot product of
 the normal vector with the maximum spread rate vector calculated for
 each cell.
 
-**** Numerical Solution of the \phi Field Equation
+**** Numerical Solution of the $\phi$ Field Equation
 
-In order to evolve the \phi field through time and space, we must
+In order to evolve the $\phi$ field through time and space, we must
 solve the following hyperbolic differential equation for the scalar
-variable \phi.
+variable $\phi$.
 
 \begin{align*}
-# TODO: Insert main hyperbolic differential equation for \phi from https://elmfire.io/tech_ref.html
+# TODO: Insert main hyperbolic differential equation for $\phi$ from https://elmfire.io/tech_ref.html
 \end{align*}
 
 This is accomplished after applying a flux limiter to the convective
@@ -3050,7 +3050,7 @@ def calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc):
 #+end_src
 
 To compute the inputs to this function, we build up the partial
-derivatives of the \phi field as follows:
+derivatives of the $\phi$ field as follows:
 
 \begin{align*}
 # TODO: Insert sig_phi_sig_x and sig_phi_sig_y formulas from https://elmfire.io/tech_ref.html
@@ -3164,7 +3164,7 @@ def calc_phi_south(phi, u_y, x, y):
 #+end_src
 
 Now that the various spatial partial derivatives have been calculated,
-we can march the \phi field solution forward in time using a second
+we can march the $\phi$ field solution forward in time using a second
 order Runge Kutta method as follows:
 
 \begin{align*}
@@ -3198,7 +3198,7 @@ def calc_phi_time(dx, dy, dt):
 
 In the above equations, timestep ($\Delta t$) is constrained by the
 Courant-Friedrichs-Lewy (CFL) condition. The location of the fire
-perimeter is determined by interpolation of the \phi field as the
+perimeter is determined by interpolation of the $\phi$ field as the
 level set corresponding to $\phi = 0$.
 
 * Appendix: Units Conversion Functions
