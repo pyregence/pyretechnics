@@ -158,25 +158,65 @@ def calc_phi_south(phi, u_y, x, y):
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi_south ends here
 # [[file:../../org/pyretechnics.org::phi_time][phi_time]]
-def calc_phi_time(dx, dy, dt):
+import numpy as np
+
+# FIXME: stub
+def identify_perimeter_cells(phi):
     """
-    TODO: Add docstring (computes phi_{t+dt})
+    TODO: Add docstring
     """
-    # FIXME: Figure out how to compute all the new terms here:
-    phi_t = 0
-    U_x = 0
-    phi_east_t = 0
-    phi_west_t = 0
-    U_y = 0
-    phi_north_t = 0
-    phi_south_t = 0
-    phi_star = 0
-    U_x_star = 0
-    phi_east_star = 0
-    phi_west_star = 0
-    U_y_star = 0
-    phi_north_star = 0
-    phi_south_star = 0
-    phi_star = phi_t - dt * (U_x * (phi_east_t - phi_west_t) / dx + U_y * (phi_north_t - phi_south_t) / dy)
-    return 0.5 * phi_t + 0.5 * (phi_star - dt * (U_x_star * (phi_east_star - phi_west_star) / dx + U_y_star * (phi_north_star - phi_south_star) / dy))
+    return [[0,0]]
+
+
+# FIXME: stub
+def calc_u_x(phi, y, x):
+    """
+    TODO: Add docstring
+    """
+    return 0.5
+
+
+# FIXME: stub
+def calc_u_y(phi, y, x):
+    """
+    TODO: Add docstring
+    """
+    return 0.5
+
+
+def calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y):
+    """
+    TODO: Add docstring
+    """
+    phi_east  = calc_phi_east(phi, u_x, x, y)
+    phi_west  = calc_phi_west(phi, u_x, x, y)
+    phi_north = calc_phi_north(phi, u_y, x, y)
+    phi_south = calc_phi_south(phi, u_y, x, y)
+    dphi_dx   = calc_dphi_dx(phi_east, phi_west, dx)
+    dphi_dy   = calc_dphi_dy(phi_north, phi_south, dy)
+    dphi_dt   = u_x[y][x] * dphi_dx + u_y[y][x] * dphi_dy
+    return phi[y][x] - dphi_dt * dt
+
+
+def calc_phi_next_timestep(phi, u_x, u_y, dx, dy, dt, perimeter_cells):
+    """
+    TODO: Add docstring
+    """
+    phi_star = np.copy(phi)
+    for [y, x] in perimeter_cells:
+        phi_star[y][x] = calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y)
+
+    perimeter_cells_star = identify_perimeter_cells(phi_star)
+
+    u_x_star = np.zeros_like(u_x)
+    u_y_star = np.zeros_like(u_y)
+    for [y, x] in perimeter_cells_star:
+        u_x_star[y][x] = calc_u_x(phi_star, y, x)
+        u_y_star[y][x] = calc_u_y(phi_star, y, x)
+
+    phi_star_star = np.copy(phi_star)
+    for [y, x] in perimeter_cells_star:
+        phi_star_star[y][x] = calc_phi_star(phi_star, u_x_star, u_y_star, dx, dy, dt, x, y)
+
+    return (phi + phi_star_star) / 2.0
 # phi_time ends here
