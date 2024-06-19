@@ -3039,11 +3039,11 @@ $B(r)$ as follows:
 
 #+name: superbee-flux-limiter
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc):
+def calc_superbee_flux_limiter(dphi_up, dphi_loc):
     """
     TODO: Add docstring
     """
-    r = sig_phi_up / sig_phi_loc
+    r = dphi_up / dphi_loc
     return max(0,
                min(2 * r, 1),
                min(r, 2))
@@ -3053,10 +3053,10 @@ To compute the inputs to this function, we build up the partial
 derivatives of the $\phi$ field as follows:
 
 \begin{align*}
-# TODO: Insert sig_phi_sig_x and sig_phi_sig_y formulas from https://elmfire.io/tech_ref.html
+# TODO: Insert dphi_dx and dphi_dy formulas from https://elmfire.io/tech_ref.html
 \end{align*}
 
-#+name: sig_phi_partial_derivatives
+#+name: dphi_partial_derivatives
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
 def calc_dphi_dx(phi_east, phi_west, dx):
     """
@@ -3083,15 +3083,15 @@ def calc_phi_east(phi, u_x, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y][x+1] - phi[y][x]
+    dphi_loc = phi[y][x+1] - phi[y][x]
     if u_x[y][x] >= 0:
-        sig_phi_up = phi[y][x] - phi[y][x-1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y][x-1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y][x+2] - phi[y][x+1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x+1] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x+2] - phi[y][x+1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x+1] - 0.5 * B * dphi_loc
 #+end_src
 
 For the west face:
@@ -3106,15 +3106,15 @@ def calc_phi_west(phi, u_x, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y][x-1] - phi[y][x]
+    dphi_loc = phi[y][x-1] - phi[y][x]
     if u_x[y][x] >= 0:
-        sig_phi_up = phi[y][x-2] - phi[y][x-1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x-1] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x-2] - phi[y][x-1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x-1] - 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y][x] - phi[y][x+1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y][x+1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
 #+end_src
 
 For the north face:
@@ -3129,15 +3129,15 @@ def calc_phi_north(phi, u_y, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y-1][x] - phi[y][x]
+    dphi_loc = phi[y-1][x] - phi[y][x]
     if u_y[y][x] >= 0:
-        sig_phi_up = phi[y][x] - phi[y+1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y+1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y-2][x] - phi[y-1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y-1][x] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y-2][x] - phi[y-1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y-1][x] - 0.5 * B * dphi_loc
 #+end_src
 
 For the south face:
@@ -3152,15 +3152,15 @@ def calc_phi_south(phi, u_y, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y+1][x] - phi[y][x]
+    dphi_loc = phi[y+1][x] - phi[y][x]
     if u_y[y][x] >= 0:
-        sig_phi_up = phi[y+2][x] - phi[y+1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y+1][x] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y+2][x] - phi[y+1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y+1][x] - 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y][x] - phi[y-1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y-1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
 #+end_src
 
 Now that the various spatial partial derivatives have been calculated,

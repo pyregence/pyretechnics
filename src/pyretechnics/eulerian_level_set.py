@@ -75,16 +75,16 @@ def calc_phi_normal_vector_angle(phi_normal_vector):
         return 1/2 * pi + atan2(abs(n_y), n_x)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
-def calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc):
+def calc_superbee_flux_limiter(dphi_up, dphi_loc):
     """
     TODO: Add docstring
     """
-    r = sig_phi_up / sig_phi_loc
+    r = dphi_up / dphi_loc
     return max(0,
                min(2 * r, 1),
                min(r, 2))
 # superbee-flux-limiter ends here
-# [[file:../../org/pyretechnics.org::sig_phi_partial_derivatives][sig_phi_partial_derivatives]]
+# [[file:../../org/pyretechnics.org::dphi_partial_derivatives][dphi_partial_derivatives]]
 def calc_dphi_dx(phi_east, phi_west, dx):
     """
     TODO: Add docstring
@@ -96,66 +96,66 @@ def calc_dphi_dy(phi_north, phi_south, dy):
     TODO: Add docstring
     """
     return (phi_north - phi_south) / dy
-# sig_phi_partial_derivatives ends here
+# dphi_partial_derivatives ends here
 # [[file:../../org/pyretechnics.org::phi_east][phi_east]]
 def calc_phi_east(phi, u_x, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y][x+1] - phi[y][x]
+    dphi_loc = phi[y][x+1] - phi[y][x]
     if u_x[y][x] >= 0:
-        sig_phi_up = phi[y][x] - phi[y][x-1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y][x-1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y][x+2] - phi[y][x+1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x+1] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x+2] - phi[y][x+1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x+1] - 0.5 * B * dphi_loc
 # phi_east ends here
 # [[file:../../org/pyretechnics.org::phi_west][phi_west]]
 def calc_phi_west(phi, u_x, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y][x-1] - phi[y][x]
+    dphi_loc = phi[y][x-1] - phi[y][x]
     if u_x[y][x] >= 0:
-        sig_phi_up = phi[y][x-2] - phi[y][x-1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x-1] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x-2] - phi[y][x-1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x-1] - 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y][x] - phi[y][x+1]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y][x+1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
 # phi_west ends here
 # [[file:../../org/pyretechnics.org::phi_north][phi_north]]
 def calc_phi_north(phi, u_y, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y-1][x] - phi[y][x]
+    dphi_loc = phi[y-1][x] - phi[y][x]
     if u_y[y][x] >= 0:
-        sig_phi_up = phi[y][x] - phi[y+1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y+1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y-2][x] - phi[y-1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y-1][x] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y-2][x] - phi[y-1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y-1][x] - 0.5 * B * dphi_loc
 # phi_north ends here
 # [[file:../../org/pyretechnics.org::phi_south][phi_south]]
 def calc_phi_south(phi, u_y, x, y):
     """
     TODO: Add docstring
     """
-    sig_phi_loc = phi[y+1][x] - phi[y][x]
+    dphi_loc = phi[y+1][x] - phi[y][x]
     if u_y[y][x] >= 0:
-        sig_phi_up = phi[y+2][x] - phi[y+1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y+1][x] - 0.5 * B * sig_phi_loc
+        dphi_up = phi[y+2][x] - phi[y+1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y+1][x] - 0.5 * B * dphi_loc
     else:
-        sig_phi_up = phi[y][x] - phi[y-1][x]
-        B = calc_superbee_flux_limiter(sig_phi_up, sig_phi_loc)
-        return phi[y][x] + 0.5 * B * sig_phi_loc
+        dphi_up = phi[y][x] - phi[y-1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
 # phi_south ends here
 # [[file:../../org/pyretechnics.org::phi_time][phi_time]]
 def calc_phi_time(dx, dy, dt):
