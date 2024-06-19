@@ -1,0 +1,12 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>Horizontal Movement Rate</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">57.860683441162</MDI>
+      <MDI key="STATISTICS_MEAN">0.72527549439743</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">0.85572167775981</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

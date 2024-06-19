@@ -1,0 +1,12 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>Flame Length</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">56.110229492188</MDI>
+      <MDI key="STATISTICS_MEAN">0.74010114582701</MDI>
+      <MDI key="STATISTICS_MINIMUM">0</MDI>
+      <MDI key="STATISTICS_STDDEV">0.66249517662023</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

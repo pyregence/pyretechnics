@@ -1,0 +1,12 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <Description>Max Spread Direction</Description>
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">6.2831854820251</MDI>
+      <MDI key="STATISTICS_MEAN">3.3438371634247</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.017453292384744</MDI>
+      <MDI key="STATISTICS_STDDEV">1.7429487955419</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">66.08</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

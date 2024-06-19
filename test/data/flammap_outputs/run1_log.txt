@@ -1,0 +1,52 @@
+#Run Log for FlamMap run: run1
+#Run Completed: 2024-05-07 08:03:41
+#Run Time (Seconds): 1.10
+#Landscape File: C:\Users\dschmidt\Nextcloud\dschmidt_working_projects\PC381_Pyretechnics\FlamMap_testing\landfire_worcester_vt\worcester_vt.lcp
+#Landscape Resolution: 30.0
+#FUEL_MOISTURE_FILE: C:\Users\dschmidt\Nextcloud\dschmidt_working_projects\PC381_Pyretechnics\FlamMap_testing\landfire_worcester_vt\worcester_vt.fms
+FlamMap-Inputs-File-Version-1
+FUEL_MOISTURES_DATA: 25
+0 6 8 10 75 60
+101 6 8 10 75 60
+102 6 8 10 75 60
+103 6 8 10 75 60
+106 6 8 10 75 60
+121 6 8 10 75 60
+122 6 8 10 75 60
+123 6 8 10 75 60
+141 6 8 10 75 60
+142 6 8 10 75 60
+143 6 8 10 75 60
+144 6 8 10 75 60
+146 6 8 10 75 60
+161 6 8 10 75 60
+162 6 8 10 75 60
+163 6 8 10 75 60
+165 6 8 10 75 60
+181 6 8 10 75 60
+182 6 8 10 75 60
+183 6 8 10 75 60
+184 6 8 10 75 60
+185 6 8 10 75 60
+186 6 8 10 75 60
+188 6 8 10 75 60
+189 6 8 10 75 60
+
+WIND_SPEED: 0
+WIND_DIRECTION: 0
+WIND_SPEED_UNITS: 0 (mph @ 20')
+FOLIAR_MOISTURE_CONTENT: 120.000000
+CROWN_FIRE_METHOD: Finney
+NUMBER_PROCESSORS: 8
+#SELECTED FLAMMAP OUTPUTS
+FLAMELENGTH:
+INTENSITY:
+SPREADRATE:
+CROWNSTATE:
+HORIZRATE:
+MAXSPREADDIR:
+ELLIPSEDIM_A:
+ELLIPSEDIM_B:
+ELLIPSEDIM_C:
+#SPREAD_VECTORS
+#END SELECTED FLAMMAP OUTPUTS

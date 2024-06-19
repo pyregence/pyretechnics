@@ -2740,9 +2740,10 @@ def slow_test_burn_all_cells():
 
 #+name: compute-worcester-burned-layers
 #+begin_src python :session view-worcester-layers
-from pyretechnics_test.test_burn_cells import slow_test_burn_all_cells
+from pyretechnics_test.test_burn_cells import slow_test_burn_all_cells, slow_test_read_flammap_outputs
 
-worcester = slow_test_burn_all_cells()
+pyretechnics = slow_test_burn_all_cells()
+flammap      = slow_test_read_flammap_outputs()
 #+end_src
 
 #+name: savefig
@@ -2751,7 +2752,12 @@ import matplotlib.pyplot as plt
 
 title     = "Worcester, VT - " + title
 file_name = "../doc/pics/worcester_" + layer + ".png"
-image     = plt.imshow(worcester[layer], cmap=colors)
+image     = plt.imshow(pyretechnics[layer], cmap=colors)
+# image     = plt.imshow(flammap[layer][0], cmap=colors)
+# image     = plt.imshow(pyretechnics[layer] - flammap[layer][0], cmap=colors)
+# copy      = np.zeros((613, 549))
+# copy[crown_fire == 0] = (pyretechnics[layer][crown_fire == 0] - flammap[layer][0][crown_fire == 0])
+# image     = plt.imshow(copy, clim=(-0.05,0.05))
 colorbar  = plt.colorbar(image, orientation="vertical")
 
 colorbar.set_label(units)
@@ -2761,11 +2767,20 @@ plt.close("all")
 file_name
 #+end_src
 
+#+begin_src python :session view-worcester-layers
+frq, edges = np.histogram(copy)
+fig, ax = plt.subplots()
+ax.bar(edges[:-1], frq, width=np.diff(edges), edgecolor="black", align="edge")
+plt.savefig("../doc/pics/worcester_max_spread_rate_diff.png")
+#+end_src
+
 #+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")>>
 #+end_src
 
 [[file:../doc/pics/worcester_max_spread_rate.png]]
+
+Layer Disagreement: [-10.93608, 8.9857025] inches/min
 
 #+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")>>
