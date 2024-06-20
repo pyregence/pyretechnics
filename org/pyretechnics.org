@@ -1282,7 +1282,7 @@ hour moisture content, dead moisture of extinction, and live
 herbaceous surface-area-to-volume-ratio. In the following formula,
 $M_{f}^{lh}$ is the live herbaceous moisture content.
 
-\begin{align*}
+\begin{align}
   \text{FractionGreen} &= \left\{
     \begin{array}{lr}
       0 & M_{f}^{lh} \le 0.3 \\
@@ -1291,7 +1291,7 @@ $M_{f}^{lh}$ is the live herbaceous moisture content.
     \end{array}
   \right. \\
   \text{FractionCured} &= 1 - \text{FractionGreen}
-\end{align*}
+\end{align}
 
 #+name: add-dynamic-fuel-loading
 #+begin_src python :tangle ../src/pyretechnics/fuel_models.py
@@ -1377,11 +1377,11 @@ content becomes greater than or equal to the moisture of extinction, a
 fire will no longer spread through that fuel. Here are the formulas
 referenced above:
 
-\begin{align*}
+\begin{align}
   M_{x}^{l} &= \max(M_{x}^{d}, 2.9 \, W' \, (1 - \frac{M_{f}^{d}}{M_{x}^{d}}) - 0.226) \\
   W' &= \frac{\sum_{c \in D}{w_{o}^{c} \> e^{-138/\sigma^{c}}}}{\sum_{c \in L}{w_{o}^{c} \> e^{-500/\sigma^{c}}}} \\
   M_{f}^{d} &= \frac{\sum_{c \in D}{w_{o}^{c} \> M_{f}^{c} \> e^{-138/\sigma^{c}}}}{\sum_{c \in D}{w_{o}^{c} \> e^{-138/\sigma^{c}}}}
-\end{align*}
+\end{align}
 
 where $M_{x}^{l}$ is the live moisture of extinction, $M_{x}^{d}$ is
 the dead moisture of extinction, $D$ is the set of dead fuel size
@@ -1442,9 +1442,9 @@ Predicting Fire Spread in Wildland Fuels''.\citep{Rothermel1972}
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
 
-\[
-R = \frac{I_{R} \, \xi \, (1 + \phi_{W} + \phi_{S})}{\rho_{b} \, \epsilon \, Q_{ig}}
-\]
+\begin{align}
+  R = \frac{I_{R} \, \xi \, (1 + \phi_{W} + \phi_{S})}{\rho_{b} \, \epsilon \, Q_{ig}}
+\end{align}
 
 where these terms have the meanings shown in Table
 [[tab:fire-spread-inputs]].
@@ -1743,11 +1743,11 @@ of the ellipse using equation 8 from Albini and Chase
 project the maximum spread rate to any point along the fire front.
 Here are the formulas used:
 
-\begin{align*}
+\begin{align}
   \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
   E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
-\end{align*}
+\end{align}
 
 where $U_{eff}$ is the effective wind speed in mph, $\theta$ is the
 angular offset from the direction of maximum fire spread, $R_{max}$ is
@@ -1978,12 +1978,12 @@ next calculate fire intensity values by applying Anderson's flame
 depth formula and Byram's fire line intensity and flame length
 equations as described below.\citep{Anderson1969,Byram1959}
 
-\begin{align*}
+\begin{align}
   t &= \frac{384}{\sigma} \\
   D &= Rt \\
   I &= \frac{I_{R}D}{60} \\
   L &= 0.45(I)^{0.46}
-\end{align*}
+\end{align}
 
 where $\sigma$ is the weighted sum by size class of the fuel model's
 surface area to volume ratio in ft^{2}/ft^{3}, $t$ is the residence
@@ -2038,11 +2038,11 @@ rate/) that must be calculated in order to determine whether a fire
 will become an active or passive crown fire or simply remain a surface
 fire. The formulas for these thresholds are as follows:
 
-\begin{align*}
+\begin{align}
   H &= 460 + 2600 M^{f} \\
   I^{*} &= (0.01 \, Z_{b} \, H)^{1.5} \\
   R^{*} &= \frac{3.0}{B_{m}}
-\end{align*}
+\end{align}
 
 where $H$ is the heat of ignition for the herbaceous material in the
 canopy in kJ/kg, $M^{f}$ is the foliar moisture content in lb
@@ -2090,10 +2090,10 @@ If crowning occurs, then the active and passive crown fire spread
 rates are calculated from the formulas given in Cruz
 2005.\citep{Cruz2005}
 
-\begin{align*}
+\begin{align}
   \text{CROS}_{A} &= 11.02 \> U_{10m}^{0.90} \> B_{m}^{0.19} \> e^{-17 \, \text{EFFM}} \\
   \text{CROS}_{P} &= \text{CROS}_{A} \> e^{\frac{-\text{CROS}_{A}}{R^{*}}}
-\end{align*}
+\end{align}
 
 where $\text{CROS}_{A}$ is the active crown fire spread rate in
 m/min, $U_{10m}$ is the 10 meter windspeed in km/hr, $B_{m}$ is the
@@ -2155,10 +2155,10 @@ Once the crown fire spread rate is determined, the crown fire line
 intensity and flame lengths may be derived using the following
 formulas:
 
-\begin{align*}
+\begin{align}
   I_{c} &= \frac{R_{c} B (Z - Z_{b}) h}{60} \\
   L_{c} &= 0.45(I + I_{c})^{0.46}
-\end{align*}
+\end{align}
 
 where $I_{c}$ is the crown fire line intensity in Btu/ft/s, $R_{c}$ is
 the crown fire spread rate (either $\text{CROS}_{A}$ or
@@ -2196,11 +2196,11 @@ ellipse using equation 8 from Albini and Chase 1980.\citep{Albini1980}
 Finally, this eccentricity $E$ is used to project the maximum spread
 rate to any point along the fire front. Here are the formulas used:
 
-\begin{align*}
+\begin{align}
   \frac{L}{W} &= 1 + 0.125 \, U_{20} \\
   E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
-\end{align*}
+\end{align}
 
 where $\theta$ is the angular offset from the direction of maximum fire
 spread, $R_{max}$ is the maximum spread rate, and $R_{\theta}$ is the
@@ -2905,21 +2905,19 @@ In this fire spread algorithm, the fire front only propagates normal
 to itself. Given a $\phi$ raster, we can calculate the normal vector to
 the $\phi$ field by using the following formula:
 
-\begin{align*}
+\begin{align}
   \hat{n} &= n_x\hat{i} + n_y\hat{j} = \frac{1}{|\nabla\phi|}\left(\frac{\partial{\phi}}{\partial x}\hat{i} + \frac{\partial{\phi}}{\partial y}\hat{j}\right) \\
-  \\
   |\nabla\phi| &= \sqrt{\left(\frac{\partial{\phi}}{\partial x}\right)^2 + \left(\frac{\partial{\phi}}{\partial y}\right)^2}
-\end{align*}
+\end{align}
 
 We begin by approximating the spatial gradients of the $\phi$ field with
 node-centered central differences, represented by the values in the
 $\phi$ raster's grid cells.
 
-\begin{align*}
+\begin{align}
   \left(\frac{\partial{\phi}}{\partial x}\right)_{i,j} &\approx \frac{\phi_{i+1,j} - \phi_{i-1,j}}{2 \Delta x} \\
-  \\
   \left(\frac{\partial{\phi}}{\partial y}\right)_{i,j} &\approx \frac{\phi_{i,j+1} - \phi_{i,j-1}}{2 \Delta y}
-\end{align*}
+\end{align}
 
 #+name: phi-field-spatial-gradients
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -2994,7 +2992,7 @@ vector points:
     \frac{3}{2}\pi + \tan^{-1}(\frac{n_y}{|n_x|}) & \text{for}\ n_x < 0 & \text{and}\ n_y \geq 0 \\
     \frac{3}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x < 0 & \text{and}\ n_y < 0 \\
     0 & \text{for}\ n_x = 0 & \text{and}\ n_y \geq 0 \\
-    \pi & \text{for}\ n_x = 0 & \text{and}\ n_y < 0 \\
+    \pi & \text{for}\ n_x = 0 & \text{and}\ n_y < 0
   \end{cases}
 \end{equation}
 
@@ -3041,9 +3039,9 @@ In order to evolve the $\phi$ field through time and space, we must
 solve the following hyperbolic differential equation for the scalar
 variable $\phi$.
 
-\begin{align*}
+\begin{align}
   \frac{\partial{\phi}}{\partial t} + {U_x}\frac{\partial{\phi}}{\partial x} + {U_y}\frac{\partial{\phi}}{\partial y} = 0
-\end{align*}
+\end{align}
 
 This is accomplished after applying a flux limiter to the convective
 terms, in order to ensure solution monotonicity and prevent spurious
@@ -3052,11 +3050,10 @@ oscillations that can be induced in its absence.
 First, we define the parameter $r$ and the Superbee flux limiter
 $B(r)$ as follows:
 
-\begin{align*}
+\begin{align}
   r &= \frac{\delta\phi_{\text{up}}}{\delta\phi_{\text{loc}}} \\
-  \\
   B(r) &= \text{max}(0, \text{min}(2r, 1), \text{min}(r, 2))
-\end{align*}
+\end{align}
 
 #+name: superbee-flux-limiter
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3074,11 +3071,10 @@ To compute the inputs to this function, we build up the partial
 derivatives of the $\phi$ field in terms of "east", "west", "north",
 and "south" values as follows:
 
-\begin{align*}
+\begin{align}
   \frac{\partial{\phi}}{\partial x} &\approx \frac{\phi_{\text{east}} - \phi_{\text{west}}}{\Delta x} \\
-  \\
   \frac{\partial{\phi}}{\partial y} &\approx \frac{\phi_{\text{north}} - \phi_{\text{south}}}{\Delta y}
-\end{align*}
+\end{align}
 
 #+name: dphi_partial_derivatives
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3097,19 +3093,17 @@ def calc_dphi_dy(phi_north, phi_south, dy):
 
 For the east face:
 
-\begin{align*}
+\begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i+1,j} - \phi{i,j} \\
-  \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
                               \phi_{i+2,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
                             \end{cases} \\
-  \\
   \phi_{\text{east}} &= \begin{cases}
                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
                           \phi_{i+1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
                         \end{cases}
-\end{align*}
+\end{align}
 
 #+name: phi_east
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3134,19 +3128,17 @@ def calc_phi_east(phi, u_x, x, y):
 
 For the west face:
 
-\begin{align*}
+\begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i-1,j} - \phi{i,j} \\
-  \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i-2,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
                               \phi_{i,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
                             \end{cases} \\
-  \\
   \phi_{\text{west}} &= \begin{cases}
                           \phi_{i-1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
                         \end{cases}
-\end{align*}
+\end{align}
 
 #+name: phi_west
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3171,19 +3163,17 @@ def calc_phi_west(phi, u_x, x, y):
 
 For the north face:
 
-\begin{align*}
+\begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i,j+1} - \phi{i,j} \\
-  \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i,j} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
                               \phi_{i,j+2} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
                             \end{cases} \\
-  \\
   \phi_{\text{north}} &= \begin{cases}
                            \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
                            \phi_{i,j+1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
                          \end{cases}
-\end{align*}
+\end{align}
 
 #+name: phi_north
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3208,19 +3198,17 @@ def calc_phi_north(phi, u_y, x, y):
 
 For the south face:
 
-\begin{align*}
+\begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i,j-1} - \phi{i,j} \\
-  \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i,j-2} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
                               \phi_{i,j} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
                             \end{cases} \\
-  \\
   \phi_{\text{south}} &= \begin{cases}
                            \phi_{i,j-1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
                            \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
                          \end{cases}
-\end{align*}
+\end{align}
 
 #+name: phi_south
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3247,11 +3235,10 @@ Once the various spatial partial derivatives have been calculated, we
 can march the $\phi$ field solution forward in time using a second
 order Runge Kutta method as follows:
 
-\begin{align*}
+\begin{align}
   \phi^* &= \phi^t - \Delta t \left(U_x \frac{\phi^t_{\text{east}} - \phi^t_{\text{west}}}{\Delta x} + U_y \frac{\phi^t_{\text{north}} - \phi^t_{\text{south}}}{\Delta y} \right) \\
-  \\
   \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
-\end{align*}
+\end{align}
 
 #+name: phi_time
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
