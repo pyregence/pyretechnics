@@ -2983,18 +2983,18 @@ def calc_phi_normal_vector(phi, dx, dy, x, y):
 #+end_src
 
 Next, we can use the following geometrical relations to calculate the
-angle $\theta$ (measured clockwise from North) to which the normal
+angle $\theta_n$ (measured clockwise from North) to which the normal
 vector points:
 
 \begin{equation}
   \theta_n =
   \begin{cases}
-    \frac{1}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}), & \text{for}\ n_x > 0 & \text{and}\ n_y \geq 0 \\
-    \frac{1}{2}\pi + \tan^{-1}(\frac{|n_y|}{n_x}), & \text{for}\ n_x > 0 & \text{and}\ n_y < 0 \\
-    \frac{3}{2}\pi + \tan^{-1}(\frac{n_y}{|n_x|}), & \text{for}\ n_x < 0 & \text{and}\ n_y \geq 0 \\
-    \frac{3}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}), & \text{for}\ n_x < 0 & \text{and}\ n_y < 0 \\
-    0, & \text{for}\ n_x = 0 & \text{and}\ n_y \geq 0 \\
-    \pi, & \text{for}\ n_x = 0 & \text{and}\ n_y < 0 \\
+    \frac{1}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x > 0 & \text{and}\ n_y \geq 0 \\
+    \frac{1}{2}\pi + \tan^{-1}(\frac{|n_y|}{n_x}) & \text{for}\ n_x > 0 & \text{and}\ n_y < 0 \\
+    \frac{3}{2}\pi + \tan^{-1}(\frac{n_y}{|n_x|}) & \text{for}\ n_x < 0 & \text{and}\ n_y \geq 0 \\
+    \frac{3}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x < 0 & \text{and}\ n_y < 0 \\
+    0 & \text{for}\ n_x = 0 & \text{and}\ n_y \geq 0 \\
+    \pi & \text{for}\ n_x = 0 & \text{and}\ n_y < 0 \\
   \end{cases}
 \end{equation}
 
@@ -3248,7 +3248,9 @@ can march the $\phi$ field solution forward in time using a second
 order Runge Kutta method as follows:
 
 \begin{align*}
-# TODO: Insert phi_* and phi_t+dt formulas from https://elmfire.io/tech_ref.html
+  \phi^* &= \phi^t - \Delta t \left(U_x \frac{\phi^t_{\text{east}} - \phi^t_{\text{west}}}{\Delta x} + U_y \frac{\phi^t_{\text{north}} - \phi^t_{\text{south}}}{\Delta y} \right) \\
+  \\
+  \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
 \end{align*}
 
 #+name: phi_time
