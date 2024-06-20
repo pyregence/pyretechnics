@@ -1283,14 +1283,14 @@ herbaceous surface-area-to-volume-ratio. In the following formula,
 $M_{f}^{lh}$ is the live herbaceous moisture content.
 
 \begin{align*}
-  \textrm{FractionGreen} &= \left\{
+  \text{FractionGreen} &= \left\{
     \begin{array}{lr}
       0 & M_{f}^{lh} \le 0.3 \\
       1 & M_{f}^{lh} \ge 1.2 \\
-      \frac{M_{f}^{lh}}{0.9} - \frac{1}{3} & \textrm{else}
+      \frac{M_{f}^{lh}}{0.9} - \frac{1}{3} & \text{else}
     \end{array}
   \right. \\
-  \textrm{FractionCured} &= 1 - \textrm{FractionGreen}
+  \text{FractionCured} &= 1 - \text{FractionGreen}
 \end{align*}
 
 #+name: add-dynamic-fuel-loading
@@ -1730,7 +1730,7 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
 
 The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
-$U_{\textrm{eff}}$. Following the recommendations given in Appendix
+$U_{\text{eff}}$. Following the recommendations given in Appendix
 III of Albini 1976, these midflame wind speeds are all limited to $0.9
 I_{R}$.\citep{Albini1976}
 
@@ -1744,7 +1744,7 @@ project the maximum spread rate to any point along the fire front.
 Here are the formulas used:
 
 \begin{align*}
-  \frac{L}{W} &= 1 + 0.25 \, U_{\textrm{eff}} \\
+  \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
   E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align*}
@@ -2091,18 +2091,18 @@ rates are calculated from the formulas given in Cruz
 2005.\citep{Cruz2005}
 
 \begin{align*}
-  \textrm{CROS}_{A} &= 11.02 \> U_{10m}^{0.90} \> B_{m}^{0.19} \> e^{-17 \, \textrm{EFFM}} \\
-  \textrm{CROS}_{P} &= \textrm{CROS}_{A} \> e^{\frac{-\textrm{CROS}_{A}}{R^{*}}}
+  \text{CROS}_{A} &= 11.02 \> U_{10m}^{0.90} \> B_{m}^{0.19} \> e^{-17 \, \text{EFFM}} \\
+  \text{CROS}_{P} &= \text{CROS}_{A} \> e^{\frac{-\text{CROS}_{A}}{R^{*}}}
 \end{align*}
 
-where $\textrm{CROS}_{A}$ is the active crown fire spread rate in
+where $\text{CROS}_{A}$ is the active crown fire spread rate in
 m/min, $U_{10m}$ is the 10 meter windspeed in km/hr, $B_{m}$ is the
 crown bulk density in kg/m^{3}, EFFM is the estimated fine fuel
-moisture as a percent (0-1), and $\textrm{CROS}_{P}$ is the passive
+moisture as a percent (0-1), and $\text{CROS}_{P}$ is the passive
 crown fire spread rate in m/min.
 
 If the active crown fire spread rate is greater than the critical
-spread rate ($\textrm{CROS}_{A} > R^{*}$), then the crown fire will be
+spread rate ($\text{CROS}_{A} > R^{*}$), then the crown fire will be
 active, otherwise passive.
 
 #+name: cruz-crown-fire-spread
@@ -2161,8 +2161,8 @@ formulas:
 \end{align*}
 
 where $I_{c}$ is the crown fire line intensity in Btu/ft/s, $R_{c}$ is
-the crown fire spread rate (either $\textrm{CROS}_{A}$ or
-$\textrm{CROS}_{P}$) in ft/min, $B$ is the crown bulk density in
+the crown fire spread rate (either $\text{CROS}_{A}$ or
+$\text{CROS}_{P}$) in ft/min, $B$ is the crown bulk density in
 lb/ft^{3}, $Z$ is the canopy height in ft, $Z_{b}$ is the canopy base
 height in ft, $h$ is the fuel model heat of combustion (generally 8000
 Btu/lb), $L_{c}$ is the crown flame length in ft, and $I$ is the
@@ -2884,12 +2884,12 @@ algorithms implemented thus far.
 
 **** The $\phi$ Field
 
-In the Eulerian Level Set Method of fire spread, operationalized in
-Chris Lautenberger's ELMFire model\cite{?}, a continuous field called
-$\phi$ fills the simulation space and is used to track the progression
-of the fire front through space and time. Within Pyretechnics, the
-$\phi$ field is discretized into grid cells and initialized with the
-following values:
+In the Eulerian level set method of fire spread, operationalized in
+Chris Lautenberger's ELMFire model[fn::https://elmfire.io], a
+continuous field called $\phi$ fills the simulation space and is used
+to track the progression of the fire front through space and time.
+Within Pyretechnics, the $\phi$ field is discretized into grid cells
+and initialized with the following values:
 
 - -1 for cells that have already been burned and are inside the fire perimeter
 - 1 for cells that have not been burned and are outside the fire perimeter
@@ -2906,7 +2906,9 @@ to itself. Given a $\phi$ raster, we can calculate the normal vector to
 the $\phi$ field by using the following formula:
 
 \begin{align*}
-# TODO: Insert normal vector and gradient formulas from https://elmfire.io/tech_ref.html
+  \hat{n} &= n_x\hat{i} + n_y\hat{j} = \frac{1}{|\nabla\phi|}\left(\frac{\partial{\phi}}{\partial x}\hat{i} + \frac{\partial{\phi}}{\partial y}\hat{j}\right) \\
+  \\
+  |\nabla\phi| &= \sqrt{\left(\frac{\partial{\phi}}{\partial x}\right)^2 + \left(\frac{\partial{\phi}}{\partial y}\right)^2}
 \end{align*}
 
 We begin by approximating the spatial gradients of the $\phi$ field with
@@ -2914,7 +2916,9 @@ node-centered central differences, represented by the values in the
 $\phi$ raster's grid cells.
 
 \begin{align*}
-# TODO: Insert spatial gradient formulas from https://elmfire.io/tech_ref.html
+  \left(\frac{\partial{\phi}}{\partial x}\right)_{i,j} &\approx \frac{\phi_{i+1,j} - \phi_{i-1,j}}{2 \Delta x} \\
+  \\
+  \left(\frac{\partial{\phi}}{\partial y}\right)_{i,j} &\approx \frac{\phi_{i,j+1} - \phi_{i,j-1}}{2 \Delta y}
 \end{align*}
 
 #+name: phi-field-spatial-gradients
@@ -2944,8 +2948,8 @@ def calc_dphi_dy_approx(phi, x, y, dy):
 #+end_src
 
 We can now combine these spatial gradients with the magnitude of the
-$\phi$ field at any location on the grid to compute the fire front
-normal vector as follows:
+gradient of the $\phi$ field at any location on the grid to compute
+the fire front normal vector as follows:
 
 #+name: phi-field-normal-vector
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -2982,9 +2986,15 @@ Next, we can use the following geometrical relations to calculate the
 angle $\theta$ (measured clockwise from North) to which the normal
 vector points:
 
-\begin{align*}
-# TODO: Insert normal vector theta formulas from https://elmfire.io/tech_ref.html
-\end{align*}
+\begin{equation}
+  \theta_n =
+  \begin{cases}
+    \frac{1}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}), & \text{for}\ n_x\geq0 & \text{and}\ n_y\geq0\\
+    \frac{3}{2}\pi + \tan^{-1}(\frac{n_y}{|n_x|}), & \text{for}\ n_x\leq0 & \text{and}\ n_y\geq0\\
+    \frac{3}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}), & \text{for}\ n_x\leq0 & \text{and}\ n_y\leq0\\
+    \frac{1}{2}\pi - \tan^{-1}(\frac{|n_y|}{n_x}), & \text{for}\ n_x\geq0 & \text{and}\ n_y\leq0\\
+  \end{cases}
+\end{equation}
 
 #+name: phi-field-normal-vector-angle
 #+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
@@ -3023,7 +3033,7 @@ solve the following hyperbolic differential equation for the scalar
 variable $\phi$.
 
 \begin{align*}
-# TODO: Insert main hyperbolic differential equation for $\phi$ from https://elmfire.io/tech_ref.html
+  \frac{\partial{\phi}}{\partial t} + {U_x}\frac{\partial{\phi}}{\partial x} + {U_y}\frac{\partial{\phi}}{\partial y} = 0
 \end{align*}
 
 This is accomplished after applying a flux limiter to the convective
@@ -3034,7 +3044,8 @@ First, we define the parameter $r$ and the Superbee flux limiter
 $B(r)$ as follows:
 
 \begin{align*}
-# TODO: Insert r and B(r) formulas from https://elmfire.io/tech_ref.html
+  r &= \frac{\delta\phi_{\textrm{up}}}{\delta\phi_{\textrm{loc}}} \\
+  B(r) &= \textrm{max}(0, \textrm{min}(2r, 1), \textrm{min}(r, 2))
 \end{align*}
 
 #+name: superbee-flux-limiter
@@ -3050,10 +3061,12 @@ def calc_superbee_flux_limiter(dphi_up, dphi_loc):
 #+end_src
 
 To compute the inputs to this function, we build up the partial
-derivatives of the $\phi$ field as follows:
+derivatives of the $\phi$ field in terms of "east", "west", "north",
+and "south" values as follows:
 
 \begin{align*}
-# TODO: Insert dphi_dx and dphi_dy formulas from https://elmfire.io/tech_ref.html
+  \frac{\partial{\phi}}{\partial x} &\approx \frac{\phi_{\textrm{east}} - \phi_{\textrm{west}}}{\Delta x} \\
+  \frac{\partial{\phi}}{\partial y} &\approx \frac{\phi_{\textrm{north}} - \phi_{\textrm{south}}}{\Delta y}
 \end{align*}
 
 #+name: dphi_partial_derivatives
@@ -3074,7 +3087,17 @@ def calc_dphi_dy(phi_north, phi_south, dy):
 For the east face:
 
 \begin{align*}
-# TODO: Insert phi_east formulas from https://elmfire.io/tech_ref.html
+  \delta\phi_{\textrm{loc}} &= \phi_{i+1,j} - \phi{i,j} \\
+  \\
+  \delta\phi_{\textrm{up}} &= \begin{cases}
+                                \phi_{i,j} - \phi_{i-1,j} & \textrm{for} u_{x,i,j} \geq 0 \\
+                                \phi_{i+2,j} - \phi_{i+1,j} & \textrm{for} u_{x,i,j} < 0
+                              \end{cases} \\
+  \\
+  \delta\phi_{\textrm{east}} &= \begin{cases}
+                                  \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{x,i,j} \geq 0 \\
+                                  \phi_{i+1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{x,i,j} < 0
+                                \end{cases}
 \end{align*}
 
 #+name: phi_east
@@ -3097,7 +3120,17 @@ def calc_phi_east(phi, u_x, x, y):
 For the west face:
 
 \begin{align*}
-# TODO: Insert phi_west formulas from https://elmfire.io/tech_ref.html
+  \delta\phi_{\textrm{loc}} &= \phi_{i-1,j} - \phi{i,j} \\
+  \\
+  \delta\phi_{\textrm{up}} &= \begin{cases}
+                                \phi_{i-2,j} - \phi_{i-1,j} & \textrm{for} u_{x,i,j} \geq 0 \\
+                                \phi_{i,j} - \phi_{i+1,j} & \textrm{for} u_{x,i,j} < 0
+                              \end{cases} \\
+  \\
+  \delta\phi_{\textrm{west}} &= \begin{cases}
+                                  \phi_{i-1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{x,i,j} \geq 0 \\
+                                  \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{x,i,j} < 0
+                                \end{cases}
 \end{align*}
 
 #+name: phi_west
@@ -3120,7 +3153,17 @@ def calc_phi_west(phi, u_x, x, y):
 For the north face:
 
 \begin{align*}
-# TODO: Insert phi_north formulas from https://elmfire.io/tech_ref.html
+  \delta\phi_{\textrm{loc}} &= \phi_{i,j+1} - \phi{i,j} \\
+  \\
+  \delta\phi_{\textrm{up}} &= \begin{cases}
+                                \phi_{i,j} - \phi_{i,j-1} & \textrm{for} u_{y,i,j} \geq 0 \\
+                                \phi_{i,j+2} - \phi_{i,j+1} & \textrm{for} u_{y,i,j} < 0
+                              \end{cases} \\
+  \\
+  \delta\phi_{\textrm{north}} &= \begin{cases}
+                                   \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{y,i,j} \geq 0 \\
+                                   \phi_{i,j+1} - \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{y,i,j} < 0
+                                 \end{cases}
 \end{align*}
 
 #+name: phi_north
@@ -3143,7 +3186,17 @@ def calc_phi_north(phi, u_y, x, y):
 For the south face:
 
 \begin{align*}
-# TODO: Insert phi_south formulas from https://elmfire.io/tech_ref.html
+  \delta\phi_{\textrm{loc}} &= \phi_{i,j-1} - \phi{i,j} \\
+  \\
+  \delta\phi_{\textrm{up}} &= \begin{cases}
+                                \phi_{i,j-2} - \phi_{i,j-1} & \textrm{for} u_{y,i,j} \geq 0 \\
+                                \phi_{i,j} - \phi_{i,j+1} & \textrm{for} u_{y,i,j} < 0
+                              \end{cases} \\
+  \\
+  \delta\phi_{\textrm{south}} &= \begin{cases}
+                                   \phi_{i,j-1} - \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{y,i,j} \geq 0 \\
+                                   \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \textrm{for} u_{y,i,j} < 0
+                                 \end{cases}
 \end{align*}
 
 #+name: phi_south
