@@ -234,7 +234,7 @@ class ArrayGrid3D:
         if remainder == 0:
             return quotient
         else:
-            raise ValueError(dividend + " must be an exact multiple of " + divisor + ".")
+            raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
     @staticmethod
     def maybe_repeat_array(array, axis_repetitions):
@@ -244,6 +244,7 @@ class ArrayGrid3D:
         (axis, repetitions) = axis_repetitions
         return np.repeat(array, repetitions, axis) if (repetitions > 1) else array
 
+    # FIXME: Inefficient invocation with match/case
     def get(self, *args):
         match len(args):
             case 1:
