@@ -175,53 +175,54 @@ class ArrayGrid3D:
         self.shape = (t, y, x)
         self.base = base
 
-        # 0D: Constant Input
-        if np.ndim(base) == 0:
-            self.data = np.broadcast_to([[[base]]], self.shape)
+        match np.ndim(base):
+            # 0D: Constant Input
+            case 0:
+                self.data = np.broadcast_to([[[base]]], self.shape)
 
-        # 1D: Time-Series Input
-        elif np.ndim(base) == 1:
-            t0 = len(base)
-            t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
-            # Repeat (t0) -> (t)              [FIXME: Inefficient memory usage]
-            repeated_array = ArrayGrid3D.maybe_repeat_array(base, (0, t_repetitions))
-            # Expand (t) -> (t,1,1)
-            expanded_array = np.expand_dims(repeated_array, axis=(1,2))
-            # Broadcast (t,1,1) -> (t,y,x)
-            self.data = np.broadcast_to(expanded_array, self.shape)
+            # 1D: Time-Series Input
+            case 1:
+                t0 = len(base)
+                t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
+                # Repeat (t0) -> (t)              [FIXME: Inefficient memory usage]
+                repeated_array = ArrayGrid3D.maybe_repeat_array(base, (0, t_repetitions))
+                # Expand (t) -> (t,1,1)
+                expanded_array = np.expand_dims(repeated_array, axis=(1,2))
+                # Broadcast (t,1,1) -> (t,y,x)
+                self.data = np.broadcast_to(expanded_array, self.shape)
 
-        # 2D: Spatial Input
-        elif np.ndim(base) == 2:
-            (y0, x0) = np.shape(base)
-            y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
-            x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
-            # Repeat (y0,x0) -> (y,x)         [FIXME: Inefficient memory usage]
-            repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
-                                    ((0, y_repetitions),
-                                     (1, x_repetitions)),
-                                    base)
-            # Expand (y,x) -> (1,y,x)
-            expanded_array = np.expand_dims(repeated_array, axis=0)
-            # Broadcast (1,y,x) -> (t,y,x)
-            self.data = np.broadcast_to(expanded_array, self.shape)
+            # 2D: Spatial Input
+            case 2:
+                (y0, x0) = np.shape(base)
+                y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
+                x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
+                # Repeat (y0,x0) -> (y,x)         [FIXME: Inefficient memory usage]
+                repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
+                                        ((0, y_repetitions),
+                                         (1, x_repetitions)),
+                                        base)
+                # Expand (y,x) -> (1,y,x)
+                expanded_array = np.expand_dims(repeated_array, axis=0)
+                # Broadcast (1,y,x) -> (t,y,x)
+                self.data = np.broadcast_to(expanded_array, self.shape)
 
-        # 3D: Spatio-Temporal Input
-        elif np.ndim(base) == 3:
-            (t0, y0, x0) = np.shape(base)
-            t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
-            y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
-            x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
-            # Repeat (t0,y0,x0) -> (t,y,x)    [FIXME: Inefficient memory usage]
-            repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
-                                    ((0, t_repetitions),
-                                     (1, y_repetitions),
-                                     (2, x_repetitions)),
-                                    base)
-            self.data = repeated_array
+            # 3D: Spatio-Temporal Input
+            case 3:
+                (t0, y0, x0) = np.shape(base)
+                t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
+                y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
+                x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
+                # Repeat (t0,y0,x0) -> (t,y,x)    [FIXME: Inefficient memory usage]
+                repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
+                                        ((0, t_repetitions),
+                                         (1, y_repetitions),
+                                         (2, x_repetitions)),
+                                        base)
+                self.data = repeated_array
 
-        # 4D+: Invalid Input
-        else:
-            raise ValueError("Invalid input: base must have 0-3 dimensions.")
+            # 4D+: Invalid Input
+            case _:
+                raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
     @staticmethod
     def is_pos_int(x):
