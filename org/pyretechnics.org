@@ -166,7 +166,10 @@ class ArrayGrid3D:
     TODO: Add docstring.
     """
     def __init__(self, base, t, y, x):
-        # TODO: Ensure that t, y, and x are positive integers
+        # Ensure that t, y, x are positive integers or throw an error
+        if not(all(map(ArrayGrid3D.is_pos_int, (t, y, x)))):
+            raise ValueError("The target dimensions (t, y, x) must all be positive integers.")
+
         self.ndim = 3
         self.size = t * y * x
         self.shape = (t, y, x)
@@ -179,9 +182,8 @@ class ArrayGrid3D:
         # 1D: Time-Series Input
         elif np.ndim(base) == 1:
             t0 = len(base)
-            t_repetitions = t / t0
-            # TODO: Ensure that t_repetitions is an integer or throw an error
-            # Repeat (t0) -> (t)
+            t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
+            # Repeat (t0) -> (t)              [FIXME: Inefficient memory usage]
             repeated_array = ArrayGrid3D.maybe_repeat_array(base, (0, t_repetitions))
             # Expand (t) -> (t,1,1)
             expanded_array = np.expand_dims(repeated_array, axis=(1,2))
@@ -191,10 +193,9 @@ class ArrayGrid3D:
         # 2D: Spatial Input
         elif np.ndim(base) == 2:
             (y0, x0) = np.shape(base)
-            y_repetitions = y / y0
-            x_repetitions = x / x0
-            # TODO: Ensure that y_repetitions and x_repetitions are integers or throw an error
-            # Repeat (y0,x0) -> (y,x)
+            y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
+            x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
+            # Repeat (y0,x0) -> (y,x)         [FIXME: Inefficient memory usage]
             repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
                                     ((0, y_repetitions),
                                      (1, x_repetitions)),
@@ -207,11 +208,10 @@ class ArrayGrid3D:
         # 3D: Spatio-Temporal Input
         elif np.ndim(base) == 3:
             (t0, y0, x0) = np.shape(base)
-            t_repetitions = t / t0
-            y_repetitions = y / y0
-            x_repetitions = x / x0
-            # TODO: Ensure that t_repetitions, y_repetitions, and x_repetitions are integers or throw an error
-            # Repeat (t0,y0,x0) -> (t,y,x)
+            t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
+            y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
+            x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
+            # Repeat (t0,y0,x0) -> (t,y,x)    [FIXME: Inefficient memory usage]
             repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
                                     ((0, t_repetitions),
                                      (1, y_repetitions),
@@ -222,6 +222,18 @@ class ArrayGrid3D:
         # 4D+: Invalid Input
         else:
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
+
+    @staticmethod
+    def is_pos_int(x):
+        return isinstance(x, int) and x > 0
+
+    @staticmethod
+    def divide_evenly(dividend, divisor):
+        (quotient, remainder) = divmod(dividend, divisor)
+        if remainder == 0:
+            return quotient
+        else:
+            raise ValueError(dividend + " must be an exact multiple of " + divisor + ".")
 
     @staticmethod
     def maybe_repeat_array(array, axis_repetitions):
