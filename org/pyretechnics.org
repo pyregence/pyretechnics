@@ -135,16 +135,116 @@ assigned to that input will correctly map the 3D space-time coordinate
 into the corresponding index within the native dataset.
 
 Similarly, input datasets may be provided at different resolutions
-from one another, provided that:
+from one another, provided that the following conditions are met:
 
-1. All spatial and temporal extents must match
-2. All spatial and temporal resolutions must be exact multiples of one another
-3. All spatially varying datasets must share the same projection
+1. All spatially varying datasets must share the same projection.
+2. All spatial and temporal extents must match.
+3. All spatial and temporal resolutions must be exact multiples of one another.
 
-Provided that these conditions are met, the 3D look-up function for
-each input will also be able to automatically translate the 3D
-space-time coordinate it receives into the correct coordinate for the
-underlying dataset's native resolution and dimensionality.
+The simulated space-time cube will share the same projection and
+extent as the input datasets, but its resolution may be specified by
+the user, provided that it meets condition 3 above.
+
+The 3D look-up function for each input will then be responsible for
+translating the space-time coordinate it receives at the simulation
+resolution into the correct coordinate for the underlying dataset's
+native resolution.
+
+** Input Loading Functions for Arrays
+
+The following sections provide some pre-built methods for transforming
+arrays into abstract 3D datatypes with index translating lookup
+functions.
+
+#+name: array-grid3d-class
+#+begin_src python :tangle ../src/pyretechnics/array_grid3d.py
+from functools import reduce
+import numpy as np
+
+class ArrayGrid3D:
+    """
+    TODO: Add docstring.
+    """
+    def __init__(self, base, t, y, x):
+        # TODO: Ensure that t, y, and x are positive integers
+        self.ndim = 3
+        self.size = t * y * x
+        self.shape = (t, y, x)
+        self.base = base
+
+        # 0D: Constant Input
+        if np.ndim(base) == 0:
+            self.data = np.broadcast_to([[[base]]], self.shape)
+
+        # 1D: Time-Series Input
+        elif np.ndim(base) == 1:
+            t0 = len(base)
+            t_repetitions = t / t0
+            # TODO: Ensure that t_repetitions is an integer or throw an error
+            # Repeat (t0) -> (t)
+            repeated_array = ArrayGrid3D.maybe_repeat_array(base, (0, t_repetitions))
+            # Expand (t) -> (t,1,1)
+            expanded_array = np.expand_dims(repeated_array, axis=(1,2))
+            # Broadcast (t,1,1) -> (t,y,x)
+            self.data = np.broadcast_to(expanded_array, self.shape)
+
+        # 2D: Spatial Input
+        elif np.ndim(base) == 2:
+            (y0, x0) = np.shape(base)
+            y_repetitions = y / y0
+            x_repetitions = x / x0
+            # TODO: Ensure that y_repetitions and x_repetitions are integers or throw an error
+            # Repeat (y0,x0) -> (y,x)
+            repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
+                                    ((0, y_repetitions),
+                                     (1, x_repetitions)),
+                                    base)
+            # Expand (y,x) -> (1,y,x)
+            expanded_array = np.expand_dims(repeated_array, axis=0)
+            # Broadcast (1,y,x) -> (t,y,x)
+            self.data = np.broadcast_to(expanded_array, self.shape)
+
+        # 3D: Spatio-Temporal Input
+        elif np.ndim(base) == 3:
+            (t0, y0, x0) = np.shape(base)
+            t_repetitions = t / t0
+            y_repetitions = y / y0
+            x_repetitions = x / x0
+            # TODO: Ensure that t_repetitions, y_repetitions, and x_repetitions are integers or throw an error
+            # Repeat (t0,y0,x0) -> (t,y,x)
+            repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
+                                    ((0, t_repetitions),
+                                     (1, y_repetitions),
+                                     (2, x_repetitions)),
+                                    base)
+            self.data = repeated_array
+
+        # 4D+: Invalid Input
+        else:
+            raise ValueError("Invalid input: base must have 0-3 dimensions.")
+
+    @staticmethod
+    def maybe_repeat_array(array, axis_repetitions):
+        """
+        TODO: Add docstring.
+        """
+        (axis, repetitions) = axis_repetitions
+        return np.repeat(array, repetitions, axis) if (repetitions > 1) else array
+
+    def get(self, *args):
+        match len(args):
+            case 1:
+                (t) = args
+                return self.data[t]
+            case 2:
+                (y,x) = args
+                return self.data[:,y,x]
+            case 3:
+                (t,y,x) = args
+                return self.data[t,y,x]
+            case _:
+                raise ValueError("ArrayGrid3D.get() takes 1-3 arguments.")
+#+end_src
 
 ** Lazy Loading of Space-Time Chunks
 
@@ -196,6 +296,7 @@ finer resolutions than have been used previously.
 
 ** Lazy-Loading Multi-Resolution Array Lookup Functions
 
+#+name: lazy-array-lookup-functions
 #+begin_src python :tangle ../src/pyretechnics/lazy_array.py
 import numpy as np
 
@@ -348,6 +449,7 @@ def make_lookup_fn_3d(simulation_shape_3d, layer_shape_3d, chunk_shape_3d, load_
 
 ** Lazy Array Usage Examples
 
+#+name: lazy-array-examples
 #+begin_src python :tangle ../test/pyretechnics_test/test_lazy_array.py
 import numpy as np
 from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
@@ -699,6 +801,7 @@ condition is encountered and then to easily resume the fire spread
 simulation from the output =simulation_clock= until the next stop
 condition is met. Here is an example of how to do this.
 
+#+name: play-pause-continue-workflow
 #+begin_src python
 import numpy as np
 
@@ -774,6 +877,7 @@ TODO: stub
 
 # TODO: Consider implementing a chunked array class and using it to store intermediate/output arrays as well
 
+#+name: fire-spread-functions
 #+begin_src python :tangle ../src/pyretechnics/fire_spread.py
 # TODO: Compare this with numpy.random (is there a generator object that I can use here?)
 import random
@@ -3309,6 +3413,12 @@ In the above equations, timestep ($\Delta t$) is constrained by the
 Courant-Friedrichs-Lewy (CFL) condition. The location of the fire
 perimeter is determined by interpolation of the $\phi$ field as the
 level set corresponding to $\phi = 0$.
+
+...RESUME HERE...
+
+# TODO: Implement U_x and U_y calculations using surface and crown
+# equations from the ELMFire paper and the online technical reference:
+  https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
 
 * Appendix: Units Conversion Functions
 
