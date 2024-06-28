@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::*Lazy Array Usage Examples][Lazy Array Usage Examples:1]]
+# [[file:../../org/pyretechnics.org::lazy-array-examples][lazy-array-examples]]
 import numpy as np
 from pyretechnics.lazy_array import make_lookup_fn_2d, make_lookup_fn_3d
 
@@ -174,4 +174,4 @@ def test_use_layer_lookup_3d():
     assert mlw_12_100_100   == 121010
     assert fm_12_100_100    == 121010
     assert wsa_12_100_100   == 121010
-# Lazy Array Usage Examples:1 ends here
+# lazy-array-examples ends here

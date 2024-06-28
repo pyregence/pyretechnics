@@ -52,27 +52,30 @@ def calc_phi_normal_vector(phi, dx, dy, x, y):
         }
 # phi-field-normal-vector ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
-from math import atan2, pi
+from math import atan, pi
 
 def calc_phi_normal_vector_angle(phi_normal_vector):
     """
     Calculate the angle (measured in radians clockwise from North)
     to which the phi field's normal vector points.
-
-    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
-          of the grid in Python arrays. Thus, as x increases, we move
-          to the east, and as y increases, we move to the south.
     """
     n_x = phi_normal_vector["n_x"]
     n_y = phi_normal_vector["n_y"]
-    if n_x >= 0 and n_y >= 0:
-        return 1/2 * pi - atan2(n_y, n_x)
-    elif n_x < 0 and n_y >= 0:
-        return 3/2 * pi + atan2(n_y, abs(n_x))
-    elif n_x < 0 and n_y < 0:
-        return 3/2 * pi - atan2(n_y, n_x)
-    elif n_x >= 0 and n_y < 0:
-        return 1/2 * pi + atan2(abs(n_y), n_x)
+    if n_x > 0:
+        if n_y >= 0:
+            return 1/2 * pi - atan(n_y / n_x)
+        elif n_y < 0:
+            return 1/2 * pi + atan(abs(n_y) / n_x)
+    elif n_x < 0:
+        if n_y >= 0:
+            return 3/2 * pi + atan(n_y / abs(n_x))
+        elif n_y < 0:
+            return 3/2 * pi - atan(n_y / n_x)
+    else:
+        if n_y >= 0:
+            return 0.0
+        elif n_y < 0:
+            return pi
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
 def calc_superbee_flux_limiter(dphi_up, dphi_loc):
@@ -103,14 +106,18 @@ def calc_phi_east(phi, u_x, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y][x+1] - phi[y][x]
-    if u_x[y][x] >= 0:
+    u_xij = u_x[y][x]
+    if u_xij > 0:
         dphi_up = phi[y][x] - phi[y][x-1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
-    else:
+    elif u_xij < 0:
         dphi_up = phi[y][x+2] - phi[y][x+1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x+1] - 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
 # phi_east ends here
 # [[file:../../org/pyretechnics.org::phi_west][phi_west]]
 def calc_phi_west(phi, u_x, x, y):
@@ -118,14 +125,18 @@ def calc_phi_west(phi, u_x, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y][x-1] - phi[y][x]
-    if u_x[y][x] >= 0:
+    u_xij = u_x[y][x]
+    if u_xij > 0:
         dphi_up = phi[y][x-2] - phi[y][x-1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x-1] - 0.5 * B * dphi_loc
-    else:
+    elif u_xij < 0:
         dphi_up = phi[y][x] - phi[y][x+1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
 # phi_west ends here
 # [[file:../../org/pyretechnics.org::phi_north][phi_north]]
 def calc_phi_north(phi, u_y, x, y):
@@ -133,14 +144,18 @@ def calc_phi_north(phi, u_y, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y-1][x] - phi[y][x]
-    if u_y[y][x] >= 0:
+    u_yij = u_y[y][x]
+    if u_yij > 0:
         dphi_up = phi[y][x] - phi[y+1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
-    else:
+    elif u_yij < 0:
         dphi_up = phi[y-2][x] - phi[y-1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y-1][x] - 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
 # phi_north ends here
 # [[file:../../org/pyretechnics.org::phi_south][phi_south]]
 def calc_phi_south(phi, u_y, x, y):
@@ -148,14 +163,18 @@ def calc_phi_south(phi, u_y, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y+1][x] - phi[y][x]
-    if u_y[y][x] >= 0:
+    u_yij = u_y[y][x]
+    if u_yij > 0:
         dphi_up = phi[y+2][x] - phi[y+1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y+1][x] - 0.5 * B * dphi_loc
-    else:
+    elif u_yij < 0:
         dphi_up = phi[y][x] - phi[y-1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
 # phi_south ends here
 # [[file:../../org/pyretechnics.org::phi_time][phi_time]]
 import numpy as np

@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::*Fire Spread Functions][Fire Spread Functions:1]]
+# [[file:../../org/pyretechnics.org::fire-spread-functions][fire-spread-functions]]
 # TODO: Compare this with numpy.random (is there a generator object that I can use here?)
 import random
 import numpy as np
@@ -156,4 +156,4 @@ def grow_fire(world_state):
     # TODO: Investigate ELMFIRE's inputs to determine if we are missing anything needed by its API.
 
     return None
-# Fire Spread Functions:1 ends here
+# fire-spread-functions ends here

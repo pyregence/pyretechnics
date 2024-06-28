@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::*Lazy-Loading Multi-Resolution Array Lookup Functions][Lazy-Loading Multi-Resolution Array Lookup Functions:1]]
+# [[file:../../org/pyretechnics.org::lazy-array-lookup-functions][lazy-array-lookup-functions]]
 import numpy as np
 
 #==============================================================
@@ -146,4 +146,4 @@ def make_lookup_fn_3d(simulation_shape_3d, layer_shape_3d, chunk_shape_3d, load_
                                         chunk_shape_3d,
                                         chunk_cache_3d,
                                         load_chunk_3d)
-# Lazy-Loading Multi-Resolution Array Lookup Functions:1 ends here
+# lazy-array-lookup-functions ends here
