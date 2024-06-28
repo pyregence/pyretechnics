@@ -1,14 +1,14 @@
-# [[file:../../org/pyretechnics.org::array-grid3d-class][array-grid3d-class]]
+# [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
 from functools import reduce
 import numpy as np
 
-class ArrayGrid3D:
+class SpaceTimeCube:
     """
     TODO: Add docstring.
     """
     def __init__(self, base, t, y, x):
         # Ensure that t, y, x are positive integers or throw an error
-        if not(all(map(ArrayGrid3D.is_pos_int, (t, y, x)))):
+        if not(all(map(SpaceTimeCube.is_pos_int, (t, y, x)))):
             raise ValueError("The target dimensions (t, y, x) must all be positive integers.")
 
         self.ndim = 3
@@ -24,9 +24,9 @@ class ArrayGrid3D:
             # 1D: Time-Series Input
             case 1:
                 t0 = len(base)
-                t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
+                t_repetitions = SpaceTimeCube.divide_evenly(t, t0)
                 # Repeat (t0) -> (t)              [FIXME: Inefficient memory usage]
-                repeated_array = ArrayGrid3D.maybe_repeat_array(base, (0, t_repetitions))
+                repeated_array = SpaceTimeCube.maybe_repeat_array(base, (0, t_repetitions))
                 # Expand (t) -> (t,1,1)
                 expanded_array = np.expand_dims(repeated_array, axis=(1,2))
                 # Broadcast (t,1,1) -> (t,y,x)
@@ -35,10 +35,10 @@ class ArrayGrid3D:
             # 2D: Spatial Input
             case 2:
                 (y0, x0) = np.shape(base)
-                y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
-                x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
+                y_repetitions = SpaceTimeCube.divide_evenly(y, y0)
+                x_repetitions = SpaceTimeCube.divide_evenly(x, x0)
                 # Repeat (y0,x0) -> (y,x)         [FIXME: Inefficient memory usage]
-                repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
+                repeated_array = reduce(SpaceTimeCube.maybe_repeat_array,
                                         ((0, y_repetitions),
                                          (1, x_repetitions)),
                                         base)
@@ -50,11 +50,11 @@ class ArrayGrid3D:
             # 3D: Spatio-Temporal Input
             case 3:
                 (t0, y0, x0) = np.shape(base)
-                t_repetitions = ArrayGrid3D.divide_evenly(t, t0)
-                y_repetitions = ArrayGrid3D.divide_evenly(y, y0)
-                x_repetitions = ArrayGrid3D.divide_evenly(x, x0)
+                t_repetitions = SpaceTimeCube.divide_evenly(t, t0)
+                y_repetitions = SpaceTimeCube.divide_evenly(y, y0)
+                x_repetitions = SpaceTimeCube.divide_evenly(x, x0)
                 # Repeat (t0,y0,x0) -> (t,y,x)    [FIXME: Inefficient memory usage]
-                repeated_array = reduce(ArrayGrid3D.maybe_repeat_array,
+                repeated_array = reduce(SpaceTimeCube.maybe_repeat_array,
                                         ((0, t_repetitions),
                                          (1, y_repetitions),
                                          (2, x_repetitions)),
@@ -85,18 +85,21 @@ class ArrayGrid3D:
         (axis, repetitions) = axis_repetitions
         return np.repeat(array, repetitions, axis) if (repetitions > 1) else array
 
-    # FIXME: Inefficient invocation with match/case
-    def get(self, *args):
-        match len(args):
-            case 1:
-                (t) = args
-                return self.data[t]
-            case 2:
-                (y,x) = args
-                return self.data[:,y,x]
-            case 3:
-                (t,y,x) = args
-                return self.data[t,y,x]
-            case _:
-                raise ValueError("ArrayGrid3D.get() takes 1-3 arguments.")
-# array-grid3d-class ends here
+    def getSpatialPlane(self, t):
+        """
+        TODO: Add docstring.
+        """
+        return self.data[t]
+
+    def getTimeSeries(self, y, x):
+        """
+        TODO: Add docstring.
+        """
+        return self.data[:,y,x]
+
+    def get(self, t, y, x):
+        """
+        TODO: Add docstring.
+        """
+        return self.data[t,y,x]
+# space-time-cube-class ends here
