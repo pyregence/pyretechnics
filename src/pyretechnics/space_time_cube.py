@@ -25,7 +25,7 @@ class SpaceTimeCube:
             case 1:
                 t0 = len(base)
                 t_repetitions = SpaceTimeCube.divide_evenly(t, t0)
-                # Repeat (t0) -> (t)              [FIXME: Inefficient memory usage]
+                # Repeat (t0) -> (t)              [NOTE: Inefficient memory usage]
                 repeated_array = SpaceTimeCube.maybe_repeat_array(base, (0, t_repetitions))
                 # Expand (t) -> (t,1,1)
                 expanded_array = np.expand_dims(repeated_array, axis=(1,2))
@@ -37,7 +37,7 @@ class SpaceTimeCube:
                 (y0, x0) = np.shape(base)
                 y_repetitions = SpaceTimeCube.divide_evenly(y, y0)
                 x_repetitions = SpaceTimeCube.divide_evenly(x, x0)
-                # Repeat (y0,x0) -> (y,x)         [FIXME: Inefficient memory usage]
+                # Repeat (y0,x0) -> (y,x)         [NOTE: Inefficient memory usage]
                 repeated_array = reduce(SpaceTimeCube.maybe_repeat_array,
                                         ((0, y_repetitions),
                                          (1, x_repetitions)),
@@ -53,13 +53,13 @@ class SpaceTimeCube:
                 t_repetitions = SpaceTimeCube.divide_evenly(t, t0)
                 y_repetitions = SpaceTimeCube.divide_evenly(y, y0)
                 x_repetitions = SpaceTimeCube.divide_evenly(x, x0)
-                # Repeat (t0,y0,x0) -> (t,y,x)    [FIXME: Inefficient memory usage]
+                # Repeat (t0,y0,x0) -> (t,y,x)    [NOTE: Inefficient memory usage]
                 repeated_array = reduce(SpaceTimeCube.maybe_repeat_array,
                                         ((0, t_repetitions),
                                          (1, y_repetitions),
                                          (2, x_repetitions)),
                                         base)
-                self.data = repeated_array
+                self.data = np.asarray(repeated_array)
 
             # 4D+: Invalid Input
             case _:
@@ -127,7 +127,7 @@ class SpaceTimeCube2:
                 self.t_repetitions = t
                 self.y_repetitions = y
                 self.x_repetitions = x
-                self.data = np.array([[[base]]])
+                self.data = np.asarray([[[base]]])
 
             # 1D: Time-Series Input
             case 1:
@@ -151,7 +151,7 @@ class SpaceTimeCube2:
                 self.t_repetitions = SpaceTimeCube2.divide_evenly(t, t0)
                 self.y_repetitions = SpaceTimeCube2.divide_evenly(y, y0)
                 self.x_repetitions = SpaceTimeCube2.divide_evenly(x, x0)
-                self.data = base
+                self.data = np.asarray(base)
 
             # 4D+: Invalid Input
             case _:
@@ -182,6 +182,7 @@ class SpaceTimeCube2:
         TODO: Add docstring.
         """
         space = self.data[t // self.t_repetitions]
+        # [NOTE: CPU and Memory Inefficient]
         return reduce(SpaceTimeCube2.maybe_repeat_array,
                       ((0, self.y_repetitions),
                        (1, self.x_repetitions)),
@@ -194,6 +195,7 @@ class SpaceTimeCube2:
         time = self.data[:,
                          y // self.y_repetitions,
                          x // self.x_repetitions]
+        # [NOTE: CPU and Memory Inefficient]
         return SpaceTimeCube2.maybe_repeat_array(time, (0, self.t_repetitions))
 
     def get(self, t, y, x):
