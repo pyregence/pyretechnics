@@ -102,6 +102,12 @@ class SpaceTimeCube:
         TODO: Add docstring.
         """
         return self.data[t,y,x]
+
+    def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+        """
+        TODO: Add docstring.
+        """
+        return self.data[t_start:t_stop, y_start:y_stop, x_start:x_stop]
 # space-time-cube-class ends here
 # [[file:../../org/pyretechnics.org::space-time-cube2-class][space-time-cube2-class]]
 from functools import reduce
@@ -205,4 +211,36 @@ class SpaceTimeCube2:
         return self.data[t // self.t_repetitions,
                          y // self.y_repetitions,
                          x // self.x_repetitions]
+
+    def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+        """
+        TODO: Add docstring.
+        """
+        t_start_chunk = t_start // self.t_repetitions
+        t_stop_chunk  = t_stop  // self.t_repetitions
+        y_start_chunk = y_start // self.y_repetitions
+        y_stop_chunk  = y_stop  // self.y_repetitions
+        x_start_chunk = x_start // self.x_repetitions
+        x_stop_chunk  = x_stop  // self.x_repetitions
+        low_res_cube  = self.data[t_start_chunk:(t_stop_chunk + 1),
+                                  y_start_chunk:(y_stop_chunk + 1),
+                                  x_start_chunk:(x_stop_chunk + 1)]
+        # [NOTE: CPU and Memory Inefficient]
+        high_res_cube = reduce(SpaceTimeCube2.maybe_repeat_array,
+                               ((0, self.t_repetitions),
+                                (1, self.y_repetitions),
+                                (2, self.x_repetitions)),
+                               low_res_cube)
+        t_chunk_origin = t_start_chunk * self.t_repetitions
+        y_chunk_origin = y_start_chunk * self.y_repetitions
+        x_chunk_origin = x_start_chunk * self.x_repetitions
+        t_start_idx    = t_start - t_chunk_origin
+        t_stop_idx     = t_stop  - t_chunk_origin
+        y_start_idx    = y_start - y_chunk_origin
+        y_stop_idx     = y_stop  - y_chunk_origin
+        x_start_idx    = x_start - x_chunk_origin
+        x_stop_idx     = x_stop  - x_chunk_origin
+        return high_res_cube[t_start_idx:t_stop_idx,
+                             y_start_idx:y_stop_idx,
+                             x_start_idx:x_stop_idx]
 # space-time-cube2-class ends here
