@@ -179,3 +179,62 @@ class SpaceTimeCube:
     def releaseFullyRealizedCube(self):
         delattr(self, "cube")
 # space-time-cube-class ends here
+# [[file:../../org/pyretechnics.org::lazy-space-time-cube-class][lazy-space-time-cube-class]]
+import numpy as np
+
+class LazySpaceTimeCube:
+    """
+    TODO: Add docstring.
+    """
+    def __init__(self, cube_shape, subcube_shape, load_subcube):
+        """
+        NOTE: (z,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
+        NOTE: cube_shape >= subcube_shape
+        """
+        # Ensure that cube_shape and subcube_shape both contain 3 values or throw an error
+        (cube_bands, cube_rows, cube_cols) = cube_shape
+        (subcube_bands, subcube_rows, subcube_cols) = subcube_shape
+
+        # Ensure that cube_shape and subcube_shape only contain positive integers or throw an error
+        if not(all(map(is_pos_int, cube_shape + subcube_shape))):
+            raise ValueError("The cube_shape and subcube_shape must only contain positive integers.")
+
+        # Ensure that cube_shape is divided evenly by subcube_shape or throw an error
+        subcube_cache_bands = divide_evenly(cube_bands, subcube_bands)
+        subcube_cache_rows  = divide_evenly(cube_rows, subcube_rows)
+        subcube_cache_cols  = divide_evenly(cube_cols, subcube_cols)
+
+        # Store the cube metadata, subcube_cache, and load_subcube functions for later
+        self.ndim          = 3
+        self.size          = cube_bands * cube_rows * cube_cols
+        self.shape         = cube_shape
+        self.subcube_cache = np.empty((subcube_cache_bands,
+                                       subcube_cache_rows,
+                                       subcube_cache_cols),
+                                      dtype=object)
+        self.load_subcube  = load_subcube
+
+
+    # FIXME: stub
+    def get(self, t, y, x):
+        # Select value by spatio-temporal coordinate
+        return None
+
+
+    # FIXME: stub
+    def getTimeSeries(self, y, x):
+        # Select time series by spatial coordinate
+        return None
+
+
+    # FIXME: stub
+    def getSpatialPlane(self, t):
+        # Select spatial plane by timestep
+        return None
+
+
+    # FIXME: stub
+    def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+        # Translate high-res coordinates to low-res coordinates
+        return None
+# lazy-space-time-cube-class ends here
