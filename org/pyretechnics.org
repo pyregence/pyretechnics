@@ -149,10 +149,20 @@ The following sections provide some pre-built methods for constructing
 3D space-time cubes corresponding to the data model described above
 for various types of input datasets.
 
-*** Utility Functions
+*** Arrays -> Space-Time Cubes
 
-#+name: space-time-cube-utilities
+# TODO: Write documentation and incorporate the following paragraph:
+
+Note, that for performance reasons, input values that are constant in
+either space or time will not be broadcast into these constant
+dimensions when stored in memory. Instead, their native
+representations will be preserved, and the 3D look-up function
+assigned to that input will correctly map the 3D space-time coordinate
+into the corresponding index within the native dataset.
+
+#+name: space-time-cube-class
 #+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
+from functools import reduce
 import numpy as np
 
 def is_pos_int(x):
@@ -170,118 +180,13 @@ def divide_evenly(dividend, divisor):
 def maybe_repeat_array(array, axis_repetitions):
     (axis, repetitions) = axis_repetitions
     return np.repeat(array, repetitions, axis) if (repetitions > 1) else array
-#+end_src
 
-*** Arrays -> Space-Time Cubes (Fast, Flexible, Memory Inefficient)
-
-# TODO: Write documentation for this section.
-
-#+name: space-time-cube-class
-#+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
-from functools import reduce
-import numpy as np
 
 class SpaceTimeCube:
     """
     TODO: Add docstring.
     """
-    def __init__(self, base, t, y, x):
-        # Ensure that t, y, x are positive integers or throw an error
-        if not(all(map(is_pos_int, (t, y, x)))):
-            raise ValueError("The target dimensions (t, y, x) must all be positive integers.")
-
-        self.ndim = 3
-        self.size = t * y * x
-        self.shape = (t, y, x)
-        self.base = base
-
-        match np.ndim(base):
-            # 0D: Constant Input
-            case 0:
-                self.data = np.broadcast_to([[[base]]], self.shape)
-
-            # 1D: Time-Series Input
-            case 1:
-                t0 = len(base)
-                t_repetitions = divide_evenly(t, t0)
-                # Repeat (t0) -> (t)              [NOTE: Inefficient memory usage]
-                repeated_array = maybe_repeat_array(base, (0, t_repetitions))
-                # Expand (t) -> (t,1,1)
-                expanded_array = np.expand_dims(repeated_array, axis=(1,2))
-                # Broadcast (t,1,1) -> (t,y,x)
-                self.data = np.broadcast_to(expanded_array, self.shape)
-
-            # 2D: Spatial Input
-            case 2:
-                (y0, x0) = np.shape(base)
-                y_repetitions = divide_evenly(y, y0)
-                x_repetitions = divide_evenly(x, x0)
-                # Repeat (y0,x0) -> (y,x)         [NOTE: Inefficient memory usage]
-                repeated_array = reduce(maybe_repeat_array,
-                                        ((0, y_repetitions),
-                                         (1, x_repetitions)),
-                                        base)
-                # Expand (y,x) -> (1,y,x)
-                expanded_array = np.expand_dims(repeated_array, axis=0)
-                # Broadcast (1,y,x) -> (t,y,x)
-                self.data = np.broadcast_to(expanded_array, self.shape)
-
-            # 3D: Spatio-Temporal Input
-            case 3:
-                (t0, y0, x0) = np.shape(base)
-                t_repetitions = divide_evenly(t, t0)
-                y_repetitions = divide_evenly(y, y0)
-                x_repetitions = divide_evenly(x, x0)
-                # Repeat (t0,y0,x0) -> (t,y,x)    [NOTE: Inefficient memory usage]
-                repeated_array = reduce(maybe_repeat_array,
-                                        ((0, t_repetitions),
-                                         (1, y_repetitions),
-                                         (2, x_repetitions)),
-                                        base)
-                self.data = np.asarray(repeated_array)
-
-            # 4D+: Invalid Input
-            case _:
-                raise ValueError("Invalid input: base must have 0-3 dimensions.")
-
-
-    def getSpatialPlane(self, t):
-        return self.data[t]
-
-
-    def getTimeSeries(self, y, x):
-        return self.data[:,y,x]
-
-
-    def get(self, t, y, x):
-        return self.data[t,y,x]
-
-
-    def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
-        return self.data[t_start:t_stop, y_start:y_stop, x_start:x_stop]
-#+end_src
-
-*** Arrays -> Space-Time Cubes (Less Fast, Less Flexible, Memory Efficient)
-
-# TODO: Write documentation and incorporate the following paragraph:
-
-Note, that for performance reasons, input values that are constant in
-either space or time will not be broadcast into these constant
-dimensions when stored in memory. Instead, their native
-representations will be preserved, and the 3D look-up function
-assigned to that input will correctly map the 3D space-time coordinate
-into the corresponding index within the native dataset.
-
-#+name: space-time-cube2-class
-#+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
-from functools import reduce
-import numpy as np
-
-class SpaceTimeCube2:
-    """
-    TODO: Add docstring.
-    """
-    def __init__(self, base, t, y, x):
+    def __init__(self, t, y, x, base):
         # Ensure that t, y, x are positive integers or throw an error
         if not(all(map(is_pos_int, (t, y, x)))):
             raise ValueError("The target dimensions (t, y, x) must all be positive integers.")
@@ -305,6 +210,7 @@ class SpaceTimeCube2:
                 self.t_repetitions = divide_evenly(t, t0)
                 self.y_repetitions = y
                 self.x_repetitions = x
+                # Expand (t0) -> (t0,1,1)
                 self.data = np.expand_dims(base, axis=(1,2))
 
             # 2D: Spatial Input
@@ -313,6 +219,7 @@ class SpaceTimeCube2:
                 self.t_repetitions = t
                 self.y_repetitions = divide_evenly(y, y0)
                 self.x_repetitions = divide_evenly(x, x0)
+                # Expand (y0,x0) -> (1,y0,x0)
                 self.data = np.expand_dims(base, axis=0)
 
             # 3D: Spatio-Temporal Input
@@ -328,45 +235,51 @@ class SpaceTimeCube2:
                 raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
 
+    def get(self, t, y, x):
+        # Select value by spatio-temporal coordinate
+        return self.data[t // self.t_repetitions,
+                         y // self.y_repetitions,
+                         x // self.x_repetitions]
+
+
+    def getTimeSeries(self, y, x):
+        # Select time series by spatial coordinate
+        time = self.data[:,
+                         y // self.y_repetitions,
+                         x // self.x_repetitions]
+        # Expand time dimension to (t)
+        return maybe_repeat_array(time, (0, self.t_repetitions))
+
+
     def getSpatialPlane(self, t):
+        # Select spatial plane by timestep
         space = self.data[t // self.t_repetitions]
-        # [NOTE: CPU and Memory Inefficient]
+        # Expand spatial dimensions to (y, x)
         return reduce(maybe_repeat_array,
                       ((0, self.y_repetitions),
                        (1, self.x_repetitions)),
                       space)
 
 
-    def getTimeSeries(self, y, x):
-        time = self.data[:,
-                         y // self.y_repetitions,
-                         x // self.x_repetitions]
-        # [NOTE: CPU and Memory Inefficient]
-        return maybe_repeat_array(time, (0, self.t_repetitions))
-
-
-    def get(self, t, y, x):
-        return self.data[t // self.t_repetitions,
-                         y // self.y_repetitions,
-                         x // self.x_repetitions]
-
-
     def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+        # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
         t_stop_chunk  = t_stop  // self.t_repetitions
         y_start_chunk = y_start // self.y_repetitions
         y_stop_chunk  = y_stop  // self.y_repetitions
         x_start_chunk = x_start // self.x_repetitions
         x_stop_chunk  = x_stop  // self.x_repetitions
-        low_res_cube  = self.data[t_start_chunk:(t_stop_chunk + 1),
-                                  y_start_chunk:(y_stop_chunk + 1),
-                                  x_start_chunk:(x_stop_chunk + 1)]
-        # [NOTE: CPU and Memory Inefficient]
+        # Select the array slice that completely contains all low-res coordinates
+        low_res_cube = self.data[t_start_chunk:(t_stop_chunk + 1),
+                                 y_start_chunk:(y_stop_chunk + 1),
+                                 x_start_chunk:(x_stop_chunk + 1)]
+        # Expand the low-res slice into a high-res slice
         high_res_cube = reduce(maybe_repeat_array,
                                ((0, self.t_repetitions),
                                 (1, self.y_repetitions),
                                 (2, self.x_repetitions)),
                                low_res_cube)
+        # Translate high-res global coordinates to high-res slice coordinates
         t_chunk_origin = t_start_chunk * self.t_repetitions
         y_chunk_origin = y_start_chunk * self.y_repetitions
         x_chunk_origin = x_start_chunk * self.x_repetitions
@@ -376,12 +289,63 @@ class SpaceTimeCube2:
         y_stop_idx     = y_stop  - y_chunk_origin
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
+        # Select the array slice that matches the high-res slice coordinates
         return high_res_cube[t_start_idx:t_stop_idx,
                              y_start_idx:y_stop_idx,
                              x_start_idx:x_stop_idx]
+
+
+    def __getFullyRealizedCube(self):
+        match np.ndim(self.base):
+            # 0D: Constant Input
+            case 0:
+                # Broadcast (0,0,0) -> (t,y,x)
+                return np.broadcast_to(self.data, self.shape)
+
+            # 1D: Time-Series Input
+            case 1:
+                # Repeat (t0,1,1) -> (t,1,1)
+                repeated_array = maybe_repeat_array(self.data, (0, self.t_repetitions))
+                # Broadcast (t,1,1) -> (t,y,x)
+                return np.broadcast_to(repeated_array, self.shape)
+
+            # 2D: Spatial Input
+            case 2:
+                # Repeat (1,y0,x0) -> (1,y,x)
+                repeated_array = reduce(maybe_repeat_array,
+                                        ((1, self.y_repetitions),
+                                         (2, self.x_repetitions)),
+                                        self.data)
+                # Broadcast (1,y,x) -> (t,y,x)
+                return np.broadcast_to(repeated_array, self.shape)
+
+            # 3D: Spatio-Temporal Input
+            case 3:
+                # Repeat (t0,y0,x0) -> (t,y,x)
+                return reduce(maybe_repeat_array,
+                              ((0, self.t_repetitions),
+                               (1, self.y_repetitions),
+                               (2, self.x_repetitions)),
+                              self.data)
+
+
+    def getFullyRealizedCube(self, cache=False):
+        if hasattr(self, "cube"):
+            return self.cube
+        else:
+            cube = self.__getFullyRealizedCube()
+            if cache is True:
+                self.cube = cube
+            return cube
+
+
+    def releaseFullyRealizedCube(self):
+        delattr(self, "cube")
 #+end_src
 
-*** Lazy Arrays -> Space-Time Cubes (Slower, Less Flexible, Memory Efficient)
+*** Lazy Arrays -> Space-Time Cubes
+
+# TODO: Incorporate the following sections into the SpaceTimeCube class model defined above.
 
 ** Lazy Loading of Space-Time Chunks
 
