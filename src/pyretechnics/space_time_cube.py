@@ -98,7 +98,7 @@ class SpaceTimeCube:
                       space)
 
 
-    def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+    def getSubcube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
         # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
         t_stop_chunk  = t_stop  // self.t_repetitions
@@ -204,10 +204,11 @@ class LazySpaceTimeCube:
         subcube_cache_rows  = divide_evenly(cube_rows, subcube_rows)
         subcube_cache_cols  = divide_evenly(cube_cols, subcube_cols)
 
-        # Store the cube metadata, subcube_cache, and load_subcube functions for later
+        # Store the cube metadata, subcube_shape, subcube_cache, and load_subcube functions for later
         self.ndim          = 3
         self.size          = cube_bands * cube_rows * cube_cols
         self.shape         = cube_shape
+        self.subcube_shape = subcube_shape
         self.subcube_cache = np.empty((subcube_cache_bands,
                                        subcube_cache_rows,
                                        subcube_cache_cols),
@@ -215,16 +216,43 @@ class LazySpaceTimeCube:
         self.load_subcube  = load_subcube
 
 
-    # FIXME: stub
+    def __getOrLoadSubcube(subcube_cache_t, subcube_cache_y, subcube_cache_x):
+        """
+        Returns SpaceTimeCube
+        """
+        subcube = self.subcube_cache[subcube_cache_t, subcube_cache_y, subcube_cache_x]
+        if subcube:
+            return subcube
+        else:
+            subcube = self.load_subcube((subcube_cache_t, subcube_cache_y, subcube_cache_x),
+                                        self.subcube_shape)
+            self.subcube_cache[subcube_cache_t, subcube_cache_y, subcube_cache_x] = subcube
+            return subcube
+
+
     def get(self, t, y, x):
         # Select value by spatio-temporal coordinate
-        return None
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (subcube_cache_t, subcube_t) = divmod(t, subcube_bands)
+        (subcube_cache_y, subcube_y) = divmod(y, subcube_rows)
+        (subcube_cache_x, subcube_x) = divmod(x, subcube_cols)
+        subcube = self.__getOrLoadSubcube(subcube_cache_t, subcube_cache_y, subcube_cache_x)
+        return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # FIXME: stub
+    # FIXME: Add an optional (t_start, t_stop) range
     def getTimeSeries(self, y, x):
         # Select time series by spatial coordinate
-        return None
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (subcube_cache_y, subcube_y) = divmod(y, subcube_rows)
+        (subcube_cache_x, subcube_x) = divmod(x, subcube_cols)
+        return np.concatenate(
+            [self.__getOrLoadSubcube(subcube_cache_t,
+                                     subcube_cache_y,
+                                     subcube_cache_x
+                                    ).getTimeSeries(subcube_y, subcube_x)
+             for subcube_cache_t in range(0, subcube_bands)]
+        )
 
 
     # FIXME: stub
@@ -234,7 +262,6 @@ class LazySpaceTimeCube:
 
 
     # FIXME: stub
-    def getSubCube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
-        # Translate high-res coordinates to low-res coordinates
+    def getSubcube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
         return None
 # lazy-space-time-cube-class ends here
