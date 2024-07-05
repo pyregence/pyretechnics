@@ -177,10 +177,17 @@ def divide_evenly(dividend, divisor):
         raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
-# TODO: If array length along repeated axis is 1, broadcast instead of repeat
 def maybe_repeat_array(array, axis_repetitions):
     (axis, repetitions) = axis_repetitions
-    return np.repeat(array, repetitions, axis) if (repetitions > 1) else array
+    if repetitions == 1:
+        return array
+    else:
+        array_shape = list(np.shape(array))
+        if array_shape[axis] == 1:
+            array_shape[axis] = repetitions
+            return np.broadcast_to(array, array_shape)
+        else:
+            return np.repeat(array, repetitions, axis)
 
 
 class SpaceTimeCube:
