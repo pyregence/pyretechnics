@@ -264,6 +264,8 @@ class SpaceTimeCube:
                       space)
 
 
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
         # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
@@ -293,9 +295,9 @@ class SpaceTimeCube:
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_cube[t_start_idx:t_stop_idx,
-                             y_start_idx:y_stop_idx,
-                             x_start_idx:x_stop_idx]
+        return high_res_cube[t_start_idx:(t_stop_idx + 1),
+                             y_start_idx:(y_stop_idx + 1),
+                             x_start_idx:(x_stop_idx + 1)]
 
 
     def __getFullyRealizedCube(self):
@@ -439,9 +441,32 @@ class LazySpaceTimeCube:
             )
 
 
-    # FIXME: stub
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
-        return None
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (subcube_cache_t_start, subcube_t_start) = divmod(t_start, subcube_bands)
+        (subcube_cache_t_stop,  subcube_t_stop)  = divmod(t_stop,  subcube_bands)
+        (subcube_cache_y_start, subcube_y_start) = divmod(y_start, subcube_rows)
+        (subcube_cache_y_stop,  subcube_y_stop)  = divmod(y_stop,  subcube_rows)
+        (subcube_cache_x_start, subcube_x_start) = divmod(x_start, subcube_cols)
+        (subcube_cache_x_stop,  subcube_x_stop)  = divmod(x_stop,  subcube_cols)
+        return np.block(
+            [[[self.__getOrLoadSubcube(subcube_cache_t,
+                                       subcube_cache_y,
+                                       subcube_cache_x
+                                       ).getSubcube(
+                                           subcube_t_start if subcube_cache_t == subcube_cache_t_start else 0,
+                                           subcube_t_stop  if subcube_cache_t == subcube_cache_t_stop  else subcube_bands - 1,
+                                           subcube_y_start if subcube_cache_y == subcube_cache_y_start else 0,
+                                           subcube_y_stop  if subcube_cache_y == subcube_cache_y_stop  else subcube_rows - 1,
+                                           subcube_x_start if subcube_cache_x == subcube_cache_x_start else 0,
+                                           subcube_x_stop  if subcube_cache_x == subcube_cache_x_stop  else subcube_cols - 1
+                                       )
+               for subcube_cache_x in range(subcube_cache_x_start, subcube_cache_x_stop + 1)]
+              for subcube_cache_y in range(subcube_cache_y_start, subcube_cache_y_stop + 1)]
+             for subcube_cache_t in range(subcube_cache_t_start, subcube_cache_t_stop + 1)]
+        )
 #+end_src
 
 # TODO: Incorporate the following sections into the SpaceTimeCube class model defined above.
