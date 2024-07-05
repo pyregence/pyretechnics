@@ -14,6 +14,7 @@ def divide_evenly(dividend, divisor):
         raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
+# TODO: If array length along repeated axis is 1, broadcast instead of repeat
 def maybe_repeat_array(array, axis_repetitions):
     (axis, repetitions) = axis_repetitions
     return np.repeat(array, repetitions, axis) if (repetitions > 1) else array
@@ -79,6 +80,7 @@ class SpaceTimeCube:
                          x // self.x_repetitions]
 
 
+    # TODO: Add an optional temporal range
     def getTimeSeries(self, y, x):
         # Select time series by spatial coordinate
         time = self.data[:,
@@ -88,6 +90,7 @@ class SpaceTimeCube:
         return maybe_repeat_array(time, (0, self.t_repetitions))
 
 
+    # TODO: Add an optional spatial range
     def getSpatialPlane(self, t):
         # Select spatial plane by timestep
         space = self.data[t // self.t_repetitions]
@@ -204,16 +207,16 @@ class LazySpaceTimeCube:
         subcube_cache_rows  = divide_evenly(cube_rows, subcube_rows)
         subcube_cache_cols  = divide_evenly(cube_cols, subcube_cols)
 
-        # Store the cube metadata, subcube_shape, subcube_cache, and load_subcube functions for later
-        self.ndim          = 3
-        self.size          = cube_bands * cube_rows * cube_cols
-        self.shape         = cube_shape
-        self.subcube_shape = subcube_shape
-        self.subcube_cache = np.empty((subcube_cache_bands,
-                                       subcube_cache_rows,
-                                       subcube_cache_cols),
-                                      dtype=object)
-        self.load_subcube  = load_subcube
+        # Store the cube metadata, subcube{,_cache}_shape, subcube_cache, and load_subcube functions for later
+        self.ndim                = 3
+        self.size                = cube_bands * cube_rows * cube_cols
+        self.shape               = cube_shape
+        self.subcube_shape       = subcube_shape
+        self.subcube_cache_shape = (subcube_cache_bands,
+                                    subcube_cache_rows,
+                                    subcube_cache_cols)
+        self.subcube_cache       = np.empty(self.subcube_cache_shape, dtype=object)
+        self.load_subcube        = load_subcube
 
 
     def __getOrLoadSubcube(subcube_cache_t, subcube_cache_y, subcube_cache_x):
@@ -231,7 +234,6 @@ class LazySpaceTimeCube:
 
 
     def get(self, t, y, x):
-        # Select value by spatio-temporal coordinate
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (subcube_cache_t, subcube_t) = divmod(t, subcube_bands)
         (subcube_cache_y, subcube_y) = divmod(y, subcube_rows)
@@ -240,10 +242,10 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # FIXME: Add an optional (t_start, t_stop) range
+    # TODO: Add an optional temporal range
     def getTimeSeries(self, y, x):
-        # Select time series by spatial coordinate
-        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (subcube_cache_bands, _, _) = self.subcube_cache_shape
+        (_, subcube_rows, subcube_cols) = self.subcube_shape
         (subcube_cache_y, subcube_y) = divmod(y, subcube_rows)
         (subcube_cache_x, subcube_x) = divmod(x, subcube_cols)
         return np.concatenate(
@@ -251,14 +253,23 @@ class LazySpaceTimeCube:
                                      subcube_cache_y,
                                      subcube_cache_x
                                     ).getTimeSeries(subcube_y, subcube_x)
-             for subcube_cache_t in range(0, subcube_bands)]
+             for subcube_cache_t in range(subcube_cache_bands)]
         )
 
 
-    # FIXME: stub
+    # TODO: Add an optional spatial range
     def getSpatialPlane(self, t):
-        # Select spatial plane by timestep
-        return None
+        (_, subcube_cache_rows, subcube_cache_cols) = self.subcube_cache_shape
+        (subcube_bands, _, _) = self.subcube_shape
+        (subcube_cache_t, subcube_t) = divmod(t, subcube_bands)
+        return np.block(
+            [[self.__getOrLoadSubcube(subcube_cache_t,
+                                      subcube_cache_y,
+                                      subcube_cache_x
+                                      ).getSpatialPlane(subcube_t)
+              for subcube_cache_x in range(subcube_cache_cols)]
+             for subcube_cache_y in range(subcube_cache_rows)]
+            )
 
 
     # FIXME: stub
