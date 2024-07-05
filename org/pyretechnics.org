@@ -464,6 +464,11 @@ class LazySpaceTimeCube:
               for cache_y in range(cache_y_start, cache_y_stop + 1)]
              for cache_t in range(cache_t_start, cache_t_stop + 1)]
         )
+
+
+    def getFullyRealizedCube(self, cache=False):
+        raise ValueError("getFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
+                         + "You probably don't want to do this anyway.")
 #+end_src
 
 # TODO: Incorporate the following sections into the SpaceTimeCube class model defined above.
