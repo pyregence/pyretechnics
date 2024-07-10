@@ -87,30 +87,73 @@ class SpaceTimeCube:
                          x // self.x_repetitions]
 
 
-    # TODO: Add an optional temporal range
-    def getTimeSeries(self, y, x):
-        # Select time series by spatial coordinate
-        time = self.data[:,
-                         y // self.y_repetitions,
-                         x // self.x_repetitions]
-        # Expand time dimension to (t)
-        return maybe_repeat_array(time, (0, self.t_repetitions))
-
-
-    # TODO: Add an optional spatial range
-    def getSpatialPlane(self, t):
-        # Select spatial plane by timestep
-        space = self.data[t // self.t_repetitions]
-        # Expand spatial dimensions to (y, x)
-        return reduce(maybe_repeat_array,
-                      ((0, self.y_repetitions),
-                       (1, self.x_repetitions)),
-                      space)
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
+    def getTimeSeries(self, t_range, y, x):
+        # Destructure the argument range
+        (t_start, t_stop) = t_range
+        # Translate high-res coordinates to low-res coordinates
+        t_start_chunk = t_start // self.t_repetitions
+        t_stop_chunk  = t_stop  // self.t_repetitions
+        y_chunk       = y       // self.y_repetitions
+        x_chunk       = x       // self.x_repetitions
+        # Select the array slice that completely contains all low-res coordinates
+        low_res_cube = self.data[t_start_chunk:(t_stop_chunk + 1),
+                                 y_chunk,
+                                 x_chunk]
+        # Expand the low-res slice into a high-res slice
+        high_res_cube = maybe_repeat_array(low_res_cube, (0, self.t_repetitions))
+        # Translate high-res global coordinates to high-res slice coordinates
+        t_chunk_origin = t_start_chunk * self.t_repetitions
+        t_start_idx    = t_start - t_chunk_origin
+        t_stop_idx     = t_stop  - t_chunk_origin
+        # Select the array slice that matches the high-res slice coordinates
+        return high_res_cube[t_start_idx:(t_stop_idx + 1),
+                             0,
+                             0]
 
 
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
-    def getSubcube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+    def getSpatialPlane(self, t, y_range, x_range):
+        # Destructure the argument ranges
+        (y_start, y_stop) = y_range
+        (x_start, x_stop) = x_range
+        # Translate high-res coordinates to low-res coordinates
+        t_chunk       = t       // self.t_repetitions
+        y_start_chunk = y_start // self.y_repetitions
+        y_stop_chunk  = y_stop  // self.y_repetitions
+        x_start_chunk = x_start // self.x_repetitions
+        x_stop_chunk  = x_stop  // self.x_repetitions
+        # Select the array slice that completely contains all low-res coordinates
+        low_res_cube = self.data[t_chunk,
+                                 y_start_chunk:(y_stop_chunk + 1),
+                                 x_start_chunk:(x_stop_chunk + 1)]
+        # Expand the low-res slice into a high-res slice
+        high_res_cube = reduce(maybe_repeat_array,
+                               ((1, self.y_repetitions),
+                                (2, self.x_repetitions)),
+                               low_res_cube)
+        # Translate high-res global coordinates to high-res slice coordinates
+        y_chunk_origin = y_start_chunk * self.y_repetitions
+        x_chunk_origin = x_start_chunk * self.x_repetitions
+        y_start_idx    = y_start - y_chunk_origin
+        y_stop_idx     = y_stop  - y_chunk_origin
+        x_start_idx    = x_start - x_chunk_origin
+        x_stop_idx     = x_stop  - x_chunk_origin
+        # Select the array slice that matches the high-res slice coordinates
+        return high_res_cube[0,
+                             y_start_idx:(y_stop_idx + 1),
+                             x_start_idx:(x_stop_idx + 1)]
+
+
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
+    def getSubcube(self, t_range, y_range, x_range):
+        # Destructure the argument ranges
+        (t_start, t_stop) = t_range
+        (y_start, y_stop) = y_range
+        (x_start, x_stop) = x_range
         # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
         t_stop_chunk  = t_stop  // self.t_repetitions
@@ -249,7 +292,7 @@ class LazySpaceTimeCube:
 
 
     # TODO: Add an optional temporal range
-    def getTimeSeries(self, y, x):
+    def getTimeSeries(self, t_range, y, x):
         (cache_bands, _, _) = self.cache_shape
         (_, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_y, subcube_y) = divmod(y, subcube_rows)
@@ -264,7 +307,7 @@ class LazySpaceTimeCube:
 
 
     # TODO: Add an optional spatial range
-    def getSpatialPlane(self, t):
+    def getSpatialPlane(self, t, y_range, x_range):
         (_, cache_rows, cache_cols) = self.cache_shape
         (subcube_bands, _, _) = self.subcube_shape
         (cache_t, subcube_t) = divmod(t, subcube_bands)
@@ -280,7 +323,12 @@ class LazySpaceTimeCube:
 
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
-    def getSubcube(self, t_start, t_stop, y_start, y_stop, x_start, x_stop):
+    def getSubcube(self, t_range, y_range, x_range):
+        # Destructure the argument ranges
+        (t_start, t_stop) = t_range
+        (y_start, y_stop) = y_range
+        (x_start, x_stop) = x_range
+        # Translate high-res coordinates to cache and subcube coordinates
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t_start, subcube_t_start) = divmod(t_start, subcube_bands)
         (cache_t_stop,  subcube_t_stop)  = divmod(t_stop,  subcube_bands)
@@ -288,17 +336,18 @@ class LazySpaceTimeCube:
         (cache_y_stop,  subcube_y_stop)  = divmod(y_stop,  subcube_rows)
         (cache_x_start, subcube_x_start) = divmod(x_start, subcube_cols)
         (cache_x_stop,  subcube_x_stop)  = divmod(x_stop,  subcube_cols)
+        # Load, expand, and combine subcubes
         return np.block(
             [[[self.__getOrLoadSubcube(cache_t,
                                        cache_y,
                                        cache_x
                                        ).getSubcube(
-                                           subcube_t_start if cache_t == cache_t_start else 0,
-                                           subcube_t_stop  if cache_t == cache_t_stop  else subcube_bands - 1,
-                                           subcube_y_start if cache_y == cache_y_start else 0,
-                                           subcube_y_stop  if cache_y == cache_y_stop  else subcube_rows - 1,
-                                           subcube_x_start if cache_x == cache_x_start else 0,
-                                           subcube_x_stop  if cache_x == cache_x_stop  else subcube_cols - 1
+                                           (subcube_t_start if cache_t == cache_t_start else 0,
+                                            subcube_t_stop  if cache_t == cache_t_stop  else subcube_bands - 1),
+                                           (subcube_y_start if cache_y == cache_y_start else 0,
+                                            subcube_y_stop  if cache_y == cache_y_stop  else subcube_rows - 1),
+                                           (subcube_x_start if cache_x == cache_x_start else 0,
+                                            subcube_x_stop  if cache_x == cache_x_stop  else subcube_cols - 1)
                                        )
                for cache_x in range(cache_x_start, cache_x_stop + 1)]
               for cache_y in range(cache_y_start, cache_y_stop + 1)]
