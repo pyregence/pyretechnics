@@ -415,7 +415,11 @@ class SpaceTimeCube:
 
 
     def releaseFullyRealizedCube(self):
-        delattr(self, "cube")
+        """
+        Deletes the cached fully realized cube if it exists.
+        """
+        if hasattr(self, "cube"):
+            delattr(self, "cube")
 #+end_src
 
 *** Lazy Space-Time Cube
