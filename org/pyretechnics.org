@@ -462,7 +462,7 @@ class LazySpaceTimeCube:
 
     def __getOrLoadSubcube(cache_t, cache_y, cache_x):
         """
-        Returns SpaceTimeCube
+        Returns a SpaceTimeCube.
         """
         subcube = self.cache[cache_t, cache_y, cache_x]
         if subcube:
@@ -474,6 +474,9 @@ class LazySpaceTimeCube:
 
 
     def get(self, t, y, x):
+        """
+        Returns a scalar value.
+        """
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t, subcube_t) = divmod(t, subcube_bands)
         (cache_y, subcube_y) = divmod(y, subcube_rows)
@@ -482,39 +485,74 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # TODO: Add an optional temporal range
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
-        (cache_bands, _, _) = self.cache_shape
-        (_, subcube_rows, subcube_cols) = self.subcube_shape
-        (cache_y, subcube_y) = divmod(y, subcube_rows)
-        (cache_x, subcube_x) = divmod(x, subcube_cols)
+        """
+        Returns a 1D array.
+        """
+        # Destructure the argument range
+        (t_start, t_stop) = t_range
+        # Translate high-res coordinates to cache and subcube coordinates
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (cache_t_start, subcube_t_start) = divmod(t_start, subcube_bands)
+        (cache_t_stop,  subcube_t_stop)  = divmod(t_stop,  subcube_bands)
+        (cache_y,       subcube_y)       = divmod(y,       subcube_rows)
+        (cache_x,       subcube_x)       = divmod(x,       subcube_cols)
+        # Load, expand, and combine subcubes
         return np.concatenate(
             [self.__getOrLoadSubcube(cache_t,
                                      cache_y,
                                      cache_x
-                                    ).getTimeSeries(subcube_y, subcube_x)
-             for cache_t in range(cache_bands)]
+                                    ).getTimeSeries(
+                                        (subcube_t_start if cache_t == cache_t_start else 0,
+                                         subcube_t_stop  if cache_t == cache_t_stop  else subcube_bands - 1),
+                                        subcube_y,
+                                        subcube_x
+                                    )
+             for cache_t in range(cache_t_start, cache_t_stop + 1)]
         )
 
 
-    # TODO: Add an optional spatial range
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
-        (_, cache_rows, cache_cols) = self.cache_shape
-        (subcube_bands, _, _) = self.subcube_shape
-        (cache_t, subcube_t) = divmod(t, subcube_bands)
+        """
+        Returns a 2D array.
+        """
+        # Destructure the argument ranges
+        (y_start, y_stop) = y_range
+        (x_start, x_stop) = x_range
+        # Translate high-res coordinates to cache and subcube coordinates
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (cache_t,       subcube_t)       = divmod(t,       subcube_bands)
+        (cache_y_start, subcube_y_start) = divmod(y_start, subcube_rows)
+        (cache_y_stop,  subcube_y_stop)  = divmod(y_stop,  subcube_rows)
+        (cache_x_start, subcube_x_start) = divmod(x_start, subcube_cols)
+        (cache_x_stop,  subcube_x_stop)  = divmod(x_stop,  subcube_cols)
+        # Load, expand, and combine subcubes
         return np.block(
             [[self.__getOrLoadSubcube(cache_t,
                                       cache_y,
                                       cache_x
-                                      ).getSpatialPlane(subcube_t)
-              for cache_x in range(cache_cols)]
-             for cache_y in range(cache_rows)]
+                                      ).getSpatialPlane(
+                                          subcube_t,
+                                          (subcube_y_start if cache_y == cache_y_start else 0,
+                                           subcube_y_stop  if cache_y == cache_y_stop  else subcube_rows - 1),
+                                          (subcube_x_start if cache_x == cache_x_start else 0,
+                                           subcube_x_stop  if cache_x == cache_x_stop  else subcube_cols - 1)
+                                      )
+              for cache_x in range(cache_x_start, cache_x_stop + 1)]
+             for cache_y in range(cache_y_start, cache_y_stop + 1)]
         )
 
 
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
+        """
+        Returns a 3D array.
+        """
         # Destructure the argument ranges
         (t_start, t_stop) = t_range
         (y_start, y_stop) = y_range
