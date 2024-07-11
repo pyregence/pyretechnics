@@ -194,48 +194,56 @@ class SpaceTimeCube:
     """
     TODO: Add docstring.
     """
-    def __init__(self, t, y, x, base):
-        # Ensure that t, y, x are positive integers or throw an error
-        if not(all(map(is_pos_int, (t, y, x)))):
-            raise ValueError("The target dimensions (t, y, x) must all be positive integers.")
+    def __init__(self, cube_shape, base):
+        """
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
+        NOTE: cube_shape >= base
+        """
+        # Ensure that cube_shape contains 3 values or throw an error
+        (cube_bands, cube_rows, cube_cols) = cube_shape
 
-        self.ndim = 3
-        self.size = t * y * x
-        self.shape = (t, y, x)
-        self.base = base
+        # Ensure that cube_shape only contains positive integers or throw an error
+        if not(all(map(is_pos_int, cube_shape))):
+            raise ValueError("The cube_shape must only contain positive integers.")
+
+        # Store the cube metadata for later
+        self.ndim  = 3
+        self.size  = cube_bands * cube_rows * cube_cols
+        self.shape = cube_shape
+        self.base  = base
 
         match np.ndim(base):
             # 0D: Constant Input
             case 0:
-                self.t_repetitions = t
-                self.y_repetitions = y
-                self.x_repetitions = x
+                self.t_repetitions = cube_bands
+                self.y_repetitions = cube_rows
+                self.x_repetitions = cube_cols
                 self.data = np.asarray([[[base]]])
 
             # 1D: Time-Series Input
             case 1:
-                t0 = len(base)
-                self.t_repetitions = divide_evenly(t, t0)
-                self.y_repetitions = y
-                self.x_repetitions = x
-                # Expand (t0) -> (t0,1,1)
+                base_bands = len(base)
+                self.t_repetitions = divide_evenly(cube_bands, base_bands)
+                self.y_repetitions = cube_rows
+                self.x_repetitions = cube_cols
+                # Expand (base_bands) -> (base_bands,1,1)
                 self.data = np.expand_dims(base, axis=(1,2))
 
             # 2D: Spatial Input
             case 2:
-                (y0, x0) = np.shape(base)
-                self.t_repetitions = t
-                self.y_repetitions = divide_evenly(y, y0)
-                self.x_repetitions = divide_evenly(x, x0)
-                # Expand (y0,x0) -> (1,y0,x0)
+                (base_rows, base_cols) = np.shape(base)
+                self.t_repetitions = cube_bands
+                self.y_repetitions = divide_evenly(cube_rows, base_rows)
+                self.x_repetitions = divide_evenly(cube_cols, base_cols)
+                # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
                 self.data = np.expand_dims(base, axis=0)
 
             # 3D: Spatio-Temporal Input
             case 3:
-                (t0, y0, x0) = np.shape(base)
-                self.t_repetitions = divide_evenly(t, t0)
-                self.y_repetitions = divide_evenly(y, y0)
-                self.x_repetitions = divide_evenly(x, x0)
+                (base_bands, base_rows, base_cols) = np.shape(base)
+                self.t_repetitions = divide_evenly(cube_bands, base_bands)
+                self.y_repetitions = divide_evenly(cube_rows, base_rows)
+                self.x_repetitions = divide_evenly(cube_cols, base_cols)
                 self.data = np.asarray(base)
 
             # 4D+: Invalid Input
@@ -410,7 +418,7 @@ class LazySpaceTimeCube:
     """
     def __init__(self, cube_shape, subcube_shape, load_subcube):
         """
-        NOTE: (z,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
         NOTE: cube_shape >= subcube_shape
         """
         # Ensure that cube_shape and subcube_shape both contain 3 values or throw an error
