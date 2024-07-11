@@ -31,48 +31,56 @@ class SpaceTimeCube:
     """
     TODO: Add docstring.
     """
-    def __init__(self, t, y, x, base):
-        # Ensure that t, y, x are positive integers or throw an error
-        if not(all(map(is_pos_int, (t, y, x)))):
-            raise ValueError("The target dimensions (t, y, x) must all be positive integers.")
+    def __init__(self, cube_shape, base):
+        """
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
+        NOTE: cube_shape >= base
+        """
+        # Ensure that cube_shape contains 3 values or throw an error
+        (cube_bands, cube_rows, cube_cols) = cube_shape
 
-        self.ndim = 3
-        self.size = t * y * x
-        self.shape = (t, y, x)
-        self.base = base
+        # Ensure that cube_shape only contains positive integers or throw an error
+        if not(all(map(is_pos_int, cube_shape))):
+            raise ValueError("The cube_shape must only contain positive integers.")
+
+        # Store the cube metadata for later
+        self.ndim  = 3
+        self.size  = cube_bands * cube_rows * cube_cols
+        self.shape = cube_shape
+        self.base  = base
 
         match np.ndim(base):
             # 0D: Constant Input
             case 0:
-                self.t_repetitions = t
-                self.y_repetitions = y
-                self.x_repetitions = x
+                self.t_repetitions = cube_bands
+                self.y_repetitions = cube_rows
+                self.x_repetitions = cube_cols
                 self.data = np.asarray([[[base]]])
 
             # 1D: Time-Series Input
             case 1:
-                t0 = len(base)
-                self.t_repetitions = divide_evenly(t, t0)
-                self.y_repetitions = y
-                self.x_repetitions = x
-                # Expand (t0) -> (t0,1,1)
+                base_bands = len(base)
+                self.t_repetitions = divide_evenly(cube_bands, base_bands)
+                self.y_repetitions = cube_rows
+                self.x_repetitions = cube_cols
+                # Expand (base_bands) -> (base_bands,1,1)
                 self.data = np.expand_dims(base, axis=(1,2))
 
             # 2D: Spatial Input
             case 2:
-                (y0, x0) = np.shape(base)
-                self.t_repetitions = t
-                self.y_repetitions = divide_evenly(y, y0)
-                self.x_repetitions = divide_evenly(x, x0)
-                # Expand (y0,x0) -> (1,y0,x0)
+                (base_rows, base_cols) = np.shape(base)
+                self.t_repetitions = cube_bands
+                self.y_repetitions = divide_evenly(cube_rows, base_rows)
+                self.x_repetitions = divide_evenly(cube_cols, base_cols)
+                # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
                 self.data = np.expand_dims(base, axis=0)
 
             # 3D: Spatio-Temporal Input
             case 3:
-                (t0, y0, x0) = np.shape(base)
-                self.t_repetitions = divide_evenly(t, t0)
-                self.y_repetitions = divide_evenly(y, y0)
-                self.x_repetitions = divide_evenly(x, x0)
+                (base_bands, base_rows, base_cols) = np.shape(base)
+                self.t_repetitions = divide_evenly(cube_bands, base_bands)
+                self.y_repetitions = divide_evenly(cube_rows, base_rows)
+                self.x_repetitions = divide_evenly(cube_cols, base_cols)
                 self.data = np.asarray(base)
 
             # 4D+: Invalid Input
@@ -81,6 +89,9 @@ class SpaceTimeCube:
 
 
     def get(self, t, y, x):
+        """
+        Returns a scalar value.
+        """
         # Select value by spatio-temporal coordinate
         return self.data[t // self.t_repetitions,
                          y // self.y_repetitions,
@@ -90,6 +101,9 @@ class SpaceTimeCube:
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
+        """
+        Returns a 1D array.
+        """
         # Destructure the argument range
         (t_start, t_stop) = t_range
         # Translate high-res coordinates to low-res coordinates
@@ -98,24 +112,25 @@ class SpaceTimeCube:
         y_chunk       = y       // self.y_repetitions
         x_chunk       = x       // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_cube = self.data[t_start_chunk:(t_stop_chunk + 1),
+        low_res_time = self.data[t_start_chunk:(t_stop_chunk + 1),
                                  y_chunk,
                                  x_chunk]
         # Expand the low-res slice into a high-res slice
-        high_res_cube = maybe_repeat_array(low_res_cube, (0, self.t_repetitions))
+        high_res_time = maybe_repeat_array(low_res_time, (0, self.t_repetitions))
         # Translate high-res global coordinates to high-res slice coordinates
         t_chunk_origin = t_start_chunk * self.t_repetitions
         t_start_idx    = t_start - t_chunk_origin
         t_stop_idx     = t_stop  - t_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_cube[t_start_idx:(t_stop_idx + 1),
-                             0,
-                             0]
+        return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
+        """
+        Returns a 2D array.
+        """
         # Destructure the argument ranges
         (y_start, y_stop) = y_range
         (x_start, x_stop) = x_range
@@ -126,14 +141,14 @@ class SpaceTimeCube:
         x_start_chunk = x_start // self.x_repetitions
         x_stop_chunk  = x_stop  // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_cube = self.data[t_chunk,
-                                 y_start_chunk:(y_stop_chunk + 1),
-                                 x_start_chunk:(x_stop_chunk + 1)]
+        low_res_space = self.data[t_chunk,
+                                  y_start_chunk:(y_stop_chunk + 1),
+                                  x_start_chunk:(x_stop_chunk + 1)]
         # Expand the low-res slice into a high-res slice
-        high_res_cube = reduce(maybe_repeat_array,
-                               ((1, self.y_repetitions),
-                                (2, self.x_repetitions)),
-                               low_res_cube)
+        high_res_space = reduce(maybe_repeat_array,
+                                ((0, self.y_repetitions),
+                                 (1, self.x_repetitions)),
+                                low_res_space)
         # Translate high-res global coordinates to high-res slice coordinates
         y_chunk_origin = y_start_chunk * self.y_repetitions
         x_chunk_origin = x_start_chunk * self.x_repetitions
@@ -142,14 +157,16 @@ class SpaceTimeCube:
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_cube[0,
-                             y_start_idx:(y_stop_idx + 1),
-                             x_start_idx:(x_stop_idx + 1)]
+        return high_res_space[y_start_idx:(y_stop_idx + 1),
+                              x_start_idx:(x_stop_idx + 1)]
 
 
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
+        """
+        Returns a 3D array.
+        """
         # Destructure the argument ranges
         (t_start, t_stop) = t_range
         (y_start, y_stop) = y_range
@@ -222,6 +239,9 @@ class SpaceTimeCube:
 
 
     def getFullyRealizedCube(self, cache=False):
+        """
+        Returns a 3D array.
+        """
         if hasattr(self, "cube"):
             return self.cube
         else:
@@ -232,7 +252,11 @@ class SpaceTimeCube:
 
 
     def releaseFullyRealizedCube(self):
-        delattr(self, "cube")
+        """
+        Deletes the cached fully realized cube if it exists.
+        """
+        if hasattr(self, "cube"):
+            delattr(self, "cube")
 # space-time-cube-class ends here
 # [[file:../../org/pyretechnics.org::lazy-space-time-cube-class][lazy-space-time-cube-class]]
 import numpy as np
@@ -243,7 +267,7 @@ class LazySpaceTimeCube:
     """
     def __init__(self, cube_shape, subcube_shape, load_subcube):
         """
-        NOTE: (z,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
         NOTE: cube_shape >= subcube_shape
         """
         # Ensure that cube_shape and subcube_shape both contain 3 values or throw an error
@@ -271,7 +295,7 @@ class LazySpaceTimeCube:
 
     def __getOrLoadSubcube(cache_t, cache_y, cache_x):
         """
-        Returns SpaceTimeCube
+        Returns a SpaceTimeCube.
         """
         subcube = self.cache[cache_t, cache_y, cache_x]
         if subcube:
@@ -283,6 +307,9 @@ class LazySpaceTimeCube:
 
 
     def get(self, t, y, x):
+        """
+        Returns a scalar value.
+        """
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t, subcube_t) = divmod(t, subcube_bands)
         (cache_y, subcube_y) = divmod(y, subcube_rows)
@@ -291,39 +318,74 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # TODO: Add an optional temporal range
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
-        (cache_bands, _, _) = self.cache_shape
-        (_, subcube_rows, subcube_cols) = self.subcube_shape
-        (cache_y, subcube_y) = divmod(y, subcube_rows)
-        (cache_x, subcube_x) = divmod(x, subcube_cols)
+        """
+        Returns a 1D array.
+        """
+        # Destructure the argument range
+        (t_start, t_stop) = t_range
+        # Translate high-res coordinates to cache and subcube coordinates
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (cache_t_start, subcube_t_start) = divmod(t_start, subcube_bands)
+        (cache_t_stop,  subcube_t_stop)  = divmod(t_stop,  subcube_bands)
+        (cache_y,       subcube_y)       = divmod(y,       subcube_rows)
+        (cache_x,       subcube_x)       = divmod(x,       subcube_cols)
+        # Load, expand, and combine subcubes
         return np.concatenate(
             [self.__getOrLoadSubcube(cache_t,
                                      cache_y,
                                      cache_x
-                                    ).getTimeSeries(subcube_y, subcube_x)
-             for cache_t in range(cache_bands)]
+                                    ).getTimeSeries(
+                                        (subcube_t_start if cache_t == cache_t_start else 0,
+                                         subcube_t_stop  if cache_t == cache_t_stop  else subcube_bands - 1),
+                                        subcube_y,
+                                        subcube_x
+                                    )
+             for cache_t in range(cache_t_start, cache_t_stop + 1)]
         )
 
 
-    # TODO: Add an optional spatial range
+    # NOTE: Ranges provide inclusion:inclusion semantics
+    # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
-        (_, cache_rows, cache_cols) = self.cache_shape
-        (subcube_bands, _, _) = self.subcube_shape
-        (cache_t, subcube_t) = divmod(t, subcube_bands)
+        """
+        Returns a 2D array.
+        """
+        # Destructure the argument ranges
+        (y_start, y_stop) = y_range
+        (x_start, x_stop) = x_range
+        # Translate high-res coordinates to cache and subcube coordinates
+        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
+        (cache_t,       subcube_t)       = divmod(t,       subcube_bands)
+        (cache_y_start, subcube_y_start) = divmod(y_start, subcube_rows)
+        (cache_y_stop,  subcube_y_stop)  = divmod(y_stop,  subcube_rows)
+        (cache_x_start, subcube_x_start) = divmod(x_start, subcube_cols)
+        (cache_x_stop,  subcube_x_stop)  = divmod(x_stop,  subcube_cols)
+        # Load, expand, and combine subcubes
         return np.block(
             [[self.__getOrLoadSubcube(cache_t,
                                       cache_y,
                                       cache_x
-                                      ).getSpatialPlane(subcube_t)
-              for cache_x in range(cache_cols)]
-             for cache_y in range(cache_rows)]
+                                      ).getSpatialPlane(
+                                          subcube_t,
+                                          (subcube_y_start if cache_y == cache_y_start else 0,
+                                           subcube_y_stop  if cache_y == cache_y_stop  else subcube_rows - 1),
+                                          (subcube_x_start if cache_x == cache_x_start else 0,
+                                           subcube_x_stop  if cache_x == cache_x_stop  else subcube_cols - 1)
+                                      )
+              for cache_x in range(cache_x_start, cache_x_stop + 1)]
+             for cache_y in range(cache_y_start, cache_y_stop + 1)]
         )
 
 
     # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
+        """
+        Returns a 3D array.
+        """
         # Destructure the argument ranges
         (t_start, t_stop) = t_range
         (y_start, y_stop) = y_range
