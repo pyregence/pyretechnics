@@ -38,23 +38,13 @@ they read through the text and code. By the time they have reached the
 end of this document, the reader should have just as strong a grasp of
 the system as the original programmer.
 
-To execute the code illustrated within this document, you will need to
-install several pieces of software, all of which are open source
-and/or freely available for all major operating systems. These
-programs are listed in Table [[tab:required-software]] along with their
-minimum required versions and URLs from which they may be downloaded.
-
-#+name: tab:required-software
-#+caption: Software necessary to evaluate the code in this document
-|----------+---------+---------------------------------------|
-| Name     | Version | URL                                   |
-|----------+---------+---------------------------------------|
-| Python   |  3.10.7 | https://www.python.org/               |
-| Numpy    |  1.23.2 | https://numpy.org/                    |
-| Rasterio |   1.3.7 | https://github.com/rasterio/rasterio/ |
-| GDAL     |   3.6.1 | https://gdal.org/                     |
-| Emacs    |    29.3 | https://www.gnu.org/software/emacs/   |
-|----------+---------+---------------------------------------|
+The source code repository containing this document provides a
+comprehensive reproducible development environment through the use of
+the open source GNU Guix[fn::https://guix.gnu.org] transactional
+package manager. This tool will automatically install all the software
+needed to test, weave, tangle, detangle, build, and install this
+library on your machine without conflicting with the main package
+manager of your operating system. See [[file:../README.md][README.md]] for more details.
 
 * Data Model
 ** Working in a 3D Space-Time Cube
@@ -1734,11 +1724,12 @@ $M_{f}^{lh}$ is the live herbaceous moisture content.
 \begin{align}
   \text{FractionGreen} &= \left\{
     \begin{array}{lr}
-      0 & M_{f}^{lh} \le 0.3 \\
-      1 & M_{f}^{lh} \ge 1.2 \\
-      \frac{M_{f}^{lh}}{0.9} - \frac{1}{3} & \text{else}
+      0 & M_f^{lh} \le 0.3 \\
+      1 & M_f^{lh} \ge 1.2 \\
+      M_f^{lh} / 0.9 - 1/3 & \text{else}
     \end{array}
   \right. \\
+  \nonumber \\
   \text{FractionCured} &= 1 - \text{FractionGreen}
 \end{align}
 
@@ -1827,9 +1818,11 @@ fire will no longer spread through that fuel. Here are the formulas
 referenced above:
 
 \begin{align}
-  M_{x}^{l} &= \max(M_{x}^{d}, 2.9 \, W' \, (1 - \frac{M_{f}^{d}}{M_{x}^{d}}) - 0.226) \\
-  W' &= \frac{\sum_{c \in D}{w_{o}^{c} \> e^{-138/\sigma^{c}}}}{\sum_{c \in L}{w_{o}^{c} \> e^{-500/\sigma^{c}}}} \\
-  M_{f}^{d} &= \frac{\sum_{c \in D}{w_{o}^{c} \> M_{f}^{c} \> e^{-138/\sigma^{c}}}}{\sum_{c \in D}{w_{o}^{c} \> e^{-138/\sigma^{c}}}}
+  M_x^l &= \max(M_x^d, 2.9 \, W' \, (1 - M_f^d / M_x^d) - 0.226) \\
+  \nonumber \\
+  W' &= \frac{\sum_{c \in D}{w_o^c \> e^{-138/\sigma^c}}}{\sum_{c \in L}{w_o^c \> e^{-500/\sigma^c}}} \\
+  \nonumber \\
+  M_f^d &= \frac{\sum_{c \in D}{w_o^c \> M_f^c \> e^{-138/\sigma^c}}}{\sum_{c \in D}{w_o^c \> e^{-138/\sigma^c}}}
 \end{align}
 
 where $M_{x}^{l}$ is the live moisture of extinction, $M_{x}^{d}$ is
@@ -2143,8 +2136,8 @@ FARSITE, FlamMap, FSPro, and FPA according to Andrews
 \begin{align}
   WAF = \left\{
     \begin{array}{lr}
-      \frac{1.83}{ \ln(\frac{20.0 + 0.36 FBD}{0.13 FBD}) } & CC = 0 \\
-      \frac{0.555}{ \sqrt(CH (CC/3.0)) \ln(\frac{20 + 0.36 CH}{0.13 CH}) } & CC > 0
+      1.83 \ln(\frac{20.0 + 0.36 FBD}{0.13 FBD})^{-1} & CC = 0 \\
+      0.555 (\sqrt{CH (CC/3.0)} \ln(\frac{20 + 0.36 CH}{0.13 CH}))^{-1} & CC > 0
     \end{array}
   \right.
 \end{align}
@@ -2194,7 +2187,9 @@ Here are the formulas used:
 
 \begin{align}
   \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
+  \nonumber \\
   E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
+  \nonumber \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align}
 
@@ -2429,8 +2424,11 @@ equations as described below.\citep{Anderson1969,Byram1959}
 
 \begin{align}
   t &= \frac{384}{\sigma} \\
+  \nonumber \\
   D &= Rt \\
-  I &= \frac{I_{R}D}{60} \\
+  \nonumber \\
+  I &= \frac{I_R D}{60} \\
+  \nonumber \\
   L &= 0.45(I)^{0.46}
 \end{align}
 
@@ -2488,9 +2486,11 @@ will become an active or passive crown fire or simply remain a surface
 fire. The formulas for these thresholds are as follows:
 
 \begin{align}
-  H &= 460 + 2600 M^{f} \\
-  I^{*} &= (0.01 \, Z_{b} \, H)^{1.5} \\
-  R^{*} &= \frac{3.0}{B_{m}}
+  H &= 460 + 2600 M^f \\
+  \nonumber \\
+  I^* &= (0.01 \, Z_b \, H)^{1.5} \\
+  \nonumber \\
+  R^* &= \frac{3.0}{B_m}
 \end{align}
 
 where $H$ is the heat of ignition for the herbaceous material in the
@@ -2540,8 +2540,9 @@ rates are calculated from the formulas given in Cruz
 2005.\citep{Cruz2005}
 
 \begin{align}
-  \text{CROS}_{A} &= 11.02 \> U_{10m}^{0.90} \> B_{m}^{0.19} \> e^{-17 \, \text{EFFM}} \\
-  \text{CROS}_{P} &= \text{CROS}_{A} \> e^{\frac{-\text{CROS}_{A}}{R^{*}}}
+  \text{CROS}_A &= 11.02 \> U_{10m}^{0.90} \> B_m^{0.19} \> e^{-17 \, \text{EFFM}} \\
+  \nonumber \\
+  \text{CROS}_P &= \text{CROS}_A \> e^{\frac{-\text{CROS}_A}{R^*}}
 \end{align}
 
 where $\text{CROS}_{A}$ is the active crown fire spread rate in
@@ -2605,8 +2606,9 @@ intensity and flame lengths may be derived using the following
 formulas:
 
 \begin{align}
-  I_{c} &= \frac{R_{c} B (Z - Z_{b}) h}{60} \\
-  L_{c} &= 0.45(I + I_{c})^{0.46}
+  I_c &= \frac{R_c B (Z - Z_b) h}{60} \\
+  \nonumber \\
+  L_c &= 0.45(I + I_c)^{0.46}
 \end{align}
 
 where $I_{c}$ is the crown fire line intensity in Btu/ft/s, $R_{c}$ is
@@ -2647,7 +2649,9 @@ rate to any point along the fire front. Here are the formulas used:
 
 \begin{align}
   \frac{L}{W} &= 1 + 0.125 \, U_{20} \\
-  E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
+  \nonumber \\
+  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}} \\
+  \nonumber \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align}
 
@@ -3355,8 +3359,9 @@ to itself. Given a $\phi$ raster, we can calculate the normal vector to
 the $\phi$ field by using the following formula:
 
 \begin{align}
-  \hat{n} &= n_x\hat{i} + n_y\hat{j} = \frac{1}{|\nabla\phi|}\left(\frac{\partial{\phi}}{\partial x}\hat{i} + \frac{\partial{\phi}}{\partial y}\hat{j}\right) \\
-  |\nabla\phi| &= \sqrt{\left(\frac{\partial{\phi}}{\partial x}\right)^2 + \left(\frac{\partial{\phi}}{\partial y}\right)^2}
+  \hat{n} &= n_x\hat{i} + n_y\hat{j} = \frac{1}{|\nabla\phi|}\left(\frac{\partial \phi}{\partial x}\hat{i} + \frac{\partial \phi}{\partial y}\hat{j}\right) \\
+  \nonumber \\
+  |\nabla\phi| &= \sqrt{\left(\frac{\partial \phi}{\partial x}\right)^2 + \left(\frac{\partial \phi}{\partial y}\right)^2}
 \end{align}
 
 We begin by approximating the spatial gradients of the $\phi$ field with
@@ -3364,8 +3369,9 @@ node-centered central differences, represented by the values in the
 $\phi$ raster's grid cells.
 
 \begin{align}
-  \left(\frac{\partial{\phi}}{\partial x}\right)_{i,j} &\approx \frac{\phi_{i+1,j} - \phi_{i-1,j}}{2 \Delta x} \\
-  \left(\frac{\partial{\phi}}{\partial y}\right)_{i,j} &\approx \frac{\phi_{i,j+1} - \phi_{i,j-1}}{2 \Delta y}
+  \left(\frac{\partial \phi}{\partial x}\right)_{i,j} &\approx \frac{\phi_{i+1,j} - \phi_{i-1,j}}{2 \Delta x} \\
+  \nonumber \\
+  \left(\frac{\partial \phi}{\partial y}\right)_{i,j} &\approx \frac{\phi_{i,j+1} - \phi_{i,j-1}}{2 \Delta y}
 \end{align}
 
 #+name: phi-field-spatial-gradients
@@ -3489,7 +3495,7 @@ solve the following hyperbolic differential equation for the scalar
 variable $\phi$.
 
 \begin{align}
-  \frac{\partial{\phi}}{\partial t} + {U_x}\frac{\partial{\phi}}{\partial x} + {U_y}\frac{\partial{\phi}}{\partial y} = 0
+  \frac{\partial \phi}{\partial t} + U_x \frac{\partial \phi}{\partial x} + U_y \frac{\partial \phi}{\partial y} = 0
 \end{align}
 
 This is accomplished after applying a flux limiter to the convective
@@ -3501,6 +3507,7 @@ $B(r)$ as follows:
 
 \begin{align}
   r &= \frac{\delta\phi_{\text{up}}}{\delta\phi_{\text{loc}}} \\
+  \nonumber \\
   B(r) &= \text{max}(0, \text{min}(2r, 1), \text{min}(r, 2))
 \end{align}
 
@@ -3521,8 +3528,9 @@ derivatives of the $\phi$ field in terms of "east", "west", "north",
 and "south" values as follows:
 
 \begin{align}
-  \frac{\partial{\phi}}{\partial x} &\approx \frac{\phi_{\text{east}} - \phi_{\text{west}}}{\Delta x} \\
-  \frac{\partial{\phi}}{\partial y} &\approx \frac{\phi_{\text{north}} - \phi_{\text{south}}}{\Delta y}
+  \frac{\partial \phi}{\partial x} &\approx \frac{\phi_{\text{east}} - \phi_{\text{west}}}{\Delta x} \\
+  \nonumber \\
+  \frac{\partial \phi}{\partial y} &\approx \frac{\phi_{\text{north}} - \phi_{\text{south}}}{\Delta y}
 \end{align}
 
 #+name: dphi_partial_derivatives
@@ -3544,10 +3552,12 @@ For the east face:
 
 \begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i+1,j} - \phi{i,j} \\
+  \nonumber \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
                               \phi_{i+2,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
                             \end{cases} \\
+  \nonumber \\
   \phi_{\text{east}} &= \begin{cases}
                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
                           \phi_{i+1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
@@ -3579,10 +3589,12 @@ For the west face:
 
 \begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i-1,j} - \phi{i,j} \\
+  \nonumber \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i-2,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
                               \phi_{i,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
                             \end{cases} \\
+  \nonumber \\
   \phi_{\text{west}} &= \begin{cases}
                           \phi_{i-1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
@@ -3614,10 +3626,12 @@ For the north face:
 
 \begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i,j+1} - \phi{i,j} \\
+  \nonumber \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i,j} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
                               \phi_{i,j+2} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
                             \end{cases} \\
+  \nonumber \\
   \phi_{\text{north}} &= \begin{cases}
                            \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
                            \phi_{i,j+1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
@@ -3649,10 +3663,12 @@ For the south face:
 
 \begin{align}
   \delta\phi_{\text{loc}} &= \phi_{i,j-1} - \phi{i,j} \\
+  \nonumber \\
   \delta\phi_{\text{up}} &= \begin{cases}
                               \phi_{i,j-2} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
                               \phi_{i,j} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
                             \end{cases} \\
+  \nonumber \\
   \phi_{\text{south}} &= \begin{cases}
                            \phi_{i,j-1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
                            \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
@@ -3686,6 +3702,7 @@ order Runge Kutta method as follows:
 
 \begin{align}
   \phi^* &= \phi^t - \Delta t \left(U_x \frac{\phi^t_{\text{east}} - \phi^t_{\text{west}}}{\Delta x} + U_y \frac{\phi^t_{\text{north}} - \phi^t_{\text{south}}}{\Delta y} \right) \\
+  \nonumber \\
   \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
 \end{align}
 
