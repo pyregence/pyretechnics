@@ -50,10 +50,10 @@ manager of your operating system. See [[file:../README.md][README.md]] for more 
 ** Working in a 3D Space-Time Cube
 
 In Pyretechnics, a fire is viewed as a three-dimensional event
-occurring within a bounded region of space-time =(T, Y, X)=. In this
+occurring within a bounded region of space-time $(T,Y,X)$. In this
 mental model, the environment in which a fire develops can be
-visualized as a cube in which space is described in 2D by the =X= and
-=Y= dimensions and time projects this 2D world into 3D along the =T=
+visualized as a cube in which space is described in 2D by the $X$ and
+$Y$ dimensions and time projects this 2D world into 3D along the $T$
 dimension.
 
 Note, in particular, that this is not the same thing as a
@@ -66,7 +66,7 @@ direction, and mode of fire spread, the outputs of the fire behavior
 algorithms in Pyretechnics currently only use two dimensions to
 describe spatial heterogeneity within the simulation environment. The
 third dimension is instead reserved for temporal variations in the
-model outputs.
+model inputs and outputs.
 
 ** Fires as Conical Shapes in Space-Time
 
@@ -82,7 +82,7 @@ fire cones to appear in environments with homogeneous topography,
 weather, fuels, and fuel moisture. As these inputs become more
 heterogenous throughout the burned region of space-time, these
 idealized cones will become distorted in the directions of faster or
-slower spread and their perimeters will become more finely dissected.
+slower spread and their perimeters may become more finely dissected.
 However, we use this conical shape description of fire events within
 the simulated space-time cube to convey both their monotonically
 increasing spatial area over time as well as to provide the foundation
@@ -90,10 +90,10 @@ for a more visually intuitive understanding of the effect of
 temporally varying environmental conditions on the behavior (and thus
 shape) of fires.
 
-** Support for Input Datasets of Varying Dimensionality and Resolution
+** Support for Input Datasets of Varying Dimensionality
 
 At the beginning of a fire behavior simulation, our 3D space-time cube
-is populated with all of the information that describes the
+will be populated with all of the information that describes the
 environment and will remain effectively static as the fire event
 unfolds. This includes (but is not limited to) topography, weather,
 fuels, and fuel moisture. In many common simulation scenarios, we
@@ -103,35 +103,58 @@ time. However, we use "may" in these statements because the data model
 within Pyretechnics is flexibly designed to allow any of these
 environmental input variables to take on any of these forms:
 
-- constant in space and time
-- constant in space but variable in time
-- variable in space but constant in time
-- variable in space and time
+- Constant :: Constant in both space and time. \\
+  *Ex*: A single constant foliar moisture value could be used over the
+  simulation area for the entire simulation duration.
+
+- Temporal :: Constant in space but variable in time. \\
+  *Ex*: An hourly sequence of spread rate adjustment factors could be
+  used to globally ramp up and down fire spread rates throughout a
+  day/night cycle, creating burn periods of arbitrary length and
+  intensity.
+
+- Spatial :: Variable in space but constant in time. \\
+  *Ex*: A raster layer downloaded from
+  LANDFIRE[fn::https://landfire.gov] can be used to specify the
+  spatial distribution of FBFM40 fuel model values on a landscape.
+
+- Spatio-temporal :: Variable in both space and time. \\
+  *Ex*: Hourly
+  RTMA[fn::https://www.nco.ncep.noaa.gov/pmb/products/rtma/] weather
+  data can be loaded from a multi-band raster and used to specify the
+  spatio-temporal distribution of wind speed and direction throughout
+  the simulation domain.
 
 This is accomplished by representing each such input value as an
-abstract datatype with a 3D space-time look-up function. From within
-our fire behavior algorithms, we should always be able to call the
-look-up function for any environmental input variable with a 3D
-space-time coordinate =(t, y, x)= and get back the correct value for
-that location. Moreover, such look-ups must be referentially
-transparent, so as to ensure that subsequent look-ups with the same
-coordinate will always yield the same values.
+abstract datatype with a set of 3D space-time look-up functions for
+accessing its values within 0D, 1D, 2D, and 3D slices of the
+space-time cube at the simulation resolution. Such look-ups should
+always be referentially transparent, so as to ensure that subsequent
+look-ups with the same coordinate will always yield the same values.
+See section [[Space-Time Cube Constructors]] for implementation details.
 
-Similarly, input datasets may be provided at different resolutions
-from one another, provided that the following conditions are met:
+** Support for Input Datasets of Varying Resolution
 
-1. All spatially varying datasets must share the same projection.
-2. All spatial and temporal extents must match.
-3. All spatial and temporal resolutions must be exact multiples of one another.
+Even when dimensions are the same between input datasets, they may be
+provided at different resolutions from one another, provided that the
+following conditions are met:
+
+- Same Projection :: All spatially varying datasets must share the
+  same projection.
+
+- Same Extent :: All spatial and temporal extents must match.
+
+- Data Resolutions Divide Simulation Resolutions Evenly :: All
+  spatial and temporal resolutions must be exact divisors of the
+  simulation resolution.
 
 The simulated space-time cube will share the same projection and
 extent as the input datasets, but its resolution may be specified by
-the user, provided that it meets condition 3 above.
-
-The 3D look-up function for each input will then be responsible for
-translating the space-time coordinate it receives at the simulation
-resolution into the correct coordinate for the underlying dataset's
-native resolution.
+the user, provided that it meets condition 3 above. The 3D look-up
+functions for each input will then be responsible for translating the
+space-time coordinates they receive at the simulation resolution into
+the correct coordinates for their underlying dataset's native
+resolution.
 
 ** Space-Time Cube Constructors
 
