@@ -154,24 +154,41 @@ the user, provided that it meets condition 3 above. The 3D look-up
 functions for each input will then be responsible for translating the
 space-time coordinates they receive at the simulation resolution into
 the correct coordinates for their underlying dataset's native
-resolution.
+resolution. See section [[Space-Time Cube Constructors]] for
+implementation details.
 
 ** Space-Time Cube Constructors
 
-The following sections provide some pre-built methods for constructing
-3D space-time cubes corresponding to the data model described above
-for various types of input datasets.
+The following sections define Python classes that construct 3D
+space-time cubes corresponding to the data model described above for
+various types of input datasets.
 
-*** Space-Time Cube
+*** SpaceTimeCube
 
-# TODO: Write documentation and incorporate the following paragraph:
+When an input dataset is already loaded into memory as either a single
+scalar value or a 1D, 2D, or 3D array of values, it can be made
+available to the various Pyretechnics algorithms by wrapping it in a
+=SpaceTimeCube= object. As described in sections [[Support for Input
+Datasets of Varying Dimensionality]] and [[Support for Input Datasets of
+Varying Resolution]], this input data can be provided in a variety of
+dimensions and resolutions, subject to some simple constraints.
 
-Note, that for performance reasons, input values that are constant in
-either space or time will not be broadcast into these constant
-dimensions when stored in memory. Instead, their native
-representations will be preserved, and the 3D look-up function
-assigned to that input will correctly map the 3D space-time coordinate
-into the corresponding index within the native dataset.
+The =SpaceTimeCube= itself will be created with a set of
+user-specified spatio-temporal resolutions, called the /cube shape/,
+which may be equal to or greater than those of the underlying data.
+For memory efficiency, input values are stored within the
+=SpaceTimeCube= object at their native resolution but can be accessed
+at any spatio-temporal point or region within the =SpaceTimeCube='s
+extent using coordinates from the /cube shape/ resolution.
+
+The various accessor functions provided by this class receive 3D
+space-time coordinates at the /cube shape/ resolution and will
+correctly map them into the corresponding index within the native
+dataset. Whenever a bounded region of space-time is requested via an
+accessor function, the underlying data will be expanded to fill a new
+Numpy array at the /cube shape/ resolution. Whenever possible, Numpy
+array broadcasting will be used instead of data copying for any
+constant input dimensions.
 
 #+name: space-time-cube-class
 #+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
@@ -435,7 +452,7 @@ class SpaceTimeCube:
             delattr(self, "cube")
 #+end_src
 
-*** Lazy Space-Time Cube
+*** LazySpaceTimeCube
 
 #+name: lazy-space-time-cube-class
 #+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
