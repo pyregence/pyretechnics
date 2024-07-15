@@ -32,17 +32,17 @@ This document is a Literate
 Program[fn::https://en.wikipedia.org/wiki/Literate_programming],
 containing both the source code of the software it describes as well
 as the rationale used in each step of its design and implementation.
-The purpose of this approach is to enable anyone sufficiently
-experienced in programming to easily retrace the author's footsteps as
-they read through the text and code. By the time they have reached the
-end of this document, the reader should have just as strong a grasp of
-the system as the original programmer.
+The purpose of this approach is to enable both programmers and
+non-programmers alike to retrace the author's footsteps as they read
+through the text and code. By the time they have reached the end of
+this document, the reader should have just as strong a grasp of the
+system as the original programmer.
 
 The source code repository containing this document provides a
 comprehensive reproducible development environment through the use of
 the open source GNU Guix[fn::https://guix.gnu.org] transactional
 package manager. This tool will automatically install all the software
-needed to test, weave, tangle, detangle, build, and install this
+needed to weave, tangle, detangle, test, build, and install this
 library on your machine without conflicting with the main package
 manager of your operating system. See [[file:../README.md][README.md]] for more details.
 
