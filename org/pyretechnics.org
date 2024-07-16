@@ -22,7 +22,7 @@
 #+PROPERTY: header-args:python+ :preamble "import sys\nsys.path.extend(['../src','../test'])"
 #+PROPERTY: header-args:python+ :results value verbatim pp silent
 #+PROPERTY: header-args:python+ :exports code
-#+PROPERTY: header-args:python+ :no-expand
+#+PROPERTY: header-args:python+ :mkdirp yes
 #+PROPERTY: header-args:python+ :padline no
 #+PROPERTY: header-args:python+ :comments link
 
