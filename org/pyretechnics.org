@@ -172,13 +172,15 @@ The following sections define Python classes that construct 3D
 space-time cubes corresponding to the data model described above for
 various types of input datasets.
 
-*** Utility Functions
+*** Module Imports
 
 #+name: space-time-cube-imports
 #+begin_src python
 from functools import reduce
 import numpy as np
 #+end_src
+
+*** Utility Functions
 
 #+name: space-time-cube-utilities
 #+begin_src python
@@ -695,6 +697,7 @@ class LazySpaceTimeCube:
 ** For Users
    :PROPERTIES:
    :header-args:python+: :session *examples:pyretechnics.space_time_cube*
+   :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
 
@@ -707,7 +710,6 @@ such as [[https://pypi.org/project/rasterio/][rasterio]] or [[https://pypi.org/p
 in either case.
 
 *** How to Use SpaceTimeCube
-
 **** Create a SpaceTimeCube from 0D, 1D, 2D, or 3D Input Data
 
 #+name: space-time-cube-create
@@ -741,7 +743,7 @@ spatiotemporal_cube = SpaceTimeCube(cube_shape, wind_speed_raster)
 **** Retrieve a Scalar Value at a Space-Time Coordinate
 
 #+name: space-time-cube-get-point
-#+begin_src python :results output replace
+#+begin_src python
 # Space-Time Coordinate
 band = 12
 row  = 100
@@ -778,7 +780,7 @@ Value from Spatio-Temporal Data: Wind Speed
 **** Retrieve a Time Series at a Spatial Coordinate
 
 #+name: space-time-cube-get-time-series
-#+begin_src python :results output replace
+#+begin_src python
 # Space-Time Coordinates
 band_range = (18,29)
 row        = 100
@@ -815,7 +817,7 @@ Time Series from Spatio-Temporal Data: Wind Speed
 **** Retrieve a Spatial Plane at a Temporal Coordinate
 
 #+name: space-time-cube-get-spatial-plane
-#+begin_src python :results output replace
+#+begin_src python
 # Space-Time Coordinates
 band      = 12
 row_range = (95,104)
@@ -888,7 +890,7 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 **** Retrieve a Subcube within a Space-Time Region
 
 #+name: space-time-cube-get-subcube
-#+begin_src python :results output replace
+#+begin_src python
 # Space-Time Coordinates
 band_range = (23,24)
 row_range  = (95,104)
