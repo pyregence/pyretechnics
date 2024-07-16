@@ -1,6 +1,7 @@
 # [[file:../../org/pyretechnics.org::conversion][conversion]]
 from math import degrees, radians, tan, atan
 
+
 def F_to_K(degrees):
     """Convert fahrenheit to kelvin."""
     return (degrees + 459.67) * 0.5555555555555556

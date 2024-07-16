@@ -2,6 +2,8 @@
 #+SUBTITLE: Copyright © 2023-2024 Spatial Informatics Group, LLC
 #+AUTHOR: Gary W. Johnson, Valentin Waeselynck, Chris Lautenberger
 
+* Document Settings :noexport:
+
 # ================================
 # HTML Export Settings
 # ================================
@@ -42,7 +44,7 @@ The source code repository containing this document provides a
 comprehensive reproducible development environment through the use of
 the open source GNU Guix[fn::https://guix.gnu.org] transactional
 package manager. This tool will automatically install all the software
-needed to weave, tangle, detangle, test, build, and install this
+needed to tangle, detangle, weave, test, build, and install this
 library on your machine without conflicting with the main package
 manager of your operating system. See [[file:../README.md][README.md]] for more details.
 
@@ -3822,11 +3824,17 @@ level set corresponding to $\phi = 0$.
 # equations from the ELMFire paper and the online technical reference:
   https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
 
-* Appendix: Units Conversion Functions
+* Appendix
+** Units Conversion Functions (pyretechnics.conversion)
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.conversion*
+   :header-args:python+: :tangle  ../src/pyretechnics/conversion.py
+   :END:
 
 #+name: conversion
-#+begin_src python :tangle ../src/pyretechnics/conversion.py
+#+begin_src python
 from math import degrees, radians, tan, atan
+
 
 def F_to_K(degrees):
     """Convert fahrenheit to kelvin."""
