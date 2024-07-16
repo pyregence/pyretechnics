@@ -133,7 +133,8 @@ accessing its values within 0D, 1D, 2D, and 3D slices of the
 space-time cube at the simulation resolution. Such look-ups should
 always be referentially transparent, so as to ensure that subsequent
 look-ups with the same coordinate will always yield the same values.
-See section [[Space-Time Cube Constructors]] for implementation details.
+See section [[Loading Input Data (pyretechnics.space_time_cube)]] for
+implementation details.
 
 ** Support for Input Datasets of Varying Resolution
 
@@ -156,16 +157,20 @@ the user, provided that it meets condition 3 above. The 3D look-up
 functions for each input will then be responsible for translating the
 space-time coordinates they receive at the simulation resolution into
 the correct coordinates for their underlying dataset's native
-resolution. See section [[Space-Time Cube Constructors]] for
-implementation details.
+resolution. See section [[Loading Input Data
+(pyretechnics.space_time_cube)]] for implementation details.
 
-** Space-Time Cube Constructors
+* Loading Input Data (pyretechnics.space_time_cube)
+  :PROPERTIES:
+  :header-args:python+: :session *pyretechnics.space_time_cube*
+  :header-args:python+: :tangle  ../src/pyretechnics/space_time_cube.py
+  :END:
 
 The following sections define Python classes that construct 3D
 space-time cubes corresponding to the data model described above for
 various types of input datasets.
 
-*** SpaceTimeCube
+** SpaceTimeCube
 
 When an input dataset is already loaded into memory as either a single
 scalar value or a 1D, 2D, or 3D array of values, it can be made
@@ -192,10 +197,11 @@ Numpy array at the /cube shape/ resolution. Whenever possible, Numpy
 array broadcasting will be used instead of data copying for any
 constant input dimensions.
 
-#+name: space-time-cube-class
-#+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
+#+name: space-time-cube-class-utilities
+#+begin_src python
 from functools import reduce
 import numpy as np
+
 
 def is_pos_int(x):
     return isinstance(x, int) and x > 0
@@ -220,8 +226,10 @@ def maybe_repeat_array(array, axis_repetitions):
             return np.broadcast_to(array, array_shape)
         else:
             return np.repeat(array, repetitions, axis)
+#+end_src
 
-
+#+name: space-time-cube-class
+#+begin_src python
 class SpaceTimeCube:
     """
     TODO: Add docstring.
@@ -454,10 +462,10 @@ class SpaceTimeCube:
             delattr(self, "cube")
 #+end_src
 
-*** LazySpaceTimeCube
+** LazySpaceTimeCube
 
 #+name: lazy-space-time-cube-class
-#+begin_src python :tangle ../src/pyretechnics/space_time_cube.py
+#+begin_src python
 import numpy as np
 
 class LazySpaceTimeCube:
@@ -3831,7 +3839,7 @@ level set corresponding to $\phi = 0$.
    :header-args:python+: :tangle  ../src/pyretechnics/conversion.py
    :END:
 
-#+name: conversion
+#+name: units-conversion
 #+begin_src python
 from math import degrees, radians, tan, atan
 
