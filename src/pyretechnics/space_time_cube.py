@@ -262,12 +262,17 @@ class SpaceTimeCube:
 # [[file:../../org/pyretechnics.org::lazy-space-time-cube-class][lazy-space-time-cube-class]]
 class LazySpaceTimeCube:
     """
-    TODO: Add docstring.
+    Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.
+    Internally, data is stored as an initially empty 3D array of SpaceTimeCube objects.
+    Whenever a point value or contiguous space-time region of values is requested, identify
+    which SpaceTimeCubes contain the requested coordinates, load them into the cache array
+    by calling load_subcube for any that are not already present, request the values from
+    these SpaceTimeCubes, combine them together if necessary, and return the resulting scalar
+    value or array to the caller.
     """
     def __init__(self, cube_shape, subcube_shape, load_subcube):
         """
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
-        NOTE: cube_shape >= subcube_shape
+        NOTE: The resolutions in cube_shape must be exact multiples of those in subcube_shape.
         """
         # Ensure that cube_shape and subcube_shape both contain 3 values or throw an error
         (cube_bands, cube_rows, cube_cols) = cube_shape
@@ -294,7 +299,9 @@ class LazySpaceTimeCube:
 
     def __getOrLoadSubcube(cache_t, cache_y, cache_x):
         """
-        Returns a SpaceTimeCube.
+        Return the SpaceTimeCube stored at self.cache[cache_t, cache_y, cache_x] if it
+        has already been loaded. Otherwise, call self.load_subcube to load it, store
+        it in self.cache, and return it.
         """
         subcube = self.cache[cache_t, cache_y, cache_x]
         if subcube:
@@ -307,7 +314,11 @@ class LazySpaceTimeCube:
 
     def get(self, t, y, x):
         """
-        Returns a scalar value.
+        Return the scalar value at index (t,y,x) by translating these cube coordinates
+        to cache and subcube coordinates, loading the matching subcube into the cache grid
+        if not already present, and looking up the value within this subcube.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t, subcube_t) = divmod(t, subcube_bands)
