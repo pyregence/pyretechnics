@@ -1,7 +1,8 @@
-# [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
+# [[file:../../org/pyretechnics.org::space-time-cube-imports][space-time-cube-imports]]
 from functools import reduce
 import numpy as np
-
+# space-time-cube-imports ends here
+# [[file:../../org/pyretechnics.org::space-time-cube-utilities][space-time-cube-utilities]]
 def is_pos_int(x):
     return isinstance(x, int) and x > 0
 
@@ -25,8 +26,8 @@ def maybe_repeat_array(array, axis_repetitions):
             return np.broadcast_to(array, array_shape)
         else:
             return np.repeat(array, repetitions, axis)
-
-
+# space-time-cube-utilities ends here
+# [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
 class SpaceTimeCube:
     """
     TODO: Add docstring.
@@ -259,8 +260,6 @@ class SpaceTimeCube:
             delattr(self, "cube")
 # space-time-cube-class ends here
 # [[file:../../org/pyretechnics.org::lazy-space-time-cube-class][lazy-space-time-cube-class]]
-import numpy as np
-
 class LazySpaceTimeCube:
     """
     TODO: Add docstring.

@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::conversion][conversion]]
+# [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
 from math import degrees, radians, tan, atan
 
 
@@ -200,4 +200,4 @@ def day_to_min(days):
 def min_to_day(minutes):
     """Convert minutes to days."""
     return minutes / 1440.0
-# conversion ends here
+# units-conversion ends here

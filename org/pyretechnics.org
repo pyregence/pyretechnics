@@ -171,7 +171,42 @@ The following sections define Python classes that construct 3D
 space-time cubes corresponding to the data model described above for
 various types of input datasets.
 
-** SpaceTimeCube
+** Utility Functions
+
+#+name: space-time-cube-imports
+#+begin_src python
+from functools import reduce
+import numpy as np
+#+end_src
+
+#+name: space-time-cube-utilities
+#+begin_src python
+def is_pos_int(x):
+    return isinstance(x, int) and x > 0
+
+
+def divide_evenly(dividend, divisor):
+    (quotient, remainder) = divmod(dividend, divisor)
+    if remainder == 0:
+        return quotient
+    else:
+        raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
+
+
+def maybe_repeat_array(array, axis_repetitions):
+    (axis, repetitions) = axis_repetitions
+    if repetitions == 1:
+        return array
+    else:
+        array_shape = list(np.shape(array))
+        if array_shape[axis] == 1:
+            array_shape[axis] = repetitions
+            return np.broadcast_to(array, array_shape)
+        else:
+            return np.repeat(array, repetitions, axis)
+#+end_src
+
+** SpaceTimeCube Class
 
 When an input dataset is already loaded into memory as either a single
 scalar value or a 1D, 2D, or 3D array of values, it can be made
@@ -197,37 +232,6 @@ accessor function, the underlying data will be expanded to fill a new
 Numpy array at the /cube shape/ resolution. Whenever possible, Numpy
 array broadcasting will be used instead of data copying for any
 constant input dimensions.
-
-#+name: space-time-cube-class-utilities
-#+begin_src python
-from functools import reduce
-import numpy as np
-
-
-def is_pos_int(x):
-    return isinstance(x, int) and x > 0
-
-
-def divide_evenly(dividend, divisor):
-    (quotient, remainder) = divmod(dividend, divisor)
-    if remainder == 0:
-        return quotient
-    else:
-        raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
-
-
-def maybe_repeat_array(array, axis_repetitions):
-    (axis, repetitions) = axis_repetitions
-    if repetitions == 1:
-        return array
-    else:
-        array_shape = list(np.shape(array))
-        if array_shape[axis] == 1:
-            array_shape[axis] = repetitions
-            return np.broadcast_to(array, array_shape)
-        else:
-            return np.repeat(array, repetitions, axis)
-#+end_src
 
 #+name: space-time-cube-class
 #+begin_src python
@@ -463,12 +467,10 @@ class SpaceTimeCube:
             delattr(self, "cube")
 #+end_src
 
-** LazySpaceTimeCube
+** LazySpaceTimeCube Class
 
 #+name: lazy-space-time-cube-class
 #+begin_src python
-import numpy as np
-
 class LazySpaceTimeCube:
     """
     TODO: Add docstring.
