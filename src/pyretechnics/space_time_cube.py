@@ -112,7 +112,7 @@ class SpaceTimeCube:
                          x // self.x_repetitions]
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -144,7 +144,7 @@ class SpaceTimeCube:
         return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
@@ -186,7 +186,7 @@ class SpaceTimeCube:
                               x_start_idx:(x_stop_idx + 1)]
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
@@ -369,7 +369,7 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -404,7 +404,7 @@ class LazySpaceTimeCube:
         )
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
@@ -444,7 +444,7 @@ class LazySpaceTimeCube:
         )
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating

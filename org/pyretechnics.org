@@ -322,7 +322,7 @@ class SpaceTimeCube:
                          x // self.x_repetitions]
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -354,7 +354,7 @@ class SpaceTimeCube:
         return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
@@ -396,7 +396,7 @@ class SpaceTimeCube:
                               x_start_idx:(x_stop_idx + 1)]
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
@@ -612,7 +612,7 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -647,7 +647,7 @@ class LazySpaceTimeCube:
         )
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
@@ -687,7 +687,7 @@ class LazySpaceTimeCube:
         )
 
 
-    # NOTE: None and -1 cannot be passed in
+    # FIXME: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
@@ -831,10 +831,10 @@ Value from Time Series Data: Spread Rate Adjustment
 1.0 
 
 Value from Spatial Data: Elevation
-694 
+618 
 
 Value from Spatio-Temporal Data: Wind Speed
-34
+35
 #+end_example
 
 **** Retrieve a Time Series at a Spatial Coordinate
@@ -842,7 +842,7 @@ Value from Spatio-Temporal Data: Wind Speed
 #+name: space-time-cube-get-time-series
 #+begin_src python
 # Space-Time Coordinates
-band_range = (18,29)
+band_range = (18,30)
 row        = 100
 col        = 100
 
@@ -868,10 +868,10 @@ Time Series from Time Series Data: Spread Rate Adjustment
 [1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
 
 Time Series from Spatial Data: Elevation
-[694 694 694 694 694 694 694 694 694 694 694 694] 
+[605 605 605 605 605 605 605 605 605 605 605 605] 
 
 Time Series from Spatio-Temporal Data: Wind Speed
-[34 34 34 34 34 34 28 28 28 28 28 28]
+[26 26 26 26 26 26 32 32 32 32 32 32]
 #+end_example
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
@@ -880,8 +880,8 @@ Time Series from Spatio-Temporal Data: Wind Speed
 #+begin_src python
 # Space-Time Coordinates
 band      = 12
-row_range = (95,104)
-col_range = (95,104)
+row_range = (95,105)
+col_range = (95,105)
 
 print("Spatial Plane from Constant Data: Foliar Moisture")
 print(constant_cube.getSpatialPlane(band, row_range, col_range), "\n")
@@ -923,28 +923,28 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
 
 Spatial Plane from Spatial Data: Elevation
-[[479 613 584 629 342 708 162 687 500 316]
- [449 728 521 508 339 452 343 664 578 487]
- [424 399 413 578 301 392 539 539 233 644]
- [458 587 526 608 461 503 464 651 550 488]
- [313 544 514 535 610 501 684 338 508 469]
- [395 497 471 262 492 694 571 464 514 394]
- [387 618 458 551 701 392 631 558 565 617]
- [811 522 560 528 520 395 520 599 491 510]
- [515 516 426 524 673 661 561 428 768 633]
- [703 460 469 510 513 483 392 551 477 437]] 
+[[552 449 409 509 662 527 519 493 481 376]
+ [587 514 481 638 643 393 521 474 514 614]
+ [367 440 712 569 533 610 596 470 412 517]
+ [363 442 688 480 562 543 530 471 446 501]
+ [432 536 437 563 330 361 479 482 478 372]
+ [586 536 312 516 556 605 380 617 622 380]
+ [453 517 623 388 486 613 406 461 452 487]
+ [521 624 458 428 602 692 376 464 596 533]
+ [501 364 507 578 604 696 529 492 688 454]
+ [460 445 514 281 467 587 459 556 405 316]] 
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
-[[25 25 25 25 25 22 22 22 22 22]
- [25 25 25 25 25 22 22 22 22 22]
- [25 25 25 25 25 22 22 22 22 22]
- [25 25 25 25 25 22 22 22 22 22]
- [25 25 25 25 25 22 22 22 22 22]
- [18 18 18 18 18 34 34 34 34 34]
- [18 18 18 18 18 34 34 34 34 34]
- [18 18 18 18 18 34 34 34 34 34]
- [18 18 18 18 18 34 34 34 34 34]
- [18 18 18 18 18 34 34 34 34 34]]
+[[26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]]
 #+end_example
 
 **** Retrieve a Subcube within a Space-Time Region
@@ -952,9 +952,9 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 #+name: space-time-cube-get-subcube
 #+begin_src python
 # Space-Time Coordinates
-band_range = (23,24)
-row_range  = (95,104)
-col_range  = (95,104)
+band_range = (23,25)
+row_range  = (95,105)
+col_range  = (95,105)
 
 print("Subcube from Constant Data: Foliar Moisture")
 print(constant_cube.getSubcube(band_range, row_range, col_range), "\n")
@@ -1018,50 +1018,50 @@ Subcube from Time Series Data: Spread Rate Adjustment
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]] 
 
 Subcube from Spatial Data: Elevation
-[[[479 613 584 629 342 708 162 687 500 316]
-  [449 728 521 508 339 452 343 664 578 487]
-  [424 399 413 578 301 392 539 539 233 644]
-  [458 587 526 608 461 503 464 651 550 488]
-  [313 544 514 535 610 501 684 338 508 469]
-  [395 497 471 262 492 694 571 464 514 394]
-  [387 618 458 551 701 392 631 558 565 617]
-  [811 522 560 528 520 395 520 599 491 510]
-  [515 516 426 524 673 661 561 428 768 633]
-  [703 460 469 510 513 483 392 551 477 437]]
+[[[552 449 409 509 662 527 519 493 481 376]
+  [587 514 481 638 643 393 521 474 514 614]
+  [367 440 712 569 533 610 596 470 412 517]
+  [363 442 688 480 562 543 530 471 446 501]
+  [432 536 437 563 330 361 479 482 478 372]
+  [586 536 312 516 556 605 380 617 622 380]
+  [453 517 623 388 486 613 406 461 452 487]
+  [521 624 458 428 602 692 376 464 596 533]
+  [501 364 507 578 604 696 529 492 688 454]
+  [460 445 514 281 467 587 459 556 405 316]]
 
- [[479 613 584 629 342 708 162 687 500 316]
-  [449 728 521 508 339 452 343 664 578 487]
-  [424 399 413 578 301 392 539 539 233 644]
-  [458 587 526 608 461 503 464 651 550 488]
-  [313 544 514 535 610 501 684 338 508 469]
-  [395 497 471 262 492 694 571 464 514 394]
-  [387 618 458 551 701 392 631 558 565 617]
-  [811 522 560 528 520 395 520 599 491 510]
-  [515 516 426 524 673 661 561 428 768 633]
-  [703 460 469 510 513 483 392 551 477 437]]] 
+ [[552 449 409 509 662 527 519 493 481 376]
+  [587 514 481 638 643 393 521 474 514 614]
+  [367 440 712 569 533 610 596 470 412 517]
+  [363 442 688 480 562 543 530 471 446 501]
+  [432 536 437 563 330 361 479 482 478 372]
+  [586 536 312 516 556 605 380 617 622 380]
+  [453 517 623 388 486 613 406 461 452 487]
+  [521 624 458 428 602 692 376 464 596 533]
+  [501 364 507 578 604 696 529 492 688 454]
+  [460 445 514 281 467 587 459 556 405 316]]] 
 
 Subcube from Spatio-Temporal Data: Wind Speed
-[[[25 25 25 25 25 22 22 22 22 22]
-  [25 25 25 25 25 22 22 22 22 22]
-  [25 25 25 25 25 22 22 22 22 22]
-  [25 25 25 25 25 22 22 22 22 22]
-  [25 25 25 25 25 22 22 22 22 22]
-  [18 18 18 18 18 34 34 34 34 34]
-  [18 18 18 18 18 34 34 34 34 34]
-  [18 18 18 18 18 34 34 34 34 34]
-  [18 18 18 18 18 34 34 34 34 34]
-  [18 18 18 18 18 34 34 34 34 34]]
+[[[26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]]
 
- [[30 30 30 30 30 32 32 32 32 32]
-  [30 30 30 30 30 32 32 32 32 32]
-  [30 30 30 30 30 32 32 32 32 32]
-  [30 30 30 30 30 32 32 32 32 32]
-  [30 30 30 30 30 32 32 32 32 32]
-  [31 31 31 31 31 28 28 28 28 28]
-  [31 31 31 31 31 28 28 28 28 28]
-  [31 31 31 31 31 28 28 28 28 28]
-  [31 31 31 31 31 28 28 28 28 28]
-  [31 31 31 31 31 28 28 28 28 28]]]
+ [[33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]]]
 #+end_example
 
 *** How to Use LazySpaceTimeCube
@@ -1187,10 +1187,10 @@ Value from Time Series Data: Spread Rate Adjustment
 1.0 
 
 Value from Spatial Data: Elevation
-519 
+605 
 
 Value from Spatio-Temporal Data: Wind Speed
-36
+26
 #+end_example
 
 **** Retrieve a Time Series at a Spatial Coordinate
@@ -1198,7 +1198,7 @@ Value from Spatio-Temporal Data: Wind Speed
 #+name: lazy-space-time-cube-get-time-series
 #+begin_src python
 # Space-Time Coordinates
-band_range = (18,29)
+band_range = (18,30)
 row        = 100
 col        = 100
 
@@ -1224,10 +1224,10 @@ Time Series from Time Series Data: Spread Rate Adjustment
 [1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
 
 Time Series from Spatial Data: Elevation
-[519 519 519 519 519 519 519 519 519 519 519 519] 
+[605 605 605 605 605 605 605 605 605 605 605 605] 
 
 Time Series from Spatio-Temporal Data: Wind Speed
-[36 36 36 36 36 36 37 37 37 37 37 37]
+[26 26 26 26 26 26 32 32 32 32 32 32]
 #+end_example
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
@@ -1236,8 +1236,8 @@ Time Series from Spatio-Temporal Data: Wind Speed
 #+begin_src python
 # Space-Time Coordinates
 band      = 12
-row_range = (95,104)
-col_range = (95,104)
+row_range = (95,105)
+col_range = (95,105)
 
 print("Spatial Plane from Constant Data: Foliar Moisture")
 print(constant_cube.getSpatialPlane(band, row_range, col_range), "\n")
@@ -1279,28 +1279,28 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
 
 Spatial Plane from Spatial Data: Elevation
-[[535 236 472 634 519 637 533 573 439 472]
- [641 391 747 414 632 474 607 570 442 576]
- [566 558 853 320 608 342 571 540 537 513]
- [428 422 411 626 515 452 493 408 555 519]
- [395 453 480 308 727 392 543 559 534 502]
- [444 509 517 566 286 519 432 525 543 531]
- [252 626 587 508 689 622 298 571 700 487]
- [500 468 552 625 373 461 365 558 678 534]
- [420 462 493 453 638 521 467 450 573 386]
- [425 412 491 487 368 467 374 655 481 578]] 
+[[552 449 409 509 662 527 519 493 481 376]
+ [587 514 481 638 643 393 521 474 514 614]
+ [367 440 712 569 533 610 596 470 412 517]
+ [363 442 688 480 562 543 530 471 446 501]
+ [432 536 437 563 330 361 479 482 478 372]
+ [586 536 312 516 556 605 380 617 622 380]
+ [453 517 623 388 486 613 406 461 452 487]
+ [521 624 458 428 602 692 376 464 596 533]
+ [501 364 507 578 604 696 529 492 688 454]
+ [460 445 514 281 467 587 459 556 405 316]] 
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
-[[24 24 24 24 24 31 31 31 31 31]
- [24 24 24 24 24 31 31 31 31 31]
- [24 24 24 24 24 31 31 31 31 31]
- [24 24 24 24 24 31 31 31 31 31]
- [24 24 24 24 24 31 31 31 31 31]
- [33 33 33 33 33 36 36 36 36 36]
- [33 33 33 33 33 36 36 36 36 36]
- [33 33 33 33 33 36 36 36 36 36]
- [33 33 33 33 33 36 36 36 36 36]
- [33 33 33 33 33 36 36 36 36 36]]
+[[26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [26 26 26 26 26 30 30 30 30 30]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]
+ [30 30 30 30 30 26 26 26 26 26]]
 #+end_example
 
 **** Retrieve a Subcube within a Space-Time Region
@@ -1308,9 +1308,9 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 #+name: lazy-space-time-cube-get-subcube
 #+begin_src python
 # Space-Time Coordinates
-band_range = (23,24)
-row_range  = (95,104)
-col_range  = (95,104)
+band_range = (23,25)
+row_range  = (95,105)
+col_range  = (95,105)
 
 print("Subcube from Constant Data: Foliar Moisture")
 print(constant_cube.getSubcube(band_range, row_range, col_range), "\n")
@@ -1374,50 +1374,50 @@ Subcube from Time Series Data: Spread Rate Adjustment
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]] 
 
 Subcube from Spatial Data: Elevation
-[[[535 236 472 634 519 637 533 573 439 472]
-  [641 391 747 414 632 474 607 570 442 576]
-  [566 558 853 320 608 342 571 540 537 513]
-  [428 422 411 626 515 452 493 408 555 519]
-  [395 453 480 308 727 392 543 559 534 502]
-  [444 509 517 566 286 519 432 525 543 531]
-  [252 626 587 508 689 622 298 571 700 487]
-  [500 468 552 625 373 461 365 558 678 534]
-  [420 462 493 453 638 521 467 450 573 386]
-  [425 412 491 487 368 467 374 655 481 578]]
+[[[552 449 409 509 662 527 519 493 481 376]
+  [587 514 481 638 643 393 521 474 514 614]
+  [367 440 712 569 533 610 596 470 412 517]
+  [363 442 688 480 562 543 530 471 446 501]
+  [432 536 437 563 330 361 479 482 478 372]
+  [586 536 312 516 556 605 380 617 622 380]
+  [453 517 623 388 486 613 406 461 452 487]
+  [521 624 458 428 602 692 376 464 596 533]
+  [501 364 507 578 604 696 529 492 688 454]
+  [460 445 514 281 467 587 459 556 405 316]]
 
- [[535 236 472 634 519 637 533 573 439 472]
-  [641 391 747 414 632 474 607 570 442 576]
-  [566 558 853 320 608 342 571 540 537 513]
-  [428 422 411 626 515 452 493 408 555 519]
-  [395 453 480 308 727 392 543 559 534 502]
-  [444 509 517 566 286 519 432 525 543 531]
-  [252 626 587 508 689 622 298 571 700 487]
-  [500 468 552 625 373 461 365 558 678 534]
-  [420 462 493 453 638 521 467 450 573 386]
-  [425 412 491 487 368 467 374 655 481 578]]] 
+ [[552 449 409 509 662 527 519 493 481 376]
+  [587 514 481 638 643 393 521 474 514 614]
+  [367 440 712 569 533 610 596 470 412 517]
+  [363 442 688 480 562 543 530 471 446 501]
+  [432 536 437 563 330 361 479 482 478 372]
+  [586 536 312 516 556 605 380 617 622 380]
+  [453 517 623 388 486 613 406 461 452 487]
+  [521 624 458 428 602 692 376 464 596 533]
+  [501 364 507 578 604 696 529 492 688 454]
+  [460 445 514 281 467 587 459 556 405 316]]] 
 
 Subcube from Spatio-Temporal Data: Wind Speed
-[[[24 24 24 24 24 31 31 31 31 31]
-  [24 24 24 24 24 31 31 31 31 31]
-  [24 24 24 24 24 31 31 31 31 31]
-  [24 24 24 24 24 31 31 31 31 31]
-  [24 24 24 24 24 31 31 31 31 31]
-  [33 33 33 33 33 36 36 36 36 36]
-  [33 33 33 33 33 36 36 36 36 36]
-  [33 33 33 33 33 36 36 36 36 36]
-  [33 33 33 33 33 36 36 36 36 36]
-  [33 33 33 33 33 36 36 36 36 36]]
+[[[26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [26 26 26 26 26 30 30 30 30 30]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]
+  [30 30 30 30 30 26 26 26 26 26]]
 
- [[31 31 31 31 31 25 25 25 25 25]
-  [31 31 31 31 31 25 25 25 25 25]
-  [31 31 31 31 31 25 25 25 25 25]
-  [31 31 31 31 31 25 25 25 25 25]
-  [31 31 31 31 31 25 25 25 25 25]
-  [30 30 30 30 30 37 37 37 37 37]
-  [30 30 30 30 30 37 37 37 37 37]
-  [30 30 30 30 30 37 37 37 37 37]
-  [30 30 30 30 30 37 37 37 37 37]
-  [30 30 30 30 30 37 37 37 37 37]]]
+ [[33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [33 33 33 33 33 28 28 28 28 28]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]
+  [25 25 25 25 25 32 32 32 32 32]]]
 #+end_example
 
 * Fire Spread API
