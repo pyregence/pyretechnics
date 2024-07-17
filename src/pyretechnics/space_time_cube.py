@@ -112,7 +112,6 @@ class SpaceTimeCube:
                          x // self.x_repetitions]
 
 
-    # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
@@ -121,9 +120,11 @@ class SpaceTimeCube:
         and expanding it back to the cube_shape resolution.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument range
-        (t_start, t_stop) = t_range
+        (t_start, t_stop_exclusive) = t_range
+        t_stop = t_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
         t_stop_chunk  = t_stop  // self.t_repetitions
@@ -143,7 +144,6 @@ class SpaceTimeCube:
         return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
-    # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
@@ -152,10 +152,13 @@ class SpaceTimeCube:
         data, and expanding it back to the cube_shape resolution.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (y_start, y_stop) = y_range
-        (x_start, x_stop) = x_range
+        (y_start, y_stop_exclusive) = y_range
+        (x_start, x_stop_exclusive) = x_range
+        y_stop = y_stop_exclusive - 1
+        x_stop = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
         t_chunk       = t       // self.t_repetitions
         y_start_chunk = y_start // self.y_repetitions
@@ -183,7 +186,6 @@ class SpaceTimeCube:
                               x_start_idx:(x_stop_idx + 1)]
 
 
-    # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
@@ -192,11 +194,15 @@ class SpaceTimeCube:
         base data, and expanding it back to the cube_shape resolution.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (t_start, t_stop) = t_range
-        (y_start, y_stop) = y_range
-        (x_start, x_stop) = x_range
+        (t_start, t_stop_exclusive) = t_range
+        (y_start, y_stop_exclusive) = y_range
+        (x_start, x_stop_exclusive) = x_range
+        t_stop = t_stop_exclusive - 1
+        y_stop = y_stop_exclusive - 1
+        x_stop = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
         t_stop_chunk  = t_stop  // self.t_repetitions
@@ -352,6 +358,8 @@ class LazySpaceTimeCube:
         if not already present, and looking up the value within this subcube.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: If you use negative values for t, y, or x, your load_subcube function will receive
+              negative values in its cache_index. Make sure these are supported in your code.
         """
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t, subcube_t) = divmod(t, subcube_bands)
@@ -361,7 +369,6 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
@@ -371,9 +378,11 @@ class LazySpaceTimeCube:
         subcube, and merging them together into a single 1D array.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument range
-        (t_start, t_stop) = t_range
+        (t_start, t_stop_exclusive) = t_range
+        t_stop = t_stop_exclusive - 1
         # Translate high-res coordinates to cache and subcube coordinates
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t_start, subcube_t_start) = divmod(t_start, subcube_bands)
@@ -386,8 +395,8 @@ class LazySpaceTimeCube:
                                      cache_y,
                                      cache_x
                                     ).getTimeSeries(
-                                        (subcube_t_start if cache_t == cache_t_start else 0,
-                                         subcube_t_stop  if cache_t == cache_t_stop  else subcube_bands - 1),
+                                        (subcube_t_start    if cache_t == cache_t_start else 0,
+                                         subcube_t_stop + 1 if cache_t == cache_t_stop  else subcube_bands),
                                         subcube_y,
                                         subcube_x
                                     )
@@ -395,7 +404,6 @@ class LazySpaceTimeCube:
         )
 
 
-    # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
@@ -405,10 +413,13 @@ class LazySpaceTimeCube:
         subcube, and merging them together into a single 2D array.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (y_start, y_stop) = y_range
-        (x_start, x_stop) = x_range
+        (y_start, y_stop_exclusive) = y_range
+        (x_start, x_stop_exclusive) = x_range
+        y_stop = y_stop_exclusive - 1
+        x_stop = x_stop_exclusive - 1
         # Translate high-res coordinates to cache and subcube coordinates
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t,       subcube_t)       = divmod(t,       subcube_bands)
@@ -423,17 +434,16 @@ class LazySpaceTimeCube:
                                       cache_x
                                       ).getSpatialPlane(
                                           subcube_t,
-                                          (subcube_y_start if cache_y == cache_y_start else 0,
-                                           subcube_y_stop  if cache_y == cache_y_stop  else subcube_rows - 1),
-                                          (subcube_x_start if cache_x == cache_x_start else 0,
-                                           subcube_x_stop  if cache_x == cache_x_stop  else subcube_cols - 1)
+                                          (subcube_y_start    if cache_y == cache_y_start else 0,
+                                           subcube_y_stop + 1 if cache_y == cache_y_stop  else subcube_rows),
+                                          (subcube_x_start    if cache_x == cache_x_start else 0,
+                                           subcube_x_stop + 1 if cache_x == cache_x_stop  else subcube_cols)
                                       )
               for cache_x in range(cache_x_start, cache_x_stop + 1)]
              for cache_y in range(cache_y_start, cache_y_stop + 1)]
         )
 
 
-    # NOTE: Ranges provide inclusion:inclusion semantics
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
@@ -443,11 +453,15 @@ class LazySpaceTimeCube:
         within each subcube, and merging them together into a single 3D array.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (t_start, t_stop) = t_range
-        (y_start, y_stop) = y_range
-        (x_start, x_stop) = x_range
+        (t_start, t_stop_exclusive) = t_range
+        (y_start, y_stop_exclusive) = y_range
+        (x_start, x_stop_exclusive) = x_range
+        t_stop = t_stop_exclusive - 1
+        y_stop = y_stop_exclusive - 1
+        x_stop = x_stop_exclusive - 1
         # Translate high-res coordinates to cache and subcube coordinates
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t_start, subcube_t_start) = divmod(t_start, subcube_bands)
@@ -462,12 +476,12 @@ class LazySpaceTimeCube:
                                        cache_y,
                                        cache_x
                                        ).getSubcube(
-                                           (subcube_t_start if cache_t == cache_t_start else 0,
-                                            subcube_t_stop  if cache_t == cache_t_stop  else subcube_bands - 1),
-                                           (subcube_y_start if cache_y == cache_y_start else 0,
-                                            subcube_y_stop  if cache_y == cache_y_stop  else subcube_rows - 1),
-                                           (subcube_x_start if cache_x == cache_x_start else 0,
-                                            subcube_x_stop  if cache_x == cache_x_stop  else subcube_cols - 1)
+                                           (subcube_t_start    if cache_t == cache_t_start else 0,
+                                            subcube_t_stop + 1 if cache_t == cache_t_stop  else subcube_bands),
+                                           (subcube_y_start    if cache_y == cache_y_start else 0,
+                                            subcube_y_stop + 1 if cache_y == cache_y_stop  else subcube_rows),
+                                           (subcube_x_start    if cache_x == cache_x_start else 0,
+                                            subcube_x_stop + 1 if cache_x == cache_x_stop  else subcube_cols)
                                        )
                for cache_x in range(cache_x_start, cache_x_stop + 1)]
               for cache_y in range(cache_y_start, cache_y_stop + 1)]
