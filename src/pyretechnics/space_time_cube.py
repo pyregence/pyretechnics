@@ -16,6 +16,11 @@ def divide_evenly(dividend, divisor):
 
 
 def maybe_repeat_array(array, axis_repetitions):
+    """
+    Return a new array that is created by repeating the elements from the input
+    array repetitions times along the specified array axis. Avoid allocating
+    new memory if repetitions == 1 or if the repeated array axis has length 1.
+    """
     (axis, repetitions) = axis_repetitions
     if repetitions == 1:
         return array
@@ -30,12 +35,17 @@ def maybe_repeat_array(array, axis_repetitions):
 # [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
 class SpaceTimeCube:
     """
-    TODO: Add docstring.
+    Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.
+    Internally, data is stored as a 3D Numpy array at the resolution of the provided base data.
+    Whenever a point value or contiguous space-time region of values is requested, translate
+    the given cube_shape coordinates into base coordinates, look up the values from the base data,
+    expand them (if necessary) back into the cube_shape resolution, and return the resulting scalar
+    value or array to the caller.
     """
     def __init__(self, cube_shape, base):
         """
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the cube in the first timestep.
-        NOTE: cube_shape >= base
+        NOTE: The resolutions in cube_shape must be exact multiples of any existing dimensions
+              in the base data.
         """
         # Ensure that cube_shape contains 3 values or throw an error
         (cube_bands, cube_rows, cube_cols) = cube_shape
@@ -91,7 +101,10 @@ class SpaceTimeCube:
 
     def get(self, t, y, x):
         """
-        Returns a scalar value.
+        Return the scalar value at index (t,y,x) by translating these cube coordinates
+        to base coordinates and looking up the value within the base data.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Select value by spatio-temporal coordinate
         return self.data[t // self.t_repetitions,
@@ -103,7 +116,11 @@ class SpaceTimeCube:
     # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
-        Returns a 1D array.
+        Return the 1D array given by the slice (t_range,y,x) by translating these cube
+        coordinates to base coordinates, looking up the array slice within the base data,
+        and expanding it back to the cube_shape resolution.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Destructure the argument range
         (t_start, t_stop) = t_range
@@ -130,7 +147,11 @@ class SpaceTimeCube:
     # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
-        Returns a 2D array.
+        Return the 2D array given by the slice (t,y_range,x_range) by translating these
+        cube coordinates to base coordinates, looking up the array slice within the base
+        data, and expanding it back to the cube_shape resolution.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Destructure the argument ranges
         (y_start, y_stop) = y_range
@@ -166,7 +187,11 @@ class SpaceTimeCube:
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
-        Returns a 3D array.
+        Return the 3D array given by the slice (t_range,y_range,x_range) by translating
+        these cube coordinates to base coordinates, looking up the array slice within the
+        base data, and expanding it back to the cube_shape resolution.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Destructure the argument ranges
         (t_start, t_stop) = t_range
@@ -206,6 +231,11 @@ class SpaceTimeCube:
 
 
     def __getFullyRealizedCube(self):
+        """
+        Return the 3D array created by expanding the base data to the cube_shape resolution.
+        Wherever possible, Numpy broadcasting is used to avoid memory allocation along
+        constant array dimensions.
+        """
         match np.ndim(self.base):
             # 0D: Constant Input
             case 0:
@@ -241,7 +271,10 @@ class SpaceTimeCube:
 
     def getFullyRealizedCube(self, cache=False):
         """
-        Returns a 3D array.
+        Return the 3D array created by expanding the base data to the cube_shape resolution.
+        Wherever possible, Numpy broadcasting is used to avoid memory allocation along
+        constant array dimensions. When cache == True, this expanded 3D array is cached
+        within the SpaceTimeCube object for future immediate retrieval.
         """
         if hasattr(self, "cube"):
             return self.cube
@@ -332,7 +365,12 @@ class LazySpaceTimeCube:
     # NOTE: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
-        Returns a 1D array.
+        Return the 1D array given by the slice (t_range,y,x) by translating these cube
+        coordinates to cache and subcube coordinates, loading the matching subcubes into
+        the cache grid if not already present, looking up the array slices within each
+        subcube, and merging them together into a single 1D array.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Destructure the argument range
         (t_start, t_stop) = t_range
@@ -361,7 +399,12 @@ class LazySpaceTimeCube:
     # NOTE: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
-        Returns a 2D array.
+        Return the 2D array given by the slice (t,y_range,x_range) by translating these
+        cube coordinates to cache and subcube coordinates, loading the matching subcubes
+        into the cache grid if not already present, looking up the array slices within each
+        subcube, and merging them together into a single 2D array.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Destructure the argument ranges
         (y_start, y_stop) = y_range
@@ -394,7 +437,12 @@ class LazySpaceTimeCube:
     # NOTE: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
-        Returns a 3D array.
+        Return the 3D array given by the slice (t_range,y_range,x_range) by translating
+        these cube coordinates to cache and subcube coordinates, loading the matching
+        subcubes into the cache grid if not already present, looking up the array slices
+        within each subcube, and merging them together into a single 3D array.
+
+        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         """
         # Destructure the argument ranges
         (t_start, t_stop) = t_range
@@ -429,5 +477,10 @@ class LazySpaceTimeCube:
 
     def getFullyRealizedCube(self, cache=False):
         raise ValueError("getFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
+                         + "You probably don't want to do this anyway.")
+
+
+    def releaseFullyRealizedCube(self):
+        raise ValueError("releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
                          + "You probably don't want to do this anyway.")
 # lazy-space-time-cube-class ends here
