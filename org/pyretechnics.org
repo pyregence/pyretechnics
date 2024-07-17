@@ -573,7 +573,7 @@ class LazySpaceTimeCube:
         self.load_subcube  = load_subcube
 
 
-    def __getOrLoadSubcube(cache_t, cache_y, cache_x):
+    def __getOrLoadSubcube(self, cache_t, cache_y, cache_x):
         """
         Return the SpaceTimeCube stored at self.cache[cache_t, cache_y, cache_x] if it
         has already been loaded. Otherwise, call self.load_subcube to load it, store
