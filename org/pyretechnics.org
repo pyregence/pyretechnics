@@ -1471,7 +1471,7 @@ fire science literature:
 - Crown Fire Initiation: Van Wagner 1977
 - Passive/Active Crown Fire Spread: Cruz 2005
 - Flame Length and Fire Line Intensity: Byram 1959
-- Midflame Wind Adjustment Factor: Albini & Baughman 1979 parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA according to Andrews 2012\nocite{Albini1979,Andrews2012}
+- Midflame Wind Adjustment Factor: Albini & Baughman 1979 parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA according to Andrews 2012
 - Fire Spread on a Raster Grid: Morais 2001 (method of adaptive timesteps and fractional distances)
 - Spot Fire: Perryman 2013
 
@@ -1523,15 +1523,15 @@ thermally relevant physical properties shown in Table
 |----------+--------------------------------------------+-----------------------------------------|
 | Property | Description                                | Units                                   |
 |----------+--------------------------------------------+-----------------------------------------|
-| \delta   | fuel depth                                 | ft                                      |
-| w_o      | ovendry fuel loading                       | lb/ft^2                                 |
-| \sigma   | fuel particle surface-area-to-volume ratio | ft^2/ft^3                               |
-| M_x      | moisture content of extinction             | lb moisture/lb ovendry wood             |
-| h        | fuel particle low heat content             | Btu/lb                                  |
-| \rho_p   | ovendry particle density                   | lb/ft^3                                 |
-| S_T      | fuel particle total mineral content        | lb minerals/lb ovendry wood             |
-| S_e      | fuel particle effective mineral content    | lb silica-free minerals/lb ovendry wood |
-| M_f      | fuel particle moisture content             | lb moisture/lb ovendry wood             |
+| $\delta$ | fuel depth                                 | ft                                      |
+| $w_o$    | ovendry fuel loading                       | lb/ft^2                                 |
+| $\sigma$ | fuel particle surface-area-to-volume ratio | ft^2/ft^3                               |
+| $M_x$    | moisture content of extinction             | lb moisture/lb ovendry wood             |
+| $h$      | fuel particle low heat content             | Btu/lb                                  |
+| $\rho_p$ | ovendry particle density                   | lb/ft^3                                 |
+| $S_T$    | fuel particle total mineral content        | lb minerals/lb ovendry wood             |
+| $S_e$    | fuel particle effective mineral content    | lb silica-free minerals/lb ovendry wood |
+| $M_f$    | fuel particle moisture content             | lb moisture/lb ovendry wood             |
 |----------+--------------------------------------------+-----------------------------------------|
 
 *Note:* While $M_f$ is not, in fact, directly assigned to any of these
@@ -1906,18 +1906,18 @@ where these terms have the meanings shown in Table
 
 #+name: tab:fire-spread-inputs
 #+caption: Inputs to Rothermel's surface fire rate of spread equation
-|----------+--------------------------------+-------|
-| Term     | Description                    | Units |
-|----------+--------------------------------+-------|
-| R        | surface fire spread rate       |       |
-| I_{R}    | reaction intensity             |       |
-| \xi      | propagating flux ratio         |       |
-| \phi_{W} | wind coefficient               |       |
-| \phi_{S} | slope factor                   |       |
-| \rho_{b} | oven-dry fuel bed bulk density |       |
-| \epsilon | effective heating number       |       |
-| Q_{ig}   | heat of preignition            |       |
-|----------+--------------------------------+-------|
+|------------+--------------------------------+-------|
+| Term       | Description                    | Units |
+|------------+--------------------------------+-------|
+| $R$        | surface fire spread rate       |       |
+| $I_{R}$    | reaction intensity             |       |
+| $\xi$      | propagating flux ratio         |       |
+| $\phi_{W}$ | wind coefficient               |       |
+| $\phi_{S}$ | slope factor                   |       |
+| $\rho_{b}$ | oven-dry fuel bed bulk density |       |
+| $\epsilon$ | effective heating number       |       |
+| $Q_{ig}$   | heat of preignition            |       |
+|------------+--------------------------------+-------|
 
 For a full description of each of the subcomponents of Rothermel's
 surface fire spread rate equation, see the Rothermel 1972 reference
