@@ -1516,34 +1516,34 @@ is then assigned a set of representative values for each of the
 thermally relevant physical properties shown in Table
 [[tab:fuel-model-properties]].
 
+# TODO: Change units to metric in the following table.
+
 #+name: tab:fuel-model-properties
 #+caption: Physical properties assigned to each fuel model
 |----------+--------------------------------------------+-----------------------------------------|
 | Property | Description                                | Units                                   |
 |----------+--------------------------------------------+-----------------------------------------|
 | \delta   | fuel depth                                 | ft                                      |
-| w_{o}    | ovendry fuel loading                       | lb/ft^{2}                               |
-| \sigma   | fuel particle surface-area-to-volume ratio | ft^{2}/ft^{3}                           |
-| M_{x}    | moisture content of extinction             | lb moisture/lb ovendry wood             |
+| w_o      | ovendry fuel loading                       | lb/ft^2                                 |
+| \sigma   | fuel particle surface-area-to-volume ratio | ft^2/ft^3                               |
+| M_x      | moisture content of extinction             | lb moisture/lb ovendry wood             |
 | h        | fuel particle low heat content             | Btu/lb                                  |
-| \rho_{p} | ovendry particle density                   | lb/ft^{3}                               |
-| S_{T}    | fuel particle total mineral content        | lb minerals/lb ovendry wood             |
-| S_{e}    | fuel particle effective mineral content    | lb silica-free minerals/lb ovendry wood |
-| M_{f}    | fuel particle moisture content             | lb moisture/lb ovendry wood             |
+| \rho_p   | ovendry particle density                   | lb/ft^3                                 |
+| S_T      | fuel particle total mineral content        | lb minerals/lb ovendry wood             |
+| S_e      | fuel particle effective mineral content    | lb silica-free minerals/lb ovendry wood |
+| M_f      | fuel particle moisture content             | lb moisture/lb ovendry wood             |
 |----------+--------------------------------------------+-----------------------------------------|
 
-TODO: Change units to metric in the table above.
-
-*Note:* While M_{f} is not, in fact, directly assigned to any of these
+*Note:* While $M_f$ is not, in fact, directly assigned to any of these
 fuel models, their definitions remain incomplete for the purposes of
 fire spread modelling (particularly those reliant on the curing
 formulas of dynamic fuel loading) until it is provided as a
 characteristic of local weather conditions.
 
 The fuel models supported by Pyretechnics include the standard 13 fuel
-models of Rothermel, Albini, and Anderson\citep{Anderson1982} and the
+models of Rothermel, Albini, and Anderson[fn::Anderson1982] and the
 additional 40 fuel models defined by Scott and
-Burgan\citep{Scott2005}. These are all concisely encoded in an
+Burgan[fn::Scott2005]. These are all concisely encoded in an
 internal data structure, which may be updated to include additional
 custom fuel models desired by the user.
 
@@ -1715,7 +1715,7 @@ All of the Scott & Burgan 40 fuel models with a live herbaceous
 component are considered dynamic. In these models, a fraction of the
 live herbaceous load is transferred to a new dead herbaceous category
 as a function of live herbaceous moisture content (see equation
-below).\citep{Burgan1979} The dead herbaceous category uses the dead 1
+below).[fn::Burgan1979] The dead herbaceous category uses the dead 1
 hour moisture content, dead moisture of extinction, and live
 herbaceous surface-area-to-volume-ratio. In the following formula,
 $M_{f}^{lh}$ is the live herbaceous moisture content.
@@ -1764,7 +1764,7 @@ def add_dynamic_fuel_loading(fuel_model, M_f):
 
 Once the dynamic fuel loading is applied, we can compute the size
 class weighting factors expressed in equations 53-57 in Rothermel
-1972\citep{Rothermel1972}. For brevity, these formulas are elided from
+1972[fn::Rothermel1972]. For brevity, these formulas are elided from
 this text.
 
 TODO: Test whether =g_ij= below creates different values for any fuel models if we simply compare =i= to [0,1,2,3].
@@ -1811,7 +1811,7 @@ the dead fuel moisture content, the dead moisture of extinction, and
 the ratio of dead fuel loading to live fuel loading using Equation 88
 from Rothermel 1972, adjusted according to Albini 1976 Appendix III to
 match the behavior of Albini's original FIREMODS
-library.\citep{Rothermel1972,Albini1976} Whenever the fuel moisture
+library.[fn::Rothermel1972][fn::Albini1976] Whenever the fuel moisture
 content becomes greater than or equal to the moisture of extinction, a
 fire will no longer spread through that fuel. Here are the formulas
 referenced above:
@@ -1890,7 +1890,7 @@ To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
 BehavePlus), we adopt the surface fire spread and reaction intensity
 formulas from Rothermel's 1972 publication ``A Mathematical Model for
-Predicting Fire Spread in Wildland Fuels''.\citep{Rothermel1972}
+Predicting Fire Spread in Wildland Fuels''.[fn::Rothermel1972]
 
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
@@ -2132,7 +2132,7 @@ must be taken into effect. To accomplish this, Pyretechnics implements
 the vector addition procedure defined in Rothermel 1983 that combines
 the wind-only and slope-only spread rates independently to calculate
 the effective fire spread direction and
-magnitude.\citep{Rothermel1983}
+magnitude.[fn::Rothermel1983]
 
 A minor wrinkle is introduced when putting these calculations into
 practice because Rothermel's formulas all expect a measure of midflame
@@ -2142,7 +2142,7 @@ present. To convert this 20-ft wind speed to the required midflame
 wind speed value, Pyretechnics uses the *wind adjustment factor*
 formula from Albini & Baughman 1979, parameterized as in BehavePlus,
 FARSITE, FlamMap, FSPro, and FPA according to Andrews
-2012\citep{Albini1979,Andrews2012}. This formula is shown below:
+2012[fn::Albini1979][fn::Andrews2012]. This formula is shown below:
 
 \begin{align}
   WAF = \left\{
@@ -2185,14 +2185,14 @@ The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
 $U_{\text{eff}}$. Following the recommendations given in Appendix
 III of Albini 1976, these midflame wind speeds are all limited to $0.9
-I_{R}$.\citep{Albini1976}
+I_{R}$.[fn::Albini1976]
 
 Next, the effective wind speed is used to compute the length to width
 ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
-front using equation 9 from Rothermel 1991.\citep{Rothermel1991} This
+front using equation 9 from Rothermel 1991.[fn::Rothermel1991] This
 length to width ratio is then converted into an eccentricity measure
 of the ellipse using equation 8 from Albini and Chase
-1980.\citep{Albini1980} Finally, this eccentricity $E$ is used to
+1980.[fn::Albini1980] Finally, this eccentricity $E$ is used to
 project the maximum spread rate to any point along the fire front.
 Here are the formulas used:
 
@@ -2431,7 +2431,7 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
 Using these surface fire spread rate and reaction intensity values, we
 next calculate fire intensity values by applying Anderson's flame
 depth formula and Byram's fire line intensity and flame length
-equations as described below.\citep{Anderson1969,Byram1959}
+equations as described below.[fn::Anderson1969][fn::Byram1959]
 
 \begin{align}
   t &= \frac{384}{\sigma} \\
@@ -2502,7 +2502,7 @@ fire behavior metrics are incorporated into our model.
 
 In order to incorporate the effects of crown fire behavior,
 Pyretechnics includes the crown fire initiation routine from Van
-Wagner 1977.\citep{VanWagner1977} According to this approach, there
+Wagner 1977.[fn::VanWagner1977] According to this approach, there
 are two threshold values (/critical intensity/ and /critical spread
 rate/) that must be calculated in order to determine whether a fire
 will become an active or passive crown fire or simply remain a surface
@@ -2560,7 +2560,7 @@ def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_mo
 
 If crowning occurs, then the active and passive crown fire spread
 rates are calculated from the formulas given in Cruz
-2005.\citep{Cruz2005}
+2005.[fn::Cruz2005]
 
 \begin{align}
   \text{CROS}_A &= 11.02 \> U_{10m}^{0.90} \> B_m^{0.19} \> e^{-17 \, \text{EFFM}} \\
@@ -2664,9 +2664,9 @@ def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_hei
 As with surface fire spread, the wind speed (this time the 20-ft wind
 speed in mph $U_{20}$) is used to compute the length to width ratio
 $\frac{L}{W}$ of an ellipse that approximates the crown fire front
-using equation 9 from Rothermel 1991.\citep{Rothermel1991} This length
+using equation 9 from Rothermel 1991.[fn::Rothermel1991] This length
 to width ratio is then converted into an eccentricity measure of the
-ellipse using equation 8 from Albini and Chase 1980.\citep{Albini1980}
+ellipse using equation 8 from Albini and Chase 1980.[fn::Albini1980]
 Finally, this eccentricity $E$ is used to project the maximum spread
 rate to any point along the fire front. Here are the formulas used:
 
@@ -4077,7 +4077,7 @@ def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
 #+end_src
 
 We will use this function to load a clipped set of LANDFIRE GeoTIFFs
-in section [[Testing burn_cells on Worcester, VT]].
+in section [[\[WIP\] Testing burn_cells on Worcester, VT]].
 
 * [WIP] Testing burn_cells on Worcester, VT
 
