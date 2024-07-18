@@ -2480,11 +2480,11 @@ def byram_flame_length(fire_line_intensity):
 #+end_src
 
 This concludes our coverage of the surface fire behavior equations
-implemented in Pyretechnics. In Section [[Fire Spread on a Raster Grid]],
-these formulas will be translated from one-dimension to
-two-dimensional spread on a raster grid. Before we move on to that,
-however, the following section explains how crown fire behavior
-metrics are incorporated into our model.
+implemented in Pyretechnics. In Section [[Fire Spread Algorithms
+(pyretechnics.eulerian_level_set)]], these formulas will be translated
+from one-dimension to two-dimensional spread on a raster grid. Before
+we move on to that, however, the following section explains how crown
+fire behavior metrics are incorporated into our model.
 
 * Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
@@ -2904,7 +2904,8 @@ Now that we can compute the fire front normal vector, we can find the
 spread rate in this direction by combining this vector with the
 maximum spread rate vector and elliptical eccentricity values
 calculated for each grid cell, using the approaches described in
-sections [[Surface Fire Formulas]] and [[Crown Fire Formulas]].
+sections [[Surface Fire Equations (pyretechnics.surface_fire)]] and [[Crown
+Fire Equations (pyretechnics.crown_fire)]].
 
 We will refer to the spread rate vector normal to the fire front in
 the following sections as $U$ with spatial components $U_x$ and $U_y$.
