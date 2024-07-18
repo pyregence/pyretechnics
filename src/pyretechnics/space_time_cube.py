@@ -15,6 +15,17 @@ def divide_evenly(dividend, divisor):
         raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
+def to_positive_index_range(index_range, axis_length):
+    """
+    Translate None and negative indices to positive indices.
+    """
+    (start, stop) = index_range
+    return (
+        0 if start == None else axis_length + start if start < 0 else start,
+        axis_length if stop == None else axis_length + stop if stop < 0 else stop
+    )
+
+
 def maybe_repeat_array(array, axis_repetitions):
     """
     Return a new array that is created by repeating the elements from the input
@@ -105,6 +116,7 @@ class SpaceTimeCube:
         to base coordinates and looking up the value within the base data.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
+        NOTE: Indices may be negative.
         """
         # Select value by spatio-temporal coordinate
         return self.data[t // self.t_repetitions,
@@ -112,7 +124,6 @@ class SpaceTimeCube:
                          x // self.x_repetitions]
 
 
-    # FIXME: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -120,10 +131,12 @@ class SpaceTimeCube:
         and expanding it back to the cube_shape resolution.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
+        NOTE: Indices may be negative.
+        NOTE: Range indices may include one or more None values and
+              provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument range
-        (t_start, t_stop_exclusive) = t_range
+        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
         t_stop = t_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
         t_start_chunk = t_start // self.t_repetitions
@@ -144,7 +157,6 @@ class SpaceTimeCube:
         return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
-    # FIXME: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
@@ -152,11 +164,13 @@ class SpaceTimeCube:
         data, and expanding it back to the cube_shape resolution.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
+        NOTE: Indices may be negative.
+        NOTE: Range indices may include one or more None values and
+              provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (y_start, y_stop_exclusive) = y_range
-        (x_start, x_stop_exclusive) = x_range
+        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
+        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
         y_stop = y_stop_exclusive - 1
         x_stop = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
@@ -186,7 +200,6 @@ class SpaceTimeCube:
                               x_start_idx:(x_stop_idx + 1)]
 
 
-    # FIXME: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
@@ -194,12 +207,14 @@ class SpaceTimeCube:
         base data, and expanding it back to the cube_shape resolution.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
+        NOTE: Indices may be negative.
+        NOTE: Range indices may include one or more None values and
+              provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (t_start, t_stop_exclusive) = t_range
-        (y_start, y_stop_exclusive) = y_range
-        (x_start, x_stop_exclusive) = x_range
+        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
+        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
+        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
         t_stop = t_stop_exclusive - 1
         y_stop = y_stop_exclusive - 1
         x_stop = x_stop_exclusive - 1
@@ -358,8 +373,8 @@ class LazySpaceTimeCube:
         if not already present, and looking up the value within this subcube.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: If you use negative values for t, y, or x, your load_subcube function will receive
-              negative values in its cache_index. Make sure these are supported in your code.
+        NOTE: Indices may be negative provided that your load_subcube function can handle
+              negative indices in its cache_index argument.
         """
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
         (cache_t, subcube_t) = divmod(t, subcube_bands)
@@ -369,7 +384,6 @@ class LazySpaceTimeCube:
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 
-    # FIXME: None and -1 cannot be passed in
     def getTimeSeries(self, t_range, y, x):
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -378,10 +392,13 @@ class LazySpaceTimeCube:
         subcube, and merging them together into a single 1D array.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
+        NOTE: Indices may be negative provided that your load_subcube function can handle
+              negative indices in its cache_index argument.
+        NOTE: Range indices may include one or more None values and
+              provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument range
-        (t_start, t_stop_exclusive) = t_range
+        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
         t_stop = t_stop_exclusive - 1
         # Translate high-res coordinates to cache and subcube coordinates
         (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
@@ -404,7 +421,6 @@ class LazySpaceTimeCube:
         )
 
 
-    # FIXME: None and -1 cannot be passed in
     def getSpatialPlane(self, t, y_range, x_range):
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
@@ -413,11 +429,14 @@ class LazySpaceTimeCube:
         subcube, and merging them together into a single 2D array.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
+        NOTE: Indices may be negative provided that your load_subcube function can handle
+              negative indices in its cache_index argument.
+        NOTE: Range indices may include one or more None values and
+              provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (y_start, y_stop_exclusive) = y_range
-        (x_start, x_stop_exclusive) = x_range
+        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
+        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
         y_stop = y_stop_exclusive - 1
         x_stop = x_stop_exclusive - 1
         # Translate high-res coordinates to cache and subcube coordinates
@@ -444,7 +463,6 @@ class LazySpaceTimeCube:
         )
 
 
-    # FIXME: None and -1 cannot be passed in
     def getSubcube(self, t_range, y_range, x_range):
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
@@ -453,12 +471,15 @@ class LazySpaceTimeCube:
         within each subcube, and merging them together into a single 3D array.
 
         NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
-        NOTE: Ranges provide (inclusion, exclusion) semantics like Python array slice notation.
+        NOTE: Indices may be negative provided that your load_subcube function can handle
+              negative indices in its cache_index argument.
+        NOTE: Range indices may include one or more None values and
+              provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (t_start, t_stop_exclusive) = t_range
-        (y_start, y_stop_exclusive) = y_range
-        (x_start, x_stop_exclusive) = x_range
+        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
+        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
+        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
         t_stop = t_stop_exclusive - 1
         y_stop = y_stop_exclusive - 1
         x_stop = x_stop_exclusive - 1
