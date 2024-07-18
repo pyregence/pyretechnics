@@ -1483,7 +1483,19 @@ The following fuel models are supported:
 In the following sections, we describe the operation of this system in
 detail.
 
-* Fuel Model Definitions
+* Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.fuel_models*
+   :header-args:python+: :tangle  ../src/pyretechnics/fuel_models.py
+   :header-args:python+: :exports code
+   :END:
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.fuel_models*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
 
 All fires ignite and travel through some form of burnable fuel.
 Although the effects of wind and slope on the rate of fire spread can
@@ -1860,7 +1872,19 @@ def moisturize(fuel_model, fuel_moisture):
 
 This concludes our coverage of fuel models and and fuel moisture.
 
-* Surface Fire Formulas
+* Surface Fire Equations (pyretechnics.surface_fire)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.surface_fire*
+   :header-args:python+: :tangle  ../src/pyretechnics/surface_fire.py
+   :header-args:python+: :exports code
+   :END:
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.surface_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
 
 To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
@@ -2462,7 +2486,19 @@ two-dimensional spread on a raster grid. Before we move on to that,
 however, the following section explains how crown fire behavior
 metrics are incorporated into our model.
 
-* Crown Fire Formulas
+* Crown Fire Equations (pyretechnics.crown_fire)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.crown_fire*
+   :header-args:python+: :tangle  ../src/pyretechnics/crown_fire.py
+   :header-args:python+: :exports code
+   :END:
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.crown_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
 
 In order to incorporate the effects of crown fire behavior,
 Pyretechnics includes the crown fire initiation routine from Van
