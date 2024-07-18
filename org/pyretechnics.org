@@ -1461,7 +1461,7 @@ Subcube from Spatio-Temporal Data: Wind Speed
   [34 34 34 34 34 37 37 37 37 37]]]
 #+end_example
 
-* Fire Behavior Model
+* [WIP] Fire Behavior Model
 # TODO: Refactor this text into the following sections and remove this section
 
 Pyretechnics implements the following fire behavior formulas from the
@@ -3232,7 +3232,7 @@ level set corresponding to $\phi = 0$.
    :header-args:python+: :exports both
    :END:
 
-* Fire Spread API
+* [WIP] Fire Spread API
 
 Pyretechnics provides two main functions for simulating fire behavior over a region of space-time:
 
@@ -3465,7 +3465,7 @@ world_state3 = grow_fire(world_state2)
 
 TODO: stub
 
-* Fire Spread Functions
+* [WIP] Fire Spread Functions
 
 # TODO: How do I want to memoize the no_wind_no_slope_surface_fire_min values?
 
@@ -3744,7 +3744,7 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | DUMP_TIME_OF_ARRIVAL                     | N/A                                   | Output writing managed externally       |
 |------------------------------------------+---------------------------------------+-----------------------------------------|
 
-* Burning All Cells as a Head-Fire (similar to FLAMMAP)
+* [WIP] Burning All Cells as a Head-Fire (similar to FLAMMAP)
 
 #+name: burn-cells
 #+begin_src python :tangle ../src/pyretechnics/burn_cells.py
@@ -3893,7 +3893,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
             }
 #+end_src
 
-* Loading LANDFIRE Inputs
+* [WIP] Loading LANDFIRE Inputs
 
 To test out the ~burn_cells~ function, we will need to populate a 3D
 space-time world cube with all of the values that it requires. In this
@@ -4079,7 +4079,7 @@ def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
 We will use this function to load a clipped set of LANDFIRE GeoTIFFs
 in section [[Testing burn_cells on Worcester, VT]].
 
-* Testing burn_cells on Worcester, VT
+* [WIP] Testing burn_cells on Worcester, VT
 
 For testing purposes, we have downloaded these layers, clipped to a
 small region in central Vermont, and stored them in the
