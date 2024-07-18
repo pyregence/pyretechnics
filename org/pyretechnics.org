@@ -2729,6 +2729,480 @@ def crown_fire_eccentricity(wind_speed_20ft):
 This concludes our discussion of the crown fire behavior formulas used
 in Pyretechnics.
 
+* Fire Spread Algorithms (pyretechnics.eulerian_level_set)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.eulerian_level_set*
+   :header-args:python+: :tangle  ../src/pyretechnics/eulerian_level_set.py
+   :header-args:python+: :exports code
+   :END:
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.eulerian_level_set*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
+
+In order to simulate the spread of a fire from a starting point or
+perimeter, we will need to implement a model that projects the
+one-dimensional spread and intensity equations presented above into
+the three-dimensional space-time cube introduced in section [[Data
+Model]].
+
+As a library, Pyretechnics has the flexibility to implement more than
+one such algorithm for the purposes of comparison in both performance
+and accuracy. The following sections will introduce the spread
+algorithms implemented thus far.
+
+*** Eulerian Level Set Method
+
+**** The $\phi$ Field
+
+In the Eulerian level set method of fire spread, operationalized in
+Chris Lautenberger's ELMFire model[fn::https://elmfire.io], a
+continuous field called $\phi$ fills the simulation space and is used
+to track the progression of the fire front through space and time.
+Within Pyretechnics, the $\phi$ field is discretized into grid cells
+and initialized with the following values:
+
+- -1 for cells that have already been burned and are inside the fire perimeter
+- 1 for cells that have not been burned and are outside the fire perimeter
+
+If a fire is being simulated starting from an actively burning
+perimeter, the $\phi$ grid cells indicate the initially burning region.
+If a point fire is being simulated, then a single $\phi$ cell will be
+set to -1 and the remaining cells will have the value 1.
+
+**** Fire Front Normal Vector
+
+In this fire spread algorithm, the fire front only propagates normal
+to itself. Given a $\phi$ raster, we can calculate the normal vector to
+the $\phi$ field by using the following formula:
+
+\begin{align}
+  \hat{n} &= n_x\hat{i} + n_y\hat{j} = \frac{1}{|\nabla\phi|}\left(\frac{\partial \phi}{\partial x}\hat{i} + \frac{\partial \phi}{\partial y}\hat{j}\right) \\
+  \nonumber \\
+  |\nabla\phi| &= \sqrt{\left(\frac{\partial \phi}{\partial x}\right)^2 + \left(\frac{\partial \phi}{\partial y}\right)^2}
+\end{align}
+
+We begin by approximating the spatial gradients of the $\phi$ field with
+node-centered central differences, represented by the values in the
+$\phi$ raster's grid cells.
+
+\begin{align}
+  \left(\frac{\partial \phi}{\partial x}\right)_{i,j} &\approx \frac{\phi_{i+1,j} - \phi_{i-1,j}}{2 \Delta x} \\
+  \nonumber \\
+  \left(\frac{\partial \phi}{\partial y}\right)_{i,j} &\approx \frac{\phi_{i,j+1} - \phi_{i,j-1}}{2 \Delta y}
+\end{align}
+
+#+name: phi-field-spatial-gradients
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_dphi_dx_approx(phi, x, y, dx):
+    """
+    Calculate the spatial gradient of the phi raster in the x (west->east)
+    direction at grid cell (x,y) given the cell width dx.
+
+    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
+          of the grid in Python arrays. Thus, as x increases, we move
+          to the east, and as y increases, we move to the south.
+    """
+    return (phi[y][x+1] - phi[y][x-1]) / (2.0 * dx)
+
+
+def calc_dphi_dy_approx(phi, x, y, dy):
+    """
+    Calculate the spatial gradient of the phi raster in the y (south->north)
+    direction at grid cell (x,y) given the cell height dy.
+
+    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
+          of the grid in Python arrays. Thus, as x increases, we move
+          to the east, and as y increases, we move to the south.
+    """
+    return (phi[y-1][x] - phi[y+1][x]) / (2.0 * dy)
+#+end_src
+
+We can now combine these spatial gradients with the magnitude of the
+gradient of the $\phi$ field at any location on the grid to compute
+the fire front normal vector as follows:
+
+#+name: phi-field-normal-vector
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+from math import sqrt
+
+def calc_phi_gradient_magnitude(dphi_dx, dphi_dy):
+    """Calculate the magnitude of the gradient of the phi field."""
+    return sqrt(dphi_dx ** 2 + dphi_dy ** 2)
+
+
+def calc_phi_normal_vector(phi, dx, dy, x, y):
+    """
+    Calculate the phi field normal vector in the x and y dimensions.
+
+    n_x: eastward component of the unit normal vector
+    n_y: northward component of the unit normal vector
+    """
+    dphi_dx = calc_dphi_dx_approx(phi, x, y, dx)
+    dphi_dy = calc_dphi_dy_approx(phi, x, y, dy)
+    if dphi_dx == 0.0 and dphi_dy == 0.0:
+        return {
+            "n_x": 0.0,
+            "n_y": 0.0,
+        }
+    else:
+        phi_gradient_magnitude = calc_phi_gradient_magnitude(dphi_dx, dphi_dy)
+        return {
+            "n_x": dphi_dx / phi_gradient_magnitude,
+            "n_y": dphi_dy / phi_gradient_magnitude,
+        }
+#+end_src
+
+Next, we can use the following geometrical relations to calculate the
+angle $\theta_n$ (measured clockwise from North) to which the normal
+vector points:
+
+\begin{equation}
+  \theta_n =
+  \begin{cases}
+    \frac{1}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x > 0 & \text{and}\ n_y \geq 0 \\
+    \frac{1}{2}\pi + \tan^{-1}(\frac{|n_y|}{n_x}) & \text{for}\ n_x > 0 & \text{and}\ n_y < 0 \\
+    \frac{3}{2}\pi + \tan^{-1}(\frac{n_y}{|n_x|}) & \text{for}\ n_x < 0 & \text{and}\ n_y \geq 0 \\
+    \frac{3}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x < 0 & \text{and}\ n_y < 0 \\
+    0 & \text{for}\ n_x = 0 & \text{and}\ n_y \geq 0 \\
+    \pi & \text{for}\ n_x = 0 & \text{and}\ n_y < 0
+  \end{cases}
+\end{equation}
+
+#+name: phi-field-normal-vector-angle
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+from math import atan, pi
+
+def calc_phi_normal_vector_angle(phi_normal_vector):
+    """
+    Calculate the angle (measured in radians clockwise from North)
+    to which the phi field's normal vector points.
+    """
+    n_x = phi_normal_vector["n_x"]
+    n_y = phi_normal_vector["n_y"]
+    if n_x > 0:
+        if n_y >= 0:
+            return 1/2 * pi - atan(n_y / n_x)
+        elif n_y < 0:
+            return 1/2 * pi + atan(abs(n_y) / n_x)
+    elif n_x < 0:
+        if n_y >= 0:
+            return 3/2 * pi + atan(n_y / abs(n_x))
+        elif n_y < 0:
+            return 3/2 * pi - atan(n_y / n_x)
+    else:
+        if n_y >= 0:
+            return 0.0
+        elif n_y < 0:
+            return pi
+#+end_src
+
+Now that we can compute the fire front normal vector, we can find the
+spread rate in this direction by combining this vector with the
+maximum spread rate vector and elliptical eccentricity values
+calculated for each grid cell, using the approaches described in
+sections [[Surface Fire Formulas]] and [[Crown Fire Formulas]].
+
+We will refer to the spread rate vector normal to the fire front in
+the following sections as $U$ with spatial components $U_x$ and $U_y$.
+
+**** Numerical Solution of the $\phi$ Field Equation
+
+In order to evolve the $\phi$ field through time and space, we must
+solve the following hyperbolic differential equation for the scalar
+variable $\phi$.
+
+\begin{align}
+  \frac{\partial \phi}{\partial t} + U_x \frac{\partial \phi}{\partial x} + U_y \frac{\partial \phi}{\partial y} = 0
+\end{align}
+
+This is accomplished after applying a flux limiter to the convective
+terms, in order to ensure solution monotonicity and prevent spurious
+oscillations that can be induced in its absence.
+
+First, we define the parameter $r$ and the Superbee flux limiter
+$B(r)$ as follows:
+
+\begin{align}
+  r &= \frac{\delta\phi_{\text{up}}}{\delta\phi_{\text{loc}}} \\
+  \nonumber \\
+  B(r) &= \text{max}(0, \text{min}(2r, 1), \text{min}(r, 2))
+\end{align}
+
+#+name: superbee-flux-limiter
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_superbee_flux_limiter(dphi_up, dphi_loc):
+    """
+    TODO: Add docstring
+    """
+    r = dphi_up / dphi_loc
+    return max(0,
+               min(2 * r, 1),
+               min(r, 2))
+#+end_src
+
+To compute the inputs to this function, we build up the partial
+derivatives of the $\phi$ field in terms of "east", "west", "north",
+and "south" values as follows:
+
+\begin{align}
+  \frac{\partial \phi}{\partial x} &\approx \frac{\phi_{\text{east}} - \phi_{\text{west}}}{\Delta x} \\
+  \nonumber \\
+  \frac{\partial \phi}{\partial y} &\approx \frac{\phi_{\text{north}} - \phi_{\text{south}}}{\Delta y}
+\end{align}
+
+#+name: dphi_partial_derivatives
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_dphi_dx(phi_east, phi_west, dx):
+    """
+    TODO: Add docstring
+    """
+    return (phi_east - phi_west) / dx
+
+def calc_dphi_dy(phi_north, phi_south, dy):
+    """
+    TODO: Add docstring
+    """
+    return (phi_north - phi_south) / dy
+#+end_src
+
+For the east face:
+
+\begin{align}
+  \delta\phi_{\text{loc}} &= \phi_{i+1,j} - \phi{i,j} \\
+  \nonumber \\
+  \delta\phi_{\text{up}} &= \begin{cases}
+                              \phi_{i,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
+                              \phi_{i+2,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
+                            \end{cases} \\
+  \nonumber \\
+  \phi_{\text{east}} &= \begin{cases}
+                          \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
+                          \phi_{i+1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
+                        \end{cases}
+\end{align}
+
+#+name: phi_east
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_phi_east(phi, u_x, x, y):
+    """
+    TODO: Add docstring
+    """
+    dphi_loc = phi[y][x+1] - phi[y][x]
+    u_xij = u_x[y][x]
+    if u_xij > 0:
+        dphi_up = phi[y][x] - phi[y][x-1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
+    elif u_xij < 0:
+        dphi_up = phi[y][x+2] - phi[y][x+1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x+1] - 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
+#+end_src
+
+For the west face:
+
+\begin{align}
+  \delta\phi_{\text{loc}} &= \phi_{i-1,j} - \phi{i,j} \\
+  \nonumber \\
+  \delta\phi_{\text{up}} &= \begin{cases}
+                              \phi_{i-2,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
+                              \phi_{i,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
+                            \end{cases} \\
+  \nonumber \\
+  \phi_{\text{west}} &= \begin{cases}
+                          \phi_{i-1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
+                          \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
+                        \end{cases}
+\end{align}
+
+#+name: phi_west
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_phi_west(phi, u_x, x, y):
+    """
+    TODO: Add docstring
+    """
+    dphi_loc = phi[y][x-1] - phi[y][x]
+    u_xij = u_x[y][x]
+    if u_xij > 0:
+        dphi_up = phi[y][x-2] - phi[y][x-1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x-1] - 0.5 * B * dphi_loc
+    elif u_xij < 0:
+        dphi_up = phi[y][x] - phi[y][x+1]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
+#+end_src
+
+For the north face:
+
+\begin{align}
+  \delta\phi_{\text{loc}} &= \phi_{i,j+1} - \phi{i,j} \\
+  \nonumber \\
+  \delta\phi_{\text{up}} &= \begin{cases}
+                              \phi_{i,j} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
+                              \phi_{i,j+2} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
+                            \end{cases} \\
+  \nonumber \\
+  \phi_{\text{north}} &= \begin{cases}
+                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
+                           \phi_{i,j+1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
+                         \end{cases}
+\end{align}
+
+#+name: phi_north
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_phi_north(phi, u_y, x, y):
+    """
+    TODO: Add docstring
+    """
+    dphi_loc = phi[y-1][x] - phi[y][x]
+    u_yij = u_y[y][x]
+    if u_yij > 0:
+        dphi_up = phi[y][x] - phi[y+1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
+    elif u_yij < 0:
+        dphi_up = phi[y-2][x] - phi[y-1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y-1][x] - 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
+#+end_src
+
+For the south face:
+
+\begin{align}
+  \delta\phi_{\text{loc}} &= \phi_{i,j-1} - \phi{i,j} \\
+  \nonumber \\
+  \delta\phi_{\text{up}} &= \begin{cases}
+                              \phi_{i,j-2} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
+                              \phi_{i,j} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
+                            \end{cases} \\
+  \nonumber \\
+  \phi_{\text{south}} &= \begin{cases}
+                           \phi_{i,j-1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
+                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
+                         \end{cases}
+\end{align}
+
+#+name: phi_south
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+def calc_phi_south(phi, u_y, x, y):
+    """
+    TODO: Add docstring
+    """
+    dphi_loc = phi[y+1][x] - phi[y][x]
+    u_yij = u_y[y][x]
+    if u_yij > 0:
+        dphi_up = phi[y+2][x] - phi[y+1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y+1][x] - 0.5 * B * dphi_loc
+    elif u_yij < 0:
+        dphi_up = phi[y][x] - phi[y-1][x]
+        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        return phi[y][x] + 0.5 * B * dphi_loc
+    else:
+        # FIXME: What is the correct value for this case? Update the equation above accordingly.
+        return 0.0
+#+end_src
+
+Once the various spatial partial derivatives have been calculated, we
+can march the $\phi$ field solution forward in time using a second
+order Runge Kutta method as follows:
+
+\begin{align}
+  \phi^* &= \phi^t - \Delta t \left(U_x \frac{\phi^t_{\text{east}} - \phi^t_{\text{west}}}{\Delta x} + U_y \frac{\phi^t_{\text{north}} - \phi^t_{\text{south}}}{\Delta y} \right) \\
+  \nonumber \\
+  \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
+\end{align}
+
+#+name: phi_time
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
+import numpy as np
+
+# FIXME: stub
+def identify_perimeter_cells(phi):
+    """
+    TODO: Add docstring
+    """
+    return [[0,0]]
+
+
+# FIXME: stub
+def calc_u_x(phi, y, x):
+    """
+    TODO: Add docstring
+    """
+    return 0.5
+
+
+# FIXME: stub
+def calc_u_y(phi, y, x):
+    """
+    TODO: Add docstring
+    """
+    return 0.5
+
+
+def calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y):
+    """
+    TODO: Add docstring
+    """
+    phi_east  = calc_phi_east(phi, u_x, x, y)
+    phi_west  = calc_phi_west(phi, u_x, x, y)
+    phi_north = calc_phi_north(phi, u_y, x, y)
+    phi_south = calc_phi_south(phi, u_y, x, y)
+    dphi_dx   = calc_dphi_dx(phi_east, phi_west, dx)
+    dphi_dy   = calc_dphi_dy(phi_north, phi_south, dy)
+    dphi_dt   = u_x[y][x] * dphi_dx + u_y[y][x] * dphi_dy
+    return phi[y][x] - dphi_dt * dt
+
+
+def calc_phi_next_timestep(phi, u_x, u_y, dx, dy, dt, perimeter_cells):
+    """
+    TODO: Add docstring
+    """
+    phi_star = np.copy(phi)
+    for [y, x] in perimeter_cells:
+        phi_star[y][x] = calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y)
+
+    perimeter_cells_star = identify_perimeter_cells(phi_star)
+
+    u_x_star = np.zeros_like(u_x)
+    u_y_star = np.zeros_like(u_y)
+    for [y, x] in perimeter_cells_star:
+        u_x_star[y][x] = calc_u_x(phi_star, y, x)
+        u_y_star[y][x] = calc_u_y(phi_star, y, x)
+
+    phi_star_star = np.copy(phi_star)
+    for [y, x] in perimeter_cells_star:
+        phi_star_star[y][x] = calc_phi_star(phi_star, u_x_star, u_y_star, dx, dy, dt, x, y)
+
+    return (phi + phi_star_star) / 2.0
+#+end_src
+
+In the above equations, timestep ($\Delta t$) is constrained by the
+Courant-Friedrichs-Lewy (CFL) condition. The location of the fire
+perimeter is determined by interpolation of the $\phi$ field as the
+level set corresponding to $\phi = 0$.
+
+...RESUME HERE...
+
+# TODO: Implement U_x and U_y calculations using surface and crown
+# equations from the ELMFire paper and the online technical reference:
+  https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
+
 * Fire Spread API
 
 Pyretechnics provides two main functions for simulating fire behavior over a region of space-time:
@@ -3854,468 +4328,6 @@ def read_flammap_outputs(flammap_file_paths):
 def slow_test_read_flammap_outputs():
     return read_flammap_outputs(flammap_file_paths)
 #+end_src
-
-* Fire Spread on a Raster Grid
-
-In order to simulate the spread of a fire from a starting point or
-perimeter, we will need to implement a model that projects the
-one-dimensional spread and intensity equations presented above into
-the three-dimensional space-time cube introduced in section [[Data
-Model]].
-
-As a library, Pyretechnics has the flexibility to implement more than
-one such algorithm for the purposes of comparison in both performance
-and accuracy. The following sections will introduce the spread
-algorithms implemented thus far.
-
-*** Eulerian Level Set Method
-
-**** The $\phi$ Field
-
-In the Eulerian level set method of fire spread, operationalized in
-Chris Lautenberger's ELMFire model[fn::https://elmfire.io], a
-continuous field called $\phi$ fills the simulation space and is used
-to track the progression of the fire front through space and time.
-Within Pyretechnics, the $\phi$ field is discretized into grid cells
-and initialized with the following values:
-
-- -1 for cells that have already been burned and are inside the fire perimeter
-- 1 for cells that have not been burned and are outside the fire perimeter
-
-If a fire is being simulated starting from an actively burning
-perimeter, the $\phi$ grid cells indicate the initially burning region.
-If a point fire is being simulated, then a single $\phi$ cell will be
-set to -1 and the remaining cells will have the value 1.
-
-**** Fire Front Normal Vector
-
-In this fire spread algorithm, the fire front only propagates normal
-to itself. Given a $\phi$ raster, we can calculate the normal vector to
-the $\phi$ field by using the following formula:
-
-\begin{align}
-  \hat{n} &= n_x\hat{i} + n_y\hat{j} = \frac{1}{|\nabla\phi|}\left(\frac{\partial \phi}{\partial x}\hat{i} + \frac{\partial \phi}{\partial y}\hat{j}\right) \\
-  \nonumber \\
-  |\nabla\phi| &= \sqrt{\left(\frac{\partial \phi}{\partial x}\right)^2 + \left(\frac{\partial \phi}{\partial y}\right)^2}
-\end{align}
-
-We begin by approximating the spatial gradients of the $\phi$ field with
-node-centered central differences, represented by the values in the
-$\phi$ raster's grid cells.
-
-\begin{align}
-  \left(\frac{\partial \phi}{\partial x}\right)_{i,j} &\approx \frac{\phi_{i+1,j} - \phi_{i-1,j}}{2 \Delta x} \\
-  \nonumber \\
-  \left(\frac{\partial \phi}{\partial y}\right)_{i,j} &\approx \frac{\phi_{i,j+1} - \phi_{i,j-1}}{2 \Delta y}
-\end{align}
-
-#+name: phi-field-spatial-gradients
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_dphi_dx_approx(phi, x, y, dx):
-    """
-    Calculate the spatial gradient of the phi raster in the x (west->east)
-    direction at grid cell (x,y) given the cell width dx.
-
-    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
-          of the grid in Python arrays. Thus, as x increases, we move
-          to the east, and as y increases, we move to the south.
-    """
-    return (phi[y][x+1] - phi[y][x-1]) / (2.0 * dx)
-
-
-def calc_dphi_dy_approx(phi, x, y, dy):
-    """
-    Calculate the spatial gradient of the phi raster in the y (south->north)
-    direction at grid cell (x,y) given the cell height dy.
-
-    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
-          of the grid in Python arrays. Thus, as x increases, we move
-          to the east, and as y increases, we move to the south.
-    """
-    return (phi[y-1][x] - phi[y+1][x]) / (2.0 * dy)
-#+end_src
-
-We can now combine these spatial gradients with the magnitude of the
-gradient of the $\phi$ field at any location on the grid to compute
-the fire front normal vector as follows:
-
-#+name: phi-field-normal-vector
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-from math import sqrt
-
-def calc_phi_gradient_magnitude(dphi_dx, dphi_dy):
-    """Calculate the magnitude of the gradient of the phi field."""
-    return sqrt(dphi_dx ** 2 + dphi_dy ** 2)
-
-
-def calc_phi_normal_vector(phi, dx, dy, x, y):
-    """
-    Calculate the phi field normal vector in the x and y dimensions.
-
-    n_x: eastward component of the unit normal vector
-    n_y: northward component of the unit normal vector
-    """
-    dphi_dx = calc_dphi_dx_approx(phi, x, y, dx)
-    dphi_dy = calc_dphi_dy_approx(phi, x, y, dy)
-    if dphi_dx == 0.0 and dphi_dy == 0.0:
-        return {
-            "n_x": 0.0,
-            "n_y": 0.0,
-        }
-    else:
-        phi_gradient_magnitude = calc_phi_gradient_magnitude(dphi_dx, dphi_dy)
-        return {
-            "n_x": dphi_dx / phi_gradient_magnitude,
-            "n_y": dphi_dy / phi_gradient_magnitude,
-        }
-#+end_src
-
-Next, we can use the following geometrical relations to calculate the
-angle $\theta_n$ (measured clockwise from North) to which the normal
-vector points:
-
-\begin{equation}
-  \theta_n =
-  \begin{cases}
-    \frac{1}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x > 0 & \text{and}\ n_y \geq 0 \\
-    \frac{1}{2}\pi + \tan^{-1}(\frac{|n_y|}{n_x}) & \text{for}\ n_x > 0 & \text{and}\ n_y < 0 \\
-    \frac{3}{2}\pi + \tan^{-1}(\frac{n_y}{|n_x|}) & \text{for}\ n_x < 0 & \text{and}\ n_y \geq 0 \\
-    \frac{3}{2}\pi - \tan^{-1}(\frac{n_y}{n_x}) & \text{for}\ n_x < 0 & \text{and}\ n_y < 0 \\
-    0 & \text{for}\ n_x = 0 & \text{and}\ n_y \geq 0 \\
-    \pi & \text{for}\ n_x = 0 & \text{and}\ n_y < 0
-  \end{cases}
-\end{equation}
-
-#+name: phi-field-normal-vector-angle
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-from math import atan, pi
-
-def calc_phi_normal_vector_angle(phi_normal_vector):
-    """
-    Calculate the angle (measured in radians clockwise from North)
-    to which the phi field's normal vector points.
-    """
-    n_x = phi_normal_vector["n_x"]
-    n_y = phi_normal_vector["n_y"]
-    if n_x > 0:
-        if n_y >= 0:
-            return 1/2 * pi - atan(n_y / n_x)
-        elif n_y < 0:
-            return 1/2 * pi + atan(abs(n_y) / n_x)
-    elif n_x < 0:
-        if n_y >= 0:
-            return 3/2 * pi + atan(n_y / abs(n_x))
-        elif n_y < 0:
-            return 3/2 * pi - atan(n_y / n_x)
-    else:
-        if n_y >= 0:
-            return 0.0
-        elif n_y < 0:
-            return pi
-#+end_src
-
-Now that we can compute the fire front normal vector, we can find the
-spread rate in this direction by combining this vector with the
-maximum spread rate vector and elliptical eccentricity values
-calculated for each grid cell, using the approaches described in
-sections [[Surface Fire Formulas]] and [[Crown Fire Formulas]].
-
-We will refer to the spread rate vector normal to the fire front in
-the following sections as $U$ with spatial components $U_x$ and $U_y$.
-
-**** Numerical Solution of the $\phi$ Field Equation
-
-In order to evolve the $\phi$ field through time and space, we must
-solve the following hyperbolic differential equation for the scalar
-variable $\phi$.
-
-\begin{align}
-  \frac{\partial \phi}{\partial t} + U_x \frac{\partial \phi}{\partial x} + U_y \frac{\partial \phi}{\partial y} = 0
-\end{align}
-
-This is accomplished after applying a flux limiter to the convective
-terms, in order to ensure solution monotonicity and prevent spurious
-oscillations that can be induced in its absence.
-
-First, we define the parameter $r$ and the Superbee flux limiter
-$B(r)$ as follows:
-
-\begin{align}
-  r &= \frac{\delta\phi_{\text{up}}}{\delta\phi_{\text{loc}}} \\
-  \nonumber \\
-  B(r) &= \text{max}(0, \text{min}(2r, 1), \text{min}(r, 2))
-\end{align}
-
-#+name: superbee-flux-limiter
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_superbee_flux_limiter(dphi_up, dphi_loc):
-    """
-    TODO: Add docstring
-    """
-    r = dphi_up / dphi_loc
-    return max(0,
-               min(2 * r, 1),
-               min(r, 2))
-#+end_src
-
-To compute the inputs to this function, we build up the partial
-derivatives of the $\phi$ field in terms of "east", "west", "north",
-and "south" values as follows:
-
-\begin{align}
-  \frac{\partial \phi}{\partial x} &\approx \frac{\phi_{\text{east}} - \phi_{\text{west}}}{\Delta x} \\
-  \nonumber \\
-  \frac{\partial \phi}{\partial y} &\approx \frac{\phi_{\text{north}} - \phi_{\text{south}}}{\Delta y}
-\end{align}
-
-#+name: dphi_partial_derivatives
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_dphi_dx(phi_east, phi_west, dx):
-    """
-    TODO: Add docstring
-    """
-    return (phi_east - phi_west) / dx
-
-def calc_dphi_dy(phi_north, phi_south, dy):
-    """
-    TODO: Add docstring
-    """
-    return (phi_north - phi_south) / dy
-#+end_src
-
-For the east face:
-
-\begin{align}
-  \delta\phi_{\text{loc}} &= \phi_{i+1,j} - \phi{i,j} \\
-  \nonumber \\
-  \delta\phi_{\text{up}} &= \begin{cases}
-                              \phi_{i,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
-                              \phi_{i+2,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
-                            \end{cases} \\
-  \nonumber \\
-  \phi_{\text{east}} &= \begin{cases}
-                          \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
-                          \phi_{i+1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
-                        \end{cases}
-\end{align}
-
-#+name: phi_east
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_phi_east(phi, u_x, x, y):
-    """
-    TODO: Add docstring
-    """
-    dphi_loc = phi[y][x+1] - phi[y][x]
-    u_xij = u_x[y][x]
-    if u_xij > 0:
-        dphi_up = phi[y][x] - phi[y][x-1]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    elif u_xij < 0:
-        dphi_up = phi[y][x+2] - phi[y][x+1]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x+1] - 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
-#+end_src
-
-For the west face:
-
-\begin{align}
-  \delta\phi_{\text{loc}} &= \phi_{i-1,j} - \phi{i,j} \\
-  \nonumber \\
-  \delta\phi_{\text{up}} &= \begin{cases}
-                              \phi_{i-2,j} - \phi_{i-1,j} & \text{for}\ u_{x,i,j} > 0 \\
-                              \phi_{i,j} - \phi_{i+1,j} & \text{for}\ u_{x,i,j} < 0
-                            \end{cases} \\
-  \nonumber \\
-  \phi_{\text{west}} &= \begin{cases}
-                          \phi_{i-1,j} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} > 0 \\
-                          \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
-                        \end{cases}
-\end{align}
-
-#+name: phi_west
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_phi_west(phi, u_x, x, y):
-    """
-    TODO: Add docstring
-    """
-    dphi_loc = phi[y][x-1] - phi[y][x]
-    u_xij = u_x[y][x]
-    if u_xij > 0:
-        dphi_up = phi[y][x-2] - phi[y][x-1]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x-1] - 0.5 * B * dphi_loc
-    elif u_xij < 0:
-        dphi_up = phi[y][x] - phi[y][x+1]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
-#+end_src
-
-For the north face:
-
-\begin{align}
-  \delta\phi_{\text{loc}} &= \phi_{i,j+1} - \phi{i,j} \\
-  \nonumber \\
-  \delta\phi_{\text{up}} &= \begin{cases}
-                              \phi_{i,j} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
-                              \phi_{i,j+2} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
-                            \end{cases} \\
-  \nonumber \\
-  \phi_{\text{north}} &= \begin{cases}
-                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
-                           \phi_{i,j+1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
-                         \end{cases}
-\end{align}
-
-#+name: phi_north
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_phi_north(phi, u_y, x, y):
-    """
-    TODO: Add docstring
-    """
-    dphi_loc = phi[y-1][x] - phi[y][x]
-    u_yij = u_y[y][x]
-    if u_yij > 0:
-        dphi_up = phi[y][x] - phi[y+1][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    elif u_yij < 0:
-        dphi_up = phi[y-2][x] - phi[y-1][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y-1][x] - 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
-#+end_src
-
-For the south face:
-
-\begin{align}
-  \delta\phi_{\text{loc}} &= \phi_{i,j-1} - \phi{i,j} \\
-  \nonumber \\
-  \delta\phi_{\text{up}} &= \begin{cases}
-                              \phi_{i,j-2} - \phi_{i,j-1} & \text{for}\ u_{y,i,j} > 0 \\
-                              \phi_{i,j} - \phi_{i,j+1} & \text{for}\ u_{y,i,j} < 0
-                            \end{cases} \\
-  \nonumber \\
-  \phi_{\text{south}} &= \begin{cases}
-                           \phi_{i,j-1} - \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} > 0 \\
-                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
-                         \end{cases}
-\end{align}
-
-#+name: phi_south
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-def calc_phi_south(phi, u_y, x, y):
-    """
-    TODO: Add docstring
-    """
-    dphi_loc = phi[y+1][x] - phi[y][x]
-    u_yij = u_y[y][x]
-    if u_yij > 0:
-        dphi_up = phi[y+2][x] - phi[y+1][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y+1][x] - 0.5 * B * dphi_loc
-    elif u_yij < 0:
-        dphi_up = phi[y][x] - phi[y-1][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
-#+end_src
-
-Once the various spatial partial derivatives have been calculated, we
-can march the $\phi$ field solution forward in time using a second
-order Runge Kutta method as follows:
-
-\begin{align}
-  \phi^* &= \phi^t - \Delta t \left(U_x \frac{\phi^t_{\text{east}} - \phi^t_{\text{west}}}{\Delta x} + U_y \frac{\phi^t_{\text{north}} - \phi^t_{\text{south}}}{\Delta y} \right) \\
-  \nonumber \\
-  \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
-\end{align}
-
-#+name: phi_time
-#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.py
-import numpy as np
-
-# FIXME: stub
-def identify_perimeter_cells(phi):
-    """
-    TODO: Add docstring
-    """
-    return [[0,0]]
-
-
-# FIXME: stub
-def calc_u_x(phi, y, x):
-    """
-    TODO: Add docstring
-    """
-    return 0.5
-
-
-# FIXME: stub
-def calc_u_y(phi, y, x):
-    """
-    TODO: Add docstring
-    """
-    return 0.5
-
-
-def calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y):
-    """
-    TODO: Add docstring
-    """
-    phi_east  = calc_phi_east(phi, u_x, x, y)
-    phi_west  = calc_phi_west(phi, u_x, x, y)
-    phi_north = calc_phi_north(phi, u_y, x, y)
-    phi_south = calc_phi_south(phi, u_y, x, y)
-    dphi_dx   = calc_dphi_dx(phi_east, phi_west, dx)
-    dphi_dy   = calc_dphi_dy(phi_north, phi_south, dy)
-    dphi_dt   = u_x[y][x] * dphi_dx + u_y[y][x] * dphi_dy
-    return phi[y][x] - dphi_dt * dt
-
-
-def calc_phi_next_timestep(phi, u_x, u_y, dx, dy, dt, perimeter_cells):
-    """
-    TODO: Add docstring
-    """
-    phi_star = np.copy(phi)
-    for [y, x] in perimeter_cells:
-        phi_star[y][x] = calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y)
-
-    perimeter_cells_star = identify_perimeter_cells(phi_star)
-
-    u_x_star = np.zeros_like(u_x)
-    u_y_star = np.zeros_like(u_y)
-    for [y, x] in perimeter_cells_star:
-        u_x_star[y][x] = calc_u_x(phi_star, y, x)
-        u_y_star[y][x] = calc_u_y(phi_star, y, x)
-
-    phi_star_star = np.copy(phi_star)
-    for [y, x] in perimeter_cells_star:
-        phi_star_star[y][x] = calc_phi_star(phi_star, u_x_star, u_y_star, dx, dy, dt, x, y)
-
-    return (phi + phi_star_star) / 2.0
-#+end_src
-
-In the above equations, timestep ($\Delta t$) is constrained by the
-Courant-Friedrichs-Lewy (CFL) condition. The location of the fire
-perimeter is determined by interpolation of the $\phi$ field as the
-level set corresponding to $\phi = 0$.
-
-...RESUME HERE...
-
-# TODO: Implement U_x and U_y calculations using surface and crown
-# equations from the ELMFire paper and the online technical reference:
-  https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
 
 * Appendix
 ** Units Conversion Functions (pyretechnics.conversion)
