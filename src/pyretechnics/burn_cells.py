@@ -1,7 +1,7 @@
 # [[file:../../org/pyretechnics.org::burn-cells][burn-cells]]
 from math import sqrt, atan2, degrees
 from pyretechnics.conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, kW_m_to_Btu_ft_s, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
-from pyretechnics.fuel_models import fuel_models_precomputed, moisturize, is_burnable_fuel_model_number
+from pyretechnics.fuel_models import fuel_model_table, moisturize
 import pyretechnics.surface_fire as sf
 import pyretechnics.crown_fire as cf
 
@@ -44,7 +44,8 @@ def compute_max_in_situ_values(inputs, t, y, x):
     fuel_spread_adjustment        = inputs.get("fuel_spread_adjustment"   , one_everywhere)(t,y,x)
     weather_spread_adjustment     = inputs.get("weather_spread_adjustment", one_everywhere)(t,y,x)
     # Check Whether Cell is Burnable
-    if not is_burnable_fuel_model_number(fuel_model_number):
+    fuel_model = fuel_model_table.get(fuel_model_number)
+    if not (fuel_model and fuel_model["burnable"]):
         return {
             "max_spread_rate"        : 0.0, # m/min
             "max_spread_direction"   : 0.0, # deg
@@ -55,7 +56,6 @@ def compute_max_in_situ_values(inputs, t, y, x):
         }
     else:
         # Moisturized Fuel Model
-        fuel_model              = fuel_models_precomputed[fuel_model_number]
         fuel_moisture           = [fuel_moisture_dead_1hr,
                                    fuel_moisture_dead_10hr,
                                    fuel_moisture_dead_100hr,

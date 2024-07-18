@@ -190,8 +190,8 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     }
 
 # Test with:
-# - moisturize(fuel_models_precomputed[1], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50])   # non-dynamic fuel model
-# - moisturize(fuel_models_precomputed[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
+# - moisturize(fuel_model_table[1]  , [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # static fuel model
+# - moisturize(fuel_model_table[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 # rothermel-surface-fire-spread-no-wind-no-slope ends here
 # [[file:../../org/pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
 from math import log, sqrt

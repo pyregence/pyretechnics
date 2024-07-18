@@ -128,11 +128,11 @@ environmental input variables to take on any of these forms:
   the simulation domain.
 
 This is accomplished by representing each such input value as an
-abstract datatype with a set of 3D space-time look-up functions for
+abstract datatype with a set of 3D space-time lookup functions for
 accessing its values within 0D, 1D, 2D, and 3D slices of the
-space-time cube at the simulation resolution. Such look-ups should
+space-time cube at the simulation resolution. Such lookups should
 always be referentially transparent, so as to ensure that subsequent
-look-ups with the same coordinate will always yield the same values.
+lookups with the same coordinate will always yield the same values.
 See section [[Loading Data into the 3D Space-Time Cube
 (pyretechnics.space_time_cube)]] for implementation details.
 
@@ -153,7 +153,7 @@ following conditions are met:
 
 The simulated space-time cube will share the same projection and
 extent as the input datasets, but its resolution may be specified by
-the user, provided that it meets condition 3 above. The 3D look-up
+the user, provided that it meets condition 3 above. The 3D lookup
 functions for each input will then be responsible for translating the
 space-time coordinates they receive at the simulation resolution into
 the correct coordinates for their underlying dataset's native
@@ -807,27 +807,27 @@ cube_shape = (
 #=====================================================================================================
 
 foliar_moisture = 0.7
-constant_cube = SpaceTimeCube(cube_shape, foliar_moisture)
+constant_cube   = SpaceTimeCube(cube_shape, foliar_moisture)
 
 #=====================================================================================================
 # Temporal Data: 24-hour burn period with ramp up and ramp down for 10 days
 #=====================================================================================================
 
 spread_rate_adjustments = ([0] * 6 + [0.33, 0.66] + [1] * 12 + [0.66, 0.33] + [0] * 2) * 10
-time_series_cube = SpaceTimeCube(cube_shape, spread_rate_adjustments)
+time_series_cube        = SpaceTimeCube(cube_shape, spread_rate_adjustments)
 
 #=====================================================================================================
 # Spatial Data: 2D elevation raster with 1000 (30m) x 1000 (30m) cells
 #=====================================================================================================
 
 elevation_raster = np.random.normal(500, 100, 1000000).astype("int").reshape(1000,1000)
-spatial_cube = SpaceTimeCube(cube_shape, elevation_raster)
+spatial_cube     = SpaceTimeCube(cube_shape, elevation_raster)
 
 #=====================================================================================================
 # Spatio-Temporal Data: 3D daily max wind speed raster with 10 (days) x 100 (300m) x 100 (300m) cells
 #=====================================================================================================
 
-wind_speed_raster = np.random.normal(30, 5, 100000).astype("int").reshape(10,100,100)
+wind_speed_raster   = np.random.normal(30, 5, 100000).astype("int").reshape(10,100,100)
 spatiotemporal_cube = SpaceTimeCube(cube_shape, wind_speed_raster)
 #+end_src
 
@@ -1123,7 +1123,7 @@ cube_shape = (
 # Constant Data: foliar moisture = 70% everywhere
 #=====================================================================================================
 
-foliar_moisture = 0.7
+foliar_moisture               = 0.7
 foliar_moisture_subcube_shape = cube_shape # Only 1 subcube necessary
 
 def foliar_moisture_load_subcube(_, subcube_shape):
@@ -1137,7 +1137,7 @@ constant_cube = LazySpaceTimeCube(cube_shape,
 # Temporal Data: 24-hour burn period with ramp up and ramp down for 10 days
 #=====================================================================================================
 
-spread_rate_adjustments = ([0] * 6 + [0.33, 0.66] + [1] * 12 + [0.66, 0.33] + [0] * 2) * 10
+spread_rate_adjustments               = ([0] * 6 + [0.33, 0.66] + [1] * 12 + [0.66, 0.33] + [0] * 2) * 10
 spread_rate_adjustments_subcube_shape = (24, 1000, 1000) # 1 subcube per day (10 total)
 
 def spread_rate_adjustments_load_subcube(cache_index, subcube_shape):
@@ -1155,7 +1155,7 @@ time_series_cube = LazySpaceTimeCube(cube_shape,
 # Spatial Data: 2D elevation raster with 1000 (30m) x 1000 (30m) cells
 #=====================================================================================================
 
-elevation_raster = np.random.normal(500, 100, 1000000).astype("int").reshape(1000,1000)
+elevation_raster               = np.random.normal(500, 100, 1000000).astype("int").reshape(1000,1000)
 elevation_raster_subcube_shape = (240, 100, 100) # 1 subcube per 100x100 cell region (10x10 = 100 total)
 
 def elevation_raster_load_subcube(cache_index, subcube_shape):
@@ -1176,7 +1176,7 @@ spatial_cube = LazySpaceTimeCube(cube_shape,
 # Spatio-Temporal Data: 3D daily max wind speed raster with 10 (days) x 100 (300m) x 100 (300m) cells
 #=====================================================================================================
 
-wind_speed_raster = np.random.normal(30, 5, 100000).astype("int").reshape(10,100,100)
+wind_speed_raster               = np.random.normal(30, 5, 100000).astype("int").reshape(10,100,100)
 wind_speed_raster_subcube_shape = (24, 100, 100) # 1 subcube per day per 100x100 cell region (10x10x10 = 1000 total)
 
 def wind_speed_raster_load_subcube(cache_index, subcube_shape):
@@ -1483,19 +1483,21 @@ The following fuel models are supported:
 In the following sections, we describe the operation of this system in
 detail.
 
-* Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
+* [WIP] Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.fuel_models*
    :header-args:python+: :tangle  ../src/pyretechnics/fuel_models.py
    :header-args:python+: :exports code
    :END:
-** For Users
-   :PROPERTIES:
-   :header-args:python+: :session *examples:pyretechnics.fuel_models*
-   :header-args:python+: :results output replace
-   :header-args:python+: :exports both
-   :END:
+
+The following sections encode various fire behavior fuel models as
+Python dictionaries and then provide functions to augment their static
+properties with additional information that is dependent upon fuel
+moisture. This combination of fuel models and moisture form the basis
+of many fire behavior analyses.
+
+*** Fuel Model Properties
 
 All fires ignite and travel through some form of burnable fuel.
 Although the effects of wind and slope on the rate of fire spread can
@@ -1510,13 +1512,11 @@ absorption and release.
 
 Of course, measuring these fuel properties for every kind of
 vegetation that may be burned in a wildfire is an intractable task. To
-cope with this, fuels are classified into categories called ``fuel
-models'' which share similar burning characteristics. Each fuel model
+cope with this, fuels are classified into categories called "fuel
+models" which share similar burning characteristics. Each fuel model
 is then assigned a set of representative values for each of the
 thermally relevant physical properties shown in Table
 [[tab:fuel-model-properties]].
-
-# TODO: Change units to metric in the following table.
 
 #+name: tab:fuel-model-properties
 #+caption: Physical properties assigned to each fuel model
@@ -1540,24 +1540,36 @@ fire spread modelling (particularly those reliant on the curing
 formulas of dynamic fuel loading) until it is provided as a
 characteristic of local weather conditions.
 
+Although most fuel model properties are static with respect to
+environmental conditions, the fuel moisture content can have two
+significant impacts on a fuel model's burning potential:
+
+- Dynamic fuel loading
+- Live moisture of extinction
+
+These two topics are discussed in sections [[Dynamic Fuel Loading]] and
+[[Live Moisture of Extinction]].
+
+*** Fuel Model Definitions
+
 The fuel models supported by Pyretechnics include the standard 13 fuel
 models of Rothermel, Albini, and Anderson[fn::Anderson1982] and the
-additional 40 fuel models defined by Scott and
-Burgan[fn::Scott2005]. These are all concisely encoded in an
-internal data structure, which may be updated to include additional
-custom fuel models desired by the user.
+additional 40 fuel models defined by Scott and Burgan[fn::Scott2005].
+These are all concisely encoded in an internal data structure, which
+may be updated to include additional custom fuel models desired by the
+user.
 
-#+name: fuel-model-definitions
-#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
-# Lookup table including one entry for each of the Anderson 13 and
-# Scott & Burgan 40 fuel models. The fields have the following
-# meanings:
-# {fuel-model-number
-#  [name delta M_x-dead h
-#   [w_o-dead-1hr w_o-dead-10hr w_o-dead-100hr w_o-live-herbaceous w_o-live-woody]
-#   [sigma-dead-1hr sigma-dead-10hr sigma-dead-100hr sigma-live-herbaceous sigma-live-woody]]
-# }
-fuel_models = {
+#+name: fuel-model-compact-table
+#+begin_src python
+# Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
+#
+# The fields have the following meanings:
+#   {fuel-model-number : [name, delta, M_x-dead, h, w_o, sigma]}
+#
+# where:
+#   w_o   = [  w_o-dead-1hr,   w_o-dead-10hr,   w_o-dead-100hr,   w_o-live-herbaceous,   w_o-live-woody]
+#   sigma = [sigma-dead-1hr, sigma-dead-10hr, sigma-dead-100hr, sigma-live-herbaceous, sigma-live-woody]
+fuel_model_compact_table = {
     # Anderson 13:
     # Grass and Grass-dominated (short-grass,timber-grass-and-understory,tall-grass)
     1   : ["R01", 1.0, 12, 8, [0.0340, 0.0000, 0.0000, 0.0000, 0.0000], [3500.0,   0.0,  0.0,    0.0,    0.0]],
@@ -1630,95 +1642,114 @@ fuel_models = {
     203 : ["SB3", 1.2, 25, 8, [0.2525, 0.1263, 0.1377, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
     204 : ["SB4", 2.7, 25, 8, [0.2410, 0.1607, 0.2410, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
 }
+#+end_src
 
+Although this compact data structure contains all the properties that
+vary by fuel model (i.e., $\delta$, $w_o$, $\sigma$,
+$M_{x-\text{dead}}$, $h$), several of their values need to be
+multiplied by a coefficient to make their units match those listed in
+Table [[tab:fuel-model-properties]]. We also need to add in the missing
+$\rho_p$, $S_T$, and $S_e$ values, which are constant across all of
+these fuel models, and to expand those properties whose values may
+vary by size class into lists with the following encoding:
 
-def is_dynamic_fuel_model_number(fuel_model_number):
-    return fuel_model_number > 100
+#+begin_example
+[dead_1hr dead_10hr dead_100hr dead_herbaceous live_herbaceous live_woody]
+#+end_example
 
+As a performance optimization, we set the dead herbaceous values that
+don't depend on fuel moisture for the dynamic Scott & Burgan 40 fuel
+models. Finally, we add two boolean properties (=dynamic= and
+=burnable=) to each fuel model for reference in later calculations.
 
-def compute_fuel_model(fuel_model_number):
-    [name, delta, M_x_dead, h, w_o, sigma] = fuel_models[fuel_model_number]
+#+name: expand-compact-fuel-model-table
+#+begin_src python
+def expand_compact_fuel_model(fuel_model_number):
+    [name, delta, M_x_dead, h, w_o, sigma] = fuel_model_compact_table[fuel_model_number]
     [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, w_o_live_herbaceous, w_o_live_woody] = w_o
     [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, sigma_live_herbaceous, sigma_live_woody] = sigma
     M_x_dead = M_x_dead * 0.01
     h        = h * 1000.0
-    fuel_model = {
-        "name"  : name,
-        "number": fuel_model_number,
-        "delta" : delta,
-        "M_x"   : [M_x_dead, M_x_dead, M_x_dead, 0.0, 0.0, 0.0],
-        "w_o"   : [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, 0.0, w_o_live_herbaceous, w_o_live_woody],
-        "sigma" : [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, 0.0, sigma_live_herbaceous, sigma_live_woody],
-        "h"     : [h, h, h, h, h, h],
-        "rho_p" : [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
-        "S_T"   : [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
-        "S_e"   : [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+    # Conditionally set dead_herbaceous values
+    dynamic               = fuel_model_number > 100 and w_o_live_herbaceous > 0.0
+    M_x_dead_herbaceous   = M_x_dead              if dynamic else 0.0
+    sigma_dead_herbaceous = sigma_live_herbaceous if dynamic else 0.0
+    return {
+        "name"    : name,
+        "number"  : fuel_model_number,
+        "delta"   : delta,
+        "M_x"     : [M_x_dead, M_x_dead, M_x_dead, M_x_dead_herbaceous, 0.0, 0.0],
+        "w_o"     : [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, 0.0, w_o_live_herbaceous, w_o_live_woody],
+        "sigma"   : [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, sigma_dead_herbaceous, sigma_live_herbaceous, sigma_live_woody],
+        "h"       : 6 * [h],
+        "rho_p"   : 6 * [32.0],
+        "S_T"     : 6 * [0.0555],
+        "S_e"     : 6 * [0.01],
+        "dynamic" : dynamic,
+        "burnable": not (91 <= fuel_model_number <= 99),
     }
-    if is_dynamic_fuel_model_number(fuel_model_number) and (w_o_live_herbaceous > 0.0):
-        # Set dead_herbaceous values
-        fuel_model["M_x"][3] = M_x_dead
-        fuel_model["sigma"][3] = sigma_live_herbaceous
-        return fuel_model
-    else:
-        # No dead_herbaceous values
-        return fuel_model
 
 
-fuel_models_precomputed = {k: compute_fuel_model(k) for k in fuel_models.keys()}
-
-
-def is_burnable_fuel_model_number(fuel_model_number):
-    return fuel_models_precomputed.get(fuel_model_number) and not (91 <= fuel_model_number <= 99)
+fuel_model_table = {k: expand_compact_fuel_model(k) for k in fuel_model_compact_table.keys()}
 #+end_src
 
-Once fuel moisture is added to the base fuel model definitions, they
-will each contain values for the following six fuel size classes:
+*** Fuel Categories and Size Classes
 
-1. Dead 1 hour ($<$ 1/4" diameter)
-2. Dead 10 hour (1/4"--1" diameter)
-3. Dead 100 hour (1"--3" diameter)
-4. Dead herbaceous (dynamic fuel models only)
-5. Live herbaceous
-6. Live woody
+Each fuel model applies to a collection of burnable material that may
+be live or dead and whose constituent elements may vary in size
+considerably.
 
-In order to more easily encode mathematical operations over these size
-classes, we define a collection of utility functions that will later
-be used in both the fuel moisture and fire spread algorithms.
+The two terms *category* and *size class* are used to describe this
+heterogeneity within each fuel model.
+
+In Pyretechnics, when we refer to a fuel category, we mean one of
+these two values:
+
+- Dead
+- Live
+
+When we refer to a fuel size class, we mean one of these six values:
+
+- Dead 1 hour (< 1/4" diameter)
+- Dead 10 hour (1/4"-1" diameter)
+- Dead 100 hour (1"-3" diameter)
+- Dead herbaceous (dynamic fuel models only)
+- Live herbaceous
+- Live woody
+
+In order to more easily encode mathematical operations over these fuel
+categories and size classes, we define a collection of utility
+functions that will later be used in both the fuel moisture and
+surface fire equations.
 
 #+name: fuel-category-and-size-class-functions
-#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+#+begin_src python
 def map_category(f):
     return [f(0), f(1)]
+
 
 def map_size_class(f):
     return [f(0), f(1), f(2), f(3), f(4), f(5)]
 
+
 def category_sum(f):
     return f(0) + f(1)
+
 
 def size_class_sum(f):
     return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
 #+end_src
 
-Although most fuel model properties are static with respect to
-environmental conditions, the fuel moisture content can have two
-significant impacts on a fuel model's burning potential:
-
-1. Dynamic fuel loading
-2. Live moisture of extinction
-
-These two topics are discussed in the remainder of this section.
-
-** Dynamic Fuel Loading
+*** Dynamic Fuel Loading
 
 All of the Scott & Burgan 40 fuel models with a live herbaceous
 component are considered dynamic. In these models, a fraction of the
 live herbaceous load is transferred to a new dead herbaceous category
 as a function of live herbaceous moisture content (see equation
-below).[fn::Burgan1979] The dead herbaceous category uses the dead 1
+below).[fn::Burgan1979] The dead herbaceous size class uses the dead 1
 hour moisture content, dead moisture of extinction, and live
 herbaceous surface-area-to-volume-ratio. In the following formula,
-$M_{f}^{lh}$ is the live herbaceous moisture content.
+$M_f^{lh}$ is the live herbaceous moisture content.
 
 \begin{align}
   \text{FractionGreen} &= \left\{
@@ -1733,78 +1764,84 @@ $M_{f}^{lh}$ is the live herbaceous moisture content.
 \end{align}
 
 #+name: add-dynamic-fuel-loading
-#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+#+begin_src python
 def add_dynamic_fuel_loading(fuel_model, M_f):
-    number               = fuel_model["number"]
-    w_o                  = fuel_model["w_o"]
-    live_herbaceous_load = w_o[4] # 4 = live_herbaceous
-    if is_dynamic_fuel_model_number(number) and live_herbaceous_load > 0:
+    if fuel_model["dynamic"]:
         # dynamic fuel model
-        fraction_green            = max(0.0, min(1.0, (M_f[4] / 0.9) - 0.3333333333333333)) # 4 = live_herbaceous
+        w_o                       = fuel_model["w_o"]
+        live_herbaceous_load      = w_o[4]
+        live_herbaceous_moisture  = M_f[4]
+        fraction_green            = max(0.0, min(1.0, (live_herbaceous_moisture / 0.9) - 0.3333333333333333))
         fraction_cured            = 1.0 - fraction_green
-        dynamic_M_f               = M_f.copy() # shallow copy
-        dynamic_M_f[3]            = M_f[0]     # 0 = dead_1hr, 3 = dead_herbaceous
         dynamic_fuel_model        = fuel_model.copy() # shallow copy
-        dynamic_fuel_model["M_f"] = dynamic_M_f
+        dynamic_fuel_model["M_f"] = [
+            M_f[0],
+            M_f[1],
+            M_f[2],
+            M_f[0], # set dead_herbaceous to dead_1hr
+            M_f[4],
+            M_f[5],
+        ]
         dynamic_fuel_model["w_o"] = [
             w_o[0],
             w_o[1],
             w_o[2],
-            live_herbaceous_load * fraction_cured,
-            live_herbaceous_load * fraction_green,
-            w_o[5]
+            live_herbaceous_load * fraction_cured, # dead_herbaceous
+            live_herbaceous_load * fraction_green, # live_herbaceous
+            w_o[5],
         ]
         return dynamic_fuel_model
     else:
         # static fuel model
-        static_fuel_model = fuel_model.copy()
+        static_fuel_model = fuel_model.copy() # shallow copy
         static_fuel_model["M_f"] = M_f
         return static_fuel_model
 #+end_src
+
+*** Size Class Weighting Factors
 
 Once the dynamic fuel loading is applied, we can compute the size
 class weighting factors expressed in equations 53-57 in Rothermel
 1972[fn::Rothermel1972]. For brevity, these formulas are elided from
 this text.
 
-TODO: Test whether =g_ij= below creates different values for any fuel models if we simply compare =i= to [0,1,2,3].
-
 #+name: add-weighting-factors
-#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+#+begin_src python
+# TODO: Can we simplify the logic between firemod_size_classes and g_ij?
 def add_weighting_factors(fuel_model):
-    w_o                  = fuel_model["w_o"]
-    sigma                = fuel_model["sigma"]
-    rho_p                = fuel_model["rho_p"]
-    A_ij                 = map_size_class(lambda i: (sigma[i] * w_o[i]) / rho_p[i])
-    A_i                  = size_class_sum(lambda i: A_ij[i])
-    A_T                  = category_sum(lambda i: A_i[i])
-    f_ij                 = map_size_class(lambda i: (lambda A: (A_ij[i] / A) if A > 0.0 else 0.0)(A_i[i//4]))
-    f_i                  = map_category(lambda i: (A_i[i] / A_T) if A_T > 0.0 else 0.0)
-    firemod_size_classes = map_size_class(lambda i: (lambda s:
-                                                     1 if (s >= 1200.0)
-                                                     else 2 if (s >= 192.0)
-                                                     else 3 if (s >= 96.0)
-                                                     else 4 if (s >= 48.0)
-                                                     else 5 if (s >= 16.0)
-                                                     else 6
-                                                     )(sigma[i]))
-    g_ij                 = map_size_class(lambda i: (lambda c:
-                                                     ((f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
-                                                      + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
-                                                      + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
-                                                      + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
-                                                     if (i < 4) else
-                                                     ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
-                                                      + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0))
-                                                     )(firemod_size_classes[i]))
-    weighted_fuel_model = fuel_model.copy() # shallow copy
+    w_o                         = fuel_model["w_o"]
+    sigma                       = fuel_model["sigma"]
+    rho_p                       = fuel_model["rho_p"]
+    A_ij                        = map_size_class(lambda i: (sigma[i] * w_o[i]) / rho_p[i])
+    A_i                         = size_class_sum(lambda i: A_ij[i])
+    A_T                         = category_sum(lambda i: A_i[i])
+    f_ij                        = map_size_class(lambda i: (lambda A: (A_ij[i] / A) if A > 0.0 else 0.0)(A_i[i//4]))
+    f_i                         = map_category(lambda i: (A_i[i] / A_T) if A_T > 0.0 else 0.0)
+    firemod_size_classes        = map_size_class(lambda i: (lambda s:
+                                                            1 if (s >= 1200.0)
+                                                            else 2 if (s >= 192.0)
+                                                            else 3 if (s >= 96.0)
+                                                            else 4 if (s >= 48.0)
+                                                            else 5 if (s >= 16.0)
+                                                            else 6
+                                                            )(sigma[i]))
+    g_ij                        = map_size_class(lambda i: (lambda c:
+                                                            ((f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
+                                                             + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
+                                                             + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
+                                                             + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
+                                                            if (i < 4) else
+                                                            ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
+                                                             + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0))
+                                                            )(firemod_size_classes[i]))
+    weighted_fuel_model         = fuel_model.copy() # shallow copy
     weighted_fuel_model["f_ij"] = f_ij
-    weighted_fuel_model["f_i"] = f_i
+    weighted_fuel_model["f_i"]  = f_i
     weighted_fuel_model["g_ij"] = g_ij
     return weighted_fuel_model
 #+end_src
 
-** Live Moisture of Extinction
+*** Live Moisture of Extinction
 
 The live moisture of extinction for each fuel model is determined from
 the dead fuel moisture content, the dead moisture of extinction, and
@@ -1833,11 +1870,13 @@ ratio of size class $c$, and $M_{f}^{c}$ is the moisture content of
 size class $c$.
 
 #+name: add-live-moisture-of-extinction
-#+begin_src python :tangle ../src/pyretechnics/fuel_models.py
+#+begin_src python
 from math import exp
 
 def add_live_moisture_of_extinction(fuel_model):
-    """Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III."""
+    """
+    Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
+    """
     w_o                       = fuel_model["w_o"]
     sigma                     = fuel_model["sigma"]
     M_f                       = fuel_model["M_f"]
@@ -1856,23 +1895,47 @@ def add_live_moisture_of_extinction(fuel_model):
                                     (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226
                                     ) if (live_loading_factor > 0.0) else M_x_dead
     moisturized_fuel_model    = fuel_model.copy() # shallow copy
-    moisturized_fuel_model["M_x"] = [M_x[0],
-                                     M_x[1],
-                                     M_x[2],
-                                     M_x[3],
-                                     M_x_live,
-                                     M_x_live]
+    moisturized_fuel_model["M_x"] = [
+        M_x[0],
+        M_x[1],
+        M_x[2],
+        M_x[3],
+        M_x_live,
+        M_x_live,
+    ]
     return moisturized_fuel_model
-
-
-# TODO: If these functions aren't called anywhere else, create a copy of the fuel model here and mutate it in the called functions
-def moisturize(fuel_model, fuel_moisture):
-    return add_live_moisture_of_extinction(add_weighting_factors(add_dynamic_fuel_loading(fuel_model, fuel_moisture)))
 #+end_src
 
-This concludes our coverage of fuel models and and fuel moisture.
+*** Applying Fuel Moisture to a Fuel Model
 
-* Surface Fire Equations (pyretechnics.surface_fire)
+The preceding sections augmented the baseline fuel models by adding
+dynamic fuel loading (section [[Dynamic Fuel Loading]]), size class
+weighting factors (section [[Size Class Weighting Factors]]), and live
+moisture of extinction (section [[Live Moisture of Extinction]]). In
+typical usage, we will want to carry out all three of these steps when
+applying fuel moisture to a fuel model. To simplify this task,
+Pyretechnics provides the =moisturize= utility function.
+
+#+name: moisturize
+#+begin_src python
+# TODO: If these functions aren't called anywhere else, create a copy
+#       of the fuel model here and mutate it in the called functions.
+def moisturize(fuel_model, fuel_moisture):
+    dynamic_fuel_model     = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
+    weighted_fuel_model    = add_weighting_factors(dynamic_fuel_model)
+    moisturized_fuel_model = add_live_moisture_of_extinction(weighted_fuel_model)
+    return moisturized_fuel_model
+#+end_src
+
+This concludes our coverage of fuel models and fuel moisture.
+
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.fuel_models*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
+* [WIP] Surface Fire Equations (pyretechnics.surface_fire)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.surface_fire*
@@ -1889,8 +1952,8 @@ This concludes our coverage of fuel models and and fuel moisture.
 To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
 BehavePlus), we adopt the surface fire spread and reaction intensity
-formulas from Rothermel's 1972 publication ``A Mathematical Model for
-Predicting Fire Spread in Wildland Fuels''.[fn::Rothermel1972]
+formulas from Rothermel's 1972 publication "A Mathematical Model for
+Predicting Fire Spread in Wildland Fuels".[fn::Rothermel1972]
 
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
@@ -2120,8 +2183,8 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     }
 
 # Test with:
-# - moisturize(fuel_models_precomputed[1], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50])   # non-dynamic fuel model
-# - moisturize(fuel_models_precomputed[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
+# - moisturize(fuel_model_table[1]  , [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # static fuel model
+# - moisturize(fuel_model_table[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 #+end_src
 
 Later, this no-wind-no-slope value is used to compute the maximum
@@ -2131,8 +2194,7 @@ wind direction and slope are aligned, the effects of cross-slope winds
 must be taken into effect. To accomplish this, Pyretechnics implements
 the vector addition procedure defined in Rothermel 1983 that combines
 the wind-only and slope-only spread rates independently to calculate
-the effective fire spread direction and
-magnitude.[fn::Rothermel1983]
+the effective fire spread direction and magnitude.[fn::Rothermel1983]
 
 A minor wrinkle is introduced when putting these calculations into
 practice because Rothermel's formulas all expect a measure of midflame
@@ -2183,8 +2245,8 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
 
 The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
-$U_{\text{eff}}$. Following the recommendations given in Appendix
-III of Albini 1976, these midflame wind speeds are all limited to $0.9
+$U_{\text{eff}}$. Following the recommendations given in Appendix III
+of Albini 1976, these midflame wind speeds are all limited to $0.9
 I_{R}$.[fn::Albini1976]
 
 Next, the effective wind speed is used to compute the length to width
@@ -2480,13 +2542,13 @@ def byram_flame_length(fire_line_intensity):
 #+end_src
 
 This concludes our coverage of the surface fire behavior equations
-implemented in Pyretechnics. In Section [[Fire Spread Algorithms
-(pyretechnics.eulerian_level_set)]], these formulas will be translated
+implemented in Pyretechnics. In Section [[\[WIP\] Fire Spread Algorithms
+(pyretechnics.eulerian_level_set)]] these formulas will be translated
 from one-dimension to two-dimensional spread on a raster grid. Before
 we move on to that, however, the following section explains how crown
 fire behavior metrics are incorporated into our model.
 
-* Crown Fire Equations (pyretechnics.crown_fire)
+* [WIP] Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.crown_fire*
@@ -2502,10 +2564,10 @@ fire behavior metrics are incorporated into our model.
 
 In order to incorporate the effects of crown fire behavior,
 Pyretechnics includes the crown fire initiation routine from Van
-Wagner 1977.[fn::VanWagner1977] According to this approach, there
-are two threshold values (/critical intensity/ and /critical spread
-rate/) that must be calculated in order to determine whether a fire
-will become an active or passive crown fire or simply remain a surface
+Wagner 1977.[fn::VanWagner1977] According to this approach, there are
+two threshold values (/critical intensity/ and /critical spread rate/)
+that must be calculated in order to determine whether a fire will
+become an active or passive crown fire or simply remain a surface
 fire. The formulas for these thresholds are as follows:
 
 \begin{align}
@@ -2729,7 +2791,7 @@ def crown_fire_eccentricity(wind_speed_20ft):
 This concludes our discussion of the crown fire behavior formulas used
 in Pyretechnics.
 
-* Spot Fire Equations (pyretechnics.spot_fire)
+* [WIP] Spot Fire Equations (pyretechnics.spot_fire)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.spot_fire*
@@ -2743,7 +2805,7 @@ in Pyretechnics.
    :header-args:python+: :exports both
    :END:
 
-* Fire Spread Algorithms (pyretechnics.eulerian_level_set)
+* [WIP] Fire Spread Algorithms (pyretechnics.eulerian_level_set)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.eulerian_level_set*
@@ -2918,8 +2980,8 @@ Now that we can compute the fire front normal vector, we can find the
 spread rate in this direction by combining this vector with the
 maximum spread rate vector and elliptical eccentricity values
 calculated for each grid cell, using the approaches described in
-sections [[Surface Fire Equations (pyretechnics.surface_fire)]] and [[Crown
-Fire Equations (pyretechnics.crown_fire)]].
+sections [[\[WIP\] Surface Fire Equations (pyretechnics.surface_fire)]]
+and [[\[WIP\] Crown Fire Equations (pyretechnics.crown_fire)]].
 
 We will refer to the spread rate vector normal to the fire front in
 the following sections as $U$ with spatial components $U_x$ and $U_y$.
@@ -3218,7 +3280,7 @@ level set corresponding to $\phi = 0$.
 # equations from the ELMFire paper and the online technical reference:
   https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
 
-* Fire Suppression Algorithms (pyretechnics.suppression)
+* [WIP] Fire Suppression Algorithms (pyretechnics.suppression)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.suppression*
@@ -3750,7 +3812,7 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 #+begin_src python :tangle ../src/pyretechnics/burn_cells.py
 from math import sqrt, atan2, degrees
 from pyretechnics.conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, kW_m_to_Btu_ft_s, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
-from pyretechnics.fuel_models import fuel_models_precomputed, moisturize, is_burnable_fuel_model_number
+from pyretechnics.fuel_models import fuel_model_table, moisturize
 import pyretechnics.surface_fire as sf
 import pyretechnics.crown_fire as cf
 
@@ -3793,7 +3855,8 @@ def compute_max_in_situ_values(inputs, t, y, x):
     fuel_spread_adjustment        = inputs.get("fuel_spread_adjustment"   , one_everywhere)(t,y,x)
     weather_spread_adjustment     = inputs.get("weather_spread_adjustment", one_everywhere)(t,y,x)
     # Check Whether Cell is Burnable
-    if not is_burnable_fuel_model_number(fuel_model_number):
+    fuel_model = fuel_model_table.get(fuel_model_number)
+    if not (fuel_model and fuel_model["burnable"]):
         return {
             "max_spread_rate"        : 0.0, # m/min
             "max_spread_direction"   : 0.0, # deg
@@ -3804,7 +3867,6 @@ def compute_max_in_situ_values(inputs, t, y, x):
         }
     else:
         # Moisturized Fuel Model
-        fuel_model              = fuel_models_precomputed[fuel_model_number]
         fuel_moisture           = [fuel_moisture_dead_1hr,
                                    fuel_moisture_dead_10hr,
                                    fuel_moisture_dead_100hr,
