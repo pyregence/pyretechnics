@@ -2729,6 +2729,20 @@ def crown_fire_eccentricity(wind_speed_20ft):
 This concludes our discussion of the crown fire behavior formulas used
 in Pyretechnics.
 
+* Spot Fire Equations (pyretechnics.spot_fire)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.spot_fire*
+   :header-args:python+: :tangle  ../src/pyretechnics/spot_fire.py
+   :header-args:python+: :exports code
+   :END:
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.spot_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
+
 * Fire Spread Algorithms (pyretechnics.eulerian_level_set)
 ** For Developers
    :PROPERTIES:
@@ -3203,6 +3217,20 @@ level set corresponding to $\phi = 0$.
 # TODO: Implement U_x and U_y calculations using surface and crown
 # equations from the ELMFire paper and the online technical reference:
   https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
+
+* Fire Suppression Algorithms (pyretechnics.suppression)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.suppression*
+   :header-args:python+: :tangle  ../src/pyretechnics/suppression.py
+   :header-args:python+: :exports code
+   :END:
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.suppression*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
 
 * Fire Spread API
 
