@@ -67,7 +67,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
         # TODO: Memoize rothermel_surface_fire_spread_no_wind_no_slope
         surface_fire_min        = sf.rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model)
         residence_time          = surface_fire_min["residence_time"] # min
-        reaction_intensity      = surface_fire_min["reaction_intensity"] # Btu/ft^2*min
+        reaction_intensity      = surface_fire_min["reaction_intensity"] # Btu/ft^2/min
         # Midflame Wind Speed
         wind_speed_10m          = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/min
         wind_speed_20ft         = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min

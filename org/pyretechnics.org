@@ -1520,19 +1520,19 @@ thermally relevant physical properties shown in Table
 
 #+name: tab:fuel-model-properties
 #+caption: Physical properties assigned to each fuel model
-|----------+--------------------------------------------+-----------------------------------------|
-| Property | Description                                | Units                                   |
-|----------+--------------------------------------------+-----------------------------------------|
-| $\delta$ | fuel depth                                 | ft                                      |
-| $w_o$    | ovendry fuel loading                       | lb/ft^2                                 |
-| $\sigma$ | fuel particle surface-area-to-volume ratio | ft^2/ft^3                               |
-| $M_x$    | moisture content of extinction             | lb moisture/lb ovendry wood             |
-| $h$      | fuel particle low heat content             | Btu/lb                                  |
-| $\rho_p$ | ovendry particle density                   | lb/ft^3                                 |
-| $S_T$    | fuel particle total mineral content        | lb minerals/lb ovendry wood             |
-| $S_e$    | fuel particle effective mineral content    | lb silica-free minerals/lb ovendry wood |
-| $M_f$    | fuel particle moisture content             | lb moisture/lb ovendry wood             |
-|----------+--------------------------------------------+-----------------------------------------|
+|----------+--------------------------------------------+---------------------------------------------------------|
+| Property | Description                                | Units                                                   |
+|----------+--------------------------------------------+---------------------------------------------------------|
+| $\delta$ | fuel depth                                 | $\text{ft}$                                             |
+| $w_o$    | ovendry fuel loading                       | $\text{lb}/\text{ft}^2$                                 |
+| $\rho_p$ | ovendry particle density                   | $\text{lb}/\text{ft}^3$                                 |
+| $\sigma$ | fuel particle surface-area-to-volume ratio | $\text{ft}^2/\text{ft}^3$                               |
+| $h$      | fuel particle low heat content             | $\text{Btu}/\text{lb}$                                  |
+| $S_T$    | fuel particle total mineral content        | $\text{lb minerals}/\text{lb ovendry wood}$             |
+| $S_e$    | fuel particle effective mineral content    | $\text{lb silica-free minerals}/\text{lb ovendry wood}$ |
+| $M_x$    | fuel particle moisture of extinction       | $\text{lb moisture}/\text{lb ovendry wood}$             |
+| $M_f$    | fuel particle moisture content             | $\text{lb moisture}/\text{lb ovendry wood}$             |
+|----------+--------------------------------------------+---------------------------------------------------------|
 
 *Note:* While $M_f$ is not, in fact, directly assigned to any of these
 fuel models, their definitions remain incomplete for the purposes of
@@ -2066,58 +2066,65 @@ Moisturized Dynamic Fuel Model: GR1
    :header-args:python+: :tangle  ../src/pyretechnics/surface_fire.py
    :header-args:python+: :exports code
    :END:
-** For Users
-   :PROPERTIES:
-   :header-args:python+: :session *examples:pyretechnics.surface_fire*
-   :header-args:python+: :results output replace
-   :header-args:python+: :exports both
-   :END:
+
+The following sections define functions that calculate the spread rate
+and intensity of a fire burning through surface fuels. These functions
+combine fuel models and fuel moisture values (as defined in section
+[[Fuel Model and Moisture Definitions (pyretechnics.fuel_models)]]) with
+wind and topography inputs to determine the spread rate and direction
+of a surface fire.
+
+*** Rothermel's Surface Fire Rate of Spread Equation
 
 To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
-BehavePlus), we adopt the surface fire spread and reaction intensity
-formulas from Rothermel's 1972 publication "A Mathematical Model for
-Predicting Fire Spread in Wildland Fuels".[fn::Rothermel1972]
+BehavePlus), Pyretechnics adopts the surface fire spread and reaction
+intensity formulas from Rothermel's 1972 publication "A Mathematical
+Model for Predicting Fire Spread in Wildland
+Fuels".[fn::Rothermel1972]
 
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
 
 \begin{align}
-  R = \frac{I_{R} \, \xi \, (1 + \phi_{W} + \phi_{S})}{\rho_{b} \, \epsilon \, Q_{ig}}
+  R = \frac{I_R \, \xi \, (1 + \phi_W + \phi_S)}{\rho_b \, \epsilon \, Q}
 \end{align}
 
 where these terms have the meanings shown in Table
 [[tab:fire-spread-inputs]].
 
-*FIXME: fill in the units column for the table below.*
-
 #+name: tab:fire-spread-inputs
 #+caption: Inputs to Rothermel's surface fire rate of spread equation
-|------------+--------------------------------+-------|
-| Term       | Description                    | Units |
-|------------+--------------------------------+-------|
-| $R$        | surface fire spread rate       |       |
-| $I_{R}$    | reaction intensity             |       |
-| $\xi$      | propagating flux ratio         |       |
-| $\phi_{W}$ | wind coefficient               |       |
-| $\phi_{S}$ | slope factor                   |       |
-| $\rho_{b}$ | oven-dry fuel bed bulk density |       |
-| $\epsilon$ | effective heating number       |       |
-| $Q_{ig}$   | heat of preignition            |       |
-|------------+--------------------------------+-------|
+|------------+--------------------------------+-------------------------------------|
+| Term       | Description                    | Units                               |
+|------------+--------------------------------+-------------------------------------|
+| $R$        | surface fire spread rate       | $\text{ft}/\text{min}$              |
+| $I_R$      | reaction intensity             | $\text{Btu}/\text{ft}^2/\text{min}$ |
+| $\xi$      | propagating flux ratio         | $\text{unitless}$                   |
+| $\phi_W$   | wind coefficient               | $\text{unitless}$                   |
+| $\phi_S$   | slope factor                   | $\text{unitless}$                   |
+| $\rho_b$   | oven-dry fuel bed bulk density | $\text{lb}/\text{ft}^3$             |
+| $\epsilon$ | effective heating number       | $\text{unitless}$                   |
+| $Q$        | heat of preignition            | $\text{Btu}/\text{lb}$              |
+|------------+--------------------------------+-------------------------------------|
 
 For a full description of each of the subcomponents of Rothermel's
 surface fire spread rate equation, see the Rothermel 1972 reference
 above.
 
-For efficiency, the surface fire spread equation given above is
-computed first without introducing the effects of wind and slope
-($\phi_{W} = \phi_{S} = 0$).
+*** Surface Fire Spread Rate without Wind or Slope
+
+In this section, Rothermel's surface fire spread rate equation will be
+computed without introducing the effects of wind or slope (i.e.,
+$\phi_W = \phi_S = 0$). In this case, the only necessary input is a
+moisturized fuel model (as created in section [[Applying Fuel Moisture
+to a Fuel Model]]).
 
 #+name: rothermel-surface-fire-spread-no-wind-no-slope
-#+begin_src python :tangle ../src/pyretechnics/surface_fire.py
+#+begin_src python
 from math import exp
 from pyretechnics.fuel_models import map_category, map_size_class, category_sum, size_class_sum
+
 
 def calc_mineral_damping_coefficients(f_ij, S_e):
     S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
@@ -2193,10 +2200,11 @@ def calc_heat_of_preignition(M_f):
     return map_size_class(lambda i: 250.0 + 1116.0 * M_f[i])
 
 
-def calc_heat_distribution(sigma, Q_ig, f_ij):
+# FIXME: remove Q
+def calc_heat_distribution(sigma, Q, f_ij):
     return size_class_sum(lambda i:
                           (lambda sigma:
-                           f_ij[i] * exp(-138.0 / sigma) * Q_ig[i] if (sigma > 0.0) else 0.0
+                           f_ij[i] * exp(-138.0 / sigma) * Q[i] if (sigma > 0.0) else 0.0
                            )(sigma[i]))
 
 
@@ -2208,13 +2216,13 @@ def calc_ovendry_bulk_density(w_o, delta):
         return 0.0
 
 
-def calc_heat_total(f_i, epsilon_i):
+def calc_effective_heating_number(f_i, epsilon_i):
     return category_sum(lambda i: f_i[i] * epsilon_i[i])
 
 
 def calc_surface_fire_spread_rate(I_R, xi, rho_b, epsilon):
-    rho_b_epsilon_Q_ig = rho_b * epsilon
-    return ((I_R * xi) / rho_b_epsilon_Q_ig) if (rho_b_epsilon_Q_ig > 0.0) else 0.0
+    rho_b_epsilon_Q = rho_b * epsilon
+    return ((I_R * xi) / rho_b_epsilon_Q) if (rho_b_epsilon_Q > 0.0) else 0.0
 
 
 def calc_residence_time(sigma_prime):
@@ -2243,36 +2251,36 @@ def get_wind_speed_fn(B, C, F):
     return lambda phi_W: (phi_W * F_over_C) ** B_inverse
 
 
-def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
+def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     """
     Returns the rate of surface fire spread in ft/min and the reaction
-    intensity (i.e., amount of heat output) of a fire in Btu/ft^2*min
+    intensity (i.e., amount of heat output) of a fire in Btu/ft^2/min
     given a map containing these keys:
     - delta [fuel depth (ft)]
-    - w_o [ovendry fuel loading (lb/ft^2)]
-    - sigma [fuel particle surface-area-to-volume ratio (ft^2/ft^3)]
-    - h [fuel particle low heat content (Btu/lb)]
+    - w_o   [ovendry fuel loading (lb/ft^2)]
     - rho_p [ovendry particle density (lb/ft^3)]
-    - S_T [fuel particle total mineral content (lb minerals/lb ovendry wood)]
-    - S_e [fuel particle effective mineral content (lb silica-free minerals/lb ovendry wood)]
-    - M_x [moisture content of extinction (lb moisture/lb ovendry wood)]
-    - M_f [fuel particle moisture content (lb moisture/lb ovendry wood)]
-    - f_ij [percent of load per size class (%)]
-    - f_i [percent of load per category (%)]
-    - g_ij [percent of load per size class from Albini_1976_FIREMOD, page 20]
+    - sigma [fuel particle surface-area-to-volume ratio (ft^2/ft^3)]
+    - h     [fuel particle low heat content (Btu/lb)]
+    - S_T   [fuel particle total mineral content (lb minerals/lb ovendry wood)]
+    - S_e   [fuel particle effective mineral content (lb silica-free minerals/lb ovendry wood)]
+    - M_x   [fuel particle moisture of extinction (lb moisture/lb ovendry wood)]
+    - M_f   [fuel particle moisture content (lb moisture/lb ovendry wood)]
+    - f_ij  [percent of load per size class (%)]
+    - f_i   [percent of load per category (%)]
+    - g_ij  [percent of load per size class from Albini_1976_FIREMOD, page 20]
     """
-    delta          = fuel_model["delta"]
-    w_o            = fuel_model["w_o"]
-    sigma          = fuel_model["sigma"]
-    h              = fuel_model["h"]
-    rho_p          = fuel_model["rho_p"]
-    S_T            = fuel_model["S_T"]
-    S_e            = fuel_model["S_e"]
-    M_x            = fuel_model["M_x"]
-    M_f            = fuel_model["M_f"]
-    f_ij           = fuel_model["f_ij"]
-    f_i            = fuel_model["f_i"]
-    g_ij           = fuel_model["g_ij"]
+    delta          = moisturized_fuel_model["delta"]
+    w_o            = moisturized_fuel_model["w_o"]
+    rho_p          = moisturized_fuel_model["rho_p"]
+    sigma          = moisturized_fuel_model["sigma"]
+    h              = moisturized_fuel_model["h"]
+    S_T            = moisturized_fuel_model["S_T"]
+    S_e            = moisturized_fuel_model["S_e"]
+    M_x            = moisturized_fuel_model["M_x"]
+    M_f            = moisturized_fuel_model["M_f"]
+    f_ij           = moisturized_fuel_model["f_ij"]
+    f_i            = moisturized_fuel_model["f_i"]
+    g_ij           = moisturized_fuel_model["g_ij"]
     eta_S_i        = calc_mineral_damping_coefficients(f_ij, S_e)
     eta_M_i        = calc_moisture_damping_coefficients(f_ij, M_f, M_x)
     h_i            = calc_low_heat_content(f_ij, h)
@@ -2282,12 +2290,12 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     beta_op        = calc_optimum_packing_ratio(sigma_prime)
     Gamma_prime    = calc_optimum_reaction_velocity(beta, sigma_prime, beta_op) # (1/min)
     Btus           = calc_heat_per_unit_area(eta_S_i, eta_M_i, h_i, W_n_i)      # (Btu/ft^2)
-    I_R            = calc_reaction_intensity(Gamma_prime, Btus)                 # (Btu/ft^2*min)
+    I_R            = calc_reaction_intensity(Gamma_prime, Btus)                 # (Btu/ft^2/min)
     xi             = calc_propagating_flux_ratio(beta, sigma_prime)
-    Q_ig           = calc_heat_of_preignition(M_f)                              # (Btu/lb)
-    epsilon_i      = calc_heat_distribution(sigma, Q_ig, f_ij)                  # (Btu/lb)
+    Q              = calc_heat_of_preignition(M_f)                              # (Btu/lb)
+    epsilon_i      = calc_heat_distribution(sigma, Q, f_ij)
     rho_b          = calc_ovendry_bulk_density(w_o, delta)                      # (lb/ft^3)
-    epsilon        = calc_heat_total(f_i, epsilon_i)                            # (Btu/lb)
+    epsilon        = calc_effective_heating_number(f_i, epsilon_i)
     R              = calc_surface_fire_spread_rate(I_R, xi, rho_b, epsilon)     # (ft/min)
     t_res          = calc_residence_time(sigma_prime)
     B              = 0.02526 * (sigma_prime ** 0.54)
@@ -2305,11 +2313,9 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
     }
-
-# Test with:
-# - moisturize(fuel_model_table[1]  , [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # static fuel model
-# - moisturize(fuel_model_table[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 #+end_src
+
+*** Surface Fire Spread Rate with Wind and Slope
 
 Later, this no-wind-no-slope value is used to compute the maximum
 spread rate and direction for the leading edge of the surface fire
@@ -2633,7 +2639,7 @@ where $\sigma$ is the weighted sum by size class of the fuel model's
 surface area to volume ratio in ft^{2}/ft^{3}, $t$ is the residence
 time in minutes, $R$ is the surface fire spread rate in ft/min, $D$ is
 the flame depth in ft, $I_{R}$ is the reaction intensity in
-Btu/ft^{2}/min, $I$ is the fire line intensity in Btu/ft/s, and $L$ is
+Btu/ft^2/min, $I$ is the fire line intensity in Btu/ft/s, and $L$ is
 the flame length in ft.
 
 #+name: surface-fire-intensity-formulas
@@ -2650,8 +2656,8 @@ def anderson_flame_depth(spread_rate, residence_time):
 
 def byram_fire_line_intensity(reaction_intensity, flame_depth):
     """
-    Returns the rate of heat release per unit of fire edge in Btu/ft*s given:
-    - reaction-intensity (Btu/ft^2*min)
+    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
+    - reaction-intensity (Btu/ft^2/min)
     - flame-depth (ft)
     """
     return (reaction_intensity * flame_depth) / 60.0
@@ -2660,7 +2666,7 @@ def byram_fire_line_intensity(reaction_intensity, flame_depth):
 def byram_flame_length(fire_line_intensity):
     """
     Returns the average flame length in ft given:
-    - fire-line-intensity (Btu/ft*s)
+    - fire-line-intensity (Btu/ft/s)
     """
     return 0.45 * (fire_line_intensity ** 0.46)
 #+end_src
@@ -2672,6 +2678,12 @@ from one-dimension to two-dimensional spread on a raster grid. Before
 we move on to that, however, the following section explains how crown
 fire behavior metrics are incorporated into our model.
 
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.surface_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
 * [WIP] Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
    :PROPERTIES:
@@ -2834,13 +2846,13 @@ surface fire line intensity in Btu/ft/s.
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
 def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
     """
-    Returns the crown_fire_line_intensity in Btu/ft*s OR kW/m, given:
+    Returns the crown_fire_line_intensity in Btu/ft/s OR kW/m, given:
     - crown_spread_rate (ft/min OR m/min)
     - canopy_bulk_density (lb/ft^3 OR kg/m^3)
     - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
     - heat_of_combustion (Btu/lb OR kJ/kg)
 
-    (ft/min * lb/ft^3 * ft * Btu/lb)/60 = (Btu/ft*min)/60 = Btu/ft*s
+    (ft/min * lb/ft^3 * ft * Btu/lb)/60 = (Btu/ft/min)/60 = Btu/ft/s
     OR
     (m/min * kg/m^3 * m * kJ/kg)/60 = (kJ/m*min)/60 = kJ/m*s = kW/m
     """
@@ -4002,7 +4014,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
         # TODO: Memoize rothermel_surface_fire_spread_no_wind_no_slope
         surface_fire_min        = sf.rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model)
         residence_time          = surface_fire_min["residence_time"] # min
-        reaction_intensity      = surface_fire_min["reaction_intensity"] # Btu/ft^2*min
+        reaction_intensity      = surface_fire_min["reaction_intensity"] # Btu/ft^2/min
         # Midflame Wind Speed
         wind_speed_10m          = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/min
         wind_speed_20ft         = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min

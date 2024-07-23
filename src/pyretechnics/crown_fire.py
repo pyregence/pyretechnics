@@ -76,13 +76,13 @@ def cruz_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_f
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
 def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
     """
-    Returns the crown_fire_line_intensity in Btu/ft*s OR kW/m, given:
+    Returns the crown_fire_line_intensity in Btu/ft/s OR kW/m, given:
     - crown_spread_rate (ft/min OR m/min)
     - canopy_bulk_density (lb/ft^3 OR kg/m^3)
     - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
     - heat_of_combustion (Btu/lb OR kJ/kg)
 
-    (ft/min * lb/ft^3 * ft * Btu/lb)/60 = (Btu/ft*min)/60 = Btu/ft*s
+    (ft/min * lb/ft^3 * ft * Btu/lb)/60 = (Btu/ft/min)/60 = Btu/ft/s
     OR
     (m/min * kg/m^3 * m * kJ/kg)/60 = (kJ/m*min)/60 = kJ/m*s = kW/m
     """

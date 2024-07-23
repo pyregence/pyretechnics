@@ -2,6 +2,7 @@
 from math import exp
 from pyretechnics.fuel_models import map_category, map_size_class, category_sum, size_class_sum
 
+
 def calc_mineral_damping_coefficients(f_ij, S_e):
     S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
     return map_category(lambda i:
@@ -126,36 +127,36 @@ def get_wind_speed_fn(B, C, F):
     return lambda phi_W: (phi_W * F_over_C) ** B_inverse
 
 
-def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
+def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     """
     Returns the rate of surface fire spread in ft/min and the reaction
-    intensity (i.e., amount of heat output) of a fire in Btu/ft^2*min
+    intensity (i.e., amount of heat output) of a fire in Btu/ft^2/min
     given a map containing these keys:
     - delta [fuel depth (ft)]
-    - w_o [ovendry fuel loading (lb/ft^2)]
-    - sigma [fuel particle surface-area-to-volume ratio (ft^2/ft^3)]
-    - h [fuel particle low heat content (Btu/lb)]
+    - w_o   [ovendry fuel loading (lb/ft^2)]
     - rho_p [ovendry particle density (lb/ft^3)]
-    - S_T [fuel particle total mineral content (lb minerals/lb ovendry wood)]
-    - S_e [fuel particle effective mineral content (lb silica-free minerals/lb ovendry wood)]
-    - M_x [moisture content of extinction (lb moisture/lb ovendry wood)]
-    - M_f [fuel particle moisture content (lb moisture/lb ovendry wood)]
-    - f_ij [percent of load per size class (%)]
-    - f_i [percent of load per category (%)]
-    - g_ij [percent of load per size class from Albini_1976_FIREMOD, page 20]
+    - sigma [fuel particle surface-area-to-volume ratio (ft^2/ft^3)]
+    - h     [fuel particle low heat content (Btu/lb)]
+    - S_T   [fuel particle total mineral content (lb minerals/lb ovendry wood)]
+    - S_e   [fuel particle effective mineral content (lb silica-free minerals/lb ovendry wood)]
+    - M_x   [fuel particle moisture of extinction (lb moisture/lb ovendry wood)]
+    - M_f   [fuel particle moisture content (lb moisture/lb ovendry wood)]
+    - f_ij  [percent of load per size class (%)]
+    - f_i   [percent of load per category (%)]
+    - g_ij  [percent of load per size class from Albini_1976_FIREMOD, page 20]
     """
-    delta          = fuel_model["delta"]
-    w_o            = fuel_model["w_o"]
-    sigma          = fuel_model["sigma"]
-    h              = fuel_model["h"]
-    rho_p          = fuel_model["rho_p"]
-    S_T            = fuel_model["S_T"]
-    S_e            = fuel_model["S_e"]
-    M_x            = fuel_model["M_x"]
-    M_f            = fuel_model["M_f"]
-    f_ij           = fuel_model["f_ij"]
-    f_i            = fuel_model["f_i"]
-    g_ij           = fuel_model["g_ij"]
+    delta          = moisturized_fuel_model["delta"]
+    w_o            = moisturized_fuel_model["w_o"]
+    rho_p          = moisturized_fuel_model["rho_p"]
+    sigma          = moisturized_fuel_model["sigma"]
+    h              = moisturized_fuel_model["h"]
+    S_T            = moisturized_fuel_model["S_T"]
+    S_e            = moisturized_fuel_model["S_e"]
+    M_x            = moisturized_fuel_model["M_x"]
+    M_f            = moisturized_fuel_model["M_f"]
+    f_ij           = moisturized_fuel_model["f_ij"]
+    f_i            = moisturized_fuel_model["f_i"]
+    g_ij           = moisturized_fuel_model["g_ij"]
     eta_S_i        = calc_mineral_damping_coefficients(f_ij, S_e)
     eta_M_i        = calc_moisture_damping_coefficients(f_ij, M_f, M_x)
     h_i            = calc_low_heat_content(f_ij, h)
@@ -165,12 +166,12 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
     beta_op        = calc_optimum_packing_ratio(sigma_prime)
     Gamma_prime    = calc_optimum_reaction_velocity(beta, sigma_prime, beta_op) # (1/min)
     Btus           = calc_heat_per_unit_area(eta_S_i, eta_M_i, h_i, W_n_i)      # (Btu/ft^2)
-    I_R            = calc_reaction_intensity(Gamma_prime, Btus)                 # (Btu/ft^2*min)
+    I_R            = calc_reaction_intensity(Gamma_prime, Btus)                 # (Btu/ft^2/min)
     xi             = calc_propagating_flux_ratio(beta, sigma_prime)
     Q_ig           = calc_heat_of_preignition(M_f)                              # (Btu/lb)
-    epsilon_i      = calc_heat_distribution(sigma, Q_ig, f_ij)                  # (Btu/lb)
+    epsilon_i      = calc_heat_distribution(sigma, Q_ig, f_ij)
     rho_b          = calc_ovendry_bulk_density(w_o, delta)                      # (lb/ft^3)
-    epsilon        = calc_heat_total(f_i, epsilon_i)                            # (Btu/lb)
+    epsilon        = calc_heat_total(f_i, epsilon_i)
     R              = calc_surface_fire_spread_rate(I_R, xi, rho_b, epsilon)     # (ft/min)
     t_res          = calc_residence_time(sigma_prime)
     B              = 0.02526 * (sigma_prime ** 0.54)
@@ -188,10 +189,6 @@ def rothermel_surface_fire_spread_no_wind_no_slope(fuel_model):
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
     }
-
-# Test with:
-# - moisturize(fuel_model_table[1]  , [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # static fuel model
-# - moisturize(fuel_model_table[101], [0.05, 0.10, 0.15, 0.05, 0.30, 0.50]) # dynamic fuel model
 # rothermel-surface-fire-spread-no-wind-no-slope ends here
 # [[file:../../org/pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
 from math import log, sqrt
@@ -445,8 +442,8 @@ def anderson_flame_depth(spread_rate, residence_time):
 
 def byram_fire_line_intensity(reaction_intensity, flame_depth):
     """
-    Returns the rate of heat release per unit of fire edge in Btu/ft*s given:
-    - reaction-intensity (Btu/ft^2*min)
+    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
+    - reaction-intensity (Btu/ft^2/min)
     - flame-depth (ft)
     """
     return (reaction_intensity * flame_depth) / 60.0
@@ -455,7 +452,7 @@ def byram_fire_line_intensity(reaction_intensity, flame_depth):
 def byram_flame_length(fire_line_intensity):
     """
     Returns the average flame length in ft given:
-    - fire-line-intensity (Btu/ft*s)
+    - fire-line-intensity (Btu/ft/s)
     """
     return 0.45 * (fire_line_intensity ** 0.46)
 # surface-fire-intensity-formulas ends here
