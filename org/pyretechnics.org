@@ -1935,6 +1935,130 @@ This concludes our coverage of fuel models and fuel moisture.
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
+
+In the following sections, we will demonstrate how to access fuel
+model properties by fuel model number both alone and combined with
+fuel moisture.
+
+*** How to Look Up a Fuel Model's Properties
+
+#+name: look-up-fuel-model-properties
+#+begin_src python
+from pprint import pprint
+from pyretechnics.fuel_models import fuel_model_table
+
+static_fuel_model_number  = 1   # R01
+dynamic_fuel_model_number = 101 # GR1
+
+static_fuel_model  = fuel_model_table.get(static_fuel_model_number)
+dynamic_fuel_model = fuel_model_table.get(dynamic_fuel_model_number)
+
+print("Static Fuel Model: R01")
+pprint(static_fuel_model)
+
+print("\nDynamic Fuel Model: GR1")
+pprint(dynamic_fuel_model)
+#+end_src
+
+#+RESULTS: look-up-fuel-model-properties
+#+begin_example
+Static Fuel Model: R01
+{'M_x': [0.12, 0.12, 0.12, 0.0, 0.0, 0.0],
+ 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
+ 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+ 'burnable': True,
+ 'delta': 1.0,
+ 'dynamic': False,
+ 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
+ 'name': 'R01',
+ 'number': 1,
+ 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
+ 'sigma': [3500.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+ 'w_o': [0.034, 0.0, 0.0, 0.0, 0.0, 0.0]}
+
+Dynamic Fuel Model: GR1
+{'M_x': [0.15, 0.15, 0.15, 0.15, 0.0, 0.0],
+ 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
+ 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+ 'burnable': True,
+ 'delta': 0.4,
+ 'dynamic': True,
+ 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
+ 'name': 'GR1',
+ 'number': 101,
+ 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
+ 'sigma': [2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0],
+ 'w_o': [0.0046, 0.0, 0.0, 0.0, 0.0138, 0.0]}
+#+end_example
+
+*** How to Apply Fuel Moisture to a Fuel Model
+
+#+name: moisturize-fuel-model
+#+begin_src python
+from pprint import pprint
+from pyretechnics.fuel_models import fuel_model_table, moisturize
+
+static_fuel_model_number  = 1   # R01
+dynamic_fuel_model_number = 101 # GR1
+
+static_fuel_model  = fuel_model_table.get(static_fuel_model_number)
+dynamic_fuel_model = fuel_model_table.get(dynamic_fuel_model_number)
+
+fuel_moisture = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.30, # live_herbaceous
+    0.50, # live_woody
+]
+
+print("Moisturized Static Fuel Model: R01")
+pprint(moisturize(static_fuel_model, fuel_moisture))
+
+print("\nMoisturized Dynamic Fuel Model: GR1")
+pprint(moisturize(dynamic_fuel_model, fuel_moisture))
+#+end_src
+
+#+RESULTS: moisturize-fuel-model
+#+begin_example
+Moisturized Static Fuel Model: R01
+{'M_f': [0.05, 0.1, 0.15, 0.0, 0.3, 0.5],
+ 'M_x': [0.12, 0.12, 0.12, 0.0, 0.12, 0.12],
+ 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
+ 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+ 'burnable': True,
+ 'delta': 1.0,
+ 'dynamic': False,
+ 'f_i': [1.0, 0.0],
+ 'f_ij': [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+ 'g_ij': [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+ 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
+ 'name': 'R01',
+ 'number': 1,
+ 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
+ 'sigma': [3500.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+ 'w_o': [0.034, 0.0, 0.0, 0.0, 0.0, 0.0]}
+
+Moisturized Dynamic Fuel Model: GR1
+{'M_f': [0.05, 0.1, 0.15, 0.05, 0.3, 0.5],
+ 'M_x': [0.15, 0.15, 0.15, 0.15, 0.15, 0.15],
+ 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
+ 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+ 'burnable': True,
+ 'delta': 0.4,
+ 'dynamic': True,
+ 'f_i': [1.0, 0.0],
+ 'f_ij': [0.26829268292682923, 0.0, 0.0, 0.7317073170731707, 0.0, 0.0],
+ 'g_ij': [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+ 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
+ 'name': 'GR1',
+ 'number': 101,
+ 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
+ 'sigma': [2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0],
+ 'w_o': [0.0046, 0.0, 0.0, 0.0138, 0.0, 0.0]}
+#+end_example
+
 * [WIP] Surface Fire Equations (pyretechnics.surface_fire)
 ** For Developers
    :PROPERTIES:
