@@ -1483,7 +1483,7 @@ The following fuel models are supported:
 In the following sections, we describe the operation of this system in
 detail.
 
-* [WIP] Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
+* Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.fuel_models*
