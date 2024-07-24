@@ -2080,14 +2080,17 @@ To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
 BehavePlus), Pyretechnics adopts the surface fire spread and reaction
 intensity formulas from Rothermel's 1972 publication "A Mathematical
-Model for Predicting Fire Spread in Wildland
-Fuels".[fn::Rothermel1972]
+Model for Predicting Fire Spread in Wildland Fuels"[fn::Rothermel1972]
+and should align with the updated description provided in Patricia
+Andrews' 2018 publication "The Rothermel Surface Fire Spread Model and
+Associated Developments: A Comprehensive
+Explanation".[fn::Andrews2018]
 
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
 
 \begin{align}
-  R = \frac{I_R \, \xi \, (1 + \phi_W + \phi_S)}{\rho_b \, \epsilon \, Q}
+  R = \frac{I_R \, \xi \, (1 + \phi_W + \phi_S)}{\rho_b \, \epsilon \, Q_{ig}}
 \end{align}
 
 where these terms have the meanings shown in Table
@@ -2101,16 +2104,12 @@ where these terms have the meanings shown in Table
 | $R$        | surface fire spread rate       | $\text{ft}/\text{min}$              |
 | $I_R$      | reaction intensity             | $\text{Btu}/\text{ft}^2/\text{min}$ |
 | $\xi$      | propagating flux ratio         | $\text{unitless}$                   |
-| $\phi_W$   | wind coefficient               | $\text{unitless}$                   |
+| $\phi_W$   | wind factor                    | $\text{unitless}$                   |
 | $\phi_S$   | slope factor                   | $\text{unitless}$                   |
 | $\rho_b$   | oven-dry fuel bed bulk density | $\text{lb}/\text{ft}^3$             |
 | $\epsilon$ | effective heating number       | $\text{unitless}$                   |
-| $Q$        | heat of preignition            | $\text{Btu}/\text{lb}$              |
+| $Q_{ig}$   | heat of preignition            | $\text{Btu}/\text{lb}$              |
 |------------+--------------------------------+-------------------------------------|
-
-For a full description of each of the subcomponents of Rothermel's
-surface fire spread rate equation, see the Rothermel 1972 reference
-above.
 
 *** Surface Fire Spread Rate without Wind or Slope
 
