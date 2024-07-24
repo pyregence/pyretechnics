@@ -1,8 +1,25 @@
-# [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-no-wind-no-slope][rothermel-surface-fire-spread-no-wind-no-slope]]
+# [[file:../../org/pyretechnics.org::surface-fire-imports][surface-fire-imports]]
 from math import exp
 from pyretechnics.fuel_models import map_category, map_size_class, category_sum, size_class_sum
+# surface-fire-imports ends here
+# [[file:../../org/pyretechnics.org::surface-fire-common-intermediate-calculations][surface-fire-common-intermediate-calculations]]
+def calc_packing_ratio(w_o, rho_p, delta):
+    if (delta > 0.0):
+        beta_i = size_class_sum(lambda i: w_o[i] / rho_p[i])
+        return category_sum(lambda i: beta_i[i]) / delta
+    else:
+        return 0.0
 
 
+def calc_surface_area_to_volume_ratio(f_i, f_ij, sigma):
+    sigma_prime_i = size_class_sum(lambda i: f_ij[i] * sigma[i])
+    return category_sum(lambda i: f_i[i] * sigma_prime_i[i])
+
+
+def calc_optimum_packing_ratio(sigma_prime):
+    return (3.348 / sigma_prime ** 0.8189) if (sigma_prime > 0.0) else 1.0
+# surface-fire-common-intermediate-calculations ends here
+# [[file:../../org/pyretechnics.org::surface-fire-reaction-intensity][surface-fire-reaction-intensity]]
 def calc_mineral_damping_coefficients(f_ij, S_e):
     S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
     return map_category(lambda i:
@@ -33,23 +50,6 @@ def calc_net_fuel_loading(g_ij, w_o, S_T):
                            )(g_ij[i], w_o[i], S_T[i]))
 
 
-def calc_packing_ratio(w_o, rho_p, delta):
-    if (delta > 0.0):
-        beta_i = size_class_sum(lambda i: w_o[i] / rho_p[i])
-        return category_sum(lambda i: beta_i[i]) / delta
-    else:
-        return 0.0
-
-
-def calc_surface_area_to_volume_ratio(f_i, f_ij, sigma):
-    sigma_prime_i = size_class_sum(lambda i: f_ij[i] * sigma[i])
-    return category_sum(lambda i: f_i[i] * sigma_prime_i[i])
-
-
-def calc_optimum_packing_ratio(sigma_prime):
-    return (3.348 / sigma_prime ** 0.8189) if (sigma_prime > 0.0) else 1.0
-
-
 def calc_optimum_reaction_velocity(beta, sigma_prime, beta_op):
     # Albini 1976 replaces 1 / (4.774 * (sigma_prime ** 0.1) - 7.27)
     A               = (133.0 / sigma_prime ** 0.7913) if (sigma_prime > 0.0) else 0.0
@@ -67,40 +67,43 @@ def calc_heat_per_unit_area(eta_S_i, eta_M_i, h_i, W_n_i):
 
 def calc_reaction_intensity(Gamma_prime, Btus):
     return Gamma_prime * Btus
-
-
+# surface-fire-reaction-intensity ends here
+# [[file:../../org/pyretechnics.org::surface-fire-propagating-flux-ratio][surface-fire-propagating-flux-ratio]]
 def calc_propagating_flux_ratio(beta, sigma_prime):
     return exp((0.792 + 0.681 * (sigma_prime ** 0.5)) * (beta + 0.1)) / (192.0 + 0.2595 * sigma_prime)
-
-
-def calc_heat_of_preignition(M_f):
-    return map_size_class(lambda i: 250.0 + 1116.0 * M_f[i])
-
-
-def calc_heat_distribution(sigma, Q_ig, f_ij):
-    return size_class_sum(lambda i:
-                          (lambda sigma:
-                           f_ij[i] * exp(-138.0 / sigma) * Q_ig[i] if (sigma > 0.0) else 0.0
-                           )(sigma[i]))
-
-
+# surface-fire-propagating-flux-ratio ends here
+# [[file:../../org/pyretechnics.org::surface-fire-oven-dry-fuel-bed-bulk-density][surface-fire-oven-dry-fuel-bed-bulk-density]]
 def calc_ovendry_bulk_density(w_o, delta):
     if (delta > 0.0):
         rho_b_i = size_class_sum(lambda i: w_o[i])
         return category_sum(lambda i: rho_b_i[i]) / delta
     else:
         return 0.0
+# surface-fire-oven-dry-fuel-bed-bulk-density ends here
+# [[file:../../org/pyretechnics.org::surface-fire-effective-heating-number][surface-fire-effective-heating-number]]
+def calc_heat_of_preignition_distribution(M_f):
+    return map_size_class(lambda i: 250.0 + 1116.0 * M_f[i])
 
 
-def calc_heat_total(f_i, epsilon_i):
+def calc_heat_distribution(sigma, Q_ig_ij, f_ij):
+    return size_class_sum(lambda i:
+                          (lambda sigma:
+                           f_ij[i] * exp(-138.0 / sigma) * Q_ig_ij[i] if (sigma > 0.0) else 0.0
+                           )(sigma[i]))
+
+
+def calc_effective_heating_number(f_i, epsilon_i):
     return category_sum(lambda i: f_i[i] * epsilon_i[i])
+# surface-fire-effective-heating-number ends here
+# [[file:../../org/pyretechnics.org::surface-fire-heat-of-preignition][surface-fire-heat-of-preignition]]
 
-
+# surface-fire-heat-of-preignition ends here
+# [[file:../../org/pyretechnics.org::surface-fire-spread-rate-no-wind-no-slope][surface-fire-spread-rate-no-wind-no-slope]]
 def calc_surface_fire_spread_rate(I_R, xi, rho_b, epsilon):
     rho_b_epsilon_Q_ig = rho_b * epsilon
     return ((I_R * xi) / rho_b_epsilon_Q_ig) if (rho_b_epsilon_Q_ig > 0.0) else 0.0
-
-
+# surface-fire-spread-rate-no-wind-no-slope ends here
+# [[file:../../org/pyretechnics.org::surface-fire-additional-calculations][surface-fire-additional-calculations]]
 def calc_residence_time(sigma_prime):
     return 384.0 / sigma_prime
 
@@ -168,10 +171,10 @@ def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     Btus           = calc_heat_per_unit_area(eta_S_i, eta_M_i, h_i, W_n_i)      # (Btu/ft^2)
     I_R            = calc_reaction_intensity(Gamma_prime, Btus)                 # (Btu/ft^2/min)
     xi             = calc_propagating_flux_ratio(beta, sigma_prime)
-    Q_ig           = calc_heat_of_preignition(M_f)                              # (Btu/lb)
-    epsilon_i      = calc_heat_distribution(sigma, Q_ig, f_ij)
     rho_b          = calc_ovendry_bulk_density(w_o, delta)                      # (lb/ft^3)
-    epsilon        = calc_heat_total(f_i, epsilon_i)
+    Q_ig_ij        = calc_heat_of_preignition_distribution(M_f)                 # (Btu/lb)
+    epsilon_i      = calc_heat_distribution(sigma, Q_ig_ij, f_ij)
+    epsilon        = calc_effective_heating_number(f_i, epsilon_i)
     R              = calc_surface_fire_spread_rate(I_R, xi, rho_b, epsilon)     # (ft/min)
     t_res          = calc_residence_time(sigma_prime)
     B              = 0.02526 * (sigma_prime ** 0.54)
@@ -189,7 +192,7 @@ def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
         "get_phi_W"         : get_phi_W,
         "get_wind_speed"    : get_wind_speed,
     }
-# rothermel-surface-fire-spread-no-wind-no-slope ends here
+# surface-fire-additional-calculations ends here
 # [[file:../../org/pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
 from math import log, sqrt
 
