@@ -160,7 +160,6 @@ def add_dynamic_fuel_loading(fuel_model, M_f):
         return static_fuel_model
 # add-dynamic-fuel-loading ends here
 # [[file:../../org/pyretechnics.org::add-weighting-factors][add-weighting-factors]]
-# TODO: Can we simplify the logic between firemod_size_classes and g_ij?
 def add_weighting_factors(fuel_model):
     w_o                         = fuel_model["w_o"]
     sigma                       = fuel_model["sigma"]

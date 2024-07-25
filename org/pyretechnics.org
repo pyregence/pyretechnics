@@ -1807,7 +1807,6 @@ this text.
 
 #+name: add-weighting-factors
 #+begin_src python
-# TODO: Can we simplify the logic between firemod_size_classes and g_ij?
 def add_weighting_factors(fuel_model):
     w_o                         = fuel_model["w_o"]
     sigma                       = fuel_model["sigma"]
@@ -2120,7 +2119,15 @@ In this section, Rothermel's surface fire spread rate equation will be
 computed without introducing the effects of wind or slope (i.e.,
 $\phi_W = \phi_S = 0$). In this case, the only necessary input is a
 moisturized fuel model (as created in section [[Applying Fuel Moisture
-to a Fuel Model]]).
+to a Fuel Model]]). Thus, the functions here will focus on this
+simplified version of Rothermel's spread rate equation:
+
+\begin{align}
+  R_{\text{base}} = \frac{I_R \, \xi}{\rho_b \, \epsilon \, Q_{ig}}
+\end{align}
+
+Each term will be defined in its own section, and finally they will be
+combined together in a single function that computes $R_{\text{base}}$.
 
 **** Module Imports
 
@@ -2130,7 +2137,7 @@ from math import exp
 from pyretechnics.fuel_models import map_category, map_size_class, category_sum, size_class_sum
 #+end_src
 
-**** Common Intermediate Calculations
+**** Common Intermediate Calculations: $\sigma', \beta, \beta_{op}$
 
 #+name: surface-fire-common-intermediate-calculations
 #+begin_src python
@@ -2711,11 +2718,11 @@ depth formula and Byram's fire line intensity and flame length
 equations as described below.[fn::Anderson1969][fn::Byram1959]
 
 \begin{align}
-  t &= \frac{384}{\sigma} \\
+  t_{\text{res}} &= \frac{384}{\sigma} \\
   \nonumber \\
-  D &= Rt \\
+  D &= R \, t_{\text{res}} \\
   \nonumber \\
-  I &= \frac{I_R D}{60} \\
+  I &= \frac{I_R \, D}{60} \\
   \nonumber \\
   L &= 0.45(I)^{0.46}
 \end{align}
