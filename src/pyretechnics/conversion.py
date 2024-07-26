@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
-from math import degrees, radians, tan, atan
+from math import sqrt, degrees, radians, sin, cos, tan, atan, atan2, pi
 
 
 def F_to_K(degrees):
@@ -112,16 +112,6 @@ def fpm_to_mph(fpm):
     return fpm / 88.0
 
 
-def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
-    """Convert wind speed at 20ft to wind speed at 10m."""
-    return wind_speed_20ft / 0.87
-
-
-def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
-    """Convert wind speed at 10m to wind speed at 20ft."""
-    return 0.87 * wind_speed_10m
-
-
 def Btu_ft_s_to_kW_m(Btu_ft_s):
     """Convert BTU per feet per second to kilowatt per meter."""
     return Btu_ft_s * 3.46165186
@@ -200,4 +190,41 @@ def day_to_min(days):
 def min_to_day(minutes):
     """Convert minutes to days."""
     return minutes / 1440.0
+
+
+def cartesian_to_polar(x, y):
+    """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
+    r     = sqrt(x ** 2.0 + y ** 2.0)
+    theta = atan2(y, x) if x > 0.0 else atan2(y, x) + pi
+    return (r, degrees(theta))
+
+
+def polar_to_cartesian(r, theta):
+    """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
+    theta_rad = radians(theta)
+    x = r * cos(theta_rad)
+    y = r * sin(theta_rad)
+    return (x, y)
+
+
+def angle_to_azimuth(theta):
+    """Convert an angle measured counterclockwise from east to one measured clockwise from north."""
+    return (90.0 - theta % 360.0) % 360.0
+
+
+def cartesian_to_azimuthal(x, y):
+    """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
+    (r, theta) = cartesian_to_polar(x, y)
+    azimuth = angle_to_azimuth(theta)
+    return (r, azimuth)
+
+
+def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
+    """Convert wind speed at 10m to wind speed at 20ft."""
+    return 0.87 * wind_speed_10m
+
+
+def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
+    """Convert wind speed at 20ft to wind speed at 10m."""
+    return wind_speed_20ft / 0.87
 # units-conversion ends here

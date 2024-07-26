@@ -2488,45 +2488,39 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     }
 #+end_src
 
-*** Surface Fire Spread Rate with Wind and Slope
+*** Midflame Wind Speed
 
-Later, this no-wind-no-slope value is used to compute the maximum
-spread rate and direction for the leading edge of the surface fire
-under analysis. Since Rothermel's original equations assume that the
-wind direction and slope are aligned, the effects of cross-slope winds
-must be taken into effect. To accomplish this, Pyretechnics implements
-the vector addition procedure defined in Rothermel 1983 that combines
-the wind-only and slope-only spread rates independently to calculate
-the effective fire spread direction and magnitude.[fn::Rothermel1983]
-
-A minor wrinkle is introduced when putting these calculations into
-practice because Rothermel's formulas all expect a measure of midflame
-wind speed. However, wind speed data is often collected at a height 20
-feet above either unsheltered ground or a tree canopy layer if
-present. To convert this 20-ft wind speed to the required midflame
-wind speed value, Pyretechnics uses the *wind adjustment factor*
-formula from Albini & Baughman 1979, parameterized as in BehavePlus,
-FARSITE, FlamMap, FSPro, and FPA according to Andrews
-2012[fn::Albini1979][fn::Andrews2012]. This formula is shown below:
+Rothermel's formulas all expect a measure of midflame wind speed
+$U_{\text{mid}}$. However, wind speed data is often collected at a
+height 20 feet (or 10 meters) above either unsheltered ground or a
+tree canopy layer if present. To convert this 20-ft wind speed
+$U_{20}$ to the required midflame wind speed value, Pyretechnics uses
+the wind adjustment factor formula from Albini & Baughman 1979,
+parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA
+according to Andrews 2012[fn::Albini1979][fn::Andrews2012].
 
 \begin{align}
-  WAF = \left\{
+  \text{WAF} &= \left\{
     \begin{array}{lr}
-      1.83 \ln(\frac{20.0 + 0.36 FBD}{0.13 FBD})^{-1} & CC = 0 \\
-      0.555 (\sqrt{CH (CC/3.0)} \ln(\frac{20 + 0.36 CH}{0.13 CH}))^{-1} & CC > 0
+      1.83 \ln(\frac{20.0 + 0.36 \text{FBD}}{0.13 \text{FBD}})^{-1} & CC = 0 \\
+      0.555 [\sqrt{\text{CH} (\text{CC}/3.0)} \ln(\frac{20 + 0.36 \text{CH}}{0.13 \text{CH}})]^{-1} & CC > 0
     \end{array}
-  \right.
+  \right. \\
+  \nonumber \\
+  U_{\text{mid}} &= U_{20} \, \text{WAF}
 \end{align}
 
-where WAF is the unitless wind adjustment factor, FBD is the fuel bed
-depth in feet, CH is the canopy height in ft, and CC is the canopy
-cover percentage (0-1).
+where $\text{WAF}$ is the unitless wind adjustment factor,
+$\text{FBD}$ is the fuel bed depth in $\text{ft}$, $\text{CH}$ is the
+canopy height in $\text{ft}$, and $\text{CC}$ is the canopy cover
+fraction $(0-1)$.
 
-#+name: wind-adjustment-factor
-#+begin_src python :tangle ../src/pyretechnics/surface_fire.py
+#+name: midflame-wind-speed
+#+begin_src python
 from math import log, sqrt
 
-def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
+
+def calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     """
     fuel_bed_depth :: ft
     canopy_height  :: ft
@@ -2544,13 +2538,30 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     else:
         # non-burnable fuel model
         return 0.0
+
+
+def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, canopy_cover):
+    """
+    wind_speed_20ft :: ft/min
+    fuel_bed_depth  :: ft
+    canopy_height   :: ft
+    canopy_cover    :: 0-1
+    """
+    wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
+    return wind_speed_20ft * wind_adj_factor
 #+end_src
 
-The midflame wind speed that would be required to produce the combined
-spread rate in a no-slope scenario is termed the effective windspeed
-$U_{\text{eff}}$. Following the recommendations given in Appendix III
-of Albini 1976, these midflame wind speeds are all limited to $0.9
-I_{R}$.[fn::Albini1976]
+*** Surface Fire Spread Rate with Wind and Slope
+
+Later, this no-wind-no-slope value is used to compute the maximum
+spread rate and direction for the leading edge of the surface fire
+under analysis. Since Rothermel's original equations assume that the
+wind direction and slope are aligned, the effects of cross-slope winds
+must be taken into effect. To accomplish this, Pyretechnics implements
+the vector addition procedure defined in Rothermel 1983 that combines
+the wind-only and slope-only spread rates independently to calculate
+the effective fire spread direction and magnitude.[fn::Rothermel1983]
+
 
 Next, the effective wind speed is used to compute the length to width
 ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
@@ -4069,11 +4080,11 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 
 #+name: burn-cells
 #+begin_src python :tangle ../src/pyretechnics/burn_cells.py
-from math import sqrt, atan2, degrees
-from pyretechnics.conversion import wind_speed_10m_to_wind_speed_20ft, m_to_ft, Btu_ft_s_to_kW_m, kW_m_to_Btu_ft_s, m_min_to_km_hr, m_min_to_mph, ft_to_m, Btu_lb_to_kJ_kg
-from pyretechnics.fuel_models import fuel_model_table, moisturize
+import pyretechnics.conversion as conv
+import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
 import pyretechnics.crown_fire as cf
+
 
 def one_everywhere(t, y, x):
     """
@@ -4114,7 +4125,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
     fuel_spread_adjustment        = inputs.get("fuel_spread_adjustment"   , one_everywhere)(t,y,x)
     weather_spread_adjustment     = inputs.get("weather_spread_adjustment", one_everywhere)(t,y,x)
     # Check Whether Cell is Burnable
-    fuel_model = fuel_model_table.get(fuel_model_number)
+    fuel_model = fm.fuel_model_table.get(fuel_model_number)
     if not (fuel_model and fuel_model["burnable"]):
         return {
             "max_spread_rate"       : 0.0, # m/min
@@ -4132,18 +4143,18 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                    0.0, # fuel_moisture_dead_herbaceous
                                    fuel_moisture_live_herbaceous,
                                    fuel_moisture_live_woody]
-        moisturized_fuel_model  = moisturize(fuel_model, fuel_moisture)
+        moisturized_fuel_model  = fm.moisturize(fuel_model, fuel_moisture)
         # Baseline Surface Fire Behavior
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         surface_fire_min        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
         # Midflame Wind Speed
-        wind_speed_10m          = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/min
-        wind_speed_20ft         = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
-        wind_from_direction     = (90.0 - degrees(atan2(wind_speed_10m_y, wind_speed_10m_x)) % 360.0) % 360.0 # deg
-        wind_adj_factor         = sf.wind_adjustment_factor(fuel_model["delta"],
-                                                            m_to_ft(canopy_height),
-                                                            canopy_cover) # unitless
-        midflame_wind_speed     = m_to_ft(wind_speed_20ft * wind_adj_factor) # ft/min
+        (wind_speed_10m,
+         wind_from_direction)   = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
+        wind_speed_20ft         = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
+        midflame_wind_speed     = sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft),
+                                                              fuel_model["delta"],
+                                                              conv.m_to_ft(canopy_height),
+                                                              canopy_cover) # ft/min
         # Max Surface Fire Behavior
         spread_rate_adjustment  = fuel_spread_adjustment * weather_spread_adjustment # unitless
         surface_fire_max        = sf.rothermel_surface_fire_spread_max(surface_fire_min,
@@ -4156,9 +4167,9 @@ def compute_max_in_situ_values(inputs, t, y, x):
         max_spread_direction         = surface_fire_max["max_spread_direction"] # deg
         surface_eccentricity         = surface_fire_max["eccentricity"] # unitless
         max_surface_intensity        = surface_fire_max["max_fireline_intensity"] # Btu/ft/s
-        max_surface_intensity_metric = Btu_ft_s_to_kW_m(max_surface_intensity) # kW/m
+        max_surface_intensity_metric = conv.Btu_ft_s_to_kW_m(max_surface_intensity) # kW/m
         #=======================================================================================
-        # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
+        # TODO: The calculations to determine the fireline_normal_spread_rate have been elided.
         #       Consider ending this function here and making another function to compute the
         #       surface/crown values based on the provided perimeter spread direction.
         #=======================================================================================
@@ -4168,26 +4179,26 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                foliar_moisture,
                                                max_surface_intensity_metric):
             # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
-            max_crown_spread_rate = m_to_ft(cf.cruz_crown_fire_spread(m_min_to_km_hr(wind_speed_10m),
-                                                                      canopy_bulk_density,
-                                                                      fuel_moisture_dead_1hr)) # ft/min
+            max_crown_spread_rate = conv.m_to_ft(cf.cruz_crown_fire_spread(conv.m_min_to_km_hr(wind_speed_10m),
+                                                                           canopy_bulk_density,
+                                                                           fuel_moisture_dead_1hr)) # ft/min
             fire_type             = 2 if (max_crown_spread_rate < 0.0) else 3 # 2=passive crown, 3=active crown
             max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
             crown_eccentricity    = (surface_eccentricity
                                      if (max_surface_spread_rate > max_crown_spread_rate)
-                                     else cf.crown_fire_eccentricity(m_min_to_mph(wind_speed_20ft))) # unitless
+                                     else cf.crown_fire_eccentricity(conv.m_min_to_mph(wind_speed_20ft))) # unitless
             #=======================================================================================
             # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
             #=======================================================================================
             # Max Crown Intensity
-            max_crown_intensity   = cf.crown_fireline_intensity(ft_to_m(max_crown_spread_rate),
+            max_crown_intensity   = cf.crown_fireline_intensity(conv.ft_to_m(max_crown_spread_rate),
                                                                 canopy_bulk_density,
                                                                 (canopy_height - canopy_base_height),
-                                                                Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
+                                                                conv.Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
-            max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
+            max_spread_rate       = conv.ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity_metric + max_crown_intensity # kW/m
-            max_flame_length      = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
+            max_flame_length      = conv.ft_to_m(sf.calc_flame_length(conv.kW_m_to_Btu_ft_s(max_intensity))) # m
             # Return Fire Behavior Values
             return {
                 "max_spread_rate"       : max_spread_rate,      # m/min
@@ -4199,14 +4210,14 @@ def compute_max_in_situ_values(inputs, t, y, x):
             }
         else:
             fire_type                = 1 # 1=surface
-            max_surface_flame_length = ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
+            max_surface_flame_length = conv.ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
             return {
-                "max_spread_rate"       : ft_to_m(max_surface_spread_rate), # m/min
-                "max_spread_direction"  : max_spread_direction,             # deg
-                "max_fireline_intensity": max_surface_intensity_metric,     # kW/m
-                "max_flame_length"      : max_surface_flame_length,         # m
-                "fire_type"             : fire_type,                        # 1=surface
-                "eccentricity"          : surface_eccentricity,             # unitless
+                "max_spread_rate"       : conv.ft_to_m(max_surface_spread_rate), # m/min
+                "max_spread_direction"  : max_spread_direction,                  # deg
+                "max_fireline_intensity": max_surface_intensity_metric,          # kW/m
+                "max_flame_length"      : max_surface_flame_length,              # m
+                "fire_type"             : fire_type,                             # 1=surface
+                "eccentricity"          : surface_eccentricity,                  # unitless
             }
 #+end_src
 
@@ -4684,7 +4695,7 @@ def slow_test_read_flammap_outputs():
 
 #+name: units-conversion
 #+begin_src python
-from math import degrees, radians, tan, atan
+from math import sqrt, degrees, radians, sin, cos, tan, atan, atan2, pi
 
 
 def F_to_K(degrees):
@@ -4797,16 +4808,6 @@ def fpm_to_mph(fpm):
     return fpm / 88.0
 
 
-def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
-    """Convert wind speed at 20ft to wind speed at 10m."""
-    return wind_speed_20ft / 0.87
-
-
-def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
-    """Convert wind speed at 10m to wind speed at 20ft."""
-    return 0.87 * wind_speed_10m
-
-
 def Btu_ft_s_to_kW_m(Btu_ft_s):
     """Convert BTU per feet per second to kilowatt per meter."""
     return Btu_ft_s * 3.46165186
@@ -4885,6 +4886,43 @@ def day_to_min(days):
 def min_to_day(minutes):
     """Convert minutes to days."""
     return minutes / 1440.0
+
+
+def cartesian_to_polar(x, y):
+    """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
+    r     = sqrt(x ** 2.0 + y ** 2.0)
+    theta = atan2(y, x) if x > 0.0 else atan2(y, x) + pi
+    return (r, degrees(theta))
+
+
+def polar_to_cartesian(r, theta):
+    """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
+    theta_rad = radians(theta)
+    x = r * cos(theta_rad)
+    y = r * sin(theta_rad)
+    return (x, y)
+
+
+def angle_to_azimuth(theta):
+    """Convert an angle measured counterclockwise from east to one measured clockwise from north."""
+    return (90.0 - theta % 360.0) % 360.0
+
+
+def cartesian_to_azimuthal(x, y):
+    """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
+    (r, theta) = cartesian_to_polar(x, y)
+    azimuth = angle_to_azimuth(theta)
+    return (r, azimuth)
+
+
+def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
+    """Convert wind speed at 10m to wind speed at 20ft."""
+    return 0.87 * wind_speed_10m
+
+
+def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
+    """Convert wind speed at 20ft to wind speed at 10m."""
+    return wind_speed_20ft / 0.87
 #+end_src
 
 ** SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)

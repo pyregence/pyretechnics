@@ -243,10 +243,11 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
         "get_wind_speed"          : get_wind_speed,
     }
 # surface-fire-behavior-no-wind-no-slope ends here
-# [[file:../../org/pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
+# [[file:../../org/pyretechnics.org::midflame-wind-speed][midflame-wind-speed]]
 from math import log, sqrt
 
-def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
+
+def calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     """
     fuel_bed_depth :: ft
     canopy_height  :: ft
@@ -264,7 +265,18 @@ def wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     else:
         # non-burnable fuel model
         return 0.0
-# wind-adjustment-factor ends here
+
+
+def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, canopy_cover):
+    """
+    wind_speed_20ft :: ft/min
+    fuel_bed_depth  :: ft
+    canopy_height   :: ft
+    canopy_cover    :: 0-1
+    """
+    wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
+    return wind_speed_20ft * wind_adj_factor
+# midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
 from math import sin, cos, asin, exp, sqrt, radians, degrees
 from pyretechnics.conversion import fpm_to_mph
