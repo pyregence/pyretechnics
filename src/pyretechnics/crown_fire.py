@@ -1,7 +1,7 @@
 # [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
-def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture):
+def van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture):
     """
-    Ouputs the critical fire line intensity (kW/m) using:
+    Ouputs the critical fireline intensity (kW/m) using:
     - canopy_base_height (m)
     - foliar_moisture (0-1)
 
@@ -12,20 +12,20 @@ def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)
     return ((foliar_moisture * 2600.0 + 460.0) * 0.01 * canopy_base_height) ** 1.5
 
 
-def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fire_line_intensity):
+def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fireline_intensity):
     """
     - canopy_cover (0-1)
     - canopy_base_height (m)
     - foliar_moisture (0-1)
-    - fire_line_intensity (kW/m)
+    - fireline_intensity (kW/m)
     """
     return ((canopy_cover > 0.4)
             and
-            (fire_line_intensity > 0.0)
+            (fireline_intensity > 0.0)
             and
             (canopy_base_height > 0.0)
             and
-            (fire_line_intensity >= van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)))
+            (fireline_intensity >= van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture)))
 # van-wagner-crown-fire-initiation ends here
 # [[file:../../org/pyretechnics.org::cruz-crown-fire-spread][cruz-crown-fire-spread]]
 from math import exp
@@ -71,12 +71,12 @@ def cruz_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_f
         # NOTE: Use minus as passive flag
         return -1.0 * cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate)
 # cruz-crown-fire-spread ends here
-# [[file:../../org/pyretechnics.org::crown-fire-line-intensity][crown-fire-line-intensity]]
+# [[file:../../org/pyretechnics.org::crown-fireline-intensity][crown-fireline-intensity]]
 # NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
-def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
+def crown_fireline_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
     """
-    Returns the crown_fire_line_intensity in Btu/ft/s OR kW/m, given:
+    Returns the crown_fireline_intensity in Btu/ft/s OR kW/m, given:
     - crown_spread_rate (ft/min OR m/min)
     - canopy_bulk_density (lb/ft^3 OR kg/m^3)
     - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
@@ -87,7 +87,7 @@ def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_hei
     (m/min * kg/m^3 * m * kJ/kg)/60 = (kJ/m*min)/60 = kJ/m*s = kW/m
     """
     return (crown_spread_rate * canopy_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
-# crown-fire-line-intensity ends here
+# crown-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::crown-eccentricity][crown-eccentricity]]
 from math import sqrt
 

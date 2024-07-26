@@ -70,7 +70,7 @@ def grow_fire(world_state):
     #
     #   :burn-time-matrix                [float32] time_of_arrival (with -1 for values in the interior of the burn scar)
     #   :eccentricity-matrix             [float32] -1 in burn scar, 0 otherwise
-    #   :fire-line-intensity-matrix      [float32] -1 in burn scar, 0 otherwise
+    #   :fireline-intensity-matrix       [float32] -1 in burn scar, 0 otherwise
     #   :fire-spread-matrix              [float32] +1 in burn scar, 0 otherwise
     #   :fire-type-matrix                [float32] -1 in burn scar, 0 otherwise
     #   :firebrand-count-matrix          [ int32 ]  0 everywhere (when spotting params are passed)
@@ -98,9 +98,9 @@ def grow_fire(world_state):
     #   max_surface_spread_rate          :max-spread-rate-matrix
     #   max_crown_spread_rate            :max-spread-rate-matrix
     #   perimeter_spread_rate            :spread-rate-matrix
-    #   max_surface_fire_line_intensity  :fire-line-intensity-matrix
-    #   max_crown_fire_line_intensity    :fire-line-intensity-matrix
-    #   perimeter_fire_line_intensity    :fire-line-intensity-matrix
+    #   max_surface_fireline_intensity   :fireline-intensity-matrix
+    #   max_crown_fireline_intensity     :fireline-intensity-matrix
+    #   perimeter_fireline_intensity     :fireline-intensity-matrix
     #   max_surface_flame_length         :flame-length-matrix
     #   max_crown_flame_length           :flame-length-matrix
     #   perimeter_flame_length           :directional-flame-length-matrix
@@ -116,8 +116,8 @@ def grow_fire(world_state):
     #
     #   ======================== Replaced 2D Arrays ========================
     #   :fire-spread-matrix              time_of_arrival
-    #   :residence-time-matrix           max_surface_fire_line_intensity, max_crown_fire_line_intensity, surface_eccentricity, crown_eccentricity
-    #   :reaction-intensity-matrix       max_surface_fire_line_intensity, max_crown_fire_line_intensity, surface_eccentricity, crown_eccentricity
+    #   :residence-time-matrix           max_surface_fireline_intensity, max_crown_fireline_intensity, surface_eccentricity, crown_eccentricity
+    #   :reaction-intensity-matrix       max_surface_fireline_intensity, max_crown_fireline_intensity, surface_eccentricity, crown_eccentricity
     #
     #   ======================== Internal 2D Arrays ========================
     #   :modified-time-matrix            \
@@ -131,25 +131,25 @@ def grow_fire(world_state):
     overwrite_outputs = config_dict["overwrite_outputs"]
 
     output_layer_dict = {
-        "eulerian_level_set_phi_field"   : supply_layer(output_layer_dict, "eulerian_level_set_phi_field"   , layer_shape, "float16", np.nan, overwrite_outputs),
-        "time_of_arrival"                : supply_layer(output_layer_dict, "time_of_arrival"                , layer_shape, "float32", np.nan, overwrite_outputs),
-        "max_surface_spread_direction"   : supply_layer(output_layer_dict, "max_surface_spread_direction"   , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_crown_spread_direction"     : supply_layer(output_layer_dict, "max_crown_spread_direction"     , layer_shape, "float16", np.nan, overwrite_outputs),
-        "perimeter_spread_direction"     : supply_layer(output_layer_dict, "perimeter_spread_direction"     , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_surface_spread_rate"        : supply_layer(output_layer_dict, "max_surface_spread_rate"        , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_crown_spread_rate"          : supply_layer(output_layer_dict, "max_crown_spread_rate"          , layer_shape, "float16", np.nan, overwrite_outputs),
-        "perimeter_spread_rate"          : supply_layer(output_layer_dict, "perimeter_spread_rate"          , layer_shape, "float16", np.nan, overwrite_outputs),
-        "surface_eccentricity"           : supply_layer(output_layer_dict, "surface_eccentricity"           , layer_shape, "float16", np.nan, overwrite_outputs),
-        "crown_eccentricity"             : supply_layer(output_layer_dict, "crown_eccentricity"             , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_surface_fire_line_intensity": supply_layer(output_layer_dict, "max_surface_fire_line_intensity", layer_shape, "float32", np.nan, overwrite_outputs),
-        "max_crown_fire_line_intensity"  : supply_layer(output_layer_dict, "max_crown_fire_line_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
-        "perimeter_fire_line_intensity"  : supply_layer(output_layer_dict, "perimeter_fire_line_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
-        "max_surface_flame_length"       : supply_layer(output_layer_dict, "max_surface_flame_length"       , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_crown_flame_length"         : supply_layer(output_layer_dict, "max_crown_flame_length"         , layer_shape, "float16", np.nan, overwrite_outputs),
-        "perimeter_flame_length"         : supply_layer(output_layer_dict, "perimeter_flame_length"         , layer_shape, "float16", np.nan, overwrite_outputs),
-        "fire_type"                      : supply_layer(output_layer_dict, "fire_type"                      , layer_shape, "uint8"  ,      0, overwrite_outputs),
-        "ember_count"                    : supply_layer(output_layer_dict, "ember_count"                    , layer_shape, "uint32" ,      0, overwrite_outputs),
-        "ember_ignition"                 : supply_layer(output_layer_dict, "ember_ignition"                 , layer_shape, "bool8"  ,  False, overwrite_outputs),
+        "eulerian_level_set_phi_field"  : supply_layer(output_layer_dict, "eulerian_level_set_phi_field"  , layer_shape, "float16", np.nan, overwrite_outputs),
+        "time_of_arrival"               : supply_layer(output_layer_dict, "time_of_arrival"               , layer_shape, "float32", np.nan, overwrite_outputs),
+        "max_surface_spread_direction"  : supply_layer(output_layer_dict, "max_surface_spread_direction"  , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_crown_spread_direction"    : supply_layer(output_layer_dict, "max_crown_spread_direction"    , layer_shape, "float16", np.nan, overwrite_outputs),
+        "perimeter_spread_direction"    : supply_layer(output_layer_dict, "perimeter_spread_direction"    , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_surface_spread_rate"       : supply_layer(output_layer_dict, "max_surface_spread_rate"       , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_crown_spread_rate"         : supply_layer(output_layer_dict, "max_crown_spread_rate"         , layer_shape, "float16", np.nan, overwrite_outputs),
+        "perimeter_spread_rate"         : supply_layer(output_layer_dict, "perimeter_spread_rate"         , layer_shape, "float16", np.nan, overwrite_outputs),
+        "surface_eccentricity"          : supply_layer(output_layer_dict, "surface_eccentricity"          , layer_shape, "float16", np.nan, overwrite_outputs),
+        "crown_eccentricity"            : supply_layer(output_layer_dict, "crown_eccentricity"            , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_surface_fireline_intensity": supply_layer(output_layer_dict, "max_surface_fireline_intensity", layer_shape, "float32", np.nan, overwrite_outputs),
+        "max_crown_fireline_intensity"  : supply_layer(output_layer_dict, "max_crown_fireline_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
+        "perimeter_fireline_intensity"  : supply_layer(output_layer_dict, "perimeter_fireline_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
+        "max_surface_flame_length"      : supply_layer(output_layer_dict, "max_surface_flame_length"      , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_crown_flame_length"        : supply_layer(output_layer_dict, "max_crown_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
+        "perimeter_flame_length"        : supply_layer(output_layer_dict, "perimeter_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
+        "fire_type"                     : supply_layer(output_layer_dict, "fire_type"                     , layer_shape, "uint8"  ,      0, overwrite_outputs),
+        "ember_count"                   : supply_layer(output_layer_dict, "ember_count"                   , layer_shape, "uint32" ,      0, overwrite_outputs),
+        "ember_ignition"                : supply_layer(output_layer_dict, "ember_ignition"                , layer_shape, "bool8"  ,  False, overwrite_outputs),
     }
 
     # RESUME at [[file:~/code/sig-gis/gridfire/src/gridfire/fire_spread.clj::(defn- run-loop]]

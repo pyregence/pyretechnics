@@ -2326,27 +2326,27 @@ def calc_flame_depth(spread_rate, residence_time):
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone
     of a free-spreading fire in ft given:
-    - spread-rate (ft/min) orthogonal to the fireline.
-    - residence-time (min)
+    - spread_rate (ft/min) orthogonal to the fireline.
+    - residence_time (min)
     """
     return spread_rate * residence_time
 
 
-def calc_fire_line_intensity(reaction_intensity, flame_depth):
+def calc_fireline_intensity(reaction_intensity, flame_depth):
     """
     Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
-    - reaction-intensity (Btu/ft^2/min)
-    - flame-depth (ft)
+    - reaction_intensity (Btu/ft^2/min)
+    - flame_depth (ft)
     """
     return (reaction_intensity * flame_depth) / 60.0
 
 
-def calc_flame_length(fire_line_intensity):
+def calc_flame_length(fireline_intensity):
     """
     Returns the average flame length in ft given:
-    - fire-line-intensity (Btu/ft/s)
+    - fireline_intensity (Btu/ft/s)
     """
-    return 0.45 * (fire_line_intensity ** 0.46)
+    return 0.45 * (fireline_intensity ** 0.46)
 #+end_src
 
 Because of the linear relationship between spread rate, flame depth,
@@ -2468,7 +2468,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     # Calculate base fireline intensity (no wind, no slope)
     t_res          = calc_residence_time(sigma_prime)                           # min
     D_A            = calc_flame_depth(R, t_res)                                 # ft
-    I_B            = calc_fire_line_intensity(I_R, D_A)                         # Btu/ft/s
+    I_B            = calc_fireline_intensity(I_R, D_A)                          # Btu/ft/s
     # Pre-compute values related to wind and slope
     U_eff_max      = calc_max_effective_wind_speed(I_R)                         # ft/min
     B              = 0.02526 * (sigma_prime ** 0.54)
@@ -2844,15 +2844,15 @@ meters, $I^{*}$ is the critical intensity in kW/m, $B_{m}$ is the
 crown bulk density in kg/m^{3}, and $R^{*}$ is the critical spread
 rate in m/min.
 
-If the canopy cover is greater than 40% and the surface fire line
-intensity is greater than the critical intensity ($I > I^{*}$), then
+If the canopy cover is greater than 40% and the surface fireline
+intensity is greater than the critical intensity ($I > I^*$), then
 crown fire initiation occurs.
 
 #+name: van-wagner-crown-fire-initiation
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
-def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture):
+def van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture):
     """
-    Ouputs the critical fire line intensity (kW/m) using:
+    Ouputs the critical fireline intensity (kW/m) using:
     - canopy_base_height (m)
     - foliar_moisture (0-1)
 
@@ -2863,20 +2863,20 @@ def van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)
     return ((foliar_moisture * 2600.0 + 460.0) * 0.01 * canopy_base_height) ** 1.5
 
 
-def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fire_line_intensity):
+def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fireline_intensity):
     """
     - canopy_cover (0-1)
     - canopy_base_height (m)
     - foliar_moisture (0-1)
-    - fire_line_intensity (kW/m)
+    - fireline_intensity (kW/m)
     """
     return ((canopy_cover > 0.4)
             and
-            (fire_line_intensity > 0.0)
+            (fireline_intensity > 0.0)
             and
             (canopy_base_height > 0.0)
             and
-            (fire_line_intensity >= van_wagner_critical_fire_line_intensity(canopy_base_height, foliar_moisture)))
+            (fireline_intensity >= van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture)))
 #+end_src
 
 If crowning occurs, then the active and passive crown fire spread
@@ -2945,7 +2945,7 @@ def cruz_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_f
         return -1.0 * cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate)
 #+end_src
 
-Once the crown fire spread rate is determined, the crown fire line
+Once the crown fire spread rate is determined, the crown fireline
 intensity and flame lengths may be derived using the following
 formulas:
 
@@ -2955,21 +2955,21 @@ formulas:
   L_c &= 0.45(I + I_c)^{0.46}
 \end{align}
 
-where $I_{c}$ is the crown fire line intensity in Btu/ft/s, $R_{c}$ is
+where $I_{c}$ is the crown fireline intensity in Btu/ft/s, $R_{c}$ is
 the crown fire spread rate (either $\text{CROS}_{A}$ or
 $\text{CROS}_{P}$) in ft/min, $B$ is the crown bulk density in
 lb/ft^{3}, $Z$ is the canopy height in ft, $Z_{b}$ is the canopy base
 height in ft, $h$ is the fuel model heat of combustion (generally 8000
 Btu/lb), $L_{c}$ is the crown flame length in ft, and $I$ is the
-surface fire line intensity in Btu/ft/s.
+surface fireline intensity in Btu/ft/s.
 
-#+name: crown-fire-line-intensity
+#+name: crown-fireline-intensity
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
 # NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
-def crown_fire_line_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
+def crown_fireline_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
     """
-    Returns the crown_fire_line_intensity in Btu/ft/s OR kW/m, given:
+    Returns the crown_fireline_intensity in Btu/ft/s OR kW/m, given:
     - crown_spread_rate (ft/min OR m/min)
     - canopy_bulk_density (lb/ft^3 OR kg/m^3)
     - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
@@ -3653,7 +3653,7 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | canopy_bulk_density                        | float32 | kilograms/meters^3 [0-0.45]                            |           |     2 |
   | fuel_spread_adjustment                     | float   | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     2 |
   | suppression_difficulty_index               | float   | integer >= 0  (TODO: What is the correct value range?) | Yes       |     2 |
-  | surface_spotting_fire_line_intensity       | float   | kilowatts/meter                                        | Yes       |     2 |
+  | surface_spotting_fireline_intensity        | float   | kilowatts/meter                                        | Yes       |     2 |
   | surface_spotting_percent (TODO: min, max?) | float   | percent [0-1]                                          | Yes       |     2 |
   | crown_spotting_percent   (TODO: min, max?) | float   | percent [0-1]                                          | Yes       |     2 |
   | temperature                                | float   | degrees Celsius                                        | Yes       |     3 |
@@ -3672,29 +3672,29 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 - output_layer_dict :: an *optional* dictionary of layer names to 2D Numpy arrays with the following units to pre-populate the simulation output arrays:
   *TODO* Consider whether some of these layers should be kept as internal state and not returned to the user.
 
-  |---------------------------------+---------+------------------------------------------------------------------------------+-----------|
-  | Parameter Name                  | Type    | Units                                                                        | Optional? |
-  |---------------------------------+---------+------------------------------------------------------------------------------+-----------|
-  | eulerian_level_set_phi_field    | float16 | TODO: find units range                                                       | No        |
-  | time_of_arrival                 | float32 | minutes from the start time of the simulated space-time cube                 | Yes       |
-  | max_surface_spread_direction    | float16 | degrees clockwise from North                                                 | Yes       |
-  | max_crown_spread_direction      | float16 | degrees clockwise from North                                                 | Yes       |
-  | perimeter_spread_direction      | float16 | degrees clockwise from North                                                 | Yes       |
-  | max_surface_spread_rate         | float16 | meters/second                                                                | Yes       |
-  | max_crown_spread_rate           | float16 | meters/second                                                                | Yes       |
-  | perimeter_spread_rate           | float16 | meters/second                                                                | Yes       |
-  | surface_eccentricity            | float16 | dimensionless (0: circular fire, >0: elliptical fire)                        | Yes       |
-  | crown_eccentricity              | float16 | dimensionless (0: circular fire, >0: elliptical fire)                        | Yes       |
-  | max_surface_fire_line_intensity | float32 | kilowatts/meter                                                              | Yes       |
-  | max_crown_fire_line_intensity   | float32 | kilowatts/meter                                                              | Yes       |
-  | perimeter_fire_line_intensity   | float32 | kilowatts/meter                                                              | Yes       |
-  | max_surface_flame_length        | float16 | meters                                                                       | Yes       |
-  | max_crown_flame_length          | float16 | meters                                                                       | Yes       |
-  | perimeter_flame_length          | float16 | meters                                                                       | Yes       |
-  | fire_type                       | uint8   | 0 = no_fire, 1 = surface_fire, 2 = passive_crown_fire, 3 = active_crown_fire | Yes       |
-  | ember_count                     | uint32  | number of embers landing in each cell                                        | Yes       |
-  | ember_ignition                  | bool8   | True for cells ignited by embers, False otherwise                            | Yes       |
-  |---------------------------------+---------+------------------------------------------------------------------------------+-----------|
+  |--------------------------------+---------+------------------------------------------------------------------------------+-----------|
+  | Parameter Name                 | Type    | Units                                                                        | Optional? |
+  |--------------------------------+---------+------------------------------------------------------------------------------+-----------|
+  | eulerian_level_set_phi_field   | float16 | TODO: find units range                                                       | No        |
+  | time_of_arrival                | float32 | minutes from the start time of the simulated space-time cube                 | Yes       |
+  | max_surface_spread_direction   | float16 | degrees clockwise from North                                                 | Yes       |
+  | max_crown_spread_direction     | float16 | degrees clockwise from North                                                 | Yes       |
+  | perimeter_spread_direction     | float16 | degrees clockwise from North                                                 | Yes       |
+  | max_surface_spread_rate        | float16 | meters/second                                                                | Yes       |
+  | max_crown_spread_rate          | float16 | meters/second                                                                | Yes       |
+  | perimeter_spread_rate          | float16 | meters/second                                                                | Yes       |
+  | surface_eccentricity           | float16 | dimensionless (0: circular fire, >0: elliptical fire)                        | Yes       |
+  | crown_eccentricity             | float16 | dimensionless (0: circular fire, >0: elliptical fire)                        | Yes       |
+  | max_surface_fireline_intensity | float32 | kilowatts/meter                                                              | Yes       |
+  | max_crown_fireline_intensity   | float32 | kilowatts/meter                                                              | Yes       |
+  | perimeter_fireline_intensity   | float32 | kilowatts/meter                                                              | Yes       |
+  | max_surface_flame_length       | float16 | meters                                                                       | Yes       |
+  | max_crown_flame_length         | float16 | meters                                                                       | Yes       |
+  | perimeter_flame_length         | float16 | meters                                                                       | Yes       |
+  | fire_type                      | uint8   | 0 = no_fire, 1 = surface_fire, 2 = passive_crown_fire, 3 = active_crown_fire | Yes       |
+  | ember_count                    | uint32  | number of embers landing in each cell                                        | Yes       |
+  | ember_ignition                 | bool8   | True for cells ignited by embers, False otherwise                            | Yes       |
+  |--------------------------------+---------+------------------------------------------------------------------------------+-----------|
 
 - ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
 
@@ -3791,12 +3791,12 @@ TODO: stub
 # TODO: How do I want to memoize the no_wind_no_slope_surface_fire_min values?
 
 #       - IDEA: We can just save max_spread_rate,
-#       - max_spread_direction, eccentricity, and fire_line_intensity
+#       - max_spread_direction, eccentricity, and fireline_intensity
 #       - for surface and crown conditions (plus crown_fire_type) in
-#       - chunked arrays. When combined with a fire-line normal
+#       - chunked arrays. When combined with a fireline normal
 #       - direction multiplier, you can just multiply max_spread_rate
-#       - and fire_line_intensity by it to get the fire-line normal
-#       - spread rate and fire-line intensity. Also, don't store flame
+#       - and fireline_intensity by it to get the fireline normal
+#       - spread rate and fireline intensity. Also, don't store flame
 #       - length during the simulation. Compute it at the end in
 #       - postprocessing.
 
@@ -3875,7 +3875,7 @@ def grow_fire(world_state):
     #
     #   :burn-time-matrix                [float32] time_of_arrival (with -1 for values in the interior of the burn scar)
     #   :eccentricity-matrix             [float32] -1 in burn scar, 0 otherwise
-    #   :fire-line-intensity-matrix      [float32] -1 in burn scar, 0 otherwise
+    #   :fireline-intensity-matrix       [float32] -1 in burn scar, 0 otherwise
     #   :fire-spread-matrix              [float32] +1 in burn scar, 0 otherwise
     #   :fire-type-matrix                [float32] -1 in burn scar, 0 otherwise
     #   :firebrand-count-matrix          [ int32 ]  0 everywhere (when spotting params are passed)
@@ -3903,9 +3903,9 @@ def grow_fire(world_state):
     #   max_surface_spread_rate          :max-spread-rate-matrix
     #   max_crown_spread_rate            :max-spread-rate-matrix
     #   perimeter_spread_rate            :spread-rate-matrix
-    #   max_surface_fire_line_intensity  :fire-line-intensity-matrix
-    #   max_crown_fire_line_intensity    :fire-line-intensity-matrix
-    #   perimeter_fire_line_intensity    :fire-line-intensity-matrix
+    #   max_surface_fireline_intensity   :fireline-intensity-matrix
+    #   max_crown_fireline_intensity     :fireline-intensity-matrix
+    #   perimeter_fireline_intensity     :fireline-intensity-matrix
     #   max_surface_flame_length         :flame-length-matrix
     #   max_crown_flame_length           :flame-length-matrix
     #   perimeter_flame_length           :directional-flame-length-matrix
@@ -3921,8 +3921,8 @@ def grow_fire(world_state):
     #
     #   ======================== Replaced 2D Arrays ========================
     #   :fire-spread-matrix              time_of_arrival
-    #   :residence-time-matrix           max_surface_fire_line_intensity, max_crown_fire_line_intensity, surface_eccentricity, crown_eccentricity
-    #   :reaction-intensity-matrix       max_surface_fire_line_intensity, max_crown_fire_line_intensity, surface_eccentricity, crown_eccentricity
+    #   :residence-time-matrix           max_surface_fireline_intensity, max_crown_fireline_intensity, surface_eccentricity, crown_eccentricity
+    #   :reaction-intensity-matrix       max_surface_fireline_intensity, max_crown_fireline_intensity, surface_eccentricity, crown_eccentricity
     #
     #   ======================== Internal 2D Arrays ========================
     #   :modified-time-matrix            \
@@ -3936,25 +3936,25 @@ def grow_fire(world_state):
     overwrite_outputs = config_dict["overwrite_outputs"]
 
     output_layer_dict = {
-        "eulerian_level_set_phi_field"   : supply_layer(output_layer_dict, "eulerian_level_set_phi_field"   , layer_shape, "float16", np.nan, overwrite_outputs),
-        "time_of_arrival"                : supply_layer(output_layer_dict, "time_of_arrival"                , layer_shape, "float32", np.nan, overwrite_outputs),
-        "max_surface_spread_direction"   : supply_layer(output_layer_dict, "max_surface_spread_direction"   , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_crown_spread_direction"     : supply_layer(output_layer_dict, "max_crown_spread_direction"     , layer_shape, "float16", np.nan, overwrite_outputs),
-        "perimeter_spread_direction"     : supply_layer(output_layer_dict, "perimeter_spread_direction"     , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_surface_spread_rate"        : supply_layer(output_layer_dict, "max_surface_spread_rate"        , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_crown_spread_rate"          : supply_layer(output_layer_dict, "max_crown_spread_rate"          , layer_shape, "float16", np.nan, overwrite_outputs),
-        "perimeter_spread_rate"          : supply_layer(output_layer_dict, "perimeter_spread_rate"          , layer_shape, "float16", np.nan, overwrite_outputs),
-        "surface_eccentricity"           : supply_layer(output_layer_dict, "surface_eccentricity"           , layer_shape, "float16", np.nan, overwrite_outputs),
-        "crown_eccentricity"             : supply_layer(output_layer_dict, "crown_eccentricity"             , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_surface_fire_line_intensity": supply_layer(output_layer_dict, "max_surface_fire_line_intensity", layer_shape, "float32", np.nan, overwrite_outputs),
-        "max_crown_fire_line_intensity"  : supply_layer(output_layer_dict, "max_crown_fire_line_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
-        "perimeter_fire_line_intensity"  : supply_layer(output_layer_dict, "perimeter_fire_line_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
-        "max_surface_flame_length"       : supply_layer(output_layer_dict, "max_surface_flame_length"       , layer_shape, "float16", np.nan, overwrite_outputs),
-        "max_crown_flame_length"         : supply_layer(output_layer_dict, "max_crown_flame_length"         , layer_shape, "float16", np.nan, overwrite_outputs),
-        "perimeter_flame_length"         : supply_layer(output_layer_dict, "perimeter_flame_length"         , layer_shape, "float16", np.nan, overwrite_outputs),
-        "fire_type"                      : supply_layer(output_layer_dict, "fire_type"                      , layer_shape, "uint8"  ,      0, overwrite_outputs),
-        "ember_count"                    : supply_layer(output_layer_dict, "ember_count"                    , layer_shape, "uint32" ,      0, overwrite_outputs),
-        "ember_ignition"                 : supply_layer(output_layer_dict, "ember_ignition"                 , layer_shape, "bool8"  ,  False, overwrite_outputs),
+        "eulerian_level_set_phi_field"  : supply_layer(output_layer_dict, "eulerian_level_set_phi_field"  , layer_shape, "float16", np.nan, overwrite_outputs),
+        "time_of_arrival"               : supply_layer(output_layer_dict, "time_of_arrival"               , layer_shape, "float32", np.nan, overwrite_outputs),
+        "max_surface_spread_direction"  : supply_layer(output_layer_dict, "max_surface_spread_direction"  , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_crown_spread_direction"    : supply_layer(output_layer_dict, "max_crown_spread_direction"    , layer_shape, "float16", np.nan, overwrite_outputs),
+        "perimeter_spread_direction"    : supply_layer(output_layer_dict, "perimeter_spread_direction"    , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_surface_spread_rate"       : supply_layer(output_layer_dict, "max_surface_spread_rate"       , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_crown_spread_rate"         : supply_layer(output_layer_dict, "max_crown_spread_rate"         , layer_shape, "float16", np.nan, overwrite_outputs),
+        "perimeter_spread_rate"         : supply_layer(output_layer_dict, "perimeter_spread_rate"         , layer_shape, "float16", np.nan, overwrite_outputs),
+        "surface_eccentricity"          : supply_layer(output_layer_dict, "surface_eccentricity"          , layer_shape, "float16", np.nan, overwrite_outputs),
+        "crown_eccentricity"            : supply_layer(output_layer_dict, "crown_eccentricity"            , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_surface_fireline_intensity": supply_layer(output_layer_dict, "max_surface_fireline_intensity", layer_shape, "float32", np.nan, overwrite_outputs),
+        "max_crown_fireline_intensity"  : supply_layer(output_layer_dict, "max_crown_fireline_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
+        "perimeter_fireline_intensity"  : supply_layer(output_layer_dict, "perimeter_fireline_intensity"  , layer_shape, "float32", np.nan, overwrite_outputs),
+        "max_surface_flame_length"      : supply_layer(output_layer_dict, "max_surface_flame_length"      , layer_shape, "float16", np.nan, overwrite_outputs),
+        "max_crown_flame_length"        : supply_layer(output_layer_dict, "max_crown_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
+        "perimeter_flame_length"        : supply_layer(output_layer_dict, "perimeter_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
+        "fire_type"                     : supply_layer(output_layer_dict, "fire_type"                     , layer_shape, "uint8"  ,      0, overwrite_outputs),
+        "ember_count"                   : supply_layer(output_layer_dict, "ember_count"                   , layer_shape, "uint32" ,      0, overwrite_outputs),
+        "ember_ignition"                : supply_layer(output_layer_dict, "ember_ignition"                , layer_shape, "bool8"  ,  False, overwrite_outputs),
     }
 
     # RESUME at [[file:~/code/sig-gis/gridfire/src/gridfire/fire_spread.clj::(defn- run-loop]]
@@ -3997,7 +3997,7 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | CBH_FILENAME                             | input_layer_dict                      | canopy_base_height                      |
 | CBD_FILENAME                             | input_layer_dict                      | canopy_bulk_density                     |
 | ADJ_FILENAME                             | input_layer_dict                      | fuel_spread_adjustment                  |
-| CRITICAL_SPOTTING_FIRELINE_INTENSITY(:)  | input_layer_dict                      | surface_spotting_fire_line_intensity    |
+| CRITICAL_SPOTTING_FIRELINE_INTENSITY(:)  | input_layer_dict                      | surface_spotting_fireline_intensity    |
 | GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MAX | input_layer_dict                      | surface_spotting_percent                |
 | GLOBAL_SURFACE_FIRE_SPOTTING_PERCENT_MIN | input_layer_dict                      | surface_spotting_percent                |
 | WS_FILENAME                              | input_layer_dict                      | wind_speed_10m_x, wind_speed_10m_y      |
@@ -4086,12 +4086,12 @@ def one_everywhere(t, y, x):
 def compute_max_in_situ_values(inputs, t, y, x):
     """
     Returns the following fire behavior values for the space-time cell at location (t,y,x):
-    - max_spread_rate        : m/min
-    - max_spread_direction   : deg
-    - max_fire_line_intensity: kW/m
-    - max_flame_length       : m
-    - fire_type              : 0=unburned, 1=surface, 2=passive crown, 3=active crown
-    - eccentricity           : unitless (0: circular fire, >0: elliptical fire)
+    - max_spread_rate       : m/min
+    - max_spread_direction  : deg
+    - max_fireline_intensity: kW/m
+    - max_flame_length      : m
+    - fire_type             : 0=unburned, 1=surface, 2=passive crown, 3=active crown
+    - eccentricity          : unitless (0: circular fire, >0: elliptical fire)
     """
     # Topography, Fuel Model, and Vegetation
     slope                         = inputs["slope"](t,y,x)
@@ -4117,12 +4117,12 @@ def compute_max_in_situ_values(inputs, t, y, x):
     fuel_model = fuel_model_table.get(fuel_model_number)
     if not (fuel_model and fuel_model["burnable"]):
         return {
-            "max_spread_rate"        : 0.0, # m/min
-            "max_spread_direction"   : 0.0, # deg
-            "max_fire_line_intensity": 0.0, # kW/m
-            "max_flame_length"       : 0.0, # m
-            "fire_type"              : 0,   # 0=unburned
-            "eccentricity"           : 0.0, # unitless
+            "max_spread_rate"       : 0.0, # m/min
+            "max_spread_direction"  : 0.0, # deg
+            "max_fireline_intensity": 0.0, # kW/m
+            "max_flame_length"      : 0.0, # m
+            "fire_type"             : 0,   # 0=unburned
+            "eccentricity"          : 0.0, # unitless
         }
     else:
         # Moisturized Fuel Model
@@ -4180,33 +4180,33 @@ def compute_max_in_situ_values(inputs, t, y, x):
             # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
             #=======================================================================================
             # Max Crown Intensity
-            max_crown_intensity   = cf.crown_fire_line_intensity(ft_to_m(max_crown_spread_rate),
-                                                                 canopy_bulk_density,
-                                                                 (canopy_height - canopy_base_height),
-                                                                 Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
+            max_crown_intensity   = cf.crown_fireline_intensity(ft_to_m(max_crown_spread_rate),
+                                                                canopy_bulk_density,
+                                                                (canopy_height - canopy_base_height),
+                                                                Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity_metric + max_crown_intensity # kW/m
             max_flame_length      = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
             # Return Fire Behavior Values
             return {
-                "max_spread_rate"        : max_spread_rate,      # m/min
-                "max_spread_direction"   : max_spread_direction, # deg
-                "max_fire_line_intensity": max_intensity,        # kW/m
-                "max_flame_length"       : max_flame_length,     # m
-                "fire_type"              : fire_type,            # 2=passive crown, 3=active crown
-                "eccentricity"           : crown_eccentricity,   # unitless
+                "max_spread_rate"       : max_spread_rate,      # m/min
+                "max_spread_direction"  : max_spread_direction, # deg
+                "max_fireline_intensity": max_intensity,        # kW/m
+                "max_flame_length"      : max_flame_length,     # m
+                "fire_type"             : fire_type,            # 2=passive crown, 3=active crown
+                "eccentricity"          : crown_eccentricity,   # unitless
             }
         else:
             fire_type                = 1 # 1=surface
             max_surface_flame_length = ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
             return {
-                "max_spread_rate"        : ft_to_m(max_surface_spread_rate), # m/min
-                "max_spread_direction"   : max_spread_direction,             # deg
-                "max_fire_line_intensity": max_surface_intensity_metric,     # kW/m
-                "max_flame_length"       : max_surface_flame_length,         # m
-                "fire_type"              : fire_type,                        # 1=surface
-                "eccentricity"           : surface_eccentricity,             # unitless
+                "max_spread_rate"       : ft_to_m(max_surface_spread_rate), # m/min
+                "max_spread_direction"  : max_spread_direction,             # deg
+                "max_fireline_intensity": max_surface_intensity_metric,     # kW/m
+                "max_flame_length"      : max_surface_flame_length,         # m
+                "fire_type"             : fire_type,                        # 1=surface
+                "eccentricity"          : surface_eccentricity,             # unitless
             }
 #+end_src
 
@@ -4494,12 +4494,12 @@ def test_burn_one_cell():
     (t,y,x) = (0,100,100)
     result = compute_max_in_situ_values(input_layer_dict, t, y, x)
     assert result == {
-        "max_spread_rate"        : 0.32044995422500566,
-        "max_spread_direction"   : 41.0,
-        "max_fire_line_intensity": 26.661398424207746,
-        "max_flame_length"       : 0.35078585296988984,
-        "fire_type"              : 1,
-        "eccentricity"           : 0.5583790663230914,
+        "max_spread_rate"       : 0.32044995422500566,
+        "max_spread_direction"  : 41.0,
+        "max_fireline_intensity": 26.661398424207746,
+        "max_flame_length"      : 0.35078585296988984,
+        "fire_type"             : 1,
+        "eccentricity"          : 0.5583790663230914,
     }
     return result
 #+end_src
@@ -4515,32 +4515,32 @@ def slow_test_burn_all_cells():
     rows = 613
     cols = 549
 
-    max_spread_rate_matrix         = np.zeros((rows, cols), dtype="float32")
-    max_spread_direction_matrix    = np.zeros((rows, cols), dtype="int16")
-    max_fire_line_intensity_matrix = np.zeros((rows, cols), dtype="float32")
-    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
-    fire_type_matrix               = np.zeros((rows, cols), dtype="uint8")
-    eccentricity_matrix            = np.zeros((rows, cols), dtype="float32")
+    max_spread_rate_matrix        = np.zeros((rows, cols), dtype="float32")
+    max_spread_direction_matrix   = np.zeros((rows, cols), dtype="int16")
+    max_fireline_intensity_matrix = np.zeros((rows, cols), dtype="float32")
+    max_flame_length_matrix       = np.zeros((rows, cols), dtype="float32")
+    fire_type_matrix              = np.zeros((rows, cols), dtype="uint8")
+    eccentricity_matrix           = np.zeros((rows, cols), dtype="float32")
 
     input_layer_dict = test_add_weather_functions()
 
     for y in range(rows):
         for x in range(cols):
-            results                             = compute_max_in_situ_values(input_layer_dict, 0, y, x)
-            max_spread_rate_matrix[y,x]         = results["max_spread_rate"]
-            max_spread_direction_matrix[y,x]    = results["max_spread_direction"]
-            max_fire_line_intensity_matrix[y,x] = results["max_fire_line_intensity"]
-            max_flame_length_matrix[y,x]        = results["max_flame_length"]
-            fire_type_matrix[y,x]               = results["fire_type"]
-            eccentricity_matrix[y,x]            = results["eccentricity"]
+            results                            = compute_max_in_situ_values(input_layer_dict, 0, y, x)
+            max_spread_rate_matrix[y,x]        = results["max_spread_rate"]
+            max_spread_direction_matrix[y,x]   = results["max_spread_direction"]
+            max_fireline_intensity_matrix[y,x] = results["max_fireline_intensity"]
+            max_flame_length_matrix[y,x]       = results["max_flame_length"]
+            fire_type_matrix[y,x]              = results["fire_type"]
+            eccentricity_matrix[y,x]           = results["eccentricity"]
 
     return {
-        "max_spread_rate"        : max_spread_rate_matrix,
-        "max_spread_direction"   : max_spread_direction_matrix,
-        "max_fire_line_intensity": max_fire_line_intensity_matrix,
-        "max_flame_length"       : max_flame_length_matrix,
-        "fire_type"              : fire_type_matrix,
-        "eccentricity"           : eccentricity_matrix,
+        "max_spread_rate"       : max_spread_rate_matrix,
+        "max_spread_direction"  : max_spread_direction_matrix,
+        "max_fireline_intensity": max_fireline_intensity_matrix,
+        "max_flame_length"      : max_flame_length_matrix,
+        "fire_type"             : fire_type_matrix,
+        "eccentricity"          : eccentricity_matrix,
     }
 #+end_src
 
@@ -4597,10 +4597,10 @@ Layer Disagreement: [-10.93608, 8.9857025] inches/min
 [[file:../doc/pics/worcester_max_spread_direction.png]]
 
 #+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Max Fire Line Intensity", layer="max_fire_line_intensity", units="kW/m", colors="hot")>>
+<<savefig(title="Max Fireline Intensity", layer="max_fireline_intensity", units="kW/m", colors="hot")>>
 #+end_src
 
-[[file:../doc/pics/worcester_max_fire_line_intensity.png]]
+[[file:../doc/pics/worcester_max_fireline_intensity.png]]
 
 #+begin_src python :session view-worcester-layers :noweb eval
 <<savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")>>
@@ -4628,11 +4628,11 @@ import numpy as np
 from pyretechnics.load_landfire import load_raster, verify_raster_constraints
 
 flammap_file_paths = {
-    "max_spread_rate"        : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
-    "max_spread_direction"   : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
-    "max_fire_line_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
-    "max_flame_length"       : project_root + "/test/data/flammap_outputs/FL_ft.tif",
-    "fire_type"              : project_root + "/test/data/flammap_outputs/fire_type.tif",
+    "max_spread_rate"       : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
+    "max_spread_direction"  : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
+    "max_fireline_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
+    "max_flame_length"      : project_root + "/test/data/flammap_outputs/FL_ft.tif",
+    "fire_type"             : project_root + "/test/data/flammap_outputs/fire_type.tif",
 }
 
 
@@ -4640,11 +4640,11 @@ flammap_array_conversions = {
     #====================================================================================
     # Layer Name             : (New dtype, Mult),                # In Units -> Out Units
     #====================================================================================
-    "max_spread_rate"        : ("float32", 0.33528),             # ch/hr -> m/min
-    "max_spread_direction"   : ("int16"  , 1),                   # rad -> rad
-    "max_fire_line_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
-    "max_flame_length"       : ("float32", 0.30478512648582745), # ft -> m
-    "fire_type"              : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
+    "max_spread_rate"       : ("float32", 0.33528),             # ch/hr -> m/min
+    "max_spread_direction"  : ("int16"  , 1),                   # rad -> rad
+    "max_fireline_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
+    "max_flame_length"      : ("float32", 0.30478512648582745), # ft -> m
+    "fire_type"             : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
 }
 
 

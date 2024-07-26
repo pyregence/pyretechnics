@@ -66,12 +66,12 @@ def test_burn_one_cell():
     (t,y,x) = (0,100,100)
     result = compute_max_in_situ_values(input_layer_dict, t, y, x)
     assert result == {
-        "max_spread_rate"        : 0.32044995422500566,
-        "max_spread_direction"   : 41.0,
-        "max_fire_line_intensity": 26.661398424207746,
-        "max_flame_length"       : 0.35078585296988984,
-        "fire_type"              : 1,
-        "eccentricity"           : 0.5583790663230914,
+        "max_spread_rate"       : 0.32044995422500566,
+        "max_spread_direction"  : 41.0,
+        "max_fireline_intensity": 26.661398424207746,
+        "max_flame_length"      : 0.35078585296988984,
+        "fire_type"             : 1,
+        "eccentricity"          : 0.5583790663230914,
     }
     return result
 # burn-single-cell-in-pyretechnics-inputs ends here
@@ -83,32 +83,32 @@ def slow_test_burn_all_cells():
     rows = 613
     cols = 549
 
-    max_spread_rate_matrix         = np.zeros((rows, cols), dtype="float32")
-    max_spread_direction_matrix    = np.zeros((rows, cols), dtype="int16")
-    max_fire_line_intensity_matrix = np.zeros((rows, cols), dtype="float32")
-    max_flame_length_matrix        = np.zeros((rows, cols), dtype="float32")
-    fire_type_matrix               = np.zeros((rows, cols), dtype="uint8")
-    eccentricity_matrix            = np.zeros((rows, cols), dtype="float32")
+    max_spread_rate_matrix        = np.zeros((rows, cols), dtype="float32")
+    max_spread_direction_matrix   = np.zeros((rows, cols), dtype="int16")
+    max_fireline_intensity_matrix = np.zeros((rows, cols), dtype="float32")
+    max_flame_length_matrix       = np.zeros((rows, cols), dtype="float32")
+    fire_type_matrix              = np.zeros((rows, cols), dtype="uint8")
+    eccentricity_matrix           = np.zeros((rows, cols), dtype="float32")
 
     input_layer_dict = test_add_weather_functions()
 
     for y in range(rows):
         for x in range(cols):
-            results                             = compute_max_in_situ_values(input_layer_dict, 0, y, x)
-            max_spread_rate_matrix[y,x]         = results["max_spread_rate"]
-            max_spread_direction_matrix[y,x]    = results["max_spread_direction"]
-            max_fire_line_intensity_matrix[y,x] = results["max_fire_line_intensity"]
-            max_flame_length_matrix[y,x]        = results["max_flame_length"]
-            fire_type_matrix[y,x]               = results["fire_type"]
-            eccentricity_matrix[y,x]            = results["eccentricity"]
+            results                            = compute_max_in_situ_values(input_layer_dict, 0, y, x)
+            max_spread_rate_matrix[y,x]        = results["max_spread_rate"]
+            max_spread_direction_matrix[y,x]   = results["max_spread_direction"]
+            max_fireline_intensity_matrix[y,x] = results["max_fireline_intensity"]
+            max_flame_length_matrix[y,x]       = results["max_flame_length"]
+            fire_type_matrix[y,x]              = results["fire_type"]
+            eccentricity_matrix[y,x]           = results["eccentricity"]
 
     return {
-        "max_spread_rate"        : max_spread_rate_matrix,
-        "max_spread_direction"   : max_spread_direction_matrix,
-        "max_fire_line_intensity": max_fire_line_intensity_matrix,
-        "max_flame_length"       : max_flame_length_matrix,
-        "fire_type"              : fire_type_matrix,
-        "eccentricity"           : eccentricity_matrix,
+        "max_spread_rate"       : max_spread_rate_matrix,
+        "max_spread_direction"  : max_spread_direction_matrix,
+        "max_fireline_intensity": max_fireline_intensity_matrix,
+        "max_flame_length"      : max_flame_length_matrix,
+        "fire_type"             : fire_type_matrix,
+        "eccentricity"          : eccentricity_matrix,
     }
 # burn-all-cells-in-pyretechnics-inputs ends here
 # [[file:../../org/pyretechnics.org::load-flammap-outputs][load-flammap-outputs]]
@@ -116,11 +116,11 @@ import numpy as np
 from pyretechnics.load_landfire import load_raster, verify_raster_constraints
 
 flammap_file_paths = {
-    "max_spread_rate"        : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
-    "max_spread_direction"   : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
-    "max_fire_line_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
-    "max_flame_length"       : project_root + "/test/data/flammap_outputs/FL_ft.tif",
-    "fire_type"              : project_root + "/test/data/flammap_outputs/fire_type.tif",
+    "max_spread_rate"       : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
+    "max_spread_direction"  : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
+    "max_fireline_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
+    "max_flame_length"      : project_root + "/test/data/flammap_outputs/FL_ft.tif",
+    "fire_type"             : project_root + "/test/data/flammap_outputs/fire_type.tif",
 }
 
 
@@ -128,11 +128,11 @@ flammap_array_conversions = {
     #====================================================================================
     # Layer Name             : (New dtype, Mult),                # In Units -> Out Units
     #====================================================================================
-    "max_spread_rate"        : ("float32", 0.33528),             # ch/hr -> m/min
-    "max_spread_direction"   : ("int16"  , 1),                   # rad -> rad
-    "max_fire_line_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
-    "max_flame_length"       : ("float32", 0.30478512648582745), # ft -> m
-    "fire_type"              : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
+    "max_spread_rate"       : ("float32", 0.33528),             # ch/hr -> m/min
+    "max_spread_direction"  : ("int16"  , 1),                   # rad -> rad
+    "max_fireline_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
+    "max_flame_length"      : ("float32", 0.30478512648582745), # ft -> m
+    "fire_type"             : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
 }
 
 

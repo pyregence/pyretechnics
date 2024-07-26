@@ -16,12 +16,12 @@ def one_everywhere(t, y, x):
 def compute_max_in_situ_values(inputs, t, y, x):
     """
     Returns the following fire behavior values for the space-time cell at location (t,y,x):
-    - max_spread_rate        : m/min
-    - max_spread_direction   : deg
-    - max_fire_line_intensity: kW/m
-    - max_flame_length       : m
-    - fire_type              : 0=unburned, 1=surface, 2=passive crown, 3=active crown
-    - eccentricity           : unitless (0: circular fire, >0: elliptical fire)
+    - max_spread_rate       : m/min
+    - max_spread_direction  : deg
+    - max_fireline_intensity: kW/m
+    - max_flame_length      : m
+    - fire_type             : 0=unburned, 1=surface, 2=passive crown, 3=active crown
+    - eccentricity          : unitless (0: circular fire, >0: elliptical fire)
     """
     # Topography, Fuel Model, and Vegetation
     slope                         = inputs["slope"](t,y,x)
@@ -47,12 +47,12 @@ def compute_max_in_situ_values(inputs, t, y, x):
     fuel_model = fuel_model_table.get(fuel_model_number)
     if not (fuel_model and fuel_model["burnable"]):
         return {
-            "max_spread_rate"        : 0.0, # m/min
-            "max_spread_direction"   : 0.0, # deg
-            "max_fire_line_intensity": 0.0, # kW/m
-            "max_flame_length"       : 0.0, # m
-            "fire_type"              : 0,   # 0=unburned
-            "eccentricity"           : 0.0, # unitless
+            "max_spread_rate"       : 0.0, # m/min
+            "max_spread_direction"  : 0.0, # deg
+            "max_fireline_intensity": 0.0, # kW/m
+            "max_flame_length"      : 0.0, # m
+            "fire_type"             : 0,   # 0=unburned
+            "eccentricity"          : 0.0, # unitless
         }
     else:
         # Moisturized Fuel Model
@@ -110,32 +110,32 @@ def compute_max_in_situ_values(inputs, t, y, x):
             # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
             #=======================================================================================
             # Max Crown Intensity
-            max_crown_intensity   = cf.crown_fire_line_intensity(ft_to_m(max_crown_spread_rate),
-                                                                 canopy_bulk_density,
-                                                                 (canopy_height - canopy_base_height),
-                                                                 Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
+            max_crown_intensity   = cf.crown_fireline_intensity(ft_to_m(max_crown_spread_rate),
+                                                                canopy_bulk_density,
+                                                                (canopy_height - canopy_base_height),
+                                                                Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity_metric + max_crown_intensity # kW/m
             max_flame_length      = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
             # Return Fire Behavior Values
             return {
-                "max_spread_rate"        : max_spread_rate,      # m/min
-                "max_spread_direction"   : max_spread_direction, # deg
-                "max_fire_line_intensity": max_intensity,        # kW/m
-                "max_flame_length"       : max_flame_length,     # m
-                "fire_type"              : fire_type,            # 2=passive crown, 3=active crown
-                "eccentricity"           : crown_eccentricity,   # unitless
+                "max_spread_rate"       : max_spread_rate,      # m/min
+                "max_spread_direction"  : max_spread_direction, # deg
+                "max_fireline_intensity": max_intensity,        # kW/m
+                "max_flame_length"      : max_flame_length,     # m
+                "fire_type"             : fire_type,            # 2=passive crown, 3=active crown
+                "eccentricity"          : crown_eccentricity,   # unitless
             }
         else:
             fire_type                = 1 # 1=surface
             max_surface_flame_length = ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
             return {
-                "max_spread_rate"        : ft_to_m(max_surface_spread_rate), # m/min
-                "max_spread_direction"   : max_spread_direction,             # deg
-                "max_fire_line_intensity": max_surface_intensity_metric,     # kW/m
-                "max_flame_length"       : max_surface_flame_length,         # m
-                "fire_type"              : fire_type,                        # 1=surface
-                "eccentricity"           : surface_eccentricity,             # unitless
+                "max_spread_rate"       : ft_to_m(max_surface_spread_rate), # m/min
+                "max_spread_direction"  : max_spread_direction,             # deg
+                "max_fireline_intensity": max_surface_intensity_metric,     # kW/m
+                "max_flame_length"      : max_surface_flame_length,         # m
+                "fire_type"             : fire_type,                        # 1=surface
+                "eccentricity"          : surface_eccentricity,             # unitless
             }
 # burn-cells ends here

@@ -128,27 +128,27 @@ def calc_flame_depth(spread_rate, residence_time):
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone
     of a free-spreading fire in ft given:
-    - spread-rate (ft/min) orthogonal to the fireline.
-    - residence-time (min)
+    - spread_rate (ft/min) orthogonal to the fireline.
+    - residence_time (min)
     """
     return spread_rate * residence_time
 
 
-def calc_fire_line_intensity(reaction_intensity, flame_depth):
+def calc_fireline_intensity(reaction_intensity, flame_depth):
     """
     Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
-    - reaction-intensity (Btu/ft^2/min)
-    - flame-depth (ft)
+    - reaction_intensity (Btu/ft^2/min)
+    - flame_depth (ft)
     """
     return (reaction_intensity * flame_depth) / 60.0
 
 
-def calc_flame_length(fire_line_intensity):
+def calc_flame_length(fireline_intensity):
     """
     Returns the average flame length in ft given:
-    - fire-line-intensity (Btu/ft/s)
+    - fireline_intensity (Btu/ft/s)
     """
-    return 0.45 * (fire_line_intensity ** 0.46)
+    return 0.45 * (fireline_intensity ** 0.46)
 # surface-fire-intensity-functions ends here
 # [[file:../../org/pyretechnics.org::surface-fire-max-effective-wind-speed][surface-fire-max-effective-wind-speed]]
 def calc_max_effective_wind_speed(reaction_intensity):
@@ -224,7 +224,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     # Calculate base fireline intensity (no wind, no slope)
     t_res          = calc_residence_time(sigma_prime)                           # min
     D_A            = calc_flame_depth(R, t_res)                                 # ft
-    I_B            = calc_fire_line_intensity(I_R, D_A)                         # Btu/ft/s
+    I_B            = calc_fireline_intensity(I_R, D_A)                          # Btu/ft/s
     # Pre-compute values related to wind and slope
     U_eff_max      = calc_max_effective_wind_speed(I_R)                         # ft/min
     B              = 0.02526 * (sigma_prime ** 0.54)
