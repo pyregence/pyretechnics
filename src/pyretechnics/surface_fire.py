@@ -119,10 +119,37 @@ def calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij):
 def calc_spread_rate(heat_source, heat_sink):
     return heat_source / heat_sink if (heat_sink > 0.0) else 0.0
 # surface-fire-spread-rate-no-wind-no-slope ends here
-# [[file:../../org/pyretechnics.org::surface-fire-residence-time][surface-fire-residence-time]]
+# [[file:../../org/pyretechnics.org::surface-fire-intensity-functions][surface-fire-intensity-functions]]
 def calc_residence_time(sigma_prime):
     return 384.0 / sigma_prime
-# surface-fire-residence-time ends here
+
+
+def calc_flame_depth(spread_rate, residence_time):
+    """
+    Returns the depth, or front-to-back distance, of the actively flaming zone
+    of a free-spreading fire in ft given:
+    - spread-rate (ft/min) orthogonal to the fireline.
+    - residence-time (min)
+    """
+    return spread_rate * residence_time
+
+
+def calc_fire_line_intensity(reaction_intensity, flame_depth):
+    """
+    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
+    - reaction-intensity (Btu/ft^2/min)
+    - flame-depth (ft)
+    """
+    return (reaction_intensity * flame_depth) / 60.0
+
+
+def calc_flame_length(fire_line_intensity):
+    """
+    Returns the average flame length in ft given:
+    - fire-line-intensity (Btu/ft/s)
+    """
+    return 0.45 * (fire_line_intensity ** 0.46)
+# surface-fire-intensity-functions ends here
 # [[file:../../org/pyretechnics.org::surface-fire-slope-factor-function][surface-fire-slope-factor-function]]
 def get_phi_S_fn(beta):
     if (beta > 0.0):
@@ -445,30 +472,3 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
     else:
         return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
 # rothermel-surface-fire-spread-max-and-any ends here
-# [[file:../../org/pyretechnics.org::surface-fire-intensity-formulas][surface-fire-intensity-formulas]]
-def anderson_flame_depth(spread_rate, residence_time):
-    """
-    Returns the depth, or front-to-back distance, of the actively flaming zone
-    of a free-spreading fire in ft given:
-    - spread-rate (ft/min) orthogonal to the fire line.
-    - residence-time (min)
-    """
-    return spread_rate * residence_time
-
-
-def byram_fire_line_intensity(reaction_intensity, flame_depth):
-    """
-    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
-    - reaction-intensity (Btu/ft^2/min)
-    - flame-depth (ft)
-    """
-    return (reaction_intensity * flame_depth) / 60.0
-
-
-def byram_flame_length(fire_line_intensity):
-    """
-    Returns the average flame length in ft given:
-    - fire-line-intensity (Btu/ft/s)
-    """
-    return 0.45 * (fire_line_intensity ** 0.46)
-# surface-fire-intensity-formulas ends here

@@ -93,9 +93,9 @@ def compute_max_in_situ_values(inputs, t, y, x):
         #       Consider ending this function here and making another function to compute the
         #       surface/crown values based on the provided perimeter spread direction.
         #=======================================================================================
-        max_flame_depth         = sf.anderson_flame_depth(max_surface_spread_rate, residence_time) # ft
-        max_surface_intensity   = Btu_ft_s_to_kW_m(sf.byram_fire_line_intensity(reaction_intensity,
-                                                                                max_flame_depth)) # kW/m
+        max_flame_depth         = sf.calc_flame_depth(max_surface_spread_rate, residence_time) # ft
+        max_surface_intensity   = Btu_ft_s_to_kW_m(sf.calc_fire_line_intensity(reaction_intensity,
+                                                                               max_flame_depth)) # kW/m
         # Check for Crown Fire Initiation
         if cf.van_wagner_crown_fire_initiation(canopy_cover,
                                                canopy_base_height,
@@ -121,7 +121,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity + max_crown_intensity # kW/m
-            max_flame_length      = ft_to_m(sf.byram_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
+            max_flame_length      = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
             # Return Fire Behavior Values
             return {
                 "max_spread_rate"        : max_spread_rate,      # m/min
@@ -133,7 +133,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
             }
         else:
             fire_type                = 1 # 1=surface
-            max_surface_flame_length = ft_to_m(sf.byram_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
+            max_surface_flame_length = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
             return {
                 "max_spread_rate"        : ft_to_m(max_surface_spread_rate), # m/min
                 "max_spread_direction"   : max_spread_direction,             # deg

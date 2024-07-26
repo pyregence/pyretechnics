@@ -1470,7 +1470,7 @@ fire science literature:
 - Surface Fire Spread: Rothermel 1972 with FIREMODS adjustments from Albini 1976
 - Crown Fire Initiation: Van Wagner 1977
 - Passive/Active Crown Fire Spread: Cruz 2005
-- Flame Length and Fire Line Intensity: Byram 1959
+- Flame Length and Fireline Intensity: Byram 1959
 - Midflame Wind Adjustment Factor: Albini & Baughman 1979 parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA according to Andrews 2012
 - Fire Spread on a Raster Grid: Morais 2001 (method of adaptive timesteps and fractional distances)
 - Spot Fire: Perryman 2013
@@ -2290,6 +2290,65 @@ def calc_spread_rate(heat_source, heat_sink):
     return heat_source / heat_sink if (heat_sink > 0.0) else 0.0
 #+end_src
 
+*** Surface Fire Intensity Functions
+
+Using these surface fire spread rate and reaction intensity values, we
+can now calculate surface fire intensity values by applying Anderson's
+flame depth formula and Byram's fireline intensity and flame length
+equations as described below.[fn::Anderson1969][fn::Byram1959]
+
+\begin{align}
+  t_{\text{res}} &= \frac{384}{\sigma'} \\
+  \nonumber \\
+  D_A &= R \, t_{\text{res}} \\
+  \nonumber \\
+  I_B &= \frac{I_R \, D_A}{60} \\
+  \nonumber \\
+  L_B &= 0.45(I_B)^{0.46}
+\end{align}
+
+where $\sigma'$ is the weighted sum by size class of the fuel model's
+surface area to volume ratio in $\text{ft}^2/\text{ft}^3$,
+$t_{\text{res}}$ is the residence time in $\text{minutes}$, $R$ is the
+surface fire spread rate in $\text{ft}/\text{min}$, $D_A$ is the flame
+depth in $\text{ft}$, $I_R$ is the reaction intensity in
+$\text{Btu}/\text{ft}^2/\text{min}$, $I_B$ is the fireline intensity
+in $\text{Btu}/\text{ft}/\text{s}$, and $L_B$ is the flame length in
+$\text{ft}$.
+
+#+name: surface-fire-intensity-functions
+#+begin_src python
+def calc_residence_time(sigma_prime):
+    return 384.0 / sigma_prime
+
+
+def calc_flame_depth(spread_rate, residence_time):
+    """
+    Returns the depth, or front-to-back distance, of the actively flaming zone
+    of a free-spreading fire in ft given:
+    - spread-rate (ft/min) orthogonal to the fireline.
+    - residence-time (min)
+    """
+    return spread_rate * residence_time
+
+
+def calc_fire_line_intensity(reaction_intensity, flame_depth):
+    """
+    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
+    - reaction-intensity (Btu/ft^2/min)
+    - flame-depth (ft)
+    """
+    return (reaction_intensity * flame_depth) / 60.0
+
+
+def calc_flame_length(fire_line_intensity):
+    """
+    Returns the average flame length in ft given:
+    - fire-line-intensity (Btu/ft/s)
+    """
+    return 0.45 * (fire_line_intensity ** 0.46)
+#+end_src
+
 *** Stored Auxiliary Values and Functions
 
 In order to compute the maximum spread rate, direction, and intensity
@@ -2299,14 +2358,6 @@ intermediate values and functions needed for this step based solely on
 the fuel bed characteristics already available to us with just a
 moisturized fuel model (see section [[Applying Fuel Moisture to a Fuel
 Model]]).
-
-**** Residence Time: $t_{\text{res}}$
-
-#+name: surface-fire-residence-time
-#+begin_src python
-def calc_residence_time(sigma_prime):
-    return 384.0 / sigma_prime
-#+end_src
 
 **** Slope Factor Function: $\tan(\theta_S) \mapsto \phi_S$
 
@@ -2710,57 +2761,6 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
         return max_spread_rate
     else:
         return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
-#+end_src
-
-Using these surface fire spread rate and reaction intensity values, we
-next calculate fire intensity values by applying Anderson's flame
-depth formula and Byram's fire line intensity and flame length
-equations as described below.[fn::Anderson1969][fn::Byram1959]
-
-\begin{align}
-  t_{\text{res}} &= \frac{384}{\sigma} \\
-  \nonumber \\
-  D &= R \, t_{\text{res}} \\
-  \nonumber \\
-  I &= \frac{I_R \, D}{60} \\
-  \nonumber \\
-  L &= 0.45(I)^{0.46}
-\end{align}
-
-where $\sigma$ is the weighted sum by size class of the fuel model's
-surface area to volume ratio in ft^{2}/ft^{3}, $t$ is the residence
-time in minutes, $R$ is the surface fire spread rate in ft/min, $D$ is
-the flame depth in ft, $I_{R}$ is the reaction intensity in
-Btu/ft^2/min, $I$ is the fire line intensity in Btu/ft/s, and $L$ is
-the flame length in ft.
-
-#+name: surface-fire-intensity-formulas
-#+begin_src python :tangle ../src/pyretechnics/surface_fire.py
-def anderson_flame_depth(spread_rate, residence_time):
-    """
-    Returns the depth, or front-to-back distance, of the actively flaming zone
-    of a free-spreading fire in ft given:
-    - spread-rate (ft/min) orthogonal to the fire line.
-    - residence-time (min)
-    """
-    return spread_rate * residence_time
-
-
-def byram_fire_line_intensity(reaction_intensity, flame_depth):
-    """
-    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
-    - reaction-intensity (Btu/ft^2/min)
-    - flame-depth (ft)
-    """
-    return (reaction_intensity * flame_depth) / 60.0
-
-
-def byram_flame_length(fire_line_intensity):
-    """
-    Returns the average flame length in ft given:
-    - fire-line-intensity (Btu/ft/s)
-    """
-    return 0.45 * (fire_line_intensity ** 0.46)
 #+end_src
 
 This concludes our coverage of the surface fire behavior equations
@@ -4132,9 +4132,9 @@ def compute_max_in_situ_values(inputs, t, y, x):
         #       Consider ending this function here and making another function to compute the
         #       surface/crown values based on the provided perimeter spread direction.
         #=======================================================================================
-        max_flame_depth         = sf.anderson_flame_depth(max_surface_spread_rate, residence_time) # ft
-        max_surface_intensity   = Btu_ft_s_to_kW_m(sf.byram_fire_line_intensity(reaction_intensity,
-                                                                                max_flame_depth)) # kW/m
+        max_flame_depth         = sf.calc_flame_depth(max_surface_spread_rate, residence_time) # ft
+        max_surface_intensity   = Btu_ft_s_to_kW_m(sf.calc_fire_line_intensity(reaction_intensity,
+                                                                               max_flame_depth)) # kW/m
         # Check for Crown Fire Initiation
         if cf.van_wagner_crown_fire_initiation(canopy_cover,
                                                canopy_base_height,
@@ -4160,7 +4160,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity + max_crown_intensity # kW/m
-            max_flame_length      = ft_to_m(sf.byram_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
+            max_flame_length      = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
             # Return Fire Behavior Values
             return {
                 "max_spread_rate"        : max_spread_rate,      # m/min
@@ -4172,7 +4172,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
             }
         else:
             fire_type                = 1 # 1=surface
-            max_surface_flame_length = ft_to_m(sf.byram_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
+            max_surface_flame_length = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
             return {
                 "max_spread_rate"        : ft_to_m(max_surface_spread_rate), # m/min
                 "max_spread_direction"   : max_spread_direction,             # deg
