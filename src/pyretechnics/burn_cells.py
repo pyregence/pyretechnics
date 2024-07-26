@@ -63,11 +63,9 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                    fuel_moisture_live_herbaceous,
                                    fuel_moisture_live_woody]
         moisturized_fuel_model  = moisturize(fuel_model, fuel_moisture)
-        # Baseline Surface Spread Rate, Residence Time, and Reaction Intensity
-        # TODO: Memoize rothermel_surface_fire_spread_no_wind_no_slope
-        surface_fire_min        = sf.rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model)
-        residence_time          = surface_fire_min["residence_time"] # min
-        reaction_intensity      = surface_fire_min["reaction_intensity"] # Btu/ft^2/min
+        # Baseline Surface Fire Behavior
+        # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
+        surface_fire_min        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
         # Midflame Wind Speed
         wind_speed_10m          = sqrt(wind_speed_10m_x ** 2.0 + wind_speed_10m_y ** 2.0) # m/min
         wind_speed_20ft         = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
@@ -76,7 +74,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                             m_to_ft(canopy_height),
                                                             canopy_cover) # unitless
         midflame_wind_speed     = m_to_ft(wind_speed_20ft * wind_adj_factor) # ft/min
-        # Max Surface Spread Rate/Direction and Surface Eccentricity
+        # Max Surface Fire Behavior
         spread_rate_adjustment  = fuel_spread_adjustment * weather_spread_adjustment # unitless
         surface_fire_max        = sf.rothermel_surface_fire_spread_max(surface_fire_min,
                                                                        midflame_wind_speed,
@@ -84,23 +82,21 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                                        slope,
                                                                        aspect,
                                                                        spread_rate_adjustment)
-        max_surface_spread_rate = surface_fire_max["max_spread_rate"] # ft/min
-        max_spread_direction    = surface_fire_max["max_spread_direction"] # deg
-        surface_eccentricity    = surface_fire_max["eccentricity"] # unitless
-        # Max Surface Intensity
+        max_surface_spread_rate      = surface_fire_max["max_spread_rate"] # ft/min
+        max_spread_direction         = surface_fire_max["max_spread_direction"] # deg
+        surface_eccentricity         = surface_fire_max["eccentricity"] # unitless
+        max_surface_intensity        = surface_fire_max["max_fireline_intensity"] # Btu/ft/s
+        max_surface_intensity_metric = Btu_ft_s_to_kW_m(max_surface_intensity) # kW/m
         #=======================================================================================
         # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
         #       Consider ending this function here and making another function to compute the
         #       surface/crown values based on the provided perimeter spread direction.
         #=======================================================================================
-        max_flame_depth         = sf.calc_flame_depth(max_surface_spread_rate, residence_time) # ft
-        max_surface_intensity   = Btu_ft_s_to_kW_m(sf.calc_fire_line_intensity(reaction_intensity,
-                                                                               max_flame_depth)) # kW/m
         # Check for Crown Fire Initiation
         if cf.van_wagner_crown_fire_initiation(canopy_cover,
                                                canopy_base_height,
                                                foliar_moisture,
-                                               max_surface_intensity):
+                                               max_surface_intensity_metric):
             # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
             max_crown_spread_rate = m_to_ft(cf.cruz_crown_fire_spread(m_min_to_km_hr(wind_speed_10m),
                                                                       canopy_bulk_density,
@@ -120,7 +116,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                                  Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
-            max_intensity         = max_surface_intensity + max_crown_intensity # kW/m
+            max_intensity         = max_surface_intensity_metric + max_crown_intensity # kW/m
             max_flame_length      = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_intensity))) # m
             # Return Fire Behavior Values
             return {
@@ -133,11 +129,11 @@ def compute_max_in_situ_values(inputs, t, y, x):
             }
         else:
             fire_type                = 1 # 1=surface
-            max_surface_flame_length = ft_to_m(sf.calc_flame_length(kW_m_to_Btu_ft_s(max_surface_intensity))) # m
+            max_surface_flame_length = ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
             return {
                 "max_spread_rate"        : ft_to_m(max_surface_spread_rate), # m/min
                 "max_spread_direction"   : max_spread_direction,             # deg
-                "max_fire_line_intensity": max_surface_intensity,            # kW/m
+                "max_fire_line_intensity": max_surface_intensity_metric,     # kW/m
                 "max_flame_length"       : max_surface_flame_length,         # m
                 "fire_type"              : fire_type,                        # 1=surface
                 "eccentricity"           : surface_eccentricity,             # unitless

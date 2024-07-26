@@ -150,6 +150,10 @@ def calc_flame_length(fire_line_intensity):
     """
     return 0.45 * (fire_line_intensity ** 0.46)
 # surface-fire-intensity-functions ends here
+# [[file:../../org/pyretechnics.org::surface-fire-max-effective-wind-speed][surface-fire-max-effective-wind-speed]]
+def calc_max_effective_wind_speed(reaction_intensity):
+    return 0.9 * reaction_intensity
+# surface-fire-max-effective-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-slope-factor-function][surface-fire-slope-factor-function]]
 def get_phi_S_fn(beta):
     if (beta > 0.0):
@@ -172,9 +176,8 @@ def get_wind_speed_fn(B, C, F):
     B_inverse = 1.0 / B
     return lambda phi_W: (phi_W * F_over_C) ** B_inverse
 # surface-fire-wind-speed-function ends here
-# [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-no-wind-no-slope][rothermel-surface-fire-spread-no-wind-no-slope]]
-# FIXME: Replace reaction_intensity and residence_time with fireline_intensity and max_wind_speed
-def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
+# [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
+def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     """
     Given a dictionary containing these keys:
     - delta [fuel depth (ft)]
@@ -191,13 +194,14 @@ def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     - g_ij  [percent of load per size class from Albini_1976_FIREMOD, page 20]
 
     return a dictionary containing these keys:
-    - base_spread_rate   (ft/min)
-    - reaction_intensity (Btu/ft^2/min)
-    - residence_time     (min)
-    - get_phi_S          (lambda: slope => phi_S)
-    - get_phi_W          (lambda: midflame_wind_speed => phi_W)
-    - get_wind_speed     (lambda: phi_W => midflame_wind_speed)
+    - base_spread_rate         (ft/min)
+    - base_fireline_intensity  (Btu/ft/s)
+    - max_effective_wind_speed (ft/min)
+    - get_phi_S                (lambda: slope => phi_S)
+    - get_phi_W                (lambda: midflame_wind_speed => phi_W)
+    - get_wind_speed           (lambda: phi_W => midflame_wind_speed)
     """
+    # Unpack fuel model values
     delta          = moisturized_fuel_model["delta"]
     w_o            = moisturized_fuel_model["w_o"]
     rho_p          = moisturized_fuel_model["rho_p"]
@@ -205,6 +209,7 @@ def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     M_f            = moisturized_fuel_model["M_f"]
     f_ij           = moisturized_fuel_model["f_ij"]
     f_i            = moisturized_fuel_model["f_i"]
+    # Calculate base spread rate (no wind, no slope)
     sigma_prime    = calc_surface_area_to_volume_ratio(f_i, f_ij, sigma)
     beta           = calc_packing_ratio(w_o, rho_p, delta)
     beta_op        = calc_optimum_packing_ratio(sigma_prime)
@@ -216,7 +221,12 @@ def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     Q_ig_ij        = calc_heat_of_preignition_distribution(M_f)                 # Btu/lb
     heat_sink      = calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij)      # Btu/ft^3
     R              = calc_spread_rate(heat_source, heat_sink)                   # ft/min
+    # Calculate base fireline intensity (no wind, no slope)
     t_res          = calc_residence_time(sigma_prime)                           # min
+    D_A            = calc_flame_depth(R, t_res)                                 # ft
+    I_B            = calc_fire_line_intensity(I_R, D_A)                         # Btu/ft/s
+    # Pre-compute values related to wind and slope
+    U_eff_max      = calc_max_effective_wind_speed(I_R)                         # ft/min
     B              = 0.02526 * (sigma_prime ** 0.54)
     C              = 7.47 * exp(-0.133 * (sigma_prime ** 0.55))
     E              = 0.715 * exp(-3.59 * (sigma_prime / 10000.0))
@@ -225,14 +235,14 @@ def rothermel_surface_fire_spread_no_wind_no_slope(moisturized_fuel_model):
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     return {
-        "base_spread_rate"  : R,
-        "reaction_intensity": I_R,
-        "residence_time"    : t_res,
-        "get_phi_S"         : get_phi_S,
-        "get_phi_W"         : get_phi_W,
-        "get_wind_speed"    : get_wind_speed,
+        "base_spread_rate"        : R,
+        "base_fireline_intensity" : I_B,
+        "max_effective_wind_speed": U_eff_max,
+        "get_phi_S"               : get_phi_S,
+        "get_phi_W"               : get_phi_W,
+        "get_wind_speed"          : get_wind_speed,
     }
-# rothermel-surface-fire-spread-no-wind-no-slope ends here
+# surface-fire-behavior-no-wind-no-slope ends here
 # [[file:../../org/pyretechnics.org::wind-adjustment-factor][wind-adjustment-factor]]
 from math import log, sqrt
 
@@ -446,16 +456,17 @@ def add_eccentricity(spread_properties):
 
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
+# FIXME: Return max_fireline_intensity
 def rothermel_surface_fire_spread_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                       slope, aspect, spread_rate_adjustment=1.0):
     spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
-    reaction_intensity = surface_fire_min["reaction_intensity"]
+    fireline_intensity = surface_fire_min["base_fireline_intensity"]
+    max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
     slope_direction    = (aspect + 180.0) % 360.0
     wind_to_direction  = (wind_from_direction + 180.0) % 360.0
-    max_wind_speed     = 0.9 * reaction_intensity
     phi_S              = get_phi_S(slope)
     phi_W              = get_phi_W(midflame_wind_speed)
     phi_max            = get_phi_W(max_wind_speed)
