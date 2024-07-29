@@ -2100,18 +2100,18 @@ where these terms have the meanings shown in Table
 
 #+name: tab:fire-spread-inputs
 #+caption: Inputs to Rothermel's surface fire rate of spread equation
-|------------+--------------------------------+-------------------------------------|
-| Term       | Description                    | Units                               |
-|------------+--------------------------------+-------------------------------------|
-| $R$        | surface fire spread rate       | $\text{ft}/\text{min}$              |
-| $I_R$      | reaction intensity             | $\text{Btu}/\text{ft}^2/\text{min}$ |
-| $\xi$      | propagating flux ratio         | $\text{unitless}$                   |
-| $\phi_W$   | wind factor                    | $\text{unitless}$                   |
-| $\phi_S$   | slope factor                   | $\text{unitless}$                   |
-| $\rho_b$   | oven-dry fuel bed bulk density | $\text{lb}/\text{ft}^3$             |
-| $\epsilon$ | effective heating number       | $\text{unitless}$                   |
-| $Q_{ig}$   | heat of preignition            | $\text{Btu}/\text{lb}$              |
-|------------+--------------------------------+-------------------------------------|
+|------------+--------------------------------+-------------------------------|
+| Term       | Description                    | Units                         |
+|------------+--------------------------------+-------------------------------|
+| $R$        | surface fire spread rate       | $\text{ft}/\min$              |
+| $I_R$      | reaction intensity             | $\text{Btu}/\text{ft}^2/\min$ |
+| $\xi$      | propagating flux ratio         | $\text{unitless}$             |
+| $\phi_W$   | wind factor                    | $\text{unitless}$             |
+| $\phi_S$   | slope factor                   | $\text{unitless}$             |
+| $\rho_b$   | oven-dry fuel bed bulk density | $\text{lb}/\text{ft}^3$       |
+| $\epsilon$ | effective heating number       | $\text{unitless}$             |
+| $Q_{ig}$   | heat of preignition            | $\text{Btu}/\text{lb}$        |
+|------------+--------------------------------+-------------------------------|
 
 *** Surface Fire Spread Rate Functions (No Wind No Slope)
 
@@ -2119,15 +2119,17 @@ In this section, Rothermel's surface fire spread rate equation will be
 computed without introducing the effects of wind or slope (i.e.,
 $\phi_W = \phi_S = 0$). In this case, the only necessary input is a
 moisturized fuel model (as created in section [[Applying Fuel Moisture
-to a Fuel Model]]). Thus, the functions here will focus on this
-simplified version of Rothermel's spread rate equation:
+to a Fuel Model]]). Thus, the functions below will focus on the
+no-wind-no-slope term $R_0$ defined as follows:
 
 \begin{align}
-  R_{\text{base}} = \frac{I_R \, \xi}{\rho_b \, \epsilon \, Q_{ig}}
+  R_0 &= \frac{I_R \, \xi}{\rho_b \, \epsilon \, Q_{ig}} \\
+  \nonumber \\
+  R &= R_0 \, (1 + \phi_W + \phi_S)
 \end{align}
 
 Each term will be defined in its own section, and finally they will be
-combined together in a single function that computes $R_{\text{base}}$.
+combined together in a single function that computes $R_0$.
 
 **** Module Imports
 
@@ -2282,7 +2284,7 @@ def calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij):
     return rho_b * effective_heat_of_preignition
 #+end_src
 
-**** Spread Rate (No Wind No Slope): $I_R \, \xi \, / \, \rho_b \, \epsilon \, Q_{ig}$
+**** Spread Rate (No Wind No Slope): $R_0$
 
 #+name: surface-fire-spread-rate-no-wind-no-slope
 #+begin_src python
@@ -2310,10 +2312,10 @@ equations as described below.[fn::Anderson1969][fn::Byram1959]
 where $\sigma'$ is the weighted sum by size class of the fuel model's
 surface area to volume ratio in $\text{ft}^2/\text{ft}^3$,
 $t_{\text{res}}$ is the residence time in $\text{minutes}$, $R$ is the
-surface fire spread rate in $\text{ft}/\text{min}$, $D_A$ is the flame
-depth in $\text{ft}$, $I_R$ is the reaction intensity in
-$\text{Btu}/\text{ft}^2/\text{min}$, $I_B$ is the fireline intensity
-in $\text{Btu}/\text{ft}/\text{s}$, and $L_B$ is the flame length in
+surface fire spread rate in $\text{ft}/\min$, $D_A$ is the flame depth
+in $\text{ft}$, $I_R$ is the reaction intensity in
+$\text{Btu}/\text{ft}^2/\min$, $I_B$ is the fireline intensity in
+$\text{Btu}/\text{ft}/\text{s}$, and $L_B$ is the flame length in
 $\text{ft}$.
 
 #+name: surface-fire-intensity-functions
@@ -2369,13 +2371,17 @@ the fuel bed characteristics already available to us with just a
 moisturized fuel model (see section [[Applying Fuel Moisture to a Fuel
 Model]]).
 
-**** Max Effective Wind Speed: $U_{\text{eff}}^{\text{max}}$
+**** Max Effective Wind Speed: $U_{\text{eff}}^{\max}$
 
 The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
 $U_{\text{eff}}$. Following the recommendations given in Appendix III
-of Albini 1976, these midflame wind speeds are all limited to $0.9
-I_R$.[fn::Albini1976]
+of Albini 1976, these midflame wind speeds are all limited by the
+reaction intensity $I_R$ as follows:[fn::Albini1976]
+
+\begin{align}
+  U_{\text{eff}}^{\max} = 0.9 \, I_R
+\end{align}
 
 #+name: surface-fire-max-effective-wind-speed
 #+begin_src python
@@ -2464,10 +2470,10 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     epsilon_ij     = calc_effective_heating_number_distribution(sigma)
     Q_ig_ij        = calc_heat_of_preignition_distribution(M_f)                 # Btu/lb
     heat_sink      = calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij)      # Btu/ft^3
-    R              = calc_spread_rate(heat_source, heat_sink)                   # ft/min
+    R0             = calc_spread_rate(heat_source, heat_sink)                   # ft/min
     # Calculate base fireline intensity (no wind, no slope)
     t_res          = calc_residence_time(sigma_prime)                           # min
-    D_A            = calc_flame_depth(R, t_res)                                 # ft
+    D_A            = calc_flame_depth(R0, t_res)                                # ft
     I_B            = calc_fireline_intensity(I_R, D_A)                          # Btu/ft/s
     # Pre-compute values related to wind and slope
     U_eff_max      = calc_max_effective_wind_speed(I_R)                         # ft/min
@@ -2479,7 +2485,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     return {
-        "base_spread_rate"        : R,
+        "base_spread_rate"        : R0,
         "base_fireline_intensity" : I_B,
         "max_effective_wind_speed": U_eff_max,
         "get_phi_S"               : get_phi_S,
@@ -2551,17 +2557,16 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     return wind_speed_20ft * wind_adj_factor
 #+end_src
 
-*** Surface Fire Spread Rate with Wind and Slope
+*** Surface Fire Behavior in the Direction of Maximum Spread
 
-Later, this no-wind-no-slope value is used to compute the maximum
-spread rate and direction for the leading edge of the surface fire
-under analysis. Since Rothermel's original equations assume that the
-wind direction and slope are aligned, the effects of cross-slope winds
-must be taken into effect. To accomplish this, Pyretechnics implements
-the vector addition procedure defined in Rothermel 1983 that combines
-the wind-only and slope-only spread rates independently to calculate
-the effective fire spread direction and magnitude.[fn::Rothermel1983]
-
+The no-wind-no-slope spread rate is used to compute the maximum spread
+rate and direction for the leading edge of the surface fire under
+analysis. Since Rothermel's original equations assume that the wind
+direction and slope are aligned, the effects of cross-slope winds must
+be taken into effect. To accomplish this, Pyretechnics implements the
+vector addition procedure defined in Rothermel 1983 that combines the
+wind-only and slope-only spread rates independently to calculate the
+effective fire spread direction and magnitude.[fn::Rothermel1983]
 
 Next, the effective wind speed is used to compute the length to width
 ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
@@ -2575,20 +2580,27 @@ Here are the formulas used:
 \begin{align}
   \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
   \nonumber \\
-  E &= \frac{\sqrt{(\frac{L}{W})^{2} - 1}}{\frac{L}{W}} \\
+  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}} \\
   \nonumber \\
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align}
 
-where $U_{eff}$ is the effective wind speed in mph, $\theta$ is the
-angular offset from the direction of maximum fire spread, $R_{max}$ is
-the maximum spread rate, and $R_{\theta}$ is the spread rate in
-direction $\theta$.
+where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$,
+$\theta$ is the angular offset from the direction of maximum fire
+spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$ is the
+spread rate in direction $\theta$.
 
-#+name: rothermel-surface-fire-spread-max-and-any
-#+begin_src python :tangle ../src/pyretechnics/surface_fire.py
+Although, Rothermel 1972 defines a maximum effective wind speed, above
+which the predicted spread rate remains constant, a 2013 publication
+by Andrews et al recommends instead that this wind limit not be
+imposed, in order to avoid possible spread rate
+underprediction.[fn::Rothermel1972][fn::Andrews2013]
+
+#+name: surface-fire-behavior-max
+#+begin_src python
 from math import sin, cos, asin, exp, sqrt, radians, degrees
 from pyretechnics.conversion import fpm_to_mph
+
 
 def almost_zero(x):
     return abs(x) < 0.000001
@@ -2603,7 +2615,7 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, slope_direction):
+def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, upslope_direction):
     if almost_zero(slope):
         if almost_zero(midflame_wind_speed):
             return "no_wind_no_slope"
@@ -2611,7 +2623,7 @@ def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, slop
             return "wind_only"
     elif almost_zero(midflame_wind_speed):
         return "slope_only"
-    elif smallest_angle_between(wind_to_direction, slope_direction) < 15.0:
+    elif smallest_angle_between(wind_to_direction, upslope_direction) < 15.0:
         return "wind_blows_upslope"
     else:
         return "wind_blows_across_slope"
@@ -2635,19 +2647,19 @@ def spread_info_max_wind_only(spread_rate, phi_W, midflame_wind_speed, wind_to_d
     }
 
 
-def spread_info_max_slope_only(spread_rate, phi_S, slope_direction, get_wind_speed):
+def spread_info_max_slope_only(spread_rate, phi_S, upslope_direction, get_wind_speed):
     return {
         "max_spread_rate"     : spread_rate * (1.0 + phi_S),
-        "max_spread_direction": slope_direction,
+        "max_spread_direction": upslope_direction,
         "effective_wind_speed": get_wind_speed(phi_S),
         "eccentricity"        : 0.0,
     }
 
 
-def spread_info_max_wind_blows_upslope(spread_rate, phi_combined, slope_direction, get_wind_speed):
+def spread_info_max_wind_blows_upslope(spread_rate, phi_combined, upslope_direction, get_wind_speed):
     return {
         "max_spread_rate"     : spread_rate * (1.0 + phi_combined),
-        "max_spread_direction": slope_direction,
+        "max_spread_direction": upslope_direction,
         "effective_wind_speed": get_wind_speed(phi_combined),
         "eccentricity"        : 0.0,
     }
@@ -2666,10 +2678,10 @@ def get_offset_prime(x, y, offset):
 
 
 def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
-                                            slope_direction, get_wind_speed):
+                                            upslope_direction, get_wind_speed):
     wind_magnitude     = spread_rate * phi_W
     slope_magnitude    = spread_rate * phi_S
-    difference_angle   = radians((wind_to_direction - slope_direction) % 360.0)
+    difference_angle   = radians((wind_to_direction - upslope_direction) % 360.0)
     x                  = slope_magnitude + wind_magnitude * cos(difference_angle)
     y                  = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x * x + y * y)
@@ -2685,7 +2697,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
         phi_combined         = (max_spread_rate / spread_rate) - 1.0
         offset               = degrees(asin(abs(y) / combined_magnitude))
         offset_prime         = get_offset_prime(x, y, offset)
-        max_spread_direction = (slope_direction + offset_prime) % 360.0
+        max_spread_direction = (upslope_direction + offset_prime) % 360.0
         effective_wind_speed = get_wind_speed(phi_combined)
         return {
             "max_spread_rate"     : max_spread_rate,
@@ -2696,19 +2708,19 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
 
 
 def get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind_speed,
-                        wind_to_direction, slope_direction, get_wind_speed):
+                        wind_to_direction, upslope_direction, get_wind_speed):
     match spread_drivers:
         case "no_wind_no_slope":
             return spread_info_max_no_wind_no_slope(spread_rate)
         case "wind_only":
             return spread_info_max_wind_only(spread_rate, phi_W, midflame_wind_speed, wind_to_direction)
         case "slope_only":
-            return spread_info_max_slope_only(spread_rate, phi_S, slope_direction, get_wind_speed)
+            return spread_info_max_slope_only(spread_rate, phi_S, upslope_direction, get_wind_speed)
         case "wind_blows_upslope":
-            return spread_info_max_wind_blows_upslope(spread_rate, (phi_W + phi_S), slope_direction, get_wind_speed)
+            return spread_info_max_wind_blows_upslope(spread_rate, (phi_W + phi_S), upslope_direction, get_wind_speed)
         case "wind_blows_across_slope":
             return spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
-                                                           slope_direction, get_wind_speed)
+                                                           upslope_direction, get_wind_speed)
 
 
 def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, phi_max):
@@ -2776,24 +2788,37 @@ def add_eccentricity(spread_properties):
     return spread_properties
 
 
+def opposite_direction(angle):
+    return (angle + 180.0) % 360.0
+
+
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 # FIXME: Return max_fireline_intensity
-def rothermel_surface_fire_spread_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
-                                      slope, aspect, spread_rate_adjustment=1.0):
+def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
+                                   slope, aspect, spread_rate_adjustment=1.0, use_wind_limit=True):
+    """
+    surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
+    midflame_wind_speed    :: ft/min
+    wind_from_direction    :: degrees clockwise from North
+    slope                  :: rise/run
+    aspect                 :: degrees clockwise from North
+    spread_rate_adjustment :: unitless float (1.0 for no adjustment)
+    use_wind_limit         :: boolean
+    """
     spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
     fireline_intensity = surface_fire_min["base_fireline_intensity"]
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
-    slope_direction    = (aspect + 180.0) % 360.0
-    wind_to_direction  = (wind_from_direction + 180.0) % 360.0
+    upslope_direction  = opposite_direction(aspect)
+    wind_to_direction  = opposite_direction(wind_from_direction)
     phi_S              = get_phi_S(slope)
     phi_W              = get_phi_W(midflame_wind_speed)
     phi_max            = get_phi_W(max_wind_speed)
-    spread_drivers     = determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, slope_direction)
+    spread_drivers     = determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, upslope_direction)
     spread_info_max    = get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind_speed,
-                                             wind_to_direction, slope_direction, get_wind_speed)
+                                             wind_to_direction, upslope_direction, get_wind_speed)
     return add_eccentricity(scale_spread_to_max_wind_speed(spread_info_max, spread_rate, max_wind_speed, phi_max))
 
 
@@ -3010,9 +3035,9 @@ rate to any point along the fire front. Here are the formulas used:
   R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
 \end{align}
 
-where $\theta$ is the angular offset from the direction of maximum fire
-spread, $R_{max}$ is the maximum spread rate, and $R_{\theta}$ is the
-spread rate in direction $\theta$.
+where $\theta$ is the angular offset from the direction of maximum
+fire spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$
+is the spread rate in direction $\theta$.
 
 #+name: crown-eccentricity
 #+begin_src python :tangle ../src/pyretechnics/crown_fire.py
@@ -3276,7 +3301,7 @@ $B(r)$ as follows:
 \begin{align}
   r &= \frac{\delta\phi_{\text{up}}}{\delta\phi_{\text{loc}}} \\
   \nonumber \\
-  B(r) &= \text{max}(0, \text{min}(2r, 1), \text{min}(r, 2))
+  B(r) &= \max(0, \min(2r, 1), \min(r, 2))
 \end{align}
 
 #+name: superbee-flux-limiter
@@ -4157,12 +4182,12 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                               canopy_cover) # ft/min
         # Max Surface Fire Behavior
         spread_rate_adjustment  = fuel_spread_adjustment * weather_spread_adjustment # unitless
-        surface_fire_max        = sf.rothermel_surface_fire_spread_max(surface_fire_min,
-                                                                       midflame_wind_speed,
-                                                                       wind_from_direction,
-                                                                       slope,
-                                                                       aspect,
-                                                                       spread_rate_adjustment)
+        surface_fire_max        = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                                    midflame_wind_speed,
+                                                                    wind_from_direction,
+                                                                    slope,
+                                                                    aspect,
+                                                                    spread_rate_adjustment)
         max_surface_spread_rate      = surface_fire_max["max_spread_rate"] # ft/min
         max_spread_direction         = surface_fire_max["max_spread_direction"] # deg
         surface_eccentricity         = surface_fire_max["eccentricity"] # unitless

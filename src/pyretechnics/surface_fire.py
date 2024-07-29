@@ -220,10 +220,10 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     epsilon_ij     = calc_effective_heating_number_distribution(sigma)
     Q_ig_ij        = calc_heat_of_preignition_distribution(M_f)                 # Btu/lb
     heat_sink      = calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij)      # Btu/ft^3
-    R              = calc_spread_rate(heat_source, heat_sink)                   # ft/min
+    R0             = calc_spread_rate(heat_source, heat_sink)                   # ft/min
     # Calculate base fireline intensity (no wind, no slope)
     t_res          = calc_residence_time(sigma_prime)                           # min
-    D_A            = calc_flame_depth(R, t_res)                                 # ft
+    D_A            = calc_flame_depth(R0, t_res)                                # ft
     I_B            = calc_fireline_intensity(I_R, D_A)                          # Btu/ft/s
     # Pre-compute values related to wind and slope
     U_eff_max      = calc_max_effective_wind_speed(I_R)                         # ft/min
@@ -235,7 +235,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     return {
-        "base_spread_rate"        : R,
+        "base_spread_rate"        : R0,
         "base_fireline_intensity" : I_B,
         "max_effective_wind_speed": U_eff_max,
         "get_phi_S"               : get_phi_S,
@@ -277,9 +277,10 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
-# [[file:../../org/pyretechnics.org::rothermel-surface-fire-spread-max-and-any][rothermel-surface-fire-spread-max-and-any]]
+# [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 from math import sin, cos, asin, exp, sqrt, radians, degrees
 from pyretechnics.conversion import fpm_to_mph
+
 
 def almost_zero(x):
     return abs(x) < 0.000001
@@ -294,7 +295,7 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, slope_direction):
+def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, upslope_direction):
     if almost_zero(slope):
         if almost_zero(midflame_wind_speed):
             return "no_wind_no_slope"
@@ -302,7 +303,7 @@ def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, slop
             return "wind_only"
     elif almost_zero(midflame_wind_speed):
         return "slope_only"
-    elif smallest_angle_between(wind_to_direction, slope_direction) < 15.0:
+    elif smallest_angle_between(wind_to_direction, upslope_direction) < 15.0:
         return "wind_blows_upslope"
     else:
         return "wind_blows_across_slope"
@@ -326,19 +327,19 @@ def spread_info_max_wind_only(spread_rate, phi_W, midflame_wind_speed, wind_to_d
     }
 
 
-def spread_info_max_slope_only(spread_rate, phi_S, slope_direction, get_wind_speed):
+def spread_info_max_slope_only(spread_rate, phi_S, upslope_direction, get_wind_speed):
     return {
         "max_spread_rate"     : spread_rate * (1.0 + phi_S),
-        "max_spread_direction": slope_direction,
+        "max_spread_direction": upslope_direction,
         "effective_wind_speed": get_wind_speed(phi_S),
         "eccentricity"        : 0.0,
     }
 
 
-def spread_info_max_wind_blows_upslope(spread_rate, phi_combined, slope_direction, get_wind_speed):
+def spread_info_max_wind_blows_upslope(spread_rate, phi_combined, upslope_direction, get_wind_speed):
     return {
         "max_spread_rate"     : spread_rate * (1.0 + phi_combined),
-        "max_spread_direction": slope_direction,
+        "max_spread_direction": upslope_direction,
         "effective_wind_speed": get_wind_speed(phi_combined),
         "eccentricity"        : 0.0,
     }
@@ -357,10 +358,10 @@ def get_offset_prime(x, y, offset):
 
 
 def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
-                                            slope_direction, get_wind_speed):
+                                            upslope_direction, get_wind_speed):
     wind_magnitude     = spread_rate * phi_W
     slope_magnitude    = spread_rate * phi_S
-    difference_angle   = radians((wind_to_direction - slope_direction) % 360.0)
+    difference_angle   = radians((wind_to_direction - upslope_direction) % 360.0)
     x                  = slope_magnitude + wind_magnitude * cos(difference_angle)
     y                  = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x * x + y * y)
@@ -376,7 +377,7 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
         phi_combined         = (max_spread_rate / spread_rate) - 1.0
         offset               = degrees(asin(abs(y) / combined_magnitude))
         offset_prime         = get_offset_prime(x, y, offset)
-        max_spread_direction = (slope_direction + offset_prime) % 360.0
+        max_spread_direction = (upslope_direction + offset_prime) % 360.0
         effective_wind_speed = get_wind_speed(phi_combined)
         return {
             "max_spread_rate"     : max_spread_rate,
@@ -387,19 +388,19 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
 
 
 def get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind_speed,
-                        wind_to_direction, slope_direction, get_wind_speed):
+                        wind_to_direction, upslope_direction, get_wind_speed):
     match spread_drivers:
         case "no_wind_no_slope":
             return spread_info_max_no_wind_no_slope(spread_rate)
         case "wind_only":
             return spread_info_max_wind_only(spread_rate, phi_W, midflame_wind_speed, wind_to_direction)
         case "slope_only":
-            return spread_info_max_slope_only(spread_rate, phi_S, slope_direction, get_wind_speed)
+            return spread_info_max_slope_only(spread_rate, phi_S, upslope_direction, get_wind_speed)
         case "wind_blows_upslope":
-            return spread_info_max_wind_blows_upslope(spread_rate, (phi_W + phi_S), slope_direction, get_wind_speed)
+            return spread_info_max_wind_blows_upslope(spread_rate, (phi_W + phi_S), upslope_direction, get_wind_speed)
         case "wind_blows_across_slope":
             return spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
-                                                           slope_direction, get_wind_speed)
+                                                           upslope_direction, get_wind_speed)
 
 
 def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, phi_max):
@@ -467,24 +468,37 @@ def add_eccentricity(spread_properties):
     return spread_properties
 
 
+def opposite_direction(angle):
+    return (angle + 180.0) % 360.0
+
+
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 # FIXME: Return max_fireline_intensity
-def rothermel_surface_fire_spread_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
-                                      slope, aspect, spread_rate_adjustment=1.0):
+def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
+                                   slope, aspect, spread_rate_adjustment=1.0, use_wind_limit=True):
+    """
+    surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
+    midflame_wind_speed    :: ft/min
+    wind_from_direction    :: degrees clockwise from North
+    slope                  :: rise/run
+    aspect                 :: degrees clockwise from North
+    spread_rate_adjustment :: unitless float (1.0 for no adjustment)
+    use_wind_limit         :: boolean
+    """
     spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
     fireline_intensity = surface_fire_min["base_fireline_intensity"]
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
-    slope_direction    = (aspect + 180.0) % 360.0
-    wind_to_direction  = (wind_from_direction + 180.0) % 360.0
+    upslope_direction  = opposite_direction(aspect)
+    wind_to_direction  = opposite_direction(wind_from_direction)
     phi_S              = get_phi_S(slope)
     phi_W              = get_phi_W(midflame_wind_speed)
     phi_max            = get_phi_W(max_wind_speed)
-    spread_drivers     = determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, slope_direction)
+    spread_drivers     = determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, upslope_direction)
     spread_info_max    = get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind_speed,
-                                             wind_to_direction, slope_direction, get_wind_speed)
+                                             wind_to_direction, upslope_direction, get_wind_speed)
     return add_eccentricity(scale_spread_to_max_wind_speed(spread_info_max, spread_rate, max_wind_speed, phi_max))
 
 
@@ -494,4 +508,4 @@ def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spr
         return max_spread_rate
     else:
         return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
-# rothermel-surface-fire-spread-max-and-any ends here
+# surface-fire-behavior-max ends here

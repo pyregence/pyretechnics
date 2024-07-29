@@ -76,12 +76,12 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                               canopy_cover) # ft/min
         # Max Surface Fire Behavior
         spread_rate_adjustment  = fuel_spread_adjustment * weather_spread_adjustment # unitless
-        surface_fire_max        = sf.rothermel_surface_fire_spread_max(surface_fire_min,
-                                                                       midflame_wind_speed,
-                                                                       wind_from_direction,
-                                                                       slope,
-                                                                       aspect,
-                                                                       spread_rate_adjustment)
+        surface_fire_max        = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                                    midflame_wind_speed,
+                                                                    wind_from_direction,
+                                                                    slope,
+                                                                    aspect,
+                                                                    spread_rate_adjustment)
         max_surface_spread_rate      = surface_fire_max["max_spread_rate"] # ft/min
         max_spread_direction         = surface_fire_max["max_spread_direction"] # deg
         surface_eccentricity         = surface_fire_max["eccentricity"] # unitless
