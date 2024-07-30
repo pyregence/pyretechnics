@@ -2430,26 +2430,26 @@ def get_wind_speed_fn(B, C, F):
 def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     """
     Given a dictionary containing these keys:
-    - delta [fuel depth (ft)]
-    - w_o   [ovendry fuel loading (lb/ft^2)]
-    - rho_p [ovendry particle density (lb/ft^3)]
-    - sigma [fuel particle surface-area-to-volume ratio (ft^2/ft^3)]
-    - h     [fuel particle low heat content (Btu/lb)]
-    - S_T   [fuel particle total mineral content (lb minerals/lb ovendry wood)]
-    - S_e   [fuel particle effective mineral content (lb silica-free minerals/lb ovendry wood)]
-    - M_x   [fuel particle moisture of extinction (lb moisture/lb ovendry wood)]
-    - M_f   [fuel particle moisture content (lb moisture/lb ovendry wood)]
-    - f_ij  [percent of load per size class (%)]
-    - f_i   [percent of load per category (%)]
-    - g_ij  [percent of load per size class from Albini_1976_FIREMOD, page 20]
+    - delta :: ft                                      (fuel depth)
+    - w_o   :: lb/ft^2                                 (ovendry fuel loading)
+    - rho_p :: lb/ft^3                                 (ovendry particle density)
+    - sigma :: ft^2/ft^3                               (fuel particle surface-area-to-volume ratio)
+    - h     :: Btu/lb                                  (fuel particle low heat content)
+    - S_T   :: lb minerals/lb ovendry wood             (fuel particle total mineral content)
+    - S_e   :: lb silica-free minerals/lb ovendry wood (fuel particle effective mineral content)
+    - M_x   :: lb moisture/lb ovendry wood             (fuel particle moisture of extinction)
+    - M_f   :: lb moisture/lb ovendry wood             (fuel particle moisture content)
+    - f_ij  :: %                                       (percent of load per size class)
+    - f_i   :: %                                       (percent of load per category)
+    - g_ij  :: %                                       (percent of load per size class - Albini_1976_FIREMOD, page 20)
 
     return a dictionary containing these keys:
-    - base_spread_rate         (ft/min)
-    - base_fireline_intensity  (Btu/ft/s)
-    - max_effective_wind_speed (ft/min)
-    - get_phi_S                (lambda: slope => phi_S)
-    - get_phi_W                (lambda: midflame_wind_speed => phi_W)
-    - get_wind_speed           (lambda: phi_W => midflame_wind_speed)
+    - base_spread_rate         :: ft/min
+    - base_fireline_intensity  :: Btu/ft/s
+    - max_effective_wind_speed :: ft/min
+    - get_phi_S                :: lambda: slope => phi_S
+    - get_phi_W                :: lambda: midflame_wind_speed => phi_W
+    - get_wind_speed           :: lambda: phi_W => midflame_wind_speed
     """
     # Unpack fuel model values
     delta          = moisturized_fuel_model["delta"]
@@ -2730,34 +2730,56 @@ def opposite_direction(angle):
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, spread_rate_adjustment=1.0, use_wind_limit=True):
     """
-    surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
-    midflame_wind_speed    :: ft/min
-    wind_from_direction    :: degrees clockwise from North
-    slope                  :: rise/run
-    aspect                 :: degrees clockwise from North
-    spread_rate_adjustment :: unitless float (1.0 for no adjustment)
-    use_wind_limit         :: boolean
+    Given these inputs:
+    - surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
+      - base_spread_rate         :: ft/min
+      - base_fireline_intensity  :: Btu/ft/s
+      - max_effective_wind_speed :: ft/min
+      - get_phi_S                :: lambda: slope => phi_S
+      - get_phi_W                :: lambda: midflame_wind_speed => phi_W
+      - get_wind_speed           :: lambda: phi_W => midflame_wind_speed
+    - midflame_wind_speed    :: ft/min
+    - wind_from_direction    :: degrees clockwise from North
+    - slope                  :: rise/run
+    - aspect                 :: degrees clockwise from North
+    - spread_rate_adjustment :: unitless float (1.0 for no adjustment)
+    - use_wind_limit         :: boolean
+
+    return a dictionary containing these keys:
+    - max_spread_rate        :: ft/min
+    - max_spread_direction   :: degrees clockwise from North
+    - max_fireline_intensity :: Btu/ft/s
+    - effective_wind_speed   :: ft/min
+    - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
+    # Unpack no-wind-no-slope surface fire values
     spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
     fireline_intensity = surface_fire_min["base_fireline_intensity"] * spread_rate_adjustment
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
+    # Prepare wind and slope vectors
     phi_W              = get_phi_W(midflame_wind_speed)
     phi_S              = get_phi_S(slope)
     wind_to_direction  = opposite_direction(wind_from_direction)
     upslope_direction  = opposite_direction(aspect)
+    # Combine wind and slope vectors
     combined_vector    = combine_wind_and_slope_vectors(phi_W, wind_to_direction, phi_S, upslope_direction)
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
-    spread_info_max    = {
+    # Calculate surface fire behavior in the max spread direction
+    spread_properties  = {
         "max_spread_rate"       : spread_rate * (1 + combined_magnitude),
         "max_spread_direction"  : combined_direction,
         "max_fireline_intensity": fireline_intensity * (1 + combined_magnitude),
         "effective_wind_speed"  : get_wind_speed(combined_magnitude),
     }
-    return add_eccentricity(scale_spread_to_max_wind_speed(spread_info_max, spread_rate, max_wind_speed, get_phi_W))
+    # Apply effective wind speed limit if used
+    scaled_spread_properties = scale_spread_to_max_wind_speed(spread_properties, spread_rate,
+                                                              max_wind_speed, get_phi_W)
+    # Calculate eccentricity
+    return add_eccentricity(scaled_spread_properties)
 
 
 def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):
