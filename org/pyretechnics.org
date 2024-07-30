@@ -2844,6 +2844,20 @@ fire behavior metrics are incorporated into our model.
    :header-args:python+: :exports both
    :END:
 
+In the following sections, we will demonstrate how to calculate the
+no-wind-no-slope and max spread direction surface fire behavior values
+given a fuel model and measurements of fuel moisture, wind speed, wind
+direction, slope, and aspect. Because wind speed and direction will
+often be provided from measurements taken 10m or 20ft above the canopy
+and may be given in either cartesion =(x,y)= or azimuthal
+=(r,azimuth)= coordinates, we also demonstrate how to convert from
+cartesian to azimuthal coordinates, from 10m to 20ft wind speeds, and
+from 20ft to midflame wind speeds, given a fuel model and measurements
+of canopy height and canopy cover.
+
+See Appendix [[Units Conversion Functions (pyretechnics.conversion)]] for
+the full list of available conversion functions.
+
 *** How to Calculate the No-Wind-No-Slope Surface Fire Behavior
 
 #+name: compute-surface-fire-min
@@ -2881,9 +2895,9 @@ pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_inte
 :  'base_spread_rate': 0.4146278037453475,
 :  'max_effective_wind_speed': 360.16497623341843}
 
-*** How to Translate the 20-ft Wind Speed Vector into the Midflame Wind Speed Vector
+*** How to Translate the 10m Wind Speed Vector into the Midflame Wind Speed Vector
 
-#+name: translate-20ft-wind-to-midflame-wind
+#+name: translate-10m-wind-to-midflame-wind
 #+begin_src python
 import pyretechnics.conversion as conv
 import pyretechnics.fuel_models as fm
@@ -2908,14 +2922,14 @@ midflame_wind_speed = sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft),
                                                   canopy_cover)                  # 0-1
 
 # View results
-print("Midflame Wind Speed and Direction for 10m Wind Speed = (100,100) m/min\n"
+print("Midflame Wind Speed and Direction for 10m Wind Speed = (100 m/min, 100 m/min)\n"
       + " with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%\n"
       + "- Speed: " + str(midflame_wind_speed) + " (ft/min)\n"
       + "- Direction: " + str(wind_from_direction) + " (degrees clockwise from North)")
 #+end_src
 
-#+RESULTS: translate-20ft-wind-to-midflame-wind
-: Midflame Wind Speed and Direction for 10m Wind Speed = (100,100) m/min
+#+RESULTS: translate-10m-wind-to-midflame-wind
+: Midflame Wind Speed and Direction for 10m Wind Speed = (100 m/min, 100 m/min)
 :  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
 : - Speed: 37.89648948678061 (ft/min)
 : - Direction: 45.0 (degrees clockwise from North)
