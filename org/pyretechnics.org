@@ -2909,7 +2909,7 @@ moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
 # Calculate no-wind-no-slope surface fire behavior
 surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
 
-# Calculate surface fire behavior in the direction of maximum spread
+# Calculate surface fire behavior in the direction of maximum spread with effective wind speed limit
 surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      midflame_wind_speed,
                                                      wind_from_direction,
@@ -2917,17 +2917,40 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      aspect)
 
 # View results
-print("Surface Fire Behavior Max for Fuel Model GR1 with Fuel Moisture = " + str(moisturized_fuel_model["M_f"]))
+print("Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = "
+      + str(moisturized_fuel_model["M_f"]))
 pprint(surface_fire_max)
+
+# Calculate surface fire behavior in the direction of maximum spread without effective wind speed limit
+surface_fire_max_unlimited = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                               midflame_wind_speed,
+                                                               wind_from_direction,
+                                                               slope,
+                                                               aspect,
+                                                               use_wind_limit=False)
+
+# View results
+print("\nSurface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = "
+      + str(moisturized_fuel_model["M_f"]))
+pprint(surface_fire_max_unlimited)
 #+end_src
 
 #+RESULTS: compute-surface-fire-max
-: Surface Fire Behavior Max for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-: {'eccentricity': 0.8693098652160023,
-:  'effective_wind_speed': 360.16497623341843,
-:  'max_fireline_intensity': 9.396739630785342,
-:  'max_spread_direction': 37.394603946280256,
-:  'max_spread_rate': 7.534709026168767}
+#+begin_example
+Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+{'eccentricity': 0.8693098652160023,
+ 'effective_wind_speed': 360.16497623341843,
+ 'max_fireline_intensity': 9.396739630785342,
+ 'max_spread_direction': 37.394603946280256,
+ 'max_spread_rate': 7.534709026168767}
+
+Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+{'eccentricity': 0.9128128849183105,
+ 'effective_wind_speed': 509.94641042930925,
+ 'max_fireline_intensity': 15.755835875023477,
+ 'max_spread_direction': 37.394603946280256,
+ 'max_spread_rate': 12.633705247449885}
+#+end_example
 
 * [WIP] Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
