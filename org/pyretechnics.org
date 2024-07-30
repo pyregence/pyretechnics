@@ -2843,6 +2843,92 @@ fire behavior metrics are incorporated into our model.
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
+
+*** How to Calculate the No-Wind-No-Slope Surface Fire Behavior
+
+#+name: compute-surface-fire-min
+#+begin_src python
+from pprint import pprint
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+
+# Set input parameters
+fuel_model    = fm.fuel_model_table.get(101) # GR1
+fuel_moisture = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.90, # live_herbaceous
+    0.60, # live_woody
+]
+
+# Apply fuel moisture to fuel model
+moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
+
+# Calculate no-wind-no-slope surface fire behavior
+surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+
+# View results
+print("No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
+      + str(moisturized_fuel_model["M_f"]))
+pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_intensity", "max_effective_wind_speed"]})
+#+end_src
+
+#+RESULTS: compute-surface-fire-min
+: No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+: {'base_fireline_intensity': 0.5170935602088539,
+:  'base_spread_rate': 0.4146278037453475,
+:  'max_effective_wind_speed': 360.16497623341843}
+
+*** How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread
+
+#+name: compute-surface-fire-max
+#+begin_src python
+from pprint import pprint
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+
+# Set input parameters
+fuel_model    = fm.fuel_model_table.get(101) # GR1
+fuel_moisture = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.90, # live_herbaceous
+    0.60, # live_woody
+]
+midflame_wind_speed = 500.0 # ft/min
+wind_from_direction = 215.0 # degrees clockwise from North
+slope               = 0.2   # rise/run
+aspect              = 270.0 # degrees clockwise from North
+
+# Apply fuel moisture to fuel model
+moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
+
+# Calculate no-wind-no-slope surface fire behavior
+surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+
+# Calculate surface fire behavior in the direction of maximum spread
+surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                     midflame_wind_speed,
+                                                     wind_from_direction,
+                                                     slope,
+                                                     aspect)
+
+# View results
+print("Surface Fire Behavior Max for Fuel Model GR1 with Fuel Moisture = " + str(moisturized_fuel_model["M_f"]))
+pprint(surface_fire_max)
+#+end_src
+
+#+RESULTS: compute-surface-fire-max
+: Surface Fire Behavior Max for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+: {'eccentricity': 0.8693098652160023,
+:  'effective_wind_speed': 360.16497623341843,
+:  'max_spread_direction': 37.394603946280256,
+:  'max_spread_rate': 7.534709026168767}
+
 * [WIP] Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
    :PROPERTIES:
