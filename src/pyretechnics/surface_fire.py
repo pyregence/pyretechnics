@@ -277,7 +277,7 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
-# [[file:../../org/pyretechnics.org::surface-fire-wind-and-slope-effects][surface-fire-wind-and-slope-effects]]
+# [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
 from math import radians, degrees, sin, cos, asin, sqrt
 
 
@@ -297,34 +297,25 @@ def get_offset_prime(x, y, offset):
         return 180.0 + offset
 
 
-def calc_wind_and_slope_effects(spread_rate, phi_W, phi_S, wind_to_direction, upslope_direction, get_wind_speed):
-    wind_magnitude     = spread_rate * phi_W
-    slope_magnitude    = spread_rate * phi_S
+def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magnitude, upslope_direction):
     difference_angle   = radians((wind_to_direction - upslope_direction) % 360.0)
-    x                  = slope_magnitude + wind_magnitude * cos(difference_angle)
-    y                  = wind_magnitude * sin(difference_angle)
-    combined_magnitude = sqrt(x * x + y * y)
+    x_magnitude        = slope_magnitude + wind_magnitude * cos(difference_angle)
+    y_magnitude        = wind_magnitude * sin(difference_angle)
+    combined_magnitude = sqrt(x_magnitude ** 2.0 + y_magnitude ** 2.0)
     if almost_zero(combined_magnitude):
         return {
-            "max_spread_rate"     : spread_rate,
-            "max_spread_direction": 0.0,
-            "effective_wind_speed": 0.0,
-            "eccentricity"        : 0.0,
+            "combined_magnitude": combined_magnitude,
+            "combined_direction": upslope_direction,
         }
     else:
-        max_spread_rate      = spread_rate + combined_magnitude
-        phi_combined         = (max_spread_rate / spread_rate) - 1.0
-        offset               = degrees(asin(abs(y) / combined_magnitude))
-        offset_prime         = get_offset_prime(x, y, offset)
-        max_spread_direction = (upslope_direction + offset_prime) % 360.0
-        effective_wind_speed = get_wind_speed(phi_combined)
+        offset             = degrees(asin(abs(y_magnitude) / combined_magnitude))
+        offset_prime       = get_offset_prime(x_magnitude, y_magnitude, offset)
+        combined_direction = (upslope_direction + offset_prime) % 360.0
         return {
-            "max_spread_rate"     : max_spread_rate,
-            "max_spread_direction": max_spread_direction,
-            "effective_wind_speed": effective_wind_speed,
-            "eccentricity"        : 0.0,
+            "combined_magnitude": combined_magnitude,
+            "combined_direction": combined_direction,
         }
-# surface-fire-wind-and-slope-effects ends here
+# surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 from math import cos, exp, sqrt, radians
 from pyretechnics.conversion import fpm_to_mph
@@ -409,7 +400,6 @@ def opposite_direction(angle):
 
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
-# FIXME: Return max_fireline_intensity
 # FIXME: Don't include spread_rate_adjustment in this function
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, spread_rate_adjustment=1.0, use_wind_limit=True):
@@ -432,8 +422,15 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     phi_S              = get_phi_S(slope)
     wind_to_direction  = opposite_direction(wind_from_direction)
     upslope_direction  = opposite_direction(aspect)
-    spread_info_max    = calc_wind_and_slope_effects(spread_rate, phi_W, phi_S, wind_to_direction,
-                                                     upslope_direction, get_wind_speed)
+    combined_vector    = combine_wind_and_slope_vectors(phi_W, wind_to_direction, phi_S, upslope_direction)
+    combined_magnitude = combined_vector["combined_magnitude"]
+    combined_direction = combined_vector["combined_direction"]
+    spread_info_max    = {
+        "max_spread_rate"       : spread_rate * (1 + combined_magnitude),
+        "max_spread_direction"  : combined_direction,
+        "max_fireline_intensity": fireline_intensity * (1 + combined_magnitude),
+        "effective_wind_speed"  : get_wind_speed(combined_magnitude),
+    }
     return add_eccentricity(scale_spread_to_max_wind_speed(spread_info_max, spread_rate, max_wind_speed, get_phi_W))
 
 
