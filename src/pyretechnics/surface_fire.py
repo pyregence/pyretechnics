@@ -368,6 +368,7 @@ def surface_fire_eccentricity(effective_wind_speed):
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 # NOTE: No longer takes ellipse_adjustment_factor parameter
+# FIXME: Don't return effective_wind_speed
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, use_wind_limit=True):
     """
@@ -392,7 +393,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     - effective_wind_speed   :: ft/min
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
-    # Unpack no-wind-no-slope surface fire values
+    # Unpack no-wind-no-slope surface fire behavior values
     spread_rate        = surface_fire_min["base_spread_rate"]
     fireline_intensity = surface_fire_min["base_fireline_intensity"]
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
@@ -439,7 +440,17 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):
-    theta = smallest_angle_between(max_spread_direction, spread_direction)
-    return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
+    # Unpack max surface fire behavior values
+    max_spread_rate        = surface_fire_max["max_spread_rate"]
+    max_spread_direction   = surface_fire_max["max_spread_direction"]
+    max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
+    eccentricity           = surface_fire_max["eccentricity"]
+    # Calculate adjustment due to the difference angle between spread_direction and max_spread_direction
+    theta      = smallest_angle_between(max_spread_direction, spread_direction)
+    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+    return {
+        "spread_rate"       : max_spread_rate * adjustment,
+        "fireline_intensity": max_fireline_intensity * adjustment,
+    }
 # surface-fire-behavior-in-direction ends here

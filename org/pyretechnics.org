@@ -2561,14 +2561,23 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
 
 *** Combining Wind and Slope Vectors
 
-The no-wind-no-slope spread rate is used to compute the maximum spread
-rate and direction for the leading edge of the surface fire under
-analysis. Since Rothermel's original equations assume that the wind
-direction and slope are aligned, the effects of cross-slope winds must
-be taken into effect. To accomplish this, Pyretechnics implements the
-vector addition procedure defined in Rothermel 1983 that combines the
-wind-only and slope-only spread rates independently to calculate the
-effective fire spread direction and magnitude.[fn::Rothermel1983]
+On flat terrain and in the absence of wind, an idealized surface fire
+will spread outward in a circle through homogeneous fuels. On sloped
+terrain, a fire will spread more quickly upslope than downslope, and
+when wind is present, a fire will spread more quickly in the direction
+that the wind is blowing rather than against it. In the presence of
+both sloped terrain and wind, the two forces combine to create a new
+maximum spread rate and direction for the fire. Together, wind and
+slope effects elongate otherwise circular fire perimeters into
+ellipses, with the fastest moving edge known as the head fire.
+
+Since Rothermel's original equations for computing the head fire
+spread rate assume that the wind direction and upslope direction are
+aligned, the effects of cross-slope winds must be taken into effect.
+To accomplish this, Pyretechnics implements the vector addition
+procedure defined in Rothermel 1983 that combines the wind and slope
+vectors to calculate the maximum fire spread direction and
+magnitude.[fn::Rothermel1983]
 
 #+name: surface-fire-combine-wind-and-slope-vectors
 #+begin_src python
@@ -2612,26 +2621,8 @@ def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magn
         }
 #+end_src
 
-*** Elliptical Dimensions
+*** [WIP] Effective Wind Speed
 
-Next, the effective wind speed is used to compute the length to width
-ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
-front using equation 9 from Rothermel 1991.[fn::Rothermel1991] This
-length to width ratio is then converted into an eccentricity measure
-of the ellipse using equation 8 from Albini and Chase
-1980.[fn::Albini1980] Finally, this eccentricity $E$ is used to
-project the maximum spread rate to any point along the fire front.
-Here are the formulas used:
-
-\begin{align}
-  \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
-  \nonumber \\
-  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}} \\
-  \nonumber \\
-  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
-\end{align}
-
-where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$,
 $\theta$ is the angular offset from the direction of maximum fire
 spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$ is the
 spread rate in direction $\theta$.
@@ -2641,6 +2632,30 @@ which the predicted spread rate remains constant, a 2013 publication
 by Andrews et al recommends instead that this wind limit not be
 imposed, in order to avoid possible spread rate
 underprediction.[fn::Rothermel1972][fn::Andrews2013]
+
+Finally, this eccentricity $E$ is used to project the maximum spread
+rate to any point along the fire front. Here are the formulas used:
+
+\begin{align}
+  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
+\end{align}
+
+*** Elliptical Eccentricity
+
+The effective wind speed $U_{\text{eff}}$ is used to compute the
+length to width ratio $\frac{L}{W}$ of an ellipse that approximates
+the surface fire front using equation 9 from Rothermel
+1991.[fn::Rothermel1991] This length to width ratio is then converted
+into an eccentricity measure of the ellipse using equation 8 from
+Albini and Chase 1980.[fn::Albini1980]
+
+\begin{align}
+  \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
+  \nonumber \\
+  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}}
+\end{align}
+
+where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
 
 #+name: surface-fire-eccentricity
 #+begin_src python
@@ -2696,6 +2711,7 @@ def surface_fire_eccentricity(effective_wind_speed):
 #+name: surface-fire-behavior-max
 #+begin_src python
 # NOTE: No longer takes ellipse_adjustment_factor parameter
+# FIXME: Don't return effective_wind_speed
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, use_wind_limit=True):
     """
@@ -2720,7 +2736,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     - effective_wind_speed   :: ft/min
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
-    # Unpack no-wind-no-slope surface fire values
+    # Unpack no-wind-no-slope surface fire behavior values
     spread_rate        = surface_fire_min["base_spread_rate"]
     fireline_intensity = surface_fire_min["base_fireline_intensity"]
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
@@ -2771,9 +2787,19 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):
-    theta = smallest_angle_between(max_spread_direction, spread_direction)
-    return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
+    # Unpack max surface fire behavior values
+    max_spread_rate        = surface_fire_max["max_spread_rate"]
+    max_spread_direction   = surface_fire_max["max_spread_direction"]
+    max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
+    eccentricity           = surface_fire_max["eccentricity"]
+    # Calculate adjustment due to the difference angle between spread_direction and max_spread_direction
+    theta      = smallest_angle_between(max_spread_direction, spread_direction)
+    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+    return {
+        "spread_rate"       : max_spread_rate * adjustment,
+        "fireline_intensity": max_fireline_intensity * adjustment,
+    }
 #+end_src
 
 This concludes our coverage of the surface fire behavior equations
