@@ -317,20 +317,7 @@ def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magn
             "combined_direction": combined_direction,
         }
 # surface-fire-combine-wind-and-slope-vectors ends here
-# [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
-from math import cos, exp, sqrt, radians
-from pyretechnics.conversion import fpm_to_mph
-
-
-def smallest_angle_between(theta1, theta2):
-  """
-  Computes the absolute difference between two angles as an angle between 0° and 180°.
-  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
-  """
-  angle = abs(theta1 - theta2)
-  return (360.0 - angle) if (angle > 180.0) else angle
-
-
+# [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
 # FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
 def surface_length_to_width_ratio(effective_wind_speed):
     """
@@ -372,6 +359,19 @@ def surface_fire_eccentricity(effective_wind_speed):
     """
     length_width_ratio = surface_length_to_width_ratio(effective_wind_speed)
     return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
+# surface-fire-eccentricity ends here
+# [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
+from math import cos, exp, sqrt, radians
+from pyretechnics.conversion import fpm_to_mph
+
+
+def smallest_angle_between(theta1, theta2):
+  """
+  Computes the absolute difference between two angles as an angle between 0° and 180°.
+  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
+  """
+  angle = abs(theta1 - theta2)
+  return (360.0 - angle) if (angle > 180.0) else angle
 
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
