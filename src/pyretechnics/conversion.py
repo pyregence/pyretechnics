@@ -219,6 +219,11 @@ def cartesian_to_azimuthal(x, y):
     return (r, azimuth)
 
 
+def opposite_direction(theta):
+    """Convert theta to theta + 180 degrees."""
+    return (theta + 180.0) % 360.0
+
+
 def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
     """Convert wind speed at 10m to wind speed at 20ft."""
     return 0.87 * wind_speed_10m

@@ -279,6 +279,7 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
 from math import radians, degrees, sin, cos, asin, sqrt
+from pyretechnics.conversion import opposite_direction
 
 
 def almost_zero(x):
@@ -330,19 +331,6 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, get_phi_W):
-    """
-    Warning: Mutates spread_properties
-    """
-    effective_wind_speed = spread_properties["effective_wind_speed"]
-    if (effective_wind_speed > max_wind_speed):
-        spread_properties["max_spread_rate"]      = spread_rate * (1.0 + get_phi_W(max_wind_speed))
-        spread_properties["effective_wind_speed"] = max_wind_speed
-        return spread_properties
-    else:
-        return spread_properties
-
-
 # FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
 def surface_length_to_width_ratio(effective_wind_speed):
     """
@@ -384,19 +372,6 @@ def surface_fire_eccentricity(effective_wind_speed):
     """
     length_width_ratio = surface_length_to_width_ratio(effective_wind_speed)
     return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
-
-
-def add_eccentricity(spread_properties):
-    """
-    Warning: Mutates spread_properties
-    """
-    effective_wind_speed              = spread_properties["effective_wind_speed"] # ft/min
-    spread_properties["eccentricity"] = surface_fire_eccentricity(effective_wind_speed)
-    return spread_properties
-
-
-def opposite_direction(angle):
-    return (angle + 180.0) % 360.0
 
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
@@ -443,17 +418,22 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
     # Calculate surface fire behavior in the max spread direction
-    spread_properties  = {
-        "max_spread_rate"       : spread_rate * (1 + combined_magnitude),
+    effective_wind_speed = get_wind_speed(combined_magnitude)
+    spread_properties    = {
+        "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
         "max_spread_direction"  : combined_direction,
-        "max_fireline_intensity": fireline_intensity * (1 + combined_magnitude),
-        "effective_wind_speed"  : get_wind_speed(combined_magnitude),
+        "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
+        "effective_wind_speed"  : effective_wind_speed,
     }
     # Apply effective wind speed limit if used
-    scaled_spread_properties = scale_spread_to_max_wind_speed(spread_properties, spread_rate,
-                                                              max_wind_speed, get_phi_W)
+    if (use_wind_limit and effective_wind_speed > max_wind_speed):
+        max_combined_magnitude                      = get_phi_W(max_wind_speed)
+        spread_properties["max_spread_rate"]        = spread_rate * (1.0 + max_combined_magnitude)
+        spread_properties["max_fireline_intensity"] = fireline_intensity * (1.0 + max_combined_magnitude)
+        spread_properties["effective_wind_speed"]   = max_wind_speed
     # Calculate eccentricity
-    return add_eccentricity(scaled_spread_properties)
+    spread_properties["eccentricity"] = surface_fire_eccentricity(spread_properties["effective_wind_speed"])
+    return spread_properties
 
 
 def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):

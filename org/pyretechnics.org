@@ -2571,6 +2571,7 @@ effective fire spread direction and magnitude.[fn::Rothermel1983]
 #+name: surface-fire-combine-wind-and-slope-vectors
 #+begin_src python
 from math import radians, degrees, sin, cos, asin, sqrt
+from pyretechnics.conversion import opposite_direction
 
 
 def almost_zero(x):
@@ -2656,19 +2657,6 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, get_phi_W):
-    """
-    Warning: Mutates spread_properties
-    """
-    effective_wind_speed = spread_properties["effective_wind_speed"]
-    if (effective_wind_speed > max_wind_speed):
-        spread_properties["max_spread_rate"]      = spread_rate * (1.0 + get_phi_W(max_wind_speed))
-        spread_properties["effective_wind_speed"] = max_wind_speed
-        return spread_properties
-    else:
-        return spread_properties
-
-
 # FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
 def surface_length_to_width_ratio(effective_wind_speed):
     """
@@ -2710,19 +2698,6 @@ def surface_fire_eccentricity(effective_wind_speed):
     """
     length_width_ratio = surface_length_to_width_ratio(effective_wind_speed)
     return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
-
-
-def add_eccentricity(spread_properties):
-    """
-    Warning: Mutates spread_properties
-    """
-    effective_wind_speed              = spread_properties["effective_wind_speed"] # ft/min
-    spread_properties["eccentricity"] = surface_fire_eccentricity(effective_wind_speed)
-    return spread_properties
-
-
-def opposite_direction(angle):
-    return (angle + 180.0) % 360.0
 
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
@@ -2769,17 +2744,22 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
     # Calculate surface fire behavior in the max spread direction
-    spread_properties  = {
-        "max_spread_rate"       : spread_rate * (1 + combined_magnitude),
+    effective_wind_speed = get_wind_speed(combined_magnitude)
+    spread_properties    = {
+        "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
         "max_spread_direction"  : combined_direction,
-        "max_fireline_intensity": fireline_intensity * (1 + combined_magnitude),
-        "effective_wind_speed"  : get_wind_speed(combined_magnitude),
+        "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
+        "effective_wind_speed"  : effective_wind_speed,
     }
     # Apply effective wind speed limit if used
-    scaled_spread_properties = scale_spread_to_max_wind_speed(spread_properties, spread_rate,
-                                                              max_wind_speed, get_phi_W)
+    if (use_wind_limit and effective_wind_speed > max_wind_speed):
+        max_combined_magnitude                      = get_phi_W(max_wind_speed)
+        spread_properties["max_spread_rate"]        = spread_rate * (1.0 + max_combined_magnitude)
+        spread_properties["max_fireline_intensity"] = fireline_intensity * (1.0 + max_combined_magnitude)
+        spread_properties["effective_wind_speed"]   = max_wind_speed
     # Calculate eccentricity
-    return add_eccentricity(scaled_spread_properties)
+    spread_properties["eccentricity"] = surface_fire_eccentricity(spread_properties["effective_wind_speed"])
+    return spread_properties
 
 
 def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):
@@ -2939,7 +2919,7 @@ pprint(surface_fire_max)
 : Surface Fire Behavior Max for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 : {'eccentricity': 0.8693098652160023,
 :  'effective_wind_speed': 360.16497623341843,
-:  'max_fireline_intensity': 15.755835875023477,
+:  'max_fireline_intensity': 9.396739630785342,
 :  'max_spread_direction': 37.394603946280256,
 :  'max_spread_rate': 7.534709026168767}
 
@@ -5038,6 +5018,11 @@ def cartesian_to_azimuthal(x, y):
     (r, theta) = cartesian_to_polar(x, y)
     azimuth = angle_to_azimuth(theta)
     return (r, azimuth)
+
+
+def opposite_direction(theta):
+    """Convert theta to theta + 180 degrees."""
+    return (theta + 180.0) % 360.0
 
 
 def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
