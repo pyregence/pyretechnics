@@ -2615,56 +2615,6 @@ def smallest_angle_between(theta1, theta2):
   return (360.0 - angle) if (angle > 180.0) else angle
 
 
-def determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, upslope_direction):
-    if almost_zero(slope):
-        if almost_zero(midflame_wind_speed):
-            return "no_wind_no_slope"
-        else:
-            return "wind_only"
-    elif almost_zero(midflame_wind_speed):
-        return "slope_only"
-    elif smallest_angle_between(wind_to_direction, upslope_direction) < 15.0:
-        return "wind_blows_upslope"
-    else:
-        return "wind_blows_across_slope"
-
-
-def spread_info_max_no_wind_no_slope(spread_rate):
-    return {
-        "max_spread_rate"     : spread_rate,
-        "max_spread_direction": 0.0,
-        "effective_wind_speed": 0.0,
-        "eccentricity"        : 0.0,
-    }
-
-
-def spread_info_max_wind_only(spread_rate, phi_W, midflame_wind_speed, wind_to_direction):
-    return {
-        "max_spread_rate"     : spread_rate * (1.0 + phi_W),
-        "max_spread_direction": wind_to_direction,
-        "effective_wind_speed": midflame_wind_speed,
-        "eccentricity"        : 0.0,
-    }
-
-
-def spread_info_max_slope_only(spread_rate, phi_S, upslope_direction, get_wind_speed):
-    return {
-        "max_spread_rate"     : spread_rate * (1.0 + phi_S),
-        "max_spread_direction": upslope_direction,
-        "effective_wind_speed": get_wind_speed(phi_S),
-        "eccentricity"        : 0.0,
-    }
-
-
-def spread_info_max_wind_blows_upslope(spread_rate, phi_combined, upslope_direction, get_wind_speed):
-    return {
-        "max_spread_rate"     : spread_rate * (1.0 + phi_combined),
-        "max_spread_direction": upslope_direction,
-        "effective_wind_speed": get_wind_speed(phi_combined),
-        "eccentricity"        : 0.0,
-    }
-
-
 def get_offset_prime(x, y, offset):
     if (x >= 0.0):
         if (y >= 0.0):
@@ -2677,8 +2627,7 @@ def get_offset_prime(x, y, offset):
         return 180.0 + offset
 
 
-def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
-                                            upslope_direction, get_wind_speed):
+def calc_wind_and_slope_effects(spread_rate, phi_W, phi_S, wind_to_direction, upslope_direction, get_wind_speed):
     wind_magnitude     = spread_rate * phi_W
     slope_magnitude    = spread_rate * phi_S
     difference_angle   = radians((wind_to_direction - upslope_direction) % 360.0)
@@ -2707,29 +2656,13 @@ def spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_d
         }
 
 
-def get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind_speed,
-                        wind_to_direction, upslope_direction, get_wind_speed):
-    match spread_drivers:
-        case "no_wind_no_slope":
-            return spread_info_max_no_wind_no_slope(spread_rate)
-        case "wind_only":
-            return spread_info_max_wind_only(spread_rate, phi_W, midflame_wind_speed, wind_to_direction)
-        case "slope_only":
-            return spread_info_max_slope_only(spread_rate, phi_S, upslope_direction, get_wind_speed)
-        case "wind_blows_upslope":
-            return spread_info_max_wind_blows_upslope(spread_rate, (phi_W + phi_S), upslope_direction, get_wind_speed)
-        case "wind_blows_across_slope":
-            return spread_info_max_wind_blows_across_slope(spread_rate, phi_W, phi_S, wind_to_direction,
-                                                           upslope_direction, get_wind_speed)
-
-
-def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, phi_max):
+def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, get_phi_W):
     """
     Warning: Mutates spread_properties
     """
     effective_wind_speed = spread_properties["effective_wind_speed"]
     if (effective_wind_speed > max_wind_speed):
-        spread_properties["max_spread_rate"]      = spread_rate * (1.0 + phi_max)
+        spread_properties["max_spread_rate"]      = spread_rate * (1.0 + get_phi_W(max_wind_speed))
         spread_properties["effective_wind_speed"] = max_wind_speed
         return spread_properties
     else:
@@ -2794,6 +2727,7 @@ def opposite_direction(angle):
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 # FIXME: Return max_fireline_intensity
+# FIXME: Don't include spread_rate_adjustment in this function
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, spread_rate_adjustment=1.0, use_wind_limit=True):
     """
@@ -2806,20 +2740,18 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     use_wind_limit         :: boolean
     """
     spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
-    fireline_intensity = surface_fire_min["base_fireline_intensity"]
+    fireline_intensity = surface_fire_min["base_fireline_intensity"] * spread_rate_adjustment
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
-    get_phi_S          = surface_fire_min["get_phi_S"]
     get_phi_W          = surface_fire_min["get_phi_W"]
+    get_phi_S          = surface_fire_min["get_phi_S"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
-    upslope_direction  = opposite_direction(aspect)
-    wind_to_direction  = opposite_direction(wind_from_direction)
-    phi_S              = get_phi_S(slope)
     phi_W              = get_phi_W(midflame_wind_speed)
-    phi_max            = get_phi_W(max_wind_speed)
-    spread_drivers     = determine_spread_drivers(midflame_wind_speed, wind_to_direction, slope, upslope_direction)
-    spread_info_max    = get_spread_info_max(spread_drivers, spread_rate, phi_W, phi_S, midflame_wind_speed,
-                                             wind_to_direction, upslope_direction, get_wind_speed)
-    return add_eccentricity(scale_spread_to_max_wind_speed(spread_info_max, spread_rate, max_wind_speed, phi_max))
+    phi_S              = get_phi_S(slope)
+    wind_to_direction  = opposite_direction(wind_from_direction)
+    upslope_direction  = opposite_direction(aspect)
+    spread_info_max    = calc_wind_and_slope_effects(spread_rate, phi_W, phi_S, wind_to_direction,
+                                                     upslope_direction, get_wind_speed)
+    return add_eccentricity(scale_spread_to_max_wind_speed(spread_info_max, spread_rate, max_wind_speed, get_phi_W))
 
 
 def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):
