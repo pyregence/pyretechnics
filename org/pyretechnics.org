@@ -2557,7 +2557,7 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     return wind_speed_20ft * wind_adj_factor
 #+end_src
 
-*** Surface Fire Behavior in the Direction of Maximum Spread
+*** Wind and Slope Interactions
 
 The no-wind-no-slope spread rate is used to compute the maximum spread
 rate and direction for the leading edge of the surface fire under
@@ -2568,51 +2568,13 @@ vector addition procedure defined in Rothermel 1983 that combines the
 wind-only and slope-only spread rates independently to calculate the
 effective fire spread direction and magnitude.[fn::Rothermel1983]
 
-Next, the effective wind speed is used to compute the length to width
-ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
-front using equation 9 from Rothermel 1991.[fn::Rothermel1991] This
-length to width ratio is then converted into an eccentricity measure
-of the ellipse using equation 8 from Albini and Chase
-1980.[fn::Albini1980] Finally, this eccentricity $E$ is used to
-project the maximum spread rate to any point along the fire front.
-Here are the formulas used:
-
-\begin{align}
-  \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
-  \nonumber \\
-  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}} \\
-  \nonumber \\
-  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
-\end{align}
-
-where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$,
-$\theta$ is the angular offset from the direction of maximum fire
-spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$ is the
-spread rate in direction $\theta$.
-
-Although, Rothermel 1972 defines a maximum effective wind speed, above
-which the predicted spread rate remains constant, a 2013 publication
-by Andrews et al recommends instead that this wind limit not be
-imposed, in order to avoid possible spread rate
-underprediction.[fn::Rothermel1972][fn::Andrews2013]
-
-#+name: surface-fire-behavior-max
+#+name: surface-fire-wind-and-slope-effects
 #+begin_src python
-from math import sin, cos, asin, exp, sqrt, radians, degrees
-from pyretechnics.conversion import fpm_to_mph
+from math import radians, degrees, sin, cos, asin, sqrt
 
 
 def almost_zero(x):
     return abs(x) < 0.000001
-
-
-def smallest_angle_between(theta1, theta2):
-  """
-  Computes the absolute difference between two angles as an angle between 0° and 180°.
-  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
-  """
-  angle = abs(theta1 - theta2)
-  return (360.0 - angle) if (angle > 180.0) else angle
 
 
 def get_offset_prime(x, y, offset):
@@ -2654,6 +2616,53 @@ def calc_wind_and_slope_effects(spread_rate, phi_W, phi_S, wind_to_direction, up
             "effective_wind_speed": effective_wind_speed,
             "eccentricity"        : 0.0,
         }
+#+end_src
+
+*** Elliptical Dimensions
+
+Next, the effective wind speed is used to compute the length to width
+ratio $\frac{L}{W}$ of an ellipse that approximates the surface fire
+front using equation 9 from Rothermel 1991.[fn::Rothermel1991] This
+length to width ratio is then converted into an eccentricity measure
+of the ellipse using equation 8 from Albini and Chase
+1980.[fn::Albini1980] Finally, this eccentricity $E$ is used to
+project the maximum spread rate to any point along the fire front.
+Here are the formulas used:
+
+\begin{align}
+  \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
+  \nonumber \\
+  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}} \\
+  \nonumber \\
+  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
+\end{align}
+
+where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$,
+$\theta$ is the angular offset from the direction of maximum fire
+spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$ is the
+spread rate in direction $\theta$.
+
+Although, Rothermel 1972 defines a maximum effective wind speed, above
+which the predicted spread rate remains constant, a 2013 publication
+by Andrews et al recommends instead that this wind limit not be
+imposed, in order to avoid possible spread rate
+underprediction.[fn::Rothermel1972][fn::Andrews2013]
+
+*** Surface Fire Behavior in the Direction of Maximum Spread
+
+#+name: surface-fire-behavior-max
+#+begin_src python
+from math import cos, exp, sqrt, radians
+from pyretechnics.conversion import fpm_to_mph
+
+
+def smallest_angle_between(theta1, theta2):
+  """
+  Computes the absolute difference between two angles as an angle between 0° and 180°.
+  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
+  """
+  angle = abs(theta1 - theta2)
+  return (360.0 - angle) if (angle > 180.0) else angle
 
 
 def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, get_phi_W):

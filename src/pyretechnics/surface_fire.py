@@ -277,22 +277,12 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
-# [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
-from math import sin, cos, asin, exp, sqrt, radians, degrees
-from pyretechnics.conversion import fpm_to_mph
+# [[file:../../org/pyretechnics.org::surface-fire-wind-and-slope-effects][surface-fire-wind-and-slope-effects]]
+from math import radians, degrees, sin, cos, asin, sqrt
 
 
 def almost_zero(x):
     return abs(x) < 0.000001
-
-
-def smallest_angle_between(theta1, theta2):
-  """
-  Computes the absolute difference between two angles as an angle between 0° and 180°.
-  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
-  """
-  angle = abs(theta1 - theta2)
-  return (360.0 - angle) if (angle > 180.0) else angle
 
 
 def get_offset_prime(x, y, offset):
@@ -334,6 +324,19 @@ def calc_wind_and_slope_effects(spread_rate, phi_W, phi_S, wind_to_direction, up
             "effective_wind_speed": effective_wind_speed,
             "eccentricity"        : 0.0,
         }
+# surface-fire-wind-and-slope-effects ends here
+# [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
+from math import cos, exp, sqrt, radians
+from pyretechnics.conversion import fpm_to_mph
+
+
+def smallest_angle_between(theta1, theta2):
+  """
+  Computes the absolute difference between two angles as an angle between 0° and 180°.
+  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
+  """
+  angle = abs(theta1 - theta2)
+  return (360.0 - angle) if (angle > 180.0) else angle
 
 
 def scale_spread_to_max_wind_speed(spread_properties, spread_rate, max_wind_speed, get_phi_W):
