@@ -177,21 +177,23 @@ def get_wind_speed_fn(B, C, F):
     return lambda phi_W: (phi_W * F_over_C) ** B_inverse
 # surface-fire-wind-speed-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
-def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
+def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_rate_adjustment=1.0):
     """
-    Given a dictionary containing these keys:
-    - delta :: ft                                      (fuel depth)
-    - w_o   :: lb/ft^2                                 (ovendry fuel loading)
-    - rho_p :: lb/ft^3                                 (ovendry particle density)
-    - sigma :: ft^2/ft^3                               (fuel particle surface-area-to-volume ratio)
-    - h     :: Btu/lb                                  (fuel particle low heat content)
-    - S_T   :: lb minerals/lb ovendry wood             (fuel particle total mineral content)
-    - S_e   :: lb silica-free minerals/lb ovendry wood (fuel particle effective mineral content)
-    - M_x   :: lb moisture/lb ovendry wood             (fuel particle moisture of extinction)
-    - M_f   :: lb moisture/lb ovendry wood             (fuel particle moisture content)
-    - f_ij  :: %                                       (percent of load per size class)
-    - f_i   :: %                                       (percent of load per category)
-    - g_ij  :: %                                       (percent of load per size class - Albini_1976_FIREMOD, page 20)
+    Given these inputs:
+    - moisturized_fuel_model :: dictionary of fuel model and fuel moisture properties
+      - delta :: ft                                      (fuel depth)
+      - w_o   :: lb/ft^2                                 (ovendry fuel loading)
+      - rho_p :: lb/ft^3                                 (ovendry particle density)
+      - sigma :: ft^2/ft^3                               (fuel particle surface-area-to-volume ratio)
+      - h     :: Btu/lb                                  (fuel particle low heat content)
+      - S_T   :: lb minerals/lb ovendry wood             (fuel particle total mineral content)
+      - S_e   :: lb silica-free minerals/lb ovendry wood (fuel particle effective mineral content)
+      - M_x   :: lb moisture/lb ovendry wood             (fuel particle moisture of extinction)
+      - M_f   :: lb moisture/lb ovendry wood             (fuel particle moisture content)
+      - f_ij  :: %                                       (percent load per size class)
+      - f_i   :: %                                       (percent load per category)
+      - g_ij  :: %                                       (percent load per size class - Albini_1976_FIREMOD, page 20)
+    - spread_rate_adjustment :: unitless float (1.0 for no adjustment)
 
     return a dictionary containing these keys:
     - base_spread_rate         :: ft/min
@@ -235,8 +237,8 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model):
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     return {
-        "base_spread_rate"        : R0,
-        "base_fireline_intensity" : I_B,
+        "base_spread_rate"        : R0 * spread_rate_adjustment,
+        "base_fireline_intensity" : I_B * spread_rate_adjustment,
         "max_effective_wind_speed": U_eff_max,
         "get_phi_S"               : get_phi_S,
         "get_phi_W"               : get_phi_W,
@@ -366,9 +368,8 @@ def surface_fire_eccentricity(effective_wind_speed):
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 # NOTE: No longer takes ellipse_adjustment_factor parameter
-# FIXME: Don't include spread_rate_adjustment in this function
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
-                                   slope, aspect, spread_rate_adjustment=1.0, use_wind_limit=True):
+                                   slope, aspect, use_wind_limit=True):
     """
     Given these inputs:
     - surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
@@ -382,7 +383,6 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     - wind_from_direction    :: degrees clockwise from North
     - slope                  :: rise/run
     - aspect                 :: degrees clockwise from North
-    - spread_rate_adjustment :: unitless float (1.0 for no adjustment)
     - use_wind_limit         :: boolean
 
     return a dictionary containing these keys:
@@ -393,8 +393,8 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
     # Unpack no-wind-no-slope surface fire values
-    spread_rate        = surface_fire_min["base_spread_rate"] * spread_rate_adjustment
-    fireline_intensity = surface_fire_min["base_fireline_intensity"] * spread_rate_adjustment
+    spread_rate        = surface_fire_min["base_spread_rate"]
+    fireline_intensity = surface_fire_min["base_fireline_intensity"]
     max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_phi_S          = surface_fire_min["get_phi_S"]

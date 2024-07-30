@@ -43,6 +43,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
     # Spread Rate Adjustments
     fuel_spread_adjustment        = inputs.get("fuel_spread_adjustment"   , one_everywhere)(t,y,x)
     weather_spread_adjustment     = inputs.get("weather_spread_adjustment", one_everywhere)(t,y,x)
+    spread_rate_adjustment        = fuel_spread_adjustment * weather_spread_adjustment
     # Check Whether Cell is Burnable
     fuel_model = fm.fuel_model_table.get(fuel_model_number)
     if not (fuel_model and fuel_model["burnable"]):
@@ -65,7 +66,8 @@ def compute_max_in_situ_values(inputs, t, y, x):
         moisturized_fuel_model  = fm.moisturize(fuel_model, fuel_moisture)
         # Baseline Surface Fire Behavior
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
-        surface_fire_min        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+        surface_fire_min        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model,
+                                                                                 spread_rate_adjustment)
         # Midflame Wind Speed
         (wind_speed_10m,
          wind_from_direction)   = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
@@ -75,13 +77,11 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                               conv.m_to_ft(canopy_height),
                                                               canopy_cover) # ft/min
         # Max Surface Fire Behavior
-        spread_rate_adjustment  = fuel_spread_adjustment * weather_spread_adjustment # unitless
         surface_fire_max        = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                                     midflame_wind_speed,
                                                                     wind_from_direction,
                                                                     slope,
-                                                                    aspect,
-                                                                    spread_rate_adjustment)
+                                                                    aspect)
         max_surface_spread_rate      = surface_fire_max["max_spread_rate"] # ft/min
         max_spread_direction         = surface_fire_max["max_spread_direction"] # deg
         surface_eccentricity         = surface_fire_max["eccentricity"] # unitless
