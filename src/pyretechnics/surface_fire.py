@@ -236,6 +236,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     get_phi_S      = get_phi_S_fn(beta)
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
+    # Return no-wind-no-slope surface fire behavior values
     return {
         "base_spread_rate"        : R0 * spread_rate_adjustment,
         "base_fireline_intensity" : I_B * spread_rate_adjustment,
@@ -368,7 +369,6 @@ def surface_fire_eccentricity(effective_wind_speed):
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 # NOTE: No longer takes ellipse_adjustment_factor parameter
-# FIXME: Don't return effective_wind_speed
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, use_wind_limit=True):
     """
@@ -390,7 +390,6 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     - max_spread_rate        :: ft/min
     - max_spread_direction   :: degrees clockwise from North
     - max_fireline_intensity :: Btu/ft/s
-    - effective_wind_speed   :: ft/min
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
     # Unpack no-wind-no-slope surface fire behavior values
@@ -409,23 +408,26 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     combined_vector    = combine_wind_and_slope_vectors(phi_W, wind_to_direction, phi_S, upslope_direction)
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
-    # Calculate surface fire behavior in the max spread direction
+    # Calculate and return max surface fire behavior values
     effective_wind_speed = get_wind_speed(combined_magnitude)
-    spread_properties    = {
-        "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
-        "max_spread_direction"  : combined_direction,
-        "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
-        "effective_wind_speed"  : effective_wind_speed,
-    }
-    # Apply effective wind speed limit if used
     if (use_wind_limit and effective_wind_speed > max_wind_speed):
-        max_combined_magnitude                      = get_phi_W(max_wind_speed)
-        spread_properties["max_spread_rate"]        = spread_rate * (1.0 + max_combined_magnitude)
-        spread_properties["max_fireline_intensity"] = fireline_intensity * (1.0 + max_combined_magnitude)
-        spread_properties["effective_wind_speed"]   = max_wind_speed
-    # Calculate eccentricity
-    spread_properties["eccentricity"] = surface_fire_eccentricity(spread_properties["effective_wind_speed"])
-    return spread_properties
+        # Limit effective wind speed to max wind speed
+        limited_magnitude    = get_phi_W(max_wind_speed)
+        limited_eccentricity = surface_fire_eccentricity(max_wind_speed)
+        return {
+            "max_spread_rate"       : spread_rate * (1.0 + limited_magnitude),
+            "max_spread_direction"  : combined_direction,
+            "max_fireline_intensity": fireline_intensity * (1.0 + limited_magnitude),
+            "eccentricity"          : limited_eccentricity,
+        }
+    else:
+        combined_eccentricity = surface_fire_eccentricity(effective_wind_speed)
+        return {
+            "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
+            "max_spread_direction"  : combined_direction,
+            "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
+            "eccentricity"          : combined_eccentricity,
+        }
 # surface-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
 from math import cos, radians

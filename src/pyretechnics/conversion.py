@@ -208,7 +208,7 @@ def polar_to_cartesian(r, theta):
 
 
 def angle_to_azimuth(theta):
-    """Convert an angle measured counterclockwise from east to one measured clockwise from north."""
+    """Convert an angle measured counterclockwise from East to one measured clockwise from North."""
     return (90.0 - theta % 360.0) % 360.0
 
 

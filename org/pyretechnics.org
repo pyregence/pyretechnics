@@ -2486,6 +2486,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     get_phi_S      = get_phi_S_fn(beta)
     get_phi_W      = get_phi_W_fn(beta, B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
+    # Return no-wind-no-slope surface fire behavior values
     return {
         "base_spread_rate"        : R0 * spread_rate_adjustment,
         "base_fireline_intensity" : I_B * spread_rate_adjustment,
@@ -2621,33 +2622,20 @@ def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magn
         }
 #+end_src
 
-*** [WIP] Effective Wind Speed
-
-$\theta$ is the angular offset from the direction of maximum fire
-spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$ is the
-spread rate in direction $\theta$.
-
-Although, Rothermel 1972 defines a maximum effective wind speed, above
-which the predicted spread rate remains constant, a 2013 publication
-by Andrews et al recommends instead that this wind limit not be
-imposed, in order to avoid possible spread rate
-underprediction.[fn::Rothermel1972][fn::Andrews2013]
-
-Finally, this eccentricity $E$ is used to project the maximum spread
-rate to any point along the fire front. Here are the formulas used:
-
-\begin{align}
-  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
-\end{align}
-
 *** Elliptical Eccentricity
 
-The effective wind speed $U_{\text{eff}}$ is used to compute the
-length to width ratio $\frac{L}{W}$ of an ellipse that approximates
-the surface fire front using equation 9 from Rothermel
-1991.[fn::Rothermel1991] This length to width ratio is then converted
-into an eccentricity measure of the ellipse using equation 8 from
-Albini and Chase 1980.[fn::Albini1980]
+The effective wind speed $U_{\text{eff}}$ is the wind speed that would
+be required to produce the same spread rate in flat terrain as that
+given by the combination of wind and sloped terrain as described in
+section [[Combining Wind and Slope Vectors]].
+
+In order to project the one-dimensional surface fire spread rate
+values calculated in earlier sections onto a two-dimensional plane,
+$U_{\text{eff}}$ is used to compute the length to width ratio
+$\frac{L}{W}$ of an ellipse that approximates the surface fire front
+using equation 9 from Rothermel 1991.[fn::Rothermel1991] This length
+to width ratio is then converted into an eccentricity measure of the
+ellipse using equation 8 from Albini and Chase 1980.[fn::Albini1980]
 
 \begin{align}
   \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
@@ -2708,10 +2696,29 @@ def surface_fire_eccentricity(effective_wind_speed):
 
 *** Surface Fire Behavior in the Direction of Maximum Spread
 
+This section introduces a function that applies the effects of wind
+and slope to the no-wind-no-slope surface fire behavior values
+produced in section [[Surface Fire Behavior Functions (No Wind No
+Slope)]], in order to compute the maximum surface fire behavior values
+associated with a head fire.
+
+A noteworthy decision for users is whether or not to limit the
+effective wind speed $U_{\text{eff}}$ in these calculations.
+
+Rothermel 1972 defines a maximum effective wind speed, above which the
+predicted spread rate and intensity remains constant. However, a 2013
+publication by Andrews et al recommends instead that this wind speed
+limit not be imposed, in order to avoid possible spread rate
+underprediction.[fn::Rothermel1972][fn::Andrews2013]
+
+In order to support both use cases, the
+=calc_surface_fire_behavior_max= function includes an optional
+=use_wind_limit= argument that can be used to toggle this limit on or
+off.
+
 #+name: surface-fire-behavior-max
 #+begin_src python
 # NOTE: No longer takes ellipse_adjustment_factor parameter
-# FIXME: Don't return effective_wind_speed
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
                                    slope, aspect, use_wind_limit=True):
     """
@@ -2733,7 +2740,6 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     - max_spread_rate        :: ft/min
     - max_spread_direction   :: degrees clockwise from North
     - max_fireline_intensity :: Btu/ft/s
-    - effective_wind_speed   :: ft/min
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
     # Unpack no-wind-no-slope surface fire behavior values
@@ -2752,26 +2758,47 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     combined_vector    = combine_wind_and_slope_vectors(phi_W, wind_to_direction, phi_S, upslope_direction)
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
-    # Calculate surface fire behavior in the max spread direction
+    # Calculate and return max surface fire behavior values
     effective_wind_speed = get_wind_speed(combined_magnitude)
-    spread_properties    = {
-        "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
-        "max_spread_direction"  : combined_direction,
-        "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
-        "effective_wind_speed"  : effective_wind_speed,
-    }
-    # Apply effective wind speed limit if used
     if (use_wind_limit and effective_wind_speed > max_wind_speed):
-        max_combined_magnitude                      = get_phi_W(max_wind_speed)
-        spread_properties["max_spread_rate"]        = spread_rate * (1.0 + max_combined_magnitude)
-        spread_properties["max_fireline_intensity"] = fireline_intensity * (1.0 + max_combined_magnitude)
-        spread_properties["effective_wind_speed"]   = max_wind_speed
-    # Calculate eccentricity
-    spread_properties["eccentricity"] = surface_fire_eccentricity(spread_properties["effective_wind_speed"])
-    return spread_properties
+        # Limit effective wind speed to max wind speed
+        limited_magnitude    = get_phi_W(max_wind_speed)
+        limited_eccentricity = surface_fire_eccentricity(max_wind_speed)
+        return {
+            "max_spread_rate"       : spread_rate * (1.0 + limited_magnitude),
+            "max_spread_direction"  : combined_direction,
+            "max_fireline_intensity": fireline_intensity * (1.0 + limited_magnitude),
+            "eccentricity"          : limited_eccentricity,
+        }
+    else:
+        combined_eccentricity = surface_fire_eccentricity(effective_wind_speed)
+        return {
+            "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
+            "max_spread_direction"  : combined_direction,
+            "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
+            "eccentricity"          : combined_eccentricity,
+        }
 #+end_src
 
 *** Surface Fire Behavior in Any Direction
+
+Once we have calculated the maximum surface fire behavior values
+associated with a head fire, we can use the elliptical eccentricity
+$E$ to project the maximum spread rate to any point along the fire
+front as follows:
+
+\begin{align}
+  R_{\theta} = R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
+\end{align}
+
+where $R_{\max}$ is the maximum spread rate, $\theta$ is the angular
+offset from the direction of maximum fire spread, and $R_{\theta}$ is
+the spread rate in this direction.
+
+The =calc_surface_fire_behavior_in_direction= function defined in this
+section takes a =spread_direction= argument, which should be provided
+in absolute degrees clockwise from North. This function will
+automatically calculate the offset angle $\theta$ described above.
 
 #+name: surface-fire-behavior-in-direction
 #+begin_src python
@@ -2805,9 +2832,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
 This concludes our coverage of the surface fire behavior equations
 implemented in Pyretechnics. In Section [[\[WIP\] Fire Spread Algorithms
 (pyretechnics.eulerian_level_set)]] these formulas will be translated
-from one-dimension to two-dimensional spread on a raster grid. Before
-we move on to that, however, the following section explains how crown
-fire behavior metrics are incorporated into our model.
+from one-dimension to two-dimensional spread on a raster grid.
 
 ** For Users
    :PROPERTIES:
@@ -5064,7 +5089,7 @@ def polar_to_cartesian(r, theta):
 
 
 def angle_to_azimuth(theta):
-    """Convert an angle measured counterclockwise from east to one measured clockwise from north."""
+    """Convert an angle measured counterclockwise from East to one measured clockwise from North."""
     return (90.0 - theta % 360.0) % 360.0
 
 
