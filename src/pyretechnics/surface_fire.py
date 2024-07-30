@@ -319,6 +319,10 @@ def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magn
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
 # FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
+from math import exp, sqrt
+from pyretechnics.conversion import fpm_to_mph
+
+
 def surface_length_to_width_ratio(effective_wind_speed):
     """
     Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
@@ -361,19 +365,6 @@ def surface_fire_eccentricity(effective_wind_speed):
     return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
-from math import cos, exp, sqrt, radians
-from pyretechnics.conversion import fpm_to_mph
-
-
-def smallest_angle_between(theta1, theta2):
-  """
-  Computes the absolute difference between two angles as an angle between 0° and 180°.
-  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
-  """
-  angle = abs(theta1 - theta2)
-  return (360.0 - angle) if (angle > 180.0) else angle
-
-
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 # FIXME: Don't include spread_rate_adjustment in this function
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
@@ -434,12 +425,21 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     # Calculate eccentricity
     spread_properties["eccentricity"] = surface_fire_eccentricity(spread_properties["effective_wind_speed"])
     return spread_properties
+# surface-fire-behavior-max ends here
+# [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
+from math import cos, radians
+
+
+def smallest_angle_between(theta1, theta2):
+  """
+  Computes the absolute difference between two angles as an angle between 0° and 180°.
+  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
+  """
+  angle = abs(theta1 - theta2)
+  return (360.0 - angle) if (angle > 180.0) else angle
 
 
 def compute_spread_rate(max_spread_rate, max_spread_direction, eccentricity, spread_direction):
     theta = smallest_angle_between(max_spread_direction, spread_direction)
-    if almost_zero(eccentricity) or almost_zero(theta):
-        return max_spread_rate
-    else:
-        return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
-# surface-fire-behavior-max ends here
+    return max_spread_rate * (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+# surface-fire-behavior-in-direction ends here
