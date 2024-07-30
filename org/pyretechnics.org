@@ -2058,7 +2058,7 @@ Moisturized Dynamic Fuel Model: GR1
  'w_o': [0.0046, 0.0, 0.0, 0.0138, 0.0, 0.0]}
 #+end_example
 
-* [WIP] Surface Fire Equations (pyretechnics.surface_fire)
+* Surface Fire Equations (pyretechnics.surface_fire)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.surface_fire*
@@ -2857,7 +2857,7 @@ the full list of available conversion functions.
 
 *** How to Calculate the No-Wind-No-Slope Surface Fire Behavior
 
-#+name: compute-surface-fire-min
+#+name: compute-surface-fire-behavior-min
 #+begin_src python
 from pprint import pprint
 import pyretechnics.fuel_models as fm
@@ -2886,7 +2886,7 @@ print("No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moist
 pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_intensity", "max_effective_wind_speed"]})
 #+end_src
 
-#+RESULTS: compute-surface-fire-min
+#+RESULTS: compute-surface-fire-behavior-min
 : No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 : {'base_fireline_intensity': 0.5170935602088539,
 :  'base_spread_rate': 0.4146278037453475,
@@ -2933,7 +2933,7 @@ print("Midflame Wind Speed and Direction for 10m Wind Speed = (100 m/min, 100 m/
 
 *** How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread
 
-#+name: compute-surface-fire-max
+#+name: compute-surface-fire-behavior-max
 #+begin_src python
 from pprint import pprint
 import pyretechnics.fuel_models as fm
@@ -2986,22 +2986,90 @@ print("\nSurface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Mois
 pprint(surface_fire_max_unlimited)
 #+end_src
 
-#+RESULTS: compute-surface-fire-max
+#+RESULTS: compute-surface-fire-behavior-max
 #+begin_example
 Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'eccentricity': 0.8693098652160023,
- 'effective_wind_speed': 360.16497623341843,
  'max_fireline_intensity': 9.396739630785342,
  'max_spread_direction': 37.394603946280256,
  'max_spread_rate': 7.534709026168767}
 
 Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'eccentricity': 0.9128128849183105,
- 'effective_wind_speed': 509.94641042930925,
  'max_fireline_intensity': 15.755835875023477,
  'max_spread_direction': 37.394603946280256,
  'max_spread_rate': 12.633705247449885}
 #+end_example
+
+*** How to Calculate the Surface Fire Behavior in Any Direction
+
+#+name: compute-surface-fire-behavior-in-direction
+#+begin_src python
+from pprint import pprint
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+
+# Set input parameters
+fuel_model    = fm.fuel_model_table[101] # GR1
+fuel_moisture = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.90, # live_herbaceous
+    0.60, # live_woody
+]
+midflame_wind_speed = 500.0 # ft/min
+wind_from_direction = 215.0 # degrees clockwise from North
+slope               = 0.2   # rise/run
+aspect              = 270.0 # degrees clockwise from North
+
+# Apply fuel moisture to fuel model
+moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
+
+# Calculate no-wind-no-slope surface fire behavior
+surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+
+# Calculate surface fire behavior in the direction of maximum spread with effective wind speed limit
+surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                     midflame_wind_speed,
+                                                     wind_from_direction,
+                                                     slope,
+                                                     aspect)
+
+# Calculate surface fire behavior for the heading, flanking, and backing fires
+heading_fire_direction  = surface_fire_max["max_spread_direction"]
+flanking_fire_direction = (heading_fire_direction + 90.0) % 360.0
+backing_fire_direction  = (heading_fire_direction + 180.0) % 360.0
+heading_fire_behavior   = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
+flanking_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_direction)
+backing_fire_behavior   = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, backing_fire_direction)
+
+# View heading fire results
+print("Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
+      + str(moisturized_fuel_model["M_f"]))
+pprint(heading_fire_behavior)
+
+# View flanking fire results
+print("\nFlanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
+      + str(moisturized_fuel_model["M_f"]))
+pprint(flanking_fire_behavior)
+
+# View backing fire results
+print("\nBacking Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
+      + str(moisturized_fuel_model["M_f"]))
+pprint(backing_fire_behavior)
+#+end_src
+
+#+RESULTS: compute-surface-fire-behavior-in-direction
+: Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+: {'fireline_intensity': 9.396739630785342, 'spread_rate': 7.534709026168767}
+: 
+: Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+: {'fireline_intensity': 1.2280611688774694, 'spread_rate': 0.9847121381882004}
+: 
+: Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+: {'fireline_intensity': 0.6569596575341267, 'spread_rate': 0.5267784418793591}
 
 * [WIP] Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
@@ -3435,8 +3503,8 @@ Now that we can compute the fire front normal vector, we can find the
 spread rate in this direction by combining this vector with the
 maximum spread rate vector and elliptical eccentricity values
 calculated for each grid cell, using the approaches described in
-sections [[\[WIP\] Surface Fire Equations (pyretechnics.surface_fire)]]
-and [[\[WIP\] Crown Fire Equations (pyretechnics.crown_fire)]].
+sections [[Surface Fire Equations (pyretechnics.surface_fire)]] and
+[[\[WIP\] Crown Fire Equations (pyretechnics.crown_fire)]].
 
 We will refer to the spread rate vector normal to the fire front in
 the following sections as $U$ with spatial components $U_x$ and $U_y$.
