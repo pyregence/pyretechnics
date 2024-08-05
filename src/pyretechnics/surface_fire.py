@@ -301,8 +301,8 @@ def get_offset_prime(x, y, offset):
         return 180.0 + offset
 
 
-def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magnitude, upslope_direction):
-    difference_angle   = radians((wind_to_direction - upslope_direction) % 360.0)
+def combine_wind_and_slope_vectors(wind_magnitude, downwind_direction, slope_magnitude, upslope_direction):
+    difference_angle   = radians((downwind_direction - upslope_direction) % 360.0)
     x_magnitude        = slope_magnitude + wind_magnitude * cos(difference_angle)
     y_magnitude        = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x_magnitude ** 2.0 + y_magnitude ** 2.0)
@@ -369,7 +369,7 @@ def surface_fire_eccentricity(effective_wind_speed):
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 # NOTE: No longer takes ellipse_adjustment_factor parameter
-def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
+def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind_direction,
                                    slope, aspect, use_wind_limit=True):
     """
     Given these inputs:
@@ -381,7 +381,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
       - get_phi_W                :: lambda: midflame_wind_speed => phi_W
       - get_wind_speed           :: lambda: phi_W => midflame_wind_speed
     - midflame_wind_speed    :: ft/min
-    - wind_from_direction    :: degrees clockwise from North
+    - upwind_direction       :: degrees clockwise from North
     - slope                  :: rise/run
     - aspect                 :: degrees clockwise from North
     - use_wind_limit         :: boolean
@@ -402,10 +402,10 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     # Prepare wind and slope vectors
     phi_W              = get_phi_W(midflame_wind_speed)
     phi_S              = get_phi_S(slope)
-    wind_to_direction  = opposite_direction(wind_from_direction)
+    downwind_direction = opposite_direction(upwind_direction)
     upslope_direction  = opposite_direction(aspect)
     # Combine wind and slope vectors
-    combined_vector    = combine_wind_and_slope_vectors(phi_W, wind_to_direction, phi_S, upslope_direction)
+    combined_vector    = combine_wind_and_slope_vectors(phi_W, downwind_direction, phi_S, upslope_direction)
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
     # Calculate and return max surface fire behavior values

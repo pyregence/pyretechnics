@@ -2602,8 +2602,8 @@ def get_offset_prime(x, y, offset):
         return 180.0 + offset
 
 
-def combine_wind_and_slope_vectors(wind_magnitude, wind_to_direction, slope_magnitude, upslope_direction):
-    difference_angle   = radians((wind_to_direction - upslope_direction) % 360.0)
+def combine_wind_and_slope_vectors(wind_magnitude, downwind_direction, slope_magnitude, upslope_direction):
+    difference_angle   = radians((downwind_direction - upslope_direction) % 360.0)
     x_magnitude        = slope_magnitude + wind_magnitude * cos(difference_angle)
     y_magnitude        = wind_magnitude * sin(difference_angle)
     combined_magnitude = sqrt(x_magnitude ** 2.0 + y_magnitude ** 2.0)
@@ -2719,7 +2719,7 @@ off.
 #+name: surface-fire-behavior-max
 #+begin_src python
 # NOTE: No longer takes ellipse_adjustment_factor parameter
-def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_from_direction,
+def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind_direction,
                                    slope, aspect, use_wind_limit=True):
     """
     Given these inputs:
@@ -2731,7 +2731,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
       - get_phi_W                :: lambda: midflame_wind_speed => phi_W
       - get_wind_speed           :: lambda: phi_W => midflame_wind_speed
     - midflame_wind_speed    :: ft/min
-    - wind_from_direction    :: degrees clockwise from North
+    - upwind_direction       :: degrees clockwise from North
     - slope                  :: rise/run
     - aspect                 :: degrees clockwise from North
     - use_wind_limit         :: boolean
@@ -2752,10 +2752,10 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, wind_f
     # Prepare wind and slope vectors
     phi_W              = get_phi_W(midflame_wind_speed)
     phi_S              = get_phi_S(slope)
-    wind_to_direction  = opposite_direction(wind_from_direction)
+    downwind_direction = opposite_direction(upwind_direction)
     upslope_direction  = opposite_direction(aspect)
     # Combine wind and slope vectors
-    combined_vector    = combine_wind_and_slope_vectors(phi_W, wind_to_direction, phi_S, upslope_direction)
+    combined_vector    = combine_wind_and_slope_vectors(phi_W, downwind_direction, phi_S, upslope_direction)
     combined_magnitude = combined_vector["combined_magnitude"]
     combined_direction = combined_vector["combined_direction"]
     # Calculate and return max surface fire behavior values
@@ -2907,7 +2907,7 @@ wind_speed_10m_x = 100.0                    # m/min
 wind_speed_10m_y = 100.0                    # m/min
 
 # Convert from cartesian (x,y) to azimuthal (r,azimuth) coordinates
-(wind_speed_10m, wind_from_direction) = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
+(wind_speed_10m, upwind_direction) = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
 
 # Convert from 10m wind speed to 20ft wind speed
 wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
@@ -2922,7 +2922,7 @@ midflame_wind_speed = sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft),
 print("Midflame Wind Speed and Direction for 10m Wind Speed = (100 m/min, 100 m/min)\n"
       + " with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%\n"
       + "- Speed: " + str(midflame_wind_speed) + " (ft/min)\n"
-      + "- Direction: " + str(wind_from_direction) + " (degrees clockwise from North)")
+      + "- Upwind Direction: " + str(upwind_direction) + " (degrees clockwise from North)")
 #+end_src
 
 #+RESULTS: translate-10m-wind-to-midflame-wind
@@ -2950,7 +2950,7 @@ fuel_moisture = [
     0.60, # live_woody
 ]
 midflame_wind_speed = 500.0 # ft/min
-wind_from_direction = 215.0 # degrees clockwise from North
+upwind_direction    = 215.0 # degrees clockwise from North
 slope               = 0.2   # rise/run
 aspect              = 270.0 # degrees clockwise from North
 
@@ -2963,7 +2963,7 @@ surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fu
 # Calculate surface fire behavior in the direction of maximum spread with effective wind speed limit
 surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      midflame_wind_speed,
-                                                     wind_from_direction,
+                                                     upwind_direction,
                                                      slope,
                                                      aspect)
 
@@ -2975,7 +2975,7 @@ pprint(surface_fire_max)
 # Calculate surface fire behavior in the direction of maximum spread without effective wind speed limit
 surface_fire_max_unlimited = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                                midflame_wind_speed,
-                                                               wind_from_direction,
+                                                               upwind_direction,
                                                                slope,
                                                                aspect,
                                                                use_wind_limit=False)
@@ -3020,7 +3020,7 @@ fuel_moisture = [
     0.60, # live_woody
 ]
 midflame_wind_speed = 500.0 # ft/min
-wind_from_direction = 215.0 # degrees clockwise from North
+upwind_direction    = 215.0 # degrees clockwise from North
 slope               = 0.2   # rise/run
 aspect              = 270.0 # degrees clockwise from North
 
@@ -3033,7 +3033,7 @@ surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fu
 # Calculate surface fire behavior in the direction of maximum spread with effective wind speed limit
 surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      midflame_wind_speed,
-                                                     wind_from_direction,
+                                                     upwind_direction,
                                                      slope,
                                                      aspect)
 
@@ -4404,7 +4404,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                                                  spread_rate_adjustment)
         # Midflame Wind Speed
         (wind_speed_10m,
-         wind_from_direction)   = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
+         upwind_direction)      = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
         wind_speed_20ft         = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
         midflame_wind_speed     = sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft),
                                                               fuel_model["delta"],
@@ -4413,7 +4413,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
         # Max Surface Fire Behavior
         surface_fire_max        = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                                     midflame_wind_speed,
-                                                                    wind_from_direction,
+                                                                    upwind_direction,
                                                                     slope,
                                                                     aspect)
         max_surface_spread_rate      = surface_fire_max["max_spread_rate"] # ft/min

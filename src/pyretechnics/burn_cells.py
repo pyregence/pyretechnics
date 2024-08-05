@@ -70,7 +70,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
                                                                                  spread_rate_adjustment)
         # Midflame Wind Speed
         (wind_speed_10m,
-         wind_from_direction)   = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
+         upwind_direction)      = conv.cartesian_to_azimuthal(wind_speed_10m_x, wind_speed_10m_y) # (m/min, deg)
         wind_speed_20ft         = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
         midflame_wind_speed     = sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft),
                                                               fuel_model["delta"],
@@ -79,7 +79,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
         # Max Surface Fire Behavior
         surface_fire_max        = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                                     midflame_wind_speed,
-                                                                    wind_from_direction,
+                                                                    upwind_direction,
                                                                     slope,
                                                                     aspect)
         max_surface_spread_rate      = surface_fire_max["max_spread_rate"] # ft/min
