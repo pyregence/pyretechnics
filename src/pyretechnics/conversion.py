@@ -219,6 +219,14 @@ def cartesian_to_azimuthal(x, y):
     return (r, azimuth)
 
 
+def azimuthal_to_cartesian(r, azimuth):
+    """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
+    azimuth_rad = radians(azimuth)
+    x = r * sin(azimuth_rad)
+    y = r * cos(azimuth_rad)
+    return (x, y)
+
+
 def opposite_direction(theta):
     """Convert theta to theta + 180 degrees."""
     return (theta + 180.0) % 360.0

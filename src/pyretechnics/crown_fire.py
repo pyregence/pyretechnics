@@ -127,6 +127,6 @@ def crown_fire_eccentricity(wind_speed_20ft):
     L/W = 1 + 0.125 * U20_mph
     E = sqrt( L/W^2 - 1 ) / L/W
     """
-    length_width_ratio = crown_length_to_width_ratio(wind_speed_20ft)
-    return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
+    length_to_width_ratio = crown_length_to_width_ratio(wind_speed_20ft)
+    return sqrt(length_to_width_ratio ** 2.0 - 1.0) / length_to_width_ratio
 # crown-eccentricity ends here

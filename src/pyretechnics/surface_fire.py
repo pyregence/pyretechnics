@@ -281,44 +281,45 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
-from math import radians, degrees, sin, cos, asin, sqrt
-from pyretechnics.conversion import opposite_direction
+from math import sqrt
+from pyretechnics.conversion import azimuthal_to_cartesian
 
 
-def almost_zero(x):
-    return abs(x) < 0.000001
-
-
-def get_offset_prime(x, y, offset):
-    if (x >= 0.0):
-        if (y >= 0.0):
-            return offset
-        else:
-            return 360.0 - offset
-    elif (y >= 0.0):
-        return 180.0 - offset
-    else:
-        return 180.0 + offset
-
-
-def combine_wind_and_slope_vectors(wind_magnitude, downwind_direction, slope_magnitude, upslope_direction):
-    difference_angle   = radians((downwind_direction - upslope_direction) % 360.0)
-    x_magnitude        = slope_magnitude + wind_magnitude * cos(difference_angle)
-    y_magnitude        = wind_magnitude * sin(difference_angle)
-    combined_magnitude = sqrt(x_magnitude ** 2.0 + y_magnitude ** 2.0)
-    if almost_zero(combined_magnitude):
-        return {
-            "combined_magnitude": combined_magnitude,
-            "combined_direction": upslope_direction,
-        }
-    else:
-        offset             = degrees(asin(abs(y_magnitude) / combined_magnitude))
-        offset_prime       = get_offset_prime(x_magnitude, y_magnitude, offset)
-        combined_direction = (upslope_direction + offset_prime) % 360.0
-        return {
-            "combined_magnitude": combined_magnitude,
-            "combined_direction": combined_direction,
-        }
+def combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction, slope, upslope_direction,
+                                   get_phi_S, get_phi_W):
+    # Create the 2D elevation gradient vector grad_z
+    (dz_dx, dz_dy) = azimuthal_to_cartesian(slope, upslope_direction)
+    # Create the 2D wind direction vector W_h
+    (dw_dx, dw_dy) = azimuthal_to_cartesian(midflame_wind_speed, downwind_direction)
+    # Create the 3D slope-tangential unit vector u_s pointing upslope
+    slope_unit_length = sqrt(slope ** 2.0 + slope ** 4.0)
+    u_s = (
+        dz_dx / slope_unit_length,
+        dz_dy / slope_unit_length,
+        slope ** 2.0 / slope_unit_length
+    )
+    # Create the 3D slope-tangential unit vector w_s pointing downwind
+    wind_slope_dot_product = dw_dx * dz_dx + dw_dy * dz_dy
+    wind_unit_length = sqrt(midflame_wind_speed ** 2.0 + wind_slope_dot_product ** 2.0)
+    w_s = (
+        dw_dx / wind_unit_length,
+        dw_dy / wind_unit_length,
+        wind_slope_dot_product / wind_unit_length
+    )
+    # Calculate phi_S and phi_W
+    phi_S = get_phi_S(slope)
+    phi_W = get_phi_W(wind_unit_length) # wind_unit_length = slope-aligned midflame wind speed
+    # Create the 3D slope-tangential phi_S vector
+    (phi_S_x, phi_S_y, phi_S_z) = (phi_S * u_s[0], phi_S * u_s[1], phi_S * u_s[2])
+    # Create the 3D slope-tangential phi_W vector
+    (phi_W_x, phi_W_y, phi_W_z) = (phi_W * w_s[0], phi_W * w_s[1], phi_W * w_s[2])
+    # Create the 3D slope-tangential phi_E vector
+    phi_E = (
+        phi_S_x + phi_W_x,
+        phi_S_y + phi_W_y,
+        phi_S_z + phi_W_z
+    )
+    return phi_E
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
 # FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
@@ -355,19 +356,36 @@ def surface_length_to_width_ratio_elmfire(effective_wind_speed):
                8.0)
 
 
-def surface_fire_eccentricity(effective_wind_speed):
+def surface_fire_eccentricity(length_to_width_ratio):
     """
-    Calculate the eccentricity (E) of the surface fire front using eq. 9 from
-    Rothermel 1991 and eq. 8 from Albini and Chase 1980 given:
-    - effective_wind_speed (ft/min)
+    Calculate the eccentricity (E) of the surface fire front using eq. 8 from
+    Albini and Chase 1980 given:
+    - L/W (1: circular spread, > 1: elliptical spread)
 
-    L/W = 1 + 0.25 * Ueff_mph
     E = sqrt( L/W^2 - 1 ) / L/W
     """
-    length_width_ratio = surface_length_to_width_ratio(effective_wind_speed)
-    return sqrt(length_width_ratio ** 2.0 - 1.0) / length_width_ratio
+    return sqrt(length_to_width_ratio ** 2.0 - 1.0) / length_to_width_ratio
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
+from math import sqrt
+import numpy as np
+from pyretechnics.conversion import opposite_direction
+
+
+def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_speed, phi_E_magnitude):
+    effective_wind_speed = get_wind_speed(phi_E_magnitude)
+    if (use_wind_limit and effective_wind_speed > max_wind_speed):
+        return (
+            max_wind_speed,
+            get_phi_W(max_wind_speed),
+        )
+    else:
+        return (
+            effective_wind_speed,
+            phi_E_magnitude,
+        )
+
+
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind_direction,
                                    slope, aspect, use_wind_limit=True):
@@ -388,8 +406,9 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 
     return a dictionary containing these keys:
     - max_spread_rate        :: ft/min
-    - max_spread_direction   :: degrees clockwise from North
+    - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
     - max_fireline_intensity :: Btu/ft/s
+    - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
     # Unpack no-wind-no-slope surface fire behavior values
@@ -399,35 +418,28 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
-    # Prepare wind and slope vectors
-    phi_W              = get_phi_W(midflame_wind_speed)
-    phi_S              = get_phi_S(slope)
+    # Combine wind and slope vectors
     downwind_direction = opposite_direction(upwind_direction)
     upslope_direction  = opposite_direction(aspect)
-    # Combine wind and slope vectors
-    combined_vector    = combine_wind_and_slope_vectors(phi_W, downwind_direction, phi_S, upslope_direction)
-    combined_magnitude = combined_vector["combined_magnitude"]
-    combined_direction = combined_vector["combined_direction"]
+    phi_E              = combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction,
+                                                        slope, upslope_direction, get_phi_S, get_phi_W)
+    phi_E_magnitude    = sqrt(phi_E[0] ** 2.0 + phi_E[1] ** 2.0 + phi_E[2] ** 2.0)
+    spread_unit_vector = np.asarray(phi_E) / phi_E_magnitude
+    # Limit effective wind speed to max wind speed if use_wind_limit == True
+    (limited_wind_speed,
+     limited_phi_E_magnitude) = maybe_limit_wind_speed(use_wind_limit, max_wind_speed,
+                                                       get_phi_W, get_wind_speed,
+                                                       phi_E_magnitude)
     # Calculate and return max surface fire behavior values
-    effective_wind_speed = get_wind_speed(combined_magnitude)
-    if (use_wind_limit and effective_wind_speed > max_wind_speed):
-        # Limit effective wind speed to max wind speed
-        limited_magnitude    = get_phi_W(max_wind_speed)
-        limited_eccentricity = surface_fire_eccentricity(max_wind_speed)
-        return {
-            "max_spread_rate"       : spread_rate * (1.0 + limited_magnitude),
-            "max_spread_direction"  : combined_direction,
-            "max_fireline_intensity": fireline_intensity * (1.0 + limited_magnitude),
-            "eccentricity"          : limited_eccentricity,
-        }
-    else:
-        combined_eccentricity = surface_fire_eccentricity(effective_wind_speed)
-        return {
-            "max_spread_rate"       : spread_rate * (1.0 + combined_magnitude),
-            "max_spread_direction"  : combined_direction,
-            "max_fireline_intensity": fireline_intensity * (1.0 + combined_magnitude),
-            "eccentricity"          : combined_eccentricity,
-        }
+    max_spread_rate       = spread_rate * (1.0 + limited_phi_E_magnitude)
+    length_to_width_ratio = surface_length_to_width_ratio(limited_wind_speed)
+    return {
+        "max_spread_rate"       : max_spread_rate,
+        "max_spread_vector"     : max_spread_rate * spread_unit_vector,
+        "max_fireline_intensity": fireline_intensity * (1.0 + limited_phi_E_magnitude),
+        "length_to_width_ratio" : length_to_width_ratio,
+        "eccentricity"          : surface_fire_eccentricity(length_to_width_ratio),
+    }
 # surface-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
 from math import cos, radians
