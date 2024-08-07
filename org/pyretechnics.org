@@ -2806,11 +2806,11 @@ $E$ to project the maximum spread rate $R$ and maximum fireline
 intensity $I_B$ to any point along the fire front as follows:
 
 \begin{align}
-  \Eta &= \frac{1-E}{1-E\cos\omega} \\
+  \eta &= \frac{1-E}{1-E\cos\omega} \\
   \nonumber \\
-  R(\omega) &= R \, \Eta \\
+  R(\omega) &= R \, \eta \\
   \nonumber \\
-  I_B(\omega) &= I_B \, \Eta
+  I_B(\omega) &= I_B \, \eta
 \end{align}
 
 where $\omega$ is the angular offset from the direction of maximum
