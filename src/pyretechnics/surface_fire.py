@@ -445,24 +445,13 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 from math import cos, radians
 
 
-def smallest_angle_between(theta1, theta2):
-  """
-  Computes the absolute difference between two angles as an angle between 0° and 180°.
-  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
-  """
-  angle = abs(theta1 - theta2)
-  return (360.0 - angle) if (angle > 180.0) else angle
-
-
-def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
+def calc_surface_fire_behavior_in_direction(surface_fire_max, offset_angle):
     # Unpack max surface fire behavior values
     max_spread_rate        = surface_fire_max["max_spread_rate"]
-    max_spread_direction   = surface_fire_max["max_spread_direction"]
     max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
     eccentricity           = surface_fire_max["eccentricity"]
-    # Calculate adjustment due to the difference angle between spread_direction and max_spread_direction
-    theta      = smallest_angle_between(max_spread_direction, spread_direction)
-    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+    # Calculate adjustment due to the offset angle from the max spread direction
+    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
     return {
         "spread_rate"       : max_spread_rate * adjustment,
         "fireline_intensity": max_fireline_intensity * adjustment,

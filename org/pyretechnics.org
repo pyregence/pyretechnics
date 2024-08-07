@@ -2802,55 +2802,38 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 
 Once we have calculated the maximum surface fire behavior values
 associated with a head fire, we can use the elliptical eccentricity
-$E$ to project the maximum spread rate to any point along the fire
-front as follows:
+$E$ to project the maximum spread rate $R$ and maximum fireline
+intensity $I_B$ to any point along the fire front as follows:
 
 \begin{align}
-  R_{\theta} = R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
+  \Eta &= \frac{1-E}{1-E\cos\omega} \\
+  \nonumber \\
+  R(\omega) &= R \, \Eta \\
+  \nonumber \\
+  I_B(\omega) &= I_B \, \Eta
 \end{align}
 
-where $R_{\max}$ is the maximum spread rate, $\theta$ is the angular
-offset from the direction of maximum fire spread, and $R_{\theta}$ is
-the spread rate in this direction.
-
-The =calc_surface_fire_behavior_in_direction= function defined in this
-section takes a =spread_direction= argument, which should be provided
-in absolute degrees clockwise from North. This function will
-automatically calculate the offset angle $\theta$ described above.
+where $\omega$ is the angular offset from the direction of maximum
+fire spread and $R(\omega)$ and $I(\omega)$ are the spread rate and
+fireline intensity in this direction respectively.
 
 #+name: surface-fire-behavior-in-direction
 #+begin_src python
 from math import cos, radians
 
 
-def smallest_angle_between(theta1, theta2):
-  """
-  Computes the absolute difference between two angles as an angle between 0° and 180°.
-  The return angle has the same cosine as (- theta1 theta2) but may have an opposite sine.
-  """
-  angle = abs(theta1 - theta2)
-  return (360.0 - angle) if (angle > 180.0) else angle
-
-
-def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
+def calc_surface_fire_behavior_in_direction(surface_fire_max, offset_angle):
     # Unpack max surface fire behavior values
     max_spread_rate        = surface_fire_max["max_spread_rate"]
-    max_spread_direction   = surface_fire_max["max_spread_direction"]
     max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
     eccentricity           = surface_fire_max["eccentricity"]
-    # Calculate adjustment due to the difference angle between spread_direction and max_spread_direction
-    theta      = smallest_angle_between(max_spread_direction, spread_direction)
-    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(theta)))
+    # Calculate adjustment due to the offset angle from the max spread direction
+    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
     return {
         "spread_rate"       : max_spread_rate * adjustment,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }
 #+end_src
-
-This concludes our coverage of the surface fire behavior equations
-implemented in Pyretechnics. In Section [[\[WIP\] Fire Spread Algorithms
-(pyretechnics.eulerian_level_set)]] these formulas will be translated
-from one-dimension to two-dimensional spread on a raster grid.
 
 ** For Users
    :PROPERTIES:
@@ -3058,12 +3041,12 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      aspect)
 
 # Calculate surface fire behavior for the heading, flanking, and backing fires
-heading_fire_direction  = surface_fire_max["max_spread_direction"]
-flanking_fire_direction = (heading_fire_direction + 90.0) % 360.0
-backing_fire_direction  = (heading_fire_direction + 180.0) % 360.0
-heading_fire_behavior   = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
-flanking_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_direction)
-backing_fire_behavior   = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, backing_fire_direction)
+heading_fire_offset    = 0.0
+flanking_fire_offset   = 90.0
+backing_fire_offset    = 180.0
+heading_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_offset)
+flanking_fire_behavior = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_offset)
+backing_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, backing_fire_offset)
 
 # View heading fire results
 print("Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
