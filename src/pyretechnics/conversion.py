@@ -194,36 +194,33 @@ def min_to_day(minutes):
 
 def cartesian_to_polar(x, y):
     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
-    r     = sqrt(x ** 2.0 + y ** 2.0)
-    theta = atan2(y, x) if x > 0.0 else atan2(y, x) + pi
-    return (r, degrees(theta))
+    r         = sqrt(x ** 2.0 + y ** 2.0)
+    theta_rad = atan2(y, x)
+    theta     = degrees(theta_rad) % 360.0
+    return (r, theta)
 
 
 def polar_to_cartesian(r, theta):
     """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
     theta_rad = radians(theta)
-    x = r * cos(theta_rad)
-    y = r * sin(theta_rad)
+    x         = r * cos(theta_rad)
+    y         = r * sin(theta_rad)
     return (x, y)
-
-
-def angle_to_azimuth(theta):
-    """Convert an angle measured counterclockwise from East to one measured clockwise from North."""
-    return (90.0 - theta % 360.0) % 360.0
 
 
 def cartesian_to_azimuthal(x, y):
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
-    (r, theta) = cartesian_to_polar(x, y)
-    azimuth = angle_to_azimuth(theta)
+    r           = sqrt(x ** 2.0 + y ** 2.0)
+    azimuth_rad = atan2(x, y)
+    azimuth     = degrees(azimuth_rad) % 360.0
     return (r, azimuth)
 
 
 def azimuthal_to_cartesian(r, azimuth):
     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
     azimuth_rad = radians(azimuth)
-    x = r * sin(azimuth_rad)
-    y = r * cos(azimuth_rad)
+    x           = r * sin(azimuth_rad)
+    y           = r * cos(azimuth_rad)
     return (x, y)
 
 
