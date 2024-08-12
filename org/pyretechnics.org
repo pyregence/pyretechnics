@@ -3047,8 +3047,10 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 #+name: compute-surface-fire-behavior-in-direction
 #+begin_src python
 from pprint import pprint
+import pyretechnics.conversion as conv
 import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
+import pyretechnics.vector_utils as vu
 
 # Set input parameters
 fuel_model    = fm.fuel_model_table[101] # GR1
@@ -3084,7 +3086,9 @@ flanking_fire_offset    = 90.0
 backing_fire_offset     = 180.0
 
 heading_fire_direction  = surface_fire_max["max_spread_direction"]
-flanking_fire_direction = (0,1,0) # TODO: Identify this vector
+grad_z                  = conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+slope_normal_vector     = vu.get_slope_normal_vector(grad_z)
+flanking_fire_direction = vu.rotate_on_sloped_plane(heading_fire_direction, 90, slope_normal_vector)
 backing_fire_direction  = -heading_fire_direction
 
 heading_fire_behavior1  = sf.calc_surface_fire_behavior_from_offset_angle(surface_fire_max, heading_fire_offset)
@@ -3138,7 +3142,7 @@ Flanking Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.0
 {'fireline_intensity': 1.2280611688774694, 'spread_rate': 0.9847121381882004}
 
 Flanking Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 3.912309387129932, 'spread_rate': 3.137057533849007}
+{'fireline_intensity': 1.2280611688774696, 'spread_rate': 0.9847121381882006}
 
 Backing Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fireline_intensity': 0.6569596575341267, 'spread_rate': 0.5267784418793591}
