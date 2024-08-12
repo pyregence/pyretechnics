@@ -281,52 +281,31 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
-from math import sqrt
-import numpy as np
 from pyretechnics.conversion import azimuthal_to_cartesian
-
-
-def vector_magnitude(vector):
-    return sqrt(np.dot(vector, vector))
-
-
-def to_slope_plane(vector_2d, upslope_vector_2d):
-    return (
-        vector_2d[0],
-        vector_2d[1],
-        np.dot(vector_2d, upslope_vector_2d)
-    )
-
-
-def to_horizontal_plane(vector_3d):
-    return vector_3d[0:2]
-
-
-def as_unit_vector(vector):
-    return np.asarray(vector) / vector_magnitude(vector)
+from pyretechnics.vector_utils import vector_magnitude, as_unit_vector, to_slope_plane
 
 
 def combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction, slope, upslope_direction,
                                    get_phi_S, get_phi_W):
     # Create the 2D elevation gradient vector grad_z
-    grad_z = azimuthal_to_cartesian(slope, upslope_direction)
+    grad_z    = azimuthal_to_cartesian(slope, upslope_direction)
     # Create the 2D wind direction vector W_h
-    W_h = azimuthal_to_cartesian(midflame_wind_speed, downwind_direction)
+    W_h       = azimuthal_to_cartesian(midflame_wind_speed, downwind_direction)
     # Create the 3D slope-tangential unit vector u_s pointing upslope
     grad_z_3d = to_slope_plane(grad_z, grad_z)
     u_s       = as_unit_vector(grad_z_3d)
     # Create the 3D slope-tangential unit vector w_s pointing downwind
-    W_h_3d = to_slope_plane(W_h, grad_z)
-    w_s    = as_unit_vector(W_h_3d)
+    W_h_3d    = to_slope_plane(W_h, grad_z)
+    w_s       = as_unit_vector(W_h_3d)
     # Calculate phi_S and phi_W
-    phi_S = get_phi_S(slope)
-    phi_W = get_phi_W(vector_magnitude(W_h_3d)) # |W_h_3d| = slope-aligned midflame wind speed
+    phi_S     = get_phi_S(slope)
+    phi_W     = get_phi_W(vector_magnitude(W_h_3d)) # |W_h_3d| = slope-aligned midflame wind speed
     # Create the 3D slope-tangential phi_S vector
-    phi_S_3d = phi_S * u_s
+    phi_S_3d  = phi_S * u_s
     # Create the 3D slope-tangential phi_W vector
-    phi_W_3d = phi_W * w_s
+    phi_W_3d  = phi_W * w_s
     # Create the 3D slope-tangential phi_E vector
-    phi_E_3d = phi_S_3d + phi_W_3d
+    phi_E_3d  = phi_S_3d + phi_W_3d
     return phi_E_3d
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
@@ -377,6 +356,7 @@ def surface_fire_eccentricity(length_to_width_ratio):
 from math import sqrt
 import numpy as np
 from pyretechnics.conversion import opposite_direction
+from pyretechnics.vector_utils import vector_magnitude
 
 
 def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_speed, phi_E_magnitude):
