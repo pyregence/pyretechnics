@@ -285,8 +285,6 @@ from pyretechnics.conversion import azimuthal_to_cartesian
 from pyretechnics.vector_utils import vector_magnitude, as_unit_vector, to_slope_plane
 
 
-# FIXME: prevent divide-by-zero error if either or both midflame_wind_speed and slope are 0
-# Val suggests using equation 38 from elliptical_wavelets.pdf
 def combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction, slope, upslope_direction,
                                    get_phi_S, get_phi_W):
     # Create the 2D elevation gradient vector grad_z
@@ -295,10 +293,10 @@ def combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction, slop
     W_h       = azimuthal_to_cartesian(midflame_wind_speed, downwind_direction)
     # Create the 3D slope-tangential unit vector u_S pointing upslope
     grad_z_3d = to_slope_plane(grad_z, grad_z)
-    u_S       = as_unit_vector(grad_z_3d)
+    u_S       = as_unit_vector(grad_z_3d) if slope > 0.0 else grad_z_3d
     # Create the 3D slope-tangential unit vector w_S pointing downwind
     W_h_3d    = to_slope_plane(W_h, grad_z)
-    w_S       = as_unit_vector(W_h_3d)
+    w_S       = as_unit_vector(W_h_3d) if midflame_wind_speed > 0.0 else W_h_3d
     # Calculate phi_S and phi_W
     phi_S     = get_phi_S(slope)
     phi_W     = get_phi_W(vector_magnitude(W_h_3d)) # |W_h_3d| = slope-aligned midflame wind speed

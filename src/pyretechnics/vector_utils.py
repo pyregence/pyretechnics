@@ -13,15 +13,15 @@ def as_unit_vector(vector):
 
 
 def to_slope_plane(vector_2d, elevation_gradient):
-    return (
+    return np.asarray((
         vector_2d[0],
         vector_2d[1],
         np.dot(vector_2d, elevation_gradient)
-    )
+    ))
 
 
 def to_horizontal_plane(vector_3d):
-    return vector_3d[0:2]
+    return np.asarray(vector_3d[0:2])
 
 
 def get_slope_normal_vector(elevation_gradient):
