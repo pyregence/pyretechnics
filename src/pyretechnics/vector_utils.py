@@ -36,5 +36,5 @@ def rotate_on_sloped_plane(vector, theta, slope, aspect):
     slope_normal_vector = get_slope_normal_vector(elevation_gradient)
     # Rotate theta degrees clockwise around the slope_normal_vector
     theta_rad = radians(theta)
-    return cos(theta_rad) * vector + np.matmul(sin(theta_rad) * slope_normal_vector, vector)
+    return cos(theta_rad) * vector + np.matmul(sin(theta_rad) * vector, slope_normal_vector)
 # vector-utilities ends here
