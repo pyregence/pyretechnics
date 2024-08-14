@@ -2304,9 +2304,9 @@ equations as described below.[fn::Anderson1969][fn::Byram1959]
   \nonumber \\
   D_A &= R \, t_{\text{res}} \\
   \nonumber \\
-  I_B &= \frac{I_R \, D_A}{60} \\
+  I_s &= \frac{I_R \, D_A}{60} \\
   \nonumber \\
-  L_B &= 0.45(I_B)^{0.46}
+  L_s &= 0.45(I_s)^{0.46}
 \end{align}
 
 where $\sigma'$ is the weighted sum by size class of the fuel model's
@@ -2314,8 +2314,8 @@ surface area to volume ratio in $\text{ft}^2/\text{ft}^3$,
 $t_{\text{res}}$ is the residence time in $\text{minutes}$, $R$ is the
 surface fire spread rate in $\text{ft}/\min$, $D_A$ is the flame depth
 in $\text{ft}$, $I_R$ is the reaction intensity in
-$\text{Btu}/\text{ft}^2/\min$, $I_B$ is the fireline intensity in
-$\text{Btu}/\text{ft}/\text{s}$, and $L_B$ is the flame length in
+$\text{Btu}/\text{ft}^2/\min$, $I_s$ is the fireline intensity in
+$\text{Btu}/\text{ft}/\text{s}$, and $L_s$ is the flame length in
 $\text{ft}$.
 
 #+name: surface-fire-intensity-functions
@@ -2476,7 +2476,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     # Calculate base fireline intensity (no wind, no slope)
     t_res          = calc_residence_time(sigma_prime)                           # min
     D_A            = calc_flame_depth(R0, t_res)                                # ft
-    I_B            = calc_fireline_intensity(I_R, D_A)                          # Btu/ft/s
+    I_s            = calc_fireline_intensity(I_R, D_A)                          # Btu/ft/s
     # Pre-compute values related to wind and slope
     U_eff_max      = calc_max_effective_wind_speed(I_R)                         # ft/min
     B              = 0.02526 * (sigma_prime ** 0.54)
@@ -2489,7 +2489,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     # Return no-wind-no-slope surface fire behavior values
     return {
         "base_spread_rate"        : R0 * spread_rate_adjustment,
-        "base_fireline_intensity" : I_B * spread_rate_adjustment,
+        "base_fireline_intensity" : I_s * spread_rate_adjustment,
         "max_effective_wind_speed": U_eff_max,
         "get_phi_S"               : get_phi_S,
         "get_phi_W"               : get_phi_W,
@@ -2588,40 +2588,52 @@ procedure provided by Waeselynck 2024.[fn::Waeselynck2024]
 
 #+name: surface-fire-combine-wind-and-slope-vectors
 #+begin_src python
+import numpy as np
 from pyretechnics.conversion import azimuthal_to_cartesian
 from pyretechnics.vector_utils import vector_magnitude, as_unit_vector, to_slope_plane
 
 
-def combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction, slope, upslope_direction,
-                                   get_phi_S, get_phi_W):
-    # Create the 2D elevation gradient vector grad_z
-    grad_z    = azimuthal_to_cartesian(slope, upslope_direction)
-    # Create the 2D wind direction vector W_h
-    W_h       = azimuthal_to_cartesian(midflame_wind_speed, downwind_direction)
-    # Create the 3D slope-tangential unit vector u_S pointing upslope
-    grad_z_3d = to_slope_plane(grad_z, grad_z)
-    u_S       = as_unit_vector(grad_z_3d) if slope > 0.0 else grad_z_3d
-    # Create the 3D slope-tangential unit vector w_S pointing downwind
-    W_h_3d    = to_slope_plane(W_h, grad_z)
-    w_S       = as_unit_vector(W_h_3d) if midflame_wind_speed > 0.0 else W_h_3d
-    # Calculate phi_S and phi_W
-    phi_S     = get_phi_S(slope)
-    phi_W     = get_phi_W(vector_magnitude(W_h_3d)) # |W_h_3d| = slope-aligned midflame wind speed
-    # Create the 3D slope-tangential phi_S vector
-    phi_S_3d  = phi_S * u_S
-    # Create the 3D slope-tangential phi_W vector
-    phi_W_3d  = phi_W * w_S
-    # Create the 3D slope-tangential phi_E vector
-    phi_E_3d  = phi_S_3d + phi_W_3d
+def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, upslope_direction):
+    """
+    Given these inputs:
+    - wind_speed         :: S
+    - downwind_direction :: degrees clockwise from North
+    - slope              :: rise/run
+    - upslope_direction  :: degrees clockwise from North
+
+    return a dictionary containing these keys:
+    - wind_vector_3d  :: (x: S, y: S, z: S)
+    - slope_vector_3d :: (x, y, z)
+    """
+    # Convert wind and slope vectors from azimuthal to cartesian coordinates
+    wind_vector_2d  = azimuthal_to_cartesian(wind_speed, downwind_direction)
+    slope_vector_2d = azimuthal_to_cartesian(slope, upslope_direction)
+    # Project wind and slope vectors onto the slope-tangential plane
+    wind_vector_3d  = to_slope_plane(wind_vector_2d, slope_vector_2d)
+    slope_vector_3d = to_slope_plane(slope_vector_2d, slope_vector_2d)
+    return {
+        "wind_vector_3d" : wind_vector_3d,
+        "slope_vector_3d": slope_vector_3d,
+    }
+
+
+def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
+    # Convert wind and slope vectors to unit vectors on the slope-tangential plane
+    w_S = as_unit_vector(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
+    u_S = as_unit_vector(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d
+    # Create the 3D slope-tangential phi_W, phi_S, and phi_E vectors
+    phi_W_3d = phi_W * w_S
+    phi_S_3d = phi_S * u_S
+    phi_E_3d = phi_W_3d + phi_S_3d
     # Calculate phi_E
-    phi_E     = vector_magnitude(phi_E_3d)
+    phi_E = vector_magnitude(phi_E_3d)
     # Determine max spread direction and return results
     if phi_E > 0.0:
         return {
             "phi_E"               : phi_E,
             "max_spread_direction": phi_E_3d / phi_E,
         }
-    elif slope > 0.0:
+    elif phi_S > 0.0:
         return {
             "phi_E"               : phi_E,
             "max_spread_direction": u_S,
@@ -2666,7 +2678,7 @@ def surface_length_to_width_ratio(effective_wind_speed):
     """
     Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
     Rothermel 1991 given:
-    - effective_wind_speed (ft/min)
+    - effective_wind_speed :: ft/min
 
     L/W = 1 + 0.25 * Ueff_mph
     """
@@ -2678,7 +2690,7 @@ def surface_length_to_width_ratio(effective_wind_speed):
 def surface_length_to_width_ratio_elmfire(effective_wind_speed):
     """
     Calculate the length_to_width_ratio of the surface fire front given:
-    - effective_wind_speed (ft/min)
+    - effective_wind_speed :: ft/min
 
     L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
     """
@@ -2695,7 +2707,7 @@ def surface_fire_eccentricity(length_to_width_ratio):
     """
     Calculate the eccentricity (E) of the surface fire front using eq. 8 from
     Albini and Chase 1980 given:
-    - L/W (1: circular spread, > 1: elliptical spread)
+    - L/W :: (1: circular spread, > 1: elliptical spread)
 
     E = sqrt( L/W^2 - 1 ) / L/W
     """
@@ -2726,8 +2738,6 @@ off.
 
 #+name: surface-fire-behavior-max
 #+begin_src python
-from math import sqrt
-import numpy as np
 from pyretechnics.conversion import opposite_direction
 from pyretechnics.vector_utils import vector_magnitude
 
@@ -2766,7 +2776,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 
     return a dictionary containing these keys:
     - max_spread_rate        :: ft/min
-    - max_spread_direction   :: (x: ft/min, y: ft/min, z: ft/min)
+    - max_spread_direction   :: (x, y, z) unit vector
     - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
     - max_fireline_intensity :: Btu/ft/s
     - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
@@ -2779,11 +2789,18 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     get_phi_W          = surface_fire_min["get_phi_W"]
     get_phi_S          = surface_fire_min["get_phi_S"]
     get_wind_speed     = surface_fire_min["get_wind_speed"]
-    # Combine wind and slope vectors
-    downwind_direction   = opposite_direction(upwind_direction)
-    upslope_direction    = opposite_direction(aspect)
-    result               = combine_wind_and_slope_vectors(midflame_wind_speed, downwind_direction,
-                                                          slope, upslope_direction, get_phi_S, get_phi_W)
+    # Reverse the provided wind and slope directions
+    downwind_direction = opposite_direction(upwind_direction)
+    upslope_direction  = opposite_direction(aspect)
+    # Project wind and slope vectors onto the slope-tangential plane
+    vectors = project_wind_and_slope_vectors_3d(midflame_wind_speed, downwind_direction, slope, upslope_direction)
+    wind_vector_3d  = vectors["wind_vector_3d"]  # ft/min
+    slope_vector_3d = vectors["slope_vector_3d"] # rise/run
+    # Calculate phi_W and phi_S
+    phi_W = get_phi_W(vector_magnitude(wind_vector_3d)) # |wind_vector_3d| = slope-aligned midflame wind speed
+    phi_S = get_phi_S(slope)
+    # Calculate phi_E and the max_spread_direction
+    result               = get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S)
     phi_E                = result["phi_E"]
     max_spread_direction = result["max_spread_direction"]
     # Limit effective wind speed to max wind speed if use_wind_limit == True
@@ -2806,20 +2823,36 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 
 Once we have calculated the maximum surface fire behavior values
 associated with a head fire, we can use the elliptical eccentricity
-$E$ to project the maximum spread rate $R$ and maximum fireline
-intensity $I_B$ to any point along the fire front as follows:
+$E$ to project the maximum spread rate $R_s$ and maximum fireline
+intensity $I_s$ to any point along the fire front as follows:
 
 \begin{align}
   \eta &= \frac{1-E}{1-E\cos\omega} \\
   \nonumber \\
-  R(\omega) &= R \, \eta \\
+  R_s(\omega) &= R_s \, \eta \\
   \nonumber \\
-  I_B(\omega) &= I_B \, \eta
+  I_s(\omega) &= I_s \, \eta
 \end{align}
 
 where $\omega$ is the angular offset from the direction of maximum
-fire spread and $R(\omega)$ and $I(\omega)$ are the spread rate and
-fireline intensity in this direction respectively.
+fire spread and $R_s(\omega)$ and $I_s(\omega)$ are the spread rate
+and fireline intensity in this direction respectively.
+
+Since the surface fire ellipse is defined on the slope-tangential
+plane, we must represent spread directions with three dimensional unit
+vectors aligned with this plane rather than with angles. Fortunately,
+we can use the relationship between the dot product of two vectors and
+the cosine of the angle between them to rewrite the $\eta$ function
+above as follows:
+
+\begin{align}
+  \eta = \frac{1-E}{1-E(\vec{u_{\max}} \cdot \vec{u_{\omega}})}
+\end{align}
+
+where $\vec{u_{\max}}$ is the slope-tangential unit vector in the
+direction of maximum spread and $\vec{u_{\omega}}$ is the
+slope-tangential unit vector rotated $\omega$ degrees clockwise along
+this plane from $\vec{u_{\max}}$.
 
 #+name: surface-fire-behavior-in-direction
 #+begin_src python
@@ -2832,7 +2865,7 @@ def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle)
     Given these inputs:
     - surface_fire_max     :: dictionary of max surface fire behavior values
       - max_spread_rate        :: ft/min
-      - max_spread_direction   :: (x: ft/min, y: ft/min, z: ft/min)
+      - max_spread_direction   :: (x, y, z) unit vector
       - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
       - max_fireline_intensity :: Btu/ft/s
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
@@ -2860,7 +2893,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     Given these inputs:
     - surface_fire_max     :: dictionary of max surface fire behavior values
       - max_spread_rate        :: ft/min
-      - max_spread_direction   :: (x: ft/min, y: ft/min, z: ft/min)
+      - max_spread_direction   :: (x, y, z) unit vector
       - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
       - max_fireline_intensity :: Btu/ft/s
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
@@ -2873,9 +2906,9 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     """
     # Unpack max surface fire behavior values
     max_spread_rate        = surface_fire_max["max_spread_rate"]
+    max_spread_direction   = surface_fire_max["max_spread_direction"]
     max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
     eccentricity           = surface_fire_max["eccentricity"]
-    max_spread_direction   = surface_fire_max["max_spread_direction"]
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
     cos_w = np.dot(max_spread_direction, np.asarray(spread_direction))
     # Calculate adjustment due to the offset angle from the max spread direction
@@ -2894,18 +2927,26 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
    :END:
 
 In the following sections, we will demonstrate how to calculate the
-no-wind-no-slope and max spread direction surface fire behavior values
-given a fuel model and measurements of fuel moisture, wind speed, wind
-direction, slope, and aspect. Because wind speed and direction will
-often be provided from measurements taken 10m or 20ft above the canopy
-and may be given in either cartesion =(x,y)= or azimuthal
-=(r,azimuth)= coordinates, we also demonstrate how to convert from
-cartesian to azimuthal coordinates, from 10m to 20ft wind speeds, and
-from 20ft to midflame wind speeds, given a fuel model and measurements
-of canopy height and canopy cover.
+surface fire behavior values given a fuel model and measurements of
+fuel moisture, wind speed, wind direction, slope, and aspect. This
+will be done first for the no-wind-no-slope case, followed by the max
+spread direction case, and finally in any direction on the sloped
+surface using both offset angles from the heading fire direction and
+3D vectors specifying absolute directions.
+
+Because wind speed and direction will often be provided from
+measurements taken 10m or 20ft above the canopy and may be given in
+either cartesion =(x,y)= or azimuthal =(r,azimuth)= coordinates, we
+also demonstrate how to convert from cartesian to azimuthal
+coordinates, from 10m to 20ft wind speeds, and from 20ft to midflame
+wind speeds, given a fuel model and measurements of canopy height and
+canopy cover.
 
 See Appendix [[Units Conversion Functions (pyretechnics.conversion)]] for
-the full list of available conversion functions.
+the full list of available units conversion functions.
+
+See Appendix [[Vector Utility Functions (pyretechnics.vector_utils)]] for
+the full list of available vector manipulation functions.
 
 *** How to Calculate the No-Wind-No-Slope Surface Fire Behavior
 
@@ -3170,206 +3211,279 @@ Backing Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [
    :header-args:python+: :tangle  ../src/pyretechnics/crown_fire.py
    :header-args:python+: :exports code
    :END:
-** For Users
-   :PROPERTIES:
-   :header-args:python+: :session *examples:pyretechnics.crown_fire*
-   :header-args:python+: :results output replace
-   :header-args:python+: :exports both
-   :END:
+
+The following sections define functions that calculate the spread rate
+and intensity of a fire burning through tree canopy fuels. These
+functions combine the surface fire behavior values calculated in
+section [[Surface Fire Equations (pyretechnics.surface_fire)]] with
+measurements of foliar moisture, dead 1 hour fuel moisture, canopy
+cover, canopy height, canopy base height, and canopy bulk density to
+determine whether a surface fire will spread into either a passive or
+active crown fire. If so, they can then calculate the maximum spread
+rate and direction of this crown fire as well as its fireline
+intensity and flame length.
+
+*** Crown Fire Initiation
 
 In order to incorporate the effects of crown fire behavior,
 Pyretechnics includes the crown fire initiation routine from Van
-Wagner 1977.[fn::VanWagner1977] According to this approach, there are
-two threshold values (/critical intensity/ and /critical spread rate/)
-that must be calculated in order to determine whether a fire will
-become an active or passive crown fire or simply remain a surface
-fire. The formulas for these thresholds are as follows:
+Wagner 1977.[fn::VanWagner1977] According to this approach, we begin
+by calculating the /critical fireline intensity/ as follows:
 
 \begin{align}
   H &= 460 + 2600 M^f \\
   \nonumber \\
-  I^* &= (0.01 \, Z_b \, H)^{1.5} \\
-  \nonumber \\
-  R^* &= \frac{3.0}{B_m}
+  I_s^* &= (0.01 \, Z_b \, H)^{1.5}
 \end{align}
 
 where $H$ is the heat of ignition for the herbaceous material in the
-canopy in kJ/kg, $M^{f}$ is the foliar moisture content in lb
-moisture/lb ovendry weight, $Z_{b}$ is the canopy base height in
-meters, $I^{*}$ is the critical intensity in kW/m, $B_{m}$ is the
-crown bulk density in kg/m^{3}, and $R^{*}$ is the critical spread
-rate in m/min.
+canopy in $\text{kJ/kg}$, $M^f$ is the foliar moisture content in
+$\text{kg moisture/kg ovendry weight}$, $Z_b$ is the canopy base
+height in meters, and $I_s^*$ is the critical fireline intensity in
+$\text{kW/m}$.
 
-If the canopy cover is greater than 40% and the surface fireline
-intensity is greater than the critical intensity ($I > I^*$), then
-crown fire initiation occurs.
-
-#+name: van-wagner-crown-fire-initiation
-#+begin_src python :tangle ../src/pyretechnics/crown_fire.py
+#+name: van-wagner-critical-fireline-intensity
+#+begin_src python
 def van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture):
     """
-    Ouputs the critical fireline intensity (kW/m) using:
-    - canopy_base_height (m)
-    - foliar_moisture (0-1)
+    Returns the critical fireline intensity (kW/m) given:
+    - canopy_base_height :: m
+    - foliar_moisture    :: kg moisture/kg ovendry weight
 
     Constants used:
-    460.0 = heat-of-ignition (kJ/kg)
-    0.01 = empirical estimate for C in eq. 4
+    460.0 = heat-of-ignition :: kJ/kg
+    0.01 = empirical estimate for C in Van Wagner 1977 (eq. 4)
     """
-    return ((foliar_moisture * 2600.0 + 460.0) * 0.01 * canopy_base_height) ** 1.5
-
-
-def van_wagner_crown_fire_initiation(canopy_cover, canopy_base_height, foliar_moisture, fireline_intensity):
-    """
-    - canopy_cover (0-1)
-    - canopy_base_height (m)
-    - foliar_moisture (0-1)
-    - fireline_intensity (kW/m)
-    """
-    return ((canopy_cover > 0.4)
-            and
-            (fireline_intensity > 0.0)
-            and
-            (canopy_base_height > 0.0)
-            and
-            (fireline_intensity >= van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture)))
+    H = 460.0 + 2600.0 * foliar_moisture
+    return (0.01 * canopy_base_height * H) ** 1.5
 #+end_src
 
-If crowning occurs, then the active and passive crown fire spread
-rates are calculated from the formulas given in Cruz
-2005.[fn::Cruz2005]
+If a surface fire is present, the canopy cover is greater than 40%,
+and the surface fireline intensity $I_s$ is greater than or equal to
+the critical fireline intensity $I_s^*$, then the surface fire
+transitions to a crown fire.
+
+#+name: van-wagner-crown-fire-initiation
+#+begin_src python
+def van_wagner_crown_fire_initiation(surface_fireline_intensity, canopy_cover, canopy_base_height, foliar_moisture):
+    """
+    Returns True if the surface fire transitions to a crown fire or False otherwise given:
+    - surface_fireline_intensity :: kW/m
+    - canopy_cover               :: 0-1
+    - canopy_base_height         :: m
+    - foliar_moisture            :: kg moisture/kg ovendry weight
+    """
+    return (
+        surface_fireline_intensity > 0.0
+        and
+        canopy_cover > 0.4
+        and
+        surface_fireline_intensity >= van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture)
+    )
+#+end_src
+
+*** Passive and Active Crown Fire Spread Rate Functions
+
+If crowning occurs, then the active crown fire spread rate is
+calculated from the following formula given in Cruz
+2005:[fn::Cruz2005]
 
 \begin{align}
-  \text{CROS}_A &= 11.02 \> U_{10m}^{0.90} \> B_m^{0.19} \> e^{-17 \, \text{EFFM}} \\
-  \nonumber \\
-  \text{CROS}_P &= \text{CROS}_A \> e^{\frac{-\text{CROS}_A}{R^*}}
+  \text{CROS}_A = 11.02 \, U_{10\text{m}}^{0.90} \, B_m^{0.19} \, e^{-17 \, \text{EFFM}} \\
 \end{align}
 
-where $\text{CROS}_{A}$ is the active crown fire spread rate in
-m/min, $U_{10m}$ is the 10 meter windspeed in km/hr, $B_{m}$ is the
-crown bulk density in kg/m^{3}, EFFM is the estimated fine fuel
-moisture as a percent (0-1), and $\text{CROS}_{P}$ is the passive
-crown fire spread rate in m/min.
+where $\text{CROS}_A$ is the active crown fire spread rate in
+$\text{m}/\min$, $U_{10\text{m}}$ is the 10 meter windspeed in
+$\text{km/hr}$, $B_m$ is the canopy bulk density in $\text{kg/m}^3$,
+and $\text{EFFM}$ is the estimated fine fuel moisture in $\text{kg moisture/kg ovendry weight}$.
 
-If the active crown fire spread rate is greater than the critical
-spread rate ($\text{CROS}_{A} > R^{*}$), then the crown fire will be
-active, otherwise passive.
-
-#+name: cruz-crown-fire-spread
-#+begin_src python :tangle ../src/pyretechnics/crown_fire.py
+#+name: cruz-active-crown-fire-spread-rate
+#+begin_src python
 from math import exp
 
-def cruz_active_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
+
+def cruz_active_crown_fire_spread_rate(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
     """
-    Returns active spread-rate in m/min given:
-    - wind_speed_10m (km/hr)
-    - canopy_bulk_density (kg/m^3)
-    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
+    Returns the active crown fire spread rate (m/min) given:
+    - wind_speed_10m                                   :: km/hr
+    - canopy_bulk_density                              :: kg/m^3
+    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") :: kg moisture/kg ovendry weight
     """
     return (11.02
-            * wind_speed_10m ** 0.90
-            * canopy_bulk_density ** 0.19
-            * exp(-17.0 * estimated_fine_fuel_moisture))
-
-
-def cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate):
-    """
-    Returns passive spread-rate in m/min given:
-    - active_spread_rate (m/min)
-    - critical_spread_rate (m/min)
-    """
-    return active_spread_rate * exp(-1.0 * active_spread_rate / critical_spread_rate)
-
-
-def cruz_crown_fire_spread(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
-    """
-    Returns spread-rate in m/min given:
-    - wind_speed_10m (km/hr)
-    - canopy_bulk_density (kg/m^3)
-    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") (0-1)
-    NOTE: A positive spread-rate indicates active crowning.
-          A negative spread-rate indicates passive crowning.
-    """
-    active_spread_rate   = cruz_active_crown_fire_spread(wind_speed_10m,
-                                                         canopy_bulk_density,
-                                                         estimated_fine_fuel_moisture)
-    critical_spread_rate = 3.0 / canopy_bulk_density # m/min
-    if (active_spread_rate > critical_spread_rate):
-        return active_spread_rate
-    else:
-        # NOTE: Use minus as passive flag
-        return -1.0 * cruz_passive_crown_fire_spread(active_spread_rate, critical_spread_rate)
+            ,* wind_speed_10m ** 0.90
+            ,* canopy_bulk_density ** 0.19
+            ,* exp(-17.0 * estimated_fine_fuel_moisture))
 #+end_src
 
+Next, we need to calculate the /critical spread rate/ from Van Wagner
+1977[fn::VanWagner1977] as follows:
+
+\begin{align}
+  R^* = \frac{3.0}{B_m}
+\end{align}
+
+where $R^*$ is the critical spread rate in $\text{m}/\min$ and $B_m$
+is the canopy bulk density in $\text{kg/m}^3$.
+
+#+name: van-wagner-critical-spread-rate
+#+begin_src python
+def van_wagner_critical_spread_rate(canopy_bulk_density):
+    """
+    Returns the critical spread rate (m/min) given:
+    - canopy_bulk_density :: kg/m^3
+    """
+    return 3.0 / canopy_bulk_density
+#+end_src
+
+If the active crown fire spread rate $\text{CROS}_A$ is greater than
+the critical spread rate $R^*$, then the crown fire will be active,
+otherwise passive. In the event of a passive crown fire, its spread
+rate is calculated using the following formula from Cruz
+2005:[fn::Cruz2005]
+
+\begin{align}
+  \text{CROS}_P = \text{CROS}_A \, e^{-\text{CROS}_A / R^*}
+\end{align}
+
+where $\text{CROS}_P$ is the passive crown fire spread rate in
+$\text{m}/\min$, $\text{CROS}_A$ is the active crown fire spread rate
+in $\text{m}/\min$, and $R^*$ is the critical spread rate in
+$\text{m}/\min$.
+
+#+name: cruz-passive-crown-fire-spread-rate
+#+begin_src python
+from math import exp
+
+
+def cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate):
+    """
+    Returns the passive crown fire spread rate (m/min) given:
+    - active_spread_rate   :: m/min
+    - critical_spread_rate :: m/min
+    """
+    return active_spread_rate * exp(-active_spread_rate / critical_spread_rate)
+#+end_src
+
+Putting it all together, the following function calculates the
+critical spread rate, whether a crown fire will become passive or
+active, and its associated passive or active spread rate.
+
+#+name: cruz-crown-fire-spread-info
+#+begin_src python
+def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_fine_fuel_moisture):
+    """
+    Given these inputs:
+    - wind_speed_10m                                   :: km/hr
+    - canopy_bulk_density                              :: kg/m^3
+    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") :: kg moisture/kg ovendry weight
+
+    return a dictionary containing these keys:
+    - spread_type          :: "passive" or "active"
+    - spread_rate          :: m/min
+    - critical_spread_rate :: m/min
+    """
+    active_spread_rate   = cruz_active_crown_fire_spread_rate(wind_speed_10m,
+                                                              canopy_bulk_density,
+                                                              estimated_fine_fuel_moisture) # m/min
+    critical_spread_rate = van_wagner_critical_spread_rate(canopy_bulk_density) # m/min
+    if (active_spread_rate > critical_spread_rate):
+        return {
+            "spread_type"         : "active",
+            "spread_rate"         : active_spread_rate,
+            "critical_spread_rate": critical_spread_rate,
+        }
+    else:
+        return {
+            "spread_type"         : "passive",
+            "spread_rate"         : cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate),
+            "critical_spread_rate": critical_spread_rate,
+        }
+#+end_src
+
+*** Crown Fire Intensity Functions
+
 Once the crown fire spread rate is determined, the crown fireline
-intensity and flame lengths may be derived using the following
+intensity and flame length may be calculated using the following
 formulas:
 
 \begin{align}
-  I_c &= \frac{R_c B (Z - Z_b) h}{60} \\
+  I_c &= \frac{R_c \, B \, (Z - Z_b) \, h}{60} \\
   \nonumber \\
-  L_c &= 0.45(I + I_c)^{0.46}
+  L_c &= 0.45(I_s + I_c)^{0.46}
 \end{align}
 
-where $I_{c}$ is the crown fireline intensity in Btu/ft/s, $R_{c}$ is
-the crown fire spread rate (either $\text{CROS}_{A}$ or
-$\text{CROS}_{P}$) in ft/min, $B$ is the crown bulk density in
-lb/ft^{3}, $Z$ is the canopy height in ft, $Z_{b}$ is the canopy base
-height in ft, $h$ is the fuel model heat of combustion (generally 8000
-Btu/lb), $L_{c}$ is the crown flame length in ft, and $I$ is the
-surface fireline intensity in Btu/ft/s.
+where $I_c$ is the crown fireline intensity in $\text{Btu/ft/s}$,
+$R_c$ is the crown fire spread rate (either $\text{CROS}_A$ or
+$\text{CROS}_P$) in $\text{ft}/\min$, $B$ is the canopy bulk density
+in $\text{lb/ft}^3$, $Z$ is the canopy height in $\text{ft}$, $Z_b$ is
+the canopy base height in $\text{ft}$, $h$ is the fuel model heat of
+combustion (generally 8000 $\text{Btu/lb}$), $L_c$ is the crown fire
+flame length in $\text{ft}$, and $I_s$ is the surface fireline
+intensity in $\text{Btu/ft/s}$.
 
 #+name: crown-fireline-intensity
-#+begin_src python :tangle ../src/pyretechnics/crown_fire.py
+#+begin_src python
+from pyretechnics.surface_fire import calc_flame_length
+
+
 # NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
-def crown_fireline_intensity(crown_spread_rate, canopy_bulk_density, canopy_height_difference, heat_of_combustion):
+def calc_crown_fireline_intensity(crown_spread_rate, canopy_bulk_density, canopy_height,
+                                  canopy_base_height, heat_of_combustion):
     """
-    Returns the crown_fireline_intensity in Btu/ft/s OR kW/m, given:
-    - crown_spread_rate (ft/min OR m/min)
-    - canopy_bulk_density (lb/ft^3 OR kg/m^3)
-    - canopy_height_difference (canopy_height - canopy_base_height) (ft OR m)
-    - heat_of_combustion (Btu/lb OR kJ/kg)
+    Returns the crown fireline intensity (Btu/ft/s OR kW/m) given:
+    - crown_spread_rate                                             :: ft/min  OR m/min
+    - canopy_bulk_density                                           :: lb/ft^3 OR kg/m^3
+    - canopy_height                                                 :: ft      OR m
+    - canopy_base_height                                            :: ft      OR m
+    - heat_of_combustion                                            :: Btu/lb  OR kJ/kg
 
     (ft/min * lb/ft^3 * ft * Btu/lb)/60 = (Btu/ft/min)/60 = Btu/ft/s
     OR
     (m/min * kg/m^3 * m * kJ/kg)/60 = (kJ/m*min)/60 = kJ/m*s = kW/m
     """
+    canopy_height_difference = canopy_height - canopy_base_height
     return (crown_spread_rate * canopy_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
+
+
+def calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity):
+    """
+    Returns the crown fire flame length (ft) given:
+    - surface_fireline_intensity :: Btu/ft/s
+    - crown_fireline_intensity   :: Btu/ft/s
+    """
+    return calc_flame_length(surface_fireline_intensity + crown_fireline_intensity) # ft
 #+end_src
 
+*** Elliptical Eccentricity
+
 As with surface fire spread, the wind speed (this time the 20-ft wind
-speed in mph $U_{20}$) is used to compute the length to width ratio
+speed $U_{20}$) is used to compute the length to width ratio
 $\frac{L}{W}$ of an ellipse that approximates the crown fire front
 using equation 9 from Rothermel 1991.[fn::Rothermel1991] This length
 to width ratio is then converted into an eccentricity measure of the
 ellipse using equation 8 from Albini and Chase 1980.[fn::Albini1980]
-Finally, this eccentricity $E$ is used to project the maximum spread
-rate to any point along the fire front. Here are the formulas used:
+Here are the formulas used:
 
 \begin{align}
   \frac{L}{W} &= 1 + 0.125 \, U_{20} \\
   \nonumber \\
-  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}} \\
-  \nonumber \\
-  R_{\theta} &= R_{\max}\left(\frac{1-E}{1-E\cos\theta}\right)
+  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}}
 \end{align}
 
-where $\theta$ is the angular offset from the direction of maximum
-fire spread, $R_{\max}$ is the maximum spread rate, and $R_{\theta}$
-is the spread rate in direction $\theta$.
+where $U_{20}$ is the 20-ft wind speed in $\text{mph}$.
 
-#+name: crown-eccentricity
-#+begin_src python :tangle ../src/pyretechnics/crown_fire.py
+#+name: crown-fire-eccentricity
+#+begin_src python
 from math import sqrt
 
-# NOTE: No longer takes ellipse_adjustment_factor argument
+
 # FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
 def crown_length_to_width_ratio(wind_speed_20ft):
     """
     Calculate the length_to_width_ratio of the crown fire front using eq. 9 from
     Rothermel 1991 given:
-    - wind_speed_20ft (mph)
+    - wind_speed_20ft :: mph
 
     L/W = 1 + 0.125 * U20_mph
     """
@@ -3381,31 +3495,280 @@ def crown_length_to_width_ratio_elmfire(wind_speed_20ft, max_length_to_width_rat
     """
     Calculate the length_to_width_ratio of the crown fire front using eq. 9 from
     Rothermel 1991 given:
-    - wind_speed_20ft (mph)
-    - max_length_to_width_ratio (int > 0)
+    - wind_speed_20ft           :: mph
+    - max_length_to_width_ratio :: int > 0
 
     L/W = min(1.0 + 0.125 * U20_mph, L/W_max)
     """
     return min((1.0 + 0.125 * wind_speed_20ft), max_length_to_width_ratio)
 
 
-# NOTE: No longer takes ellipse_adjustment_factor argument
-def crown_fire_eccentricity(wind_speed_20ft):
+def crown_fire_eccentricity(length_to_width_ratio):
     """
-    Calculate the eccentricity (E) of the crown fire front using eq. 9 from
-    Rothermel 1991 and eq. 8 from Albini and Chase 1980 given:
-    - wind_speed_20ft (mph)
+    Calculate the eccentricity (E) of the crown fire front using eq. 8 from
+    Albini and Chase 1980 given:
+    - L/W :: (1: circular spread, > 1: elliptical spread)
 
-    L/W = 1 + 0.125 * U20_mph
     E = sqrt( L/W^2 - 1 ) / L/W
     """
-    length_to_width_ratio = crown_length_to_width_ratio(wind_speed_20ft)
     return sqrt(length_to_width_ratio ** 2.0 - 1.0) / length_to_width_ratio
 #+end_src
 
-This concludes our discussion of the crown fire behavior formulas used
-in Pyretechnics.
+*** Crown Fire Behavior in the Direction of Maximum Spread
 
+This section introduces a function that computes all of the crown fire
+behavior values described in the previous sections. In order to
+accurately compare the crown fire behavior values from this section
+with the surface fire behavior values from section [[Surface Fire
+Behavior in the Direction of Maximum Spread]], the 10 meter wind vector
+must be projected onto the slope-tangential plane (using Waeselynck
+2024[fn::Waeselynck2024]) before the crown fire's maximum spread rate
+and associated elliptical parameters are calculated. This ensures that
+both the surface fire and crown fire ellipses are aligned with the
+slope-tangential plane for later comparison in section [[Combining
+Surface and Crown Fire Behavior]].
+
+#+name: crown-fire-behavior-max
+#+begin_src python
+import numpy as np
+import pyretechnics.conversion as conv
+import pyretechnics.surface_fire as sf
+import pyretechnics.vector_utils as vu
+
+
+def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_density, heat_of_combustion,
+                                 estimated_fine_fuel_moisture, wind_speed_10m, upwind_direction,
+                                 slope, aspect):
+    """
+    Given these inputs:
+    - canopy_height                                    :: m
+    - canopy_base_height                               :: m
+    - canopy_bulk_density                              :: kg/m^3
+    - heat_of_combustion                               :: kJ/kg
+    - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") :: kg moisture/kg ovendry weight
+    - wind_speed_10m                                   :: km/hr
+    - upwind_direction                                 :: degrees clockwise from North
+    - slope                                            :: rise/run
+    - aspect                                           :: degrees clockwise from North
+
+    return a dictionary containing these keys:
+    - max_spread_type        :: "passive" or "active"
+    - max_spread_rate        :: m/min
+    - max_spread_direction   :: (x, y, z) unit vector
+    - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+    - max_fireline_intensity :: kW/m
+    - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
+    - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
+    - critical_spread_rate   :: m/min
+    """
+    # Reverse the provided wind and slope directions
+    downwind_direction = conv.opposite_direction(upwind_direction)
+    upslope_direction  = conv.opposite_direction(aspect)
+    # Project wind and slope vectors onto the slope-tangential plane
+    vectors = sf.project_wind_and_slope_vectors_3d(wind_speed_10m, downwind_direction, slope, upslope_direction)
+    wind_vector_3d  = vectors["wind_vector_3d"]  # km/hr
+    slope_vector_3d = vectors["slope_vector_3d"] # rise/run
+    # Determine the max spread direction
+    wind_speed_10m_3d    = vu.vector_magnitude(wind_vector_3d)      # km/hr
+    max_spread_direction = (wind_vector_3d / wind_speed_10m_3d      # unit vector in the 3D downwind direction
+                            if wind_speed_10m_3d > 0.0
+                            else vu.as_unit_vector(slope_vector_3d) # unit vector in the 3D upslope direction
+                            if slope > 0.0
+                            else np.asarray((0,1,0)))               # default: North
+    # Calculate the crown fire behavior in the max spread direction
+    spread_info           = cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
+                                                        estimated_fine_fuel_moisture)
+    spread_rate           = spread_info["spread_rate"] # m/min
+    fireline_intensity    = calc_crown_fireline_intensity(spread_rate, canopy_bulk_density, canopy_height,
+                                                          canopy_base_height, heat_of_combustion)        # kW/m
+    wind_speed_20ft_mph   = conv.km_hr_to_mph(conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m_3d)) # mph
+    length_to_width_ratio = crown_length_to_width_ratio(wind_speed_20ft_mph) # unitless
+    eccentricity          = crown_fire_eccentricity(length_to_width_ratio)   # unitless
+    return {
+        "max_spread_type"       : spread_info["spread_type"],
+        "max_spread_rate"       : spread_rate,
+        "max_spread_direction"  : max_spread_direction, # unit vector
+        "max_spread_vector"     : spread_rate * max_spread_direction,
+        "max_fireline_intensity": fireline_intensity,
+        "length_to_width_ratio" : length_to_width_ratio,
+        "eccentricity"          : eccentricity,
+        "critical_spread_rate"  : spread_info["critical_spread_rate"],
+    }
+#+end_src
+
+*** Crown Fire Behavior in Any Direction
+
+Once we have calculated the maximum crown fire behavior values
+associated with a head fire, we can use the elliptical eccentricity
+$E$ to project the maximum spread rate $R_c$ and maximum fireline
+intensity $I_c$ to any point along the fire front as follows:
+
+\begin{align}
+  \eta &= \frac{1-E}{1-E\cos\omega} \\
+  \nonumber \\
+  R_c(\omega) &= R_c \, \eta \\
+  \nonumber \\
+  I_c(\omega) &= I_c \, \eta
+\end{align}
+
+where $\omega$ is the angular offset from the direction of maximum
+fire spread and $R_c(\omega)$ and $I_c(\omega)$ are the spread rate
+and fireline intensity in this direction respectively.
+
+Since the crown fire ellipse is defined on the slope-tangential plane,
+we must represent spread directions with three dimensional unit
+vectors aligned with this plane rather than with angles. Fortunately,
+we can use the relationship between the dot product of two vectors and
+the cosine of the angle between them to rewrite the $\eta$ function
+above as follows:
+
+\begin{align}
+  \eta = \frac{1-E}{1-E(\vec{u_{\max}} \cdot \vec{u_{\omega}})}
+\end{align}
+
+where $\vec{u_{\max}}$ is the slope-tangential unit vector in the
+direction of maximum spread and $\vec{u_{\omega}}$ is the
+slope-tangential unit vector rotated $\omega$ degrees clockwise along
+this plane from $\vec{u_{\max}}$.
+
+#+name: crown-fire-behavior-in-direction
+#+begin_src python
+import numpy as np
+
+
+def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
+    """
+    Given these inputs:
+    - crown_fire_max     :: dictionary of max crown fire behavior values
+      - max_spread_type        :: "passive" or "active"
+      - max_spread_rate        :: m/min
+      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+      - max_fireline_intensity :: kW/m
+      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
+      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
+      - critical_spread_rate   :: m/min
+    - spread_direction   :: 3D unit vector on the slope-tangential plane
+
+    return a dictionary containing these keys:
+    - spread_type        :: "passive" or "active"
+    - spread_rate        :: m/min
+    - fireline_intensity :: kW/m
+    """
+    # Unpack max crown fire behavior values
+    max_spread_type        = crown_fire_max["max_spread_type"]
+    max_spread_rate        = crown_fire_max["max_spread_rate"]
+    max_spread_direction   = crown_fire_max["max_spread_direction"]
+    max_fireline_intensity = crown_fire_max["max_fireline_intensity"]
+    eccentricity           = crown_fire_max["eccentricity"]
+    critical_spread_rate   = crown_fire_max["critical_spread_rate"]
+    # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
+    cos_w = np.dot(max_spread_direction, np.asarray(spread_direction))
+    # Calculate adjustment due to the offset angle from the max spread direction
+    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    # Adjust the spread rate (possibly switching from an active to passive crown fire)
+    spread_rate = max_spread_rate * adjustment
+    if spread_rate > critical_spread_rate:
+        # Max spread rate was active and directional spread rate remains active
+        return {
+            "spread_type"       : "active",
+            "spread_rate"       : spread_rate,
+            "fireline_intensity": max_fireline_intensity * adjustment,
+        }
+    elif max_spread_type == "passive":
+        # Max spread rate was passive and directional spread rate remains passive
+        return {
+            "spread_type"       : "passive",
+            "spread_rate"       : spread_rate,
+            "fireline_intensity": max_fireline_intensity * adjustment,
+        }
+    else:
+        # Max spread rate was active and directional spread rate has become passive
+        return {
+            "spread_type"       : "passive",
+            "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
+            "fireline_intensity": max_fireline_intensity * adjustment,
+        }
+#+end_src
+
+*** Combining Surface and Crown Fire Behavior
+
+When both surface fire and crown fire are present in the same
+location, their combined behavior determines the spread rate and
+intensity values associated with this location. Specifically, their
+combined spread rate is the maximum of the two spread rates and their
+combined fireline intensity is the sum of their two fireline
+intensities. However, since the surface fire and crown fire each
+define separate fire spread ellipses with potentially different
+maximum spread directions, their relative spread rates and intensities
+can only be compared in a given absolute direction in the
+slope-tangential plane.
+
+#+name: combined-fire-behavior-max
+#+begin_src python
+import pyretechnics.conversion as conv
+import pyretechnics.surface_fire as sf
+import pyretechnics.vector_utils as vu
+
+
+def calc_combined_fire_behavior_in_direction(surface_fire_max, crown_fire_max, spread_direction):
+    """
+    Given these inputs:
+    - surface_fire_max     :: dictionary of max surface fire behavior values
+      - max_spread_rate        :: ft/min
+      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
+      - max_fireline_intensity :: Btu/ft/s
+      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
+      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
+    - crown_fire_max       :: dictionary of max crown fire behavior values
+      - max_spread_type        :: "passive" or "active"
+      - max_spread_rate        :: m/min
+      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+      - max_fireline_intensity :: kW/m
+      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
+      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
+      - critical_spread_rate   :: m/min
+    - spread_direction     :: 3D unit vector on the slope-tangential plane
+
+    return a dictionary containing these keys:
+    - spread_type        :: "surface", "passive", or "active"
+    - spread_rate        :: m/min
+    - fireline_intensity :: kW/m
+    """
+    # Calculate the surface fire behavior in spread_direction
+    surface_fire_behavior      = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction)
+    surface_spread_rate        = conv.ft_to_m(surface_fire_behavior["spread_rate"])                 # m/min
+    surface_fireline_intensity = conv.Btu_ft_s_to_kW_m(surface_fire_behavior["fireline_intensity"]) # kW/m
+    # Calculate the crown fire behavior in spread_direction
+    crown_fire_behavior      = calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction)
+    crown_spread_type        = crown_fire_behavior["spread_type"]        # "passive" or "active"
+    crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
+    crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
+    # Determine whether the surface or crown fire has the fastest spread rate
+    if surface_spread_rate > crown_spread_rate:
+        # Surface fire spreads faster
+        return {
+            "spread_type"       : "surface",
+            "spread_rate"       : surface_spread_rate,
+            "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
+        }
+    else:
+        # Crown fire spreads faster
+        return {
+            "spread_type"       : crown_spread_type,
+            "spread_rate"       : crown_spread_rate,
+            "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
+        }
+#+end_src
+
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.crown_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
 ** For Developers
    :PROPERTIES:
@@ -4519,27 +4882,30 @@ def compute_max_in_situ_values(inputs, t, y, x):
         #       surface/crown values based on the provided perimeter spread direction.
         #=======================================================================================
         # Check for Crown Fire Initiation
-        if cf.van_wagner_crown_fire_initiation(canopy_cover,
+        if cf.van_wagner_crown_fire_initiation(max_surface_intensity_metric,
+                                               canopy_cover,
                                                canopy_base_height,
-                                               foliar_moisture,
-                                               max_surface_intensity_metric):
+                                               foliar_moisture):
             # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
-            max_crown_spread_rate = conv.m_to_ft(cf.cruz_crown_fire_spread(conv.m_min_to_km_hr(wind_speed_10m),
-                                                                           canopy_bulk_density,
-                                                                           fuel_moisture_dead_1hr)) # ft/min
-            fire_type             = 2 if (max_crown_spread_rate < 0.0) else 3 # 2=passive crown, 3=active crown
-            max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
-            crown_eccentricity    = (surface_eccentricity
-                                     if (max_surface_spread_rate > max_crown_spread_rate)
-                                     else cf.crown_fire_eccentricity(conv.m_min_to_mph(wind_speed_20ft))) # unitless
+            crown_spread_info     = cf.cruz_crown_fire_spread_info(conv.m_min_to_km_hr(wind_speed_10m),
+                                                                   canopy_bulk_density,
+                                                                   fuel_moisture_dead_1hr)
+            fire_type             = crown_spread_info["spread_type"] # "passive" or "active"
+            max_crown_spread_rate = conv.m_to_ft(crown_spread_info["spread_rate"]) # ft/min
+            crown_eccentricity    = (
+                surface_eccentricity
+                if max_surface_spread_rate > max_crown_spread_rate
+                else cf.crown_fire_eccentricity(cf.crown_length_to_width_ratio(conv.m_min_to_mph(wind_speed_20ft)))
+            ) # unitless
             #=======================================================================================
             # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
             #=======================================================================================
             # Max Crown Intensity
-            max_crown_intensity   = cf.crown_fireline_intensity(conv.ft_to_m(max_crown_spread_rate),
-                                                                canopy_bulk_density,
-                                                                (canopy_height - canopy_base_height),
-                                                                conv.Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
+            max_crown_intensity   = cf.calc_crown_fireline_intensity(conv.ft_to_m(max_crown_spread_rate),
+                                                                     canopy_bulk_density,
+                                                                     canopy_height,
+                                                                     canopy_base_height,
+                                                                     conv.Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = conv.ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity_metric + max_crown_intensity # kW/m
@@ -4550,18 +4916,17 @@ def compute_max_in_situ_values(inputs, t, y, x):
                 "max_spread_direction"  : max_spread_direction, # deg
                 "max_fireline_intensity": max_intensity,        # kW/m
                 "max_flame_length"      : max_flame_length,     # m
-                "fire_type"             : fire_type,            # 2=passive crown, 3=active crown
+                "fire_type"             : fire_type,            # "passive" or "active"
                 "eccentricity"          : crown_eccentricity,   # unitless
             }
         else:
-            fire_type                = 1 # 1=surface
             max_surface_flame_length = conv.ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
             return {
                 "max_spread_rate"       : conv.ft_to_m(max_surface_spread_rate), # m/min
                 "max_spread_direction"  : max_spread_direction,                  # deg
                 "max_fireline_intensity": max_surface_intensity_metric,          # kW/m
                 "max_flame_length"      : max_surface_flame_length,              # m
-                "fire_type"             : fire_type,                             # 1=surface
+                "fire_type"             : "surface",                             # "surface"
                 "eccentricity"          : surface_eccentricity,                  # unitless
             }
 #+end_src

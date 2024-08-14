@@ -93,27 +93,30 @@ def compute_max_in_situ_values(inputs, t, y, x):
         #       surface/crown values based on the provided perimeter spread direction.
         #=======================================================================================
         # Check for Crown Fire Initiation
-        if cf.van_wagner_crown_fire_initiation(canopy_cover,
+        if cf.van_wagner_crown_fire_initiation(max_surface_intensity_metric,
+                                               canopy_cover,
                                                canopy_base_height,
-                                               foliar_moisture,
-                                               max_surface_intensity_metric):
+                                               foliar_moisture):
             # Max Crown Spread Rate, Fire Type, and Crown Eccentricity
-            max_crown_spread_rate = conv.m_to_ft(cf.cruz_crown_fire_spread(conv.m_min_to_km_hr(wind_speed_10m),
-                                                                           canopy_bulk_density,
-                                                                           fuel_moisture_dead_1hr)) # ft/min
-            fire_type             = 2 if (max_crown_spread_rate < 0.0) else 3 # 2=passive crown, 3=active crown
-            max_crown_spread_rate = abs(max_crown_spread_rate) # ft/min
-            crown_eccentricity    = (surface_eccentricity
-                                     if (max_surface_spread_rate > max_crown_spread_rate)
-                                     else cf.crown_fire_eccentricity(conv.m_min_to_mph(wind_speed_20ft))) # unitless
+            crown_spread_info     = cf.cruz_crown_fire_spread_info(conv.m_min_to_km_hr(wind_speed_10m),
+                                                                   canopy_bulk_density,
+                                                                   fuel_moisture_dead_1hr)
+            fire_type             = crown_spread_info["spread_type"] # "passive" or "active"
+            max_crown_spread_rate = conv.m_to_ft(crown_spread_info["spread_rate"]) # ft/min
+            crown_eccentricity    = (
+                surface_eccentricity
+                if max_surface_spread_rate > max_crown_spread_rate
+                else cf.crown_fire_eccentricity(cf.crown_length_to_width_ratio(conv.m_min_to_mph(wind_speed_20ft)))
+            ) # unitless
             #=======================================================================================
             # NOTE: The calculations to determine the fireline_normal_spread_rate have been elided.
             #=======================================================================================
             # Max Crown Intensity
-            max_crown_intensity   = cf.crown_fireline_intensity(conv.ft_to_m(max_crown_spread_rate),
-                                                                canopy_bulk_density,
-                                                                (canopy_height - canopy_base_height),
-                                                                conv.Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
+            max_crown_intensity   = cf.calc_crown_fireline_intensity(conv.ft_to_m(max_crown_spread_rate),
+                                                                     canopy_bulk_density,
+                                                                     canopy_height,
+                                                                     canopy_base_height,
+                                                                     conv.Btu_lb_to_kJ_kg(fuel_model["h"][0])) # kW/m
             # Max Combined Spread Rate, Intensity, and Flame Length
             max_spread_rate       = conv.ft_to_m(max(max_surface_spread_rate, max_crown_spread_rate)) # m/min
             max_intensity         = max_surface_intensity_metric + max_crown_intensity # kW/m
@@ -124,18 +127,17 @@ def compute_max_in_situ_values(inputs, t, y, x):
                 "max_spread_direction"  : max_spread_direction, # deg
                 "max_fireline_intensity": max_intensity,        # kW/m
                 "max_flame_length"      : max_flame_length,     # m
-                "fire_type"             : fire_type,            # 2=passive crown, 3=active crown
+                "fire_type"             : fire_type,            # "passive" or "active"
                 "eccentricity"          : crown_eccentricity,   # unitless
             }
         else:
-            fire_type                = 1 # 1=surface
             max_surface_flame_length = conv.ft_to_m(sf.calc_flame_length(max_surface_intensity)) # m
             return {
                 "max_spread_rate"       : conv.ft_to_m(max_surface_spread_rate), # m/min
                 "max_spread_direction"  : max_spread_direction,                  # deg
                 "max_fireline_intensity": max_surface_intensity_metric,          # kW/m
                 "max_flame_length"      : max_surface_flame_length,              # m
-                "fire_type"             : fire_type,                             # 1=surface
+                "fire_type"             : "surface",                             # "surface"
                 "eccentricity"          : surface_eccentricity,                  # unitless
             }
 # burn-cells ends here
