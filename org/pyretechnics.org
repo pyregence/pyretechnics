@@ -3204,7 +3204,7 @@ Backing Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [
 {'fireline_intensity': 0.6569596575341267, 'spread_rate': 0.5267784418793591}
 #+end_example
 
-* [WIP] Crown Fire Equations (pyretechnics.crown_fire)
+* Crown Fire Equations (pyretechnics.crown_fire)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.crown_fire*
@@ -3704,7 +3704,7 @@ maximum spread directions, their relative spread rates and intensities
 can only be compared in a given absolute direction in the
 slope-tangential plane.
 
-#+name: combined-fire-behavior-max
+#+name: combined-fire-behavior-in-direction
 #+begin_src python
 import pyretechnics.conversion as conv
 import pyretechnics.surface_fire as sf
@@ -3769,6 +3769,544 @@ def calc_combined_fire_behavior_in_direction(surface_fire_max, crown_fire_max, s
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
+
+In the following sections, we will demonstrate how to calculate the
+crown fire behavior values given a surface fire line intensity and
+measurements of foliar moisture, fine fuel moisture, tree canopy
+characteristics, wind speed, wind direction, slope, and aspect. This
+will be done first for the max spread direction case and then in any
+direction on the sloped surface using 3D vectors to specify absolute
+directions.
+
+Because wind speed and direction will often be provided from
+measurements taken 10m or 20ft above the canopy and may be given in
+either cartesion =(x,y)= or azimuthal =(r,azimuth)= coordinates, we
+also demonstrate how to convert from cartesian to azimuthal
+coordinates and from 10m to 20ft wind speeds.
+
+See Appendix [[Units Conversion Functions (pyretechnics.conversion)]] for
+the full list of available units conversion functions.
+
+See Appendix [[Vector Utility Functions (pyretechnics.vector_utils)]] for
+the full list of available vector manipulation functions.
+
+*** How to Determine Whether a Surface Fire Transitions to a Crown Fire
+
+#+name: check-crown-fire-initiation
+#+begin_src python
+from pprint import pprint
+import pyretechnics.crown_fire as cf
+
+# Set tree canopy characteristics
+canopy_cover_low   = 0.3 # 0-1
+canopy_cover_high  = 0.8 # 0-1
+canopy_base_height = 3.0 # m
+foliar_moisture    = 1.0 # kg moisture/kg ovendry weight
+
+# Specify some surface fireline intensity values to check
+# These would normally be calculated by the functions in pyretechnics.surface_fire
+surface_fireline_intensity_low  = 500.0  # kW/m
+surface_fireline_intensity_high = 5000.0 # kW/m
+
+#=================================================================================
+# Check for crown fire with canopy_cover_low and surface_fireline_intensity_low
+#=================================================================================
+
+print("Low Canopy Cover and Low Surface Fireline Intensity\n" + "=" * 60)
+
+if cf.van_wagner_crown_fire_initiation(surface_fireline_intensity_low,
+                                       canopy_cover_low,
+                                       canopy_base_height,
+                                       foliar_moisture):
+    # Crown Fire
+    print("\nA crown fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_low,
+        "canopy_cover"              : canopy_cover_low,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+else:
+    # Surface Fire
+    print("\nA surface fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_low,
+        "canopy_cover"              : canopy_cover_low,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+
+#=================================================================================
+# Check for crown fire with canopy_cover_low and surface_fireline_intensity_high
+#=================================================================================
+
+print("\nLow Canopy Cover and High Surface Fireline Intensity\n" + "=" * 60)
+
+if cf.van_wagner_crown_fire_initiation(surface_fireline_intensity_high,
+                                       canopy_cover_low,
+                                       canopy_base_height,
+                                       foliar_moisture):
+    # Crown Fire
+    print("\nA crown fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_high,
+        "canopy_cover"              : canopy_cover_low,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+else:
+    # Surface Fire
+    print("\nA surface fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_high,
+        "canopy_cover"              : canopy_cover_low,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+
+#=================================================================================
+# Check for crown fire with canopy_cover_high and surface_fireline_intensity_low
+#=================================================================================
+
+print("\nHigh Canopy Cover and Low Surface Fireline Intensity\n" + "=" * 60)
+
+if cf.van_wagner_crown_fire_initiation(surface_fireline_intensity_low,
+                                       canopy_cover_high,
+                                       canopy_base_height,
+                                       foliar_moisture):
+    # Crown Fire
+    print("\nA crown fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_low,
+        "canopy_cover"              : canopy_cover_high,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+else:
+    # Surface Fire
+    print("\nA surface fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_low,
+        "canopy_cover"              : canopy_cover_high,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+
+#=================================================================================
+# Check for crown fire with canopy_cover_high and surface_fireline_intensity_high
+#=================================================================================
+
+print("\nHigh Canopy Cover and High Surface Fireline Intensity\n" + "=" * 60)
+
+if cf.van_wagner_crown_fire_initiation(surface_fireline_intensity_high,
+                                       canopy_cover_high,
+                                       canopy_base_height,
+                                       foliar_moisture):
+    # Crown Fire
+    print("\nA crown fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_high,
+        "canopy_cover"              : canopy_cover_high,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+else:
+    # Surface Fire
+    print("\nA surface fire occurs with these input parameters:")
+    pprint({
+        "surface_fireline_intensity": surface_fireline_intensity_high,
+        "canopy_cover"              : canopy_cover_high,
+        "canopy_base_height"        : canopy_base_height,
+        "foliar_moisture"           : foliar_moisture,
+    })
+#+end_src
+
+#+RESULTS: check-crown-fire-initiation
+#+begin_example
+Low Canopy Cover and Low Surface Fireline Intensity
+============================================================
+
+A surface fire occurs with these input parameters:
+{'canopy_base_height': 3.0,
+ 'canopy_cover': 0.3,
+ 'foliar_moisture': 1.0,
+ 'surface_fireline_intensity': 500.0}
+
+Low Canopy Cover and High Surface Fireline Intensity
+============================================================
+
+A surface fire occurs with these input parameters:
+{'canopy_base_height': 3.0,
+ 'canopy_cover': 0.3,
+ 'foliar_moisture': 1.0,
+ 'surface_fireline_intensity': 5000.0}
+
+High Canopy Cover and Low Surface Fireline Intensity
+============================================================
+
+A surface fire occurs with these input parameters:
+{'canopy_base_height': 3.0,
+ 'canopy_cover': 0.8,
+ 'foliar_moisture': 1.0,
+ 'surface_fireline_intensity': 500.0}
+
+High Canopy Cover and High Surface Fireline Intensity
+============================================================
+
+A crown fire occurs with these input parameters:
+{'canopy_base_height': 3.0,
+ 'canopy_cover': 0.8,
+ 'foliar_moisture': 1.0,
+ 'surface_fireline_intensity': 5000.0}
+#+end_example
+
+*** How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread
+
+#+name: compute-crown-fire-behavior-max
+#+begin_src python
+from pprint import pprint
+import pyretechnics.crown_fire as cf
+
+# Set input parameters
+canopy_height                = 30.0    # m
+canopy_base_height           = 3.0     # m
+canopy_bulk_density          = 0.3     # kg/m^3
+heat_of_combustion           = 18608.0 # kJ/kg
+estimated_fine_fuel_moisture = 0.05    # kg moisture/kg ovendry weight
+wind_speed_10m               = 10.0    # km/hr
+upwind_direction             = 180.0   # degrees clockwise from North
+slope                        = 0.5     # rise/run
+aspect_parallel_to_wind      = 180.0   # degrees clockwise from North
+aspect_perpendicular_to_wind = 270.0   # degrees clockwise from North
+
+#====================================================================================================
+# Calculate crown fire behavior in the direction of maximum spread with slope and wind aligned
+#====================================================================================================
+
+crown_fire_max_aligned = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
+                                                         canopy_bulk_density, heat_of_combustion,
+                                                         estimated_fine_fuel_moisture,
+                                                         wind_speed_10m, upwind_direction,
+                                                         slope, aspect_parallel_to_wind)
+
+# View results
+print("Crown Fire Behavior Max with Wind and Slope Aligned\n" + "=" * 60)
+
+print("\nInputs:")
+pprint({
+    "canopy_height"               : canopy_height,
+    "canopy_base_height"          : canopy_base_height,
+    "canopy_bulk_density"         : canopy_bulk_density,
+    "heat_of_combustion"          : heat_of_combustion,
+    "estimated_fine_fuel_moisture": estimated_fine_fuel_moisture,
+    "wind_speed_10m"              : wind_speed_10m,
+    "upwind_direction"            : upwind_direction,
+    "slope"                       : slope,
+    "aspect"                      : aspect_parallel_to_wind,
+})
+
+print("\nOutputs:")
+pprint(crown_fire_max_aligned)
+
+#====================================================================================================
+# Calculate crown fire behavior in the direction of maximum spread with slope and wind perpendicular
+#====================================================================================================
+
+crown_fire_max_perpendicular = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
+                                                               canopy_bulk_density, heat_of_combustion,
+                                                               estimated_fine_fuel_moisture,
+                                                               wind_speed_10m, upwind_direction,
+                                                               slope, aspect_perpendicular_to_wind)
+
+# View results
+print("\nCrown Fire Behavior Max with Wind and Slope Perpendicular\n" + "=" * 60)
+
+print("\nInputs:")
+pprint({
+    "canopy_height"               : canopy_height,
+    "canopy_base_height"          : canopy_base_height,
+    "canopy_bulk_density"         : canopy_bulk_density,
+    "heat_of_combustion"          : heat_of_combustion,
+    "estimated_fine_fuel_moisture": estimated_fine_fuel_moisture,
+    "wind_speed_10m"              : wind_speed_10m,
+    "upwind_direction"            : upwind_direction,
+    "slope"                       : slope,
+    "aspect"                      : aspect_perpendicular_to_wind,
+})
+
+print("\nOutputs:")
+pprint(crown_fire_max_perpendicular)
+#+end_src
+
+#+RESULTS: compute-crown-fire-behavior-max
+#+begin_example
+Crown Fire Behavior Max with Wind and Slope Aligned
+============================================================
+
+Inputs:
+{'aspect': 180.0,
+ 'canopy_base_height': 3.0,
+ 'canopy_bulk_density': 0.3,
+ 'canopy_height': 30.0,
+ 'estimated_fine_fuel_moisture': 0.05,
+ 'heat_of_combustion': 18608.0,
+ 'slope': 0.5,
+ 'upwind_direction': 180.0,
+ 'wind_speed_10m': 10.0}
+
+Outputs:
+{'critical_spread_rate': 10.0,
+ 'eccentricity': 0.8218958698260199,
+ 'length_to_width_ratio': 1.7555015973996304,
+ 'max_fire_type': 'active',
+ 'max_fireline_intensity': 82666.07067724908,
+ 'max_spread_direction': array([0.        , 0.89442719, 0.4472136 ]),
+ 'max_spread_rate': 32.907419619299176,
+ 'max_spread_vector': array([ 0.        , 29.43329089, 14.71664545])}
+
+Crown Fire Behavior Max with Wind and Slope Perpendicular
+============================================================
+
+Inputs:
+{'aspect': 270.0,
+ 'canopy_base_height': 3.0,
+ 'canopy_bulk_density': 0.3,
+ 'canopy_height': 30.0,
+ 'estimated_fine_fuel_moisture': 0.05,
+ 'heat_of_combustion': 18608.0,
+ 'slope': 0.5,
+ 'upwind_direction': 180.0,
+ 'wind_speed_10m': 10.0}
+
+Outputs:
+{'critical_spread_rate': 10.0,
+ 'eccentricity': 0.8024265702196313,
+ 'length_to_width_ratio': 1.6757411715581005,
+ 'max_fire_type': 'active',
+ 'max_fireline_intensity': 74768.3487091958,
+ 'max_spread_direction': array([0.000000e+00, 1.000000e+00, 3.061617e-17]),
+ 'max_spread_rate': 29.763522144675242,
+ 'max_spread_vector': array([0.00000000e+00, 2.97635221e+01, 9.11245053e-16])}
+#+end_example
+
+*** How to Calculate the Crown Fire Behavior in Any Direction
+
+#+name: compute-crown-fire-behavior-in-direction
+#+begin_src python
+from pprint import pprint
+import pyretechnics.crown_fire as cf
+import pyretechnics.vector_utils as vu
+
+# Set input parameters
+canopy_height                = 30.0    # m
+canopy_base_height           = 3.0     # m
+canopy_bulk_density          = 0.3     # kg/m^3
+heat_of_combustion           = 18608.0 # kJ/kg
+estimated_fine_fuel_moisture = 0.05    # kg moisture/kg ovendry weight
+wind_speed_10m               = 10.0    # km/hr
+upwind_direction             = 180.0   # degrees clockwise from North
+slope                        = 0.5     # rise/run
+aspect                       = 225.0   # degrees clockwise from North
+
+#================================================================================================
+# Calculate crown fire behavior in the direction of maximum spread
+#================================================================================================
+
+crown_fire_max = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
+                                                 canopy_bulk_density, heat_of_combustion,
+                                                 estimated_fine_fuel_moisture,
+                                                 wind_speed_10m, upwind_direction,
+                                                 slope, aspect)
+
+#================================================================================================
+# Calculate crown fire behavior for the heading, flanking, and backing fires from 3D directions
+#================================================================================================
+
+heading_fire_direction  = crown_fire_max["max_spread_direction"]
+flanking_fire_direction = vu.rotate_on_sloped_plane(heading_fire_direction, 90, slope, aspect)
+backing_fire_direction  = -heading_fire_direction
+
+heading_fire_behavior  = cf.calc_crown_fire_behavior_in_direction(crown_fire_max, heading_fire_direction)
+flanking_fire_behavior = cf.calc_crown_fire_behavior_in_direction(crown_fire_max, flanking_fire_direction)
+backing_fire_behavior  = cf.calc_crown_fire_behavior_in_direction(crown_fire_max, backing_fire_direction)
+
+# View heading fire results
+print("Heading Fire Behavior\n" + "=" * 60)
+pprint(heading_fire_behavior)
+
+# View flanking fire results
+print("\nFlanking Fire Behavior\n" + "=" * 60)
+pprint(flanking_fire_behavior)
+
+# View backing fire results
+print("\nBacking Fire Behavior\n" + "=" * 60)
+pprint(backing_fire_behavior)
+#+end_src
+
+#+RESULTS: compute-crown-fire-behavior-in-direction
+#+begin_example
+Heading Fire Behavior
+============================================================
+{'fire_type': 'active',
+ 'fireline_intensity': 78838.1499300167,
+ 'spread_rate': 31.38361434747966}
+
+Flanking Fire Behavior
+============================================================
+{'fire_type': 'passive',
+ 'fireline_intensity': 14756.204837586314,
+ 'spread_rate': 3.264617932843692}
+
+Backing Fire Behavior
+============================================================
+{'fire_type': 'passive',
+ 'fireline_intensity': 8139.876265831974,
+ 'spread_rate': 2.3434742325850952}
+#+end_example
+
+*** How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction
+
+#+name: compute-combined-fire-behavior-in-direction
+#+begin_src python
+from pprint import pprint
+import pyretechnics.conversion as conv
+import pyretechnics.crown_fire as cf
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+import pyretechnics.vector_utils as vu
+
+#================================================================================================
+# Set input parameters
+#================================================================================================
+
+# Landscape
+fuel_model          = fm.fuel_model_table[101] # GR1
+canopy_cover        = 0.6                      # 0-1
+canopy_height       = 30.0                     # m
+canopy_base_height  = 3.0                      # m
+canopy_bulk_density = 0.3                      # kg/m^3
+slope               = 0.5                      # rise/run
+aspect              = 225.0                    # degrees clockwise from North
+
+# Weather
+fuel_moisture    = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.90, # live_herbaceous
+    0.60, # live_woody
+]                        # kg moisture/kg ovendry weight
+foliar_moisture  = 0.9   # kg moisture/kg ovendry weight
+wind_speed_10m   = 10.0  # km/hr
+upwind_direction = 180.0 # degrees clockwise from North
+
+# Derived Parameters
+fuel_bed_depth               = fuel_model["delta"]                      # ft
+heat_of_combustion           = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
+estimated_fine_fuel_moisture = fuel_moisture[0]                         # kg moisture/kg ovendry weight
+
+# Fire Perimeter Normal Vector
+fire_perimeter_normal_vector_2d = (1.0, 0.0) # (x,y) unit vector pointing East
+
+#================================================================================================
+# Project the 2D fire perimeter normal vector onto the slope-tangential plane
+#================================================================================================
+
+upslope_direction               = conv.opposite_direction(aspect)
+slope_vector_2d                 = conv.azimuthal_to_cartesian(slope, upslope_direction)
+fire_perimeter_normal_vector_3d = vu.to_slope_plane(fire_perimeter_normal_vector_2d, slope_vector_2d)
+
+#================================================================================================
+# Calculate midflame wind speed
+#================================================================================================
+
+# Convert from 10m wind speed to 20ft wind speed
+wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+
+# Convert 20ft wind speed from km/hr to ft/min
+wind_speed_20ft_ft_min = conv.m_to_ft(conv.km_hr_to_m_min(wind_speed_20ft)) # ft/min
+
+# Convert from 20ft wind speed to midflame wind speed
+midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_ft_min,      # ft/min
+                                                  fuel_bed_depth,              # ft
+                                                  conv.m_to_ft(canopy_height), # ft
+                                                  canopy_cover)                # 0-1
+
+#================================================================================================
+# Calculate surface fire behavior in the direction of maximum spread
+#================================================================================================
+
+# Apply fuel moisture to fuel model
+moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
+
+# Calculate no-wind-no-slope surface fire behavior
+surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+
+# Calculate surface fire behavior in the direction of maximum spread with effective wind speed limit
+surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                     midflame_wind_speed,
+                                                     upwind_direction,
+                                                     slope,
+                                                     aspect)
+
+#================================================================================================
+# Calculate surface fire behavior in the direction normal to the fire perimeter
+#================================================================================================
+
+surface_fire_normal = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, fire_perimeter_normal_vector_3d)
+
+#================================================================================================
+# Determine whether the surface fire transitions to a crown fire
+#================================================================================================
+
+surface_fireline_intensity = conv.Btu_ft_s_to_kW_m(surface_fire_normal["fireline_intensity"]) # kW/m
+
+if cf.van_wagner_crown_fire_initiation(surface_fireline_intensity,
+                                       canopy_cover,
+                                       canopy_base_height,
+                                       foliar_moisture):
+
+    #============================================================================================
+    # Calculate crown fire behavior in the direction of maximum spread
+    #============================================================================================
+
+    crown_fire_max = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
+                                                     canopy_bulk_density, heat_of_combustion,
+                                                     estimated_fine_fuel_moisture,
+                                                     wind_speed_10m, upwind_direction,
+                                                     slope, aspect)
+
+    #============================================================================================
+    # Calculate combined fire behavior in the direction normal to the fire perimeter
+    #============================================================================================
+
+    combined_fire_normal = cf.calc_combined_fire_behavior_in_direction(surface_fire_max,
+                                                                       crown_fire_max,
+                                                                       fire_perimeter_normal_vector_3d)
+
+    #============================================================================================
+    # Display the combined fire behavior normal to the fire perimeter
+    #============================================================================================
+
+    print("Fire Behavior from Combined Surface and Crown Fire\n" + "=" * 60)
+    pprint(combined_fire_normal)
+
+else:
+
+    #============================================================================================
+    # Display the surface fire behavior normal to the fire perimeter
+    #============================================================================================
+
+    print("Fire Behavior from Surface Fire (No Crown Fire Occurred)\n" + "=" * 60)
+    pprint(surface_fire_normal)
+#+end_src
+
+#+RESULTS: compute-combined-fire-behavior-in-direction
+: Fire Behavior from Surface Fire (No Crown Fire Occurred)
+: ============================================================
+: {'fireline_intensity': 2.7516947158713765, 'spread_rate': 2.206426891409373}
+
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
 ** For Developers
    :PROPERTIES:
@@ -3958,8 +4496,8 @@ Now that we can compute the fire front normal vector, we can find the
 spread rate in this direction by combining this vector with the
 maximum spread rate vector and elliptical eccentricity values
 calculated for each grid cell, using the approaches described in
-sections [[Surface Fire Equations (pyretechnics.surface_fire)]] and
-[[\[WIP\] Crown Fire Equations (pyretechnics.crown_fire)]].
+sections [[Surface Fire Equations (pyretechnics.surface_fire)]] and [[Crown
+Fire Equations (pyretechnics.crown_fire)]].
 
 We will refer to the spread rate vector normal to the fire front in
 the following sections as $U$ with spatial components $U_x$ and $U_y$.

@@ -290,7 +290,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
 # crown-fire-behavior-in-direction ends here
-# [[file:../../org/pyretechnics.org::combined-fire-behavior-max][combined-fire-behavior-max]]
+# [[file:../../org/pyretechnics.org::combined-fire-behavior-in-direction][combined-fire-behavior-in-direction]]
 import pyretechnics.conversion as conv
 import pyretechnics.surface_fire as sf
 import pyretechnics.vector_utils as vu
@@ -346,4 +346,4 @@ def calc_combined_fire_behavior_in_direction(surface_fire_max, crown_fire_max, s
             "spread_rate"       : crown_spread_rate,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
-# combined-fire-behavior-max ends here
+# combined-fire-behavior-in-direction ends here
