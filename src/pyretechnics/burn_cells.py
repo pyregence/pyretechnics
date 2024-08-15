@@ -101,7 +101,7 @@ def compute_max_in_situ_values(inputs, t, y, x):
             crown_spread_info     = cf.cruz_crown_fire_spread_info(conv.m_min_to_km_hr(wind_speed_10m),
                                                                    canopy_bulk_density,
                                                                    fuel_moisture_dead_1hr)
-            fire_type             = crown_spread_info["spread_type"] # "passive" or "active"
+            fire_type             = crown_spread_info["fire_type"] # "passive" or "active"
             max_crown_spread_rate = conv.m_to_ft(crown_spread_info["spread_rate"]) # ft/min
             crown_eccentricity    = (
                 surface_eccentricity
