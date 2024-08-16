@@ -290,44 +290,30 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
 # crown-fire-behavior-in-direction ends here
-# [[file:../../org/pyretechnics.org::combined-fire-behavior-in-direction][combined-fire-behavior-in-direction]]
+# [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
 import pyretechnics.conversion as conv
-import pyretechnics.surface_fire as sf
-import pyretechnics.vector_utils as vu
 
 
-def calc_combined_fire_behavior_in_direction(surface_fire_max, crown_fire_max, spread_direction):
+def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     """
     Given these inputs:
-    - surface_fire_max     :: dictionary of max surface fire behavior values
-      - max_spread_rate        :: ft/min
-      - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
-      - max_fireline_intensity :: Btu/ft/s
-      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
-      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
-    - crown_fire_max       :: dictionary of max crown fire behavior values
-      - max_fire_type          :: "passive" or "active"
-      - max_spread_rate        :: m/min
-      - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
-      - max_fireline_intensity :: kW/m
-      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
-      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
-      - critical_spread_rate   :: m/min
-    - spread_direction     :: 3D unit vector on the slope-tangential plane
+    - surface_fire_behavior :: dictionary of surface fire behavior values
+      - spread_rate            :: ft/min
+      - fireline_intensity     :: Btu/ft/s
+    - crown_fire_behavior   :: dictionary of crown fire behavior values
+      - fire_type              :: "passive" or "active"
+      - spread_rate            :: m/min
+      - fireline_intensity     :: kW/m
 
     return a dictionary containing these keys:
     - fire_type          :: "surface", "passive", or "active"
     - spread_rate        :: m/min
     - fireline_intensity :: kW/m
     """
-    # Calculate the surface fire behavior in spread_direction
-    surface_fire_behavior      = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction)
+    # Unpack the surface fire behavior values
     surface_spread_rate        = conv.ft_to_m(surface_fire_behavior["spread_rate"])                 # m/min
     surface_fireline_intensity = conv.Btu_ft_s_to_kW_m(surface_fire_behavior["fireline_intensity"]) # kW/m
-    # Calculate the crown fire behavior in spread_direction
-    crown_fire_behavior      = calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction)
+    # Unpack the crown fire behavior values
     crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive" or "active"
     crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
@@ -346,4 +332,4 @@ def calc_combined_fire_behavior_in_direction(surface_fire_max, crown_fire_max, s
             "spread_rate"       : crown_spread_rate,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
-# combined-fire-behavior-in-direction ends here
+# combined-fire-behavior ends here
