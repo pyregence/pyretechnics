@@ -4316,9 +4316,33 @@ import pyretechnics.surface_fire as sf
 import pyretechnics.vector_utils as vu
 
 
-def burn_cell_toward_azimuth(inputs, space_time_coordinate, azimuth, use_wind_limit=True):
+# TODO: Create a version of this function that runs efficiently over a space_time_region
+def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, use_wind_limit=True):
     """
-    Return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
+    Given these inputs:
+    - space_time_cubes      :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+      - slope                         :: rise/run
+      - aspect                        :: degrees clockwise from North
+      - fuel_model                    :: integer index in fm.fuel_model_table
+      - canopy_cover                  :: 0-1
+      - canopy_height                 :: m
+      - canopy_base_height            :: m
+      - canopy_bulk_density           :: kg/m^3
+      - wind_speed_10m                :: km/hr
+      - upwind_direction              :: degrees clockwise from North
+      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_10hr       :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_100hr      :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_herbaceous :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_woody      :: kg moisture/kg ovendry weight
+      - foliar_moisture               :: kg moisture/kg ovendry weight
+      - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
+      - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
+    - space_time_coordinate :: (t,y,x)
+    - azimuth               :: degrees clockwise from North on the horizontal plane
+    - use_wind_limit        :: boolean
+
+    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
     - fire_type          :: "unburned", "surface", "passive", or "active"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
@@ -4331,34 +4355,34 @@ def burn_cell_toward_azimuth(inputs, space_time_coordinate, azimuth, use_wind_li
     (t, y, x) = space_time_coordinate
 
     #================================================================================================
-    # Unpack the inputs dictionary
+    # Unpack the space_time_cubes dictionary
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    slope               = inputs["slope"].get(t,y,x)               # rise/run
-    aspect              = inputs["aspect"].get(t,y,x)              # degrees clockwise from North
-    fuel_model_number   = inputs["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
-    canopy_cover        = inputs["canopy_cover"].get(t,y,x)        # 0-1
-    canopy_height       = inputs["canopy_height"].get(t,y,x)       # m
-    canopy_base_height  = inputs["canopy_base_height"].get(t,y,x)  # m
-    canopy_bulk_density = inputs["canopy_bulk_density"].get(t,y,x) # kg/m^3
+    slope               = space_time_cubes["slope"].get(t,y,x)               # rise/run
+    aspect              = space_time_cubes["aspect"].get(t,y,x)              # degrees clockwise from North
+    fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
+    canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
+    canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
+    canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
+    canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m                = inputs["wind_speed_10m"].get(t,y,x)                # km/hr
-    upwind_direction              = inputs["wind_direction"].get(t,y,x)                # degrees clockwise from North
-    fuel_moisture_dead_1hr        = inputs["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
-    fuel_moisture_dead_10hr       = inputs["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
-    fuel_moisture_dead_100hr      = inputs["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
-    fuel_moisture_live_herbaceous = inputs["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
-    fuel_moisture_live_woody      = inputs["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
-    foliar_moisture               = inputs["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
+    wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
+    upwind_direction              = space_time_cubes["wind_direction"].get(t,y,x)                # degrees clockwise from North
+    fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
+    foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment    = (inputs["fuel_spread_adjustment"].get(t,y,x)
-                                 if "fuel_spread_adjustment" in inputs
+    fuel_spread_adjustment    = (space_time_cubes["fuel_spread_adjustment"].get(t,y,x)
+                                 if "fuel_spread_adjustment" in space_time_cubes
                                  else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment = (inputs["weather_spread_adjustment"].get(t,y,x)
-                                 if "weather_spread_adjustment" in inputs
+    weather_spread_adjustment = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
+                                 if "weather_spread_adjustment" in space_time_cubes
                                  else 1.0)                                         # float >= 0.0
     spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
 
