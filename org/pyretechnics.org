@@ -2873,6 +2873,7 @@ def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle)
     - offset_angle         :: degrees clockwise from max spread direction on the slope-tangential plane
 
     return a dictionary containing these keys:
+    - fire_type          :: "surface"
     - spread_rate        :: ft/min
     - fireline_intensity :: Btu/ft/s
     """
@@ -2883,6 +2884,7 @@ def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle)
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
     return {
+        "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }
@@ -2901,6 +2903,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     - spread_direction     :: 3D unit vector on the slope-tangential plane
 
     return a dictionary containing these keys:
+    - fire_type          :: "surface"
     - spread_rate        :: ft/min
     - fireline_intensity :: Btu/ft/s
     """
@@ -2914,6 +2917,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     return {
+        "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }
@@ -3186,22 +3190,34 @@ pprint(backing_fire_behavior2)
 #+RESULTS: compute-surface-fire-behavior-in-direction
 #+begin_example
 Heading Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 9.396739630785342, 'spread_rate': 7.534709026168767}
+{'fire_type': 'surface',
+ 'fireline_intensity': 9.396739630785342,
+ 'spread_rate': 7.534709026168767}
 
 Heading Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 9.396739630785342, 'spread_rate': 7.534709026168767}
+{'fire_type': 'surface',
+ 'fireline_intensity': 9.396739630785342,
+ 'spread_rate': 7.534709026168767}
 
 Flanking Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 1.2280611688774694, 'spread_rate': 0.9847121381882004}
+{'fire_type': 'surface',
+ 'fireline_intensity': 1.2280611688774694,
+ 'spread_rate': 0.9847121381882004}
 
 Flanking Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 1.2280611688774694, 'spread_rate': 0.9847121381882004}
+{'fire_type': 'surface',
+ 'fireline_intensity': 1.2280611688774694,
+ 'spread_rate': 0.9847121381882004}
 
 Backing Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 0.6569596575341267, 'spread_rate': 0.5267784418793591}
+{'fire_type': 'surface',
+ 'fireline_intensity': 0.6569596575341267,
+ 'spread_rate': 0.5267784418793591}
 
 Backing Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fireline_intensity': 0.6569596575341267, 'spread_rate': 0.5267784418793591}
+{'fire_type': 'surface',
+ 'fireline_intensity': 0.6569596575341267,
+ 'spread_rate': 0.5267784418793591}
 #+end_example
 
 * Crown Fire Equations (pyretechnics.crown_fire)
@@ -3715,6 +3731,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     """
     Given these inputs:
     - surface_fire_behavior :: dictionary of surface fire behavior values
+      - fire_type              :: "surface"
       - spread_rate            :: ft/min
       - fireline_intensity     :: Btu/ft/s
     - crown_fire_behavior   :: dictionary of crown fire behavior values
@@ -3728,6 +3745,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     - fireline_intensity :: kW/m
     """
     # Unpack the surface fire behavior values
+    surface_fire_type          = surface_fire_behavior["fire_type"]                                 # "surface"
     surface_spread_rate        = conv.ft_to_m(surface_fire_behavior["spread_rate"])                 # m/min
     surface_fireline_intensity = conv.Btu_ft_s_to_kW_m(surface_fire_behavior["fireline_intensity"]) # kW/m
     # Unpack the crown fire behavior values
@@ -3738,7 +3756,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     if surface_spread_rate > crown_spread_rate:
         # Surface fire spreads faster
         return {
-            "fire_type"         : "surface",
+            "fire_type"         : surface_fire_type,
             "spread_rate"       : surface_spread_rate,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
@@ -4297,7 +4315,9 @@ else:
 #+RESULTS: compute-combined-fire-behavior-in-direction
 : Fire Behavior from Surface Fire (No Crown Fire Occurred)
 : ============================================================
-: {'fireline_intensity': 2.7516947158713765, 'spread_rate': 2.206426891409373}
+: {'fire_type': 'surface',
+:  'fireline_intensity': 2.7516947158713765,
+:  'spread_rate': 2.206426891409373}
 
 * [WIP] Burning Cells on a Grid (pyretechnics.burn_cells)
 ** For Developers

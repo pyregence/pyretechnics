@@ -480,6 +480,7 @@ def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle)
     - offset_angle         :: degrees clockwise from max spread direction on the slope-tangential plane
 
     return a dictionary containing these keys:
+    - fire_type          :: "surface"
     - spread_rate        :: ft/min
     - fireline_intensity :: Btu/ft/s
     """
@@ -490,6 +491,7 @@ def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle)
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
     return {
+        "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }
@@ -508,6 +510,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     - spread_direction     :: 3D unit vector on the slope-tangential plane
 
     return a dictionary containing these keys:
+    - fire_type          :: "surface"
     - spread_rate        :: ft/min
     - fireline_intensity :: Btu/ft/s
     """
@@ -521,6 +524,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     return {
+        "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }

@@ -298,6 +298,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     """
     Given these inputs:
     - surface_fire_behavior :: dictionary of surface fire behavior values
+      - fire_type              :: "surface"
       - spread_rate            :: ft/min
       - fireline_intensity     :: Btu/ft/s
     - crown_fire_behavior   :: dictionary of crown fire behavior values
@@ -311,6 +312,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     - fireline_intensity :: kW/m
     """
     # Unpack the surface fire behavior values
+    surface_fire_type          = surface_fire_behavior["fire_type"]                                 # "surface"
     surface_spread_rate        = conv.ft_to_m(surface_fire_behavior["spread_rate"])                 # m/min
     surface_fireline_intensity = conv.Btu_ft_s_to_kW_m(surface_fire_behavior["fireline_intensity"]) # kW/m
     # Unpack the crown fire behavior values
@@ -321,7 +323,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     if surface_spread_rate > crown_spread_rate:
         # Surface fire spreads faster
         return {
-            "fire_type"         : "surface",
+            "fire_type"         : surface_fire_type,
             "spread_rate"       : surface_spread_rate,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
