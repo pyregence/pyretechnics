@@ -166,20 +166,29 @@ def get_phi_S_fn(beta):
         return lambda _: 0.0
 # surface-fire-slope-factor-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-wind-factor-function][surface-fire-wind-factor-function]]
+import pyretechnics.conversion as conv
+
+
 def get_phi_W_fn(beta, B, C, F):
     if (beta > 0.0):
         C_over_F = C / F
-        return lambda midflame_wind_speed: (midflame_wind_speed ** B) * C_over_F
+        return lambda midflame_wind_speed: (conv.m_to_ft(midflame_wind_speed) ** B) * C_over_F
     else:
         return lambda _: 0.0
 # surface-fire-wind-factor-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-wind-speed-function][surface-fire-wind-speed-function]]
+import pyretechnics.conversion as conv
+
+
 def get_wind_speed_fn(B, C, F):
     F_over_C  = F / C
     B_inverse = 1.0 / B
-    return lambda phi_W: (phi_W * F_over_C) ** B_inverse
+    return lambda phi_W: conv.ft_to_m((phi_W * F_over_C) ** B_inverse)
 # surface-fire-wind-speed-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
+import pyretechnics.conversion as conv
+
+
 def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_rate_adjustment=1.0):
     """
     Given these inputs:
@@ -199,12 +208,12 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     - spread_rate_adjustment :: unitless float (1.0 for no adjustment)
 
     return a dictionary containing these keys:
-    - base_spread_rate         :: ft/min
-    - base_fireline_intensity  :: Btu/ft/s
-    - max_effective_wind_speed :: ft/min
-    - get_phi_S                :: lambda: slope => phi_S
-    - get_phi_W                :: lambda: midflame_wind_speed => phi_W
-    - get_wind_speed           :: lambda: phi_W => midflame_wind_speed
+    - base_spread_rate         :: m/min
+    - base_fireline_intensity  :: kW/m
+    - max_effective_wind_speed :: m/min
+    - get_phi_S                :: lambda: slope (rise/run) => phi_S (unitless)
+    - get_phi_W                :: lambda: midflame_wind_speed (m/min) => phi_W (unitless)
+    - get_wind_speed           :: lambda: phi_W (unitless) => midflame_wind_speed (m/min)
     """
     # Unpack fuel model values
     delta          = moisturized_fuel_model["delta"]
@@ -241,9 +250,9 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     get_wind_speed = get_wind_speed_fn(B, C, F)
     # Return no-wind-no-slope surface fire behavior values
     return {
-        "base_spread_rate"        : R0 * spread_rate_adjustment,
-        "base_fireline_intensity" : I_s * spread_rate_adjustment,
-        "max_effective_wind_speed": U_eff_max,
+        "base_spread_rate"        : conv.ft_to_m(R0 * spread_rate_adjustment),
+        "base_fireline_intensity" : conv.Btu_ft_s_to_kW_m(I_s * spread_rate_adjustment),
+        "max_effective_wind_speed": conv.ft_to_m(U_eff_max),
         "get_phi_S"               : get_phi_S,
         "get_phi_W"               : get_phi_W,
         "get_wind_speed"          : get_wind_speed,
@@ -342,16 +351,16 @@ def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
 from math import exp, sqrt
-from pyretechnics.conversion import fpm_to_mph
+from pyretechnics.conversion import m_min_to_mph
 
 
 def surface_length_to_width_ratio(effective_wind_speed):
     """
     Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
     Rothermel 1991 given:
-    - effective_wind_speed :: ft/min (aligned with the slope-tangential plane)
+    - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
     """
-    effective_wind_speed_mph = fpm_to_mph(effective_wind_speed)
+    effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
     return 1.0 + 0.25 * effective_wind_speed_mph
 
 
@@ -359,11 +368,11 @@ def surface_length_to_width_ratio(effective_wind_speed):
 def surface_length_to_width_ratio_elmfire(effective_wind_speed):
     """
     Calculate the length_to_width_ratio of the surface fire front given:
-    - effective_wind_speed :: ft/min
+    - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
 
     L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
     """
-    effective_wind_speed_mph = fpm_to_mph(effective_wind_speed)
+    effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
     return min((0.936 * exp(0.2566 * effective_wind_speed_mph))
                +
                (0.461 * exp(-0.1548 * effective_wind_speed_mph))
@@ -386,6 +395,18 @@ from pyretechnics.vector_utils import vector_magnitude
 
 
 def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_speed, phi_E_magnitude):
+    """
+    Given these inputs:
+    - use_wind_limit  :: boolean
+    - max_wind_speed  :: m/min
+    - get_phi_W       :: lambda: midflame_wind_speed (m/min) => phi_W (unitless)
+    - get_wind_speed  :: lambda: phi_W (unitless) => midflame_wind_speed (m/min)
+    - phi_E_magnitude :: unitless
+
+    return a tuple with these fields:
+    - limited_wind_speed :: m/min
+    - limited_phi_E      :: unitless
+    """
     effective_wind_speed = get_wind_speed(phi_E_magnitude)
     if (use_wind_limit and effective_wind_speed > max_wind_speed):
         return (
@@ -405,23 +426,23 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     """
     Given these inputs:
     - surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
-      - base_spread_rate         :: ft/min
-      - base_fireline_intensity  :: Btu/ft/s
-      - max_effective_wind_speed :: ft/min
-      - get_phi_S                :: lambda: slope => phi_S
-      - get_phi_W                :: lambda: midflame_wind_speed => phi_W
-      - get_wind_speed           :: lambda: phi_W => midflame_wind_speed
-    - midflame_wind_speed    :: ft/min
+      - base_spread_rate         :: m/min
+      - base_fireline_intensity  :: kW/m
+      - max_effective_wind_speed :: m/min
+      - get_phi_S                :: lambda: slope (rise/run) => phi_S (unitless)
+      - get_phi_W                :: lambda: midflame_wind_speed (m/min) => phi_W (unitless)
+      - get_wind_speed           :: lambda: phi_W (unitless) => midflame_wind_speed (m/min)
+    - midflame_wind_speed    :: m/min
     - upwind_direction       :: degrees clockwise from North
     - slope                  :: rise/run
     - aspect                 :: degrees clockwise from North
     - use_wind_limit         :: boolean (Optional)
 
     return a dictionary containing these keys:
-    - max_spread_rate        :: ft/min
+    - max_spread_rate        :: m/min
     - max_spread_direction   :: (x, y, z) unit vector
-    - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
-    - max_fireline_intensity :: Btu/ft/s
+    - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+    - max_fireline_intensity :: kW/m
     - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
@@ -437,7 +458,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     upslope_direction  = opposite_direction(aspect)
     # Project wind and slope vectors onto the slope-tangential plane
     vectors = project_wind_and_slope_vectors_3d(midflame_wind_speed, downwind_direction, slope, upslope_direction)
-    wind_vector_3d  = vectors["wind_vector_3d"]  # ft/min
+    wind_vector_3d  = vectors["wind_vector_3d"]  # m/min
     slope_vector_3d = vectors["slope_vector_3d"] # rise/run
     # Calculate phi_W and phi_S
     phi_W = get_phi_W(vector_magnitude(wind_vector_3d)) # |wind_vector_3d| = slope-aligned midflame wind speed
@@ -464,17 +485,16 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
 from math import cos, radians
 import numpy as np
-import pyretechnics.conversion as conv
 
 
 def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle):
     """
     Given these inputs:
     - surface_fire_max     :: dictionary of max surface fire behavior values
-      - max_spread_rate        :: ft/min
+      - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
-      - max_fireline_intensity :: Btu/ft/s
+      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+      - max_fireline_intensity :: kW/m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     - offset_angle         :: degrees clockwise from max spread direction on the slope-tangential plane
@@ -492,8 +512,8 @@ def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle)
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
     return {
         "fire_type"         : "surface",
-        "spread_rate"       : conv.ft_to_m(max_spread_rate * adjustment), # m/min
-        "fireline_intensity": conv.Btu_ft_s_to_kW_m(max_fireline_intensity * adjustment), # kW/m
+        "spread_rate"       : max_spread_rate * adjustment,
+        "fireline_intensity": max_fireline_intensity * adjustment,
     }
 
 
@@ -501,10 +521,10 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     """
     Given these inputs:
     - surface_fire_max     :: dictionary of max surface fire behavior values
-      - max_spread_rate        :: ft/min
+      - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: ft/min, y: ft/min, z: ft/min)
-      - max_fireline_intensity :: Btu/ft/s
+      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+      - max_fireline_intensity :: kW/m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     - spread_direction     :: 3D unit vector on the slope-tangential plane
@@ -525,7 +545,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     return {
         "fire_type"         : "surface",
-        "spread_rate"       : conv.ft_to_m(max_spread_rate * adjustment), # m/min
-        "fireline_intensity": conv.Btu_ft_s_to_kW_m(max_fireline_intensity * adjustment), # kW/m
+        "spread_rate"       : max_spread_rate * adjustment,
+        "fireline_intensity": max_fireline_intensity * adjustment,
     }
 # surface-fire-behavior-in-direction ends here

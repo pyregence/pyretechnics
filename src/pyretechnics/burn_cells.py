@@ -131,14 +131,16 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
         # Convert from 10m wind speed to 20ft wind speed
         wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
 
-        # Convert 20ft wind speed from km/hr to ft/min
-        wind_speed_20ft_ft_min = conv.m_to_ft(conv.km_hr_to_m_min(wind_speed_20ft)) # ft/min
+        # Convert 20ft wind speed from km/hr to m/min
+        wind_speed_20ft_m_min = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
 
         # Convert from 20ft wind speed to midflame wind speed
-        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_ft_min,      # ft/min
-                                                          fuel_bed_depth,              # ft
-                                                          conv.m_to_ft(canopy_height), # ft
-                                                          canopy_cover)                # 0-1
+        midflame_wind_speed = conv.ft_to_m(
+            sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft_m_min), # ft/min
+                                        fuel_bed_depth,                      # ft
+                                        conv.m_to_ft(canopy_height),         # ft
+                                        canopy_cover)                        # 0-1
+        ) # m/min
 
         #============================================================================================
         # Calculate surface fire behavior in the direction of maximum spread
@@ -147,8 +149,8 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
         # Apply fuel moisture to fuel model
         moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
 
-        # Calculate no-wind-no-slope surface fire behavior
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
+        # Calculate no-wind-no-slope surface fire behavior
         surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model,
                                                                           spread_rate_adjustment)
 
