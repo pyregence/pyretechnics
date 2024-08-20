@@ -7,10 +7,11 @@ import pyretechnics.vector_utils as vu
 
 
 # TODO: Create a version of this function that runs efficiently over a space_time_region
-def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, use_wind_limit=True):
+def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
+                             use_wind_limit=True, max_length_to_width_ratio=None):
     """
     Given these inputs:
-    - space_time_cubes      :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
       - slope                         :: rise/run
       - aspect                        :: degrees clockwise from North
       - fuel_model                    :: integer index in fm.fuel_model_table
@@ -28,9 +29,10 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
       - foliar_moisture               :: kg moisture/kg ovendry weight
       - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
       - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
-    - space_time_coordinate :: (t,y,x)
-    - azimuth               :: degrees clockwise from North on the horizontal plane
-    - use_wind_limit        :: boolean
+    - space_time_coordinate     :: (t,y,x)
+    - azimuth                   :: degrees clockwise from North on the horizontal plane
+    - use_wind_limit            :: boolean (Optional)
+    - max_length_to_width_ratio :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
     - fire_type          :: "unburned", "surface", "passive", or "active"
@@ -156,7 +158,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
                                                              upwind_direction,
                                                              slope,
                                                              aspect,
-                                                             use_wind_limit=use_wind_limit)
+                                                             use_wind_limit)
 
         #============================================================================================
         # Calculate surface fire behavior in the direction of the azimuth vector
@@ -168,9 +170,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
         # Determine whether the surface fire transitions to a crown fire
         #============================================================================================
 
-        surface_fireline_intensity = conv.Btu_ft_s_to_kW_m(surface_fire_azimuth["fireline_intensity"]) # kW/m
-
-        if cf.van_wagner_crown_fire_initiation(surface_fireline_intensity,
+        if cf.van_wagner_crown_fire_initiation(surface_fire_azimuth["fireline_intensity"],
                                                canopy_cover,
                                                canopy_base_height,
                                                foliar_moisture):
@@ -183,7 +183,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
                                                              canopy_bulk_density, heat_of_combustion,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
-                                                             slope, aspect)
+                                                             slope, aspect, max_length_to_width_ratio)
 
             #========================================================================================
             # Calculate crown fire behavior in the direction of the azimuth vector
