@@ -264,9 +264,10 @@ from math import log, sqrt
 
 def calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     """
-    fuel_bed_depth :: ft
-    canopy_height  :: ft
-    canopy_cover   :: 0-1
+    Return the wind adjustment factor (unitless) given these inputs:
+    - fuel_bed_depth :: ft
+    - canopy_height  :: ft
+    - canopy_cover   :: 0-1
     """
     if (canopy_cover > 0.0) and (canopy_height > 0.0):
         # sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)
@@ -284,10 +285,11 @@ def calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
 
 def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, canopy_cover):
     """
-    wind_speed_20ft :: ft/min
-    fuel_bed_depth  :: ft
-    canopy_height   :: ft
-    canopy_cover    :: 0-1
+    Return the midflame wind speed (S) given these inputs:
+    - wind_speed_20ft :: S
+    - fuel_bed_depth  :: ft
+    - canopy_height   :: ft
+    - canopy_cover    :: 0-1
     """
     wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
     return wind_speed_20ft * wind_adj_factor

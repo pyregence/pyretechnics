@@ -134,13 +134,11 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
         # Convert 20ft wind speed from km/hr to m/min
         wind_speed_20ft_m_min = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
 
-        # Convert from 20ft wind speed to midflame wind speed
-        midflame_wind_speed = conv.ft_to_m(
-            sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft_m_min), # ft/min
-                                        fuel_bed_depth,                      # ft
-                                        conv.m_to_ft(canopy_height),         # ft
-                                        canopy_cover)                        # 0-1
-        ) # m/min
+        # Convert from 20ft wind speed to midflame wind speed in m/min
+        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,       # m/min
+                                                          fuel_bed_depth,              # ft
+                                                          conv.m_to_ft(canopy_height), # ft
+                                                          canopy_cover)                # 0-1
 
         #============================================================================================
         # Calculate surface fire behavior in the direction of maximum spread

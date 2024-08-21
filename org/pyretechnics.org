@@ -2547,9 +2547,10 @@ from math import log, sqrt
 
 def calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
     """
-    fuel_bed_depth :: ft
-    canopy_height  :: ft
-    canopy_cover   :: 0-1
+    Return the wind adjustment factor (unitless) given these inputs:
+    - fuel_bed_depth :: ft
+    - canopy_height  :: ft
+    - canopy_cover   :: 0-1
     """
     if (canopy_cover > 0.0) and (canopy_height > 0.0):
         # sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)
@@ -2567,10 +2568,11 @@ def calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover):
 
 def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, canopy_cover):
     """
-    wind_speed_20ft :: ft/min
-    fuel_bed_depth  :: ft
-    canopy_height   :: ft
-    canopy_cover    :: 0-1
+    Return the midflame wind speed (S) given these inputs:
+    - wind_speed_20ft :: S
+    - fuel_bed_depth  :: ft
+    - canopy_height   :: ft
+    - canopy_cover    :: 0-1
     """
     wind_adj_factor = calc_wind_adjustment_factor(fuel_bed_depth, canopy_height, canopy_cover)
     return wind_speed_20ft * wind_adj_factor
@@ -3019,6 +3021,7 @@ pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_inte
 #+begin_src python
 import pyretechnics.conversion as conv
 import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
 
 # Set input parameters
 fuel_model       = fm.fuel_model_table[101] # GR1
@@ -3033,24 +3036,24 @@ wind_speed_10m_y = 100.0                    # m/min
 # Convert from 10m wind speed to 20ft wind speed
 wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # m/min
 
-# Convert from 20ft wind speed to midflame wind speed
-midflame_wind_speed = sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft), # ft/min
-                                                  fuel_model["delta"],           # ft
-                                                  conv.m_to_ft(canopy_height),   # ft
-                                                  canopy_cover)                  # 0-1
+# Convert from 20ft wind speed to midflame wind speed in m/min
+midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft,             # m/min
+                                                  fuel_model["delta"],         # ft
+                                                  conv.m_to_ft(canopy_height), # ft
+                                                  canopy_cover)                # 0-1
 
 # View results
 print("Midflame Wind Speed and Direction for 10m Wind Speed = (100 m/min, 100 m/min)\n"
       + " with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%\n"
-      + "- Speed: " + str(midflame_wind_speed) + " (ft/min)\n"
-      + "- Upwind Direction: " + str(upwind_direction) + " (degrees clockwise from North)")
+      + "- Speed: " + str(midflame_wind_speed) + " (m/min)\n"
+      + "- Downwind Direction: " + str(conv.opposite_direction(upwind_direction)) + " (degrees clockwise from North)")
 #+end_src
 
 #+RESULTS: translate-10m-wind-to-midflame-wind
 : Midflame Wind Speed and Direction for 10m Wind Speed = (100 m/min, 100 m/min)
 :  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
-: - Speed: 37.89648948678061 (ft/min)
-: - Upwind Direction: 45.0 (degrees clockwise from North)
+: - Speed: 11.55028634159726 (m/min)
+: - Downwind Direction: 225.0 (degrees clockwise from North)
 
 *** How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread
 
@@ -4247,13 +4250,11 @@ wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
 # Convert 20ft wind speed from km/hr to m/min
 wind_speed_20ft_m_min = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
 
-# Convert from 20ft wind speed to midflame wind speed
-midflame_wind_speed = conv.ft_to_m(
-    sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft_m_min), # ft/min
-                                fuel_bed_depth,                      # ft
-                                conv.m_to_ft(canopy_height),         # ft
-                                canopy_cover)                        # 0-1
-) # m/min
+# Convert from 20ft wind speed to midflame wind speed in m/min
+midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,       # m/min
+                                                  fuel_bed_depth,              # ft
+                                                  conv.m_to_ft(canopy_height), # ft
+                                                  canopy_cover)                # 0-1
 
 #================================================================================================
 # Calculate surface fire behavior in the direction of maximum spread
@@ -4478,13 +4479,11 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
         # Convert 20ft wind speed from km/hr to m/min
         wind_speed_20ft_m_min = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
 
-        # Convert from 20ft wind speed to midflame wind speed
-        midflame_wind_speed = conv.ft_to_m(
-            sf.calc_midflame_wind_speed(conv.m_to_ft(wind_speed_20ft_m_min), # ft/min
-                                        fuel_bed_depth,                      # ft
-                                        conv.m_to_ft(canopy_height),         # ft
-                                        canopy_cover)                        # 0-1
-        ) # m/min
+        # Convert from 20ft wind speed to midflame wind speed in m/min
+        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,       # m/min
+                                                          fuel_bed_depth,              # ft
+                                                          conv.m_to_ft(canopy_height), # ft
+                                                          canopy_cover)                # 0-1
 
         #============================================================================================
         # Calculate surface fire behavior in the direction of maximum spread
