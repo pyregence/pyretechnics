@@ -243,6 +243,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     return a dictionary containing these keys:
     - fire_type          :: "passive" or "active"
     - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     """
     # Unpack max crown fire behavior values
@@ -263,6 +264,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "active",
             "spread_rate"       : spread_rate,
+            "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
     elif max_fire_type == "passive":
@@ -270,6 +272,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "passive",
             "spread_rate"       : spread_rate,
+            "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
     else:
@@ -277,6 +280,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "passive",
             "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
+            "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
 # crown-fire-behavior-in-direction ends here
@@ -290,24 +294,29 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     - surface_fire_behavior :: dictionary of surface fire behavior values
       - fire_type              :: "surface"
       - spread_rate            :: m/min
+      - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
     - crown_fire_behavior   :: dictionary of crown fire behavior values
       - fire_type              :: "passive" or "active"
       - spread_rate            :: m/min
+      - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
 
     return a dictionary containing these keys:
     - fire_type          :: "surface", "passive", or "active"
     - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     """
     # Unpack the surface fire behavior values
     surface_fire_type          = surface_fire_behavior["fire_type"]          # "surface"
     surface_spread_rate        = surface_fire_behavior["spread_rate"]        # m/min
+    surface_spread_direction   = surface_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
     # Unpack the crown fire behavior values
     crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive" or "active"
     crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
+    crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
     # Determine whether the surface or crown fire has the fastest spread rate
     if surface_spread_rate > crown_spread_rate:
@@ -315,6 +324,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
         return {
             "fire_type"         : surface_fire_type,
             "spread_rate"       : surface_spread_rate,
+            "spread_direction"  : surface_spread_direction,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
     else:
@@ -322,6 +332,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
         return {
             "fire_type"         : crown_fire_type,
             "spread_rate"       : crown_spread_rate,
+            "spread_direction"  : crown_spread_direction,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
 # combined-fire-behavior ends here

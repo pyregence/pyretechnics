@@ -2882,38 +2882,7 @@ this plane from $\vec{u_{\max}}$.
 
 #+name: surface-fire-behavior-in-direction
 #+begin_src python
-from math import cos, radians
 import numpy as np
-
-
-def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle):
-    """
-    Given these inputs:
-    - surface_fire_max     :: dictionary of max surface fire behavior values
-      - max_spread_rate        :: m/min
-      - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
-      - max_fireline_intensity :: kW/m
-      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
-      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
-    - offset_angle         :: degrees clockwise from max spread direction on the slope-tangential plane
-
-    return a dictionary containing these keys:
-    - fire_type          :: "surface"
-    - spread_rate        :: m/min
-    - fireline_intensity :: kW/m
-    """
-    # Unpack max surface fire behavior values
-    max_spread_rate        = surface_fire_max["max_spread_rate"]
-    max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
-    eccentricity           = surface_fire_max["eccentricity"]
-    # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
-    return {
-        "fire_type"         : "surface",
-        "spread_rate"       : max_spread_rate * adjustment,
-        "fireline_intensity": max_fireline_intensity * adjustment,
-    }
 
 
 def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
@@ -2931,6 +2900,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     return a dictionary containing these keys:
     - fire_type          :: "surface"
     - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     """
     # Unpack max surface fire behavior values
@@ -2945,6 +2915,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     return {
         "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
+        "spread_direction"  : spread_direction,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }
 #+end_src
@@ -3166,84 +3137,49 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      slope,
                                                      aspect)
 
-# Calculate surface fire behavior for the heading, flanking, and backing fires from offset angles and 3D directions
-heading_fire_offset     = 0.0
-flanking_fire_offset    = 90.0
-backing_fire_offset     = 180.0
-
+# Calculate surface fire behavior for the heading, flanking, and backing fires
 heading_fire_direction  = surface_fire_max["max_spread_direction"]
 flanking_fire_direction = vu.rotate_on_sloped_plane(heading_fire_direction, 90, slope, aspect)
 backing_fire_direction  = -heading_fire_direction
 
-heading_fire_behavior1  = sf.calc_surface_fire_behavior_from_offset_angle(surface_fire_max, heading_fire_offset)
-flanking_fire_behavior1 = sf.calc_surface_fire_behavior_from_offset_angle(surface_fire_max, flanking_fire_offset)
-backing_fire_behavior1  = sf.calc_surface_fire_behavior_from_offset_angle(surface_fire_max, backing_fire_offset)
-
-heading_fire_behavior2  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
-flanking_fire_behavior2 = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_direction)
-backing_fire_behavior2  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, backing_fire_direction)
+heading_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
+flanking_fire_behavior = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_direction)
+backing_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, backing_fire_direction)
 
 # View heading fire results
-print("Heading Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = "
+print("Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
       + str(moisturized_fuel_model["M_f"]))
-pprint(heading_fire_behavior1)
-
-# View heading fire results
-print("\nHeading Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = "
-      + str(moisturized_fuel_model["M_f"]))
-pprint(heading_fire_behavior2)
+pprint(heading_fire_behavior)
 
 # View flanking fire results
-print("\nFlanking Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = "
+print("\nFlanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
       + str(moisturized_fuel_model["M_f"]))
-pprint(flanking_fire_behavior1)
-
-# View flanking fire results
-print("\nFlanking Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = "
-      + str(moisturized_fuel_model["M_f"]))
-pprint(flanking_fire_behavior2)
+pprint(flanking_fire_behavior)
 
 # View backing fire results
-print("\nBacking Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = "
+print("\nBacking Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
       + str(moisturized_fuel_model["M_f"]))
-pprint(backing_fire_behavior1)
-
-# View backing fire results
-print("\nBacking Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = "
-      + str(moisturized_fuel_model["M_f"]))
-pprint(backing_fire_behavior2)
+pprint(backing_fire_behavior)
 #+end_src
 
 #+RESULTS: compute-surface-fire-behavior-in-direction
 #+begin_example
-Heading Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 32.52824122084378,
- 'spread_rate': 2.2964672435747526}
-
-Heading Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
  'fireline_intensity': 32.528241220843725,
+ 'spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
  'spread_rate': 2.2964672435747486}
 
-Flanking Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 4.251120229437338,
- 'spread_rate': 0.3001256135897406}
-
-Flanking Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
  'fireline_intensity': 4.251120229437339,
+ 'spread_direction': array([6.29728731e-17, 7.73492354e-17, 3.47990351e-17]),
  'spread_rate': 0.30012561358974066}
 
-Backing Fire Behavior (from Angle) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 2.274165620447327,
- 'spread_rate': 0.16055423403816196}
-
-Backing Fire Behavior (from Direction) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
+Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
  'fireline_intensity': 2.2741656204473273,
+ 'spread_direction': array([-0.57514211, -0.80992593, -0.11502842]),
  'spread_rate': 0.160554234038162}
 #+end_example
 
@@ -3686,6 +3622,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     return a dictionary containing these keys:
     - fire_type          :: "passive" or "active"
     - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     """
     # Unpack max crown fire behavior values
@@ -3706,6 +3643,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "active",
             "spread_rate"       : spread_rate,
+            "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
     elif max_fire_type == "passive":
@@ -3713,6 +3651,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "passive",
             "spread_rate"       : spread_rate,
+            "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
     else:
@@ -3720,6 +3659,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "passive",
             "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
+            "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
 #+end_src
@@ -3736,7 +3676,7 @@ the type of whichever fire perimeter grows the most quickly.
 
 *Note:* Since the surface fire and crown fire each define separate
 fire spread ellipses with potentially different maximum spread
-directions, their relative spread rates and intensities can only be
+directions, their relative spread rates and intensities should only be
 compared in a given absolute direction in the slope-tangential plane.
 
 #+name: combined-fire-behavior
@@ -3750,24 +3690,29 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     - surface_fire_behavior :: dictionary of surface fire behavior values
       - fire_type              :: "surface"
       - spread_rate            :: m/min
+      - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
     - crown_fire_behavior   :: dictionary of crown fire behavior values
       - fire_type              :: "passive" or "active"
       - spread_rate            :: m/min
+      - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
 
     return a dictionary containing these keys:
     - fire_type          :: "surface", "passive", or "active"
     - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     """
     # Unpack the surface fire behavior values
     surface_fire_type          = surface_fire_behavior["fire_type"]          # "surface"
     surface_spread_rate        = surface_fire_behavior["spread_rate"]        # m/min
+    surface_spread_direction   = surface_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
     # Unpack the crown fire behavior values
     crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive" or "active"
     crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
+    crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
     # Determine whether the surface or crown fire has the fastest spread rate
     if surface_spread_rate > crown_spread_rate:
@@ -3775,6 +3720,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
         return {
             "fire_type"         : surface_fire_type,
             "spread_rate"       : surface_spread_rate,
+            "spread_direction"  : surface_spread_direction,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
     else:
@@ -3782,6 +3728,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
         return {
             "fire_type"         : crown_fire_type,
             "spread_rate"       : crown_spread_rate,
+            "spread_direction"  : crown_spread_direction,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
         }
 #+end_src
@@ -4142,7 +4089,7 @@ crown_fire_max = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_heig
                                                  slope, aspect)
 
 #================================================================================================
-# Calculate crown fire behavior for the heading, flanking, and backing fires from 3D directions
+# Calculate crown fire behavior for the heading, flanking, and backing fires
 #================================================================================================
 
 heading_fire_direction  = crown_fire_max["max_spread_direction"]
@@ -4172,18 +4119,21 @@ Heading Fire Behavior
 ============================================================
 {'fire_type': 'active',
  'fireline_intensity': 78838.1499300167,
+ 'spread_direction': array([0.        , 0.94280904, 0.33333333]),
  'spread_rate': 31.38361434747966}
 
 Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive',
  'fireline_intensity': 14756.204837586314,
+ 'spread_direction': array([-5.55111512e-17,  2.21925252e-18, -3.51003712e-17]),
  'spread_rate': 3.264617932843692}
 
 Backing Fire Behavior
 ============================================================
 {'fire_type': 'passive',
  'fireline_intensity': 8139.876265831974,
+ 'spread_direction': array([-0.        , -0.94280904, -0.33333333]),
  'spread_rate': 2.3434742325850952}
 #+end_example
 
@@ -4332,6 +4282,7 @@ else:
 : ============================================================
 : {'fire_type': 'surface',
 :  'fireline_intensity': 8.720636300499834,
+:  'spread_direction': array([0.94280904, 0.        , 0.33333333]),
 :  'spread_rate': 0.6156697950946667}
 
 * [WIP] Burning Cells on a Grid (pyretechnics.burn_cells)
@@ -4342,7 +4293,222 @@ else:
    :header-args:python+: :exports code
    :END:
 
-#+name: burn-cells
+*** Burn Cell as a Head Fire
+
+#+name: burn-cell-as-head-fire
+#+begin_src python
+import pyretechnics.conversion as conv
+import pyretechnics.crown_fire as cf
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+import pyretechnics.vector_utils as vu
+
+
+# TODO: Create a version of this function that runs efficiently over a space_time_region
+def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
+                           use_wind_limit=True, max_length_to_width_ratio=None):
+    """
+    Given these inputs:
+    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+      - slope                         :: rise/run
+      - aspect                        :: degrees clockwise from North
+      - fuel_model                    :: integer index in fm.fuel_model_table
+      - canopy_cover                  :: 0-1
+      - canopy_height                 :: m
+      - canopy_base_height            :: m
+      - canopy_bulk_density           :: kg/m^3
+      - wind_speed_10m                :: km/hr
+      - upwind_direction              :: degrees clockwise from North
+      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_10hr       :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_100hr      :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_herbaceous :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_woody      :: kg moisture/kg ovendry weight
+      - foliar_moisture               :: kg moisture/kg ovendry weight
+      - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
+      - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
+    - space_time_coordinate     :: (t,y,x)
+    - use_wind_limit            :: boolean (Optional)
+    - max_length_to_width_ratio :: float > 0.0 (Optional)
+
+    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
+    - fire_type          :: "unburned", "surface", "passive", or "active"
+    - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
+    - fireline_intensity :: kW/m
+    """
+    #================================================================================================
+    # Destructure the space_time_coordinate
+    #================================================================================================
+
+    (t, y, x) = space_time_coordinate
+
+    #================================================================================================
+    # Unpack the space_time_cubes dictionary
+    #================================================================================================
+
+    # Topography, Fuel Model, and Vegetation
+    slope               = space_time_cubes["slope"].get(t,y,x)               # rise/run
+    aspect              = space_time_cubes["aspect"].get(t,y,x)              # degrees clockwise from North
+    fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
+    canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
+    canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
+    canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
+    canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
+
+    # Wind, Surface Moisture, and Foliar Moisture
+    wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
+    upwind_direction              = space_time_cubes["wind_direction"].get(t,y,x)                # degrees clockwise from North
+    fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
+    foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
+
+    # Spread Rate Adjustments (Optional)
+    fuel_spread_adjustment    = (space_time_cubes["fuel_spread_adjustment"].get(t,y,x)
+                                 if "fuel_spread_adjustment" in space_time_cubes
+                                 else 1.0)                                         # float >= 0.0
+    weather_spread_adjustment = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
+                                 if "weather_spread_adjustment" in space_time_cubes
+                                 else 1.0)                                         # float >= 0.0
+    spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
+
+    #================================================================================================
+    # Check whether cell is burnable
+    #================================================================================================
+
+    fuel_model = fm.fuel_model_table.get(fuel_model_number)
+
+    if not (fuel_model and fuel_model["burnable"]):
+        # Encountered unknown or non-burnable fuel model
+
+        #================================================================================================
+        # Create a 3D unit vector pointing upslope on the slope-tangential plane
+        #================================================================================================
+
+        upslope_direction = conv.opposite_direction(aspect)
+        slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
+        slope_vector_3d   = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
+        spread_direction  = vu.as_unit_vector(slope_vector_3d)
+
+        #============================================================================================
+        # Return zero surface fire behavior
+        #============================================================================================
+
+        return {
+            "fire_type"         : "unburned",
+            "spread_rate"       : 0.0,
+            "spread_direction"  : spread_direction,
+            "fireline_intensity": 0.0,
+        }
+
+    else:
+        # Encountered burnable fuel model
+
+        #============================================================================================
+        # Compute derived parameters
+        #============================================================================================
+
+        fuel_moisture                = [fuel_moisture_dead_1hr,
+                                        fuel_moisture_dead_10hr,
+                                        fuel_moisture_dead_100hr,
+                                        0.0, # fuel_moisture_dead_herbaceous
+                                        fuel_moisture_live_herbaceous,
+                                        fuel_moisture_live_woody]               # kg moisture/kg ovendry weight
+        fuel_bed_depth               = fuel_model["delta"]                      # ft
+        heat_of_combustion           = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
+        estimated_fine_fuel_moisture = fuel_moisture_dead_1hr                   # kg moisture/kg ovendry weight
+
+        #============================================================================================
+        # Calculate midflame wind speed
+        #============================================================================================
+
+        # Convert from 10m wind speed to 20ft wind speed
+        wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+
+        # Convert 20ft wind speed from km/hr to m/min
+        wind_speed_20ft_m_min = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
+
+        # Convert from 20ft wind speed to midflame wind speed in m/min
+        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,       # m/min
+                                                          fuel_bed_depth,              # ft
+                                                          conv.m_to_ft(canopy_height), # ft
+                                                          canopy_cover)                # 0-1
+
+        #============================================================================================
+        # Calculate surface fire behavior in the direction of maximum spread
+        #============================================================================================
+
+        # Apply fuel moisture to fuel model
+        moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
+
+        # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
+        # Calculate no-wind-no-slope surface fire behavior
+        surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model,
+                                                                          spread_rate_adjustment)
+
+        # Calculate surface fire behavior in the direction of maximum spread
+        surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
+                                                             midflame_wind_speed,
+                                                             upwind_direction,
+                                                             slope,
+                                                             aspect,
+                                                             use_wind_limit)
+
+        # Simplify the surface fire behavior fields for future comparison/combination with the crown fire behavior values
+        surface_fire_max_simple = sf.calc_surface_fire_behavior_in_direction(surface_fire_max,
+                                                                             surface_fire_max["max_spread_direction"])
+
+        #============================================================================================
+        # Determine whether the surface fire transitions to a crown fire
+        #============================================================================================
+
+        if cf.van_wagner_crown_fire_initiation(surface_fire_max_simple["fireline_intensity"],
+                                               canopy_cover,
+                                               canopy_base_height,
+                                               foliar_moisture):
+
+            #========================================================================================
+            # Calculate crown fire behavior in the direction of maximum spread
+            #========================================================================================
+
+            # Calculate crown fire behavior in the direction of maximum spread
+            crown_fire_max = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
+                                                             canopy_bulk_density, heat_of_combustion,
+                                                             estimated_fine_fuel_moisture,
+                                                             wind_speed_10m, upwind_direction,
+                                                             slope, aspect, max_length_to_width_ratio)
+
+            # Simplify the crown fire behavior fields for future comparison/combination with the surface fire behavior values
+            crown_fire_max_simple = cf.calc_crown_fire_behavior_in_direction(crown_fire_max,
+                                                                             crown_fire_max["max_spread_direction"])
+
+            #========================================================================================
+            # Calculate combined fire behavior in the direction of maximum spread
+            #========================================================================================
+
+            combined_fire_max = cf.calc_combined_fire_behavior(surface_fire_max_simple, crown_fire_max_simple)
+
+            #========================================================================================
+            # Return the combined fire behavior in the direction of maximum spread
+            #========================================================================================
+
+            return combined_fire_max
+
+        else:
+
+            #========================================================================================
+            # Return the surface fire behavior in the direction of maximum spread
+            #========================================================================================
+
+            return surface_fire_max_simple
+#+end_src
+
+*** Burn Cell in Any Direction
+
+#+name: burn-cell-toward-azimuth
 #+begin_src python
 import pyretechnics.conversion as conv
 import pyretechnics.crown_fire as cf

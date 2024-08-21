@@ -485,38 +485,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     }
 # surface-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
-from math import cos, radians
 import numpy as np
-
-
-def calc_surface_fire_behavior_from_offset_angle(surface_fire_max, offset_angle):
-    """
-    Given these inputs:
-    - surface_fire_max     :: dictionary of max surface fire behavior values
-      - max_spread_rate        :: m/min
-      - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
-      - max_fireline_intensity :: kW/m
-      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
-      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
-    - offset_angle         :: degrees clockwise from max spread direction on the slope-tangential plane
-
-    return a dictionary containing these keys:
-    - fire_type          :: "surface"
-    - spread_rate        :: m/min
-    - fireline_intensity :: kW/m
-    """
-    # Unpack max surface fire behavior values
-    max_spread_rate        = surface_fire_max["max_spread_rate"]
-    max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
-    eccentricity           = surface_fire_max["eccentricity"]
-    # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos(radians(offset_angle)))
-    return {
-        "fire_type"         : "surface",
-        "spread_rate"       : max_spread_rate * adjustment,
-        "fireline_intensity": max_fireline_intensity * adjustment,
-    }
 
 
 def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
@@ -534,6 +503,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     return a dictionary containing these keys:
     - fire_type          :: "surface"
     - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     """
     # Unpack max surface fire behavior values
@@ -548,6 +518,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     return {
         "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
+        "spread_direction"  : spread_direction,
         "fireline_intensity": max_fireline_intensity * adjustment,
     }
 # surface-fire-behavior-in-direction ends here
