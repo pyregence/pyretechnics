@@ -60,7 +60,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
 
     # Wind, Surface Moisture, and Foliar Moisture
     wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
-    upwind_direction              = space_time_cubes["wind_direction"].get(t,y,x)                # degrees clockwise from North
+    upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
@@ -270,7 +270,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
 
     # Wind, Surface Moisture, and Foliar Moisture
     wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
-    upwind_direction              = space_time_cubes["wind_direction"].get(t,y,x)                # degrees clockwise from North
+    upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight

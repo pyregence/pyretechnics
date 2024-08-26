@@ -4292,7 +4292,25 @@ else:
    :header-args:python+: :exports code
    :END:
 
+This module provides convenience functions that apply the fuel model
+and moisture definitions from section [[Fuel Model and Moisture
+Definitions (pyretechnics.fuel_models)]], surface fire equations from
+section [[Surface Fire Equations (pyretechnics.surface_fire)]], and crown
+fire equations from section [[Crown Fire Equations
+(pyretechnics.crown_fire)]] to cells within a space-time cube, returning
+their combined surface and crown fire behavior.
+
 *** Burn Cell as a Head Fire
+
+Sometimes the goal of a fire behavior analysis is to determine the
+most extreme behavior to be expected, given static measurements of
+surface fuels, tree canopy characteristics, topography, wind, and
+moisture. The following function computes the maximum surface fire
+behavior and checks to see whether its maximum surface fireline
+intensity causes a crown fire. If so, the maximum crown fire behavior
+is computed and combined with the maximum surface fire behavior as per
+section [[Combining Surface and Crown Fire Behavior]]. If not, the maximum
+surface fire behavior is returned.
 
 #+name: burn-cell-as-head-fire
 #+begin_src python
@@ -4357,7 +4375,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
 
     # Wind, Surface Moisture, and Foliar Moisture
     wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
-    upwind_direction              = space_time_cubes["wind_direction"].get(t,y,x)                # degrees clockwise from North
+    upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
@@ -4507,6 +4525,21 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
 
 *** Burn Cell in Any Direction
 
+When the goal of a fire behavior analysis is to evolve a burn scar
+from its point of ignition into a generally conical shape in
+space-time, then it is necessary to evalute the combined surface and
+crown fire behavior in the direction normal to the fire front. In
+order to facilitate this calculation, the following function takes an
+azimuth (degrees clockwise from North), meant to represent the spatial
+direction in which the fire front is spreading from a given grid cell.
+It first projects this 2D direction onto the local slope-tangential
+plane and computes the surface fire behavior in this direction. If a
+crown fire occurs, the crown fire behavior is also calculated in the
+azimuth direction, and the combined surface and crown fire behavior
+(as per section [[Combining Surface and Crown Fire Behavior]]) is
+returned. If no crown fire occurs, the surface fire behavior in the
+azimuth direction is returned.
+
 #+name: burn-cell-toward-azimuth
 #+begin_src python
 import pyretechnics.conversion as conv
@@ -4571,7 +4604,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
 
     # Wind, Surface Moisture, and Foliar Moisture
     wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
-    upwind_direction              = space_time_cubes["wind_direction"].get(t,y,x)                # degrees clockwise from North
+    upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
@@ -4728,6 +4761,180 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
+
+In the following sections, we will demonstrate how to calculate the
+combined surface and crown fire behavior first in the direction of
+maximum spread and then in any direction.
+
+*** How to Burn a Cell as a Head Fire
+
+#+name: run-burn-cell-as-head-fire
+#+begin_src python
+from pprint import pprint
+import pyretechnics.burn_cells as bc
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240,  # bands: 10 days @ 1 hour/band
+    1000, # rows:  30 km @ 30 meters/row
+    1000, # cols:  30 km @ 30 meters/col
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.5),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 10.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Specify a space-time coordinate (t,y,x) within the extent of the SpaceTimeCube dimensions
+#============================================================================================
+
+space_time_coordinate = (24, 100, 100)
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of maximum spread (with wind limit)
+#============================================================================================
+
+print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate "
+      + str(space_time_coordinate) + "\n" + "=" * 100)
+pprint(bc.burn_cell_as_head_fire(space_time_cubes, space_time_coordinate))
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of maximum spread (without wind limit)
+#============================================================================================
+
+print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate "
+      + str(space_time_coordinate) + "\n" + "=" * 100)
+pprint(bc.burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_limit=False))
+#+end_src
+
+#+RESULTS: run-burn-cell-as-head-fire
+#+begin_example
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate (24, 100, 100)
+====================================================================================================
+{'fire_type': 'surface',
+ 'fireline_intensity': 19.468478555649945,
+ 'spread_direction': array([0.60161366, 0.66213845, 0.44680384]),
+ 'spread_rate': 1.3744586736721165}
+
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate (24, 100, 100)
+====================================================================================================
+{'fire_type': 'surface',
+ 'fireline_intensity': 19.468478555649945,
+ 'spread_direction': array([0.60161366, 0.66213845, 0.44680384]),
+ 'spread_rate': 1.3744586736721165}
+#+end_example
+
+*** How to Burn a Cell in Any Direction
+
+#+name: run-burn-cell-toward-azimuth
+#+begin_src python
+from pprint import pprint
+import pyretechnics.burn_cells as bc
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240,  # bands: 10 days @ 1 hour/band
+    1000, # rows:  30 km @ 30 meters/row
+    1000, # cols:  30 km @ 30 meters/col
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.5),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 10.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Specify a space-time coordinate (t,y,x) within the extent of the SpaceTimeCube dimensions
+#============================================================================================
+
+space_time_coordinate = (24, 100, 100)
+
+#============================================================================================
+# Specify an azimuth to spread the fire towards
+#============================================================================================
+
+spread_azimuth = 90.0 # degrees clockwise from North on the horizontal plane
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of the azimuth (with wind limit)
+#============================================================================================
+
+print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate "
+      + str(space_time_coordinate) + "\n" + "=" * 100)
+pprint(bc.burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, spread_azimuth))
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of the azimuth (without wind limit)
+#============================================================================================
+
+print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate "
+      + str(space_time_coordinate) + "\n" + "=" * 100)
+pprint(bc.burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, spread_azimuth, use_wind_limit=False))
+#+end_src
+
+#+RESULTS: run-burn-cell-toward-azimuth
+#+begin_example
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate (24, 100, 100)
+====================================================================================================
+{'fire_type': 'surface',
+ 'fireline_intensity': 8.720636300499834,
+ 'spread_direction': array([9.42809042e-01, 5.77304037e-17, 3.33333333e-01]),
+ 'spread_rate': 0.6156697950946667}
+
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate (24, 100, 100)
+====================================================================================================
+{'fire_type': 'surface',
+ 'fireline_intensity': 8.720636300499834,
+ 'spread_direction': array([9.42809042e-01, 5.77304037e-17, 3.33333333e-01]),
+ 'spread_rate': 0.6156697950946667}
+#+end_example
 
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
 ** For Developers
