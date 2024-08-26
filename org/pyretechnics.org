@@ -3172,9 +3172,9 @@ Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.251120229437339,
- 'spread_direction': array([6.29728731e-17, 7.73492354e-17, 3.47990351e-17]),
- 'spread_rate': 0.30012561358974066}
+ 'fireline_intensity': 4.251120229437338,
+ 'spread_direction': array([ 0.79419771, -0.58653217,  0.15883954]),
+ 'spread_rate': 0.3001256135897406}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
@@ -4126,7 +4126,7 @@ Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive',
  'fireline_intensity': 14756.204837586314,
- 'spread_direction': array([-5.55111512e-17,  2.21925252e-18, -3.51003712e-17]),
+ 'spread_direction': array([ 0.9486833 , -0.10540926,  0.2981424 ]),
  'spread_rate': 3.264617932843692}
 
 Backing Fire Behavior
@@ -6504,7 +6504,7 @@ def rotate_on_sloped_plane(vector, theta, slope, aspect):
     slope_normal_vector = get_slope_normal_vector(elevation_gradient)
     # Rotate theta degrees clockwise around the slope_normal_vector
     theta_rad = radians(theta)
-    return cos(theta_rad) * vector + np.matmul(sin(theta_rad) * vector, slope_normal_vector)
+    return cos(theta_rad) * vector + np.cross(sin(theta_rad) * vector, slope_normal_vector)
 #+end_src
 
 ** SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)
