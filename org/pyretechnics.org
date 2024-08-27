@@ -6768,7 +6768,7 @@ def load_raster(file_path, dtype=None):
         }
 #+end_src
 
-*** Convert LANDFIRE Units and Datatypes
+*** Converting LANDFIRE Units and Datatypes
 
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
 Table [[tab:landfire-layers]]. In order to make them match those required
