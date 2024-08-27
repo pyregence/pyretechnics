@@ -5977,192 +5977,6 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | DUMP_TIME_OF_ARRIVAL                     | N/A                                   | Output writing managed externally       |
 |------------------------------------------+---------------------------------------+-----------------------------------------|
 
-* [WIP] Loading LANDFIRE Inputs
-
-To test out the ~burn_cells~ function, we will need to populate a 3D
-space-time world cube with all of the values that it requires. In this
-section, we will provide the space-varying topography, fuels, and
-vegetation layers by using the latest 30m raster layers from the US
-LANDFIRE program.[fn::https://landfire.gov]
-
-#+name: tab:landfire-layers
-#+caption: 2022 LANDFIRE Raster Layers
-|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
-| Layer Name          | Label  | Units                                    | Min |  Max | NoData | Notes         | Type  | SRID      | Cell Size |
-|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
-| Elevation           | DEM    | meters above sea level                   |   0 | 8850 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
-| Slope               | SLP    | percent (100 * meters rise / meters run) |   0 |  400 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
-| Aspect              | ASP    | degrees CW from North                    |   0 |  359 |  32767 | -1 = no slope | int16 | EPSG:5070 | 30m x 30m |
-| Fuel Model (S&B 40) | FBFM40 | integer classes                          |  91 |  204 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
-| Canopy Cover        | CC     | percent (100 * canopy area / total area) |   0 |   95 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
-| Canopy Height       | CH     | meters * 10                              |   0 |  510 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
-| Canopy Base Height  | CBH    | meters * 10                              |   0 |  100 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
-| Canopy Bulk Density | CBD    | kg/m^3 * 100                             |   0 |   45 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
-|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
-
-** Loading Raster Files with Python Rasterio
-
-We will begin by defining a =load_raster= function that takes a path
-to a raster file (e.g., a GeoTIFF) and returns a dictionary containing
-these keys:
-
-- array :: raster data as a 3D Numpy array =(bands, rows, cols)= of the specified =dtype= (default: =float32=)
-- metadata :: dictionary of raster metadata values (e.g., number of bands/rows/cols, band dtypes, nodata value, georeferencing info)
-
-#+name: load-raster
-#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
-import rasterio
-
-def raster_metadata(raster):
-    return {
-        "name"      : raster.name,
-        "bands"     : raster.count,
-        "rows"      : raster.height,
-        "cols"      : raster.width,
-        "band_types": {i: dtype for i, dtype in zip(raster.indexes, raster.dtypes)},
-        "nodata"    : raster.nodata,
-        "crs"       : raster.crs,
-        "bounds"    : raster.bounds,
-        "transform" : raster.transform,
-    }
-
-
-# TODO: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
-def load_raster(file_path, dtype=None):
-    with rasterio.open(file_path, "r") as input_raster:
-        return {
-            "array"   : input_raster.read(out_dtype=dtype),
-            "metadata": raster_metadata(input_raster),
-        }
-#+end_src
-
-** Convert LANDFIRE Units and Datatypes
-
-The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table [[tab:landfire-layers]]. In order to make them match those required
-by the Pyretechnics Fire Spread API, we need to apply some conversions
-during the layer loading process.
-
-#+name: load-and-convert-landfire-rasters
-#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
-landfire_array_conversions = {
-    #==============================================================================
-    # Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
-    #==============================================================================
-    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
-    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
-    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
-    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
-    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
-    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
-    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
-    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
-}
-
-
-def load_and_convert_landfire_rasters(landfire_file_paths):
-    landfire_rasters = {}
-
-    for name, path in landfire_file_paths.items():
-        (dtype, multiplier) = landfire_array_conversions[name]
-        landfire_rasters[name] = load_raster(path, dtype)
-        if multiplier != 1:
-            array  = landfire_rasters[name]["array"]
-            nodata = landfire_rasters[name]["metadata"]["nodata"]
-            array[array != nodata] *= multiplier
-
-    return landfire_rasters
-#+end_src
-
-** Verifying Raster Constraints
-
-In order to work with the Pyretechnics Fire Spread API, all rasters
-must meet certain requirements:
-
-*TODO: Extend this to support multi-resolution rasters.*
-
-1. All rasters must share the same array shape =(bands, rows, cols)=.
-2. All rasters must share the same spatial extent and projection.
-
-Below we implement functions to check these constraints:
-
-#+name: verify-raster-constraints
-#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
-def verify_same_dimensions(rasters):
-    dimensions = [
-        (r["metadata"]["bands"],
-         r["metadata"]["rows"],
-         r["metadata"]["cols"])
-        for r in rasters
-    ]
-    if len(set(dimensions)) == 1:
-        return True
-    else:
-        raise ValueError("All rasters do not share the same dimensions.")
-
-
-def verify_same_georeferences(rasters):
-    georeferences = [
-        (r["metadata"]["crs"],
-         r["metadata"]["bounds"],
-         r["metadata"]["transform"])
-        for r in rasters
-    ]
-    if len(set(georeferences)) == 1:
-        return True
-    else:
-        raise ValueError("All rasters do not share the same georeferences.")
-
-
-def verify_raster_constraints(rasters):
-    return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
-#+end_src
-
-** Converting Rasters to 3D Lookup Functions
-
-Another requirement of the Pyretechnics Fire Spread API is that each
-input layer must be specified as a 3D space-time lookup function. This
-abstracts away the underlying data representation (e.g. an ND array, a
-single constant value, a random sampling function), allowing many
-different sources of information to interoperate through a simple
-unified interface.
-
-For our LANDFIRE use case, the following function converts a
-dictionary of single-band rasters =(1, rows, cols)= into a dictionary
-of 3D anonymous functions, that always return the same value for each
-=(t,y,x)= coordinate regardless of the time value =t= specified.
-
-#+name: convert-rasters-to-2d-fns
-#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
-# TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
-def convert_rasters_to_2d_fns(raster_dict):
-    fn_dict = {}
-
-    for name, raster in raster_dict.items():
-        fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
-
-    return fn_dict
-#+end_src
-
-** Putting It All Together
-
-By combining the functions defined in the previous sections, we can
-now read in a dictionary of layer names to file paths, load the
-associated rasters and apply the correct dtype and unit conversions,
-verify all of our raster constraints, and wrap each raster's array
-with a 3D lookup function.
-
-#+name: read-landfire-rasters-as-pyretechnics-inputs
-#+begin_src python :tangle ../src/pyretechnics/load_landfire.py
-def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
-    landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
-    if verify_raster_constraints(landfire_rasters.values()):
-        return convert_rasters_to_2d_fns(landfire_rasters)
-#+end_src
-
-We will use this function to load a clipped set of LANDFIRE GeoTIFFs
-in section [[\[WIP\] Testing burn_cells on Worcester, VT]].
-
 * [WIP] Testing burn_cells on Worcester, VT
 
 For testing purposes, we have downloaded these layers, clipped to a
@@ -6178,7 +5992,7 @@ from https://landfire.gov, using the function we defined in section
 #+name: add-landfire-layers-to-pyretechnics-inputs
 #+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
 import os
-from pyretechnics.load_landfire import read_landfire_rasters_as_pyretechnics_inputs
+from pyretechnics.load_landfire import read_landfire_rasters_as_space_time_cubes
 
 def get_project_root(current_dir=os.curdir):
     """
@@ -6208,8 +6022,9 @@ landfire_file_paths = {
 }
 
 
+# FIXME: Need to define cube_shape
 def test_read_landfire_rasters():
-    input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths)
+    input_layer_dict = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
     assert type(input_layer_dict) == dict
     assert input_layer_dict.keys() == landfire_file_paths.keys()
     assert all(map(lambda v: callable(v), input_layer_dict.values()))
@@ -6430,9 +6245,10 @@ def load_and_convert_flammap_rasters(flammap_file_paths):
     return flammap_rasters
 
 
+# FIXME: Need to define cube_shape
 def read_flammap_outputs(flammap_file_paths):
     raster_dict = load_and_convert_flammap_rasters(flammap_file_paths)
-    if verify_raster_constraints(raster_dict.values()):
+    if verify_raster_constraints(cube_shape, raster_dict.values()):
         array_dict = {name: raster["array"] for name, raster in raster_dict.items()}
         array_dict["max_spread_direction"] = np.rad2deg(array_dict["max_spread_direction"]) # rad -> deg
         return array_dict
@@ -6447,6 +6263,7 @@ def slow_test_read_flammap_outputs():
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.conversion*
    :header-args:python+: :tangle  ../src/pyretechnics/conversion.py
+   :header-args:python+: :exports code
    :END:
 
 #+name: units-conversion
@@ -6695,6 +6512,7 @@ def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.vector_utils*
    :header-args:python+: :tangle  ../src/pyretechnics/vector_utils.py
+   :header-args:python+: :exports code
    :END:
 
 #+name: vector-utilities
@@ -6743,6 +6561,7 @@ def rotate_on_sloped_plane(vector, theta, slope, aspect):
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics_test.test_space_time_cube*
    :header-args:python+: :tangle  ../test/pyretechnics_test/test_space_time_cube.py
+   :header-args:python+: :exports code
    :END:
 
 #+name: test-space-time-cube
@@ -6875,4 +6694,205 @@ def test_use_layer_lookup_3d():
     assert mlw_12_100_100   == 121010
     assert fm_12_100_100    == 121010
     assert wsa_12_100_100   == 121010
+#+end_src
+
+** Loading LANDFIRE Inputs (pyretechnics.load_landfire)
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.load_landfire*
+   :header-args:python+: :tangle  ../src/pyretechnics/load_landfire.py
+   :header-args:python+: :exports code
+   :END:
+
+In order to use the functions from =pyretechnics.burn_cells= (see
+section [[Burning Cells on a Grid (pyretechnics.burn_cells)]]), we must
+first create a collection of =SpaceTimeCube= objects, representing all
+of the input layers that are needed to describe the simulation
+environment. A popular source of data for the space-varying
+topography, fuels, and vegetation layers are the 30m raster layers
+provided by the US LANDFIRE program[fn::https://landfire.gov] (see
+table [[tab:landfire-layers]] for details).
+
+#+name: tab:landfire-layers
+#+caption: 2022 LANDFIRE Raster Layers
+|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
+| Layer Name          | Label  | Units                                    | Min |  Max | NoData | Notes         | Type  | SRID      | Cell Size |
+|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
+| Elevation           | DEM    | meters above sea level                   |   0 | 8850 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
+| Slope               | SLP    | percent (100 * meters rise / meters run) |   0 |  400 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
+| Aspect              | ASP    | degrees CW from North                    |   0 |  359 |  32767 | -1 = no slope | int16 | EPSG:5070 | 30m x 30m |
+| Fuel Model (S&B 40) | FBFM40 | integer classes                          |  91 |  204 |  32767 |               | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Cover        | CC     | percent (100 * canopy area / total area) |   0 |   95 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Height       | CH     | meters * 10                              |   0 |  510 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Base Height  | CBH    | meters * 10                              |   0 |  100 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+| Canopy Bulk Density | CBD    | kg/m^3 * 100                             |   0 |   45 |  32767 | 0 = no canopy | int16 | EPSG:5070 | 30m x 30m |
+|---------------------+--------+------------------------------------------+-----+------+--------+---------------+-------+-----------+-----------|
+
+For convenience, this section introduces functionality to load these
+raster layers from files on disk into a Python dictionary of
+=SpaceTimeCube= objects.
+
+*** Loading Raster Files with Python Rasterio
+
+We will begin by defining a =load_raster= function that takes a path
+to a raster file (e.g., a GeoTIFF) and returns a dictionary containing
+these keys:
+
+- array :: raster data as a 3D Numpy array =(bands, rows, cols)= of the specified =dtype= (default: =float32=)
+- metadata :: dictionary of raster metadata values (e.g., number of bands/rows/cols, band dtypes, nodata value, georeferencing info)
+
+#+name: load-raster
+#+begin_src python
+import rasterio
+
+
+def raster_metadata(raster):
+    return {
+        "name"      : raster.name,
+        "bands"     : raster.count,
+        "rows"      : raster.height,
+        "cols"      : raster.width,
+        "band_types": {i: dtype for i, dtype in zip(raster.indexes, raster.dtypes)},
+        "nodata"    : raster.nodata,
+        "crs"       : raster.crs,
+        "bounds"    : raster.bounds,
+        "transform" : raster.transform,
+    }
+
+
+# TODO: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
+def load_raster(file_path, dtype=None):
+    with rasterio.open(file_path, "r") as input_raster:
+        return {
+            "array"   : input_raster.read(out_dtype=dtype),
+            "metadata": raster_metadata(input_raster),
+        }
+#+end_src
+
+*** Convert LANDFIRE Units and Datatypes
+
+The units and datatypes of our LANDFIRE GeoTIFFs are documented in
+Table [[tab:landfire-layers]]. In order to make them match those required
+by the Pyretechnics Fire Spread API, we need to apply some conversions
+during the layer loading process.
+
+#+name: load-and-convert-landfire-rasters
+#+begin_src python
+landfire_array_conversions = {
+    #==============================================================================
+    # Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
+    #==============================================================================
+    "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
+    "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
+    "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
+    "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
+    "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
+    "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
+    "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
+    "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
+}
+
+
+def load_and_convert_landfire_rasters(landfire_file_paths):
+    landfire_rasters = {}
+
+    for name, path in landfire_file_paths.items():
+        (dtype, multiplier) = landfire_array_conversions[name]
+        landfire_rasters[name] = load_raster(path, dtype)
+        if multiplier != 1:
+            array  = landfire_rasters[name]["array"]
+            nodata = landfire_rasters[name]["metadata"]["nodata"]
+            array[array != nodata] *= multiplier
+
+    return landfire_rasters
+#+end_src
+
+*** Verifying Raster Constraints
+
+In order to work with the Pyretechnics Fire Spread API, all rasters
+must meet certain requirements:
+
+1. All rasters must have array shapes =(bands, rows, cols)= that evenly divide a user-specified space-time cube shape =(t,y,x)=.
+2. All rasters must share the same spatial extent and projection.
+
+Below we implement functions to check these constraints:
+
+#+name: verify-raster-constraints
+#+begin_src python
+import numpy as np
+
+
+def verify_cube_compatible_dimensions(cube_shape, rasters):
+    cube_shape_ = np.asarray(cube_shape)
+    for r in rasters:
+        raster_shape = np.asarray((r["metadata"]["bands"],
+                                   r["metadata"]["rows"],
+                                   r["metadata"]["cols"]))
+        if any(map(lambda x: x != 0, cube_shape_ % raster_shape)):
+            raise ValueError("Some rasters do not evenly divide the space-time cube dimensions.")
+
+    return True
+
+
+def verify_same_georeferences(rasters):
+    georeferences = [
+        (r["metadata"]["crs"],
+         r["metadata"]["bounds"],
+         r["metadata"]["transform"])
+        for r in rasters
+    ]
+    if len(set(georeferences)) == 1:
+        return True
+    else:
+        raise ValueError("All rasters do not share the same georeferences.")
+
+
+def verify_raster_constraints(cube_shape, rasters):
+    return verify_cube_compatible_dimensions(cube_shape, rasters) and verify_same_georeferences(rasters)
+#+end_src
+
+*** Converting Rasters to SpaceTimeCubes
+
+Another requirement of the Pyretechnics Fire Spread API is that each
+input layer must be specified as a =SpaceTimeCube= or
+=LazySpaceTimeCube= object (see section [[Loading Data into the 3D
+Space-Time Cube (pyretechnics.space_time_cube)]]). This abstracts away
+the underlying data representation (e.g., an ND array, a single
+constant value, a random sampling function), allowing many different
+sources of information to interoperate through a simple unified
+interface.
+
+For our LANDFIRE use case, the following function converts a
+dictionary of single-band rasters =(1, rows, cols)= into a dictionary
+of =SpaceTimeCube= objects, that always return the same value for each
+=(t,y,x)= coordinate regardless of the time value =t= specified in
+lookup calls.
+
+#+name: convert-rasters-to-space-time-cubes
+#+begin_src python
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+
+def convert_rasters_to_space_time_cubes(cube_shape, raster_dict):
+    fn_dict = {}
+
+    for name, raster in raster_dict.items():
+        fn_dict[name] = SpaceTimeCube(cube_shape, raster["array"])
+
+    return fn_dict
+#+end_src
+
+*** Putting It All Together
+
+By combining the functions defined in the previous sections, we can
+now read in a dictionary of layer names to file paths, load the
+associated rasters and apply the correct dtype and unit conversions,
+verify all of our raster constraints, and wrap each raster's array
+with a =SpaceTimeCube= object.
+
+#+name: read-landfire-rasters-as-space-time-cubes
+#+begin_src python
+def read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths):
+    landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
+    if verify_raster_constraints(cube_shape, landfire_rasters.values()):
+        return convert_rasters_to_space_time_cubes(cube_shape, landfire_rasters)
 #+end_src

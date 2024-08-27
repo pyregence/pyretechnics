@@ -1,6 +1,6 @@
 # [[file:../../org/pyretechnics.org::add-landfire-layers-to-pyretechnics-inputs][add-landfire-layers-to-pyretechnics-inputs]]
 import os
-from pyretechnics.load_landfire import read_landfire_rasters_as_pyretechnics_inputs
+from pyretechnics.load_landfire import read_landfire_rasters_as_space_time_cubes
 
 def get_project_root(current_dir=os.curdir):
     """
@@ -30,8 +30,9 @@ landfire_file_paths = {
 }
 
 
+# FIXME: Need to define cube_shape
 def test_read_landfire_rasters():
-    input_layer_dict = read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths)
+    input_layer_dict = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
     assert type(input_layer_dict) == dict
     assert input_layer_dict.keys() == landfire_file_paths.keys()
     assert all(map(lambda v: callable(v), input_layer_dict.values()))
@@ -151,9 +152,10 @@ def load_and_convert_flammap_rasters(flammap_file_paths):
     return flammap_rasters
 
 
+# FIXME: Need to define cube_shape
 def read_flammap_outputs(flammap_file_paths):
     raster_dict = load_and_convert_flammap_rasters(flammap_file_paths)
-    if verify_raster_constraints(raster_dict.values()):
+    if verify_raster_constraints(cube_shape, raster_dict.values()):
         array_dict = {name: raster["array"] for name, raster in raster_dict.items()}
         array_dict["max_spread_direction"] = np.rad2deg(array_dict["max_spread_direction"]) # rad -> deg
         return array_dict

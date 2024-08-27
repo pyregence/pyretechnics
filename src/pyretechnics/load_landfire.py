@@ -1,6 +1,7 @@
 # [[file:../../org/pyretechnics.org::load-raster][load-raster]]
 import rasterio
 
+
 def raster_metadata(raster):
     return {
         "name"      : raster.name,
@@ -53,17 +54,19 @@ def load_and_convert_landfire_rasters(landfire_file_paths):
     return landfire_rasters
 # load-and-convert-landfire-rasters ends here
 # [[file:../../org/pyretechnics.org::verify-raster-constraints][verify-raster-constraints]]
-def verify_same_dimensions(rasters):
-    dimensions = [
-        (r["metadata"]["bands"],
-         r["metadata"]["rows"],
-         r["metadata"]["cols"])
-        for r in rasters
-    ]
-    if len(set(dimensions)) == 1:
-        return True
-    else:
-        raise ValueError("All rasters do not share the same dimensions.")
+import numpy as np
+
+
+def verify_cube_compatible_dimensions(cube_shape, rasters):
+    cube_shape_ = np.asarray(cube_shape)
+    for r in rasters:
+        raster_shape = np.asarray((r["metadata"]["bands"],
+                                   r["metadata"]["rows"],
+                                   r["metadata"]["cols"]))
+        if any(map(lambda x: x != 0, cube_shape_ % raster_shape)):
+            raise ValueError("Some rasters do not evenly divide the space-time cube dimensions.")
+
+    return True
 
 
 def verify_same_georeferences(rasters):
@@ -79,22 +82,24 @@ def verify_same_georeferences(rasters):
         raise ValueError("All rasters do not share the same georeferences.")
 
 
-def verify_raster_constraints(rasters):
-    return verify_same_dimensions(rasters) and verify_same_georeferences(rasters)
+def verify_raster_constraints(cube_shape, rasters):
+    return verify_cube_compatible_dimensions(cube_shape, rasters) and verify_same_georeferences(rasters)
 # verify-raster-constraints ends here
-# [[file:../../org/pyretechnics.org::convert-rasters-to-2d-fns][convert-rasters-to-2d-fns]]
-# TODO: This does not use the lazy chunking, multi-resolution functions defined earlier.
-def convert_rasters_to_2d_fns(raster_dict):
+# [[file:../../org/pyretechnics.org::convert-rasters-to-space-time-cubes][convert-rasters-to-space-time-cubes]]
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+
+def convert_rasters_to_space_time_cubes(cube_shape, raster_dict):
     fn_dict = {}
 
     for name, raster in raster_dict.items():
-        fn_dict[name] = (lambda array: lambda t,y,x: array[0,y,x])(raster["array"])
+        fn_dict[name] = SpaceTimeCube(cube_shape, raster["array"])
 
     return fn_dict
-# convert-rasters-to-2d-fns ends here
-# [[file:../../org/pyretechnics.org::read-landfire-rasters-as-pyretechnics-inputs][read-landfire-rasters-as-pyretechnics-inputs]]
-def read_landfire_rasters_as_pyretechnics_inputs(landfire_file_paths):
+# convert-rasters-to-space-time-cubes ends here
+# [[file:../../org/pyretechnics.org::read-landfire-rasters-as-space-time-cubes][read-landfire-rasters-as-space-time-cubes]]
+def read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths):
     landfire_rasters = load_and_convert_landfire_rasters(landfire_file_paths)
-    if verify_raster_constraints(landfire_rasters.values()):
-        return convert_rasters_to_2d_fns(landfire_rasters)
-# read-landfire-rasters-as-pyretechnics-inputs ends here
+    if verify_raster_constraints(cube_shape, landfire_rasters.values()):
+        return convert_rasters_to_space_time_cubes(cube_shape, landfire_rasters)
+# read-landfire-rasters-as-space-time-cubes ends here
