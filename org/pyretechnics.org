@@ -1520,19 +1520,19 @@ thermally relevant physical properties shown in Table
 
 #+name: tab:fuel-model-properties
 #+caption: Physical properties assigned to each fuel model
-|----------+--------------------------------------------+---------------------------------------------------------|
-| Property | Description                                | Units                                                   |
-|----------+--------------------------------------------+---------------------------------------------------------|
-| $\delta$ | fuel depth                                 | $\text{ft}$                                             |
-| $w_o$    | ovendry fuel loading                       | $\text{lb}/\text{ft}^2$                                 |
-| $\rho_p$ | ovendry particle density                   | $\text{lb}/\text{ft}^3$                                 |
-| $\sigma$ | fuel particle surface-area-to-volume ratio | $\text{ft}^2/\text{ft}^3$                               |
-| $h$      | fuel particle low heat content             | $\text{Btu}/\text{lb}$                                  |
-| $S_T$    | fuel particle total mineral content        | $\text{lb minerals}/\text{lb ovendry wood}$             |
-| $S_e$    | fuel particle effective mineral content    | $\text{lb silica-free minerals}/\text{lb ovendry wood}$ |
-| $M_x$    | fuel particle moisture of extinction       | $\text{lb moisture}/\text{lb ovendry wood}$             |
-| $M_f$    | fuel particle moisture content             | $\text{lb moisture}/\text{lb ovendry wood}$             |
-|----------+--------------------------------------------+---------------------------------------------------------|
+|----------+--------------------------------------------+-----------------------------------------------------------|
+| Property | Description                                | Units                                                     |
+|----------+--------------------------------------------+-----------------------------------------------------------|
+| $\delta$ | fuel depth                                 | $\text{ft}$                                               |
+| $w_o$    | ovendry fuel loading                       | $\text{lb}/\text{ft}^2$                                   |
+| $\rho_p$ | ovendry particle density                   | $\text{lb}/\text{ft}^3$                                   |
+| $\sigma$ | fuel particle surface-area-to-volume ratio | $\text{ft}^2/\text{ft}^3$                                 |
+| $h$      | fuel particle low heat content             | $\text{Btu}/\text{lb}$                                    |
+| $S_T$    | fuel particle total mineral content        | $\text{lb minerals}/\text{lb ovendry weight}$             |
+| $S_e$    | fuel particle effective mineral content    | $\text{lb silica-free minerals}/\text{lb ovendry weight}$ |
+| $M_x$    | fuel particle moisture of extinction       | $\text{lb moisture}/\text{lb ovendry weight}$             |
+| $M_f$    | fuel particle moisture content             | $\text{lb moisture}/\text{lb ovendry weight}$             |
+|----------+--------------------------------------------+-----------------------------------------------------------|
 
 While $M_f$ is not, in fact, directly assigned to any of these fuel
 models, their definitions remain incomplete for the purposes of fire
@@ -2447,18 +2447,18 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     """
     Given these inputs:
     - moisturized_fuel_model :: dictionary of fuel model and fuel moisture properties
-      - delta :: ft                                      (fuel depth)
-      - w_o   :: lb/ft^2                                 (ovendry fuel loading)
-      - rho_p :: lb/ft^3                                 (ovendry particle density)
-      - sigma :: ft^2/ft^3                               (fuel particle surface-area-to-volume ratio)
-      - h     :: Btu/lb                                  (fuel particle low heat content)
-      - S_T   :: lb minerals/lb ovendry wood             (fuel particle total mineral content)
-      - S_e   :: lb silica-free minerals/lb ovendry wood (fuel particle effective mineral content)
-      - M_x   :: lb moisture/lb ovendry wood             (fuel particle moisture of extinction)
-      - M_f   :: lb moisture/lb ovendry wood             (fuel particle moisture content)
-      - f_ij  :: %                                       (percent load per size class)
-      - f_i   :: %                                       (percent load per category)
-      - g_ij  :: %                                       (percent load per size class - Albini_1976_FIREMOD, page 20)
+      - delta :: ft                                        (fuel depth)
+      - w_o   :: lb/ft^2                                   (ovendry fuel loading)
+      - rho_p :: lb/ft^3                                   (ovendry particle density)
+      - sigma :: ft^2/ft^3                                 (fuel particle surface-area-to-volume ratio)
+      - h     :: Btu/lb                                    (fuel particle low heat content)
+      - S_T   :: lb minerals/lb ovendry weight             (fuel particle total mineral content)
+      - S_e   :: lb silica-free minerals/lb ovendry weight (fuel particle effective mineral content)
+      - M_x   :: lb moisture/lb ovendry weight             (fuel particle moisture of extinction)
+      - M_f   :: lb moisture/lb ovendry weight             (fuel particle moisture content)
+      - f_ij  :: %                                         (percent load per size class)
+      - f_i   :: %                                         (percent load per category)
+      - g_ij  :: %                                         (percent load per size class - Albini_1976_FIREMOD, page 20)
     - spread_rate_adjustment :: unitless float (1.0 for no adjustment)
 
     return a dictionary containing these keys:
@@ -4314,6 +4314,7 @@ surface fire behavior is returned.
 
 #+name: burn-cell-as-head-fire
 #+begin_src python
+import numpy as np
 import pyretechnics.conversion as conv
 import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
@@ -4408,7 +4409,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
         upslope_direction = conv.opposite_direction(aspect)
         slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
         slope_vector_3d   = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        spread_direction  = vu.as_unit_vector(slope_vector_3d)
+        spread_direction  = vu.as_unit_vector(slope_vector_3d) if slope > 0.0 else np.asarray((0,1,0)) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior
@@ -5572,12 +5573,12 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | relative_humidity                          | float   | percent [0-1+]                                         | Yes       |     3 |
   | wind_speed_10m_x                           | float   | meters/minute                                          |           |     3 |
   | wind_speed_10m_y                           | float   | meters/minute                                          |           |     3 |
-  | fuel_moisture_dead_1hr                     | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
-  | fuel_moisture_dead_10hr                    | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
-  | fuel_moisture_dead_100hr                   | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
-  | fuel_moisture_live_herbaceous              | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
-  | fuel_moisture_live_woody                   | float   | ratio [0-1+] grams moisture/grams ovendry wood         |           |     3 |
-  | foliar_moisture                            | float   | ratio [0-1+] grams moisture/grams ovendry foliage      |           |     3 |
+  | fuel_moisture_dead_1hr                     | float   | ratio [0-1+] grams moisture/grams ovendry weight       |           |     3 |
+  | fuel_moisture_dead_10hr                    | float   | ratio [0-1+] grams moisture/grams ovendry weight       |           |     3 |
+  | fuel_moisture_dead_100hr                   | float   | ratio [0-1+] grams moisture/grams ovendry weight       |           |     3 |
+  | fuel_moisture_live_herbaceous              | float   | ratio [0-1+] grams moisture/grams ovendry weight       |           |     3 |
+  | fuel_moisture_live_woody                   | float   | ratio [0-1+] grams moisture/grams ovendry weight       |           |     3 |
+  | foliar_moisture                            | float   | ratio [0-1+] grams moisture/grams ovendry weight       |           |     3 |
   | weather_spread_adjustment                  | float   | real number >= 0.0 (1.0 means no adjustment)           | Yes       |     3 |
   |--------------------------------------------+---------+--------------------------------------------------------+-----------+-------|
 
@@ -5976,287 +5977,6 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | DUMP_SPREAD_RATE                         | N/A                                   | Output writing managed externally       |
 | DUMP_TIME_OF_ARRIVAL                     | N/A                                   | Output writing managed externally       |
 |------------------------------------------+---------------------------------------+-----------------------------------------|
-
-* [WIP] Testing burn_cells on Worcester, VT
-
-For testing purposes, we have downloaded these layers, clipped to a
-small region in central Vermont, and stored them in the
-[[file:../test/data/landfire_inputs][../test/data/landfire_inputs]] directory of this repository.
-
-** Loading Topography, Fuel Model, and Vegetation Inputs from LANDFIRE GeoTIFFs
-
-We begin by loading in the eight LANDFIRE GeoTIFFs that we downloaded
-from https://landfire.gov, using the function we defined in section
-[[Putting It All Together]].
-
-#+name: add-landfire-layers-to-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
-import os
-from pyretechnics.load_landfire import read_landfire_rasters_as_space_time_cubes
-
-def get_project_root(current_dir=os.curdir):
-    """
-    Search up the directory tree from current_dir until we find a directory containing guix.scm,
-    and return this directory path. If the filesystem root directory (/) is reached, return None.
-    """
-    if current_dir == "/":
-        return None
-    elif os.path.exists(current_dir + "/guix.scm"):
-        return current_dir
-    else:
-        return get_project_root(os.path.dirname(os.path.abspath(current_dir)))
-
-
-project_root = get_project_root()
-
-
-landfire_file_paths = {
-    "elevation"          : project_root + "/test/data/landfire_inputs/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
-    "slope"              : project_root + "/test/data/landfire_inputs/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
-    "aspect"             : project_root + "/test/data/landfire_inputs/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
-    "fuel_model"         : project_root + "/test/data/landfire_inputs/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
-    "canopy_cover"       : project_root + "/test/data/landfire_inputs/LF2022_CC_230_CONUS/LC22_CC_230.tif",
-    "canopy_height"      : project_root + "/test/data/landfire_inputs/LF2022_CH_230_CONUS/LC22_CH_230.tif",
-    "canopy_base_height" : project_root + "/test/data/landfire_inputs/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
-    "canopy_bulk_density": project_root + "/test/data/landfire_inputs/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
-}
-
-
-# FIXME: Need to define cube_shape
-def test_read_landfire_rasters():
-    input_layer_dict = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
-    assert type(input_layer_dict) == dict
-    assert input_layer_dict.keys() == landfire_file_paths.keys()
-    assert all(map(lambda v: callable(v), input_layer_dict.values()))
-    return input_layer_dict
-#+end_src
-
-** Adding Constant Wind and Moisture Values
-
-In order to complete our input dataset for a test run of the
-~burn_cells~ function, we need to provide the remaining required wind
-and moisture layers as 3D lookup functions. The following example
-shows how we can easily set constant values for each of these layers:
-
-#+name: add-constant-wind-moisture-to-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
-weather_functions = {
-    "wind_speed_10m_x"             : lambda t,y,x: 0.00, # meters/minute
-    "wind_speed_10m_y"             : lambda t,y,x: 0.00, # meters/minute
-    "fuel_moisture_dead_1hr"       : lambda t,y,x: 0.06, # ratio [0-1+] grams moisture/grams ovendry wood
-    "fuel_moisture_dead_10hr"      : lambda t,y,x: 0.08, # ratio [0-1+] grams moisture/grams ovendry wood
-    "fuel_moisture_dead_100hr"     : lambda t,y,x: 0.10, # ratio [0-1+] grams moisture/grams ovendry wood
-    "fuel_moisture_live_herbaceous": lambda t,y,x: 0.75, # ratio [0-1+] grams moisture/grams ovendry wood
-    "fuel_moisture_live_woody"     : lambda t,y,x: 0.60, # ratio [0-1+] grams moisture/grams ovendry wood
-    "foliar_moisture"              : lambda t,y,x: 1.20, # ratio [0-1+] grams moisture/grams ovendry foliage
-}
-
-
-def test_add_weather_functions():
-    input_layer_dict = test_read_landfire_rasters()
-    input_layer_dict.update(weather_functions)
-    assert type(input_layer_dict) == dict
-    assert set(input_layer_dict.keys()) == set(landfire_file_paths.keys()).union(set(weather_functions.keys()))
-    assert all(map(lambda v: callable(v), input_layer_dict.values()))
-    return input_layer_dict
-#+end_src
-
-** Burning a Single Cell in the Dataset
-
-Now that our input layers are all loaded, our next step will be to
-make sure that we can burn a single cell as a head fire and get back
-meaningful results.
-
-#+name: burn-single-cell-in-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
-from pyretechnics.burn_cells import compute_max_in_situ_values
-
-def test_burn_one_cell():
-    input_layer_dict = test_add_weather_functions()
-    (t,y,x) = (0,100,100)
-    result = compute_max_in_situ_values(input_layer_dict, t, y, x)
-    assert result == {
-        "max_spread_rate"       : 0.32044995422500566,
-        "max_spread_direction"  : 41.0,
-        "max_fireline_intensity": 26.661398424207746,
-        "max_flame_length"      : 0.35078585296988984,
-        "fire_type"             : 1,
-        "eccentricity"          : 0.5583790663230914,
-    }
-    return result
-#+end_src
-
-** Running Burn Cells on the Test Dataset
-
-#+name: burn-all-cells-in-pyretechnics-inputs
-#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
-import numpy as np
-
-def slow_test_burn_all_cells():
-    # TODO: Extract these dimensions from the input layers
-    rows = 613
-    cols = 549
-
-    max_spread_rate_matrix        = np.zeros((rows, cols), dtype="float32")
-    max_spread_direction_matrix   = np.zeros((rows, cols), dtype="int16")
-    max_fireline_intensity_matrix = np.zeros((rows, cols), dtype="float32")
-    max_flame_length_matrix       = np.zeros((rows, cols), dtype="float32")
-    fire_type_matrix              = np.zeros((rows, cols), dtype="uint8")
-    eccentricity_matrix           = np.zeros((rows, cols), dtype="float32")
-
-    input_layer_dict = test_add_weather_functions()
-
-    for y in range(rows):
-        for x in range(cols):
-            results                            = compute_max_in_situ_values(input_layer_dict, 0, y, x)
-            max_spread_rate_matrix[y,x]        = results["max_spread_rate"]
-            max_spread_direction_matrix[y,x]   = results["max_spread_direction"]
-            max_fireline_intensity_matrix[y,x] = results["max_fireline_intensity"]
-            max_flame_length_matrix[y,x]       = results["max_flame_length"]
-            fire_type_matrix[y,x]              = results["fire_type"]
-            eccentricity_matrix[y,x]           = results["eccentricity"]
-
-    return {
-        "max_spread_rate"       : max_spread_rate_matrix,
-        "max_spread_direction"  : max_spread_direction_matrix,
-        "max_fireline_intensity": max_fireline_intensity_matrix,
-        "max_flame_length"      : max_flame_length_matrix,
-        "fire_type"             : fire_type_matrix,
-        "eccentricity"          : eccentricity_matrix,
-    }
-#+end_src
-
-** Visualizing the Burned Layers
-
-#+name: compute-worcester-burned-layers
-#+begin_src python :session view-worcester-layers
-from pyretechnics_test.test_burn_cells import slow_test_burn_all_cells, slow_test_read_flammap_outputs
-
-pyretechnics = slow_test_burn_all_cells()
-flammap      = slow_test_read_flammap_outputs()
-#+end_src
-
-#+name: savefig
-#+begin_src python :session view-worcester-layers :var title="" layer="" units="" colors=""
-import matplotlib.pyplot as plt
-
-title     = "Worcester, VT - " + title
-file_name = "../doc/pics/worcester_" + layer + ".png"
-image     = plt.imshow(pyretechnics[layer], cmap=colors)
-# image     = plt.imshow(flammap[layer][0], cmap=colors)
-# image     = plt.imshow(pyretechnics[layer] - flammap[layer][0], cmap=colors)
-# copy      = np.zeros((613, 549))
-# copy[crown_fire == 0] = (pyretechnics[layer][crown_fire == 0] - flammap[layer][0][crown_fire == 0])
-# image     = plt.imshow(copy, clim=(-0.05,0.05))
-colorbar  = plt.colorbar(image, orientation="vertical")
-
-colorbar.set_label(units)
-plt.title(title)
-plt.savefig(file_name)
-plt.close("all")
-file_name
-#+end_src
-
-#+begin_src python :session view-worcester-layers
-frq, edges = np.histogram(copy)
-fig, ax = plt.subplots()
-ax.bar(edges[:-1], frq, width=np.diff(edges), edgecolor="black", align="edge")
-plt.savefig("../doc/pics/worcester_max_spread_rate_diff.png")
-#+end_src
-
-#+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")>>
-#+end_src
-
-[[file:../doc/pics/worcester_max_spread_rate.png]]
-
-Layer Disagreement: [-10.93608, 8.9857025] inches/min
-
-#+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")>>
-#+end_src
-
-[[file:../doc/pics/worcester_max_spread_direction.png]]
-
-#+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Max Fireline Intensity", layer="max_fireline_intensity", units="kW/m", colors="hot")>>
-#+end_src
-
-[[file:../doc/pics/worcester_max_fireline_intensity.png]]
-
-#+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")>>
-#+end_src
-
-[[file:../doc/pics/worcester_max_flame_length.png]]
-
-#+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Fire Type", layer="fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")>>
-#+end_src
-
-[[file:../doc/pics/worcester_fire_type.png]]
-
-#+begin_src python :session view-worcester-layers :noweb eval
-<<savefig(title="Eccentricity", layer="eccentricity", units="0=circular,>0=elliptical", colors="viridis")>>
-#+end_src
-
-[[file:../doc/pics/worcester_eccentricity.png]]
-
-** Comparing Pyretechnics Outputs with FLAMMAP Outputs
-
-#+name: load-flammap-outputs
-#+begin_src python :tangle ../test/pyretechnics_test/test_burn_cells.py
-import numpy as np
-from pyretechnics.load_landfire import load_raster, verify_raster_constraints
-
-flammap_file_paths = {
-    "max_spread_rate"       : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
-    "max_spread_direction"  : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
-    "max_fireline_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
-    "max_flame_length"      : project_root + "/test/data/flammap_outputs/FL_ft.tif",
-    "fire_type"             : project_root + "/test/data/flammap_outputs/fire_type.tif",
-}
-
-
-flammap_array_conversions = {
-    #====================================================================================
-    # Layer Name             : (New dtype, Mult),                # In Units -> Out Units
-    #====================================================================================
-    "max_spread_rate"       : ("float32", 0.33528),             # ch/hr -> m/min
-    "max_spread_direction"  : ("int16"  , 1),                   # rad -> rad
-    "max_fireline_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
-    "max_flame_length"      : ("float32", 0.30478512648582745), # ft -> m
-    "fire_type"             : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
-}
-
-
-def load_and_convert_flammap_rasters(flammap_file_paths):
-    flammap_rasters = {}
-
-    for name, path in flammap_file_paths.items():
-        (dtype, multiplier)   = flammap_array_conversions[name]
-        flammap_rasters[name] = load_raster(path, dtype)
-        array                 = flammap_rasters[name]["array"]
-        nodata                = flammap_rasters[name]["metadata"]["nodata"]
-        array[array == nodata] = 0
-        if multiplier != 1:
-            array[array != nodata] *= multiplier
-
-    return flammap_rasters
-
-
-# FIXME: Need to define cube_shape
-def read_flammap_outputs(flammap_file_paths):
-    raster_dict = load_and_convert_flammap_rasters(flammap_file_paths)
-    if verify_raster_constraints(cube_shape, raster_dict.values()):
-        array_dict = {name: raster["array"] for name, raster in raster_dict.items()}
-        array_dict["max_spread_direction"] = np.rad2deg(array_dict["max_spread_direction"]) # rad -> deg
-        return array_dict
-
-
-def slow_test_read_flammap_outputs():
-    return read_flammap_outputs(flammap_file_paths)
-#+end_src
 
 * Appendix
 ** Units Conversion Functions (pyretechnics.conversion)
@@ -6896,3 +6616,303 @@ def read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths):
     if verify_raster_constraints(cube_shape, landfire_rasters.values()):
         return convert_rasters_to_space_time_cubes(cube_shape, landfire_rasters)
 #+end_src
+
+** [WIP] Testing pyretechnics.burn_cells on Worcester, VT (pyretechnics_test.test_burn_cells)
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics_test.test_burn_cells*
+   :header-args:python+: :tangle  ../test/pyretechnics_test/test_burn_cells.py
+   :header-args:python+: :exports code
+   :END:
+
+*Note:* For testing purposes, we have downloaded the LANDFIRE rasters
+described in table [[tab:landfire-layers]], clipped to a small region in
+central Vermont, and stored them in the [[file:../test/data/landfire_inputs][../test/data/landfire_inputs]]
+directory of this repository.
+
+*** Loading Topography, Fuel Model, and Tree Canopy Inputs from LANDFIRE GeoTIFFs
+
+We begin by loading in the eight LANDFIRE GeoTIFFs that we downloaded
+from https://landfire.gov/, using the function we defined in section
+[[Putting It All Together]].
+
+#+name: add-landfire-layers-to-test-dataset
+#+begin_src python
+import os
+from pyretechnics.load_landfire import read_landfire_rasters_as_space_time_cubes
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+
+def get_project_root(current_dir=os.curdir):
+    """
+    Search up the directory tree from current_dir until we find a directory containing guix.scm,
+    and return this directory path. If the filesystem root directory (/) is reached, return None.
+    """
+    if current_dir == "/":
+        return None
+    elif os.path.exists(current_dir + "/guix.scm"):
+        return current_dir
+    else:
+        return get_project_root(os.path.dirname(os.path.abspath(current_dir)))
+
+
+project_root = get_project_root()
+
+
+landfire_file_paths = {
+    "elevation"          : project_root + "/test/data/landfire_inputs/LF2020_Elev_220_CONUS/LC20_Elev_220.tif",
+    "slope"              : project_root + "/test/data/landfire_inputs/LF2020_SlpP_220_CONUS/LC20_SlpP_220.tif",
+    "aspect"             : project_root + "/test/data/landfire_inputs/LF2020_Asp_220_CONUS/LC20_Asp_220.tif",
+    "fuel_model"         : project_root + "/test/data/landfire_inputs/LF2022_FBFM40_230_CONUS/LC22_F40_230.tif",
+    "canopy_cover"       : project_root + "/test/data/landfire_inputs/LF2022_CC_230_CONUS/LC22_CC_230.tif",
+    "canopy_height"      : project_root + "/test/data/landfire_inputs/LF2022_CH_230_CONUS/LC22_CH_230.tif",
+    "canopy_base_height" : project_root + "/test/data/landfire_inputs/LF2022_CBH_230_CONUS/LC22_CBH_230.tif",
+    "canopy_bulk_density": project_root + "/test/data/landfire_inputs/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
+}
+
+cube_shape = (1, 613, 549) # Matches the resolution of the GeoTIFFs
+
+def test_read_landfire_rasters():
+    input_layer_dict = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
+    assert type(input_layer_dict) == dict
+    assert input_layer_dict.keys() == landfire_file_paths.keys()
+    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), input_layer_dict.values()))
+    return input_layer_dict
+#+end_src
+
+*** Adding Constant Wind and Moisture Values
+
+In order to complete our input dataset for a test run of the
+=pyretechnics.burn_cells= functions, we need to provide the remaining
+required wind and moisture layers as =SpaceTimeCube= objects. The
+following example shows how we can easily set constant values for each
+of these layers:
+
+#+name: add-constant-wind-and-moisture-to-test-dataset
+#+begin_src python
+weather_cubes = {
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 0.00), # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 0.00), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.06), # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.08), # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.10), # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.75), # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60), # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 1.20), # kg moisture/kg ovendry weight
+}
+
+
+def test_add_weather_cubes():
+    input_layer_dict = test_read_landfire_rasters()
+    input_layer_dict.update(weather_cubes)
+    assert type(input_layer_dict) == dict
+    assert set(input_layer_dict.keys()) == set(landfire_file_paths.keys()).union(set(weather_cubes.keys()))
+    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), input_layer_dict.values()))
+    return input_layer_dict
+#+end_src
+
+*** Burning a Single Cell in the Dataset as a Head Fire
+
+Now that our input layers are all loaded, our next step will be to
+make sure that we can burn a single cell as a head fire and get back
+meaningful results.
+
+#+name: burn-single-cell-in-test-dataset
+#+begin_src python
+from pyretechnics.burn_cells import burn_cell_as_head_fire
+
+
+def test_burn_cell_as_head_fire():
+    input_layer_dict           = test_add_weather_cubes()
+    space_time_coordinate      = (0, 100, 100) # (t,y,x)
+    result                     = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
+    result["spread_direction"] = list(result["spread_direction"])
+    assert result == {
+        "fire_type"         : "surface",
+        "spread_rate"       : 0.32044995422500555,
+        "spread_direction"  : [0.644528432121562, 0.7414451458683358, 0.18666064356259804],
+        "fireline_intensity": 26.66139842420774,
+    }
+    return result
+#+end_src
+
+*** Burning All Cells in the Dataset as a Head Fire
+
+#+name: burn-all-cells-in-test-dataset
+#+begin_src python
+import numpy as np
+from pyretechnics.burn_cells import burn_cell_as_head_fire
+import pyretechnics.conversion as conv
+import pyretechnics.vector_utils as vu
+
+
+fire_type_codes = {
+    "unburned": 0,
+    "surface" : 1,
+    "passive" : 2,
+    "active"  : 3,
+}
+
+
+def spread_direction_vector_to_angle(vector_3d):
+    (x, y)       = vu.to_horizontal_plane(vector_3d)
+    (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
+    return azimuth
+
+
+def test_burn_all_cells_as_head_fire():
+    input_layer_dict     = test_add_weather_cubes()
+    (_bands, rows, cols) = input_layer_dict["elevation"].shape
+    output_layer_shape   = (rows, cols)
+
+    max_fire_type_matrix          = np.zeros(output_layer_shape, dtype="uint8")
+    max_spread_rate_matrix        = np.zeros(output_layer_shape, dtype="float32")
+    max_spread_direction_matrix   = np.zeros(output_layer_shape, dtype="float32")
+    max_fireline_intensity_matrix = np.zeros(output_layer_shape, dtype="float32")
+    max_flame_length_matrix       = np.zeros(output_layer_shape, dtype="float32")
+
+    for y in range(rows):
+        for x in range(cols):
+            space_time_coordinate              = (0, y, x) # (t,y,x)
+            results                            = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
+            max_fire_type_matrix[y,x]          = fire_type_codes[results["fire_type"]]
+            max_spread_rate_matrix[y,x]        = results["spread_rate"]
+            max_spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(results["spread_direction"])
+            max_fireline_intensity_matrix[y,x] = results["fireline_intensity"]
+            # max_flame_length_matrix[y,x]       = results["flame_length"] # FIXME: No value for this field
+
+    return {
+        "max_fire_type"         : max_fire_type_matrix,
+        "max_spread_rate"       : max_spread_rate_matrix,
+        "max_spread_direction"  : max_spread_direction_matrix,
+        "max_fireline_intensity": max_fireline_intensity_matrix,
+        "max_flame_length"      : max_flame_length_matrix,
+    }
+#+end_src
+
+*** Comparing Pyretechnics Outputs with FLAMMAP Outputs
+
+#+name: load-flammap-outputs
+#+begin_src python
+from math import pi
+from pyretechnics.load_landfire import load_raster, verify_raster_constraints
+
+
+flammap_file_paths = {
+    "max_fire_type"         : project_root + "/test/data/flammap_outputs/fire_type.tif",
+    "max_spread_rate"       : project_root + "/test/data/flammap_outputs/ROS_ch_hr.tif",
+    "max_spread_direction"  : project_root + "/test/data/flammap_outputs/max_spread_direction_radians.tif",
+    "max_fireline_intensity": project_root + "/test/data/flammap_outputs/FLI_BTU_ft-s.tif",
+    "max_flame_length"      : project_root + "/test/data/flammap_outputs/FL_ft.tif",
+}
+
+
+flammap_array_conversions = {
+    #====================================================================================
+    # Layer Name            : (New dtype, Mult),                # In Units -> Out Units
+    #====================================================================================
+    "max_fire_type"         : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
+    "max_spread_rate"       : ("float32", 0.33528),             # ch/hr -> m/min
+    "max_spread_direction"  : ("float32", 180.0 / pi),          # radians -> degrees
+    "max_fireline_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
+    "max_flame_length"      : ("float32", 0.30478512648582745), # ft -> m
+}
+
+
+def load_and_convert_flammap_rasters(flammap_file_paths):
+    flammap_rasters = {}
+
+    for name, path in flammap_file_paths.items():
+        (dtype, multiplier)    = flammap_array_conversions[name]
+        flammap_rasters[name]  = load_raster(path, dtype)
+        array                  = flammap_rasters[name]["array"]
+        nodata                 = flammap_rasters[name]["metadata"]["nodata"]
+        array[array == nodata] = 0
+        if multiplier != 1:
+            array *= multiplier
+
+    return flammap_rasters
+
+
+def read_flammap_outputs(flammap_file_paths):
+    cube_shape  = (1, 613, 549) # Matches the resolution of the GeoTIFFs
+    raster_dict = load_and_convert_flammap_rasters(flammap_file_paths)
+    if verify_raster_constraints(cube_shape, raster_dict.values()):
+        return {name: raster["array"] for name, raster in raster_dict.items()}
+
+
+def test_read_flammap_outputs():
+    return read_flammap_outputs(flammap_file_paths)
+#+end_src
+
+** [WIP] Visualizing the Burned Layers
+   :PROPERTIES:
+   :header-args:python+: :session *view-worcester-layers*
+   :header-args:python+: :exports code
+   :END:
+
+#+name: compute-worcester-burned-layers
+#+begin_src python
+import matplotlib.pyplot as plt
+# import numpy as np
+from pyretechnics_test.test_burn_cells import test_burn_all_cells_as_head_fire, test_read_flammap_outputs
+
+
+pyretechnics = test_burn_all_cells_as_head_fire()
+flammap      = test_read_flammap_outputs()
+
+
+def savefig(title, layer, units, colors):
+    title     = "Worcester, VT - " + title
+    file_name = "../doc/pics/worcester_" + layer + ".png"
+    image     = plt.imshow(pyretechnics[layer], cmap=colors)
+    # image     = plt.imshow(flammap[layer][0], cmap=colors)
+    # image     = plt.imshow(pyretechnics[layer] - flammap[layer][0], cmap=colors)
+    # copy      = np.zeros((613, 549))
+    # copy[crown_fire == 0] = (pyretechnics[layer][crown_fire == 0] - flammap[layer][0][crown_fire == 0])
+    # image     = plt.imshow(copy, clim=(-0.05,0.05))
+    colorbar  = plt.colorbar(image, orientation="vertical")
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(file_name)
+    plt.close("all")
+    return file_name
+#+end_src
+
+# #+begin_src python
+# frq, edges = np.histogram(copy)
+# fig, ax = plt.subplots()
+# ax.bar(edges[:-1], frq, width=np.diff(edges), edgecolor="black", align="edge")
+# plt.savefig("../doc/pics/worcester_max_spread_rate_diff.png")
+# #+end_src
+
+#+begin_src python
+savefig(title="Max Fire Type", layer="max_fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")
+#+end_src
+
+[[file:../doc/pics/worcester_max_fire_type.png]]
+
+#+begin_src python
+savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")
+#+end_src
+
+[[file:../doc/pics/worcester_max_spread_rate.png]]
+
+Layer Disagreement: [-10.93608, 8.9857025] inches/min
+
+#+begin_src python
+savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")
+#+end_src
+
+[[file:../doc/pics/worcester_max_spread_direction.png]]
+
+#+begin_src python
+savefig(title="Max Fireline Intensity", layer="max_fireline_intensity", units="kW/m", colors="hot")
+#+end_src
+
+[[file:../doc/pics/worcester_max_fireline_intensity.png]]
+
+# #+begin_src python
+# savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")
+# #+end_src
+
+# [[file:../doc/pics/worcester_max_flame_length.png]]

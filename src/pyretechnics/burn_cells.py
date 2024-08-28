@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
+import numpy as np
 import pyretechnics.conversion as conv
 import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
@@ -93,7 +94,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
         upslope_direction = conv.opposite_direction(aspect)
         slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
         slope_vector_3d   = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        spread_direction  = vu.as_unit_vector(slope_vector_3d)
+        spread_direction  = vu.as_unit_vector(slope_vector_3d) if slope > 0.0 else np.asarray((0,1,0)) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior

@@ -193,18 +193,18 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     """
     Given these inputs:
     - moisturized_fuel_model :: dictionary of fuel model and fuel moisture properties
-      - delta :: ft                                      (fuel depth)
-      - w_o   :: lb/ft^2                                 (ovendry fuel loading)
-      - rho_p :: lb/ft^3                                 (ovendry particle density)
-      - sigma :: ft^2/ft^3                               (fuel particle surface-area-to-volume ratio)
-      - h     :: Btu/lb                                  (fuel particle low heat content)
-      - S_T   :: lb minerals/lb ovendry wood             (fuel particle total mineral content)
-      - S_e   :: lb silica-free minerals/lb ovendry wood (fuel particle effective mineral content)
-      - M_x   :: lb moisture/lb ovendry wood             (fuel particle moisture of extinction)
-      - M_f   :: lb moisture/lb ovendry wood             (fuel particle moisture content)
-      - f_ij  :: %                                       (percent load per size class)
-      - f_i   :: %                                       (percent load per category)
-      - g_ij  :: %                                       (percent load per size class - Albini_1976_FIREMOD, page 20)
+      - delta :: ft                                        (fuel depth)
+      - w_o   :: lb/ft^2                                   (ovendry fuel loading)
+      - rho_p :: lb/ft^3                                   (ovendry particle density)
+      - sigma :: ft^2/ft^3                                 (fuel particle surface-area-to-volume ratio)
+      - h     :: Btu/lb                                    (fuel particle low heat content)
+      - S_T   :: lb minerals/lb ovendry weight             (fuel particle total mineral content)
+      - S_e   :: lb silica-free minerals/lb ovendry weight (fuel particle effective mineral content)
+      - M_x   :: lb moisture/lb ovendry weight             (fuel particle moisture of extinction)
+      - M_f   :: lb moisture/lb ovendry weight             (fuel particle moisture content)
+      - f_ij  :: %                                         (percent load per size class)
+      - f_i   :: %                                         (percent load per category)
+      - g_ij  :: %                                         (percent load per size class - Albini_1976_FIREMOD, page 20)
     - spread_rate_adjustment :: unitless float (1.0 for no adjustment)
 
     return a dictionary containing these keys:
