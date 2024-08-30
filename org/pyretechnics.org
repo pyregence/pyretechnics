@@ -3286,9 +3286,9 @@ def cruz_active_crown_fire_spread_rate(wind_speed_10m, canopy_bulk_density, esti
     - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") :: kg moisture/kg ovendry weight
     """
     return (11.02
-            ,* wind_speed_10m ** 0.90
-            ,* canopy_bulk_density ** 0.19
-            ,* exp(-17.0 * estimated_fine_fuel_moisture))
+            * wind_speed_10m ** 0.90
+            * canopy_bulk_density ** 0.19
+            * exp(-17.0 * estimated_fine_fuel_moisture))
 #+end_src
 
 Next, we need to calculate the /critical spread rate/ from Van Wagner
