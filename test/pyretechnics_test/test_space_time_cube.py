@@ -118,8 +118,8 @@ def test_use_layer_lookup_3d():
     wsa_12_100_100   = layer_lookup["weather_spread_adjustment"].get(12,100,100) # Optional
     assert temp_12_100_100  == 121010
     assert rh_12_100_100    == 121010
-    assert wspx_12_100_100  == 121010
-    assert wspy_12_100_100  == 121010
+    assert wsp_12_100_100   == 121010
+    assert wdir_12_100_100  == 121010
     assert md1_12_100_100   == 121010
     assert md10_12_100_100  == 121010
     assert md100_12_100_100 == 121010
