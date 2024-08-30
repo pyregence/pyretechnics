@@ -35,7 +35,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
     - max_length_to_width_ratio :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
-    - fire_type          :: "unburned", "surface", "passive", or "active"
+    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
     - fireline_intensity :: kW/m
@@ -245,7 +245,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
     - max_length_to_width_ratio :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
-    - fire_type          :: "unburned", "surface", "passive", or "active"
+    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
     - fireline_intensity :: kW/m

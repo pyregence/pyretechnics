@@ -3354,7 +3354,7 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
     - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") :: kg moisture/kg ovendry weight
 
     return a dictionary containing these keys:
-    - fire_type            :: "passive" or "active"
+    - fire_type            :: "passive_crown" or "active_crown"
     - spread_rate          :: m/min
     - critical_spread_rate :: m/min
     """
@@ -3364,13 +3364,13 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
     critical_spread_rate = van_wagner_critical_spread_rate(canopy_bulk_density) # m/min
     if (active_spread_rate > critical_spread_rate):
         return {
-            "fire_type"           : "active",
+            "fire_type"           : "active_crown",
             "spread_rate"         : active_spread_rate,
             "critical_spread_rate": critical_spread_rate,
         }
     else:
         return {
-            "fire_type"           : "passive",
+            "fire_type"           : "passive_crown",
             "spread_rate"         : cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate),
             "critical_spread_rate": critical_spread_rate,
         }
@@ -3518,7 +3518,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     - max_length_to_width_ratio                        :: float > 0.0 (Optional)
 
     return a dictionary containing these keys:
-    - max_fire_type          :: "passive" or "active"
+    - max_fire_type          :: "passive_crown" or "active_crown"
     - max_spread_rate        :: m/min
     - max_spread_direction   :: (x, y, z) unit vector
     - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
@@ -3605,7 +3605,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     """
     Given these inputs:
     - crown_fire_max     :: dictionary of max crown fire behavior values
-      - max_fire_type          :: "passive" or "active"
+      - max_fire_type          :: "passive_crown" or "active_crown"
       - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
       - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
@@ -3616,7 +3616,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     - spread_direction   :: 3D unit vector on the slope-tangential plane
 
     return a dictionary containing these keys:
-    - fire_type          :: "passive" or "active"
+    - fire_type          :: "passive_crown" or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
@@ -3637,15 +3637,15 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     if spread_rate > critical_spread_rate:
         # Max spread rate was active and directional spread rate remains active
         return {
-            "fire_type"         : "active",
+            "fire_type"         : "active_crown",
             "spread_rate"       : spread_rate,
             "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
-    elif max_fire_type == "passive":
+    elif max_fire_type == "passive_crown":
         # Max spread rate was passive and directional spread rate remains passive
         return {
-            "fire_type"         : "passive",
+            "fire_type"         : "passive_crown",
             "spread_rate"       : spread_rate,
             "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
@@ -3653,7 +3653,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     else:
         # Max spread rate was active and directional spread rate has become passive
         return {
-            "fire_type"         : "passive",
+            "fire_type"         : "passive_crown",
             "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
             "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
@@ -3689,13 +3689,13 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
       - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
     - crown_fire_behavior   :: dictionary of crown fire behavior values
-      - fire_type              :: "passive" or "active"
+      - fire_type              :: "passive_crown" or "active_crown"
       - spread_rate            :: m/min
       - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
 
     return a dictionary containing these keys:
-    - fire_type          :: "surface", "passive", or "active"
+    - fire_type          :: "surface", "passive_crown", or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
@@ -3705,7 +3705,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     surface_spread_direction   = surface_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
     # Unpack the crown fire behavior values
-    crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive" or "active"
+    crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive_crown" or "active_crown"
     crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
     crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
@@ -4023,7 +4023,7 @@ Outputs:
 {'critical_spread_rate': 10.0,
  'eccentricity': 0.8218958698260199,
  'length_to_width_ratio': 1.7555015973996304,
- 'max_fire_type': 'active',
+ 'max_fire_type': 'active_crown',
  'max_fireline_intensity': 82666.07067724908,
  'max_spread_direction': array([0.        , 0.89442719, 0.4472136 ]),
  'max_spread_rate': 32.907419619299176,
@@ -4047,7 +4047,7 @@ Outputs:
 {'critical_spread_rate': 10.0,
  'eccentricity': 0.8024265702196313,
  'length_to_width_ratio': 1.6757411715581005,
- 'max_fire_type': 'active',
+ 'max_fire_type': 'active_crown',
  'max_fireline_intensity': 74768.3487091958,
  'max_spread_direction': array([0.000000e+00, 1.000000e+00, 3.061617e-17]),
  'max_spread_rate': 29.763522144675242,
@@ -4112,21 +4112,21 @@ pprint(backing_fire_behavior)
 #+begin_example
 Heading Fire Behavior
 ============================================================
-{'fire_type': 'active',
+{'fire_type': 'active_crown',
  'fireline_intensity': 78838.1499300167,
  'spread_direction': array([0.        , 0.94280904, 0.33333333]),
  'spread_rate': 31.38361434747966}
 
 Flanking Fire Behavior
 ============================================================
-{'fire_type': 'passive',
+{'fire_type': 'passive_crown',
  'fireline_intensity': 14756.204837586314,
  'spread_direction': array([ 0.9486833 , -0.10540926,  0.2981424 ]),
  'spread_rate': 3.264617932843692}
 
 Backing Fire Behavior
 ============================================================
-{'fire_type': 'passive',
+{'fire_type': 'passive_crown',
  'fireline_intensity': 8139.876265831974,
  'spread_direction': array([-0.        , -0.94280904, -0.33333333]),
  'spread_rate': 2.3434742325850952}
@@ -4346,7 +4346,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
     - max_length_to_width_ratio :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
-    - fire_type          :: "unburned", "surface", "passive", or "active"
+    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
     - fireline_intensity :: kW/m
@@ -4575,7 +4575,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
     - max_length_to_width_ratio :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
-    - fire_type          :: "unburned", "surface", "passive", or "active"
+    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
     - fireline_intensity :: kW/m
@@ -5581,29 +5581,29 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 - output_layer_dict :: an *optional* dictionary of layer names to 2D Numpy arrays with the following units to pre-populate the simulation output arrays:
   *TODO* Consider whether some of these layers should be kept as internal state and not returned to the user.
 
-  |--------------------------------+---------+------------------------------------------------------------------------------+-----------|
-  | Parameter Name                 | Type    | Units                                                                        | Optional? |
-  |--------------------------------+---------+------------------------------------------------------------------------------+-----------|
-  | eulerian_level_set_phi_field   | float16 | TODO: find units range                                                       | No        |
-  | time_of_arrival                | float32 | minutes from the start time of the simulated space-time cube                 | Yes       |
-  | max_surface_spread_direction   | float16 | degrees clockwise from North                                                 | Yes       |
-  | max_crown_spread_direction     | float16 | degrees clockwise from North                                                 | Yes       |
-  | perimeter_spread_direction     | float16 | degrees clockwise from North                                                 | Yes       |
-  | max_surface_spread_rate        | float16 | meters/second                                                                | Yes       |
-  | max_crown_spread_rate          | float16 | meters/second                                                                | Yes       |
-  | perimeter_spread_rate          | float16 | meters/second                                                                | Yes       |
-  | surface_eccentricity           | float16 | dimensionless (0: circular fire, >0: elliptical fire)                        | Yes       |
-  | crown_eccentricity             | float16 | dimensionless (0: circular fire, >0: elliptical fire)                        | Yes       |
-  | max_surface_fireline_intensity | float32 | kilowatts/meter                                                              | Yes       |
-  | max_crown_fireline_intensity   | float32 | kilowatts/meter                                                              | Yes       |
-  | perimeter_fireline_intensity   | float32 | kilowatts/meter                                                              | Yes       |
-  | max_surface_flame_length       | float16 | meters                                                                       | Yes       |
-  | max_crown_flame_length         | float16 | meters                                                                       | Yes       |
-  | perimeter_flame_length         | float16 | meters                                                                       | Yes       |
-  | fire_type                      | uint8   | 0 = no_fire, 1 = surface_fire, 2 = passive_crown_fire, 3 = active_crown_fire | Yes       |
-  | ember_count                    | uint32  | number of embers landing in each cell                                        | Yes       |
-  | ember_ignition                 | bool8   | True for cells ignited by embers, False otherwise                            | Yes       |
-  |--------------------------------+---------+------------------------------------------------------------------------------+-----------|
+  |--------------------------------+---------+----------------------------------------------------------------+-----------|
+  | Parameter Name                 | Type    | Units                                                          | Optional? |
+  |--------------------------------+---------+----------------------------------------------------------------+-----------|
+  | eulerian_level_set_phi_field   | float16 | TODO: find units range                                         | No        |
+  | time_of_arrival                | float32 | minutes from the start time of the simulated space-time cube   | Yes       |
+  | max_surface_spread_direction   | float16 | degrees clockwise from North                                   | Yes       |
+  | max_crown_spread_direction     | float16 | degrees clockwise from North                                   | Yes       |
+  | perimeter_spread_direction     | float16 | degrees clockwise from North                                   | Yes       |
+  | max_surface_spread_rate        | float16 | meters/second                                                  | Yes       |
+  | max_crown_spread_rate          | float16 | meters/second                                                  | Yes       |
+  | perimeter_spread_rate          | float16 | meters/second                                                  | Yes       |
+  | surface_eccentricity           | float16 | dimensionless (0: circular fire, >0: elliptical fire)          | Yes       |
+  | crown_eccentricity             | float16 | dimensionless (0: circular fire, >0: elliptical fire)          | Yes       |
+  | max_surface_fireline_intensity | float32 | kilowatts/meter                                                | Yes       |
+  | max_crown_fireline_intensity   | float32 | kilowatts/meter                                                | Yes       |
+  | perimeter_fireline_intensity   | float32 | kilowatts/meter                                                | Yes       |
+  | max_surface_flame_length       | float16 | meters                                                         | Yes       |
+  | max_crown_flame_length         | float16 | meters                                                         | Yes       |
+  | perimeter_flame_length         | float16 | meters                                                         | Yes       |
+  | fire_type                      | uint8   | 0 = unburned, 1 = surface, 2 = passive_crown, 3 = active_crown | Yes       |
+  | ember_count                    | uint32  | number of embers landing in each cell                          | Yes       |
+  | ember_ignition                 | bool8   | True for cells ignited by embers, False otherwise              | Yes       |
+  |--------------------------------+---------+----------------------------------------------------------------+-----------|
 
 - ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
 
@@ -6742,10 +6742,10 @@ import pyretechnics.vector_utils as vu
 
 
 fire_type_codes = {
-    "unburned": 0,
-    "surface" : 1,
-    "passive" : 2,
-    "active"  : 3,
+    "unburned"      : 0,
+    "surface"       : 1,
+    "passive_crown" : 2,
+    "active_crown"  : 3,
 }
 
 
@@ -6806,7 +6806,7 @@ flammap_array_conversions = {
     #====================================================================================
     # Layer Name            : (New dtype, Mult),                # In Units -> Out Units
     #====================================================================================
-    "max_fire_type"         : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
+    "max_fire_type"         : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive_crown,3=active_crown
     "max_spread_rate"       : ("float32", 0.33528),             # ch/hr -> m/min
     "max_spread_direction"  : ("float32", 180.0 / pi),          # radians -> degrees
     "max_fireline_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m
@@ -6882,7 +6882,7 @@ def savefig(title, layer, units, colors):
 # #+end_src
 
 #+begin_src python
-savefig(title="Max Fire Type", layer="max_fire_type", units="1=surface,2=passive crown,3=active crown", colors="viridis")
+savefig(title="Max Fire Type", layer="max_fire_type", units="0=unburned,1=surface,2=passive_crown,3=active_crown", colors="viridis")
 #+end_src
 
 [[file:../doc/pics/worcester_max_fire_type.png]]

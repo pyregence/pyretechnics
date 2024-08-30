@@ -86,10 +86,10 @@ import pyretechnics.vector_utils as vu
 
 
 fire_type_codes = {
-    "unburned": 0,
-    "surface" : 1,
-    "passive" : 2,
-    "active"  : 3,
+    "unburned"      : 0,
+    "surface"       : 1,
+    "passive_crown" : 2,
+    "active_crown"  : 3,
 }
 
 
@@ -146,7 +146,7 @@ flammap_array_conversions = {
     #====================================================================================
     # Layer Name            : (New dtype, Mult),                # In Units -> Out Units
     #====================================================================================
-    "max_fire_type"         : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive crown,3=active crown
+    "max_fire_type"         : ("uint8"  , 1.0),                 # 0=unburned,1=surface,2=passive_crown,3=active_crown
     "max_spread_rate"       : ("float32", 0.33528),             # ch/hr -> m/min
     "max_spread_direction"  : ("float32", 180.0 / pi),          # radians -> degrees
     "max_fireline_intensity": ("float32", 3.46165186),          # Btu/ft/s -> kW/m

@@ -74,7 +74,7 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
     - estimated_fine_fuel_moisture (M_f[0] "dead-1hr") :: kg moisture/kg ovendry weight
 
     return a dictionary containing these keys:
-    - fire_type            :: "passive" or "active"
+    - fire_type            :: "passive_crown" or "active_crown"
     - spread_rate          :: m/min
     - critical_spread_rate :: m/min
     """
@@ -84,13 +84,13 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
     critical_spread_rate = van_wagner_critical_spread_rate(canopy_bulk_density) # m/min
     if (active_spread_rate > critical_spread_rate):
         return {
-            "fire_type"           : "active",
+            "fire_type"           : "active_crown",
             "spread_rate"         : active_spread_rate,
             "critical_spread_rate": critical_spread_rate,
         }
     else:
         return {
-            "fire_type"           : "passive",
+            "fire_type"           : "passive_crown",
             "spread_rate"         : cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate),
             "critical_spread_rate": critical_spread_rate,
         }
@@ -179,7 +179,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     - max_length_to_width_ratio                        :: float > 0.0 (Optional)
 
     return a dictionary containing these keys:
-    - max_fire_type          :: "passive" or "active"
+    - max_fire_type          :: "passive_crown" or "active_crown"
     - max_spread_rate        :: m/min
     - max_spread_direction   :: (x, y, z) unit vector
     - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
@@ -229,7 +229,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     """
     Given these inputs:
     - crown_fire_max     :: dictionary of max crown fire behavior values
-      - max_fire_type          :: "passive" or "active"
+      - max_fire_type          :: "passive_crown" or "active_crown"
       - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
       - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
@@ -240,7 +240,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     - spread_direction   :: 3D unit vector on the slope-tangential plane
 
     return a dictionary containing these keys:
-    - fire_type          :: "passive" or "active"
+    - fire_type          :: "passive_crown" or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
@@ -261,15 +261,15 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     if spread_rate > critical_spread_rate:
         # Max spread rate was active and directional spread rate remains active
         return {
-            "fire_type"         : "active",
+            "fire_type"         : "active_crown",
             "spread_rate"       : spread_rate,
             "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
-    elif max_fire_type == "passive":
+    elif max_fire_type == "passive_crown":
         # Max spread rate was passive and directional spread rate remains passive
         return {
-            "fire_type"         : "passive",
+            "fire_type"         : "passive_crown",
             "spread_rate"       : spread_rate,
             "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
@@ -277,7 +277,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     else:
         # Max spread rate was active and directional spread rate has become passive
         return {
-            "fire_type"         : "passive",
+            "fire_type"         : "passive_crown",
             "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
             "spread_direction"  : spread_direction,
             "fireline_intensity": max_fireline_intensity * adjustment,
@@ -296,13 +296,13 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
       - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
     - crown_fire_behavior   :: dictionary of crown fire behavior values
-      - fire_type              :: "passive" or "active"
+      - fire_type              :: "passive_crown" or "active_crown"
       - spread_rate            :: m/min
       - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
 
     return a dictionary containing these keys:
-    - fire_type          :: "surface", "passive", or "active"
+    - fire_type          :: "surface", "passive_crown", or "active_crown"
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
@@ -312,7 +312,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     surface_spread_direction   = surface_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
     # Unpack the crown fire behavior values
-    crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive" or "active"
+    crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive_crown" or "active_crown"
     crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
     crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
