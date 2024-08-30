@@ -21,8 +21,8 @@ suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # O
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
 temperature_layer                   = np.arange(240000).reshape(24,100,100)
 relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
-wind_speed_10m_x_layer              = np.arange(240000).reshape(24,100,100)
-wind_speed_10m_y_layer              = np.arange(240000).reshape(24,100,100)
+wind_speed_10m_layer                = np.arange(240000).reshape(24,100,100)
+upwind_direction_layer              = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_10hr_layer       = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_100hr_layer      = np.arange(240000).reshape(24,100,100)
@@ -62,8 +62,8 @@ def test_make_layer_lookup():
         # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
         "temperature"                  : SpaceTimeCube(cube_shape, temperature_layer),
         "relative_humidity"            : SpaceTimeCube(cube_shape, relative_humidity_layer),
-        "wind_speed_10m_x"             : SpaceTimeCube(cube_shape, wind_speed_10m_x_layer),
-        "wind_speed_10m_y"             : SpaceTimeCube(cube_shape, wind_speed_10m_y_layer),
+        "wind_speed_10m"               : SpaceTimeCube(cube_shape, wind_speed_10m_layer),
+        "upwind_direction"             : SpaceTimeCube(cube_shape, upwind_direction_layer),
         "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, fuel_moisture_dead_1hr_layer),
         "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, fuel_moisture_dead_10hr_layer),
         "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, fuel_moisture_dead_100hr_layer),
@@ -107,8 +107,8 @@ def test_use_layer_lookup_3d():
     layer_lookup     = test_make_layer_lookup()
     temp_12_100_100  = layer_lookup["temperature"].get(12,100,100)
     rh_12_100_100    = layer_lookup["relative_humidity"].get(12,100,100)
-    wspx_12_100_100  = layer_lookup["wind_speed_10m_x"].get(12,100,100)
-    wspy_12_100_100  = layer_lookup["wind_speed_10m_y"].get(12,100,100)
+    wsp_12_100_100   = layer_lookup["wind_speed_10m"].get(12,100,100)
+    wdir_12_100_100  = layer_lookup["upwind_direction"].get(12,100,100)
     md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"].get(12,100,100)
     md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"].get(12,100,100)
     md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"].get(12,100,100)

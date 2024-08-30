@@ -132,7 +132,6 @@ from math import sqrt
 import pyretechnics.conversion as conv
 
 
-# FIXME: Surface L/W uses 0.25 but Crown L/W uses 0.125. Check Rothermel 1991.
 def crown_length_to_width_ratio(wind_speed_10m, max_length_to_width_ratio=None):
     """
     Calculate the length_to_width_ratio of the crown fire front using eq. 9 from
