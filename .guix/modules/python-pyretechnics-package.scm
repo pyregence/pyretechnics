@@ -7,7 +7,7 @@
   #:use-module ((gnu packages geo)             #:select (gdal))
   #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python-build)    #:select (python-hatchling))
-  #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio))
+  #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio python-matplotlib))
   #:use-module ((gnu packages ssh)             #:select (openssh))
   #:use-module ((gnu packages version-control) #:select (git))
   #:use-module ((guix build-system pyproject)  #:select (pyproject-build-system))
@@ -25,7 +25,7 @@
 (define-public python-pyretechnics
   (package
    (name "python-pyretechnics")
-   (version "2024.5.7")
+   (version "2024.8.30")
    (source (local-file "../.."
                        "pyretechnics-checkout"
                        #:recursive? #t
@@ -54,7 +54,8 @@
    (propagated-inputs (list
                        ;; Python dependency libraries
                        python-numpy
-                       python-rasterio))
+                       python-rasterio
+                       python-matplotlib))
    (synopsis "A Python library for simulating fire behavior in a variety of ways.")
    (description "A Python library for simulating fire behavior in a variety of ways.")
    (home-page "https://github.com/pyregence/pyretechnics/")
