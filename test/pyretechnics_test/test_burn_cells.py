@@ -75,6 +75,7 @@ def test_burn_cell_as_head_fire():
         "spread_rate"       : 0.32044995422500555,
         "spread_direction"  : [0.644528432121562, 0.7414451458683358, 0.18666064356259804],
         "fireline_intensity": 26.66139842420774,
+        "flame_length"      : 0.3507858529698898,
     }
     return result
 # burn-single-cell-in-test-dataset ends here
@@ -118,7 +119,7 @@ def test_burn_all_cells_as_head_fire():
             max_spread_rate_matrix[y,x]        = results["spread_rate"]
             max_spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(results["spread_direction"])
             max_fireline_intensity_matrix[y,x] = results["fireline_intensity"]
-            # max_flame_length_matrix[y,x]       = results["flame_length"] # FIXME: No value for this field
+            max_flame_length_matrix[y,x]       = results["flame_length"]
 
     return {
         "max_fire_type"         : max_fire_type_matrix,

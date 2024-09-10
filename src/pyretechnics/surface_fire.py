@@ -445,6 +445,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     - max_spread_direction   :: (x, y, z) unit vector
     - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
     - max_fireline_intensity :: kW/m
+    - max_flame_length       :: m
     - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
@@ -473,13 +474,15 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     (limited_wind_speed, limited_phi_E) = maybe_limit_wind_speed(use_wind_limit, max_wind_speed,
                                                                  get_phi_W, get_wind_speed, phi_E)
     # Calculate and return max surface fire behavior values
-    max_spread_rate       = spread_rate * (1.0 + limited_phi_E)
-    length_to_width_ratio = surface_length_to_width_ratio(limited_wind_speed)
+    max_spread_rate        = spread_rate * (1.0 + limited_phi_E)
+    max_fireline_intensity = fireline_intensity * (1.0 + limited_phi_E)
+    length_to_width_ratio  = surface_length_to_width_ratio(limited_wind_speed)
     return {
         "max_spread_rate"       : max_spread_rate,
         "max_spread_direction"  : max_spread_direction, # unit vector
         "max_spread_vector"     : max_spread_rate * max_spread_direction,
-        "max_fireline_intensity": fireline_intensity * (1.0 + limited_phi_E),
+        "max_fireline_intensity": max_fireline_intensity,
+        "max_flame_length"      : calc_flame_length(max_fireline_intensity),
         "length_to_width_ratio" : length_to_width_ratio,
         "eccentricity"          : surface_fire_eccentricity(length_to_width_ratio),
     }
@@ -496,6 +499,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
       - max_spread_direction   :: (x, y, z) unit vector
       - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
       - max_fireline_intensity :: kW/m
+      - max_flame_length       :: m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     - spread_direction     :: 3D unit vector on the slope-tangential plane
@@ -505,6 +509,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
+    - flame_length       :: m
     """
     # Unpack max surface fire behavior values
     max_spread_rate        = surface_fire_max["max_spread_rate"]
@@ -515,10 +520,13 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     cos_w = np.dot(max_spread_direction, np.asarray(spread_direction))
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    # Update surface fire behavior values by the adjustment value
+    fireline_intensity = max_fireline_intensity * adjustment
     return {
         "fire_type"         : "surface",
         "spread_rate"       : max_spread_rate * adjustment,
         "spread_direction"  : spread_direction,
-        "fireline_intensity": max_fireline_intensity * adjustment,
+        "fireline_intensity": fireline_intensity,
+        "flame_length"      : calc_flame_length(fireline_intensity),
     }
 # surface-fire-behavior-in-direction ends here

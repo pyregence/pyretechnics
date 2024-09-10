@@ -284,9 +284,6 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         }
 # crown-fire-behavior-in-direction ends here
 # [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
-import pyretechnics.conversion as conv
-
-
 def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     """
     Given these inputs:
@@ -295,6 +292,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
       - spread_rate            :: m/min
       - spread_direction       :: (x, y, z) unit vector
       - fireline_intensity     :: kW/m
+      - flame_length           :: m
     - crown_fire_behavior   :: dictionary of crown fire behavior values
       - fire_type              :: "passive_crown" or "active_crown"
       - spread_rate            :: m/min
@@ -306,6 +304,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
+    - flame_length       :: m
     """
     # Unpack the surface fire behavior values
     surface_spread_rate        = surface_fire_behavior["spread_rate"]        # m/min
@@ -324,6 +323,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
             "spread_rate"       : surface_spread_rate,
             "spread_direction"  : surface_spread_direction,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
+            "flame_length"      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
         }
     else:
         # Crown fire spreads faster
@@ -332,5 +332,6 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
             "spread_rate"       : crown_spread_rate,
             "spread_direction"  : crown_spread_direction,
             "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
+            "flame_length"      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
         }
 # combined-fire-behavior ends here

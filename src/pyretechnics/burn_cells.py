@@ -39,6 +39,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
     - fireline_intensity :: kW/m
+    - flame_length       :: m
     """
     #================================================================================================
     # Destructure the space_time_coordinate
@@ -105,6 +106,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
             "spread_rate"       : 0.0,
             "spread_direction"  : spread_direction,
             "fireline_intensity": 0.0,
+            "flame_length"      : 0.0,
         }
 
     else:
@@ -249,6 +251,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
     - fireline_intensity :: kW/m
+    - flame_length       :: m
     """
     #================================================================================================
     # Destructure the space_time_coordinate
@@ -315,6 +318,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
             "spread_rate"       : 0.0,
             "spread_direction"  : spread_direction,
             "fireline_intensity": 0.0,
+            "flame_length"      : 0.0,
         }
 
     else:
