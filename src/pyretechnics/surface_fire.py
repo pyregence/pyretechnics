@@ -356,31 +356,27 @@ from math import exp, sqrt
 from pyretechnics.conversion import m_min_to_mph
 
 
-def surface_length_to_width_ratio(effective_wind_speed):
-    """
-    Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
-    Rothermel 1991 given:
-    - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
-    """
-    effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
-    return 1.0 + 0.25 * effective_wind_speed_mph
-
-
-# FIXME: unused
-def surface_length_to_width_ratio_elmfire(effective_wind_speed):
+def surface_length_to_width_ratio(effective_wind_speed, model="rothermel"):
     """
     Calculate the length_to_width_ratio of the surface fire front given:
     - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
-
-    L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
+    - model                :: "rothermel" or "behave" (Optional)
     """
     effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
-    return min((0.936 * exp(0.2566 * effective_wind_speed_mph))
-               +
-               (0.461 * exp(-0.1548 * effective_wind_speed_mph))
-               -
-               0.397,
-               8.0)
+    match model:
+        case "rothermel":
+            return 1.0 + 0.25 * effective_wind_speed_mph
+
+        case "behave":
+            return min(8.0,
+                       0.936 * exp(0.1147 * effective_wind_speed_mph)
+                       +
+                       0.461 * exp(-0.0692 * effective_wind_speed_mph)
+                       -
+                       0.397)
+
+        case _:
+            raise ValueError("Invalid input: model must be 'rothermel' or 'behave'.")
 
 
 def surface_fire_eccentricity(length_to_width_ratio):

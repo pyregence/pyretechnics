@@ -2673,15 +2673,30 @@ section [[Combining Wind and Slope Vectors]].
 In order to project the one-dimensional surface fire spread rate
 values calculated in earlier sections onto a two-dimensional plane,
 $U_{\text{eff}}$ is used to compute the length to width ratio
-$\frac{L}{W}$ of an ellipse that approximates the surface fire front
-using equation 9 from Rothermel 1991.[fn::Rothermel1991] This length
-to width ratio is then converted into an eccentricity measure of the
-ellipse using equation 8 from Albini and Chase 1980.[fn::Albini1980]
+$\frac{L}{W}$ of an ellipse that approximates the surface fire front.
+This length to width ratio is then converted into an eccentricity
+measure $E$ of the ellipse using equation 8 from Albini and Chase
+1980.[fn::Albini1980]
 
 \begin{align}
-  \frac{L}{W} &= 1 + 0.25 \, U_{\text{eff}} \\
-  \nonumber \\
-  E &= \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}}
+  E = \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}}
+\end{align}
+
+Currently Pyretechnics supports two different methods for computing
+the length to width ratio $\frac{L}{W}$:
+
+1. Using equation 9 from Rothermel 1991.[fn::Rothermel1991]
+
+\begin{align}
+  \frac{L}{W} = 1 + 0.25 \, U_{\text{eff}}
+\end{align}
+
+where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
+
+2. Using the formula implemented in the Missoula Fire Lab's =behave= C++ library[fn::https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93]
+
+\begin{align}
+  \frac{L}{W} = \min(8.0, 0.936 e^{(0.1147 U_{\text{eff}})} + 0.461 e^{(-0.0692 U_{\text{eff}})} - 0.397)
 \end{align}
 
 where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
@@ -2692,31 +2707,27 @@ from math import exp, sqrt
 from pyretechnics.conversion import m_min_to_mph
 
 
-def surface_length_to_width_ratio(effective_wind_speed):
-    """
-    Calculate the length_to_width_ratio of the surface fire front using eq. 9 from
-    Rothermel 1991 given:
-    - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
-    """
-    effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
-    return 1.0 + 0.25 * effective_wind_speed_mph
-
-
-# FIXME: unused
-def surface_length_to_width_ratio_elmfire(effective_wind_speed):
+def surface_length_to_width_ratio(effective_wind_speed, model="rothermel"):
     """
     Calculate the length_to_width_ratio of the surface fire front given:
     - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
-
-    L/W = min(0.936 * e^(0.2566 * Ueff_mph) + 0.461 * e^(-0.1548 * Ueff_mph) - 0.397, 8.0)
+    - model                :: "rothermel" or "behave" (Optional)
     """
     effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
-    return min((0.936 * exp(0.2566 * effective_wind_speed_mph))
-               +
-               (0.461 * exp(-0.1548 * effective_wind_speed_mph))
-               -
-               0.397,
-               8.0)
+    match model:
+        case "rothermel":
+            return 1.0 + 0.25 * effective_wind_speed_mph
+
+        case "behave":
+            return min(8.0,
+                       0.936 * exp(0.1147 * effective_wind_speed_mph)
+                       +
+                       0.461 * exp(-0.0692 * effective_wind_speed_mph)
+                       -
+                       0.397)
+
+        case _:
+            raise ValueError("Invalid input: model must be 'rothermel' or 'behave'.")
 
 
 def surface_fire_eccentricity(length_to_width_ratio):
@@ -3449,7 +3460,7 @@ def calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_inte
 As with surface fire spread, the wind speed (this time the 20-ft wind
 speed $U_{20}$) is used to compute the length to width ratio
 $\frac{L}{W}$ of an ellipse that approximates the crown fire front
-using equation 9 from Rothermel 1991.[fn::Rothermel1991] This length
+using equation 10 from Rothermel 1991.[fn::Rothermel1991] This length
 to width ratio is then converted into an eccentricity measure of the
 ellipse using equation 8 from Albini and Chase 1980.[fn::Albini1980]
 Here are the formulas used:
