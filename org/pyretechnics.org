@@ -4994,32 +4994,12 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coord
  'spread_rate': 0.9812016167065538}
 #+end_example
 
-* [WIP] Spot Fire Equations (pyretechnics.spot_fire)
-** For Developers
-   :PROPERTIES:
-   :header-args:python+: :session *pyretechnics.spot_fire*
-   :header-args:python+: :tangle  ../src/pyretechnics/spot_fire.py
-   :header-args:python+: :exports code
-   :END:
-** For Users
-   :PROPERTIES:
-   :header-args:python+: :session *examples:pyretechnics.spot_fire*
-   :header-args:python+: :results output replace
-   :header-args:python+: :exports both
-   :END:
-
 * [WIP] Fire Spread Algorithms (pyretechnics.eulerian_level_set)
 ** For Developers
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.eulerian_level_set*
    :header-args:python+: :tangle  ../src/pyretechnics/eulerian_level_set.py
    :header-args:python+: :exports code
-   :END:
-** For Users
-   :PROPERTIES:
-   :header-args:python+: :session *examples:pyretechnics.eulerian_level_set*
-   :header-args:python+: :results output replace
-   :header-args:python+: :exports both
    :END:
 
 In order to simulate the spread of a fire from a starting point or
@@ -5483,6 +5463,28 @@ level set corresponding to $\phi = 0$.
 # equations from the ELMFire paper and the online technical reference:
   https://github.com/lautenberger/elmfire/blob/main/docs/tech_ref.rst
 
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.eulerian_level_set*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
+
+* [WIP] Spot Fire Equations (pyretechnics.spot_fire)
+** For Developers
+   :PROPERTIES:
+   :header-args:python+: :session *pyretechnics.spot_fire*
+   :header-args:python+: :tangle  ../src/pyretechnics/spot_fire.py
+   :header-args:python+: :exports code
+   :END:
+
+** For Users
+   :PROPERTIES:
+   :header-args:python+: :session *examples:pyretechnics.spot_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
+
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression)
 ** For Developers
    :PROPERTIES:
@@ -5490,6 +5492,7 @@ level set corresponding to $\phi = 0$.
    :header-args:python+: :tangle  ../src/pyretechnics/suppression.py
    :header-args:python+: :exports code
    :END:
+
 ** For Users
    :PROPERTIES:
    :header-args:python+: :session *examples:pyretechnics.suppression*
@@ -6009,7 +6012,7 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 | DUMP_TIME_OF_ARRIVAL                     | N/A                                   | Output writing managed externally       |
 |------------------------------------------+---------------------------------------+-----------------------------------------|
 
-* Appendix
+* Appendices
 ** Units Conversion Functions (pyretechnics.conversion)
    :PROPERTIES:
    :header-args:python+: :session *pyretechnics.conversion*
