@@ -5487,7 +5487,98 @@ Courant-Friedrichs-Lewy (CFL) condition. The location of the fire
 perimeter is determined by interpolation of the $\phi$ field as the
 level set corresponding to $\phi = 0$.
 
-...RESUME HERE...
+*** Val's Elliptical Equations
+
+#+name: vw-elliptical-solver
+#+begin_src python
+from math import sqrt
+import numpy as np
+from pyretechnics.surface_fire import calc_flame_length
+from pyretechnics.vector_utils import vector_magnitude
+
+
+# FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
+#        Did I do this correctly in calc_crown_fire_behavior_in_direction?
+def calc_fireline_normal_behavior(fire_behavior_max, elevation_gradient, phi_gradient):
+    """
+    Given these inputs:
+    - fire_behavior_max  :: dictionary of max surface or crown fire behavior values
+      - max_fire_type          :: "passive_crown" or "active_crown" (Required for crown fires only)
+      - max_spread_rate        :: m/min
+      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
+      - max_fireline_intensity :: kW/m
+      - max_flame_length       :: m
+      - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
+      - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
+      - critical_spread_rate   :: m/min (Required for crown fires only)
+    - elevation_gradient :: (dz_dx: m/m, dz_dy: m/m)
+    - phi_gradient       :: (dphi_dx: phi/m, dphi_dy: phi/m, dphi_dz: phi/m) 3D vector on the slope-tangential plane
+
+    return a dictionary containing these keys:
+    - dphi_dt            :: phi/min
+    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"
+    - spread_rate        :: m/min
+    - spread_direction   :: (x, y, z) unit vector
+    - fireline_intensity :: kW/m
+    - flame_length       :: m
+
+    Note: This function should work for surface or crown fires interchangeably.
+    """
+    phi_gradient  = np.asarray(phi_gradient)       # (x: phi/m, y: phi/m, z: phi/m)
+    phi_magnitude = vector_magnitude(phi_gradient) # phi/m
+    if phi_magnitude == 0.0:
+        # This location is not on the fire perimeter.
+        return {
+            "dphi_dt"           : 0.0,
+            "fire_type"         : "unburned",
+            "spread_rate"       : 0.0,
+            "spread_direction"  : None,
+            "fireline_intensity": 0.0,
+            "flame_length"      : 0.0,
+        }
+    else:
+        # This location is on the fire perimeter.
+        heading_spread_rate         = fire_behavior_max["max_spread_rate"]         # m/min
+        heading_spread_vector       = fire_behavior_max["max_spread_vector"]       # (x: m/min, y: m/min, z: m/min)
+        heading_spread_rate_x       = heading_spread_vector[0]                     # m/min
+        heading_spread_rate_y       = heading_spread_vector[1]                     # m/min
+        length_to_width_ratio       = fire_behavior_max["length_to_width_ratio"]   # unitless
+        eccentricity                = fire_behavior_max["eccentricity"]            # unitless
+        backing_adjustment          = (1.0 - eccentricity) / (1.0 + eccentricity)  # unitless
+        backing_spread_rate         = heading_spread_rate * backing_adjustment     # m/min
+        flanking_spread_rate        = ((heading_spread_rate + backing_spread_rate)
+                                       / (2.0 * length_to_width_ratio))            # m/min
+        heading_fireline_intensity  = fire_behavior_max["max_fireline_intensity"]  # kW/m
+        heading_fire_type           = fire_behavior_max.get("max_fire_type", "surface")
+        critical_spread_rate        = fire_behavior_max.get("critical_spread_rate", 0.0) # m/min
+        (dz_dx, dz_dy)              = elevation_gradient                           # (x: m/m, y: m/m)
+        (dphi_dx, dphi_dy, dphi_dz) = phi_gradient                                 # (x: phi/m, y: phi/m, z: phi/m)
+        A = (heading_spread_rate - backing_spread_rate) / (2 * heading_spread_rate)              # unitless
+        B = heading_spread_rate_x * dphi_dx + heading_spread_rate_y * dphi_dy                    # phi/min
+        C = (flanking_spread_rate / heading_spread_rate)                                         # unitless
+        D = (dphi_dx * dz_dx + dphi_dy * dz_dy) ** 2.0 / (1 + dz_dx ** 2.0 + dz_dy ** 2.0)       # (phi/m)^2
+        E = dphi_dx ** 2.0 + dphi_dy ** 2.0 - D                                                  # (phi/m)^2
+        F = (heading_spread_rate ** 2.0) * E + (length_to_width_ratio ** 2.0 - 1.0) * (B ** 2.0) # (phi/min)^2
+        dphi_dt                   = -(A * B + C * sqrt(F))                                       # phi/min
+        normal_spread_rate        = -dphi_dt / sqrt(E)                                           # m/min
+        normal_direction          = phi_gradient / phi_magnitude                                 # (x,y,z) unit vector
+        normal_adjustment         = normal_spread_rate / heading_spread_rate                     # unitless
+        normal_fireline_intensity = heading_fireline_intensity * normal_adjustment               # kW/m
+        normal_flame_length       = calc_flame_length(normal_fireline_intensity)                 # m
+        normal_fire_type          = ("unburned" if heading_spread_rate == 0.0
+                                     else "surface" if heading_fire_type == "surface"
+                                     else "active_crown" if normal_spread_rate > critical_spread_rate
+                                     else "passive_crown")
+        return {
+            "dphi_dt"           : dphi_dt,                   # phi/min
+            "fire_type"         : normal_fire_type,          # surface, passive_crown, or active_crown
+            "spread_rate"       : normal_spread_rate,        # m/min
+            "spread_direction"  : normal_direction,          # (x,y,z) unit vector
+            "fireline_intensity": normal_fireline_intensity, # kW/m
+            "flame_length"      : normal_flame_length,       # m
+        }
+#+end_src
 
 # TODO: Implement U_x and U_y calculations using surface and crown
 # equations from the ELMFIRE paper and the online technical reference:
