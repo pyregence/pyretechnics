@@ -274,13 +274,39 @@ def calc_phi_next_timestep(space_time_cubes, phi, dx, dy, dt, t):
 # [[file:../../org/pyretechnics.org::vw-elliptical-solver][vw-elliptical-solver]]
 from math import sqrt
 import numpy as np
+import pyretechnics.conversion as conv
 from pyretechnics.surface_fire import calc_flame_length
-from pyretechnics.vector_utils import vector_magnitude
+from pyretechnics.vector_utils import vector_magnitude, get_slope_normal_vector
+
+
+# TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
+def calc_elevation_gradient(slope, aspect):
+    """
+    Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:
+    - slope  :: rise/run
+    - aspect :: degrees clockwise from North
+    """
+    return conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+
+
+def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):
+    """
+    Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:
+    - phi_gradient_xy    :: (dphi_dx: phi/m, dphi_dy: phi/m)
+    - elevation_gradient :: (dz_dx: m/m, dz_dy: m/m)
+    """
+    (dphi_dx, dphi_dy) = phi_gradient_xy
+    phi_gradient_xyz   = np.asarray((dphi_dx, dphi_dy, 0.0))
+    if vector_magnitude(elevation_gradient) == 0.0:
+        return phi_gradient_xyz
+    else:
+        slope_normal_vector = get_slope_normal_vector(elevation_gradient) # (x,y,z) unit vector
+        return phi_gradient_xyz - np.dot(phi_gradient_xyz, slope_normal_vector) * slope_normal_vector
 
 
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
-def calc_fireline_normal_behavior(fire_behavior_max, elevation_gradient, phi_gradient):
+def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     """
     Given these inputs:
     - fire_behavior_max  :: dictionary of max surface or crown fire behavior values
@@ -293,7 +319,6 @@ def calc_fireline_normal_behavior(fire_behavior_max, elevation_gradient, phi_gra
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
       - critical_spread_rate   :: m/min (Required for crown fires only)
-    - elevation_gradient :: (dz_dx: m/m, dz_dy: m/m)
     - phi_gradient       :: (dphi_dx: phi/m, dphi_dy: phi/m, dphi_dz: phi/m) 3D vector on the slope-tangential plane
 
     return a dictionary containing these keys:
@@ -306,7 +331,6 @@ def calc_fireline_normal_behavior(fire_behavior_max, elevation_gradient, phi_gra
 
     Note: This function should work for surface or crown fires interchangeably.
     """
-    phi_gradient  = np.asarray(phi_gradient)       # (x: phi/m, y: phi/m, z: phi/m)
     phi_magnitude = vector_magnitude(phi_gradient) # phi/m
     if phi_magnitude == 0.0:
         # This location is not on the fire perimeter.
@@ -320,37 +344,33 @@ def calc_fireline_normal_behavior(fire_behavior_max, elevation_gradient, phi_gra
         }
     else:
         # This location is on the fire perimeter.
-        heading_spread_rate         = fire_behavior_max["max_spread_rate"]         # m/min
-        heading_spread_vector       = fire_behavior_max["max_spread_vector"]       # (x: m/min, y: m/min, z: m/min)
-        heading_spread_rate_x       = heading_spread_vector[0]                     # m/min
-        heading_spread_rate_y       = heading_spread_vector[1]                     # m/min
-        length_to_width_ratio       = fire_behavior_max["length_to_width_ratio"]   # unitless
-        eccentricity                = fire_behavior_max["eccentricity"]            # unitless
-        backing_adjustment          = (1.0 - eccentricity) / (1.0 + eccentricity)  # unitless
-        backing_spread_rate         = heading_spread_rate * backing_adjustment     # m/min
-        flanking_spread_rate        = ((heading_spread_rate + backing_spread_rate)
-                                       / (2.0 * length_to_width_ratio))            # m/min
-        heading_fireline_intensity  = fire_behavior_max["max_fireline_intensity"]  # kW/m
-        heading_fire_type           = fire_behavior_max.get("max_fire_type", "surface")
-        critical_spread_rate        = fire_behavior_max.get("critical_spread_rate", 0.0) # m/min
-        (dz_dx, dz_dy)              = elevation_gradient                           # (x: m/m, y: m/m)
-        (dphi_dx, dphi_dy, dphi_dz) = phi_gradient                                 # (x: phi/m, y: phi/m, z: phi/m)
-        A = (heading_spread_rate - backing_spread_rate) / (2 * heading_spread_rate)              # unitless
-        B = heading_spread_rate_x * dphi_dx + heading_spread_rate_y * dphi_dy                    # phi/min
-        C = (flanking_spread_rate / heading_spread_rate)                                         # unitless
-        D = (dphi_dx * dz_dx + dphi_dy * dz_dy) ** 2.0 / (1 + dz_dx ** 2.0 + dz_dy ** 2.0)       # (phi/m)^2
-        E = dphi_dx ** 2.0 + dphi_dy ** 2.0 - D                                                  # (phi/m)^2
-        F = (heading_spread_rate ** 2.0) * E + (length_to_width_ratio ** 2.0 - 1.0) * (B ** 2.0) # (phi/min)^2
-        dphi_dt                   = -(A * B + C * sqrt(F))                                       # phi/min
-        normal_spread_rate        = -dphi_dt / sqrt(E)                                           # m/min
-        normal_direction          = phi_gradient / phi_magnitude                                 # (x,y,z) unit vector
-        normal_adjustment         = normal_spread_rate / heading_spread_rate                     # unitless
-        normal_fireline_intensity = heading_fireline_intensity * normal_adjustment               # kW/m
-        normal_flame_length       = calc_flame_length(normal_fireline_intensity)                 # m
-        normal_fire_type          = ("unburned" if heading_spread_rate == 0.0
-                                     else "surface" if heading_fire_type == "surface"
-                                     else "active_crown" if normal_spread_rate > critical_spread_rate
-                                     else "passive_crown")
+        heading_spread_rate        = fire_behavior_max["max_spread_rate"]                  # m/min
+        heading_spread_vector      = fire_behavior_max["max_spread_vector"]                # (x,y,z) m/min vector
+        length_to_width_ratio      = fire_behavior_max["length_to_width_ratio"]            # unitless
+        eccentricity               = fire_behavior_max["eccentricity"]                     # unitless
+        backing_adjustment         = (1.0 - eccentricity) / (1.0 + eccentricity)           # unitless
+        backing_spread_rate        = heading_spread_rate * backing_adjustment              # m/min
+        flanking_spread_rate       = ((heading_spread_rate + backing_spread_rate)
+                                      / (2.0 * length_to_width_ratio))                     # m/min
+        heading_fireline_intensity = fire_behavior_max["max_fireline_intensity"]           # kW/m
+        heading_fire_type          = fire_behavior_max.get("max_fire_type", "surface")
+        critical_spread_rate       = fire_behavior_max.get("critical_spread_rate", 0.0)    # m/min
+        A                          = ((heading_spread_rate - backing_spread_rate)
+                                      / (2 * heading_spread_rate))                         # unitless
+        B                          = np.dot(heading_spread_vector, phi_gradient)           # phi/min
+        C                          = (flanking_spread_rate / heading_spread_rate)          # unitless
+        D                          = (heading_spread_rate ** 2.0) * (phi_magnitude ** 2.0) # (phi/min)^2
+        E                          = (length_to_width_ratio ** 2.0 - 1.0) * (B ** 2.0)     # (phi/min)^2
+        dphi_dt                    = -(A * B + C * sqrt(D + E))                            # phi/min
+        normal_spread_rate         = -dphi_dt / phi_magnitude                              # m/min
+        normal_direction           = np.asarray(phi_gradient) / phi_magnitude              # (x,y,z) unit vector
+        normal_adjustment          = normal_spread_rate / heading_spread_rate              # unitless
+        normal_fireline_intensity  = heading_fireline_intensity * normal_adjustment        # kW/m
+        normal_flame_length        = calc_flame_length(normal_fireline_intensity)          # m
+        normal_fire_type           = ("unburned" if heading_spread_rate == 0.0
+                                      else "surface" if heading_fire_type == "surface"
+                                      else "active_crown" if normal_spread_rate > critical_spread_rate
+                                      else "passive_crown")
         return {
             "dphi_dt"           : dphi_dt,                   # phi/min
             "fire_type"         : normal_fire_type,          # surface, passive_crown, or active_crown
@@ -359,4 +379,38 @@ def calc_fireline_normal_behavior(fire_behavior_max, elevation_gradient, phi_gra
             "fireline_intensity": normal_fireline_intensity, # kW/m
             "flame_length"      : normal_flame_length,       # m
         }
+
+
+# Sketch of Fire Spread Progression Algorithm:
+# ==============================================================================================
+# 0. Start with space_time_cubes dictionary, phi 2D array, dx, dy, and start_time in minutes.
+# 1. Calculate dt.
+# 2. Exit if start_time + dt > max_stop_time.
+# 3. Create phi_star and phi_star_star 2D arrays.
+# 4. Identify perimeter cells with a buffer from phi 2D array.
+# 5. Exit if no perimeter cells are found.
+# 6. For each perimeter cell [y,x]:
+#    3.1. phi_gradient_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
+#    3.2. if vector_magnitude(phi_gradient_xy) == 0.0:
+#         3.2.1. Skip this cell since it is not on the perimeter. Return to 3.1. for the next perimeter cell.
+#         else:
+#         3.2.2  Look up slope and aspect from the space_time_cubes dictionary.
+#         3.2.3. phi_gradient_on_slope = calc_phi_gradient_on_slope(phi_gradient_xy, slope, aspect)
+#         3.2.4. surface_fire_max = calc_surface_fire_behavior_max(...) # May require another burn_cells function.
+#         3.2.5. surface_normal_behavior = calc_fireline_normal_behavior(surface_fire_max, phi_gradient_on_slope)
+#         3.2.6. surface_dphi_dt = surface_normal_behavior["dphi_dt"]
+#         3.2.7. if van_wagner_crown_fire_initiation(surface_normal_behavior["fireline_intensity"], ...):
+#                3.2.7.1. crown_fire_max = calc_crown_fire_behavior_max(...) # May require another burn_cells function.
+#                3.2.7.2. crown_normal_behavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient_on_slope)
+#                3.2.7.3. crown_dphi_dt = crown_normal_behavior["dphi_dt"]
+#                3.2.7.4. combined_dphi_dt = min(surface_dphi_dt, crown_dphi_dt)
+#                3.2.7.5. combined_normal_behavior = calc_combined_fire_behavior(surface_normal_behavior,
+#                                                                                crown_normal_behavior)
+#                3.2.7.6. return (combined_dphi_dt, combined_normal_behavior)
+#                else:
+#                3.2.7.7. return (surface_dphi_dt, surface_normal_behavior)
+#    3.3. Set phi_star[y][x] = phi[y][x] + dphi_dt
+# 6. Jump to step 4 and set the time to (start_time + dt). Also replace phi -> phi_star and phi_star -> phi_star_star.
+# 7. Set the phi 2D array to be the average of phi and phi_star_star.
+# 8. Jump to step 1 and repeat for the next timestep.
 # vw-elliptical-solver ends here
