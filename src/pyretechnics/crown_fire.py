@@ -182,7 +182,6 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     - max_fire_type          :: "passive_crown" or "active_crown"
     - max_spread_rate        :: m/min
     - max_spread_direction   :: (x, y, z) unit vector
-    - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
     - max_fireline_intensity :: kW/m
     - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
@@ -214,7 +213,6 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
         "max_fire_type"         : spread_info["fire_type"],
         "max_spread_rate"       : spread_rate,
         "max_spread_direction"  : max_spread_direction, # unit vector
-        "max_spread_vector"     : spread_rate * max_spread_direction,
         "max_fireline_intensity": fireline_intensity,
         "length_to_width_ratio" : length_to_width_ratio,
         "eccentricity"          : eccentricity,
@@ -232,7 +230,6 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
       - max_fire_type          :: "passive_crown" or "active_crown"
       - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
       - max_fireline_intensity :: kW/m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)

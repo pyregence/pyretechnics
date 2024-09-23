@@ -439,7 +439,6 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     return a dictionary containing these keys:
     - max_spread_rate        :: m/min
     - max_spread_direction   :: (x, y, z) unit vector
-    - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
     - max_fireline_intensity :: kW/m
     - max_flame_length       :: m
     - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
@@ -476,7 +475,6 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     return {
         "max_spread_rate"       : max_spread_rate,
         "max_spread_direction"  : max_spread_direction, # unit vector
-        "max_spread_vector"     : max_spread_rate * max_spread_direction,
         "max_fireline_intensity": max_fireline_intensity,
         "max_flame_length"      : calc_flame_length(max_fireline_intensity),
         "length_to_width_ratio" : length_to_width_ratio,
@@ -493,7 +491,6 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
     - surface_fire_max     :: dictionary of max surface fire behavior values
       - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
-      - max_spread_vector      :: (x: m/min, y: m/min, z: m/min)
       - max_fireline_intensity :: kW/m
       - max_flame_length       :: m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
