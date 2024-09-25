@@ -5886,6 +5886,151 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             return surface_fire_normal
 #+end_src
 
+*** Identify Cells Near the Fire Perimeter ($\phi = 0$)
+**** A proposed algorithm for narrow band tracking
+***** Problem statement
+
+To make the level-set method efficient, an important optimization
+consists of updating only those cells in a narrow band around the fire
+front (e.g., within a width of 3 cells). This way fire behavior gets
+computed (and $\phi$ gets updated) only on a sparse subset of the
+landscape at each timestep.
+
+***** Definitions
+
+At a given time step:
+
+1. a _frontier_ cell is a cell that has a neighbor of opposite $\phi$
+   sign.
+
+2. a _tracked_ cell is a cell for which we will compute the fire
+   behavior and update the $\phi$ field.
+
+***** Suggested algorithm
+
+- Invariant :: at each time step, the set of tracked cells is the set
+  of cells within 3 cells of a frontier cell using the Chebyshev
+  distance.
+
+- State :: we maintain a "reference counting" map, mapping each
+  tracked cell to the number of frontier cells to which it is near
+  (_near_ means "within 3 cells" using the Chebyshev distance). In
+  particular, the keyset of this map is the set of tracked cells.
+
+- Iteration :: at the end of timestep $t$, we know the values of
+  $\phi(t)$ and $\phi(t+\Delta t)$ for all tracked cells. We now must
+  compute the new set of tracked cells, which involves updating the
+  reference-counting map. We do so by taking the following steps:
+
+  1. Scan the set of tracked cells, and compute two subsets of them:
+     (A) those that have become frontier cells and (B) those that are
+     no longer frontier cells.
+
+  2. For each cell in A (new frontier cell), list the cells near it,
+     and increment their tracking counter by 1.
+
+  3. For each cell in B (no longer a frontier cell), list the cells
+     near it, and decrement their tracking counter by 1. Upon reaching
+     0, remove the map entry.
+
+- Detecting Frontier Cells :: Iterate through cell pairs (N/S, E/W),
+  computing their products and early exiting if I get a negative
+  value.
+
+- Open question :: What's an efficient data structure for implementing
+  the reference-counting map? If Python/Cython can provide an
+  efficient primitive map implementation, then use that. Otherwise, a
+  2D array might be a reasonable start, with the downside of not being
+  sparse, which means that iterating over its keys ends up being
+  $O(n^2)$. If that becomes a problem in practice, then we'll have to
+  implement some sort of sparse data structure (I envision a hierarchy
+  of 2D arrays with exponentially increasing resolution, representing
+  a tree-like data structure).
+
+#+name: identify-perimeter-cells-from-phi-field
+#+begin_src python
+def opposite_phi_signs(phi_matrix, y1, x1, y2, x2):
+    """
+    TODO: Add docstring
+    """
+    return phi_matrix[y1, x1] * phi_matrix[y2, x2] < 0.0
+
+
+def identify_perimeter_cells(phi_matrix):
+    """
+    TODO: Add docstring
+    """
+    frontier_cells = []
+
+    (rows, cols) = phi_matrix.shape
+
+    # Scan interior cells
+    for y in range(1, rows-1):
+        for x in range(1, cols-1):
+            # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
+            if opposite_phi_signs(phi_matrix, y-1, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x+1, y, x-1):
+                frontier_cells.append((y, x))
+
+    # Scan northern edge (non-corner) cells
+    y = 0
+    for x in range(1, cols-1):
+        # Compare (here, south) and (east, west) neighboring cell pairs for opposite phi signs
+        if opposite_phi_signs(phi_matrix, y, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x+1, y, x-1):
+            frontier_cells.append((y, x))
+
+    # Scan southern edge (non-corner) cells
+    y = rows-1
+    for x in range(1, cols-1):
+        # Compare (here, north) and (east, west) neighboring cell pairs for opposite phi signs
+        if opposite_phi_signs(phi_matrix, y, x, y-1, x) or opposite_phi_signs(phi_matrix, y, x+1, y, x-1):
+            frontier_cells.append((y, x))
+
+    # Scan eastern edge (non-corner) cells
+    x = cols-1
+    for y in range(1, rows-1):
+        # Compare (north, south) and (here, west) neighboring cell pairs for opposite phi signs
+        if opposite_phi_signs(phi_matrix, y-1, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x-1):
+            frontier_cells.append((y, x))
+
+    # Scan western edge (non-corner) cells
+    x = 0
+    for y in range(1, rows-1):
+        # Compare (north, south) and (here, east) neighboring cell pairs for opposite phi signs
+        if opposite_phi_signs(phi_matrix, y-1, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x+1):
+            frontier_cells.append((y, x))
+
+    # Scan northwestern corner cell
+    y = 0
+    x = 0
+    # Compare (here, south) and (here, east) neighboring cell pairs for opposite phi signs
+    if opposite_phi_signs(phi_matrix, y, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x+1):
+        frontier_cells.append((y, x))
+
+    # Scan northeastern corner cell
+    y = 0
+    x = cols-1
+    # Compare (here, south) and (here, west) neighboring cell pairs for opposite phi signs
+    if opposite_phi_signs(phi_matrix, y, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x-1):
+        frontier_cells.append((y, x))
+
+    # Scan southwestern corner cell
+    y = rows-1
+    x = 0
+    # Compare (here, north) and (here, east) neighboring cell pairs for opposite phi signs
+    if opposite_phi_signs(phi_matrix, y, x, y-1, x) or opposite_phi_signs(phi_matrix, y, x, y, x+1):
+        frontier_cells.append((y, x))
+
+    # Scan southeastern corner cell
+    y = rows-1
+    x = cols-1
+    # Compare (here, north) and (here, west) neighboring cell pairs for opposite phi signs
+    if opposite_phi_signs(phi_matrix, y, x, y-1, x) or opposite_phi_signs(phi_matrix, y, x, y, x-1):
+        frontier_cells.append((y, x))
+
+    # Return the list of frontier cells
+    return frontier_cells
+#+end_src
+
 *** Spread Phi Field
 
 #+name: spread-phi-field
@@ -5917,16 +6062,6 @@ def spread_direction_vector_to_angle(vector_3d):
         return 0.0 # default: North
 
 
-# FIXME: stub
-def identify_perimeter_cells(phi_matrix):
-    """
-    TODO: Add docstring
-    """
-    return [[0,0]]
-
-
-# TODO: Incorporate Val's ideas on integrating the flux-limited phi gradient with the non-limited phi gradient.
-#       See his evaluate_dphi_dt() function in the "Pyretechnics Library" channel.
 def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell_height, start_time,
                              use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1):
     """
@@ -6118,6 +6253,13 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
     # 6. Jump to step 4 and set the time to (start_time + dt). Also replace phi -> phi_star and phi_star -> phi_next.
     # 7. Set the phi 2D array to be the average of phi and phi_next.
     # 8. Jump to step 2 and repeat for the next timestep.
+
+    results = spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell_height, start_time,
+                                       use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1)
+
+    new_time                = results["simulation_time"]
+    updated_output_matrices = results["output_matrices"]
+
     return None
 #+end_src
 
@@ -6158,66 +6300,6 @@ CONTINUE
 ! *****************************************************************************
 END SUBROUTINE CALC_CFL
 #+end_src
-
-Implement Val's narrow band perimeter tracking algorithm:
-# A proposed algorithm for narrow band tracking
-## Problem statement
-
-To make the level-set method efficient, an important
-optmization consists of updating only those cells in a narrow
-band around the fire front (ELMFIRE typically uses a width of 3
-cells). This way fire behavior gets computed (and $\varphi$
-gets updated) only on a sparse subset of the landscape at each
-timestep.
-
-## Definitions
-
-At a given time step:
-
-1. a _frontier_ cell is a cell that has a neighbour of opposite φ sign.
-2. a _tracked_ cell is a cell for which we will compute the fire behavior and update the φ field.
-
-## Suggested algorithm
-
-**Invariant:** at each time step, the set of tracked cells is
-the set of cells within 3 cells of a frontier cell using the
-Chebyshev distance.
-
-**State:** we maintain a "reference counting" map, mapping each
-tracked cell to the number of frontier cells to which it is
-near. (_near_ means "within 3 cells" using the Chebyshev
-distance). In particular, the keyset of this map is the set of
-tracked cells.
-
-**Iteration:** at the end of timestep $t$, we know the values
-of $\varphi(t)$ and $\varphi(t+\Delta t)$ for all tracked
-cells. We now must compute the new set of tracked cells, which
-involves updating the reference-counting map. We do so by
-taking the following steps:
-
-1. Scan the set of tracked cells, and compute two subsets of
-   them: (A) those that have become frontier cells and (B)
-   those that are no longer frontier cells.
-2. For each cell in A (new frontier cell), list the cells near
-   it, and increment their tracking counter by 1.
-3. For each cell in B (no longer a frontier cell), list the
-   cells near it, and decrement their tracking counter by 1.
-   Upon reaching 0, remove the map entry.
-
-**Detecting Frontier Cells:**
-Iterate through cell pairs (N/S, E/W, NW/SE, NE/SW), computing
-their products and early exiting if I get a negative value.
-
-**Open question:** what's an efficient data structure for
-implementing the reference-counting map? If Python/Cython can
-provide an efficient primitive map implementation, then use
-that. Otherwise, a 2D array might be a reasonable start, with
-the downside of not being sparse, which means that iterating
-over its keys ends up being $O(n^2)$. If that becomes a problem
-in practice, then we'll have to implement some sort of sparse
-data structure (I envision a hierarchy of 2D arrays with
-exponentially increasing resolution, representing a tree-like
-data structure).
 
 Compute dt at each timestep using the Courant-Friedrichs Lewy condition simplified to the one-dimensional case by computing `UMAX`:
 https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
