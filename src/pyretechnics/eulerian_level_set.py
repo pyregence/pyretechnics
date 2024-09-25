@@ -125,17 +125,14 @@ def calc_phi_east(phi, u_x, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y][x+1] - phi[y][x]
-    if u_x > 0:
+    if u_x >= 0:
         dphi_up = phi[y][x] - phi[y][x-1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
-    elif u_x < 0:
+    else:
         dphi_up = phi[y][x+2] - phi[y][x+1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x+1] - 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
 def calc_phi_west(phi, u_x, x, y):
@@ -143,17 +140,14 @@ def calc_phi_west(phi, u_x, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y][x-1] - phi[y][x]
-    if u_x > 0:
+    if u_x >= 0:
         dphi_up = phi[y][x-2] - phi[y][x-1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x-1] - 0.5 * B * dphi_loc
-    elif u_x < 0:
+    else:
         dphi_up = phi[y][x] - phi[y][x+1]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
 def calc_phi_north(phi, u_y, x, y):
@@ -161,17 +155,14 @@ def calc_phi_north(phi, u_y, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y-1][x] - phi[y][x]
-    if u_y > 0:
+    if u_y >= 0:
         dphi_up = phi[y][x] - phi[y+1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
-    elif u_y < 0:
+    else:
         dphi_up = phi[y-2][x] - phi[y-1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y-1][x] - 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
 def calc_phi_south(phi, u_y, x, y):
@@ -179,17 +170,14 @@ def calc_phi_south(phi, u_y, x, y):
     TODO: Add docstring
     """
     dphi_loc = phi[y+1][x] - phi[y][x]
-    if u_y > 0:
+    if u_y >= 0:
         dphi_up = phi[y+2][x] - phi[y+1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y+1][x] - 0.5 * B * dphi_loc
-    elif u_y < 0:
+    else:
         dphi_up = phi[y][x] - phi[y-1][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        # FIXME: What is the correct value for this case? Update the equation above accordingly.
-        return 0.0
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::phi-time][phi-time]]
 import numpy as np
@@ -717,10 +705,6 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
     - dt is the timestep in minutes.
     - start_time is the start time in minutes.
     """
-    # Unpack input cubes
-    slope_cube  = space_time_cubes["slope"]
-    aspect_cube = space_time_cubes["aspect"]
-
     # Unpack output matrices
     phi_matrix                = output_matrices["phi"]
     fire_type_matrix          = output_matrices["fire_type"]
@@ -763,6 +747,12 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
         max_spread_rate_x = max(max_spread_rate_x, abs(spread_rate_x))
         max_spread_rate_y = max(max_spread_rate_y, abs(spread_rate_y))
 
+        # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
+        phi_magnitude = vu.vector_magnitude(phi_gradient_xy)
+        if phi_magnitude > 0.0:
+            phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, *phi_gradient_xy, cell_width, cell_height, x, y)
+            fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude
+
         # Store fire behavior values for later use
         fire_behavior_dict[cell_index] = fire_behavior
 
@@ -791,19 +781,24 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
         (y, x) = cell_index
 
         # Calculate phi gradient on the horizontal plane
-        phi_gradient_xy = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
+        phi_gradient_xy_star = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
 
-        # Project the phi gradient onto the slope-tangential plane
-        slope              = slope_cube.get(start_time + dt, y, x)
-        aspect             = aspect_cube.get(start_time + dt, y, x)
-        elevation_gradient = calc_elevation_gradient(slope, aspect)
-        phi_gradient       = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
+        # Calculate the fire behavior normal to the fire front on the slope-tangential plane
+        fire_behavior_star = burn_cell_toward_phi_gradient(space_time_cubes, (start_time + dt, y, x),
+                                                           phi_gradient_xy_star, use_wind_limit,
+                                                           max_length_to_width_ratio)
+
+        # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
+        phi_magnitude = vu.vector_magnitude(phi_gradient_xy_star)
+        if phi_magnitude > 0.0:
+            phi_gradient_xy_star_limited = calc_phi_gradient(phi_star_matrix, *phi_gradient_xy_star,
+                                                             cell_width, cell_height, x, y)
+            fire_behavior_star["dphi_dt"] *= np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) / phi_magnitude
 
         # Calculate the new phi value at time (start_time + dt) as phi_next
         fire_behavior     = fire_behavior_dict[cell_index]
-        spread_vector     = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
         dphi_dt_estimate1 = fire_behavior["dphi_dt"]
-        dphi_dt_estimate2 = -np.dot(spread_vector, phi_gradient)
+        dphi_dt_estimate2 = fire_behavior_star["dphi_dt"]
         dphi_dt_average   = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
         phi               = phi_matrix[y][x]
         phi_next          = phi + dphi_dt_average * dt
