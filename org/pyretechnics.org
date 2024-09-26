@@ -5908,6 +5908,10 @@ At a given time step:
 
 ***** Suggested algorithm
 
+- Detecting Frontier Cells :: iterate through cell pairs (N/S, E/W),
+  computing their products and early exiting if we get a negative
+  value.
+
 - Invariant :: at each time step, the set of tracked cells is the set
   of cells within 3 cells of a frontier cell using the Chebyshev
   distance.
@@ -5932,10 +5936,6 @@ At a given time step:
   3. For each cell in B (no longer a frontier cell), list the cells
      near it, and decrement their tracking counter by 1. Upon reaching
      0, remove the map entry.
-
-- Detecting Frontier Cells :: Iterate through cell pairs (N/S, E/W),
-  computing their products and early exiting if I get a negative
-  value.
 
 - Open question :: What's an efficient data structure for implementing
   the reference-counting map? If Python/Cython can provide an
@@ -6049,9 +6049,10 @@ def identify_tracked_cells(phi_matrix, buffer_width):
     """
     (rows, cols)   = phi_matrix.shape
     frontier_cells = identify_frontier_cells(phi_matrix)
-    tracked_cells  = set()
+    tracked_cells  = {}
     for cell in frontier_cells:
-        tracked_cells.update(project_buffer(cell, buffer_width, rows, cols))
+        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
+            tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
     return tracked_cells
 #+end_src
 

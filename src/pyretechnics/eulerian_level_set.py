@@ -756,9 +756,10 @@ def identify_tracked_cells(phi_matrix, buffer_width):
     """
     (rows, cols)   = phi_matrix.shape
     frontier_cells = identify_frontier_cells(phi_matrix)
-    tracked_cells  = set()
+    tracked_cells  = {}
     for cell in frontier_cells:
-        tracked_cells.update(project_buffer(cell, buffer_width, rows, cols))
+        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
+            tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
     return tracked_cells
 # identify-perimeter-cells-from-phi-field ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
