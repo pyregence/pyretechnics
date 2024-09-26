@@ -655,7 +655,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
 
             return surface_fire_normal
 # burn-cell-toward-phi-gradient ends here
-# [[file:../../org/pyretechnics.org::identify-perimeter-cells-from-phi-field][identify-perimeter-cells-from-phi-field]]
+# [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
 def opposite_phi_signs(phi_matrix, y1, x1, y2, x2):
     """
     TODO: Add docstring
@@ -663,78 +663,25 @@ def opposite_phi_signs(phi_matrix, y1, x1, y2, x2):
     return phi_matrix[y1, x1] * phi_matrix[y2, x2] < 0.0
 
 
-def identify_frontier_cells(phi_matrix):
+def identify_frontier_cells(phi_matrix, tracked_cells=None):
     """
     TODO: Add docstring
     """
-    frontier_cells = []
-
-    (rows, cols) = phi_matrix.shape
-
-    # Scan interior cells
-    for y in range(1, rows-1):
-        for x in range(1, cols-1):
+    (rows, cols)   = phi_matrix.shape
+    frontier_cells = set()
+    if tracked_cells:
+        for (y, x) in tracked_cells:
             # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
-            if opposite_phi_signs(phi_matrix, y-1, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x+1, y, x-1):
-                frontier_cells.append((y, x))
-
-    # Scan northern edge (non-corner) cells
-    y = 0
-    for x in range(1, cols-1):
-        # Compare (here, south) and (east, west) neighboring cell pairs for opposite phi signs
-        if opposite_phi_signs(phi_matrix, y, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x+1, y, x-1):
-            frontier_cells.append((y, x))
-
-    # Scan southern edge (non-corner) cells
-    y = rows-1
-    for x in range(1, cols-1):
-        # Compare (here, north) and (east, west) neighboring cell pairs for opposite phi signs
-        if opposite_phi_signs(phi_matrix, y, x, y-1, x) or opposite_phi_signs(phi_matrix, y, x+1, y, x-1):
-            frontier_cells.append((y, x))
-
-    # Scan eastern edge (non-corner) cells
-    x = cols-1
-    for y in range(1, rows-1):
-        # Compare (north, south) and (here, west) neighboring cell pairs for opposite phi signs
-        if opposite_phi_signs(phi_matrix, y-1, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x-1):
-            frontier_cells.append((y, x))
-
-    # Scan western edge (non-corner) cells
-    x = 0
-    for y in range(1, rows-1):
-        # Compare (north, south) and (here, east) neighboring cell pairs for opposite phi signs
-        if opposite_phi_signs(phi_matrix, y-1, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x+1):
-            frontier_cells.append((y, x))
-
-    # Scan northwestern corner cell
-    y = 0
-    x = 0
-    # Compare (here, south) and (here, east) neighboring cell pairs for opposite phi signs
-    if opposite_phi_signs(phi_matrix, y, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x+1):
-        frontier_cells.append((y, x))
-
-    # Scan northeastern corner cell
-    y = 0
-    x = cols-1
-    # Compare (here, south) and (here, west) neighboring cell pairs for opposite phi signs
-    if opposite_phi_signs(phi_matrix, y, x, y+1, x) or opposite_phi_signs(phi_matrix, y, x, y, x-1):
-        frontier_cells.append((y, x))
-
-    # Scan southwestern corner cell
-    y = rows-1
-    x = 0
-    # Compare (here, north) and (here, east) neighboring cell pairs for opposite phi signs
-    if opposite_phi_signs(phi_matrix, y, x, y-1, x) or opposite_phi_signs(phi_matrix, y, x, y, x+1):
-        frontier_cells.append((y, x))
-
-    # Scan southeastern corner cell
-    y = rows-1
-    x = cols-1
-    # Compare (here, north) and (here, west) neighboring cell pairs for opposite phi signs
-    if opposite_phi_signs(phi_matrix, y, x, y-1, x) or opposite_phi_signs(phi_matrix, y, x, y, x-1):
-        frontier_cells.append((y, x))
-
-    # Return the list of frontier cells
+            if (opposite_phi_signs(phi_matrix, max(0, y-1), x, min(rows-1, y+1), x) or
+                opposite_phi_signs(phi_matrix, y, min(cols-1, x+1), y, max(0, x-1))):
+                frontier_cells.add((y, x))
+    else:
+        for y in range(rows):
+            for x in range(cols):
+                # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
+                if (opposite_phi_signs(phi_matrix, max(0, y-1), x, min(rows-1, y+1), x) or
+                    opposite_phi_signs(phi_matrix, y, min(cols-1, x+1), y, max(0, x-1))):
+                    frontier_cells.add((y, x))
     return frontier_cells
 
 
@@ -750,18 +697,39 @@ def project_buffer(cell, buffer_width, rows, cols):
             for x_ in buffer_range_x]
 
 
-def identify_tracked_cells(phi_matrix, buffer_width):
+def identify_tracked_cells(frontier_cells, buffer_width, matrix_shape):
     """
     TODO: Add docstring
     """
-    (rows, cols)   = phi_matrix.shape
-    frontier_cells = identify_frontier_cells(phi_matrix)
-    tracked_cells  = {}
+    (rows, cols)  = matrix_shape
+    tracked_cells = {}
     for cell in frontier_cells:
         for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
             tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
     return tracked_cells
-# identify-perimeter-cells-from-phi-field ends here
+
+
+def update_tracked_cells(tracked_cells, frontier_cells_old, phi_matrix_new, buffer_width):
+    """
+    TODO: Add docstring
+    """
+    (rows, cols)           = phi_matrix_new.shape
+    frontier_cells_new     = identify_frontier_cells(phi_matrix_new, tracked_cells)
+    frontier_cells_added   = frontier_cells_new.difference(frontier_cells_old)
+    frontier_cells_dropped = frontier_cells_old.difference(frontier_cells_new)
+    # Increment reference counters for all cells within buffer_width of the added frontier cells
+    for cell in frontier_cells_added:
+        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
+            tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
+    # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
+    for cell in frontier_cells_dropped:
+        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
+            tracked_cells[buffer_cell] -= 1
+            if tracked_cells[buffer_cell] == 0:
+                tracked_cells.pop(buffer_cell)
+    # Return updated tracked cells
+    return tracked_cells
+# phi-field-perimeter-tracking ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 import numpy as np
 import pyretechnics.conversion as conv
