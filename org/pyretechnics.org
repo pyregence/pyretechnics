@@ -5956,7 +5956,7 @@ def opposite_phi_signs(phi_matrix, y1, x1, y2, x2):
     return phi_matrix[y1, x1] * phi_matrix[y2, x2] < 0.0
 
 
-def identify_perimeter_cells(phi_matrix):
+def identify_frontier_cells(phi_matrix):
     """
     TODO: Add docstring
     """
@@ -6029,6 +6029,30 @@ def identify_perimeter_cells(phi_matrix):
 
     # Return the list of frontier cells
     return frontier_cells
+
+
+def project_buffer(cell, buffer_width, rows, cols):
+    """
+    TODO: Add docstring
+    """
+    (y, x)         = cell
+    buffer_range_y = range(max(0, y - buffer_width), min(rows, y + buffer_width + 1))
+    buffer_range_x = range(max(0, x - buffer_width), min(cols, x + buffer_width + 1))
+    return [(y_, x_)
+            for y_ in buffer_range_y
+            for x_ in buffer_range_x]
+
+
+def identify_tracked_cells(phi_matrix, buffer_width):
+    """
+    TODO: Add docstring
+    """
+    (rows, cols)   = phi_matrix.shape
+    frontier_cells = identify_frontier_cells(phi_matrix)
+    tracked_cells  = set()
+    for cell in frontier_cells:
+        tracked_cells.update(project_buffer(cell, buffer_width, rows, cols))
+    return tracked_cells
 #+end_src
 
 *** Spread Phi Field
