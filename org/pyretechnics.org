@@ -6003,12 +6003,12 @@ def identify_tracked_cells(frontier_cells, buffer_width, matrix_shape):
     return tracked_cells
 
 
-def update_tracked_cells(tracked_cells, frontier_cells_old, phi_matrix_new, buffer_width):
+def update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, buffer_width, matrix_shape):
     """
     TODO: Add docstring
     """
-    (rows, cols)           = phi_matrix_new.shape
-    frontier_cells_new     = identify_frontier_cells(phi_matrix_new, tracked_cells)
+    # Determine which frontier cells have been added or dropped
+    (rows, cols)           = matrix_shape
     frontier_cells_added   = frontier_cells_new.difference(frontier_cells_old)
     frontier_cells_dropped = frontier_cells_old.difference(frontier_cells_new)
     # Increment reference counters for all cells within buffer_width of the added frontier cells
@@ -6056,8 +6056,10 @@ def spread_direction_vector_to_angle(vector_3d):
         return 0.0 # default: North
 
 
-def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell_height, start_time,
-                             use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1):
+def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
+                             cell_width, cell_height, band_duration, start_time, max_timestep,
+                             use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1,
+                             buffer_width=3):
     """
     TODO: Add docstring
     NOTE:
@@ -6077,9 +6079,6 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
-    # TODO: Compute max_timestep based on the temporal resolution of the space_time_cubes
-    max_timestep = 1.0
-
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
     max_spread_rate_y = 0.0
@@ -6087,14 +6086,11 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
     # Create an empty dictionary to store intermediate fire behavior values per cell
     fire_behavior_dict = {}
 
-    # Identify perimeter cells
-    perimeter_cells = identify_perimeter_cells(phi_matrix)
-
     # Make a copy of phi_matrix as phi_star_matrix
     phi_star_matrix = np.copy(phi_matrix)
 
     # Compute fire behavior values at time (start_time) and identify the max spread rates in the x and y dimensions
-    for cell_index in perimeter_cells:
+    for cell_index in tracked_cells:
         # Unpack cell_index
         (y, x) = cell_index
 
@@ -6102,8 +6098,10 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
         phi_gradient_xy = calc_phi_gradient_approx(phi_matrix, cell_width, cell_height, x, y)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
-        fire_behavior = burn_cell_toward_phi_gradient(space_time_cubes, (start_time, y, x), phi_gradient_xy,
-                                                      use_wind_limit, max_length_to_width_ratio)
+        space_time_coordinate = (int(start_time // band_duration), y, x)
+        fire_behavior         = burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate,
+                                                              phi_gradient_xy, use_wind_limit,
+                                                              max_length_to_width_ratio)
 
         # Keep a running tally of the max spread rates in the x and y dimensions
         (spread_rate_x, spread_rate_y, _) = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
@@ -6133,13 +6131,13 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
             dt = min(cell_width / max_spread_rate_x,
                      cell_height / max_spread_rate_y)
 
-    # Update the perimeter cell values in phi_star_matrix
-    for cell_index in perimeter_cells:
+    # Update the tracked cell values in phi_star_matrix
+    for cell_index in tracked_cells:
         (y, x) = cell_index
         phi_star_matrix[y][x] += fire_behavior_dict[cell_index]["dphi_dt"] * dt
 
     # Compute fire behavior values at time (start_time + dt) and update the output matrices
-    for cell_index in perimeter_cells:
+    for cell_index in tracked_cells:
         # Unpack cell_index
         (y, x) = cell_index
 
@@ -6147,9 +6145,10 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
         phi_gradient_xy_star = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
-        fire_behavior_star = burn_cell_toward_phi_gradient(space_time_cubes, (start_time + dt, y, x),
-                                                           phi_gradient_xy_star, use_wind_limit,
-                                                           max_length_to_width_ratio)
+        space_time_coordinate = (int((start_time + dt) // band_duration), y, x)
+        fire_behavior_star    = burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate,
+                                                              phi_gradient_xy_star, use_wind_limit,
+                                                              max_length_to_width_ratio)
 
         # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
         phi_magnitude = vu.vector_magnitude(phi_gradient_xy_star)
@@ -6166,7 +6165,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
         phi               = phi_matrix[y][x]
         phi_next          = phi + dphi_dt_average * dt
 
-        # Update the perimeter cell values in phi_matrix
+        # Update the tracked cell values in phi_matrix
         phi_matrix[y][x] = phi_next
 
         # Record fire behavior values in their respective output matrices for cells that are burned in this timestep
@@ -6179,16 +6178,23 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell
             flame_length_matrix[y][x]       = fire_behavior["flame_length"]
             time_of_arrival_matrix[y][x]    = start_time + dt * phi / (phi - phi_next)
 
+    # Update the sets of frontier cells and tracked cells based on the updated phi matrix
+    frontier_cells_new = identify_frontier_cells(phi_matrix, tracked_cells)
+    tracked_cells_new  = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
+                                              buffer_width, phi_matrix.shape)
+
+    # Return the updated world state
     return {
         "simulation_time": start_time + dt,
         "output_matrices": output_matrices,
+        "frontier_cells" : frontier_cells_new,
+        "tracked_cells"  : tracked_cells_new,
     }
 
 
-# FIXME: stub
-# TODO: Add exit conditions for a max_duration or no perimeter cells found and that should be the spread algorithm!
-def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, cell_height, start_time,
-                               use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1):
+def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, cell_height, band_duration, start_time,
+                               max_duration=None, use_wind_limit=True, max_length_to_width_ratio=None,
+                               max_cells_per_timestep=1, buffer_width=3):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -6209,52 +6215,83 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
       - foliar_moisture               :: kg moisture/kg ovendry weight
       - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
       - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
-    - phi                       :: 2D float array of values in [-1,1]
+    - output_matrices           :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
+      - phi                           :: 2D float array of values in [-1,1]
+      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+      - spread_rate                   :: 2D float array (m/min)
+      - spread_direction              :: 2D float array (degrees clockwise from North)
+      - fireline_intensity            :: 2D float array (kW/m)
+      - flame_length                  :: 2D float array (m)
+      - time_of_arrival               :: 2D float array (min)
     - cell_width                :: meters
     - cell_height               :: meters
-    - start_time                :: minutes
+    - band_duration             :: minutes
+    - start_time                :: minutes (from the start of the space_time_cube's temporal origin)
+    - max_duration              :: minutes (Optional)
     - use_wind_limit            :: boolean (Optional)
     - max_length_to_width_ratio :: float > 0.0 (Optional)
+    - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)
+    - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
 
-    return a dictionary with these fire behavior values for the space-time region:
-    - phi_final          :: 2D float array of values in [-1,1]
-    - fire_type          :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
-    - spread_rate        :: 2D float array (m/min)
-    - spread_direction   :: 2D float array (degrees clockwise from North)
-    - fireline_intensity :: 2D float array (kW/m)
-    - flame_length       :: 2D float array (m)
-    - time_of_arrival    :: 2D float array (min)
+    return a dictionary with these keys:
+    - stop_time            :: minutes
+    - stop_condition       :: string
+    - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
+      - phi                   :: 2D float array of values in [-1,1]
+      - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+      - spread_rate           :: 2D float array (m/min)
+      - spread_direction      :: 2D float array (degrees clockwise from North)
+      - fireline_intensity    :: 2D float array (kW/m)
+      - flame_length          :: 2D float array (m)
+      - time_of_arrival       :: 2D float array (min)
     """
-    # Sketch of Fire Spread Progression Algorithm:
-    # ==============================================================================================
-    # 2. Exit if start_time + dt > max_stop_time.
-    # 3. Create phi_star and phi_next 2D arrays.
-    # 4. Identify perimeter cells with a buffer from phi 2D array.
-    # 5. Exit if no perimeter cells are found.
-    # 6. For each perimeter cell [y,x]:
-    #    3.1. phi_gradient_xy = calc_phi_gradient_approx(phi, cell_width, cell_height, x, y)
-    #    3.2. if vector_magnitude(phi_gradient_xy) == 0.0:
-    #         3.2.1. Skip this cell since it is not on the perimeter. Return to 3.1. for the next perimeter cell.
-    #         else:
-    #         3.2.2  Look up slope and aspect from the space_time_cubes dictionary.
-    #         3.2.3. elevation_gradient = calc_elevation_gradient(slope, aspect)
-    #         3.2.4. phi_gradient_on_slope = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
-    #         3.2.5. (dphi_dt, fire_behavior) = burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate,
-    #                                                                         phi_gradient, use_wind_limit,
-    #                                                                         max_length_to_width_ratio)
-    #    3.3. Calculate dt using the CFL condition.
-    #    3.4. Set phi_star[y][x] = phi[y][x] + dphi_dt * dt
-    # 6. Jump to step 4 and set the time to (start_time + dt). Also replace phi -> phi_star and phi_star -> phi_next.
-    # 7. Set the phi 2D array to be the average of phi and phi_next.
-    # 8. Jump to step 2 and repeat for the next timestep.
+    # Extract simulation dimensions
+    (bands, rows, cols) = space_time_cubes["slope"].shape
+    cube_duration       = bands * band_duration
 
-    results = spread_fire_one_timestep(space_time_cubes, output_matrices, cell_width, cell_height, start_time,
-                                       use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1)
+    # Ensure that space_time_cubes and output_matrices have the same spatial resolution
+    for layer in output_matrices:
+        if output_matrices[layer].shape != (rows, cols):
+            raise ValueError("The space_time_cubes and output_matrices must share the same spatial resolution.")
 
-    new_time                = results["simulation_time"]
-    updated_output_matrices = results["output_matrices"]
+    # Calculate the max stop time
+    max_stop_time = start_time + max_duration if max_duration else cube_duration
 
-    return None
+    # Ensure that start_time does not exceed the cube_duration
+    if start_time > cube_duration:
+        raise ValueError("The start_time exceeds the temporal limit of the space_time_cubes.")
+
+    # Ensure that the max_stop_time does not exceed the cube_duration
+    if max_stop_time > cube_duration:
+        raise ValueError("The start_time + max_duration exceeds the temporal limit of the space_time_cubes.")
+
+    # Identify the sets of frontier cells and tracked cells based on the phi matrix
+    phi_matrix     = output_matrices["phi"]
+    frontier_cells = identify_frontier_cells(phi_matrix)
+    tracked_cells  = identify_tracked_cells(frontier_cells, buffer_width, (rows, cols))
+
+    # Spread the fire until an exit condition is reached
+    simulation_time = start_time
+    while(simulation_time < max_stop_time and len(tracked_cells) > 0):
+        # Compute max_timestep based on the remaining time in the simulation
+        max_timestep = max_stop_time - simulation_time
+
+        # Spread fire one timestep
+        results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
+                                           cell_width, cell_height, band_duration, simulation_time, max_timestep, 
+                                           use_wind_limit, max_length_to_width_ratio, max_cells_per_timestep,
+                                           buffer_width)
+        # Reset spread inputs
+        simulation_time = results["simulation_time"]
+        output_matrices = results["output_matrices"]
+        frontier_cells  = results["frontier_cells"]
+        tracked_cells   = results["tracked_cells"]
+
+    return {
+        "stop_time"      : simulation_time,
+        "stop_condition" : "max duration reached" if simulation_time >= max_stop_time else "no burnable cells",
+        "output_matrices": output_matrices,
+    }
 #+end_src
 
 @gjohnson I think the dt question is easy enough to answer: you want
