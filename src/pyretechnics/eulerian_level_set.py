@@ -820,18 +820,17 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         fire_behavior_dict[cell_index] = fire_behavior
 
     # Calculate timestep using the CFL condition
-    # TODO: Incorporate max_cells_per_timestep
     if max_spread_rate_x == 0.0:
         if max_spread_rate_y == 0.0:
             dt = max_timestep
         else:
-            dt = cell_height / max_spread_rate_y
+            dt = max_cells_per_timestep * cell_height / max_spread_rate_y
     else:
         if max_spread_rate_y == 0.0:
-            dt = cell_width / max_spread_rate_x
+            dt = max_cells_per_timestep * cell_width / max_spread_rate_x
         else:
-            dt = min(cell_width / max_spread_rate_x,
-                     cell_height / max_spread_rate_y)
+            dt = max_cells_per_timestep * min(cell_width / max_spread_rate_x,
+                                              cell_height / max_spread_rate_y)
 
     # Update the tracked cell values in phi_star_matrix
     for cell_index in tracked_cells:
