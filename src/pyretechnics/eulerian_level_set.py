@@ -805,10 +805,11 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                                                               phi_gradient_xy, use_wind_limit,
                                                               max_length_to_width_ratio)
 
-        # Keep a running tally of the max spread rates in the x and y dimensions
-        (spread_rate_x, spread_rate_y, _) = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
-        max_spread_rate_x = max(max_spread_rate_x, abs(spread_rate_x))
-        max_spread_rate_y = max(max_spread_rate_y, abs(spread_rate_y))
+        # Keep a running tally of the max spread rates in the x and y dimensions for unburned cells
+        if phi_matrix[y,x] > 0.0:
+            (spread_rate_x, spread_rate_y, _) = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
+            max_spread_rate_x = max(max_spread_rate_x, abs(spread_rate_x))
+            max_spread_rate_y = max(max_spread_rate_y, abs(spread_rate_y))
 
         # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
         phi_magnitude = vu.vector_magnitude(phi_gradient_xy)
@@ -835,7 +836,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     # Update the tracked cell values in phi_star_matrix
     for cell_index in tracked_cells:
         (y, x) = cell_index
-        phi_star_matrix[y][x] += fire_behavior_dict[cell_index]["dphi_dt"] * dt
+        phi_star_matrix[y,x] += fire_behavior_dict[cell_index]["dphi_dt"] * dt
 
     # Compute fire behavior values at time (start_time + dt) and update the output matrices
     for cell_index in tracked_cells:
@@ -864,21 +865,21 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         dphi_dt_estimate1 = fire_behavior["dphi_dt"]
         dphi_dt_estimate2 = fire_behavior_star["dphi_dt"]
         dphi_dt_average   = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
-        phi               = phi_matrix[y][x]
+        phi               = phi_matrix[y,x]
         phi_next          = phi + dphi_dt_average * dt
 
         # Update the tracked cell values in phi_matrix
-        phi_matrix[y][x] = phi_next
+        phi_matrix[y,x] = phi_next
 
         # Record fire behavior values in their respective output matrices for cells that are burned in this timestep
         # NOTE: This records the fire behavior values at time (start_time) and not at the time of arrival.
         if phi > 0.0 and phi_next <= 0.0:
-            fire_type_matrix[y][x]          = fire_type_codes[fire_behavior["fire_type"]]
-            spread_rate_matrix[y][x]        = fire_behavior["spread_rate"]
-            spread_direction_matrix[y][x]   = spread_direction_vector_to_angle(fire_behavior["spread_direction"])
-            fireline_intensity_matrix[y][x] = fire_behavior["fireline_intensity"]
-            flame_length_matrix[y][x]       = fire_behavior["flame_length"]
-            time_of_arrival_matrix[y][x]    = start_time + dt * phi / (phi - phi_next)
+            fire_type_matrix[y,x]          = fire_type_codes[fire_behavior["fire_type"]]
+            spread_rate_matrix[y,x]        = fire_behavior["spread_rate"]
+            spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fire_behavior["spread_direction"])
+            fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
+            flame_length_matrix[y,x]       = fire_behavior["flame_length"]
+            time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
     frontier_cells_new = identify_frontier_cells(phi_matrix, tracked_cells)
@@ -995,7 +996,3 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
         "output_matrices": output_matrices,
     }
 # spread-phi-field ends here
-# [[file:../../org/pyretechnics.org::*Spread Phi Field][Spread Phi Field:3]]
-# C_max will usually be 1
-dt = min(C_max * cell_size / max(max(x_spread_rates), max(y_spread_rates)), simulation_dtmax)
-# Spread Phi Field:3 ends here
