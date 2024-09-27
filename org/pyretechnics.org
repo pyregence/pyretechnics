@@ -4851,7 +4851,7 @@ combined_behavior_unlimited = bc.burn_cell_as_head_fire(space_time_cubes, space_
 # Display combined fire behavior in the direction of maximum spread (with wind limit)
 #============================================================================================
 
-print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate "
+print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate "
       + str(space_time_coordinate) + "\n" + "=" * 100)
 pprint(combined_behavior_limited)
 
@@ -4859,14 +4859,14 @@ pprint(combined_behavior_limited)
 # Display combined fire behavior in the direction of maximum spread (without wind limit)
 #============================================================================================
 
-print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate "
+print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate "
       + str(space_time_coordinate) + "\n" + "=" * 100)
 pprint(combined_behavior_unlimited)
 #+end_src
 
 #+RESULTS: run-burn-cell-as-head-fire
 #+begin_example
-Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate (24, 100, 100)
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
  'fireline_intensity': 32.52824122084378,
@@ -4874,7 +4874,7 @@ Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordina
  'spread_direction': array([0.48686888, 0.61304249, 0.62220383]),
  'spread_rate': 2.2964672435747526}
 
-Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate (24, 100, 100)
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
  'fireline_intensity': 50.61290793356301,
@@ -4954,7 +4954,7 @@ combined_behavior_unlimited = bc.burn_cell_toward_azimuth(space_time_cubes, spac
 # Display combined fire behavior in the direction of the azimuth (with wind limit)
 #============================================================================================
 
-print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate "
+print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate "
       + str(space_time_coordinate) + "\n" + "=" * 100)
 pprint(combined_behavior_limited)
 
@@ -4962,14 +4962,14 @@ pprint(combined_behavior_limited)
 # Display combined fire behavior in the direction of the azimuth (without wind limit)
 #============================================================================================
 
-print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate "
+print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate "
       + str(space_time_coordinate) + "\n" + "=" * 100)
 pprint(combined_behavior_unlimited)
 #+end_src
 
 #+RESULTS: run-burn-cell-toward-azimuth
 #+begin_example
-Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordinate (24, 100, 100)
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
  'fireline_intensity': 11.637272000784206,
@@ -4977,7 +4977,7 @@ Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at coordina
  'spread_direction': array([8.70388280e-01, 5.32959110e-17, 4.92365964e-01]),
  'spread_rate': 0.8215818916531423}
 
-Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at coordinate (24, 100, 100)
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
  'fireline_intensity': 13.898200796816093,
@@ -5188,10 +5188,13 @@ def calc_superbee_flux_limiter(dphi_up, dphi_loc):
     """
     TODO: Add docstring
     """
-    r = dphi_up / dphi_loc
-    return max(0,
-               min(2 * r, 1),
-               min(r, 2))
+    if dphi_loc == 0.0:
+        return 0.0
+    else:
+        r = dphi_up / dphi_loc
+        return max(0,
+                   min(2 * r, 1),
+                   min(r, 2))
 #+end_src
 
 To compute the inputs to this function, we build up the partial
@@ -6055,12 +6058,9 @@ def spread_direction_vector_to_angle(vector_3d):
     """
     TODO: Add docstring
     """
-    if vector_3d:
-        (x, y)       = vu.to_horizontal_plane(vector_3d)
-        (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
-        return azimuth
-    else:
-        return 0.0 # default: North
+    (x, y)       = vu.to_horizontal_plane(vector_3d)
+    (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
+    return azimuth
 
 
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
@@ -6243,7 +6243,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
 
     return a dictionary with these keys:
     - stop_time            :: minutes
-    - stop_condition       :: string
+    - stop_condition       :: "max duration reached" or "no burnable cells"
     - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
       - phi                   :: 2D float array of values in [-1,1]
       - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
@@ -6308,6 +6308,205 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
+
+*** How to Spread a Fire from a Point Ignition
+
+#+name: run-spread-fire-with-phi-field
+#+begin_src python
+import numpy as np
+from pprint import pprint
+import pyretechnics.eulerian_level_set as els
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240,  # bands: 10 days @ 1 hour/band
+    1000, # rows:  30 km @ 30 meters/row
+    1000, # cols:  30 km @ 30 meters/col
+)
+
+grid_shape = cube_shape[1:]
+
+#============================================================================================
+# Specify the SpaceTimeCube resolution
+#============================================================================================
+
+cube_resolution = (
+    60, # band_duration: minutes
+    30, # cell_height:   meters
+    30, # cell_width:    meters
+)
+
+(band_duration, cell_height, cell_width) = cube_resolution
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Create an output dictionary of 2D Numpy arrays
+#============================================================================================
+
+output_matrices = {
+    "phi"               : np.ones(grid_shape, dtype="float32"),       # 2D float array of values in [-1,1]
+    "fire_type"         : np.zeros(grid_shape, dtype="uint8"),        # 2D byte array (0-3)
+    "spread_rate"       : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m/min)
+    "spread_direction"  : np.zeros(grid_shape, dtype="float32"),      # 2D float array (degrees clockwise from North)
+    "fireline_intensity": np.zeros(grid_shape, dtype="float32"),      # 2D float array (kW/m)
+    "flame_length"      : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m)
+    "time_of_arrival"   : np.full(grid_shape, -1.0, dtype="float32"), # 2D float array (min)
+}
+
+#============================================================================================
+# Set the start time, max duration, and initially ignited cell
+#============================================================================================
+
+# Day 2 @ 10:30am
+start_time = 2070  # minutes
+
+# 4 hours
+max_duration = 240 # minutes
+
+# Burn initially ignited cell into the phi matrix by setting it to -1.0
+output_matrices["phi"][500,500] = -1.0
+
+#============================================================================================
+# Spread fire from the start time for the max duration
+#============================================================================================
+
+fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
+                                                     cell_width, cell_height, band_duration,
+                                                     start_time, max_duration)
+
+stop_time       = fire_spread_results["stop_time"]       # minutes
+stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached" or "no burnable cells"
+output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mutated from inputs)
+
+#============================================================================================
+# Display fire spread results
+#============================================================================================
+
+print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 2:30pm Spreading from Coordinate (500,500)\n" + "=" * 100)
+
+print("Stop Time: " + str(stop_time) + " (minutes)")
+print("Stop Condition: " + stop_condition)
+
+print("\nPhi (phi <= 0: burned, phi > 0: unburned")
+pprint(output_matrices["phi"])
+
+print("\nFire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)")
+pprint(output_matrices["fire_type"])
+
+print("\nSpread Rate (m/min)")
+pprint(output_matrices["spread_rate"])
+
+print("\nSpread Direction (degrees clockwise from North)")
+pprint(output_matrices["spread_direction"])
+
+print("\nFireline Intensity (kW/m)")
+pprint(output_matrices["fireline_intensity"])
+
+print("\nFlame Length (meters)")
+pprint(output_matrices["flame_length"])
+
+print("\nTime of Arrival (minutes)")
+pprint(output_matrices["time_of_arrival"])
+#+end_src
+
+#+RESULTS: run-spread-fire-with-phi-field
+#+begin_example
+Fire Behavior from Day 2 @ 10:30am - Day 2 @ 2:30pm Spreading from Coordinate (500,500)
+====================================================================================================
+Stop Time: 2314.16011142593 (minutes)
+Stop Condition: max duration reached
+
+Phi (phi <= 0: burned, phi > 0: unburned
+array([[1., 1., 1., ..., 1., 1., 1.],
+       [1., 1., 1., ..., 1., 1., 1.],
+       [1., 1., 1., ..., 1., 1., 1.],
+       ...,
+       [1., 1., 1., ..., 1., 1., 1.],
+       [1., 1., 1., ..., 1., 1., 1.],
+       [1., 1., 1., ..., 1., 1., 1.]], dtype=float32)
+
+Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+array([[0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       ...,
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0],
+       [0, 0, 0, ..., 0, 0, 0]], dtype=uint8)
+
+Spread Rate (m/min)
+array([[0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       ...,
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+
+Spread Direction (degrees clockwise from North)
+array([[0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       ...,
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+
+Fireline Intensity (kW/m)
+array([[0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       ...,
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+
+Flame Length (meters)
+array([[0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       ...,
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.],
+       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+
+Time of Arrival (minutes)
+array([[-1., -1., -1., ..., -1., -1., -1.],
+       [-1., -1., -1., ..., -1., -1., -1.],
+       [-1., -1., -1., ..., -1., -1., -1.],
+       ...,
+       [-1., -1., -1., ..., -1., -1., -1.],
+       [-1., -1., -1., ..., -1., -1., -1.],
+       [-1., -1., -1., ..., -1., -1., -1.]], dtype=float32)
+#+end_example
 
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
 ** For Developers

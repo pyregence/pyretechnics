@@ -84,10 +84,13 @@ def calc_superbee_flux_limiter(dphi_up, dphi_loc):
     """
     TODO: Add docstring
     """
-    r = dphi_up / dphi_loc
-    return max(0,
-               min(2 * r, 1),
-               min(r, 2))
+    if dphi_loc == 0.0:
+        return 0.0
+    else:
+        r = dphi_up / dphi_loc
+        return max(0,
+                   min(2 * r, 1),
+                   min(r, 2))
 # superbee-flux-limiter ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
 import numpy as np
@@ -750,12 +753,9 @@ def spread_direction_vector_to_angle(vector_3d):
     """
     TODO: Add docstring
     """
-    if vector_3d:
-        (x, y)       = vu.to_horizontal_plane(vector_3d)
-        (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
-        return azimuth
-    else:
-        return 0.0 # default: North
+    (x, y)       = vu.to_horizontal_plane(vector_3d)
+    (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
+    return azimuth
 
 
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
@@ -938,7 +938,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
 
     return a dictionary with these keys:
     - stop_time            :: minutes
-    - stop_condition       :: string
+    - stop_condition       :: "max duration reached" or "no burnable cells"
     - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
       - phi                   :: 2D float array of values in [-1,1]
       - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
