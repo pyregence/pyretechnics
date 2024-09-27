@@ -814,7 +814,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         phi_magnitude = vu.vector_magnitude(phi_gradient_xy)
         if phi_magnitude > 0.0:
             phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, *phi_gradient_xy, cell_width, cell_height, x, y)
-            fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude
+            fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / (phi_magnitude ** 2.0)
 
         # Store fire behavior values for later use
         fire_behavior_dict[cell_index] = fire_behavior
@@ -856,7 +856,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         if phi_magnitude > 0.0:
             phi_gradient_xy_star_limited = calc_phi_gradient(phi_star_matrix, *phi_gradient_xy_star,
                                                              cell_width, cell_height, x, y)
-            fire_behavior_star["dphi_dt"] *= np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) / phi_magnitude
+            fire_behavior_star["dphi_dt"] *= (np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) /
+                                              (phi_magnitude ** 2.0))
 
         # Calculate the new phi value at time (start_time + dt) as phi_next
         fire_behavior     = fire_behavior_dict[cell_index]
