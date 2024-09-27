@@ -6508,6 +6508,87 @@ array([[-1., -1., -1., ..., -1., -1., -1.],
        [-1., -1., -1., ..., -1., -1., -1.]], dtype=float32)
 #+end_example
 
+*** How to Create Images of Fire Behavior Outputs
+
+#+name: save-matrix-as-figure
+#+begin_src python :results silent
+import matplotlib.pyplot as plt
+
+
+def save_matrix_as_figure(matrix, colors, units, title, filename):
+    image    = plt.imshow(matrix, cmap=colors)
+    colorbar = plt.colorbar(image, orientation="vertical")
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+figure_configs = [
+    {
+        "matrix"  : output_matrices["phi"],
+        "colors"  : "viridis",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "../doc/pics/els_phi.png",
+    },
+    {
+        "matrix"  : output_matrices["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "../doc/pics/els_fire_type.png",
+    },
+    {
+        "matrix"  : output_matrices["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "../doc/pics/els_spread_rate.png",
+    },
+    {
+        "matrix"  : output_matrices["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "../doc/pics/els_spread_direction.png",
+    },
+    {
+        "matrix"  : output_matrices["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "../doc/pics/els_fireline_intensity.png",
+    },
+    {
+        "matrix"  : output_matrices["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "../doc/pics/els_flame_length.png",
+    },
+    {
+        "matrix"  : output_matrices["time_of_arrival"],
+        "colors"  : "viridis",
+        "units"   : "minutes",
+        "title"   : "Time of Arrival",
+        "filename": "../doc/pics/els_time_of_arrival.png",
+    },
+]
+
+
+for figure_config in figure_configs:
+    save_matrix_as_figure(**figure_config)
+#+end_src
+
+file:../doc/pics/els_phi.png
+file:../doc/pics/els_fire_type.png
+file:../doc/pics/els_spread_rate.png
+file:../doc/pics/els_spread_direction.png
+file:../doc/pics/els_fireline_intensity.png
+file:../doc/pics/els_flame_length.png
+file:../doc/pics/els_time_of_arrival.png
+
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
 ** For Developers
    :PROPERTIES:
