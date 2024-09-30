@@ -823,7 +823,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     # Calculate timestep using the CFL condition
     if max_spread_rate_x == 0.0:
         if max_spread_rate_y == 0.0:
-            dt = max_timestep
+            dt = max_timestep  # FIXME:  Don't set stop_time to start_time + dt when no cells are burning
         else:
             dt = min(max_timestep, max_cells_per_timestep * cell_height / max_spread_rate_y)
     else:
@@ -992,7 +992,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
 
     return {
         "stop_time"      : simulation_time,
-        "stop_condition" : "max duration reached" if simulation_time >= max_stop_time else "no burnable cells",
+        "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
     }
 # spread-phi-field ends here
