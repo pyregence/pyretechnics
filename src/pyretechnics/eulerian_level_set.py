@@ -760,7 +760,7 @@ def spread_direction_vector_to_angle(vector_3d):
 
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cell_width, cell_height, band_duration, start_time, max_timestep,
-                             use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=1,
+                             use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=0.5,
                              buffer_width=3):
     """
     TODO: Add docstring
@@ -897,7 +897,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
 def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, cell_height, band_duration, start_time,
                                max_duration=None, use_wind_limit=True, max_length_to_width_ratio=None,
-                               max_cells_per_timestep=1, buffer_width=3):
+                               max_cells_per_timestep=0.5, buffer_width=3):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
