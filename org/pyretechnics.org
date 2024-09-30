@@ -6324,9 +6324,9 @@ from pyretechnics.space_time_cube import SpaceTimeCube
 #============================================================================================
 
 cube_shape = (
-    240,  # bands: 10 days @ 1 hour/band
-    1000, # rows:  30 km @ 30 meters/row
-    1000, # cols:  30 km @ 30 meters/col
+    240, # bands: 10 days @ 1 hour/band
+    100, # rows:  3 km @ 30 meters/row
+    100, # cols:  3 km @ 30 meters/col
 )
 
 grid_shape = cube_shape[1:]
@@ -6388,11 +6388,11 @@ output_matrices = {
 # Day 2 @ 10:30am
 start_time = 2070  # minutes
 
-# 4 hours
-max_duration = 240 # minutes
+# 8 hours
+max_duration = 480 # minutes
 
 # Burn initially ignited cell into the phi matrix by setting it to -1.0
-output_matrices["phi"][500,500] = -1.0
+output_matrices["phi"][50,50] = -1.0
 
 #============================================================================================
 # Spread fire from the start time for the max duration
@@ -6410,7 +6410,7 @@ output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mu
 # Display fire spread results
 #============================================================================================
 
-print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 2:30pm Spreading from Coordinate (500,500)\n" + "=" * 100)
+print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)\n" + "=" * 100)
 
 print("Stop Time: " + str(stop_time) + " (minutes)")
 print("Stop Condition: " + stop_condition)
@@ -6439,9 +6439,9 @@ pprint(output_matrices["time_of_arrival"])
 
 #+RESULTS: run-spread-fire-with-phi-field
 #+begin_example
-Fire Behavior from Day 2 @ 10:30am - Day 2 @ 2:30pm Spreading from Coordinate (500,500)
+Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
 ====================================================================================================
-Stop Time: 2314.16011142593 (minutes)
+Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
@@ -6515,19 +6515,20 @@ array([[-1., -1., -1., ..., -1., -1., -1.],
 import matplotlib.pyplot as plt
 
 
-def save_matrix_as_figure(matrix, colors, units, title, filename):
-    image    = plt.imshow(matrix, cmap=colors)
-    colorbar = plt.colorbar(image, orientation="vertical")
+def save_matrix_as_figure(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
     colorbar.set_label(units)
     plt.title(title)
     plt.savefig(filename)
     plt.close("all")
 
 
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
 figure_configs = [
     {
         "matrix"  : output_matrices["phi"],
-        "colors"  : "viridis",
+        "colors"  : "plasma",
         "units"   : "phi <= 0: burned, phi > 0: unburned",
         "title"   : "Phi",
         "filename": "../doc/pics/els_phi.png",
@@ -6538,6 +6539,9 @@ figure_configs = [
         "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
         "title"   : "Fire Type",
         "filename": "../doc/pics/els_fire_type.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
     },
     {
         "matrix"  : output_matrices["spread_rate"],
@@ -6552,6 +6556,9 @@ figure_configs = [
         "units"   : "degrees clockwise from North",
         "title"   : "Spread Direction",
         "filename": "../doc/pics/els_spread_direction.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
     },
     {
         "matrix"  : output_matrices["fireline_intensity"],
