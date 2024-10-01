@@ -6072,9 +6072,8 @@ def spread_direction_vector_to_angle(vector_3d):
 
 
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
-                             cell_width, cell_height, band_duration, start_time, max_timestep,
-                             use_wind_limit=True, max_length_to_width_ratio=None, max_cells_per_timestep=0.4,
-                             buffer_width=3):
+                             cube_resolution, start_time, max_timestep, use_wind_limit=True,
+                             max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3):
     """
     TODO: Add docstring
     NOTE:
@@ -6085,6 +6084,9 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     - dt is the timestep in minutes.
     - start_time is the start time in minutes.
     """
+    # Extract simulation dimensions
+    (band_duration, cell_height, cell_width) = cube_resolution
+
     # Unpack output matrices
     phi_matrix                = output_matrices["phi"]
     fire_type_matrix          = output_matrices["fire_type"]
@@ -6212,7 +6214,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     }
 
 
-def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, cell_height, band_duration, start_time,
+def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration=None, use_wind_limit=True, max_length_to_width_ratio=None,
                                max_cells_per_timestep=0.4, buffer_width=3):
     """
@@ -6243,9 +6245,10 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
       - fireline_intensity            :: 2D float array (kW/m)
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
-    - cell_width                :: meters
-    - cell_height               :: meters
-    - band_duration             :: minutes
+    - cube_resolution           :: tuple with these fields:
+      - band_duration                 :: minutes
+      - cell_height                   :: meters
+      - cell_width                    :: meters
     - start_time                :: minutes (from the start of the space_time_cube's temporal origin)
     - max_duration              :: minutes (Optional)
     - use_wind_limit            :: boolean (Optional)
@@ -6267,6 +6270,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
     """
     # Extract simulation dimensions
     (bands, rows, cols) = space_time_cubes["slope"].shape
+    band_duration       = cube_resolution[0]
     cube_duration       = bands * band_duration
 
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
@@ -6298,9 +6302,8 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cell_width, ce
 
         # Spread fire one timestep
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
-                                           cell_width, cell_height, band_duration, simulation_time, max_timestep, 
-                                           use_wind_limit, max_length_to_width_ratio, max_cells_per_timestep,
-                                           buffer_width)
+                                           cube_resolution, simulation_time, max_timestep, use_wind_limit,
+                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width)
         # Reset spread inputs
         simulation_time = results["simulation_time"]
         output_matrices = results["output_matrices"]
@@ -6352,8 +6355,6 @@ cube_resolution = (
     30, # cell_height:   meters
     30, # cell_width:    meters
 )
-
-(band_duration, cell_height, cell_width) = cube_resolution
 
 #============================================================================================
 # Create an input dictionary of SpaceTimeCubes (using constant data for this example)
@@ -6411,8 +6412,7 @@ output_matrices["phi"][50,50] = -1.0
 #============================================================================================
 
 fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
-                                                     cell_width, cell_height, band_duration,
-                                                     start_time, max_duration)
+                                                     cube_resolution, start_time, max_duration)
 
 stop_time       = fire_spread_results["stop_time"]       # minutes
 stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached" or "no burnable cells"
