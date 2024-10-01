@@ -797,7 +797,9 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         (y, x) = cell_index
 
         # Calculate phi gradient on the horizontal plane
-        phi_gradient_xy = calc_phi_gradient_approx(phi_matrix, cell_width, cell_height, x, y)
+        phi_gradient_xy    = calc_phi_gradient_approx(phi_matrix, cell_width, cell_height, x, y)
+        phi_magnitude_xy   = vu.vector_magnitude(phi_gradient_xy)
+        phi_magnitude_xy_2 = phi_magnitude_xy ** 2.0
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate = (int(start_time // band_duration), y, x)
@@ -807,15 +809,17 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
         # Keep a running tally of the max spread rates in the x and y dimensions for unburned cells
         if phi_matrix[y,x] > 0.0:
-            (spread_rate_x, spread_rate_y, _) = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
-            max_spread_rate_x = max(max_spread_rate_x, abs(spread_rate_x))
-            max_spread_rate_y = max(max_spread_rate_y, abs(spread_rate_y))
+            dphi_dt            = fire_behavior["dphi_dt"]
+            (dphi_dx, dphi_dy) = phi_gradient_xy
+            spread_rate_x      = -dphi_dt * dphi_dx / phi_magnitude_xy_2
+            spread_rate_y      = -dphi_dt * dphi_dy / phi_magnitude_xy_2
+            max_spread_rate_x  = max(max_spread_rate_x, abs(spread_rate_x))
+            max_spread_rate_y  = max(max_spread_rate_y, abs(spread_rate_y))
 
         # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
-        phi_magnitude = vu.vector_magnitude(phi_gradient_xy)
-        if phi_magnitude > 0.0:
+        if phi_magnitude_xy > 0.0:
             phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, *phi_gradient_xy, cell_width, cell_height, x, y)
-            fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / (phi_magnitude ** 2.0)
+            fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude_xy_2
 
         # Store fire behavior values for later use
         fire_behavior_dict[cell_index] = fire_behavior
@@ -844,7 +848,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         (y, x) = cell_index
 
         # Calculate phi gradient on the horizontal plane
-        phi_gradient_xy_star = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
+        phi_gradient_xy_star  = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
+        phi_magnitude_xy_star = vu.vector_magnitude(phi_gradient_xy_star)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate = (int((start_time + dt) // band_duration), y, x)
@@ -853,12 +858,11 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                                                               max_length_to_width_ratio)
 
         # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
-        phi_magnitude = vu.vector_magnitude(phi_gradient_xy_star)
-        if phi_magnitude > 0.0:
+        if phi_magnitude_xy_star > 0.0:
             phi_gradient_xy_star_limited = calc_phi_gradient(phi_star_matrix, *phi_gradient_xy_star,
                                                              cell_width, cell_height, x, y)
             fire_behavior_star["dphi_dt"] *= (np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) /
-                                              (phi_magnitude ** 2.0))
+                                              (phi_magnitude_xy_star ** 2.0))
 
         # Calculate the new phi value at time (start_time + dt) as phi_next
         fire_behavior     = fire_behavior_dict[cell_index]
