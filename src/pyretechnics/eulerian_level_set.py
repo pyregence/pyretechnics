@@ -776,6 +776,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
     # Unpack output matrices
     phi_matrix                = output_matrices["phi"]
+    phi_star_matrix           = output_matrices["phi_star"]
     fire_type_matrix          = output_matrices["fire_type"]
     spread_rate_matrix        = output_matrices["spread_rate"]
     spread_direction_matrix   = output_matrices["spread_direction"]
@@ -789,10 +790,6 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
     # Create an empty dictionary to store intermediate fire behavior values per cell
     fire_behavior_dict = {}
-
-    # Make a copy of phi_matrix as phi_star_matrix
-    # TODO: Replace with a dictionary and a smarter lookup function or an array copy in place operation
-    phi_star_matrix = np.copy(phi_matrix)
 
     # Compute fire behavior values at time (start_time) and identify the max spread rates in the x and y dimensions
     t0 = int(start_time // band_duration)
@@ -893,6 +890,10 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                 flame_length_matrix[y,x]       = fire_behavior["flame_length"]
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
 
+    # Save the new phi_matrix values in phi_star_matrix
+    for (y,x) in tracked_cells:
+        phi_star_matrix[y,x] = phi_matrix[y,x]
+
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
     frontier_cells_new = identify_frontier_cells(phi_matrix, tracked_cells)
     tracked_cells_new  = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
@@ -987,6 +988,9 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     frontier_cells = identify_frontier_cells(phi_matrix)
     tracked_cells  = identify_tracked_cells(frontier_cells, buffer_width, (rows, cols))
 
+    # Make a copy of the phi matrix to use for intermediate calculations in each timestep
+    output_matrices["phi_star"] = np.copy(phi_matrix)
+
     # Spread the fire until an exit condition is reached
     simulation_time = start_time
     while(simulation_time < max_stop_time and len(tracked_cells) > 0):
@@ -997,12 +1001,17 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
                                            max_length_to_width_ratio, max_cells_per_timestep, buffer_width)
+
         # Reset spread inputs
         simulation_time = results["simulation_time"]
         output_matrices = results["output_matrices"]
         frontier_cells  = results["frontier_cells"]
         tracked_cells   = results["tracked_cells"]
 
+    # Remove the temporary copy of the phi matrix from output_matrices
+    output_matrices.pop("phi_star")
+
+    # Return the final simulation results
     return {
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
