@@ -804,16 +804,13 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         phi_gradient_xy  = calc_phi_gradient_approx(phi_matrix, cell_width, cell_height, x, y)
         phi_magnitude_xy = vu.vector_magnitude(phi_gradient_xy)
 
-        # Check whether cell has a positive phi magnitude
-        if phi_magnitude_xy == 0.0:
-            # Store fire behavior values for later use
-            fire_behavior_dict[cell_index] = {"dphi_dt": 0.0}
-        else:
-            # Calculate the fire behavior normal to the fire front on the slope-tangential plane
-            fire_behavior = burn_cell_toward_phi_gradient(space_time_cubes, (t0, y, x),
-                                                          phi_gradient_xy, use_wind_limit,
-                                                          max_length_to_width_ratio)
+        # Calculate the fire behavior normal to the fire front on the slope-tangential plane
+        fire_behavior = burn_cell_toward_phi_gradient(space_time_cubes, (t0, y, x),
+                                                      phi_gradient_xy, use_wind_limit,
+                                                      max_length_to_width_ratio)
 
+        # Check whether cell has a positive phi magnitude
+        if phi_magnitude_xy > 0.0:
             # Keep a running tally of the max horizontal spread rates in the x and y dimensions for unburned cells
             (dphi_dx, dphi_dy) = phi_gradient_xy
             phi_magnitude_xy_2 = phi_magnitude_xy ** 2.0
@@ -828,8 +825,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
             phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, dphi_dx, dphi_dy, cell_width, cell_height, x, y)
             fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude_xy_2
 
-            # Store fire behavior values for later use
-            fire_behavior_dict[cell_index] = fire_behavior
+        # Store fire behavior values for later use
+        fire_behavior_dict[cell_index] = fire_behavior
 
     # Calculate timestep using the CFL condition
     if max_spread_rate_x == 0.0:
@@ -861,15 +858,13 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         phi_gradient_xy_star  = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
         phi_magnitude_xy_star = vu.vector_magnitude(phi_gradient_xy_star)
 
-        # Check whether cell has a positive phi magnitude
-        if phi_magnitude_xy_star == 0.0:
-            fire_behavior_star = {"dphi_dt": 0.0}
-        else:
-            # Calculate the fire behavior normal to the fire front on the slope-tangential plane
-            fire_behavior_star = burn_cell_toward_phi_gradient(space_time_cubes, (t1, y, x),
-                                                               phi_gradient_xy_star, use_wind_limit,
-                                                               max_length_to_width_ratio)
+        # Calculate the fire behavior normal to the fire front on the slope-tangential plane
+        fire_behavior_star = burn_cell_toward_phi_gradient(space_time_cubes, (t1, y, x),
+                                                           phi_gradient_xy_star, use_wind_limit,
+                                                           max_length_to_width_ratio)
 
+        # Check whether cell has a positive phi magnitude
+        if phi_magnitude_xy_star > 0.0:
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
             phi_gradient_xy_star_limited = calc_phi_gradient(phi_star_matrix, *phi_gradient_xy_star,
                                                              cell_width, cell_height, x, y)
