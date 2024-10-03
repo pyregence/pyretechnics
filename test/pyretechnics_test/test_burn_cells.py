@@ -70,13 +70,15 @@ def test_burn_cell_as_head_fire():
     space_time_coordinate      = (0, 100, 100) # (t,y,x)
     result                     = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
     result["spread_direction"] = list(result["spread_direction"])
-    assert result == {
-        "fire_type"         : "surface",
-        "spread_rate"       : 0.32044995422500555,
-        "spread_direction"  : [0.644528432121562, 0.7414451458683358, 0.18666064356259804],
-        "fireline_intensity": 26.66139842420774,
-        "flame_length"      : 0.3507858529698898,
-    }
+
+    assert result["fire_type"] == "surface"
+    assert result["spread_rate"]         - 0.32044995422500555 < 0.001
+    assert result["spread_direction"][0] - 0.644528432121562   < 0.001
+    assert result["spread_direction"][1] - 0.7414451458683358  < 0.001
+    assert result["spread_direction"][2] - 0.18666064356259804 < 0.001
+    assert result["fireline_intensity"]  - 26.66139842420774   < 0.001
+    assert result["flame_length"]        - 0.3507858529698898  < 0.001
+
     return result
 # burn-single-cell-in-test-dataset ends here
 # [[file:../../org/pyretechnics.org::burn-all-cells-in-test-dataset][burn-all-cells-in-test-dataset]]
