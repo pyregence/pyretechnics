@@ -2,28 +2,42 @@
 import numpy as np
 
 
-def calc_dphi_dx_approx(phi, dx, x, y):
+def calc_dphi_dx_approx(phi, dx, x, y, cols):
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given the cell width dx.
-
-    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
-          of the grid in Python arrays. Thus, as x increases, we move
-          to the east, and as y increases, we move to the south.
     """
-    return (phi[y][x+1] - phi[y][x-1]) / (2.0 * dx)
+    east_x = x + 1
+    west_x = x - 1
+    if east_x < cols:
+        if west_x >= 0:
+            return (phi[y][east_x] - phi[y][west_x]) / (2.0 * dx)
+        else:
+            return (phi[y][east_x] - phi[y][x]) / dx
+    else:
+        if west_x >= 0:
+            return (phi[y][x] - phi[y][west_x]) / dx
+        else:
+            return 0.0
 
 
-def calc_dphi_dy_approx(phi, dy, x, y):
+def calc_dphi_dy_approx(phi, dy, x, y, rows):
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given the cell height dy.
-
-    NOTE: The origin cell (x=0,y=0) is located in the upper left corner
-          of the grid in Python arrays. Thus, as x increases, we move
-          to the east, and as y increases, we move to the south.
     """
-    return (phi[y-1][x] - phi[y+1][x]) / (2.0 * dy)
+    north_y = y + 1
+    south_y = y - 1
+    if north_y < rows:
+        if south_y >= 0:
+            return (phi[north_y][x] - phi[south_y][x]) / (2.0 * dy)
+        else:
+            return (phi[north_y][x] - phi[y][x]) / dy
+    else:
+        if south_y >= 0:
+            return (phi[y][x] - phi[south_y][x]) / dy
+        else:
+            return 0.0
 
 
 def calc_phi_gradient_approx(phi, dx, dy, x, y):
@@ -31,8 +45,9 @@ def calc_phi_gradient_approx(phi, dx, dy, x, y):
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
     """
-    dphi_dx = calc_dphi_dx_approx(phi, dx, x, y)
-    dphi_dy = calc_dphi_dy_approx(phi, dy, x, y)
+    (rows, cols) = phi.shape
+    dphi_dx      = calc_dphi_dx_approx(phi, dx, x, y, cols)
+    dphi_dy      = calc_dphi_dy_approx(phi, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
@@ -96,21 +111,21 @@ def calc_superbee_flux_limiter(dphi_up, dphi_loc):
 import numpy as np
 
 
-def calc_dphi_dx(phi, u_x, dx, x, y):
+def calc_dphi_dx(phi, u_x, dx, x, y, cols):
     """
     TODO: Add docstring
     """
-    phi_east = calc_phi_east(phi, u_x, x, y)
-    phi_west = calc_phi_west(phi, u_x, x, y)
+    phi_east = calc_phi_east(phi, u_x, x, y, cols)
+    phi_west = calc_phi_west(phi, u_x, x, y, cols)
     return (phi_east - phi_west) / dx
 
 
-def calc_dphi_dy(phi, u_y, dy, x, y):
+def calc_dphi_dy(phi, u_y, dy, x, y, rows):
     """
     TODO: Add docstring
     """
-    phi_north = calc_phi_north(phi, u_y, x, y)
-    phi_south = calc_phi_south(phi, u_y, x, y)
+    phi_north = calc_phi_north(phi, u_y, x, y, rows)
+    phi_south = calc_phi_south(phi, u_y, x, y, rows)
     return (phi_north - phi_south) / dy
 
 
@@ -118,67 +133,84 @@ def calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y):
     """
     TODO: Add docstring
     """
-    dphi_dx = calc_dphi_dx(phi, u_x, dx, x, y)
-    dphi_dy = calc_dphi_dy(phi, u_y, dy, x, y)
+    (rows, cols) = phi.shape
+    dphi_dx      = calc_dphi_dx(phi, u_x, dx, x, y, cols)
+    dphi_dy      = calc_dphi_dy(phi, u_y, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
-def calc_phi_east(phi, u_x, x, y):
+def calc_phi_east(phi, u_x, x, y, cols):
     """
     TODO: Add docstring
     """
-    dphi_loc = phi[y][x+1] - phi[y][x]
+    very_east_x = min(x+2, cols-1)
+    east_x      = min(x+1, cols-1)
+    west_x      = max(x-1, 0)
+
+    dphi_loc = phi[y][east_x] - phi[y][x]
     if u_x >= 0:
-        dphi_up = phi[y][x] - phi[y][x-1]
+        dphi_up = phi[y][x] - phi[y][west_x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x+2] - phi[y][x+1]
+        dphi_up = phi[y][very_east_x] - phi[y][east_x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x+1] - 0.5 * B * dphi_loc
+        return phi[y][east_x] - 0.5 * B * dphi_loc
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
-def calc_phi_west(phi, u_x, x, y):
+def calc_phi_west(phi, u_x, x, y, cols):
     """
     TODO: Add docstring
     """
-    dphi_loc = phi[y][x-1] - phi[y][x]
+    east_x      = min(x+1, cols-1)
+    west_x      = max(x-1, 0)
+    very_west_x = max(x-2, 0)
+
+    dphi_loc = phi[y][west_x] - phi[y][x]
     if u_x >= 0:
-        dphi_up = phi[y][x-2] - phi[y][x-1]
+        dphi_up = phi[y][very_west_x] - phi[y][west_x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x-1] - 0.5 * B * dphi_loc
+        return phi[y][west_x] - 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x] - phi[y][x+1]
+        dphi_up = phi[y][x] - phi[y][east_x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
-def calc_phi_north(phi, u_y, x, y):
+def calc_phi_north(phi, u_y, x, y, rows):
     """
     TODO: Add docstring
     """
-    dphi_loc = phi[y-1][x] - phi[y][x]
+    very_north_y = min(y+2, rows-1)
+    north_y      = min(y+1, rows-1)
+    south_y      = max(y-1, 0)
+
+    dphi_loc = phi[north_y][x] - phi[y][x]
     if u_y >= 0:
-        dphi_up = phi[y][x] - phi[y+1][x]
+        dphi_up = phi[y][x] - phi[south_y][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y-2][x] - phi[y-1][x]
+        dphi_up = phi[very_north_y][x] - phi[north_y][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y-1][x] - 0.5 * B * dphi_loc
+        return phi[north_y][x] - 0.5 * B * dphi_loc
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
-def calc_phi_south(phi, u_y, x, y):
+def calc_phi_south(phi, u_y, x, y, rows):
     """
     TODO: Add docstring
     """
-    dphi_loc = phi[y+1][x] - phi[y][x]
+    north_y      = min(y+1, rows-1)
+    south_y      = max(y-1, 0)
+    very_south_y = max(y-2, 0)
+
+    dphi_loc = phi[south_y][x] - phi[y][x]
     if u_y >= 0:
-        dphi_up = phi[y+2][x] - phi[y+1][x]
+        dphi_up = phi[very_south_y][x] - phi[south_y][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y+1][x] - 0.5 * B * dphi_loc
+        return phi[south_y][x] - 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x] - phi[y-1][x]
+        dphi_up = phi[y][x] - phi[north_y][x]
         B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-south ends here
