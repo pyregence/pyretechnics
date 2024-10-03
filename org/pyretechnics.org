@@ -6575,7 +6575,7 @@ import matplotlib.pyplot as plt
 
 
 def save_matrix_as_figure(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
-    image    = plt.imshow(matrix, cmap=colors, vmin=vmin, vmax=vmax)
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
     colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
     colorbar.set_label(units)
     plt.title(title)
