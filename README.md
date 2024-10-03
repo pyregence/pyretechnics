@@ -117,16 +117,23 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
 
 6.  Installing the Pyretechnics Library with Guix
 
-    In order to install the Pyretechnics library into your Guix
-    profile, you can run this command:
+    You have two options for installing the Pyretechnics library locally:
+
+    First, you can simply install it into a temporary shell
+    environment like so:
 
     ```sh
-    ./make.sh install
+    ./make.sh install-shell
     ```
 
-    **NOTE:** You must also install `python` into your Guix profile in
-    order for the correct environment variables to be made available.
-    The command above takes care of this.
+    You can leave this shell by typing `exit`.
+
+    Your second option is to install the Pyretechnics library into
+    your Guix profile with this command:
+
+    ```sh
+    ./make.sh install-user
+    ```
 
     Next, you will need to invoke the following Bash commands in your
     shell to make the newly installed library available via
@@ -144,8 +151,9 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
 
 7.  Using the Pyretechnics Library
 
-    Once you have installed the library into your Guix profile, you
-    should be able to launch `python` and load the library as follows:
+    Once you have installed the library either into a temporary shell
+    environment or into your Guix profile, you should be able to
+    launch `python` and load the library as follows:
 
     ```python
     import pyretechnics

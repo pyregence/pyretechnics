@@ -9,7 +9,8 @@ Usage: $0 <command>
   - container-shell
   - test
   - build
-  - install
+  - install-shell
+  - install-user
   - weave
   - tangle
   - detangle
@@ -30,38 +31,45 @@ then
     exit 1
 fi
 
-case $1 in
+CMD=$1
+ARGS=${@:2:$#}
+
+case $CMD in
 
     "shell")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm
+        guix time-machine -C channels.scm -- shell -D -f guix.scm $ARGS
         ;;
 
     "container-shell")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh
+        guix time-machine -C channels.scm -- shell -D -f guix.scm --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh $ARGS
         ;;
 
     "test")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv $ARGS
         ;;
 
     "build")
-        guix time-machine -C channels.scm -- build -f guix.scm
+        guix time-machine -C channels.scm -- build -f guix.scm $ARGS
         ;;
 
-    "install")
-        guix time-machine -C channels.scm -- install -L .guix/modules python-wrapper python-pyretechnics
+    "install-shell")
+        guix time-machine -C channels.scm -- shell -f guix.scm $ARGS
+        ;;
+
+    "install-user")
+        guix time-machine -C channels.scm -- install -L .guix/modules python-wrapper python-pyretechnics $ARGS
         ;;
 
     "weave")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/weave.el
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/weave.el $ARGS
         ;;
 
     "tangle")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/tangle.el
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/tangle.el $ARGS
         ;;
 
     "detangle")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/detangle.el
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/detangle.el $ARGS
         ;;
 
     *)

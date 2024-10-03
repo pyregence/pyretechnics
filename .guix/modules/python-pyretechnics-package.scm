@@ -6,6 +6,7 @@
   #:use-module ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
   #:use-module ((gnu packages geo)             #:select (gdal))
   #:use-module ((gnu packages less)            #:select (less))
+  #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-hatchling))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio python-matplotlib))
   #:use-module ((gnu packages ssh)             #:select (openssh))
@@ -52,6 +53,8 @@
                    python-hatchling
                    python-pytest))
    (propagated-inputs (list
+                       ;; Python3
+                       python-wrapper
                        ;; Python dependency libraries
                        python-numpy
                        python-rasterio
