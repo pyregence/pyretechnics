@@ -707,15 +707,23 @@ def identify_frontier_cells(phi_matrix, tracked_cells=None):
     if tracked_cells:
         for (y, x) in tracked_cells:
             # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
-            if (opposite_phi_signs(phi_matrix, max(0, y-1), x, min(rows-1, y+1), x) or
-                opposite_phi_signs(phi_matrix, y, min(cols-1, x+1), y, max(0, x-1))):
+            north_y = min(y+1, rows-1)
+            south_y = max(y-1, 0)
+            east_x  = min(x+1, cols-1)
+            west_x  = max(x-1, 0)
+            if (opposite_phi_signs(phi_matrix, north_y, x, south_y, x) or
+                opposite_phi_signs(phi_matrix, y, east_x, y, west_x)):
                 frontier_cells.add((y, x))
     else:
         for y in range(rows):
             for x in range(cols):
                 # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
-                if (opposite_phi_signs(phi_matrix, max(0, y-1), x, min(rows-1, y+1), x) or
-                    opposite_phi_signs(phi_matrix, y, min(cols-1, x+1), y, max(0, x-1))):
+                north_y = min(y+1, rows-1)
+                south_y = max(y-1, 0)
+                east_x  = min(x+1, cols-1)
+                west_x  = max(x-1, 0)
+                if (opposite_phi_signs(phi_matrix, north_y, x, south_y, x) or
+                    opposite_phi_signs(phi_matrix, y, east_x, y, west_x)):
                     frontier_cells.add((y, x))
     return frontier_cells
 

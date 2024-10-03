@@ -115,7 +115,6 @@ class SpaceTimeCube:
         Return the scalar value at index (t,y,x) by translating these cube coordinates
         to base coordinates and looking up the value within the base data.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative.
         """
         # Select value by spatio-temporal coordinate
@@ -130,7 +129,6 @@ class SpaceTimeCube:
         coordinates to base coordinates, looking up the array slice within the base data,
         and expanding it back to the cube_shape resolution.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative.
         NOTE: Range indices may include one or more None values and
               provide (inclusion, exclusion) semantics like Python array slice notation.
@@ -163,7 +161,6 @@ class SpaceTimeCube:
         cube coordinates to base coordinates, looking up the array slice within the base
         data, and expanding it back to the cube_shape resolution.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative.
         NOTE: Range indices may include one or more None values and
               provide (inclusion, exclusion) semantics like Python array slice notation.
@@ -206,7 +203,6 @@ class SpaceTimeCube:
         these cube coordinates to base coordinates, looking up the array slice within the
         base data, and expanding it back to the cube_shape resolution.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative.
         NOTE: Range indices may include one or more None values and
               provide (inclusion, exclusion) semantics like Python array slice notation.
@@ -372,7 +368,6 @@ class LazySpaceTimeCube:
         to cache and subcube coordinates, loading the matching subcube into the cache grid
         if not already present, and looking up the value within this subcube.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative provided that your load_subcube function can handle
               negative indices in its cache_index argument.
         """
@@ -391,7 +386,6 @@ class LazySpaceTimeCube:
         the cache grid if not already present, looking up the array slices within each
         subcube, and merging them together into a single 1D array.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative provided that your load_subcube function can handle
               negative indices in its cache_index argument.
         NOTE: Range indices may include one or more None values and
@@ -428,7 +422,6 @@ class LazySpaceTimeCube:
         into the cache grid if not already present, looking up the array slices within each
         subcube, and merging them together into a single 2D array.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative provided that your load_subcube function can handle
               negative indices in its cache_index argument.
         NOTE: Range indices may include one or more None values and
@@ -470,7 +463,6 @@ class LazySpaceTimeCube:
         subcubes into the cache grid if not already present, looking up the array slices
         within each subcube, and merging them together into a single 3D array.
 
-        NOTE: (t,y,x) = (0,0,0) is the upper-left corner of the array in the first timestep.
         NOTE: Indices may be negative provided that your load_subcube function can handle
               negative indices in its cache_index argument.
         NOTE: Range indices may include one or more None values and
