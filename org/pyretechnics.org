@@ -6571,9 +6571,10 @@ array([[-1., -1., -1., ..., -1., -1., -1.],
 #+name: save-matrix-as-figure
 #+begin_src python :results silent
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def save_matrix_as_figure(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
     image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
     colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
     colorbar.set_label(units)
@@ -6582,8 +6583,18 @@ def save_matrix_as_figure(matrix, colors, units, title, filename, vmin=None, vma
     plt.close("all")
 
 
+def save_matrix_as_contours(matrix, title, filename, levels=None):
+    fig, ax = plt.subplots()
+    cs      = ax.contour(matrix, levels=levels)
+    ax.clabel(cs, inline=True, fontsize=10)
+    ax.set_aspect('equal', 'box')
+    ax.set_title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
 # See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
-figure_configs = [
+heatmap_configs = [
     {
         "matrix"  : output_matrices["phi"],
         "colors"  : "plasma",
@@ -6632,18 +6643,25 @@ figure_configs = [
         "title"   : "Flame Length",
         "filename": "../doc/pics/els_flame_length.png",
     },
+]
+
+
+contour_configs = [
     {
         "matrix"  : output_matrices["time_of_arrival"],
-        "colors"  : "viridis",
-        "units"   : "minutes",
         "title"   : "Time of Arrival",
         "filename": "../doc/pics/els_time_of_arrival.png",
+        "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
     },
 ]
 
 
-for figure_config in figure_configs:
-    save_matrix_as_figure(**figure_config)
+for heatmap_config in heatmap_configs:
+    save_matrix_as_heatmap(**heatmap_config)
+
+
+for contour_config in contour_configs:
+    save_matrix_as_contours(**contour_config)
 #+end_src
 
 file:../doc/pics/els_phi.png
