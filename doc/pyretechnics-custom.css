@@ -1,6 +1,6 @@
 table {
     font-size: small;
-    margin-left: 15px;
+    margin: auto;
 }
 
 th {
@@ -15,4 +15,8 @@ td {
 
 a {
     color: brown;
+}
+
+table img {
+    width: 24vw;
 }

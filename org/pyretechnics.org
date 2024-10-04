@@ -6664,12 +6664,16 @@ for contour_config in contour_configs:
     save_matrix_as_contours(**contour_config)
 #+end_src
 
-file:../doc/pics/els_phi.png
-file:../doc/pics/els_fire_type.png
-file:../doc/pics/els_spread_rate.png
-file:../doc/pics/els_spread_direction.png
-file:../doc/pics/els_fireline_intensity.png
-file:../doc/pics/els_flame_length.png
+#+name: fire-behavior-matplotlib-heatmaps
+#+caption: Fire behavior attributes after 8 hours of spread
+|---------------------------------------------+-------------------------------------------|
+| file:../doc/pics/els_phi.png                | file:../doc/pics/els_fire_type.png        |
+| file:../doc/pics/els_spread_rate.png        | file:../doc/pics/els_spread_direction.png |
+| file:../doc/pics/els_fireline_intensity.png | file:../doc/pics/els_flame_length.png     |
+|---------------------------------------------+-------------------------------------------|
+
+#+name: time-of-arrival-matplotlib-countours
+#+caption: Time of arrival with hourly perimeters
 file:../doc/pics/els_time_of_arrival.png
 
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
