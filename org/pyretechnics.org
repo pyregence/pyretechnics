@@ -6466,8 +6466,17 @@ stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached
 output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mutated from inputs)
 
 #============================================================================================
-# Display fire spread results
+# Display summary statistics of our fire spread results
 #============================================================================================
+
+def get_array_stats(array):
+    return {
+        "Min"  : np.min(array),
+        "Max"  : np.max(array),
+        "Mean" : np.mean(array),
+        "Stdev": np.std(array),
+    }
+
 
 print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)\n" + "=" * 100)
 
@@ -6475,25 +6484,25 @@ print("Stop Time: " + str(stop_time) + " (minutes)")
 print("Stop Condition: " + stop_condition)
 
 print("\nPhi (phi <= 0: burned, phi > 0: unburned")
-pprint(output_matrices["phi"])
+pprint(get_array_stats(output_matrices["phi"]), sort_dicts=False)
 
 print("\nFire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)")
-pprint(output_matrices["fire_type"])
+pprint(get_array_stats(output_matrices["fire_type"]), sort_dicts=False)
 
 print("\nSpread Rate (m/min)")
-pprint(output_matrices["spread_rate"])
+pprint(get_array_stats(output_matrices["spread_rate"]), sort_dicts=False)
 
 print("\nSpread Direction (degrees clockwise from North)")
-pprint(output_matrices["spread_direction"])
+pprint(get_array_stats(output_matrices["spread_direction"]), sort_dicts=False)
 
 print("\nFireline Intensity (kW/m)")
-pprint(output_matrices["fireline_intensity"])
+pprint(get_array_stats(output_matrices["fireline_intensity"]), sort_dicts=False)
 
 print("\nFlame Length (meters)")
-pprint(output_matrices["flame_length"])
+pprint(get_array_stats(output_matrices["flame_length"]), sort_dicts=False)
 
 print("\nTime of Arrival (minutes)")
-pprint(output_matrices["time_of_arrival"])
+pprint(get_array_stats(output_matrices["time_of_arrival"]), sort_dicts=False)
 #+end_src
 
 #+RESULTS: run-spread-fire-with-phi-field
@@ -6504,67 +6513,25 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-array([[1., 1., 1., ..., 1., 1., 1.],
-       [1., 1., 1., ..., 1., 1., 1.],
-       [1., 1., 1., ..., 1., 1., 1.],
-       ...,
-       [1., 1., 1., ..., 1., 1., 1.],
-       [1., 1., 1., ..., 1., 1., 1.],
-       [1., 1., 1., ..., 1., 1., 1.]], dtype=float32)
+{'Min': -0.92562664, 'Max': 1.0, 'Mean': 0.90606785, 'Stdev': 0.3891296}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
-array([[0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0],
-       ...,
-       [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0],
-       [0, 0, 0, ..., 0, 0, 0]], dtype=uint8)
+{'Min': 0, 'Max': 1, 'Mean': 0.0503, 'Stdev': 0.21856328602947023}
 
 Spread Rate (m/min)
-array([[0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       ...,
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+{'Min': 0.0, 'Max': 2.2964673, 'Mean': 0.060979664, 'Stdev': 0.3007719}
 
 Spread Direction (degrees clockwise from North)
-array([[0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       ...,
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+{'Min': 0.0, 'Max': 359.1836, 'Mean': 9.633849, 'Stdev': 49.50558}
 
 Fireline Intensity (kW/m)
-array([[0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       ...,
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+{'Min': 0.0, 'Max': 32.52824, 'Mean': 0.8637446, 'Stdev': 4.2602744}
 
 Flame Length (meters)
-array([[0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       ...,
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.],
-       [0., 0., 0., ..., 0., 0., 0.]], dtype=float32)
+{'Min': 0.0, 'Max': 0.38439327, 'Mean': 0.0138476025, 'Stdev': 0.06239403}
 
 Time of Arrival (minutes)
-array([[-1., -1., -1., ..., -1., -1., -1.],
-       [-1., -1., -1., ..., -1., -1., -1.],
-       [-1., -1., -1., ..., -1., -1., -1.],
-       ...,
-       [-1., -1., -1., ..., -1., -1., -1.],
-       [-1., -1., -1., ..., -1., -1., -1.],
-       [-1., -1., -1., ..., -1., -1., -1.]], dtype=float32)
+{'Min': -1.0, 'Max': 2548.0952, 'Mean': 119.04421, 'Stdev': 522.27325}
 #+end_example
 
 *** How to Create Images of Fire Behavior Outputs
