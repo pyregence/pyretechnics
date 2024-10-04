@@ -16,6 +16,7 @@
 #+KEYWORDS: pyretechnics fire behavior model python library pyregence pyrecast
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics-base.css" />
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics-custom.css" />
+#+INFOJS_OPT: view:info path:../doc/org-info.js
 
 # ================================
 # Code Block Settings
