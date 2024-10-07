@@ -1331,7 +1331,7 @@ np.random.seed(0)
 </pre>
 </div>
 
-<pre class="example" id="org2fd7e81">
+<pre class="example" id="space-time-cube-get-point-results">
 Value from Constant Data: Foliar Moisture
 0.7 
 
@@ -1368,7 +1368,7 @@ Value from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 
-<pre class="example" id="orgbb26206">
+<pre class="example" id="space-time-cube-get-time-series-results">
 Time Series from Constant Data: Foliar Moisture
 [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7] 
 
@@ -1405,7 +1405,7 @@ Time Series from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 
-<pre class="example" id="org05a6fae">
+<pre class="example" id="space-time-cube-get-spatial-plane-results">
 Spatial Plane from Constant Data: Foliar Moisture
 [[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
@@ -1478,7 +1478,7 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 
-<pre class="example" id="org56e7da0">
+<pre class="example" id="space-time-cube-get-subcube-results">
 Subcube from Constant Data: Foliar Moisture
 [[[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
@@ -1704,7 +1704,7 @@ np.random.seed(0)
 </pre>
 </div>
 
-<pre class="example" id="org82b22d0">
+<pre class="example" id="lazy-space-time-cube-get-point-results">
 Value from Constant Data: Foliar Moisture
 0.7 
 
@@ -1741,7 +1741,7 @@ Value from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 
-<pre class="example" id="orga483bbe">
+<pre class="example" id="lazy-space-time-cube-get-time-series-results">
 Time Series from Constant Data: Foliar Moisture
 [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7] 
 
@@ -1778,7 +1778,7 @@ Time Series from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 
-<pre class="example" id="orgcf14393">
+<pre class="example" id="lazy-space-time-cube-get-spatial-plane-results">
 Spatial Plane from Constant Data: Foliar Moisture
 [[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
@@ -1851,7 +1851,7 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 
-<pre class="example" id="org0d37a89">
+<pre class="example" id="lazy-space-time-cube-get-subcube-results">
 Subcube from Constant Data: Foliar Moisture
 [[[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
@@ -2233,7 +2233,7 @@ these fuel models, and to expand those properties whose values may
 vary by size class into lists with the following encoding:
 </p>
 
-<pre class="example" id="orgccf519a">
+<pre class="example" id="fuel-model-categories-and-size-classes">
 [dead_1hr dead_10hr dead_100hr dead_herbaceous live_herbaceous live_woody]
 </pre>
 
@@ -2578,7 +2578,7 @@ pprint(dynamic_fuel_model)
 </pre>
 </div>
 
-<pre class="example" id="org73d1b97">
+<pre class="example" id="look-up-fuel-model-properties-results">
 Static Fuel Model: R01
 {'M_x': [0.12, 0.12, 0.12, 0.0, 0.0, 0.0],
  'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
@@ -2639,7 +2639,7 @@ pprint(moisturize(dynamic_fuel_model, fuel_moisture))
 </pre>
 </div>
 
-<pre class="example" id="orgef7bd00">
+<pre class="example" id="moisturize-fuel-model-results">
 Moisturized Static Fuel Model: R01
 {'M_f': [0.05, 0.1, 0.15, 0.0, 0.3, 0.5],
  'M_x': [0.12, 0.12, 0.12, 0.0, 0.12, 0.12],
@@ -3881,7 +3881,7 @@ pprint(surface_fire_max_unlimited)
 </pre>
 </div>
 
-<pre class="example" id="org0640c8a">
+<pre class="example" id="compute-surface-fire-behavior-max-results">
 Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'eccentricity': 0.8693098652160369,
  'length_to_width_ratio': 2.0231959552088243,
@@ -3963,7 +3963,7 @@ pprint(backing_fire_behavior)
 </pre>
 </div>
 
-<pre class="example" id="orgbe6eea3">
+<pre class="example" id="compute-surface-fire-behavior-in-direction-results">
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
  'fireline_intensity': 32.528241220843725,
@@ -4755,7 +4755,7 @@ the full list of available vector manipulation functions.
 </pre>
 </div>
 
-<pre class="example" id="org6a4192d">
+<pre class="example" id="check-crown-fire-initiation-results">
 Low Canopy Cover and Low Surface Fireline Intensity
 ============================================================
 
@@ -4873,7 +4873,7 @@ pprint(crown_fire_max_perpendicular)
 </pre>
 </div>
 
-<pre class="example" id="org680d9d2">
+<pre class="example" id="compute-crown-fire-behavior-max-results">
 Crown Fire Behavior Max with Wind and Slope Aligned
 ============================================================
 
@@ -4977,7 +4977,7 @@ pprint(backing_fire_behavior)
 </pre>
 </div>
 
-<pre class="example" id="orgdae2614">
+<pre class="example" id="compute-crown-fire-behavior-in-direction-results">
 Heading Fire Behavior
 ============================================================
 {'fire_type': 'active_crown',
@@ -5727,7 +5727,7 @@ pprint(combined_behavior_unlimited)
 </pre>
 </div>
 
-<pre class="example" id="orga0f74d3">
+<pre class="example" id="run-burn-cell-as-head-fire-results">
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
@@ -5831,7 +5831,7 @@ pprint(combined_behavior_unlimited)
 </pre>
 </div>
 
-<pre class="example" id="org880fa3e">
+<pre class="example" id="run-burn-cell-toward-azimuth-results">
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
@@ -7454,7 +7454,7 @@ pprint(get_array_stats(output_matrices[<span class="org-string">"time_of_arrival
 </pre>
 </div>
 
-<pre class="example" id="org789f62a">
+<pre class="example" id="run-spread-fire-with-phi-field-results">
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
 ====================================================================================================
 Stop Time: 2550.0 (minutes)
@@ -10303,67 +10303,44 @@ meaningful results.
     plt.savefig(file_name)
     plt.close(<span class="org-string">"all"</span>)
     <span class="org-keyword">return</span> file_name
+
+savefig(title<span class="org-operator">=</span><span class="org-string">"Max Fire Type"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_fire_type"</span>, units<span class="org-operator">=</span><span class="org-string">"0=unburned,1=surface,2=passive_crown,3=active_crown"</span>, colors<span class="org-operator">=</span><span class="org-string">"viridis"</span>)
+savefig(title<span class="org-operator">=</span><span class="org-string">"Max Spread Rate"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_spread_rate"</span>, units<span class="org-operator">=</span><span class="org-string">"m/min"</span>, colors<span class="org-operator">=</span><span class="org-string">"hot"</span>)
+savefig(title<span class="org-operator">=</span><span class="org-string">"Max Spread Direction"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_spread_direction"</span>, units<span class="org-operator">=</span><span class="org-string">"degrees"</span>, colors<span class="org-operator">=</span><span class="org-string">"viridis"</span>)
+savefig(title<span class="org-operator">=</span><span class="org-string">"Max Fireline Intensity"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_fireline_intensity"</span>, units<span class="org-operator">=</span><span class="org-string">"kW/m"</span>, colors<span class="org-operator">=</span><span class="org-string">"hot"</span>)
+savefig(title<span class="org-operator">=</span><span class="org-string">"Max Flame Length"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_flame_length"</span>, units<span class="org-operator">=</span><span class="org-string">"m"</span>, colors<span class="org-operator">=</span><span class="org-string">"hot"</span>)
 </pre>
 </div>
 
-<div class="org-src-container">
-<pre class="src src-python">savefig(title<span class="org-operator">=</span><span class="org-string">"Max Fire Type"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_fire_type"</span>, units<span class="org-operator">=</span><span class="org-string">"0=unburned,1=surface,2=passive_crown,3=active_crown"</span>, colors<span class="org-operator">=</span><span class="org-string">"viridis"</span>)
-</pre>
-</div>
+<table id="max-fire-behavior-matplotlib-heatmaps">
+<caption class="t-above"><span class="table-number">Table 5:</span> Max fire behavior attributes</caption>
 
+<colgroup>
+<col  class="org-left">
 
-<div id="org4ad5151" class="figure">
-<p><img src="../doc/pics/worcester_max_fire_type.png" alt="worcester_max_fire_type.png">
-</p>
-</div>
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">&#xa0;</td>
+<td class="org-left"><img src="../doc/pics/worcester_max_fire_type.png" alt="worcester_max_fire_type.png"></td>
+</tr>
 
-<div class="org-src-container">
-<pre class="src src-python">savefig(title<span class="org-operator">=</span><span class="org-string">"Max Spread Rate"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_spread_rate"</span>, units<span class="org-operator">=</span><span class="org-string">"m/min"</span>, colors<span class="org-operator">=</span><span class="org-string">"hot"</span>)
-</pre>
-</div>
+<tr>
+<td class="org-left"><img src="../doc/pics/worcester_max_spread_rate.png" alt="worcester_max_spread_rate.png"></td>
+<td class="org-left"><img src="../doc/pics/worcester_max_spread_direction.png" alt="worcester_max_spread_direction.png"></td>
+</tr>
 
-
-<div id="orga68919e" class="figure">
-<p><img src="../doc/pics/worcester_max_spread_rate.png" alt="worcester_max_spread_rate.png">
-</p>
-</div>
+<tr>
+<td class="org-left"><img src="../doc/pics/worcester_max_fireline_intensity.png" alt="worcester_max_fireline_intensity.png"></td>
+<td class="org-left"><img src="../doc/pics/worcester_max_flame_length.png" alt="worcester_max_flame_length.png"></td>
+</tr>
+</tbody>
+</table>
 
 <p>
 Layer Disagreement: [-10.93608, 8.9857025] inches/min
 </p>
-
-<div class="org-src-container">
-<pre class="src src-python">savefig(title<span class="org-operator">=</span><span class="org-string">"Max Spread Direction"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_spread_direction"</span>, units<span class="org-operator">=</span><span class="org-string">"degrees"</span>, colors<span class="org-operator">=</span><span class="org-string">"viridis"</span>)
-</pre>
-</div>
-
-
-<div id="org87aa3e5" class="figure">
-<p><img src="../doc/pics/worcester_max_spread_direction.png" alt="worcester_max_spread_direction.png">
-</p>
-</div>
-
-<div class="org-src-container">
-<pre class="src src-python">savefig(title<span class="org-operator">=</span><span class="org-string">"Max Fireline Intensity"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_fireline_intensity"</span>, units<span class="org-operator">=</span><span class="org-string">"kW/m"</span>, colors<span class="org-operator">=</span><span class="org-string">"hot"</span>)
-</pre>
-</div>
-
-
-<div id="orgf52f53e" class="figure">
-<p><img src="../doc/pics/worcester_max_fireline_intensity.png" alt="worcester_max_fireline_intensity.png">
-</p>
-</div>
-
-<div class="org-src-container">
-<pre class="src src-python">savefig(title<span class="org-operator">=</span><span class="org-string">"Max Flame Length"</span>, layer<span class="org-operator">=</span><span class="org-string">"max_flame_length"</span>, units<span class="org-operator">=</span><span class="org-string">"m"</span>, colors<span class="org-operator">=</span><span class="org-string">"hot"</span>)
-</pre>
-</div>
-
-
-<div id="orga44391a" class="figure">
-<p><img src="../doc/pics/worcester_max_flame_length.png" alt="worcester_max_flame_length.png">
-</p>
-</div>
 </div>
 </div>
 </div>

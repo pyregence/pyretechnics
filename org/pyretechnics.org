@@ -890,6 +890,7 @@ print("Value from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.get(band, row, col))
 #+end_src
 
+#+NAME: space-time-cube-get-point-results
 #+RESULTS: space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
@@ -930,6 +931,7 @@ print("Time Series from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getTimeSeries(band_range, row, col))
 #+end_src
 
+#+NAME: space-time-cube-get-time-series-results
 #+RESULTS: space-time-cube-get-time-series
 #+begin_example
 Time Series from Constant Data: Foliar Moisture
@@ -970,6 +972,7 @@ print("Spatial Plane from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSpatialPlane(band, row_range, col_range))
 #+end_src
 
+#+NAME: space-time-cube-get-spatial-plane-results
 #+RESULTS: space-time-cube-get-spatial-plane
 #+begin_example
 Spatial Plane from Constant Data: Foliar Moisture
@@ -1046,6 +1049,7 @@ print("Subcube from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSubcube(band_range, row_range, col_range))
 #+end_src
 
+#+NAME: space-time-cube-get-subcube-results
 #+RESULTS: space-time-cube-get-subcube
 #+begin_example
 Subcube from Constant Data: Foliar Moisture
@@ -1274,6 +1278,7 @@ print("Value from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.get(band, row, col))
 #+end_src
 
+#+NAME: lazy-space-time-cube-get-point-results
 #+RESULTS: lazy-space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
@@ -1314,6 +1319,7 @@ print("Time Series from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getTimeSeries(band_range, row, col))
 #+end_src
 
+#+NAME: lazy-space-time-cube-get-time-series-results
 #+RESULTS: lazy-space-time-cube-get-time-series
 #+begin_example
 Time Series from Constant Data: Foliar Moisture
@@ -1354,6 +1360,7 @@ print("Spatial Plane from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSpatialPlane(band, row_range, col_range))
 #+end_src
 
+#+NAME: lazy-space-time-cube-get-spatial-plane-results
 #+RESULTS: lazy-space-time-cube-get-spatial-plane
 #+begin_example
 Spatial Plane from Constant Data: Foliar Moisture
@@ -1430,6 +1437,7 @@ print("Subcube from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSubcube(band_range, row_range, col_range))
 #+end_src
 
+#+NAME: lazy-space-time-cube-get-subcube-results
 #+RESULTS: lazy-space-time-cube-get-subcube
 #+begin_example
 Subcube from Constant Data: Foliar Moisture
@@ -1732,6 +1740,7 @@ $\rho_p$, $S_T$, and $S_e$ values, which are constant across all of
 these fuel models, and to expand those properties whose values may
 vary by size class into lists with the following encoding:
 
+#+NAME: fuel-model-categories-and-size-classes
 #+begin_example
 [dead_1hr dead_10hr dead_100hr dead_herbaceous live_herbaceous live_woody]
 #+end_example
@@ -2057,6 +2066,7 @@ print("\nDynamic Fuel Model: GR1")
 pprint(dynamic_fuel_model)
 #+end_src
 
+#+NAME: look-up-fuel-model-properties-results
 #+RESULTS: look-up-fuel-model-properties
 #+begin_example
 Static Fuel Model: R01
@@ -2120,6 +2130,7 @@ print("\nMoisturized Dynamic Fuel Model: GR1")
 pprint(moisturize(dynamic_fuel_model, fuel_moisture))
 #+end_src
 
+#+NAME: moisturize-fuel-model-results
 #+RESULTS: moisturize-fuel-model
 #+begin_example
 Moisturized Static Fuel Model: R01
@@ -3177,6 +3188,7 @@ print("No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moist
 pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_intensity", "max_effective_wind_speed"]})
 #+end_src
 
+#+NAME: compute-surface-fire-behavior-min-results
 #+RESULTS: compute-surface-fire-behavior-min
 : No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 : {'base_fireline_intensity': 1.789997884491001,
@@ -3217,6 +3229,7 @@ print("Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind D
       + "- Downwind Direction: " + str(conv.opposite_direction(upwind_direction)) + " (degrees clockwise from North)")
 #+end_src
 
+#+NAME: translate-10m-wind-to-midflame-wind-results
 #+RESULTS: translate-10m-wind-to-midflame-wind
 : Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Direction = 45.0
 :  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
@@ -3281,6 +3294,7 @@ print("\nSurface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Mois
 pprint(surface_fire_max_unlimited)
 #+end_src
 
+#+NAME: compute-surface-fire-behavior-max-results
 #+RESULTS: compute-surface-fire-behavior-max
 #+begin_example
 Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
@@ -3365,6 +3379,7 @@ print("\nBacking Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
 pprint(backing_fire_behavior)
 #+end_src
 
+#+NAME: compute-surface-fire-behavior-in-direction-results
 #+RESULTS: compute-surface-fire-behavior-in-direction
 #+begin_example
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
@@ -4123,6 +4138,7 @@ else:
     })
 #+end_src
 
+#+NAME: check-crown-fire-initiation-results
 #+RESULTS: check-crown-fire-initiation
 #+begin_example
 Low Canopy Cover and Low Surface Fireline Intensity
@@ -4243,6 +4259,7 @@ print("\nOutputs:")
 pprint(crown_fire_max_perpendicular)
 #+end_src
 
+#+NAME: compute-crown-fire-behavior-max-results
 #+RESULTS: compute-crown-fire-behavior-max
 #+begin_example
 Crown Fire Behavior Max with Wind and Slope Aligned
@@ -4349,6 +4366,7 @@ print("\nBacking Fire Behavior\n" + "=" * 60)
 pprint(backing_fire_behavior)
 #+end_src
 
+#+NAME: compute-crown-fire-behavior-in-direction-results
 #+RESULTS: compute-crown-fire-behavior-in-direction
 #+begin_example
 Heading Fire Behavior
@@ -4516,6 +4534,7 @@ else:
     pprint(surface_fire_normal)
 #+end_src
 
+#+NAME: compute-combined-fire-behavior-in-direction-results
 #+RESULTS: compute-combined-fire-behavior-in-direction
 : Fire Behavior from Surface Fire (No Crown Fire Occurred)
 : ============================================================
@@ -5104,6 +5123,7 @@ print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit)
 pprint(combined_behavior_unlimited)
 #+end_src
 
+#+NAME: run-burn-cell-as-head-fire-results
 #+RESULTS: run-burn-cell-as-head-fire
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
@@ -5210,6 +5230,7 @@ print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit)
 pprint(combined_behavior_unlimited)
 #+end_src
 
+#+NAME: run-burn-cell-toward-azimuth-results
 #+RESULTS: run-burn-cell-toward-azimuth
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
@@ -6799,6 +6820,7 @@ print("\nTime of Arrival (minutes)")
 pprint(get_array_stats(output_matrices["time_of_arrival"]), sort_dicts=False)
 #+end_src
 
+#+NAME: run-spread-fire-with-phi-field-results
 #+RESULTS: run-spread-fire-with-phi-field
 #+begin_example
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
@@ -8480,7 +8502,21 @@ def savefig(title, layer, units, colors):
     plt.savefig(file_name)
     plt.close("all")
     return file_name
+
+savefig(title="Max Fire Type", layer="max_fire_type", units="0=unburned,1=surface,2=passive_crown,3=active_crown", colors="viridis")
+savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")
+savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")
+savefig(title="Max Fireline Intensity", layer="max_fireline_intensity", units="kW/m", colors="hot")
+savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")
 #+end_src
+
+#+NAME: max-fire-behavior-matplotlib-heatmaps
+#+caption: Max fire behavior attributes
+|-------------------------------------------------------+-----------------------------------------------------|
+|                                                       | file:../doc/pics/worcester_max_fire_type.png        |
+| file:../doc/pics/worcester_max_spread_rate.png        | file:../doc/pics/worcester_max_spread_direction.png |
+| file:../doc/pics/worcester_max_fireline_intensity.png | file:../doc/pics/worcester_max_flame_length.png     |
+|-------------------------------------------------------+-----------------------------------------------------|
 
 # #+begin_src python
 # frq, edges = np.histogram(copy)
@@ -8489,34 +8525,4 @@ def savefig(title, layer, units, colors):
 # plt.savefig("../doc/pics/worcester_max_spread_rate_diff.png")
 # #+end_src
 
-#+begin_src python
-savefig(title="Max Fire Type", layer="max_fire_type", units="0=unburned,1=surface,2=passive_crown,3=active_crown", colors="viridis")
-#+end_src
-
-[[file:../doc/pics/worcester_max_fire_type.png]]
-
-#+begin_src python
-savefig(title="Max Spread Rate", layer="max_spread_rate", units="m/min", colors="hot")
-#+end_src
-
-[[file:../doc/pics/worcester_max_spread_rate.png]]
-
 Layer Disagreement: [-10.93608, 8.9857025] inches/min
-
-#+begin_src python
-savefig(title="Max Spread Direction", layer="max_spread_direction", units="degrees", colors="viridis")
-#+end_src
-
-[[file:../doc/pics/worcester_max_spread_direction.png]]
-
-#+begin_src python
-savefig(title="Max Fireline Intensity", layer="max_fireline_intensity", units="kW/m", colors="hot")
-#+end_src
-
-[[file:../doc/pics/worcester_max_fireline_intensity.png]]
-
-#+begin_src python
-savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="hot")
-#+end_src
-
-[[file:../doc/pics/worcester_max_flame_length.png]]
