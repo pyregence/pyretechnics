@@ -6986,7 +6986,7 @@ file:../doc/pics/els_time_of_arrival.png
    :header-args:python+: :exports both
    :END:
 
-* [WIP] Fire Suppression Algorithms (pyretechnics.suppression)
+* [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-fire-suppression-algorithms-(pyretechnics.suppression)
   :END:
@@ -7006,7 +7006,7 @@ file:../doc/pics/els_time_of_arrival.png
    :header-args:python+: :exports both
    :END:
 
-* [WIP] Urban Spread Algorithms
+* [WIP] Urban Spread Algorithms :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-urban-spread-algorithms
   :END:
@@ -7026,7 +7026,7 @@ file:../doc/pics/els_time_of_arrival.png
    :header-args:python+: :exports both
    :END:
 
-* [WIP] Fire Spread API
+* [WIP] Fire Spread API :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-fire-spread-api
   :END:
@@ -7277,7 +7277,7 @@ world_state3 = grow_fire(world_state2)
 
 TODO: stub
 
-* [WIP] Fire Spread Functions
+* [WIP] Fire Spread Functions :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-fire-spread-functions
   :END:
