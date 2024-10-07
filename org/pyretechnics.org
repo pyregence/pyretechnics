@@ -30,6 +30,9 @@
 #+PROPERTY: header-args:python+ :comments link
 
 * Preface
+  :PROPERTIES:
+  :CUSTOM_ID: Preface
+  :END:
 
 This document is a Literate
 Program[fn::https://en.wikipedia.org/wiki/Literate_programming],
@@ -50,7 +53,13 @@ library on your machine without conflicting with the main package
 manager of your operating system. See [[file:../README.md][README.md]] for more details.
 
 * Data Model
+  :PROPERTIES:
+  :CUSTOM_ID: Data Model
+  :END:
 ** Working in a 3D Space-Time Cube
+   :PROPERTIES:
+   :CUSTOM_ID: Working in a 3D Space-Time Cube
+   :END:
 
 In Pyretechnics, a fire is viewed as a three-dimensional event
 occurring within a bounded region of space-time $(T,Y,X)$. In this
@@ -72,6 +81,9 @@ third dimension is instead reserved for temporal variations in the
 model inputs and outputs.
 
 ** Fires as Conical Shapes in Space-Time
+   :PROPERTIES:
+   :CUSTOM_ID: Fires as Conical Shapes in Space-Time
+   :END:
 
 All fire events begin from an ignition somewhere in space-time. As
 combustion and propagation occur in burnable fuels, the burned area
@@ -94,6 +106,9 @@ temporally varying environmental conditions on the behavior (and thus
 shape) of fires.
 
 ** Support for Input Datasets of Varying Dimensionality
+   :PROPERTIES:
+   :CUSTOM_ID: Support for Input Datasets of Varying Dimensionality
+   :END:
 
 At the beginning of a fire behavior simulation, our 3D space-time cube
 will be populated with all of the information that describes the
@@ -138,6 +153,9 @@ See section [[Loading Data into the 3D Space-Time Cube
 (pyretechnics.space_time_cube)]] for implementation details.
 
 ** Support for Input Datasets of Varying Resolution
+   :PROPERTIES:
+   :CUSTOM_ID: Support for Input Datasets of Varying Resolution
+   :END:
 
 Even when dimensions are the same between input datasets, they may be
 provided at different resolutions from one another, provided that the
@@ -162,8 +180,12 @@ resolution. See section [[Loading Data into the 3D Space-Time Cube
 (pyretechnics.space_time_cube)]] for implementation details.
 
 * Loading Data into the 3D Space-Time Cube (pyretechnics.space_time_cube)
+  :PROPERTIES:
+  :CUSTOM_ID: Loading Data into the 3D Space-Time Cube (pyretechnics.space_time_cube)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.space_time_cube*
    :header-args:python+: :tangle  ../src/pyretechnics/space_time_cube.py
    :header-args:python+: :exports code
@@ -174,6 +196,9 @@ space-time cubes corresponding to the data model described above for
 various types of input datasets.
 
 *** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: Module Imports
+    :END:
 
 #+name: space-time-cube-imports
 #+begin_src python
@@ -182,6 +207,9 @@ import numpy as np
 #+end_src
 
 *** Utility Functions
+    :PROPERTIES:
+    :CUSTOM_ID: Utility Functions
+    :END:
 
 #+name: space-time-cube-utilities
 #+begin_src python
@@ -227,6 +255,9 @@ def maybe_repeat_array(array, axis_repetitions):
 #+end_src
 
 *** SpaceTimeCube Class
+    :PROPERTIES:
+    :CUSTOM_ID: SpaceTimeCube Class
+    :END:
 
 When an input dataset is already loaded into memory as either a single
 scalar value or a 1D, 2D, or 3D array of values, it can be made
@@ -522,6 +553,9 @@ class SpaceTimeCube:
 #+end_src
 
 *** LazySpaceTimeCube Class
+    :PROPERTIES:
+    :CUSTOM_ID: LazySpaceTimeCube Class
+    :END:
 
 When a dataset is too large to fit easily into memory, it can be
 partitioned into a collection of subcubes, which will be lazily loaded
@@ -758,6 +792,7 @@ class LazySpaceTimeCube:
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.space_time_cube*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
@@ -772,7 +807,13 @@ such as [[https://pypi.org/project/rasterio/][rasterio]] or [[https://pypi.org/p
 in either case.
 
 *** How to Use SpaceTimeCube
+    :PROPERTIES:
+    :CUSTOM_ID: How to Use SpaceTimeCube
+    :END:
 **** Create a SpaceTimeCube from 0D, 1D, 2D, or 3D Input Data
+     :PROPERTIES:
+     :CUSTOM_ID: Create a SpaceTimeCube from 0D, 1D, 2D, or 3D Input Data
+     :END:
 
 #+name: space-time-cube-create
 #+begin_src python :results silent
@@ -825,6 +866,9 @@ spatiotemporal_cube = SpaceTimeCube(cube_shape, wind_speed_raster)
 #+end_src
 
 **** Retrieve a Scalar Value at a Space-Time Coordinate
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Scalar Value at a Space-Time Coordinate
+     :END:
 
 #+name: space-time-cube-get-point
 #+begin_src python
@@ -862,6 +906,9 @@ Value from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 **** Retrieve a Time Series at a Spatial Coordinate
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Time Series at a Spatial Coordinate
+     :END:
 
 #+name: space-time-cube-get-time-series
 #+begin_src python
@@ -899,6 +946,9 @@ Time Series from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Spatial Plane at a Temporal Coordinate
+     :END:
 
 #+name: space-time-cube-get-spatial-plane
 #+begin_src python
@@ -972,6 +1022,9 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 **** Retrieve a Subcube within a Space-Time Region
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Subcube within a Space-Time Region
+     :END:
 
 #+name: space-time-cube-get-subcube
 #+begin_src python
@@ -1089,7 +1142,13 @@ Subcube from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 *** How to Use LazySpaceTimeCube
+    :PROPERTIES:
+    :CUSTOM_ID: How to Use LazySpaceTimeCube
+    :END:
 **** Create a LazySpaceTimeCube from 0D, 1D, 2D, or 3D Input Data
+     :PROPERTIES:
+     :CUSTOM_ID: Create a LazySpaceTimeCube from 0D, 1D, 2D, or 3D Input Data
+     :END:
 
 #+name: lazy-space-time-cube-create
 #+begin_src python :results silent
@@ -1191,6 +1250,9 @@ spatiotemporal_cube = LazySpaceTimeCube(cube_shape,
 #+end_src
 
 **** Retrieve a Scalar Value at a Space-Time Coordinate
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Scalar Value at a Space-Time Coordinate
+     :END:
 
 #+name: lazy-space-time-cube-get-point
 #+begin_src python
@@ -1228,6 +1290,9 @@ Value from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 **** Retrieve a Time Series at a Spatial Coordinate
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Time Series at a Spatial Coordinate
+     :END:
 
 #+name: lazy-space-time-cube-get-time-series
 #+begin_src python
@@ -1265,6 +1330,9 @@ Time Series from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Spatial Plane at a Temporal Coordinate
+     :END:
 
 #+name: lazy-space-time-cube-get-spatial-plane
 #+begin_src python
@@ -1338,6 +1406,9 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 **** Retrieve a Subcube within a Space-Time Region
+     :PROPERTIES:
+     :CUSTOM_ID: Retrieve a Subcube within a Space-Time Region
+     :END:
 
 #+name: lazy-space-time-cube-get-subcube
 #+begin_src python
@@ -1455,6 +1526,9 @@ Subcube from Spatio-Temporal Data: Wind Speed
 #+end_example
 
 * [WIP] Fire Behavior Model
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Fire Behavior Model
+  :END:
 # TODO: Refactor this text into the following sections and remove this section
 
 Pyretechnics implements the following fire behavior formulas from the
@@ -1479,8 +1553,12 @@ and accuracy. The following sections will introduce the spread
 algorithms implemented thus far.
 
 * Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
+  :PROPERTIES:
+  :CUSTOM_ID: Fuel Model and Moisture Definitions (pyretechnics.fuel_models)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.fuel_models*
    :header-args:python+: :tangle  ../src/pyretechnics/fuel_models.py
    :header-args:python+: :exports code
@@ -1493,6 +1571,9 @@ moisture. This combination of fuel models and moisture form the basis
 of many fire behavior analyses.
 
 *** Fuel Model Properties
+    :PROPERTIES:
+    :CUSTOM_ID: Fuel Model Properties
+    :END:
 
 All fires ignite and travel through some form of burnable fuel.
 Although the effects of wind and slope on the rate of fire spread can
@@ -1546,6 +1627,9 @@ These two topics are discussed in sections [[Dynamic Fuel Loading]] and
 [[Live Moisture of Extinction]].
 
 *** Fuel Model Definitions
+    :PROPERTIES:
+    :CUSTOM_ID: Fuel Model Definitions
+    :END:
 
 The fuel models supported by Pyretechnics include the standard 13 fuel
 models of Rothermel, Albini, and Anderson[fn::Anderson1982] and the
@@ -1689,6 +1773,9 @@ fuel_model_table = {k: expand_compact_fuel_model(k) for k in fuel_model_compact_
 #+end_src
 
 *** Fuel Categories and Size Classes
+    :PROPERTIES:
+    :CUSTOM_ID: Fuel Categories and Size Classes
+    :END:
 
 Each fuel model applies to a collection of burnable material that may
 be live or dead and whose constituent elements may vary in size
@@ -1736,6 +1823,9 @@ def size_class_sum(f):
 #+end_src
 
 *** Dynamic Fuel Loading
+    :PROPERTIES:
+    :CUSTOM_ID: Dynamic Fuel Loading
+    :END:
 
 All of the Scott & Burgan 40 fuel models with a live herbaceous
 component are considered dynamic. In these models, a fraction of the
@@ -1794,6 +1884,9 @@ def add_dynamic_fuel_loading(fuel_model, M_f):
 #+end_src
 
 *** Size Class Weighting Factors
+    :PROPERTIES:
+    :CUSTOM_ID: Size Class Weighting Factors
+    :END:
 
 Once the dynamic fuel loading is applied, we can compute the size
 class weighting factors expressed in equations 53-57 in Rothermel
@@ -1836,6 +1929,9 @@ def add_weighting_factors(fuel_model):
 #+end_src
 
 *** Live Moisture of Extinction
+    :PROPERTIES:
+    :CUSTOM_ID: Live Moisture of Extinction
+    :END:
 
 The live moisture of extinction for each fuel model is determined from
 the dead fuel moisture content, the dead moisture of extinction, and
@@ -1901,6 +1997,9 @@ def add_live_moisture_of_extinction(fuel_model):
 #+end_src
 
 *** Applying Fuel Moisture to a Fuel Model
+    :PROPERTIES:
+    :CUSTOM_ID: Applying Fuel Moisture to a Fuel Model
+    :END:
 
 The preceding sections augmented the baseline fuel models by adding
 dynamic fuel loading (section [[Dynamic Fuel Loading]]), size class
@@ -1925,6 +2024,7 @@ This concludes our coverage of fuel models and fuel moisture.
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.fuel_models*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
@@ -1935,6 +2035,9 @@ model properties by fuel model number both alone and combined with
 fuel moisture.
 
 *** How to Look Up a Fuel Model's Properties
+    :PROPERTIES:
+    :CUSTOM_ID: How to Look Up a Fuel Model's Properties
+    :END:
 
 #+name: look-up-fuel-model-properties
 #+begin_src python
@@ -1986,6 +2089,9 @@ Dynamic Fuel Model: GR1
 #+end_example
 
 *** How to Apply Fuel Moisture to a Fuel Model
+    :PROPERTIES:
+    :CUSTOM_ID: How to Apply Fuel Moisture to a Fuel Model
+    :END:
 
 #+name: moisturize-fuel-model
 #+begin_src python
@@ -2054,8 +2160,12 @@ Moisturized Dynamic Fuel Model: GR1
 #+end_example
 
 * Surface Fire Equations (pyretechnics.surface_fire)
+  :PROPERTIES:
+  :CUSTOM_ID: Surface Fire Equations (pyretechnics.surface_fire)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.surface_fire*
    :header-args:python+: :tangle  ../src/pyretechnics/surface_fire.py
    :header-args:python+: :exports code
@@ -2070,6 +2180,9 @@ direction of a surface fire as well as its fireline intensity and
 flame length.
 
 *** Rothermel's Surface Fire Rate of Spread Equation
+    :PROPERTIES:
+    :CUSTOM_ID: Rothermel's Surface Fire Rate of Spread Equation
+    :END:
 
 To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
@@ -2109,6 +2222,9 @@ where these terms have the meanings shown in Table
 |------------+--------------------------------+-------------------------------|
 
 *** Surface Fire Spread Rate Functions (No Wind No Slope)
+    :PROPERTIES:
+    :CUSTOM_ID: Surface Fire Spread Rate Functions (No Wind No Slope)
+    :END:
 
 In this section, Rothermel's surface fire spread rate equation will be
 computed without introducing the effects of wind or slope (i.e.,
@@ -2127,6 +2243,9 @@ Each term will be defined in its own section, and finally they will be
 combined together in a single function that computes $R_0$.
 
 **** Module Imports
+     :PROPERTIES:
+     :CUSTOM_ID: Module Imports
+     :END:
 
 #+name: surface-fire-imports
 #+begin_src python
@@ -2135,6 +2254,9 @@ from pyretechnics.fuel_models import map_category, map_size_class, category_sum,
 #+end_src
 
 **** Common Intermediate Calculations: $\sigma', \beta, \beta_{op}$
+     :PROPERTIES:
+     :CUSTOM_ID: Common Intermediate Calculations: $\sigma', \beta, \beta_{op}$
+     :END:
 
 #+name: surface-fire-common-intermediate-calculations
 #+begin_src python
@@ -2156,6 +2278,9 @@ def calc_optimum_packing_ratio(sigma_prime):
 #+end_src
 
 **** Reaction Intensity: $I_R$
+     :PROPERTIES:
+     :CUSTOM_ID: Reaction Intensity: $I_R$
+     :END:
 
 #+name: surface-fire-reaction-intensity
 #+begin_src python
@@ -2223,6 +2348,9 @@ def calc_reaction_intensity(moisturized_fuel_model, sigma_prime, beta, beta_op):
 #+end_src
 
 **** Propagating Flux Ratio: $\xi$
+     :PROPERTIES:
+     :CUSTOM_ID: Propagating Flux Ratio: $\xi$
+     :END:
 
 #+name: surface-fire-propagating-flux-ratio
 #+begin_src python
@@ -2231,6 +2359,9 @@ def calc_propagating_flux_ratio(sigma_prime, beta):
 #+end_src
 
 **** Heat Source (No Wind No Slope): $I_R \, \xi$
+     :PROPERTIES:
+     :CUSTOM_ID: Heat Source (No Wind No Slope): $I_R \, \xi$
+     :END:
 
 #+name: surface-fire-heat-source-no-wind-no-slope
 #+begin_src python
@@ -2239,6 +2370,9 @@ def calc_heat_source(I_R, xi):
 #+end_src
 
 **** Oven-Dry Fuel Bed Bulk Density: $\rho_b$
+     :PROPERTIES:
+     :CUSTOM_ID: Oven-Dry Fuel Bed Bulk Density: $\rho_b$
+     :END:
 
 #+name: surface-fire-oven-dry-fuel-bed-bulk-density
 #+begin_src python
@@ -2251,6 +2385,9 @@ def calc_ovendry_bulk_density(w_o, delta):
 #+end_src
 
 **** Effective Heating Number Distribution: $\epsilon_{ij}$
+     :PROPERTIES:
+     :CUSTOM_ID: Effective Heating Number Distribution: $\epsilon_{ij}$
+     :END:
 
 #+name: surface-fire-effective-heating-number-distribution
 #+begin_src python
@@ -2262,6 +2399,9 @@ def calc_effective_heating_number_distribution(sigma):
 #+end_src
 
 **** Heat of Preignition Distribution: $(Q_{ig})_{ij}$
+     :PROPERTIES:
+     :CUSTOM_ID: Heat of Preignition Distribution: $(Q_{ig})_{ij}$
+     :END:
 
 #+name: surface-fire-heat-of-preignition-distribution
 #+begin_src python
@@ -2270,6 +2410,9 @@ def calc_heat_of_preignition_distribution(M_f):
 #+end_src
 
 **** Heat Sink: $\rho_b \, \epsilon \, Q_{ig}$
+     :PROPERTIES:
+     :CUSTOM_ID: Heat Sink: $\rho_b \, \epsilon \, Q_{ig}$
+     :END:
 
 #+name: surface-fire-heat-sink
 #+begin_src python
@@ -2280,6 +2423,9 @@ def calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij):
 #+end_src
 
 **** Spread Rate (No Wind No Slope): $R_0$
+     :PROPERTIES:
+     :CUSTOM_ID: Spread Rate (No Wind No Slope): $R_0$
+     :END:
 
 #+name: surface-fire-spread-rate-no-wind-no-slope
 #+begin_src python
@@ -2288,6 +2434,9 @@ def calc_spread_rate(heat_source, heat_sink):
 #+end_src
 
 *** Surface Fire Intensity Functions
+    :PROPERTIES:
+    :CUSTOM_ID: Surface Fire Intensity Functions
+    :END:
 
 Using these surface fire spread rate and reaction intensity values, we
 can now calculate surface fire intensity values by applying Anderson's
@@ -2360,6 +2509,9 @@ we will need to wait until after any transformations are applied to
 fireline intensity before calculating the associated flame length.
 
 *** Wind and Slope Factor Functions
+    :PROPERTIES:
+    :CUSTOM_ID: Wind and Slope Factor Functions
+    :END:
 
 In order to compute the maximum spread rate, direction, and intensity
 of the surface fire front, we will need to incorporate the effects of
@@ -2370,6 +2522,9 @@ moisturized fuel model (see section [[Applying Fuel Moisture to a Fuel
 Model]]).
 
 **** Max Effective Wind Speed: $U_{\text{eff}}^{\max}$
+     :PROPERTIES:
+     :CUSTOM_ID: Max Effective Wind Speed: $U_{\text{eff}}^{\max}$
+     :END:
 
 The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
@@ -2392,6 +2547,9 @@ def calc_max_effective_wind_speed(reaction_intensity):
 #+end_src
 
 **** Slope Factor Function: $\tan(\theta_S) \mapsto \phi_S$
+     :PROPERTIES:
+     :CUSTOM_ID: Slope Factor Function: $\tan(\theta_S) \mapsto \phi_S$
+     :END:
 
 #+name: surface-fire-slope-factor-function
 #+begin_src python
@@ -2404,6 +2562,9 @@ def get_phi_S_fn(beta):
 #+end_src
 
 **** Wind Factor Function: $U_{\text{mid}} \mapsto \phi_W$
+     :PROPERTIES:
+     :CUSTOM_ID: Wind Factor Function: $U_{\text{mid}} \mapsto \phi_W$
+     :END:
 
 #+name: surface-fire-wind-factor-function
 #+begin_src python
@@ -2419,6 +2580,9 @@ def get_phi_W_fn(beta, B, C, F):
 #+end_src
 
 **** Wind Speed Function: $\phi_W \mapsto U_{\text{mid}}$
+     :PROPERTIES:
+     :CUSTOM_ID: Wind Speed Function: $\phi_W \mapsto U_{\text{mid}}$
+     :END:
 
 #+name: surface-fire-wind-speed-function
 #+begin_src python
@@ -2432,6 +2596,9 @@ def get_wind_speed_fn(B, C, F):
 #+end_src
 
 *** Surface Fire Behavior Functions (No Wind No Slope)
+    :PROPERTIES:
+    :CUSTOM_ID: Surface Fire Behavior Functions (No Wind No Slope)
+    :END:
 
 #+name: surface-fire-behavior-no-wind-no-slope
 #+begin_src python
@@ -2509,6 +2676,9 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
 #+end_src
 
 *** Midflame Wind Speed
+    :PROPERTIES:
+    :CUSTOM_ID: Midflame Wind Speed
+    :END:
 
 Rothermel's formulas all expect a measure of midflame wind speed
 $U_{\text{mid}}$. However, wind speed data is often collected at a
@@ -2574,6 +2744,9 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
 #+end_src
 
 *** Combining Wind and Slope Vectors
+    :PROPERTIES:
+    :CUSTOM_ID: Combining Wind and Slope Vectors
+    :END:
 
 On flat terrain and in the absence of wind, an idealized surface fire
 will spread outward in a circle through homogeneous fuels. On sloped
@@ -2659,6 +2832,9 @@ def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
 #+end_src
 
 *** Elliptical Eccentricity
+    :PROPERTIES:
+    :CUSTOM_ID: Elliptical Eccentricity
+    :END:
 
 The effective wind speed $U_{\text{eff}}$ is the wind speed that would
 be required to produce the same spread rate in flat terrain as that
@@ -2735,6 +2911,9 @@ def surface_fire_eccentricity(length_to_width_ratio):
 #+end_src
 
 *** Surface Fire Behavior in the Direction of Maximum Spread
+    :PROPERTIES:
+    :CUSTOM_ID: Surface Fire Behavior in the Direction of Maximum Spread
+    :END:
 
 This section introduces a function that applies the effects of wind
 and slope to the no-wind-no-slope surface fire behavior values
@@ -2853,6 +3032,9 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
 #+end_src
 
 *** Surface Fire Behavior in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: Surface Fire Behavior in Any Direction
+    :END:
 
 Once we have calculated the maximum surface fire behavior values
 associated with a head fire, we can use the elliptical eccentricity
@@ -2933,6 +3115,7 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.surface_fire*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
@@ -2961,6 +3144,9 @@ See Appendix [[Vector Utility Functions (pyretechnics.vector_utils)]] for
 the full list of available vector manipulation functions.
 
 *** How to Calculate the No-Wind-No-Slope Surface Fire Behavior
+    :PROPERTIES:
+    :CUSTOM_ID: How to Calculate the No-Wind-No-Slope Surface Fire Behavior
+    :END:
 
 #+name: compute-surface-fire-behavior-min
 #+begin_src python
@@ -2998,6 +3184,9 @@ pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_inte
 :  'max_effective_wind_speed': 109.77292783706747}
 
 *** How to Translate the 10m Wind Speed Vector into the Midflame Wind Speed Vector
+    :PROPERTIES:
+    :CUSTOM_ID: How to Translate the 10m Wind Speed Vector into the Midflame Wind Speed Vector
+    :END:
 
 #+name: translate-10m-wind-to-midflame-wind
 #+begin_src python
@@ -3035,6 +3224,9 @@ print("Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind D
 : - Downwind Direction: 225.0 (degrees clockwise from North)
 
 *** How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread
+    :PROPERTIES:
+    :CUSTOM_ID: How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread
+    :END:
 
 #+name: compute-surface-fire-behavior-max
 #+begin_src python
@@ -3109,6 +3301,9 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 #+end_example
 
 *** How to Calculate the Surface Fire Behavior in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: How to Calculate the Surface Fire Behavior in Any Direction
+    :END:
 
 #+name: compute-surface-fire-behavior-in-direction
 #+begin_src python
@@ -3195,8 +3390,12 @@ Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 
 #+end_example
 
 * Crown Fire Equations (pyretechnics.crown_fire)
+  :PROPERTIES:
+  :CUSTOM_ID: Crown Fire Equations (pyretechnics.crown_fire)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.crown_fire*
    :header-args:python+: :tangle  ../src/pyretechnics/crown_fire.py
    :header-args:python+: :exports code
@@ -3214,6 +3413,9 @@ rate and direction of this crown fire as well as its fireline
 intensity and flame length.
 
 *** Crown Fire Initiation
+    :PROPERTIES:
+    :CUSTOM_ID: Crown Fire Initiation
+    :END:
 
 In order to incorporate the effects of crown fire behavior,
 Pyretechnics includes the crown fire initiation routine from Van
@@ -3273,6 +3475,9 @@ def van_wagner_crown_fire_initiation(surface_fireline_intensity, canopy_cover, c
 #+end_src
 
 *** Passive and Active Crown Fire Spread Rate Functions
+    :PROPERTIES:
+    :CUSTOM_ID: Passive and Active Crown Fire Spread Rate Functions
+    :END:
 
 If crowning occurs, then the active crown fire spread rate is
 calculated from the following formula given in Cruz
@@ -3391,6 +3596,9 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
 #+end_src
 
 *** Crown Fire Intensity Functions
+    :PROPERTIES:
+    :CUSTOM_ID: Crown Fire Intensity Functions
+    :END:
 
 Once the crown fire spread rate is determined, the crown fireline
 intensity and flame length may be calculated using the following
@@ -3446,6 +3654,9 @@ def calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_inte
 #+end_src
 
 *** Elliptical Eccentricity
+    :PROPERTIES:
+    :CUSTOM_ID: Elliptical Eccentricity
+    :END:
 
 As with surface fire spread, the wind speed (this time the 20-ft wind
 speed $U_{20}$) is used to compute the length to width ratio
@@ -3494,6 +3705,9 @@ def crown_fire_eccentricity(length_to_width_ratio):
 #+end_src
 
 *** Crown Fire Behavior in the Direction of Maximum Spread
+    :PROPERTIES:
+    :CUSTOM_ID: Crown Fire Behavior in the Direction of Maximum Spread
+    :END:
 
 This section introduces a function that computes all of the crown fire
 behavior values described in the previous sections. In order to
@@ -3574,6 +3788,9 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
 #+end_src
 
 *** Crown Fire Behavior in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: Crown Fire Behavior in Any Direction
+    :END:
 
 Once we have calculated the maximum crown fire behavior values
 associated with a head fire, we can use the elliptical eccentricity
@@ -3672,6 +3889,9 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
 #+end_src
 
 *** Combining Surface and Crown Fire Behavior
+    :PROPERTIES:
+    :CUSTOM_ID: Combining Surface and Crown Fire Behavior
+    :END:
 
 When both surface fire and crown fire are present in the same
 location, their combined behavior determines the spread rate and
@@ -3743,6 +3963,7 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.crown_fire*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
@@ -3769,6 +3990,9 @@ See Appendix [[Vector Utility Functions (pyretechnics.vector_utils)]] for
 the full list of available vector manipulation functions.
 
 *** How to Determine Whether a Surface Fire Transitions to a Crown Fire
+    :PROPERTIES:
+    :CUSTOM_ID: How to Determine Whether a Surface Fire Transitions to a Crown Fire
+    :END:
 
 #+name: check-crown-fire-initiation
 #+begin_src python
@@ -3939,6 +4163,9 @@ A crown fire occurs with these input parameters:
 #+end_example
 
 *** How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread
+    :PROPERTIES:
+    :CUSTOM_ID: How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread
+    :END:
 
 #+name: compute-crown-fire-behavior-max
 #+begin_src python
@@ -4066,6 +4293,9 @@ Outputs:
 #+end_example
 
 *** How to Calculate the Crown Fire Behavior in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: How to Calculate the Crown Fire Behavior in Any Direction
+    :END:
 
 #+name: compute-crown-fire-behavior-in-direction
 #+begin_src python
@@ -4144,6 +4374,9 @@ Backing Fire Behavior
 #+end_example
 
 *** How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction
+    :END:
 
 #+name: compute-combined-fire-behavior-in-direction
 #+begin_src python
@@ -4293,8 +4526,12 @@ else:
 :  'spread_rate': 0.8215818916531423}
 
 * Burning Cells on a Grid (pyretechnics.burn_cells)
+  :PROPERTIES:
+  :CUSTOM_ID: Burning Cells on a Grid (pyretechnics.burn_cells)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.burn_cells*
    :header-args:python+: :tangle  ../src/pyretechnics/burn_cells.py
    :header-args:python+: :exports code
@@ -4309,6 +4546,9 @@ fire equations from section [[Crown Fire Equations
 their combined surface and crown fire behavior.
 
 *** Burn Cell as a Head Fire
+    :PROPERTIES:
+    :CUSTOM_ID: Burn Cell as a Head Fire
+    :END:
 
 Sometimes the goal of a fire behavior analysis is to determine the
 most extreme behavior to be expected, given static measurements of
@@ -4535,6 +4775,9 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
 #+end_src
 
 *** Burn Cell in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: Burn Cell in Any Direction
+    :END:
 
 When the goal of a fire behavior analysis is to evolve a burn scar
 from its point of ignition into a generally conical shape in
@@ -4770,6 +5013,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth,
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.burn_cells*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
@@ -4780,6 +5024,9 @@ combined surface and crown fire behavior first in the direction of
 maximum spread and then in any direction.
 
 *** How to Burn a Cell as a Head Fire
+    :PROPERTIES:
+    :CUSTOM_ID: How to Burn a Cell as a Head Fire
+    :END:
 
 #+name: run-burn-cell-as-head-fire
 #+begin_src python
@@ -4877,6 +5124,9 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 #+end_example
 
 *** How to Burn a Cell in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: How to Burn a Cell in Any Direction
+    :END:
 
 #+name: run-burn-cell-toward-azimuth
 #+begin_src python
@@ -4980,8 +5230,12 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 #+end_example
 
 * [WIP] Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.eulerian_level_set*
    :header-args:python+: :tangle  ../src/pyretechnics/eulerian_level_set.py
    :header-args:python+: :exports code
@@ -4999,6 +5253,9 @@ method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
 model[fn::https://elmfire.io].
 
 *** The $\phi$ Field
+    :PROPERTIES:
+    :CUSTOM_ID: The $\phi$ Field
+    :END:
 
 In this model, a continuous field called $\phi$ fills the simulation
 space and is used to track the progression of the fire front through
@@ -5014,6 +5271,9 @@ If a point fire is being simulated, then a single $\phi$ cell will be
 set to -1 and the remaining cells will have the value 1.
 
 *** Fire Front Normal Vector
+    :PROPERTIES:
+    :CUSTOM_ID: Fire Front Normal Vector
+    :END:
 
 In this fire spread algorithm, the fire front only propagates normal
 to itself. Given a $\phi$ raster, we can calculate the normal vector to
@@ -5168,6 +5428,9 @@ We will refer to the spread rate vector normal to the fire front in
 the following sections as $U$ with spatial components $U_x$ and $U_y$.
 
 *** Numerical Solution of the $\phi$ Field Equation
+    :PROPERTIES:
+    :CUSTOM_ID: Numerical Solution of the $\phi$ Field Equation
+    :END:
 
 In order to evolve the $\phi$ field through time and space, we must
 solve the following hyperbolic differential equation for the scalar
@@ -5494,6 +5757,9 @@ perimeter is determined by interpolation of the $\phi$ field as the
 level set corresponding to $\phi = 0$.
 
 *** Calculate the Surface/Crown Fireline Normal Behavior
+    :PROPERTIES:
+    :CUSTOM_ID: Calculate the Surface/Crown Fireline Normal Behavior
+    :END:
 
 #+name: calc-fireline-normal-behavior
 #+begin_src python
@@ -5651,6 +5917,9 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
 #+end_src
 
 *** Burn Cell Normal to the Fire Perimeter
+    :PROPERTIES:
+    :CUSTOM_ID: Burn Cell Normal to the Fire Perimeter
+    :END:
 
 # TODO: Update this text.
 
@@ -5915,8 +6184,17 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
 #+end_src
 
 *** Identify Cells Near the Fire Perimeter ($\phi = 0$)
+    :PROPERTIES:
+    :CUSTOM_ID: Identify Cells Near the Fire Perimeter ($\phi = 0$)
+    :END:
 **** A proposed algorithm for narrow band tracking
+     :PROPERTIES:
+     :CUSTOM_ID: A proposed algorithm for narrow band tracking
+     :END:
 ***** Problem statement
+      :PROPERTIES:
+      :CUSTOM_ID: Problem statement
+      :END:
 
 To make the level-set method efficient, an important optimization
 consists of updating only those cells in a narrow band around the fire
@@ -5925,6 +6203,9 @@ computed (and $\phi$ gets updated) only on a sparse subset of the
 landscape at each timestep.
 
 ***** Definitions
+      :PROPERTIES:
+      :CUSTOM_ID: Definitions
+      :END:
 
 At a given time step:
 
@@ -5935,6 +6216,9 @@ At a given time step:
    behavior and update the $\phi$ field.
 
 ***** Suggested algorithm
+      :PROPERTIES:
+      :CUSTOM_ID: Suggested algorithm
+      :END:
 
 - Detecting Frontier Cells :: iterate through cell pairs (N/S, E/W),
   computing the products of their $\phi$ values and match when these
@@ -6062,6 +6346,9 @@ def update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, 
 #+end_src
 
 *** Spread Phi Field
+    :PROPERTIES:
+    :CUSTOM_ID: Spread Phi Field
+    :END:
 
 # TODO: Include Val's proof for late integration of the limited and unlimited phi gradients in dphi/dt.
 
@@ -6367,12 +6654,16 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.eulerian_level_set*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
 
 *** How to Spread a Fire from a Point Ignition
+    :PROPERTIES:
+    :CUSTOM_ID: How to Spread a Fire from a Point Ignition
+    :END:
 
 #+name: run-spread-fire-with-phi-field
 #+begin_src python
@@ -6541,6 +6832,9 @@ Time of Arrival (minutes)
 #+end_example
 
 *** How to Create Images of Fire Behavior Outputs
+    :PROPERTIES:
+    :CUSTOM_ID: How to Create Images of Fire Behavior Outputs
+    :END:
 
 #+name: save-matrix-as-figure
 #+begin_src python :results silent
@@ -6651,8 +6945,12 @@ for contour_config in contour_configs:
 file:../doc/pics/els_time_of_arrival.png
 
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Spot Fire Equations (pyretechnics.spot_fire)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.spot_fire*
    :header-args:python+: :tangle  ../src/pyretechnics/spot_fire.py
    :header-args:python+: :exports code
@@ -6660,14 +6958,19 @@ file:../doc/pics/els_time_of_arrival.png
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.spot_fire*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
 
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression)
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Fire Suppression Algorithms (pyretechnics.suppression)
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.suppression*
    :header-args:python+: :tangle  ../src/pyretechnics/suppression.py
    :header-args:python+: :exports code
@@ -6675,14 +6978,19 @@ file:../doc/pics/els_time_of_arrival.png
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.suppression*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
 
 * [WIP] Urban Spread Algorithms
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Urban Spread Algorithms
+  :END:
 ** For Developers
    :PROPERTIES:
+   :CUSTOM_ID: For Developers
    :header-args:python+: :session *pyretechnics.urban_spread*
    :header-args:python+: :tangle  ../src/pyretechnics/urban_spread.py
    :header-args:python+: :exports code
@@ -6690,16 +6998,23 @@ file:../doc/pics/els_time_of_arrival.png
 
 ** For Users
    :PROPERTIES:
+   :CUSTOM_ID: For Users
    :header-args:python+: :session *examples:pyretechnics.urban_spread*
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
 
 * [WIP] Fire Spread API
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Fire Spread API
+  :END:
 
 Pyretechnics provides two main functions for simulating fire behavior over a region of space-time:
 
 ** grow_fire
+   :PROPERTIES:
+   :CUSTOM_ID: grow_fire
+   :END:
 
 Simulates the growth of a fire over space and time starting from one
 or more actively burning cells. Suppression effects may be optionally
@@ -6709,6 +7024,9 @@ reproducible runs, despite the presence of stochastic calculations
 within the fire spread algorithm.
 
 *** Inputs
+    :PROPERTIES:
+    :CUSTOM_ID: Inputs
+    :END:
 
 The ~grow_fire~ function takes a single =world_state= dictionary as input with these fields:
 
@@ -6841,6 +7159,9 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 - ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
 
 *** Outputs
+    :PROPERTIES:
+    :CUSTOM_ID: Outputs
+    :END:
 
 The ~grow_fire~ function will return a dictionary with these fields:
 
@@ -6861,6 +7182,9 @@ the input dictionary that was provided to ~grow_fire~. All other
 fields will contain values updated by the fire spread simulation.
 
 *** Play/Pause/Continue Workflow
+    :PROPERTIES:
+    :CUSTOM_ID: Play/Pause/Continue Workflow
+    :END:
 
 The inputs and outputs of ~grow_fire~ are structured so as to enable
 you to simulate fire spread from =simulation_clock= until a stop
@@ -6925,10 +7249,16 @@ world_state3 = grow_fire(world_state2)
 #+end_src
 
 ** burn_cells
+   :PROPERTIES:
+   :CUSTOM_ID: burn_cells
+   :END:
 
 TODO: stub
 
 * [WIP] Fire Spread Functions
+  :PROPERTIES:
+  :CUSTOM_ID: [WIP] Fire Spread Functions
+  :END:
 
 # TODO: How do I want to memoize the no_wind_no_slope_surface_fire_min values?
 
@@ -7106,6 +7436,9 @@ def grow_fire(world_state):
 #+end_src
 
 ** ELMFIRE Inputs
+   :PROPERTIES:
+   :CUSTOM_ID: ELMFIRE Inputs
+   :END:
 
 This section lists the full set of inputs used in any =elmfire.data= or =elmfire.data.in= file in:
 
@@ -7208,8 +7541,12 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 |------------------------------------------+---------------------------------------+-----------------------------------------|
 
 * Appendices
+  :PROPERTIES:
+  :CUSTOM_ID: Appendices
+  :END:
 ** Units Conversion Functions (pyretechnics.conversion)
    :PROPERTIES:
+   :CUSTOM_ID: Units Conversion Functions (pyretechnics.conversion)
    :header-args:python+: :session *pyretechnics.conversion*
    :header-args:python+: :tangle  ../src/pyretechnics/conversion.py
    :header-args:python+: :exports code
@@ -7459,6 +7796,7 @@ def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
 
 ** Vector Utility Functions (pyretechnics.vector_utils)
    :PROPERTIES:
+   :CUSTOM_ID: Vector Utility Functions (pyretechnics.vector_utils)
    :header-args:python+: :session *pyretechnics.vector_utils*
    :header-args:python+: :tangle  ../src/pyretechnics/vector_utils.py
    :header-args:python+: :exports code
@@ -7508,6 +7846,7 @@ def rotate_on_sloped_plane(vector, theta, slope, aspect):
 
 ** SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)
    :PROPERTIES:
+   :CUSTOM_ID: SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)
    :header-args:python+: :session *pyretechnics_test.test_space_time_cube*
    :header-args:python+: :tangle  ../test/pyretechnics_test/test_space_time_cube.py
    :header-args:python+: :exports code
@@ -7647,6 +7986,7 @@ def test_use_layer_lookup_3d():
 
 ** Loading LANDFIRE Inputs (pyretechnics.load_landfire)
    :PROPERTIES:
+   :CUSTOM_ID: Loading LANDFIRE Inputs (pyretechnics.load_landfire)
    :header-args:python+: :session *pyretechnics.load_landfire*
    :header-args:python+: :tangle  ../src/pyretechnics/load_landfire.py
    :header-args:python+: :exports code
@@ -7681,6 +8021,9 @@ raster layers from files on disk into a Python dictionary of
 =SpaceTimeCube= objects.
 
 *** Loading Raster Files with Python Rasterio
+    :PROPERTIES:
+    :CUSTOM_ID: Loading Raster Files with Python Rasterio
+    :END:
 
 We will begin by defining a =load_raster= function that takes a path
 to a raster file (e.g., a GeoTIFF) and returns a dictionary containing
@@ -7718,6 +8061,9 @@ def load_raster(file_path, dtype=None):
 #+end_src
 
 *** Converting LANDFIRE Units and Datatypes
+    :PROPERTIES:
+    :CUSTOM_ID: Converting LANDFIRE Units and Datatypes
+    :END:
 
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
 Table [[tab:landfire-layers]]. In order to make them match those required
@@ -7756,6 +8102,9 @@ def load_and_convert_landfire_rasters(landfire_file_paths):
 #+end_src
 
 *** Verifying Raster Constraints
+    :PROPERTIES:
+    :CUSTOM_ID: Verifying Raster Constraints
+    :END:
 
 In order to work with the Pyretechnics Fire Spread API, all rasters
 must meet certain requirements:
@@ -7800,6 +8149,9 @@ def verify_raster_constraints(cube_shape, rasters):
 #+end_src
 
 *** Converting Rasters to SpaceTimeCubes
+    :PROPERTIES:
+    :CUSTOM_ID: Converting Rasters to SpaceTimeCubes
+    :END:
 
 Another requirement of the Pyretechnics Fire Spread API is that each
 input layer must be specified as a =SpaceTimeCube= or
@@ -7831,6 +8183,9 @@ def convert_rasters_to_space_time_cubes(cube_shape, raster_dict):
 #+end_src
 
 *** Putting It All Together
+    :PROPERTIES:
+    :CUSTOM_ID: Putting It All Together
+    :END:
 
 By combining the functions defined in the previous sections, we can
 now read in a dictionary of layer names to file paths, load the
@@ -7848,6 +8203,7 @@ def read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths):
 
 ** [WIP] Testing pyretechnics.burn_cells on Worcester, VT (pyretechnics_test.test_burn_cells)
    :PROPERTIES:
+   :CUSTOM_ID: [WIP] Testing pyretechnics.burn_cells on Worcester, VT (pyretechnics_test.test_burn_cells)
    :header-args:python+: :session *pyretechnics_test.test_burn_cells*
    :header-args:python+: :tangle  ../test/pyretechnics_test/test_burn_cells.py
    :header-args:python+: :exports code
@@ -7859,6 +8215,9 @@ central Vermont, and stored them in the [[file:../test/data/landfire_inputs][../
 directory of this repository.
 
 *** Loading Topography, Fuel Model, and Tree Canopy Inputs from LANDFIRE GeoTIFFs
+    :PROPERTIES:
+    :CUSTOM_ID: Loading Topography, Fuel Model, and Tree Canopy Inputs from LANDFIRE GeoTIFFs
+    :END:
 
 We begin by loading in the eight LANDFIRE GeoTIFFs that we downloaded
 from https://landfire.gov/, using the function we defined in section
@@ -7909,6 +8268,9 @@ def test_read_landfire_rasters():
 #+end_src
 
 *** Adding Constant Wind and Moisture Values
+    :PROPERTIES:
+    :CUSTOM_ID: Adding Constant Wind and Moisture Values
+    :END:
 
 In order to complete our input dataset for a test run of the
 =pyretechnics.burn_cells= functions, we need to provide the remaining
@@ -7940,6 +8302,9 @@ def test_add_weather_cubes():
 #+end_src
 
 *** Burning a Single Cell in the Dataset as a Head Fire
+    :PROPERTIES:
+    :CUSTOM_ID: Burning a Single Cell in the Dataset as a Head Fire
+    :END:
 
 Now that our input layers are all loaded, our next step will be to
 make sure that we can burn a single cell as a head fire and get back
@@ -7968,6 +8333,9 @@ def test_burn_cell_as_head_fire():
 #+end_src
 
 *** Burning All Cells in the Dataset as a Head Fire
+    :PROPERTIES:
+    :CUSTOM_ID: Burning All Cells in the Dataset as a Head Fire
+    :END:
 
 #+name: burn-all-cells-in-test-dataset
 #+begin_src python
@@ -8022,6 +8390,9 @@ def test_burn_all_cells_as_head_fire():
 #+end_src
 
 *** Comparing Pyretechnics Outputs with FLAMMAP Outputs
+    :PROPERTIES:
+    :CUSTOM_ID: Comparing Pyretechnics Outputs with FLAMMAP Outputs
+    :END:
 
 #+name: load-flammap-outputs
 #+begin_src python
@@ -8078,6 +8449,7 @@ def test_read_flammap_outputs():
 
 ** [WIP] Visualizing the Burned Layers
    :PROPERTIES:
+   :CUSTOM_ID: [WIP] Visualizing the Burned Layers
    :header-args:python+: :session *view-worcester-layers*
    :header-args:python+: :exports code
    :END:
