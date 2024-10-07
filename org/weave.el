@@ -15,6 +15,7 @@
  '((python . t)))
 
 (setq org-html-htmlize-output-type      'css
+      org-html-prefer-user-labels       t
       org-confirm-babel-evaluate        nil
       python-indent-guess-indent-offset nil)
 
