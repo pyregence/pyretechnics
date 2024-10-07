@@ -371,7 +371,7 @@ org_html_manager.setup();  // activate after the parameters are set
 </li>
 </ul>
 </li>
-<li><a href="#[wip]-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9. [WIP] Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)</a>
+<li><a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9. Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)</a>
 <ul>
 <li><a href="#for-developers-fire-spread">9.1. For Developers</a>
 <ul>
@@ -5823,9 +5823,9 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 </div>
 </div>
 </div>
-<div id="outline-container-[wip]-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)" class="outline-2">
-<h2 id="[wip]-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)"><span class="section-number-2">9.</span> [WIP] Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)</h2>
-<div class="outline-text-2" id="text-[wip]-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">
+<div id="outline-container-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)" class="outline-2">
+<h2 id="fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)"><span class="section-number-2">9.</span> Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)</h2>
+<div class="outline-text-2" id="text-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">
 </div>
 <div id="outline-container-for-developers-fire-spread" class="outline-3">
 <h3 id="for-developers-fire-spread"><span class="section-number-3">9.1.</span> For Developers</h3>
@@ -6098,6 +6098,12 @@ and "south" values as follows:
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx</span>(phi, u_x, dx, x, y, cols):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_x  :: m/min</span>
+<span class="org-doc">    - dx   :: meters</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - cols :: integer number of columns in the phi matrix</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">phi_east</span> <span class="org-operator">=</span> calc_phi_east(phi, u_x, x, y, cols)
     <span class="org-variable-name">phi_west</span> <span class="org-operator">=</span> calc_phi_west(phi, u_x, x, y, cols)
@@ -6107,6 +6113,12 @@ and "south" values as follows:
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy</span>(phi, u_y, dy, x, y, rows):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_y  :: m/min</span>
+<span class="org-doc">    - dy   :: meters</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - rows :: integer number of rows in the phi matrix</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">phi_north</span> <span class="org-operator">=</span> calc_phi_north(phi, u_y, x, y, rows)
     <span class="org-variable-name">phi_south</span> <span class="org-operator">=</span> calc_phi_south(phi, u_y, x, y, rows)
@@ -6116,6 +6128,13 @@ and "south" values as follows:
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient</span>(phi, u_x, u_y, dx, dy, x, y):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_x :: m/min</span>
+<span class="org-doc">    - u_y :: m/min</span>
+<span class="org-doc">    - dx  :: meters</span>
+<span class="org-doc">    - dy  :: meters</span>
+<span class="org-doc">    - x   :: integer column index in phi</span>
+<span class="org-doc">    - y   :: integer row index in phi</span>
 <span class="org-doc">    """</span>
     (<span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>) <span class="org-operator">=</span> phi.shape
     <span class="org-variable-name">dphi_dx</span>      <span class="org-operator">=</span> calc_dphi_dx(phi, u_x, dx, x, y, cols)
@@ -6146,6 +6165,11 @@ For the east face:
 <pre class="src src-python" id="phi-east"><span class="org-keyword">def</span> <span class="org-function-name">calc_phi_east</span>(phi, u_x, x, y, cols):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_x  :: m/min</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - cols :: integer number of columns in the phi matrix</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">very_east_x</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>2, cols<span class="org-operator">-</span>1)
     <span class="org-variable-name">east_x</span>      <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>1, cols<span class="org-operator">-</span>1)
@@ -6185,6 +6209,11 @@ For the west face:
 <pre class="src src-python" id="phi-west"><span class="org-keyword">def</span> <span class="org-function-name">calc_phi_west</span>(phi, u_x, x, y, cols):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_x  :: m/min</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - cols :: integer number of columns in the phi matrix</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">east_x</span>      <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>1, cols<span class="org-operator">-</span>1)
     <span class="org-variable-name">west_x</span>      <span class="org-operator">=</span> <span class="org-builtin">max</span>(x<span class="org-operator">-</span>1, 0)
@@ -6224,6 +6253,11 @@ For the north face:
 <pre class="src src-python" id="phi-north"><span class="org-keyword">def</span> <span class="org-function-name">calc_phi_north</span>(phi, u_y, x, y, rows):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_y  :: m/min</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - rows :: integer number of rows in the phi matrix</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">very_north_y</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>2, rows<span class="org-operator">-</span>1)
     <span class="org-variable-name">north_y</span>      <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
@@ -6263,6 +6297,11 @@ For the south face:
 <pre class="src src-python" id="phi-south"><span class="org-keyword">def</span> <span class="org-function-name">calc_phi_south</span>(phi, u_y, x, y, rows):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_y  :: m/min</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - rows :: integer number of rows in the phi matrix</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">north_y</span>      <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
     <span class="org-variable-name">south_y</span>      <span class="org-operator">=</span> <span class="org-builtin">max</span>(y<span class="org-operator">-</span>1, 0)
@@ -6291,88 +6330,6 @@ order Runge Kutta method as follows:
   \nonumber \\
   \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
 \end{align}
-
-<div class="org-src-container">
-<pre class="src src-python" id="phi-time"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">from</span> pyretechnics.burn_cells <span class="org-keyword">import</span> burn_cell_toward_azimuth
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: stub</span>
-<span class="org-keyword">def</span> <span class="org-function-name">identify_perimeter_cells</span>(phi):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    TODO: Add docstring</span>
-<span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> [[0,0]]
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_star</span>(phi, u_x, u_y, dx, dy, dt, x, y):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Return an estimate for phi[y][x] at time (t + dt) given these inputs:</span>
-<span class="org-doc">    - phi :: 2D float array of values in [-1,1]</span>
-<span class="org-doc">    - u_x :: m/min</span>
-<span class="org-doc">    - u_y :: m/min</span>
-<span class="org-doc">    - dx  :: meters</span>
-<span class="org-doc">    - dy  :: meters</span>
-<span class="org-doc">    - dt  :: minutes</span>
-<span class="org-doc">    - x   :: integer column index in phi</span>
-<span class="org-doc">    - y   :: integer row index in phi</span>
-<span class="org-doc">    """</span>
-    <span class="org-variable-name">spread_vector</span>   <span class="org-operator">=</span> np.asarray((u_x, u_y))
-    <span class="org-variable-name">gradient_vector</span> <span class="org-operator">=</span> calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y)
-    <span class="org-variable-name">dphi_dt</span>         <span class="org-operator">=</span> np.dot(spread_vector, gradient_vector)
-    <span class="org-keyword">return</span> phi[y][x] <span class="org-operator">-</span> dphi_dt <span class="org-operator">*</span> dt
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Add exit conditions for a max_duration or no perimeter cells found and that should be the spread algorithm!</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Store the fire behavior values computed in the first perimeter_cells loop in output arrays.</span>
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_next_timestep</span>(space_time_cubes, phi, dx, dy, dt, t):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    TODO: Add docstring</span>
-<span class="org-doc">    NOTE:</span>
-<span class="org-doc">    - space_time_cubes and phi must have the same spatial resolution.</span>
-<span class="org-doc">    - space_time_cubes must support temporal lookups in minutes.</span>
-<span class="org-doc">    - dx is the cell width in meters.</span>
-<span class="org-doc">    - dy is the cell height in meters.</span>
-<span class="org-doc">    - dt is the timestep in minutes.</span>
-<span class="org-doc">    - t is the start time in minutes.</span>
-<span class="org-doc">    """</span>
-    <span class="org-variable-name">perimeter_cells</span> <span class="org-operator">=</span> identify_perimeter_cells(phi)
-
-    <span class="org-variable-name">phi_star</span> <span class="org-operator">=</span> np.copy(phi)
-    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Make this into a ufunc and apply directly to the array</span>
-    <span class="org-keyword">for</span> [y, x] <span class="org-keyword">in</span> perimeter_cells:
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the spread vector normal to the fire front on the slope-tangential plane</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: This only gives the wavelet spread rate, not the fire front spread rate. Use Val's functions instead.</span>
-        <span class="org-variable-name">space_time_coordinate</span> <span class="org-operator">=</span> (t, y, x)
-        <span class="org-variable-name">normal_vector</span>         <span class="org-operator">=</span> calc_phi_normal_vector(phi, dx, dy, x, y)
-        <span class="org-variable-name">normal_azimuth</span>        <span class="org-operator">=</span> calc_phi_normal_azimuth(normal_vector)
-        <span class="org-variable-name">fire_behavior</span>         <span class="org-operator">=</span> burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, normal_azimuth)
-        (<span class="org-variable-name">u_x</span>, <span class="org-variable-name">u_y</span>, <span class="org-variable-name">u_z</span>)       <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>] <span class="org-operator">*</span> fire_behavior[<span class="org-string">"spread_direction"</span>]
-
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the gradient of phi given this spread vector projected onto the horizontal plane</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Update phi_star based on the dot product of the spread vector and the gradient vector</span>
-        phi_star[y][x] <span class="org-operator">=</span> calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y)
-
-    <span class="org-variable-name">perimeter_cells_star</span> <span class="org-operator">=</span> identify_perimeter_cells(phi_star)
-
-    <span class="org-variable-name">phi_star_star</span> <span class="org-operator">=</span> np.copy(phi_star)
-    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Make this into a ufunc and apply directly to the array</span>
-    <span class="org-keyword">for</span> [y, x] <span class="org-keyword">in</span> perimeter_cells_star:
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the spread vector normal to the fire front on the slope-tangential plane</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: This only gives the wavelet spread rate, not the fire front spread rate. Use Val's functions instead.</span>
-        <span class="org-variable-name">space_time_coordinate</span> <span class="org-operator">=</span> (t <span class="org-operator">+</span> dt, y, x)
-        <span class="org-variable-name">normal_vector</span>         <span class="org-operator">=</span> calc_phi_normal_vector(phi_star, dx, dy, x, y)
-        <span class="org-variable-name">normal_azimuth</span>        <span class="org-operator">=</span> calc_phi_normal_azimuth(normal_vector)
-        <span class="org-variable-name">fire_behavior</span>         <span class="org-operator">=</span> burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, normal_azimuth)
-        (<span class="org-variable-name">u_x</span>, <span class="org-variable-name">u_y</span>, <span class="org-variable-name">u_z</span>)       <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>] <span class="org-operator">*</span> fire_behavior[<span class="org-string">"spread_direction"</span>]
-
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the gradient of phi_star given this spread vector projected onto the horizontal plane</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Update phi_star_star based on the dot product of the spread vector and the gradient vector</span>
-        phi_star_star[y][x] <span class="org-operator">=</span> calc_phi_star(phi_star, u_x, u_y, dx, dy, dt, x, y)
-
-    <span class="org-keyword">return</span> (phi <span class="org-operator">+</span> phi_star_star) <span class="org-operator">/</span> 2.0
-</pre>
-</div>
 
 <p>
 In the above equations, timestep (\(\Delta t\)) is constrained by the

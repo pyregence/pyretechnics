@@ -5250,9 +5250,9 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
  'spread_rate': 0.9812016167065538}
 #+end_example
 
-* [WIP] Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)
+* Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)
   :PROPERTIES:
-  :CUSTOM_ID: [wip]-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)
+  :CUSTOM_ID: fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)
   :END:
 ** For Developers
    :PROPERTIES:
@@ -5507,6 +5507,12 @@ import numpy as np
 def calc_dphi_dx(phi, u_x, dx, x, y, cols):
     """
     TODO: Add docstring
+    - phi  :: 2D float array of values in [-1,1]
+    - u_x  :: m/min
+    - dx   :: meters
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - cols :: integer number of columns in the phi matrix
     """
     phi_east = calc_phi_east(phi, u_x, x, y, cols)
     phi_west = calc_phi_west(phi, u_x, x, y, cols)
@@ -5516,6 +5522,12 @@ def calc_dphi_dx(phi, u_x, dx, x, y, cols):
 def calc_dphi_dy(phi, u_y, dy, x, y, rows):
     """
     TODO: Add docstring
+    - phi  :: 2D float array of values in [-1,1]
+    - u_y  :: m/min
+    - dy   :: meters
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - rows :: integer number of rows in the phi matrix
     """
     phi_north = calc_phi_north(phi, u_y, x, y, rows)
     phi_south = calc_phi_south(phi, u_y, x, y, rows)
@@ -5525,6 +5537,13 @@ def calc_dphi_dy(phi, u_y, dy, x, y, rows):
 def calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y):
     """
     TODO: Add docstring
+    - phi :: 2D float array of values in [-1,1]
+    - u_x :: m/min
+    - u_y :: m/min
+    - dx  :: meters
+    - dy  :: meters
+    - x   :: integer column index in phi
+    - y   :: integer row index in phi
     """
     (rows, cols) = phi.shape
     dphi_dx      = calc_dphi_dx(phi, u_x, dx, x, y, cols)
@@ -5553,6 +5572,11 @@ For the east face:
 def calc_phi_east(phi, u_x, x, y, cols):
     """
     TODO: Add docstring
+    - phi  :: 2D float array of values in [-1,1]
+    - u_x  :: m/min
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - cols :: integer number of columns in the phi matrix
     """
     very_east_x = min(x+2, cols-1)
     east_x      = min(x+1, cols-1)
@@ -5590,6 +5614,11 @@ For the west face:
 def calc_phi_west(phi, u_x, x, y, cols):
     """
     TODO: Add docstring
+    - phi  :: 2D float array of values in [-1,1]
+    - u_x  :: m/min
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - cols :: integer number of columns in the phi matrix
     """
     east_x      = min(x+1, cols-1)
     west_x      = max(x-1, 0)
@@ -5627,6 +5656,11 @@ For the north face:
 def calc_phi_north(phi, u_y, x, y, rows):
     """
     TODO: Add docstring
+    - phi  :: 2D float array of values in [-1,1]
+    - u_y  :: m/min
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - rows :: integer number of rows in the phi matrix
     """
     very_north_y = min(y+2, rows-1)
     north_y      = min(y+1, rows-1)
@@ -5664,6 +5698,11 @@ For the south face:
 def calc_phi_south(phi, u_y, x, y, rows):
     """
     TODO: Add docstring
+    - phi  :: 2D float array of values in [-1,1]
+    - u_y  :: m/min
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - rows :: integer number of rows in the phi matrix
     """
     north_y      = min(y+1, rows-1)
     south_y      = max(y-1, 0)
@@ -5689,88 +5728,6 @@ order Runge Kutta method as follows:
   \nonumber \\
   \phi^{t + \Delta t} &= \frac{1}{2}\phi^t + \frac{1}{2} \left( \phi^* - \Delta t \left(U_x \frac{\phi^*_{\text{east}} - \phi^*_{\text{west}}}{\Delta x} + U_y \frac{\phi^*_{\text{north}} - \phi^*_{\text{south}}}{\Delta y} \right) \right)
 \end{align}
-
-#+NAME: phi-time
-#+begin_src python
-import numpy as np
-from pyretechnics.burn_cells import burn_cell_toward_azimuth
-
-
-# FIXME: stub
-def identify_perimeter_cells(phi):
-    """
-    TODO: Add docstring
-    """
-    return [[0,0]]
-
-
-def calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y):
-    """
-    Return an estimate for phi[y][x] at time (t + dt) given these inputs:
-    - phi :: 2D float array of values in [-1,1]
-    - u_x :: m/min
-    - u_y :: m/min
-    - dx  :: meters
-    - dy  :: meters
-    - dt  :: minutes
-    - x   :: integer column index in phi
-    - y   :: integer row index in phi
-    """
-    spread_vector   = np.asarray((u_x, u_y))
-    gradient_vector = calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y)
-    dphi_dt         = np.dot(spread_vector, gradient_vector)
-    return phi[y][x] - dphi_dt * dt
-
-
-# TODO: Add exit conditions for a max_duration or no perimeter cells found and that should be the spread algorithm!
-# TODO: Store the fire behavior values computed in the first perimeter_cells loop in output arrays.
-def calc_phi_next_timestep(space_time_cubes, phi, dx, dy, dt, t):
-    """
-    TODO: Add docstring
-    NOTE:
-    - space_time_cubes and phi must have the same spatial resolution.
-    - space_time_cubes must support temporal lookups in minutes.
-    - dx is the cell width in meters.
-    - dy is the cell height in meters.
-    - dt is the timestep in minutes.
-    - t is the start time in minutes.
-    """
-    perimeter_cells = identify_perimeter_cells(phi)
-
-    phi_star = np.copy(phi)
-    # TODO: Make this into a ufunc and apply directly to the array
-    for [y, x] in perimeter_cells:
-        # Calculate the spread vector normal to the fire front on the slope-tangential plane
-        # FIXME: This only gives the wavelet spread rate, not the fire front spread rate. Use Val's functions instead.
-        space_time_coordinate = (t, y, x)
-        normal_vector         = calc_phi_normal_vector(phi, dx, dy, x, y)
-        normal_azimuth        = calc_phi_normal_azimuth(normal_vector)
-        fire_behavior         = burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, normal_azimuth)
-        (u_x, u_y, u_z)       = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
-
-        # Calculate the gradient of phi given this spread vector projected onto the horizontal plane
-        # Update phi_star based on the dot product of the spread vector and the gradient vector
-        phi_star[y][x] = calc_phi_star(phi, u_x, u_y, dx, dy, dt, x, y)
-
-    perimeter_cells_star = identify_perimeter_cells(phi_star)
-
-    phi_star_star = np.copy(phi_star)
-    # TODO: Make this into a ufunc and apply directly to the array
-    for [y, x] in perimeter_cells_star:
-        # Calculate the spread vector normal to the fire front on the slope-tangential plane
-        # FIXME: This only gives the wavelet spread rate, not the fire front spread rate. Use Val's functions instead.
-        space_time_coordinate = (t + dt, y, x)
-        normal_vector         = calc_phi_normal_vector(phi_star, dx, dy, x, y)
-        normal_azimuth        = calc_phi_normal_azimuth(normal_vector)
-        fire_behavior         = burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, normal_azimuth)
-        (u_x, u_y, u_z)       = fire_behavior["spread_rate"] * fire_behavior["spread_direction"]
-
-        # Calculate the gradient of phi_star given this spread vector projected onto the horizontal plane
-        # Update phi_star_star based on the dot product of the spread vector and the gradient vector
-        phi_star_star[y][x] = calc_phi_star(phi_star, u_x, u_y, dx, dy, dt, x, y)
-
-    return (phi + phi_star_star) / 2.0
-#+end_src
 
 In the above equations, timestep ($\Delta t$) is constrained by the
 Courant-Friedrichs-Lewy (CFL) condition. The location of the fire
