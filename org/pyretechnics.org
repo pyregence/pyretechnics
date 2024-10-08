@@ -5739,6 +5739,12 @@ level set corresponding to $\phi = 0$.
     :CUSTOM_ID: calculate-the-surface/crown-fireline-normal-behavior
     :END:
 
+Since the fire front only propagates normal to itself in this fire
+spread algorithm, we need a method to translate the surface and/or
+crown fire behavior associated with a heading fire into the surface
+and/or crown fire behavior normal to the fire front. This process is
+illustrated below.
+
 #+NAME: calc-fireline-normal-behavior
 #+begin_src python
 from math import sqrt
@@ -5899,22 +5905,21 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     :CUSTOM_ID: burn-cell-normal-to-the-fire-perimeter
     :END:
 
-# TODO: Update this text.
-
 When the goal of a fire behavior analysis is to evolve a burn scar
 from its point of ignition into a generally conical shape in
 space-time, then it is necessary to evaluate the combined surface and
 crown fire behavior in the direction normal to the fire front. In
-order to facilitate this calculation, the following function takes an
-azimuth (degrees clockwise from North), meant to represent the spatial
-direction in which the fire front is spreading from a given grid cell.
-It first projects this 2D direction onto the local slope-tangential
-plane and computes the surface fire behavior in this direction. If a
-crown fire occurs, the crown fire behavior is also calculated in the
-azimuth direction, and the combined surface and crown fire behavior
-(as per section [[Combining Surface and Crown Fire Behavior]]) is
-returned. If no crown fire occurs, the surface fire behavior in the
-azimuth direction is returned.
+order to facilitate this calculation, the following function uses the
+horizontal $\phi$ gradient, which denotes the maximum rate of change
+in the $\phi$ field at each grid cell in the horizontal (spatial)
+plane. This 2D vector is first projected onto the 3D local
+slope-tangential plane and used to compute the surface fire behavior
+in this direction. If a crown fire occurs, the crown fire behavior is
+also calculated in the direction of the 3D $\phi$ gradient, and the
+combined surface and crown fire behavior (as per section [[Combining
+Surface and Crown Fire Behavior]]) is returned. If no crown fire occurs,
+the surface fire behavior in the direction of the 3D $\phi$ gradient
+is returned.
 
 #+NAME: burn-cell-toward-phi-gradient
 #+begin_src python
