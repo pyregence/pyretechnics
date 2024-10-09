@@ -6940,6 +6940,24 @@ file:../doc/pics/els_time_of_arrival.png
    :header-args:python+: :exports code
    :END:
 
+Whether a fire is spreading through surface or canopy fuels, it is
+possible that small pieces of the burning fuels may be lofted by winds
+ahead of the fire front. When these burning embers land in
+sufficiently dry fuels, they may ignite new fires under the right
+circumstances. Fires created in this way are called "spot fires" and
+are the subject of this chapter. The following sections provide
+functions for calculating the probability and rate of ember generation
+from burning fuels, the lofting distance and direction of these
+embers, the times at which they will be deposited ahead of the fire
+front, and their likelihood of igniting spot fires once deposited.
+
+*** Probability and Rate of Ember Generation
+
+#+name: ember-generation
+#+begin_src python
+
+#+end_src
+
 ** For Users
    :PROPERTIES:
    :CUSTOM_ID: for-users-spot
