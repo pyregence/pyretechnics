@@ -6424,15 +6424,14 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
-            # Keep a running tally of the max horizontal spread rates in the x and y dimensions for unburned cells
+            # Keep a running tally of the max horizontal spread rates in the x and y dimensions
             (dphi_dx, dphi_dy) = phi_gradient_xy
             phi_magnitude_xy_2 = phi_magnitude_xy ** 2.0
-            if phi_matrix[y,x] > 0.0:
-                dphi_dt            = fire_behavior["dphi_dt"]
-                spread_rate_x      = -dphi_dt * dphi_dx / phi_magnitude_xy_2
-                spread_rate_y      = -dphi_dt * dphi_dy / phi_magnitude_xy_2
-                max_spread_rate_x  = max(max_spread_rate_x, abs(spread_rate_x))
-                max_spread_rate_y  = max(max_spread_rate_y, abs(spread_rate_y))
+            dphi_dt            = fire_behavior["dphi_dt"]
+            spread_rate_x      = -dphi_dt * dphi_dx / phi_magnitude_xy_2
+            spread_rate_y      = -dphi_dt * dphi_dy / phi_magnitude_xy_2
+            max_spread_rate_x  = max(max_spread_rate_x, abs(spread_rate_x))
+            max_spread_rate_y  = max(max_spread_rate_y, abs(spread_rate_y))
 
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
             phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, dphi_dx, dphi_dy, cell_width, cell_height, x, y)
@@ -6791,28 +6790,28 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.92403376,
- 'Max': -0.027144847,
- 'Mean': -0.74992913,
- 'Stdev': 0.21444972}
+{'Min': -0.9240486,
+ 'Max': -0.027404163,
+ 'Mean': -0.7501928,
+ 'Stdev': 0.21454884}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077071, 'Max': 2.2964673, 'Mean': 1.2123194, 'Stdev': 0.6345803}
+{'Min': 0.16077146, 'Max': 2.2964647, 'Mean': 1.2113922, 'Stdev': 0.6336495}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.06370052, 'Max': 359.1836, 'Mean': 191.5278, 'Stdev': 117.83867}
+{'Min': 0.13703398, 'Max': 359.51968, 'Mean': 192.24963, 'Stdev': 117.77361}
 
 Fireline Intensity (kW/m)
-{'Min': 2.277232, 'Max': 32.52824, 'Mean': 17.171862, 'Stdev': 8.988494}
+{'Min': 2.2772427, 'Max': 32.528206, 'Mean': 17.158728, 'Stdev': 8.975309}
 
 Flame Length (meters)
-{'Min': 0.11312101, 'Max': 0.38439327, 'Mean': 0.2753003, 'Stdev': 0.07360656}
+{'Min': 0.11312125, 'Max': 0.3843931, 'Mean': 0.27521303, 'Stdev': 0.07355067}
 
 Time of Arrival (minutes)
-{'Min': 2081.8513, 'Max': 2548.0952, 'Mean': 2385.5647, 'Stdev': 116.835556}
+{'Min': 2081.8513, 'Max': 2548.0085, 'Mean': 2385.572, 'Stdev': 116.83921}
 #+end_example
 
 *** How to Create Images of Fire Behavior Outputs

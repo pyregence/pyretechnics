@@ -807,15 +807,14 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
-            # Keep a running tally of the max horizontal spread rates in the x and y dimensions for unburned cells
+            # Keep a running tally of the max horizontal spread rates in the x and y dimensions
             (dphi_dx, dphi_dy) = phi_gradient_xy
             phi_magnitude_xy_2 = phi_magnitude_xy ** 2.0
-            if phi_matrix[y,x] > 0.0:
-                dphi_dt            = fire_behavior["dphi_dt"]
-                spread_rate_x      = -dphi_dt * dphi_dx / phi_magnitude_xy_2
-                spread_rate_y      = -dphi_dt * dphi_dy / phi_magnitude_xy_2
-                max_spread_rate_x  = max(max_spread_rate_x, abs(spread_rate_x))
-                max_spread_rate_y  = max(max_spread_rate_y, abs(spread_rate_y))
+            dphi_dt            = fire_behavior["dphi_dt"]
+            spread_rate_x      = -dphi_dt * dphi_dx / phi_magnitude_xy_2
+            spread_rate_y      = -dphi_dt * dphi_dy / phi_magnitude_xy_2
+            max_spread_rate_x  = max(max_spread_rate_x, abs(spread_rate_x))
+            max_spread_rate_y  = max(max_spread_rate_y, abs(spread_rate_y))
 
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
             phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, dphi_dx, dphi_dy, cell_width, cell_height, x, y)
