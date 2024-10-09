@@ -6443,7 +6443,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     # Calculate timestep using the CFL condition
     if max_spread_rate_x == 0.0:
         if max_spread_rate_y == 0.0:
-            dt = max_timestep  # FIXME:  Don't set stop_time to start_time + dt when no cells are burning
+            dt = max_timestep
         else:
             dt = min(max_timestep, max_cells_per_timestep * cell_height / max_spread_rate_y)
     else:
@@ -6607,10 +6607,13 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     output_matrices["phi_star"] = np.copy(phi_matrix)
 
     # Spread the fire until an exit condition is reached
+    # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
     simulation_time = start_time
     while(simulation_time < max_stop_time and len(tracked_cells) > 0):
-        # Compute max_timestep based on the remaining time in the simulation
-        max_timestep = max_stop_time - simulation_time
+        # Compute max_timestep based on the remaining time in the temporal band and simulation
+        remaining_time_in_band       = band_duration - simulation_time % band_duration
+        remaining_time_in_simulation = max_stop_time - simulation_time
+        max_timestep                 = min(remaining_time_in_band, remaining_time_in_simulation)
 
         # Spread fire one timestep
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
@@ -6790,28 +6793,28 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.9240486,
- 'Max': -0.027404163,
- 'Mean': -0.7501928,
- 'Stdev': 0.21454884}
+{'Min': -0.9240959,
+ 'Max': -0.027171956,
+ 'Mean': -0.7502774,
+ 'Stdev': 0.21447739}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077146, 'Max': 2.2964647, 'Mean': 1.2113922, 'Stdev': 0.6336495}
+{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.63416344}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.13703398, 'Max': 359.51968, 'Mean': 192.24963, 'Stdev': 117.77361}
+{'Min': 0.6585914, 'Max': 359.69888, 'Mean': 191.40175, 'Stdev': 117.93311}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772427, 'Max': 32.528206, 'Mean': 17.158728, 'Stdev': 8.975309}
+{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.982589}
 
 Flame Length (meters)
-{'Min': 0.11312125, 'Max': 0.3843931, 'Mean': 0.27521303, 'Stdev': 0.07355067}
+{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523625, 'Stdev': 0.073568314}
 
 Time of Arrival (minutes)
-{'Min': 2081.8513, 'Max': 2548.0085, 'Mean': 2385.572, 'Stdev': 116.83921}
+{'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83745}
 #+end_example
 
 *** How to Create Images of Fire Behavior Outputs
