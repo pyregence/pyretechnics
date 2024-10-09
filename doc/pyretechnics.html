@@ -394,7 +394,11 @@ org_html_manager.setup();  // activate after the parameters are set
 </li>
 <li><a href="#[wip]-spot-fire-equations-(pyretechnics.spot_fire)">10. [WIP] Spot Fire Equations (pyretechnics.spot_fire)</a>
 <ul>
-<li><a href="#for-developers-spot">10.1. For Developers</a></li>
+<li><a href="#for-developers-spot">10.1. For Developers</a>
+<ul>
+<li><a href="#probability-and-rate-of-ember-production">10.1.1. Probability and Rate of Ember Production</a></li>
+</ul>
+</li>
 <li><a href="#for-users-spot">10.2. For Users</a></li>
 </ul>
 </li>
@@ -7035,15 +7039,14 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell has a positive phi magnitude</span>
         <span class="org-keyword">if</span> phi_magnitude_xy <span class="org-operator">&gt;</span> 0.0:
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Keep a running tally of the max horizontal spread rates in the x and y dimensions for unburned cells</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Keep a running tally of the max horizontal spread rates in the x and y dimensions</span>
             (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>) <span class="org-operator">=</span> phi_gradient_xy
             <span class="org-variable-name">phi_magnitude_xy_2</span> <span class="org-operator">=</span> phi_magnitude_xy <span class="org-operator">**</span> 2.0
-            <span class="org-keyword">if</span> phi_matrix[y,x] <span class="org-operator">&gt;</span> 0.0:
-                <span class="org-variable-name">dphi_dt</span>            <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
-                <span class="org-variable-name">spread_rate_x</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dx <span class="org-operator">/</span> phi_magnitude_xy_2
-                <span class="org-variable-name">spread_rate_y</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dy <span class="org-operator">/</span> phi_magnitude_xy_2
-                <span class="org-variable-name">max_spread_rate_x</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_x, <span class="org-builtin">abs</span>(spread_rate_x))
-                <span class="org-variable-name">max_spread_rate_y</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_y, <span class="org-builtin">abs</span>(spread_rate_y))
+            <span class="org-variable-name">dphi_dt</span>            <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
+            <span class="org-variable-name">spread_rate_x</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dx <span class="org-operator">/</span> phi_magnitude_xy_2
+            <span class="org-variable-name">spread_rate_y</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dy <span class="org-operator">/</span> phi_magnitude_xy_2
+            <span class="org-variable-name">max_spread_rate_x</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_x, <span class="org-builtin">abs</span>(spread_rate_x))
+            <span class="org-variable-name">max_spread_rate_y</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_y, <span class="org-builtin">abs</span>(spread_rate_y))
 
             <span class="org-comment-delimiter"># </span><span class="org-comment">Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable</span>
             <span class="org-variable-name">phi_gradient_xy_limited</span> <span class="org-operator">=</span> calc_phi_gradient(phi_matrix, dphi_dx, dphi_dy, cell_width, cell_height, x, y)
@@ -7055,7 +7058,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate timestep using the CFL condition</span>
     <span class="org-keyword">if</span> max_spread_rate_x <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">if</span> max_spread_rate_y <span class="org-operator">==</span> 0.0:
-            <span class="org-variable-name">dt</span> <span class="org-operator">=</span> max_timestep  <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME:  Don't set stop_time to start_time + dt when no cells are burning</span>
+            <span class="org-variable-name">dt</span> <span class="org-operator">=</span> max_timestep
         <span class="org-keyword">else</span>:
             <span class="org-variable-name">dt</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(max_timestep, max_cells_per_timestep <span class="org-operator">*</span> cell_height <span class="org-operator">/</span> max_spread_rate_y)
     <span class="org-keyword">else</span>:
@@ -7219,10 +7222,13 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">output_matrices</span>[<span class="org-string">"phi_star"</span>] <span class="org-operator">=</span> np.copy(phi_matrix)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the fire until an exit condition is reached</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: I don't think the "no burnable cells" condition can ever be met currently.</span>
     <span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> start_time
     <span class="org-keyword">while</span>(simulation_time <span class="org-operator">&lt;</span> max_stop_time <span class="org-keyword">and</span> <span class="org-builtin">len</span>(tracked_cells) <span class="org-operator">&gt;</span> 0):
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Compute max_timestep based on the remaining time in the simulation</span>
-        <span class="org-variable-name">max_timestep</span> <span class="org-operator">=</span> max_stop_time <span class="org-operator">-</span> simulation_time
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Compute max_timestep based on the remaining time in the temporal band and simulation</span>
+        <span class="org-variable-name">remaining_time_in_band</span>       <span class="org-operator">=</span> band_duration <span class="org-operator">-</span> simulation_time <span class="org-operator">%</span> band_duration
+        <span class="org-variable-name">remaining_time_in_simulation</span> <span class="org-operator">=</span> max_stop_time <span class="org-operator">-</span> simulation_time
+        <span class="org-variable-name">max_timestep</span>                 <span class="org-operator">=</span> <span class="org-builtin">min</span>(remaining_time_in_band, remaining_time_in_simulation)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire one timestep</span>
         <span class="org-variable-name">results</span> <span class="org-operator">=</span> spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
@@ -7397,28 +7403,28 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.92403376,
- 'Max': -0.027144847,
- 'Mean': -0.74992913,
- 'Stdev': 0.21444972}
+{'Min': -0.9240959,
+ 'Max': -0.027171956,
+ 'Mean': -0.7502774,
+ 'Stdev': 0.21447739}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077071, 'Max': 2.2964673, 'Mean': 1.2123194, 'Stdev': 0.6345803}
+{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.63416344}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.06370052, 'Max': 359.1836, 'Mean': 191.5278, 'Stdev': 117.83867}
+{'Min': 0.6585914, 'Max': 359.69888, 'Mean': 191.40175, 'Stdev': 117.93311}
 
 Fireline Intensity (kW/m)
-{'Min': 2.277232, 'Max': 32.52824, 'Mean': 17.171862, 'Stdev': 8.988494}
+{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.982589}
 
 Flame Length (meters)
-{'Min': 0.11312101, 'Max': 0.38439327, 'Mean': 0.2753003, 'Stdev': 0.07360656}
+{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523625, 'Stdev': 0.073568314}
 
 Time of Arrival (minutes)
-{'Min': 2081.8513, 'Max': 2548.0952, 'Mean': 2385.5647, 'Stdev': 116.835556}
+{'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83745}
 </pre>
 </div>
 </div>
@@ -7564,6 +7570,96 @@ Time of Arrival (minutes)
 <div id="outline-container-for-developers-spot" class="outline-3">
 <h3 id="for-developers-spot"><span class="section-number-3">10.1.</span> For Developers</h3>
 <div class="outline-text-3" id="text-for-developers-spot">
+<p>
+Whether a fire is spreading through surface or canopy fuels, it is
+possible that small pieces of the burning fuels may be lofted by winds
+ahead of the fire front. When these burning embers land in
+sufficiently dry fuels, they may ignite new fires under the right
+circumstances. Fires created in this way are called "spot fires" and
+are the subject of this chapter. The following sections provide
+functions for calculating the probability and rate of ember generation
+from burning fuels, the lofting distance and direction of these
+embers, the times at which they will be deposited ahead of the fire
+front, and their likelihood of igniting spot fires once deposited.
+</p>
+</div>
+<div id="outline-container-probability-and-rate-of-ember-production" class="outline-4">
+<h4 id="probability-and-rate-of-ember-production"><span class="section-number-4">10.1.1.</span> Probability and Rate of Ember Production</h4>
+<div class="outline-text-4" id="text-probability-and-rate-of-ember-production">
+<div class="org-src-container">
+<pre class="src src-python" id="expected-ember-production"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+<span class="org-keyword">from</span> pyretechnics.eulerian_level_set <span class="org-keyword">import</span> calc_elevation_gradient
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">expected_ember_production</span>(space_time_cubes, space_time_coordinate, cube_resolution, fire_behavior,
+                              ember_production_rate<span class="org-operator">=</span>0.03):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Return the expected number of embers produced at the specified space_time_coordinate given:</span>
+<span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
+<span class="org-doc">      - slope                         :: rise/run</span>
+<span class="org-doc">      - aspect                        :: degrees clockwise from North</span>
+<span class="org-doc">      - fuel_model                    :: integer index in fm.fuel_model_table</span>
+<span class="org-doc">      - canopy_cover                  :: 0-1</span>
+<span class="org-doc">      - canopy_height                 :: m</span>
+<span class="org-doc">      - canopy_base_height            :: m</span>
+<span class="org-doc">      - canopy_bulk_density           :: kg/m^3</span>
+<span class="org-doc">      - wind_speed_10m                :: km/hr</span>
+<span class="org-doc">      - upwind_direction              :: degrees clockwise from North</span>
+<span class="org-doc">      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">      - fuel_moisture_dead_10hr       :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">      - fuel_moisture_dead_100hr      :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">      - fuel_moisture_live_herbaceous :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">      - fuel_moisture_live_woody      :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">      - foliar_moisture               :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">      - fuel_spread_adjustment        :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+<span class="org-doc">      - weather_spread_adjustment     :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+<span class="org-doc">    - space_time_coordinate     :: (t,y,x)</span>
+<span class="org-doc">    - cube_resolution           :: tuple with these fields:</span>
+<span class="org-doc">      - band_duration                 :: minutes</span>
+<span class="org-doc">      - cell_height                   :: meters</span>
+<span class="org-doc">      - cell_width                    :: meters</span>
+<span class="org-doc">    - fire_behavior             :: dictionary of surface or crown fire behavior values</span>
+<span class="org-doc">      - fire_type                     :: "unburned", "surface", "passive_crown", or "active_crown"</span>
+<span class="org-doc">      - spread_rate                   :: m/min</span>
+<span class="org-doc">      - spread_direction              :: (x, y, z) unit vector on the slope-tangential plane</span>
+<span class="org-doc">      - fireline_intensity            :: kW/m</span>
+<span class="org-doc">      - flame_length                  :: m</span>
+<span class="org-doc">    - ember_production_rate     :: embers/kJ</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">if</span> fire_behavior[<span class="org-string">"fire_type"</span>] <span class="org-operator">==</span> <span class="org-string">"unburned"</span>:
+        <span class="org-keyword">return</span> 0.0
+    <span class="org-keyword">else</span>:
+        <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the heat output per unit area</span>
+        <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
+
+        <span class="org-variable-name">spread_rate</span>          <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+        <span class="org-variable-name">fireline_intensity</span>   <span class="org-operator">=</span> fire_behavior[<span class="org-string">"fireline_intensity"</span>]     <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
+        <span class="org-variable-name">heat_output_per_area</span> <span class="org-operator">=</span> 60.0 <span class="org-operator">*</span> fireline_intensity <span class="org-operator">/</span> spread_rate <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/m^2 (reaction_intensity * residence_time)</span>
+
+        <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the slope-adjusted cell area</span>
+        <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
+
+        (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)      <span class="org-operator">=</span> space_time_coordinate
+        <span class="org-variable-name">slope</span>          <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>].get(t, y, x)  <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
+        <span class="org-variable-name">aspect</span>         <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"aspect"</span>].get(t, y, x) <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+        (<span class="org-variable-name">dz_dx</span>, <span class="org-variable-name">dz_dy</span>) <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)  <span class="org-comment-delimiter"># </span><span class="org-comment">(rise/run, rise/run)</span>
+        <span class="org-variable-name">slope_factor</span>   <span class="org-operator">=</span> sqrt(1.0 <span class="org-operator">+</span> dz_dx <span class="org-operator">**</span> 2.0 <span class="org-operator">+</span> dz_dy <span class="org-operator">**</span> 2.0) <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
+        <span class="org-variable-name">cell_height</span>    <span class="org-operator">=</span> cube_resolution[1]                      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+        <span class="org-variable-name">cell_width</span>     <span class="org-operator">=</span> cube_resolution[2]                      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+        <span class="org-variable-name">cell_area</span>      <span class="org-operator">=</span> cell_height <span class="org-operator">*</span> cell_width <span class="org-operator">*</span> slope_factor <span class="org-comment-delimiter"># </span><span class="org-comment">m^2</span>
+
+        <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the expected number of embers produced in this cell</span>
+        <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
+
+        <span class="org-variable-name">cell_heat_output</span> <span class="org-operator">=</span> heat_output_per_area <span class="org-operator">*</span> cell_area         <span class="org-comment-delimiter"># </span><span class="org-comment">kJ</span>
+        <span class="org-variable-name">ember_count</span>      <span class="org-operator">=</span> cell_heat_output <span class="org-operator">*</span> ember_production_rate <span class="org-comment-delimiter"># </span><span class="org-comment">number of embers</span>
+        <span class="org-keyword">return</span> ember_count
+</pre>
+</div>
+</div>
 </div>
 </div>
 <div id="outline-container-for-users-spot" class="outline-3">
