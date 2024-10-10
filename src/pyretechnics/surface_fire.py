@@ -169,8 +169,8 @@ def get_phi_S_fn(beta):
 import pyretechnics.conversion as conv
 
 
-def get_phi_W_fn(beta, B, C, F):
-    if (beta > 0.0):
+def get_phi_W_fn(B, C, F):
+    if (F > 0.0):
         C_over_F = C / F
         return lambda midflame_wind_speed: (conv.m_to_ft(midflame_wind_speed) ** B) * C_over_F
     else:
@@ -181,9 +181,12 @@ import pyretechnics.conversion as conv
 
 
 def get_wind_speed_fn(B, C, F):
-    F_over_C  = F / C
-    B_inverse = 1.0 / B
-    return lambda phi_W: conv.ft_to_m((phi_W * F_over_C) ** B_inverse)
+    if (B > 0.0):
+        F_over_C  = F / C
+        B_inverse = 1.0 / B
+        return lambda phi_W: conv.ft_to_m((phi_W * F_over_C) ** B_inverse)
+    else:
+        return lambda _: 0.0
 # surface-fire-wind-speed-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
 import pyretechnics.conversion as conv
@@ -246,7 +249,7 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     E              = 0.715 * exp(-3.59 * (sigma_prime / 10000.0))
     F              = (beta / beta_op) ** E
     get_phi_S      = get_phi_S_fn(beta)
-    get_phi_W      = get_phi_W_fn(beta, B, C, F)
+    get_phi_W      = get_phi_W_fn(B, C, F)
     get_wind_speed = get_wind_speed_fn(B, C, F)
     # Return no-wind-no-slope surface fire behavior values
     return {
