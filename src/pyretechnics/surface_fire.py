@@ -124,7 +124,7 @@ import pyretechnics.conversion as conv
 
 
 def calc_residence_time(sigma_prime):
-    return 384.0 / sigma_prime
+    return 384.0 / sigma_prime if (sigma_prime > 0.0) else 0.0
 
 
 def calc_flame_depth(spread_rate, residence_time):

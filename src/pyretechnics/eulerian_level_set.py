@@ -275,7 +275,7 @@ def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):
     """
     Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:
     - phi_gradient_xy    :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane
-    - elevation_gradient :: (dz_dx: m/m, dz_dy: m/m)
+    - elevation_gradient :: (dz_dx: rise/run, dz_dy: rise/run)
     """
     (dphi_dx, dphi_dy) = phi_gradient_xy
     phi_gradient_xyz   = np.asarray((dphi_dx, dphi_dy, 0.0))
