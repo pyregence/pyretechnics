@@ -7022,6 +7022,114 @@ def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution
    :header-args:python+: :exports both
    :END:
 
+*** How to Estimate the Areal Heat Output for All Surface Fuel Models
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-calculate-the-areal-heat-output-for-all-surface-fuel-models
+    :END:
+
+#+NAME: estimate-areal-heat-output
+#+begin_src python
+import matplotlib.pyplot as plt
+import numpy as np
+from pprint import pprint
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+
+def calc_areal_heat_output(moisturized_fuel_model):
+    fire_behavior        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+    spread_rate          = fire_behavior["base_spread_rate"]        # m/min
+    fireline_intensity   = fire_behavior["base_fireline_intensity"] # kW/m
+    heat_output_per_area = 60.0 * fireline_intensity / spread_rate if spread_rate > 0.0 else 0.0 # kJ/m^2
+    return heat_output_per_area
+
+def save_areal_heat_output_as_histogram(areal_heat_output, moisture_category):
+    plt.hist(areal_heat_output[moisture_category],
+             range=(0, 60000),
+             bins=12,
+             density=True,
+             histtype="bar",
+             color="darkred",
+             edgecolor="black")
+    plt.title("Areal Heat Output for All Surface Fuel Models - " + str.capitalize(moisture_category) + " Conditions")
+    plt.xlabel("Areal Heat Output (kJ/m^2)")
+    plt.ylabel("Probability Density")
+    plt.savefig("../doc/pics/fm_areal_heat_output_" + moisture_category + ".png")
+    plt.close("all")
+
+fuel_moisture_dry = [
+    0.025, # dead_1hr
+    0.050, # dead_10hr
+    0.075, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.45, # live_herbaceous
+    0.30, # live_woody
+]
+
+fuel_moisture_mod = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.90, # live_herbaceous
+    0.60, # live_woody
+]
+
+fuel_moisture_wet = [
+    0.10, # dead_1hr
+    0.20, # dead_10hr
+    0.30, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    1.80, # live_herbaceous
+    1.20, # live_woody
+]
+
+areal_heat_output = {
+    "dry": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_dry)) for v in fm.fuel_model_table.values()],
+    "mod": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_mod)) for v in fm.fuel_model_table.values()],
+    "wet": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_wet)) for v in fm.fuel_model_table.values()],
+}
+
+for moisture_category in ["dry", "mod", "wet"]:
+    save_areal_heat_output_as_histogram(areal_heat_output, moisture_category)
+
+print("Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
+pprint({
+    "dry": np.median(areal_heat_output["dry"]),
+    "mod": np.median(areal_heat_output["mod"]),
+    "wet": np.median(areal_heat_output["wet"]),
+})
+
+print("\nMean Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
+pprint({
+    "dry": np.mean(areal_heat_output["dry"]),
+    "mod": np.mean(areal_heat_output["mod"]),
+    "wet": np.mean(areal_heat_output["wet"]),
+})
+
+print("\nMax Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
+pprint({
+    "dry": np.max(areal_heat_output["dry"]),
+    "mod": np.max(areal_heat_output["mod"]),
+    "wet": np.max(areal_heat_output["wet"]),
+})
+#+end_src
+
+#+NAME: run-estimate-areal-heat-output
+#+RESULTS: estimate-areal-heat-output
+#+begin_example
+Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models
+================================================================================
+{'dry': 9517.751902280774, 'mod': 7050.167242235583, 'wet': 3533.8204025496834}
+
+Mean Areal Heat Output (kJ/m^2) for All Surface Fuel Models
+================================================================================
+{'dry': 14270.339257437603, 'mod': 10954.33091872254, 'wet': 5705.411098489761}
+
+Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
+================================================================================
+{'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
+#+end_example
+
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-fire-suppression-algorithms-(pyretechnics.suppression)
