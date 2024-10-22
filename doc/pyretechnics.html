@@ -6879,24 +6879,28 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-variable-name">frontier_cells</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>()
     <span class="org-keyword">if</span> tracked_cells:
         <span class="org-keyword">for</span> (y, x) <span class="org-keyword">in</span> tracked_cells:
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south, east, west) neighboring cell pairs for opposite phi signs</span>
             <span class="org-variable-name">north_y</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
             <span class="org-variable-name">south_y</span> <span class="org-operator">=</span> <span class="org-builtin">max</span>(y<span class="org-operator">-</span>1, 0)
             <span class="org-variable-name">east_x</span>  <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>1, cols<span class="org-operator">-</span>1)
             <span class="org-variable-name">west_x</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(x<span class="org-operator">-</span>1, 0)
-            <span class="org-keyword">if</span> (opposite_phi_signs(phi_matrix, north_y, x, south_y, x) <span class="org-keyword">or</span>
-                opposite_phi_signs(phi_matrix, y, east_x, y, west_x)):
+            <span class="org-keyword">if</span> (opposite_phi_signs(phi_matrix, y, x, north_y, x) <span class="org-keyword">or</span>
+                opposite_phi_signs(phi_matrix, y, x, south_y, x) <span class="org-keyword">or</span>
+                opposite_phi_signs(phi_matrix, y, x, y, east_x) <span class="org-keyword">or</span>
+                opposite_phi_signs(phi_matrix, y, x, y, west_x)):
                 frontier_cells.add((y, x))
     <span class="org-keyword">else</span>:
         <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
             <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs</span>
+                <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south, east, west) neighboring cell pairs for opposite phi signs</span>
                 <span class="org-variable-name">north_y</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
                 <span class="org-variable-name">south_y</span> <span class="org-operator">=</span> <span class="org-builtin">max</span>(y<span class="org-operator">-</span>1, 0)
                 <span class="org-variable-name">east_x</span>  <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>1, cols<span class="org-operator">-</span>1)
                 <span class="org-variable-name">west_x</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(x<span class="org-operator">-</span>1, 0)
-                <span class="org-keyword">if</span> (opposite_phi_signs(phi_matrix, north_y, x, south_y, x) <span class="org-keyword">or</span>
-                    opposite_phi_signs(phi_matrix, y, east_x, y, west_x)):
+                <span class="org-keyword">if</span> (opposite_phi_signs(phi_matrix, y, x, north_y, x) <span class="org-keyword">or</span>
+                    opposite_phi_signs(phi_matrix, y, x, south_y, x) <span class="org-keyword">or</span>
+                    opposite_phi_signs(phi_matrix, y, x, y, east_x) <span class="org-keyword">or</span>
+                    opposite_phi_signs(phi_matrix, y, x, y, west_x)):
                     frontier_cells.add((y, x))
     <span class="org-keyword">return</span> frontier_cells
 
@@ -6984,6 +6988,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <div class="org-src-container">
 <pre class="src src-python" id="spread-phi-field"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
+<span class="org-keyword">from</span> pyretechnics.spot_fire <span class="org-keyword">import</span> expected_ember_production, spread_firebrands
 <span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
 
 
@@ -7008,7 +7013,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
-                             max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3):
+                             max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
+                             spot_ignitions<span class="org-operator">=</span>{}, spotting_config<span class="org-operator">=</span><span class="org-constant">None</span>, rand_gen<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    NOTE:</span>
@@ -7022,7 +7028,11 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
     (<span class="org-variable-name">band_duration</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack output matrices</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack space_time_cubes</span>
+    <span class="org-variable-name">slope_cube</span>  <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>]
+    <span class="org-variable-name">aspect_cube</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"aspect"</span>]
+
+   <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack output_matrices</span>
     <span class="org-variable-name">phi_matrix</span>                <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
     <span class="org-variable-name">phi_star_matrix</span>           <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi_star"</span>]
     <span class="org-variable-name">fire_type_matrix</span>          <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
@@ -7032,6 +7042,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">flame_length_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
     <span class="org-variable-name">time_of_arrival_matrix</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
 
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the ember_production_rate from the spotting_config if provided</span>
+    <span class="org-variable-name">ember_production_rate</span> <span class="org-operator">=</span> spotting_config[<span class="org-string">"ember_production_rate"</span>] <span class="org-keyword">if</span> spotting_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+
     <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize max spread rates in the x and y dimensions to 0.0</span>
     <span class="org-variable-name">max_spread_rate_x</span> <span class="org-operator">=</span> 0.0
     <span class="org-variable-name">max_spread_rate_y</span> <span class="org-operator">=</span> 0.0
@@ -7039,7 +7052,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Create an empty dictionary to store intermediate fire behavior values per cell</span>
     <span class="org-variable-name">fire_behavior_dict</span> <span class="org-operator">=</span> {}
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Compute fire behavior values at time (start_time) and identify the max spread rates in the x and y dimensions</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Compute fire behavior values at start_time and identify the max spread rates in the x and y dimensions</span>
     <span class="org-variable-name">t0</span> <span class="org-operator">=</span> <span class="org-builtin">int</span>(start_time <span class="org-operator">//</span> band_duration)
     <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack cell_index</span>
@@ -7085,6 +7098,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
             <span class="org-variable-name">dt</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(max_timestep, max_cells_per_timestep <span class="org-operator">*</span> <span class="org-builtin">min</span>(cell_width <span class="org-operator">/</span> max_spread_rate_x,
                                                                 cell_height <span class="org-operator">/</span> max_spread_rate_y))
 
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the stop_time using this timestep</span>
+    <span class="org-variable-name">stop_time</span> <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt
+
     <span class="org-comment-delimiter"># </span><span class="org-comment">Update the tracked cell values in phi_star_matrix</span>
     <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
         (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)  <span class="org-operator">=</span> cell_index
@@ -7092,8 +7108,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-keyword">if</span> dphi_dt <span class="org-operator">!=</span> 0.0:
             <span class="org-variable-name">phi_star_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">+=</span> dphi_dt <span class="org-operator">*</span> dt
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Compute fire behavior values at time (start_time + dt) and update the output matrices</span>
-    <span class="org-variable-name">t1</span> <span class="org-operator">=</span> <span class="org-builtin">int</span>((start_time <span class="org-operator">+</span> dt) <span class="org-operator">//</span> band_duration)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Compute fire behavior values at stop_time and update the output_matrices</span>
+    <span class="org-variable-name">t1</span> <span class="org-operator">=</span> <span class="org-builtin">int</span>(stop_time <span class="org-operator">//</span> band_duration)
     <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack cell_index</span>
         (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> cell_index
@@ -7115,7 +7131,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
             <span class="org-variable-name">fire_behavior_star</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">*=</span> (np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) <span class="org-operator">/</span>
                                               (phi_magnitude_xy_star <span class="org-operator">**</span> 2.0))
 
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the new phi value at time (start_time + dt) as phi_next</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the new phi value at stop_time as phi_next</span>
         <span class="org-variable-name">fire_behavior</span>     <span class="org-operator">=</span> fire_behavior_dict[cell_index]
         <span class="org-variable-name">dphi_dt_estimate1</span> <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
         <span class="org-variable-name">dphi_dt_estimate2</span> <span class="org-operator">=</span> fire_behavior_star[<span class="org-string">"dphi_dt"</span>]
@@ -7127,8 +7143,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
             <span class="org-comment-delimiter"># </span><span class="org-comment">Update the tracked cell values in phi_matrix</span>
             <span class="org-variable-name">phi_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> phi_next
 
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Record fire behavior values in the output matrices for cells that are burned in this timestep</span>
-            <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: This records the fire behavior values at time (start_time) and not at the time of arrival.</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Record fire behavior values in the output_matrices for cells that are burned in this timestep</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: This records the fire behavior values at start_time and not at the time of arrival.</span>
             <span class="org-keyword">if</span> phi <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">and</span> phi_next <span class="org-operator">&lt;=</span> 0.0:
                 <span class="org-variable-name">fire_type_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]          <span class="org-operator">=</span> fire_type_codes[fire_behavior[<span class="org-string">"fire_type"</span>]]
                 <span class="org-variable-name">spread_rate_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]        <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>]
@@ -7136,10 +7152,40 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                 <span class="org-variable-name">fireline_intensity_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> fire_behavior[<span class="org-string">"fireline_intensity"</span>]
                 <span class="org-variable-name">flame_length_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]       <span class="org-operator">=</span> fire_behavior[<span class="org-string">"flame_length"</span>]
                 <span class="org-variable-name">time_of_arrival_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]    <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt <span class="org-operator">*</span> phi <span class="org-operator">/</span> (phi <span class="org-operator">-</span> phi_next)
-                <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Cast firebrands and accumulate their landing locations and ignition times in a global data structure</span>
-                <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create rand_gen with numpy.random.default_rng(seed=1234567890)</span>
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Set phi_matrix to -1.0 in all cells whosee ignition times occur before start_time + dt</span>
+                <span class="org-comment-delimiter"># </span><span class="org-comment">Cast firebrands, update firebrand_count_matrix, and update spot_ignitions</span>
+                <span class="org-keyword">if</span> spotting_config:
+                    <span class="org-variable-name">t_cast</span>                <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
+                    <span class="org-variable-name">space_time_coordinate</span> <span class="org-operator">=</span> (t_cast, y, x)
+                    <span class="org-variable-name">slope</span>                 <span class="org-operator">=</span> slope_cube.get(t_cast, y, x)
+                    <span class="org-variable-name">aspect</span>                <span class="org-operator">=</span> aspect_cube.get(t_cast, y, x)
+                    <span class="org-variable-name">elevation_gradient</span>    <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
+                    <span class="org-variable-name">expected_ember_count</span>  <span class="org-operator">=</span> expected_ember_production(fire_behavior,
+                                                                      elevation_gradient,
+                                                                      cube_resolution,
+                                                                      ember_production_rate)
+                    <span class="org-variable-name">new_ignitions</span>         <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
+                                                              space_time_coordinate, rand_gen, expected_ember_count,
+                                                              spotting_config)
+                    <span class="org-keyword">if</span> new_ignitions:
+                        (<span class="org-variable-name">ignition_time</span>, <span class="org-variable-name">ignited_cells</span>) <span class="org-operator">=</span> new_ignitions
+                        <span class="org-variable-name">concurrent_ignited_cells</span>       <span class="org-operator">=</span> spot_ignitions.get(ignition_time)
+                        <span class="org-keyword">if</span> concurrent_ignited_cells:
+                            <span class="org-variable-name">spot_ignitions</span>[ignition_time] <span class="org-operator">=</span> concurrent_ignited_cells <span class="org-operator">+</span> ignited_cells
+                        <span class="org-keyword">else</span>:
+                            <span class="org-variable-name">spot_ignitions</span>[ignition_time] <span class="org-operator">=</span> ignited_cells
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Update phi_matrix and time_of_arrival matrix for all cells that ignite a new spot fire before stop_time</span>
+    <span class="org-keyword">for</span> ignition_time <span class="org-keyword">in</span> <span class="org-builtin">sorted</span>(spot_ignitions):
+        <span class="org-keyword">if</span> ignition_time <span class="org-operator">&lt;</span> stop_time:
+            <span class="org-variable-name">ignited_cells</span> <span class="org-operator">=</span> spot_ignitions.pop(ignition_time)
+            <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> ignited_cells:
+                (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> cell_index
+                <span class="org-keyword">if</span> phi_matrix[y,x] <span class="org-operator">&gt;</span> 0.0:
+                    <span class="org-variable-name">phi_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]             <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+                    <span class="org-variable-name">time_of_arrival_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> ignition_time <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: REVIEW Should I use stop_time instead?</span>
+                    <span class="org-variable-name">tracked_cells</span>[cell_index]   <span class="org-operator">=</span> tracked_cells.get(cell_index, 0)
+                    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: I need to calculate and store the fire_behavior values for these cells</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Save the new phi_matrix values in phi_star_matrix</span>
     <span class="org-keyword">for</span> (y,x) <span class="org-keyword">in</span> tracked_cells:
@@ -7152,16 +7198,17 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated world state</span>
     <span class="org-keyword">return</span> {
-        <span class="org-string">"simulation_time"</span>: start_time <span class="org-operator">+</span> dt,
+        <span class="org-string">"simulation_time"</span>: stop_time,
         <span class="org-string">"output_matrices"</span>: output_matrices,
         <span class="org-string">"frontier_cells"</span> : frontier_cells_new,
         <span class="org-string">"tracked_cells"</span>  : tracked_cells_new,
+        <span class="org-string">"spot_ignitions"</span> : spot_ignitions,
     }
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration<span class="org-operator">=</span><span class="org-constant">None</span>, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>,
-                               max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3):
+                               max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3, spot_ignitions<span class="org-operator">=</span>{}, spotting_config<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
@@ -7172,6 +7219,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - canopy_height                 :: m</span>
 <span class="org-doc">      - canopy_base_height            :: m</span>
 <span class="org-doc">      - canopy_bulk_density           :: kg/m^3</span>
+<span class="org-doc">      - temperature                   :: degrees Celsius (Optional: needed for spotting)</span>
 <span class="org-doc">      - wind_speed_10m                :: km/hr</span>
 <span class="org-doc">      - upwind_direction              :: degrees clockwise from North</span>
 <span class="org-doc">      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight</span>
@@ -7190,6 +7238,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - fireline_intensity            :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
+<span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands) (Optional: needed for spotting)</span>
 <span class="org-doc">    - cube_resolution           :: tuple with these fields</span>
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
@@ -7200,6 +7249,16 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - max_length_to_width_ratio :: float &gt; 0.0 (Optional)</span>
 <span class="org-doc">    - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)</span>
 <span class="org-doc">    - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
+<span class="org-doc">    - spot_ignitions            :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
+<span class="org-doc">    - spotting_config           :: dictionary of spotting parameters (Optional: needed for spotting)</span>
+<span class="org-doc">      - mean_distance                 :: ? TODO: Record these parameters' types</span>
+<span class="org-doc">      - flin_exp                      :: ?</span>
+<span class="org-doc">      - ws_exp                        :: ?</span>
+<span class="org-doc">      - normalized_distance_variance  :: ?</span>
+<span class="org-doc">      - delta_y_sigma                 :: ?</span>
+<span class="org-doc">      - decay_constant                :: ?</span>
+<span class="org-doc">      - ember_production_rate         :: embers/kJ</span>
+<span class="org-doc">      - random_seed                   :: integer to seed a numpy.random.Generator object</span>
 
 <span class="org-doc">    return a dictionary with these keys:</span>
 <span class="org-doc">    - stop_time            :: minutes</span>
@@ -7212,15 +7271,22 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - fireline_intensity    :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length          :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival       :: 2D float array (min)</span>
+<span class="org-doc">      - firebrand_count       :: 2D integer array (number of firebrands) (only included when spotting is used)</span>
+<span class="org-doc">    - spot_ignitions       :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
     (<span class="org-variable-name">bands</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>) <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>].shape
     <span class="org-variable-name">band_duration</span>       <span class="org-operator">=</span> cube_resolution[0]
     <span class="org-variable-name">cube_duration</span>       <span class="org-operator">=</span> bands <span class="org-operator">*</span> band_duration
 
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all space_time_cubes have the same spatial resolution</span>
+    <span class="org-keyword">for</span> cube <span class="org-keyword">in</span> space_time_cubes.values():
+        <span class="org-keyword">if</span> cube.shape <span class="org-operator">!=</span> (bands, rows, cols):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes must all share the same spatial resolution."</span>)
+
     <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that space_time_cubes and output_matrices have the same spatial resolution</span>
-    <span class="org-keyword">for</span> layer <span class="org-keyword">in</span> output_matrices:
-        <span class="org-keyword">if</span> output_matrices[layer].shape <span class="org-operator">!=</span> (rows, cols):
+    <span class="org-keyword">for</span> layer <span class="org-keyword">in</span> output_matrices.values():
+        <span class="org-keyword">if</span> layer.shape <span class="org-operator">!=</span> (rows, cols):
             <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes and output_matrices must share the same spatial resolution."</span>)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the max stop time</span>
@@ -7242,10 +7308,13 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Make a copy of the phi matrix to use for intermediate calculations in each timestep</span>
     <span class="org-variable-name">output_matrices</span>[<span class="org-string">"phi_star"</span>] <span class="org-operator">=</span> np.copy(phi_matrix)
 
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a numpy.random.Generator object to produce random samples if spotting_config is provided</span>
+    <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> np.random.default_rng(seed<span class="org-operator">=</span>spotting_config[<span class="org-string">"random_seed"</span>]) <span class="org-keyword">if</span> spotting_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+
     <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the fire until an exit condition is reached</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: I don't think the "no burnable cells" condition can ever be met currently.</span>
     <span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> start_time
-    <span class="org-keyword">while</span>(simulation_time <span class="org-operator">&lt;</span> max_stop_time <span class="org-keyword">and</span> <span class="org-builtin">len</span>(tracked_cells) <span class="org-operator">&gt;</span> 0):
+    <span class="org-keyword">while</span>(simulation_time <span class="org-operator">&lt;</span> max_stop_time <span class="org-keyword">and</span> (<span class="org-builtin">len</span>(tracked_cells) <span class="org-operator">&gt;</span> 0 <span class="org-keyword">or</span> <span class="org-builtin">len</span>(spot_ignitions) <span class="org-operator">&gt;</span> 0)):
         <span class="org-comment-delimiter"># </span><span class="org-comment">Compute max_timestep based on the remaining time in the temporal band and simulation</span>
         <span class="org-variable-name">remaining_time_in_band</span>       <span class="org-operator">=</span> band_duration <span class="org-operator">-</span> simulation_time <span class="org-operator">%</span> band_duration
         <span class="org-variable-name">remaining_time_in_simulation</span> <span class="org-operator">=</span> max_stop_time <span class="org-operator">-</span> simulation_time
@@ -7254,13 +7323,15 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire one timestep</span>
         <span class="org-variable-name">results</span> <span class="org-operator">=</span> spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
-                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width)
+                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
+                                           spot_ignitions, spotting_config, rand_gen)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Reset spread inputs</span>
         <span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> results[<span class="org-string">"simulation_time"</span>]
         <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> results[<span class="org-string">"output_matrices"</span>]
         <span class="org-variable-name">frontier_cells</span>  <span class="org-operator">=</span> results[<span class="org-string">"frontier_cells"</span>]
         <span class="org-variable-name">tracked_cells</span>   <span class="org-operator">=</span> results[<span class="org-string">"tracked_cells"</span>]
+        <span class="org-variable-name">spot_ignitions</span>  <span class="org-operator">=</span> results[<span class="org-string">"spot_ignitions"</span>]
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Remove the temporary copy of the phi matrix from output_matrices</span>
     output_matrices.pop(<span class="org-string">"phi_star"</span>)
@@ -7270,7 +7341,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-string">"stop_time"</span>      : simulation_time,
         <span class="org-string">"stop_condition"</span> : <span class="org-string">"max duration reached"</span> <span class="org-keyword">if</span> <span class="org-builtin">len</span>(tracked_cells) <span class="org-operator">&gt;</span> 0 <span class="org-keyword">else</span> <span class="org-string">"no burnable cells"</span>,
         <span class="org-string">"output_matrices"</span>: output_matrices,
-    }
+    } <span class="org-operator">|</span> ({<span class="org-string">"spot_ignitions"</span> : spot_ignitions} <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> {})
 </pre>
 </div>
 </div>
@@ -8487,12 +8558,14 @@ length is 1.17m (100x smaller than \(z_\text{max}\)), \(t_v\) is about
 <div class="outline-text-4" id="text-spreading-firebrands">
 <p>
 Once the locations, ignition probabilities, and times of ignition have
-been calculated for each of the firebrands, a sequence of space-time
-coordinates <b>(spot_time,y,x)</b> are returned, to be processed in the
-fire spread algorithm (see section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9</a>), where <b>spot_time</b>
-is the ignition time of the spot fire in minutes, and <b>y,x</b> is the
-cell in which the firebrand will land.
+been calculated for each of the firebrands, a tuple of
+<b>(spot_ignition_time, ignition_locations)</b> are returned, to be
+processed in the fire spread algorithm (see section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9</a>), where <b>spot_ignition_time</b> is the
+ignition time of the spot fire in minutes, and <b>ignition_locations</b> is
+a list of <b>(y,x)</b> grid coordinates in which spot fires will be
+ignited.
 </p>
+
 
 <div class="org-src-container">
 <pre class="src src-python" id="spread-firebrands"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sin, cos, hypot, radians
@@ -8611,8 +8684,8 @@ cell in which the firebrand will land.
 <span class="org-doc">    locations in output_matrices["firebrand_count"], filters out all of the firebrands that fizzle out in either</span>
 <span class="org-doc">    burnable or non-burnable fuels, and returns any that ignite new spot fires in a tuple with these fields:</span>
 
-<span class="org-doc">    - target_ignition_time :: minutes</span>
-<span class="org-doc">    - ignited_cells        :: list of (y,x) grid coordinates</span>
+<span class="org-doc">    - ignition_time :: minutes</span>
+<span class="org-doc">    - ignited_cells :: list of (y,x) grid coordinates</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Sample the number of firebrands to cast from the source cell</span>
@@ -8676,11 +8749,11 @@ cell in which the firebrand will land.
         <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
         <span class="org-keyword">if</span> <span class="org-builtin">len</span>(ignited_cells) <span class="org-operator">&gt;</span> 0:
-            <span class="org-variable-name">time_of_arrival</span>      <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>][y,x]           <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-            <span class="org-variable-name">flame_length</span>         <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>][y,x]              <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-            <span class="org-variable-name">target_ignition_time</span> <span class="org-operator">=</span> spot_ignition_time(time_of_arrival, flame_length) <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+            <span class="org-variable-name">time_of_arrival</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>][y,x]           <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+            <span class="org-variable-name">flame_length</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>][y,x]              <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+            <span class="org-variable-name">ignition_time</span>   <span class="org-operator">=</span> spot_ignition_time(time_of_arrival, flame_length) <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
-            <span class="org-keyword">return</span> (target_ignition_time, ignited_cells)
+            <span class="org-keyword">return</span> (ignition_time, ignited_cells)
 </pre>
 </div>
 </div>

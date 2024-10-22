@@ -665,24 +665,28 @@ def identify_frontier_cells(phi_matrix, tracked_cells=None):
     frontier_cells = set()
     if tracked_cells:
         for (y, x) in tracked_cells:
-            # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
+            # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
             north_y = min(y+1, rows-1)
             south_y = max(y-1, 0)
             east_x  = min(x+1, cols-1)
             west_x  = max(x-1, 0)
-            if (opposite_phi_signs(phi_matrix, north_y, x, south_y, x) or
-                opposite_phi_signs(phi_matrix, y, east_x, y, west_x)):
+            if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
+                opposite_phi_signs(phi_matrix, y, x, south_y, x) or
+                opposite_phi_signs(phi_matrix, y, x, y, east_x) or
+                opposite_phi_signs(phi_matrix, y, x, y, west_x)):
                 frontier_cells.add((y, x))
     else:
         for y in range(rows):
             for x in range(cols):
-                # Compare (north, south) and (east, west) neighboring cell pairs for opposite phi signs
+                # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
                 north_y = min(y+1, rows-1)
                 south_y = max(y-1, 0)
                 east_x  = min(x+1, cols-1)
                 west_x  = max(x-1, 0)
-                if (opposite_phi_signs(phi_matrix, north_y, x, south_y, x) or
-                    opposite_phi_signs(phi_matrix, y, east_x, y, west_x)):
+                if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
+                    opposite_phi_signs(phi_matrix, y, x, south_y, x) or
+                    opposite_phi_signs(phi_matrix, y, x, y, east_x) or
+                    opposite_phi_signs(phi_matrix, y, x, y, west_x)):
                     frontier_cells.add((y, x))
     return frontier_cells
 
@@ -735,6 +739,7 @@ def update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, 
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 import numpy as np
 import pyretechnics.conversion as conv
+from pyretechnics.spot_fire import expected_ember_production, spread_firebrands
 import pyretechnics.vector_utils as vu
 
 
@@ -759,7 +764,8 @@ def spread_direction_vector_to_angle(vector_3d):
 
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit=True,
-                             max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3):
+                             max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
+                             spot_ignitions={}, spotting_config=None, rand_gen=None):
     """
     TODO: Add docstring
     NOTE:
@@ -773,7 +779,11 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     # Extract simulation dimensions
     (band_duration, cell_height, cell_width) = cube_resolution
 
-    # Unpack output matrices
+    # Unpack space_time_cubes
+    slope_cube  = space_time_cubes["slope"]
+    aspect_cube = space_time_cubes["aspect"]
+
+   # Unpack output_matrices
     phi_matrix                = output_matrices["phi"]
     phi_star_matrix           = output_matrices["phi_star"]
     fire_type_matrix          = output_matrices["fire_type"]
@@ -783,6 +793,9 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
+    # Extract the ember_production_rate from the spotting_config if provided
+    ember_production_rate = spotting_config["ember_production_rate"] if spotting_config else None
+
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
     max_spread_rate_y = 0.0
@@ -790,7 +803,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     # Create an empty dictionary to store intermediate fire behavior values per cell
     fire_behavior_dict = {}
 
-    # Compute fire behavior values at time (start_time) and identify the max spread rates in the x and y dimensions
+    # Compute fire behavior values at start_time and identify the max spread rates in the x and y dimensions
     t0 = int(start_time // band_duration)
     for cell_index in tracked_cells:
         # Unpack cell_index
@@ -836,6 +849,9 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
             dt = min(max_timestep, max_cells_per_timestep * min(cell_width / max_spread_rate_x,
                                                                 cell_height / max_spread_rate_y))
 
+    # Calculate the stop_time using this timestep
+    stop_time = start_time + dt
+
     # Update the tracked cell values in phi_star_matrix
     for cell_index in tracked_cells:
         (y, x)  = cell_index
@@ -843,8 +859,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         if dphi_dt != 0.0:
             phi_star_matrix[y,x] += dphi_dt * dt
 
-    # Compute fire behavior values at time (start_time + dt) and update the output matrices
-    t1 = int((start_time + dt) // band_duration)
+    # Compute fire behavior values at stop_time and update the output_matrices
+    t1 = int(stop_time // band_duration)
     for cell_index in tracked_cells:
         # Unpack cell_index
         (y, x) = cell_index
@@ -866,7 +882,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
             fire_behavior_star["dphi_dt"] *= (np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) /
                                               (phi_magnitude_xy_star ** 2.0))
 
-        # Calculate the new phi value at time (start_time + dt) as phi_next
+        # Calculate the new phi value at stop_time as phi_next
         fire_behavior     = fire_behavior_dict[cell_index]
         dphi_dt_estimate1 = fire_behavior["dphi_dt"]
         dphi_dt_estimate2 = fire_behavior_star["dphi_dt"]
@@ -878,8 +894,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
             # Update the tracked cell values in phi_matrix
             phi_matrix[y,x] = phi_next
 
-            # Record fire behavior values in the output matrices for cells that are burned in this timestep
-            # NOTE: This records the fire behavior values at time (start_time) and not at the time of arrival.
+            # Record fire behavior values in the output_matrices for cells that are burned in this timestep
+            # NOTE: This records the fire behavior values at start_time and not at the time of arrival.
             if phi > 0.0 and phi_next <= 0.0:
                 fire_type_matrix[y,x]          = fire_type_codes[fire_behavior["fire_type"]]
                 spread_rate_matrix[y,x]        = fire_behavior["spread_rate"]
@@ -887,10 +903,40 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                 fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
                 flame_length_matrix[y,x]       = fire_behavior["flame_length"]
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
-                # TODO: Cast firebrands and accumulate their landing locations and ignition times in a global data structure
-                # TODO: Create rand_gen with numpy.random.default_rng(seed=1234567890)
 
-    # TODO: Set phi_matrix to -1.0 in all cells whosee ignition times occur before start_time + dt
+                # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
+                if spotting_config:
+                    t_cast                = int(time_of_arrival_matrix[y,x] // band_duration)
+                    space_time_coordinate = (t_cast, y, x)
+                    slope                 = slope_cube.get(t_cast, y, x)
+                    aspect                = aspect_cube.get(t_cast, y, x)
+                    elevation_gradient    = calc_elevation_gradient(slope, aspect)
+                    expected_ember_count  = expected_ember_production(fire_behavior,
+                                                                      elevation_gradient,
+                                                                      cube_resolution,
+                                                                      ember_production_rate)
+                    new_ignitions         = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
+                                                              space_time_coordinate, rand_gen, expected_ember_count,
+                                                              spotting_config)
+                    if new_ignitions:
+                        (ignition_time, ignited_cells) = new_ignitions
+                        concurrent_ignited_cells       = spot_ignitions.get(ignition_time)
+                        if concurrent_ignited_cells:
+                            spot_ignitions[ignition_time] = concurrent_ignited_cells + ignited_cells
+                        else:
+                            spot_ignitions[ignition_time] = ignited_cells
+
+    # Update phi_matrix and time_of_arrival matrix for all cells that ignite a new spot fire before stop_time
+    for ignition_time in sorted(spot_ignitions):
+        if ignition_time < stop_time:
+            ignited_cells = spot_ignitions.pop(ignition_time)
+            for cell_index in ignited_cells:
+                (y, x) = cell_index
+                if phi_matrix[y,x] > 0.0:
+                    phi_matrix[y,x]             = -1.0
+                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
+                    tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0)
+                    # FIXME: I need to calculate and store the fire_behavior values for these cells
 
     # Save the new phi_matrix values in phi_star_matrix
     for (y,x) in tracked_cells:
@@ -903,16 +949,17 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
     # Return the updated world state
     return {
-        "simulation_time": start_time + dt,
+        "simulation_time": stop_time,
         "output_matrices": output_matrices,
         "frontier_cells" : frontier_cells_new,
         "tracked_cells"  : tracked_cells_new,
+        "spot_ignitions" : spot_ignitions,
     }
 
 
 def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration=None, use_wind_limit=True, max_length_to_width_ratio=None,
-                               max_cells_per_timestep=0.4, buffer_width=3):
+                               max_cells_per_timestep=0.4, buffer_width=3, spot_ignitions={}, spotting_config=None):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -923,6 +970,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - canopy_height                 :: m
       - canopy_base_height            :: m
       - canopy_bulk_density           :: kg/m^3
+      - temperature                   :: degrees Celsius (Optional: needed for spotting)
       - wind_speed_10m                :: km/hr
       - upwind_direction              :: degrees clockwise from North
       - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
@@ -941,6 +989,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - fireline_intensity            :: 2D float array (kW/m)
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
+      - firebrand_count               :: 2D integer array (number of firebrands) (Optional: needed for spotting)
     - cube_resolution           :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
@@ -951,6 +1000,16 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - max_length_to_width_ratio :: float > 0.0 (Optional)
     - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)
     - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
+    - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
+    - spotting_config           :: dictionary of spotting parameters (Optional: needed for spotting)
+      - mean_distance                 :: ? TODO: Record these parameters' types
+      - flin_exp                      :: ?
+      - ws_exp                        :: ?
+      - normalized_distance_variance  :: ?
+      - delta_y_sigma                 :: ?
+      - decay_constant                :: ?
+      - ember_production_rate         :: embers/kJ
+      - random_seed                   :: integer to seed a numpy.random.Generator object
 
     return a dictionary with these keys:
     - stop_time            :: minutes
@@ -963,15 +1022,22 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - fireline_intensity    :: 2D float array (kW/m)
       - flame_length          :: 2D float array (m)
       - time_of_arrival       :: 2D float array (min)
+      - firebrand_count       :: 2D integer array (number of firebrands) (only included when spotting is used)
+    - spot_ignitions       :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
     """
     # Extract simulation dimensions
     (bands, rows, cols) = space_time_cubes["slope"].shape
     band_duration       = cube_resolution[0]
     cube_duration       = bands * band_duration
 
+    # Ensure that all space_time_cubes have the same spatial resolution
+    for cube in space_time_cubes.values():
+        if cube.shape != (bands, rows, cols):
+            raise ValueError("The space_time_cubes must all share the same spatial resolution.")
+
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
-    for layer in output_matrices:
-        if output_matrices[layer].shape != (rows, cols):
+    for layer in output_matrices.values():
+        if layer.shape != (rows, cols):
             raise ValueError("The space_time_cubes and output_matrices must share the same spatial resolution.")
 
     # Calculate the max stop time
@@ -993,10 +1059,13 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     # Make a copy of the phi matrix to use for intermediate calculations in each timestep
     output_matrices["phi_star"] = np.copy(phi_matrix)
 
+    # Create a numpy.random.Generator object to produce random samples if spotting_config is provided
+    rand_gen = np.random.default_rng(seed=spotting_config["random_seed"]) if spotting_config else None
+
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
     simulation_time = start_time
-    while(simulation_time < max_stop_time and len(tracked_cells) > 0):
+    while(simulation_time < max_stop_time and (len(tracked_cells) > 0 or len(spot_ignitions) > 0)):
         # Compute max_timestep based on the remaining time in the temporal band and simulation
         remaining_time_in_band       = band_duration - simulation_time % band_duration
         remaining_time_in_simulation = max_stop_time - simulation_time
@@ -1005,13 +1074,15 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         # Spread fire one timestep
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
-                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width)
+                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
+                                           spot_ignitions, spotting_config, rand_gen)
 
         # Reset spread inputs
         simulation_time = results["simulation_time"]
         output_matrices = results["output_matrices"]
         frontier_cells  = results["frontier_cells"]
         tracked_cells   = results["tracked_cells"]
+        spot_ignitions  = results["spot_ignitions"]
 
     # Remove the temporary copy of the phi matrix from output_matrices
     output_matrices.pop("phi_star")
@@ -1021,5 +1092,5 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
-    }
+    } | ({"spot_ignitions" : spot_ignitions} if spot_config else {})
 # spread-phi-field ends here

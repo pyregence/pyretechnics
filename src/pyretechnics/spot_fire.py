@@ -523,8 +523,8 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     locations in output_matrices["firebrand_count"], filters out all of the firebrands that fizzle out in either
     burnable or non-burnable fuels, and returns any that ignite new spot fires in a tuple with these fields:
 
-    - target_ignition_time :: minutes
-    - ignited_cells        :: list of (y,x) grid coordinates
+    - ignition_time :: minutes
+    - ignited_cells :: list of (y,x) grid coordinates
     """
     #=======================================================================================
     # Sample the number of firebrands to cast from the source cell
@@ -588,9 +588,9 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         #=======================================================================================
 
         if len(ignited_cells) > 0:
-            time_of_arrival      = output_matrices["time_of_arrival"][y,x]           # minutes
-            flame_length         = output_matrices["flame_length"][y,x]              # meters
-            target_ignition_time = spot_ignition_time(time_of_arrival, flame_length) # minutes
+            time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
+            flame_length    = output_matrices["flame_length"][y,x]              # meters
+            ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
 
-            return (target_ignition_time, ignited_cells)
+            return (ignition_time, ignited_cells)
 # spread-firebrands ends here
