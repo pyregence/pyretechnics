@@ -396,12 +396,22 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#for-developers-spot">10.1. For Developers</a>
 <ul>
-<li><a href="#probability-and-rate-of-ember-production">10.1.1. Probability and Rate of Ember Production</a></li>
+<li><a href="#expected-ember-production">10.1.1. Expected Ember Production</a></li>
+<li><a href="#firebrand-dispersal-model">10.1.2. Firebrand Dispersal Model</a></li>
+<li><a href="#resolution-of-log-normal-parameters">10.1.3. Resolution of Log-Normal Parameters</a></li>
+<li><a href="#wind-perpendicular-dispersal">10.1.4. Wind-Perpendicular Dispersal</a></li>
+<li><a href="#sampling-firebrand-casting-distances">10.1.5. Sampling Firebrand Casting Distances</a></li>
+<li><a href="#spotting-probability-and-number-of-firebrands">10.1.6. Spotting Probability and Number of Firebrands</a></li>
+<li><a href="#spot-ignition-model">10.1.7. Spot Ignition Model</a></li>
+<li><a href="#time-to-spot-ignition">10.1.8. Time to Spot Ignition</a></li>
+<li><a href="#spreading-firebrands">10.1.9. Spreading Firebrands</a></li>
 </ul>
 </li>
 <li><a href="#for-users-spot">10.2. For Users</a>
 <ul>
-<li><a href="#how-to-calculate-the-areal-heat-output-for-all-surface-fuel-models">10.2.1. How to Estimate the Areal Heat Output for All Surface Fuel Models</a></li>
+<li><a href="#how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models">10.2.1. How to Estimate the Areal Heat Output for All Surface Fuel Models</a></li>
+<li><a href="#how-to-estimate-spot-fire-count-from-ember-production-rate">10.2.2. [WIP] How to Estimate Spot Fire Count from Ember Production Rate</a></li>
+<li><a href="#how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics">10.2.3. How to Estimate Typical Ranges for the \(\vec{\Delta}\) Distribution Characteristics</a></li>
 </ul>
 </li>
 </ul>
@@ -7126,6 +7136,10 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                 <span class="org-variable-name">fireline_intensity_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> fire_behavior[<span class="org-string">"fireline_intensity"</span>]
                 <span class="org-variable-name">flame_length_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]       <span class="org-operator">=</span> fire_behavior[<span class="org-string">"flame_length"</span>]
                 <span class="org-variable-name">time_of_arrival_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]    <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt <span class="org-operator">*</span> phi <span class="org-operator">/</span> (phi <span class="org-operator">-</span> phi_next)
+                <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Cast firebrands and accumulate their landing locations and ignition times in a global data structure</span>
+                <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create rand_gen with numpy.random.default_rng(seed=1234567890)</span>
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Set phi_matrix to -1.0 in all cells whosee ignition times occur before start_time + dt</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Save the new phi_matrix values in phi_star_matrix</span>
     <span class="org-keyword">for</span> (y,x) <span class="org-keyword">in</span> tracked_cells:
@@ -7176,7 +7190,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - fireline_intensity            :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
-<span class="org-doc">    - cube_resolution           :: tuple with these fields:</span>
+<span class="org-doc">    - cube_resolution           :: tuple with these fields</span>
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
 <span class="org-doc">      - cell_width                    :: meters</span>
@@ -7590,9 +7604,9 @@ embers, the times at which they will be deposited ahead of the fire
 front, and their likelihood of igniting spot fires once deposited.
 </p>
 </div>
-<div id="outline-container-probability-and-rate-of-ember-production" class="outline-4">
-<h4 id="probability-and-rate-of-ember-production"><span class="section-number-4">10.1.1.</span> Probability and Rate of Ember Production</h4>
-<div class="outline-text-4" id="text-probability-and-rate-of-ember-production">
+<div id="outline-container-expected-ember-production" class="outline-4">
+<h4 id="expected-ember-production"><span class="section-number-4">10.1.1.</span> Expected Ember Production</h4>
+<div class="outline-text-4" id="text-expected-ember-production">
 <div class="org-src-container">
 <pre class="src src-python" id="expected-ember-production"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
 
@@ -7606,10 +7620,10 @@ front, and their likelihood of igniting spot fires once deposited.
 <span class="org-doc">      - spread_direction         :: (x, y, z) unit vector on the slope-tangential plane</span>
 <span class="org-doc">      - fireline_intensity       :: kW/m</span>
 <span class="org-doc">      - flame_length             :: m</span>
-<span class="org-doc">    - elevation_gradient    :: tuple with these fields:</span>
+<span class="org-doc">    - elevation_gradient    :: tuple with these fields</span>
 <span class="org-doc">      - dz_dx                    :: rise/run</span>
 <span class="org-doc">      - dz_dy                    :: rise/run</span>
-<span class="org-doc">    - cube_resolution       :: tuple with these fields:</span>
+<span class="org-doc">    - cube_resolution       :: tuple with these fields</span>
 <span class="org-doc">      - band_duration            :: minutes</span>
 <span class="org-doc">      - cell_height              :: meters</span>
 <span class="org-doc">      - cell_width               :: meters</span>
@@ -7647,14 +7661,1038 @@ front, and their likelihood of igniting spot fires once deposited.
 </div>
 </div>
 </div>
+<div id="outline-container-firebrand-dispersal-model" class="outline-4">
+<h4 id="firebrand-dispersal-model"><span class="section-number-4">10.1.2.</span> Firebrand Dispersal Model</h4>
+<div class="outline-text-4" id="text-firebrand-dispersal-model">
+<p>
+The Firebrand Dispersal model describes the distributions of
+firebrands relative to the wind direction. The location where the
+firebrand lands is represented by the random vector \(\vec{\Delta}\)
+from the location of origin:
+</p>
+
+\begin{align}
+  \vec{\Delta} := \Delta_X.\vec{w} + \Delta_Y.\vec{w}_\perp
+\end{align}
+
+<p>
+in which \(\vec{w}, \vec{w}_\perp\) are unit vectors respectively
+parallel and perpendicular to the wind direction, and \(\Delta_X,
+\Delta_Y\) are the random variables for coordinates.
+</p>
+
+<p>
+Following Perryman 2012, Sardoy 2008, and Himoto 2005, we model
+\(\Delta_X\) and \(\Delta_Y\) to be independent, with \(\Delta_X\) following
+a log-normal distribution, and \(\Delta_Y\) following a zero-mean normal
+distribution, conditional on the fire behavior \(\Phi\) at the cell of
+origin:<sup><a id="fnr.34" class="footref" href="#fn.34" role="doc-backlink">34</a></sup><sup>, </sup><sup><a id="fnr.35" class="footref" href="#fn.35" role="doc-backlink">35</a></sup><sup>, </sup><sup><a id="fnr.36" class="footref" href="#fn.36" role="doc-backlink">36</a></sup>
+</p>
+
+\begin{align}
+  \ln (\Delta_X / \text{1m}) | \Phi \sim & \text{Normal}(\mu = \mu_X(\Phi), \sigma = \sigma_X(\Phi)) & \\
+  \nonumber \\
+  \Delta_Y | \Phi \sim & \text{Normal}(\mu = 0, \sigma = \sigma_Y(\Phi)) &
+\end{align}
+
+<p>
+where \(\text{Normal}(\mu, \sigma)\) denotes a one-dimensional Gaussian
+distribution with mean \(\mu\) and standard deviation \(\sigma\). Note
+that \(\mu_X\) and \(\sigma_X\) are in log-space, therefore dimensionless.
+For the sake of light notation, the conditioning on \(\Phi\) will be
+implicit from now on, e.g. we will write \(\Delta_X\) instead of
+\(\Delta_X | \Phi\).
+</p>
+
+<p>
+Since the results are distance deltas relative to the wind direction,
+we must convert this to deltas in our coordinate plane. We can convert
+these deltas by using trigonometric functions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="convert-deltas"><span class="org-keyword">def</span> <span class="org-function-name">delta_to_grid_dx</span>(cos_wdir, sin_wdir, delta_x, delta_y):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Computes the grid-aligned x coordinate of the delta vector, given the wind-aligned [&#916;X &#916;Y] coordinates.</span>
+<span class="org-doc">    Returns a signed distance (same unit as &#916;X and &#916;Y).</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">wdir_x</span>      <span class="org-operator">=</span> sin_wdir
+    <span class="org-variable-name">wdir_perp_x</span> <span class="org-operator">=</span> cos_wdir
+    <span class="org-keyword">return</span> delta_x <span class="org-operator">*</span> wdir_x <span class="org-operator">+</span> delta_y <span class="org-operator">*</span> wdir_perp_x
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">delta_to_grid_dy</span>(cos_wdir, sin_wdir, delta_x, delta_y):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [&#916;X &#916;Y] coordinates.</span>
+<span class="org-doc">    Returns a signed distance (same unit as &#916;X and &#916;Y).</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">wdir_y</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>cos_wdir  <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Why is this negative? Perhaps because origin is in upper-left in GridFire...</span>
+    <span class="org-variable-name">wdir_perp_y</span> <span class="org-operator">=</span> sin_wdir
+    <span class="org-keyword">return</span> delta_x <span class="org-operator">*</span> wdir_y <span class="org-operator">+</span> delta_y <span class="org-operator">*</span> wdir_perp_y
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">distance_to_n_cells</span>(distance, cell_size):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Converts a delta expressed as a signed distance to one expressed as a number of grid cells.</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> <span class="org-builtin">round</span>(distance <span class="org-operator">/</span> cell_size)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-resolution-of-log-normal-parameters" class="outline-4">
+<h4 id="resolution-of-log-normal-parameters"><span class="section-number-4">10.1.3.</span> Resolution of Log-Normal Parameters</h4>
+<div class="outline-text-4" id="text-resolution-of-log-normal-parameters">
+<p>
+We now need to define the functions \(\mu_X(\Phi)\) and
+\(\sigma_X(\Phi)\). Here we depart from Sardoy 2008<sup><a id="fnr.37" class="footref" href="#fn.37" role="doc-backlink">37</a></sup> and
+reproduce the model of ELMFIRE<sup><a id="fnr.38" class="footref" href="#fn.38" role="doc-backlink">38</a></sup>, which models
+that dependency using the following relationships between the moments
+of the distribution and the fireline intensity \(I\) and wind speed \(U\):
+</p>
+
+\begin{align}
+  \mathbb{E}[\Delta_X] = & \Delta_1 \left(\frac{I}{\text{1 kW/m}}\right)^{e_I} \left(\frac{U}{\text{1 m/s}}\right)^{e_U} & \\
+  \nonumber \\
+  \text{Var}[\Delta_X] = & r_\frac{V}{E} \mathbb{E}[\Delta_X] &
+\end{align}
+
+<p>
+in which \(\Delta_1, e_I, e_U, r_\frac{V}{E}\) are configured by the
+keys shown in table <a href="#tab:spotting-elmfire-params">4</a>.
+</p>
+
+<table id="tab:spotting-elmfire-params">
+<caption class="t-above"><span class="table-number">Table 4:</span> Spotting parameters for the downwind distribution per the ELMFIRE model</caption>
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Parameter</th>
+<th scope="col" class="org-left">Unit</th>
+<th scope="col" class="org-left">Description</th>
+<th scope="col" class="org-left">Configuration Key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">\(\Delta_1\)</td>
+<td class="org-left">m</td>
+<td class="org-left">Mean landing distance in unit conditions</td>
+<td class="org-left">mean_distance</td>
+</tr>
+
+<tr>
+<td class="org-left">\(e_I\)</td>
+<td class="org-left">-</td>
+<td class="org-left">Intensity exponent</td>
+<td class="org-left">flin_exp</td>
+</tr>
+
+<tr>
+<td class="org-left">\(e_U\)</td>
+<td class="org-left">-</td>
+<td class="org-left">Wind exponent</td>
+<td class="org-left">ws_exp</td>
+</tr>
+
+<tr>
+<td class="org-left">\(r_\frac{V}{E}\)</td>
+<td class="org-left">m</td>
+<td class="org-left">Variance-over-Mean ratio</td>
+<td class="org-left">normalized_distance_variance</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Note:</b> One potential way in which this model can misbehave is that
+the variance is proportional to the expected value, and therefore the
+coefficient of variation is driven to zero as the expected value goes
+to infinity, making the distribution less and less dispersed around
+its mean. This means that, in high-wind/high-intensity conditions, all
+the firebrands will tend to land at approximately the same (large)
+distance, following a narrow near-normal distribution.
+</p>
+
+<p>
+From the above moments, \(\mu_X\) and \(\sigma_X\) can be obtained using
+the properties of the log-normal distribution:
+</p>
+
+\begin{align}
+  \sigma_X = & \ln \left(1 + \frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]^2}\right) & \\
+  \nonumber \\
+  \mu_X = & \ln \frac{\mathbb{E}[\Delta_X]^2}{\sqrt{\text{Var}[\Delta_X] + \mathbb{E}[\Delta_X]^2}} &
+\end{align}
+
+<div class="org-src-container">
+<pre class="src src-python" id="resolve-spotting-lognormal-elmfire"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> log, sqrt
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_exp_delta_x</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Computes the expected value E[&#916;X] (in meters) of the downwind spotting distance &#916;X given:</span>
+<span class="org-doc">    - spotting_config    :: a map of spotting parameters</span>
+<span class="org-doc">    - fireline_intensity :: kW/m</span>
+<span class="org-doc">    - wind_speed_20ft    :: m/s</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">mean_distance</span> <span class="org-operator">=</span> spotting_config[<span class="org-string">"mean_distance"</span>]
+    <span class="org-variable-name">flin_exp</span>      <span class="org-operator">=</span> spotting_config[<span class="org-string">"flin_exp"</span>]
+    <span class="org-variable-name">ws_exp</span>        <span class="org-operator">=</span> spotting_config[<span class="org-string">"ws_exp"</span>]
+    <span class="org-keyword">return</span> mean_distance <span class="org-operator">*</span> (fireline_intensity <span class="org-operator">**</span> flin_exp) <span class="org-operator">*</span> (wind_speed_20ft <span class="org-operator">**</span> ws_exp)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_var_delta_x</span>(spotting_config, exp_delta_x):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Computes the variance Var[&#916;X] (in m^2) of the downwind spotting distance &#916;X given:</span>
+<span class="org-doc">    - spotting_config :: a map of spotting parameters</span>
+<span class="org-doc">    - exp_delta_x     :: meters (E[&#916;X])</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> spotting_config[<span class="org-string">"normalized_distance_variance"</span>] <span class="org-operator">*</span> exp_delta_x
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">lognormal_mu_from_moments</span>(mean, variance):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">m2</span> <span class="org-operator">=</span> mean <span class="org-operator">**</span> 2.0
+    <span class="org-keyword">return</span> log(m2 <span class="org-operator">/</span> sqrt(m2 <span class="org-operator">+</span> variance))
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">lognormal_sigma_from_moments</span>(mean, variance):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> sqrt(log(1.0 <span class="org-operator">+</span> variance <span class="org-operator">/</span> (mean <span class="org-operator">**</span> 2.0)))
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_lognormal_params</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">exp_delta_x</span> <span class="org-operator">=</span> resolve_exp_delta_x(spotting_config, fireline_intensity, wind_speed_20ft)
+    <span class="org-variable-name">var_delta_x</span> <span class="org-operator">=</span> resolve_var_delta_x(spotting_config, exp_delta_x)
+    <span class="org-keyword">return</span> {
+        <span class="org-string">"prob.lognormal.mu"</span>   : lognormal_mu_from_moments(exp_delta_x, var_delta_x),
+        <span class="org-string">"prob.lognormal.sigma"</span>: lognormal_sigma_from_moments(exp_delta_x, var_delta_x),
+    }
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-wind-perpendicular-dispersal" class="outline-4">
+<h4 id="wind-perpendicular-dispersal"><span class="section-number-4">10.1.4.</span> Wind-Perpendicular Dispersal</h4>
+<div class="outline-text-4" id="text-wind-perpendicular-dispersal">
+<p>
+For \(\sigma_Y\), we either let the user specify an explicit value with
+key <b>delta_y_sigma</b> (in meters), which makes it equivalent to the
+model of Perryman 2012<sup><a id="fnr.39" class="footref" href="#fn.39" role="doc-backlink">39</a></sup>, or we default to deriving
+them from equation (28) of Himoto 2005<sup><a id="fnr.40" class="footref" href="#fn.40" role="doc-backlink">40</a></sup>, which is
+equivalent to:
+</p>
+
+\begin{align}
+  \sigma_Y = 0.92 D = 0.92 \frac{0.47}{0.88^2}\frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]}
+\end{align}
+
+<p>
+\(\text{Var}[\Delta_X]\) and \(\mathbb{E}[\Delta_X]\) can be calculated
+from the properties of the log-normal distribution:
+</p>
+
+\begin{align}
+  \mathbb{E}[\Delta_X] = \text{1m} \times \exp \left(\mu_X + \frac{1}{2}\sigma_X^2 \right) \\
+  \nonumber \\
+  \text{Var}[\Delta_X] = \mathbb{E}[\Delta_X]^2 \left(e^{\sigma_X^2} - 1\right)
+\end{align}
+
+<p>
+Combining the above equations and applying some algebra yields a
+formula for \(\sigma_Y\):
+</p>
+
+\begin{align}
+  \sigma_Y = 0.92 D = \text{1m} \times 0.5584 \times e^{\mu_X} \times e^{\frac{1}{2}\sigma_X^2} \left(e^{\frac{1}{2}\sigma_X^2} - 1\right) \left(e^{\frac{1}{2}\sigma_X^2} + 1\right)
+\end{align}
+
+<p>
+Typical values are shown in table <a href="#tab:himoto2005-example-values">5</a>.
+</p>
+
+<table id="tab:himoto2005-example-values">
+<caption class="t-above"><span class="table-number">Table 5:</span> Typical values for \(\vec{\Delta}\) distribution characteristics derived from Himoto2005</caption>
+
+<colgroup>
+<col  class="org-right">
+
+<col  class="org-right">
+
+<col  class="org-right">
+
+<col  class="org-right">
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">\(B^*\)</th>
+<th scope="col" class="org-right">\(\text{CV}[\Delta_X]\)</th>
+<th scope="col" class="org-right">\(\sigma_X\)</th>
+<th scope="col" class="org-right">\(\sigma_Y/\mathbb{E}[\Delta_X]\)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">20</td>
+<td class="org-right">69%</td>
+<td class="org-right">0.72</td>
+<td class="org-right">0.27</td>
+</tr>
+
+<tr>
+<td class="org-right">50</td>
+<td class="org-right">51%</td>
+<td class="org-right">0.64</td>
+<td class="org-right">0.14</td>
+</tr>
+
+<tr>
+<td class="org-right">100</td>
+<td class="org-right">40%</td>
+<td class="org-right">0.58</td>
+<td class="org-right">0.09</td>
+</tr>
+
+<tr>
+<td class="org-right">150</td>
+<td class="org-right">35%</td>
+<td class="org-right">0.55</td>
+<td class="org-right">0.07</td>
+</tr>
+
+<tr>
+<td class="org-right">200</td>
+<td class="org-right">32%</td>
+<td class="org-right">0.53</td>
+<td class="org-right">0.06</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+See section <a href="#how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics">10.2.3</a> for more information on how these values
+were obtained.
+</p>
+
+<p>
+<b>CAUTION:</b> (FIXME REVIEW) We have found the above formula to be
+problematic when applied to the parameters values found in Sardoy
+2008<sup><a id="fnr.41" class="footref" href="#fn.41" role="doc-backlink">41</a></sup> because it tends to yield nonsensical \(\sigma_Y >
+\mathbb{E}[\Delta_X]\). In fact, it can be seen that \(\sigma_Y > s
+\mathbb{E}[\Delta_X]\) if and only if \(\sigma_X > \sqrt{\ln \left(1 +
+\frac{.88^2}{.92 \times .47} s \right)}\), in particular \(\sigma_X >
+1.013\) for \(s = 1\), which is unfortunately the case with the range of
+\(\sigma_X\) values in Sardoy 2008<sup><a id="fnr.42" class="footref" href="#fn.42" role="doc-backlink">42</a></sup>. This reflects a
+divergence between Himoto 2005<sup><a id="fnr.43" class="footref" href="#fn.43" role="doc-backlink">43</a></sup> and Sardoy
+2008<sup><a id="fnr.44" class="footref" href="#fn.44" role="doc-backlink">44</a></sup>, the latter allowing for more dispersed
+\(\Delta_X\) distributions (higher coefficient of variation
+\(\text{Var}[\Delta_X]^{\frac{1}{2}}/\mathbb{E}[\Delta_X] =
+\sqrt{e^{\sigma_X^2} - 1}\)), whereas the former typically predicts a
+low coefficient of variation, as is perceptible in figure 6 of Himoto
+2005<sup><a id="fnr.45" class="footref" href="#fn.45" role="doc-backlink">45</a></sup>. Figure 10 of Sardoy 2008<sup><a id="fnr.46" class="footref" href="#fn.46" role="doc-backlink">46</a></sup>
+suggests coefficients of variation ranging from 95% to 210%, whereas
+Figure 6 of Himoto 2005<sup><a id="fnr.47" class="footref" href="#fn.47" role="doc-backlink">47</a></sup> suggests coefficients of
+variation ranging from 30% to 70%. For this reason, we <b>strongly
+recommend to supply \(\sigma_Y\) directly</b> through the configuration key
+<b>delta_y_sigma</b>.
+</p>
+</div>
+</div>
+<div id="outline-container-sampling-firebrand-casting-distances" class="outline-4">
+<h4 id="sampling-firebrand-casting-distances"><span class="section-number-4">10.1.5.</span> Sampling Firebrand Casting Distances</h4>
+<div class="outline-text-4" id="text-sampling-firebrand-casting-distances">
+<p>
+Having computed the \(\mu_X\), \(\sigma_X\) and \(\sigma_Y\) parameters, it
+remains to draw values of \(\Delta_X\) and \(\Delta_Y\) by sampling from
+log-normal and normal distributions. This can be done by sampling from
+a standard normal distribution, then transforming by affine and
+exponential functions:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="sardoy-firebrand-dispersal"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp, sqrt, log
+<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">sample_normal</span>(rand_gen, mu, sd):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns sample from normal/gaussian distribution given mu and sd.</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> rand_gen.normal(mu, sd)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">sample_lognormal</span>(rand_gen, mu, sd):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns sample from log-normal distribution given mu and sd.</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> rand_gen.lognormal(mu, sd)
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: unused</span>
+<span class="org-keyword">def</span> <span class="org-function-name">deltax_expected_value</span>(mu_x, sigma_x):
+    <span class="org-keyword">return</span> conv.m_to_ft(exp(mu_x <span class="org-operator">+</span> (sigma_x <span class="org-operator">**</span> 2.0) <span class="org-operator">/</span> 2.0))
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: unused</span>
+<span class="org-keyword">def</span> <span class="org-function-name">deltax_coefficient_of_variation</span>(sigma_x):
+    <span class="org-keyword">return</span> sqrt(exp(sigma_x <span class="org-operator">**</span> 2.0) <span class="org-operator">-</span> 1.0)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">delta_x_sampler</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns a function for randomly sampling &#916;X, the spotting jump along the wind direction (in meters).</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft)
+    <span class="org-variable-name">mu_x</span>      <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.mu"</span>]    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">sigma_x</span>   <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.sigma"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: REVIEW Should I have kept this as sigma_y_scalar_ft? Is GridFire incorrect here?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">When will we have the default sigma_Y &gt; E[&#916;X]?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">It can be seen that this nonsensical situation</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">happens iff sigma_X exceeds the following number:</span>
+<span class="org-comment-delimiter">#</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">sqrt(log(1.0 + (0.88 ** 2.0) / (0.92 * 0.47))</span>
+<span class="org-comment-delimiter">#</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">=&gt; 1.0131023746492023</span>
+<span class="org-variable-name">sigma_y_scalar_m</span> <span class="org-operator">=</span> 0.92 <span class="org-operator">*</span> 0.47 <span class="org-operator">/</span> (0.88 <span class="org-operator">**</span> 2.0)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">himoto_resolve_default_sigma_y_from_lognormal_params</span>(mu_x, sigma_x):
+    <span class="org-variable-name">es2h</span>         <span class="org-operator">=</span> exp((sigma_x <span class="org-operator">**</span> 2.0) <span class="org-operator">/</span> 2.0)
+    <span class="org-variable-name">avg_deltax_m</span> <span class="org-operator">=</span> exp(mu_x) <span class="org-operator">*</span> es2h
+    <span class="org-keyword">return</span> sigma_y_scalar_m <span class="org-operator">*</span> avg_deltax_m <span class="org-operator">*</span> (es2h <span class="org-operator">+</span> 1.0) <span class="org-operator">*</span> (es2h <span class="org-operator">-</span> 1.0) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">himoto_resolve_default_sigma_y</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft)
+    <span class="org-variable-name">mu_x</span>      <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.mu"</span>]    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">sigma_x</span>   <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.sigma"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-keyword">return</span> himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_delta_y_sigma</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-variable-name">delta_y_sigma</span> <span class="org-operator">=</span> spotting_config.get(<span class="org-string">"delta_y_sigma"</span>)
+    <span class="org-keyword">if</span> delta_y_sigma <span class="org-operator">!=</span> <span class="org-constant">None</span>:
+        <span class="org-keyword">return</span> delta_y_sigma <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">return</span> himoto_resolve_default_sigma_y(spotting_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">delta_y_sampler</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns a function for randomly sampling &#916;Y, the spotting jump perpendicular to the wind direction (in meters).</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_delta_y_sigma(spotting_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_normal(rand_gen, 0.0, sigma_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: unused</span>
+<span class="org-keyword">def</span> <span class="org-function-name">sample_wind_dir_deltas</span>(inputs, fireline_intensity, wind_speed_20ft, num_firebrands):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Draws a random sequence of [&#916;X, &#916;Y] pairs of signed distances (in meters) from</span>
+<span class="org-doc">    the supplied cell, representing the coordinates of the spotting jump in the directions</span>
+<span class="org-doc">    parallel and perpendicular to the wind. &#916;X will typically be positive (downwind),</span>
+<span class="org-doc">    and positive &#916;Y means to the right of the downwind direction.</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">spotting_config</span>     <span class="org-operator">=</span> inputs[<span class="org-string">"spotting"</span>]
+    <span class="org-variable-name">rand_gen</span>            <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
+    <span class="org-variable-name">wind_speed_20ft_mps</span> <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)
+    <span class="org-variable-name">sample_delta_x_fn</span>   <span class="org-operator">=</span> delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+    <span class="org-variable-name">sample_delta_y_fn</span>   <span class="org-operator">=</span> delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+    <span class="org-keyword">return</span> [(sample_delta_x_fn(rand_gen), sample_delta_y_fn(rand_gen)) <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)]
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-spotting-probability-and-number-of-firebrands" class="outline-4">
+<h4 id="spotting-probability-and-number-of-firebrands"><span class="section-number-4">10.1.6.</span> Spotting Probability and Number of Firebrands</h4>
+<div class="outline-text-4" id="text-spotting-probability-and-number-of-firebrands">
+<p>
+Whether or not a cell emits firebrands is determined by a spotting
+probability. Pyretechnics lets users configure separate spotting
+probabilities for crown fires (<b>crown_fire_spotting_percent</b>) and for
+surface fires under certain conditions
+(<b>surface_fire_spotting_percent</b>). Note that these configuration keys
+have misleading names (the values must be between 0 and 1).
+</p>
+
+<p>
+Surface fire spotting can only happen when the fireline intensity
+exceeds a certain threshold (configured with
+<b>critical_fireline_intensity</b>). Both that threshold and the spotting
+probability can be configured per fuel model.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="spotting-probability"><span class="org-keyword">def</span> <span class="org-function-name">in_range</span>(bounds, fuel_model_number):
+    (<span class="org-builtin">min</span>, <span class="org-builtin">max</span>) <span class="org-operator">=</span> bounds
+    <span class="org-keyword">return</span> <span class="org-builtin">min</span> <span class="org-operator">&lt;=</span> fuel_model_number <span class="org-operator">&lt;=</span> <span class="org-builtin">max</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">intranges_mapping_lookup</span>(intranges_mapping, fuel_model_number):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Looks up a value in a mapping from fuel number to anything,</span>
+<span class="org-doc">    encoded as either a single value v (constant mapping),</span>
+<span class="org-doc">    or as a vector of [[min_fuel_number max_fuel_number] v] pairs,</span>
+<span class="org-doc">    such as:</span>
+<span class="org-doc">    [[[  1 140] 0.0]</span>
+<span class="org-doc">     [[141 149] 1.0]</span>
+<span class="org-doc">     [[150 256] 1.0]]</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">if</span> intranges_mapping <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">or</span> <span class="org-builtin">isinstance</span>(intranges_mapping, (<span class="org-builtin">int</span>, <span class="org-builtin">float</span>)):
+        <span class="org-keyword">return</span> intranges_mapping
+    <span class="org-keyword">else</span>:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">IMPROVEMENT for performance, we could do a non_sequential lookup, (Val, 02 Nov 2022)</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">e.g. a dichotomic search,</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">or even better just (aget) an array into which we have indexed the decompressed mapping.</span>
+        <span class="org-variable-name">kv_match</span> <span class="org-operator">=</span> <span class="org-builtin">next</span>(<span class="org-builtin">filter</span>(<span class="org-keyword">lambda</span> kv: in_range(kv[0], fuel_model_number), intranges_mapping), <span class="org-constant">None</span>)
+        <span class="org-keyword">if</span> kv_match:
+            <span class="org-keyword">return</span> kv_match[1]
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">is_surface_spot_fire</span>(inputs, fuel_model_number, fireline_intensity):
+    <span class="org-variable-name">spotting_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
+    <span class="org-keyword">if</span> spotting_config:
+        <span class="org-variable-name">surface_fire_spotting_config</span> <span class="org-operator">=</span> spotting_config.get(<span class="org-string">"surface_fire_spotting"</span>)
+        <span class="org-keyword">if</span> surface_fire_spotting_config:
+            <span class="org-variable-name">critical_fireline_intensity_mapping</span> <span class="org-operator">=</span> surface_fire_spotting_config.get(<span class="org-string">"critical_fireline_intensity"</span>)
+            <span class="org-variable-name">critical_fireline_intensity</span>         <span class="org-operator">=</span> (intranges_mapping_lookup(critical_fireline_intensity_mapping,
+                                                                            fuel_model_number)
+                                                   <span class="org-keyword">or</span> 0.0)
+            <span class="org-keyword">if</span> fireline_intensity <span class="org-operator">&gt;</span> critical_fireline_intensity:
+                <span class="org-variable-name">spotting_percent_mapping</span> <span class="org-operator">=</span> surface_fire_spotting_config.get(<span class="org-string">"surface_fire_spotting_percent"</span>)
+                <span class="org-variable-name">spotting_percent</span>         <span class="org-operator">=</span> intranges_mapping_lookup(spotting_percent_mapping, fuel_model_number) <span class="org-keyword">or</span> 0.0
+                <span class="org-variable-name">rand_gen</span>                 <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
+                <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spotting_percent
+            <span class="org-keyword">else</span>:
+                <span class="org-keyword">return</span> <span class="org-constant">False</span>
+        <span class="org-keyword">else</span>:
+            <span class="org-keyword">return</span> <span class="org-constant">False</span>
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">return</span> <span class="org-constant">False</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">is_crown_spot_fire</span>(inputs):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Determine whether crowning causes spot fires. Config key `spotting` should</span>
+<span class="org-doc">    take either a vector of probabilities (0-1) or a single spotting probability.</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">spotting_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
+    <span class="org-keyword">if</span> spotting_config:
+        <span class="org-variable-name">spotting_percent</span> <span class="org-operator">=</span> spotting_config.get(<span class="org-string">"crown_fire_spotting_percent"</span>)
+        <span class="org-keyword">if</span> spotting_percent:
+            <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
+            <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spotting_percent
+        <span class="org-keyword">else</span>:
+            <span class="org-keyword">return</span> <span class="org-constant">False</span>
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">return</span> <span class="org-constant">False</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">is_spot_fire</span>(inputs, fire_type, fireline_intensity, fuel_model_number):
+    <span class="org-keyword">if</span> fire_type <span class="org-operator">&gt;</span> 1:
+        <span class="org-keyword">return</span> is_crown_spot_fire(inputs)
+    <span class="org-keyword">elif</span> fire_type <span class="org-operator">==</span> 1:
+        <span class="org-keyword">return</span> is_surface_spot_fire(inputs, fuel_model_number, fireline_intensity)
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">return</span> <span class="org-constant">False</span>
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">sample_poisson</span>(rand_gen, mu):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns sample from poisson distribution given mu.</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> rand_gen.poisson(mu)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">sample_number_of_firebrands</span>(rand_gen, expected_ember_count):
+    <span class="org-keyword">return</span> sample_poisson(rand_gen, expected_ember_count)
+</pre>
+</div>
+
+<p>
+If spotting occurs at a cell, the number of firebrands is randomly
+drawn from a Poisson distribution, the mean of which is configured
+with key <b>num_firebrands</b>. As such, non-integer values are allowed for
+<b>num_firebrands</b>. The use of a Poisson distribution can help make the
+behavior robust to changes in simulation resolution. That being said,
+note that <b>num_firebrands</b> and/or the spotting probabilities will need
+to be adjusted if you change the simulation resolution, the essential
+invariant being the average number of firebrands per unit area. What's
+more, it may be sensible to set the spotting probability to 1 and
+compensate with a low Poisson mean.
+</p>
+</div>
+</div>
+<div id="outline-container-spot-ignition-model" class="outline-4">
+<h4 id="spot-ignition-model"><span class="section-number-4">10.1.7.</span> Spot Ignition Model</h4>
+<div class="outline-text-4" id="text-spot-ignition-model">
+<p>
+The Spot Ignition model describes the probability of a spot ignition
+as well as when the spot ignition should occur. Perryman 2012 uses the
+method described in Schroeder 1969 but adjusts the result to take into
+account the distance a firebrand lands from the source tree (using
+Albini 1979) and the number of firebrands that land in a cell (using
+Stauffer
+2008).<sup><a id="fnr.48" class="footref" href="#fn.48" role="doc-backlink">48</a></sup><sup>, </sup><sup><a id="fnr.49" class="footref" href="#fn.49" role="doc-backlink">49</a></sup><sup>, </sup><sup><a id="fnr.50" class="footref" href="#fn.50" role="doc-backlink">50</a></sup><sup>, </sup><sup><a id="fnr.51" class="footref" href="#fn.51" role="doc-backlink">51</a></sup>
+</p>
+
+\begin{align}
+  P(I)_l = P(I)\exp(-\lambda_s l) \\
+  \nonumber \\
+  P(I)_l^{FB} = 1 - (1 - P(I)_l)^{n_b}
+\end{align}
+
+<p>
+where \(\lambda_s\) is a positive number representing the decay
+constant, \(l\) is the firebrand's landing distance away from the source
+cell. \(P(I)_l\) is the probability of spot ignition taking into
+consideration \(l\). \(P(I)_l^{FB}\) is the probability of spot fire
+ignition taking into consideration \(n_b\), the number of firebrands
+landing in a cell.
+</p>
+
+<p>
+We observe that the second formula is equivalent to a model where the
+firebrands are i.i.d causes of ignition (this is consistent with the
+goal of making the model insensitive to grid resolution). Therefore,
+Pyretechnics will simply draw an independent Bernoulli trial for each
+firebrand rather than apply the above formula.
+</p>
+
+<p>
+The first formula simply says that the per-firebrand probability
+decays exponentially with distance (i.e. adding \(1/\lambda_s\) to the
+distance divides the probability by \(e\), or equivalently \(l \mapsto
+P(I)_l\) has derivative \(\lambda_s P(I)_l\)). Yet another way to say
+this is that, if \(\lambda_s = \text{0.005 m}^{-1}\), then each added
+meter decreases \(P(I)_l\) by 5%.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="firebrand-ignition-probability"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">heat_of_preignition</span>(temperature, fine_fuel_moisture):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns heat of preignition given:</span>
+<span class="org-doc">    - temperature        :: degrees Celsius</span>
+<span class="org-doc">    - fine_fuel_moisture :: 0-1</span>
+
+<span class="org-doc">    Q_ig = 144.512 - 0.266 * T_o - 0.00058 * (T_o)^2 - T_o * M + 18.54 * (1 - exp(-15.1 * M)) + 640 * M (eq. 10)</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">T_o</span> <span class="org-operator">=</span> temperature
+    <span class="org-variable-name">M</span>   <span class="org-operator">=</span> fine_fuel_moisture
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Heat required to reach ignition temperature</span>
+    <span class="org-variable-name">Q_a</span> <span class="org-operator">=</span> 144.512 <span class="org-operator">-</span> 0.266 <span class="org-operator">*</span> T_o <span class="org-operator">-</span> 0.00058 <span class="org-operator">*</span> (T_o <span class="org-operator">**</span> 2.0)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Heat required to raise moisture to the boiling point</span>
+    <span class="org-variable-name">Q_b</span> <span class="org-operator">=</span> <span class="org-operator">-</span>T_o <span class="org-operator">*</span> M
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Heat of desorption</span>
+    <span class="org-variable-name">Q_c</span> <span class="org-operator">=</span> 18.54 <span class="org-operator">*</span> (1.0 <span class="org-operator">-</span> exp(<span class="org-operator">-</span>15.1 <span class="org-operator">*</span> M))
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Heat required to vaporize moisture</span>
+    <span class="org-variable-name">Q_d</span> <span class="org-operator">=</span> 640.0 <span class="org-operator">*</span> M
+    <span class="org-keyword">return</span> Q_a <span class="org-operator">+</span> Q_b <span class="org-operator">+</span> Q_c <span class="org-operator">+</span> Q_d
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">schroeder_ignition_probability</span>(temperature, fine_fuel_moisture):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns the probability of spot fire ignition (Schroeder 1969) given:</span>
+<span class="org-doc">    - temperature        :: degrees Celsius</span>
+<span class="org-doc">    - fine_fuel_moisture :: 0-1</span>
+
+<span class="org-doc">    X = (400 - Q_ig) / 10</span>
+<span class="org-doc">    P(I) = (0.000048 * X^4.3) / 50 (pg. 15)</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">Q_ig</span> <span class="org-operator">=</span> heat_of_preignition(temperature, fine_fuel_moisture)
+    <span class="org-variable-name">X</span>    <span class="org-operator">=</span> <span class="org-builtin">max</span>(0.0, 400.0 <span class="org-operator">-</span> Q_ig) <span class="org-operator">/</span> 10.0
+    <span class="org-variable-name">P_I</span>  <span class="org-operator">=</span> 0.000048 <span class="org-operator">*</span> (X <span class="org-operator">**</span> 4.3) <span class="org-operator">/</span> 50.0
+    <span class="org-keyword">return</span> <span class="org-builtin">min</span>(P_I, 1.0)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">spot_ignition_probability</span>(temperature, fine_fuel_moisture, decay_constant, spotting_distance):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns the distance-decayed probability of spot fire ignition (Perryman 2012) given:</span>
+<span class="org-doc">    - temperature        :: degrees Celsius</span>
+<span class="org-doc">    - fine_fuel_moisture :: 0-1</span>
+<span class="org-doc">    - decay_constant     :: m^-1   (lambda)</span>
+<span class="org-doc">    - spotting_distance  :: meters (d)</span>
+
+<span class="org-doc">    P(Spot Ignition) = P(I) * exp(-lambda * d)</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">P_I</span> <span class="org-operator">=</span> schroeder_ignition_probability(temperature, fine_fuel_moisture)
+    <span class="org-keyword">return</span> P_I <span class="org-operator">*</span> exp(<span class="org-operator">-</span>decay_constant <span class="org-operator">*</span> spotting_distance)
+</pre>
+</div>
+
+<p>
+A firebrand will cause an unburned cell to transition to a burned
+state if the cell receives at least one firebrand and the cell's
+probability of ignition as calculated by the above equations is
+greater than a randomly generated uniform number.
+</p>
+</div>
+</div>
+<div id="outline-container-time-to-spot-ignition" class="outline-4">
+<h4 id="time-to-spot-ignition"><span class="section-number-4">10.1.8.</span> Time to Spot Ignition</h4>
+<div class="outline-text-4" id="text-time-to-spot-ignition">
+<p>
+Once a cell has been determined to ignite, then the time until
+ignition is calculated. The time until ignition is a sum of three time
+intervals: the amount of time required for the firebrand to reach its
+maximum vertical height \(t_v\), the amount of time required for the
+firebrand to descend from the maximum vertical height to the forest
+floor \(t_g\), and the amount of time required for a spot fire to ignite
+and build up to the steady-state \(t_I\). Perryman
+2012<sup><a id="fnr.52" class="footref" href="#fn.52" role="doc-backlink">52</a></sup> assumes \(t_v\) and \(t_g\) to be equal and used
+the formula from Albini 1979<sup><a id="fnr.53" class="footref" href="#fn.53" role="doc-backlink">53</a></sup> to calculate it.
+\(t_I\) is also assumed to be 20 min as used in McAlpine
+1991<sup><a id="fnr.54" class="footref" href="#fn.54" role="doc-backlink">54</a></sup>.
+</p>
+
+<p>
+By Albini 1979<sup><a id="fnr.55" class="footref" href="#fn.55" role="doc-backlink">55</a></sup>, the time \(t_v\) for a firebrand to
+reach height \(z\) when the flame length is \(z_F\) is given by:
+</p>
+
+\begin{align}
+  t_v &= \frac{2 z_F}{w_F} \left(1.2 + \frac{a}{3} \left[ \left(\frac{b + (z/z_F)}{a}\right)^\frac{3}{2} - 1 \right] \right) & \\
+  \nonumber \\
+  w_F &= 2.3 \text{ m/s} \sqrt{\frac{z_F}{1 \text{ m}}} & \\
+  \nonumber \\
+  a   &= 5.963 & \\
+  \nonumber \\
+  b   &=  a - 1.4 & \\
+\end{align}
+
+<p>
+In the notation of Albini 1979<sup><a id="fnr.56" class="footref" href="#fn.56" role="doc-backlink">56</a></sup>, we would have \(t_v
+= \frac{2 z_F}{w_F}(t_T - t_o)\).
+</p>
+
+<p>
+Albini 1979<sup><a id="fnr.57" class="footref" href="#fn.57" role="doc-backlink">57</a></sup> also provides a formula - (D44) - for
+the maximum height \(z_\text{max}\) that a firebrand can reach while
+still glowing when it hits the ground, as a function of the firebrand
+diameter \(D\) in a cylinder model:
+</p>
+
+\begin{align}
+  z_\text{max} = D \times 0.39 \times 10^5
+\end{align}
+
+<p>
+To estimate firebrand travel time, Pyretechnics makes the assumption
+that each firebrand will reach \(z_\text{max}\), where \(z_\text{max}\) is
+computed for \(D = 3\text{mm}\), yielding \(z_\text{max} = 117 \text{m}\).
+</p>
+
+<p>
+To make the above formulas more tangible, observe that when the flame
+length is small enough that \(z_F \ll z_\text{max}\), the above formulas
+simplify into the following approximation:
+</p>
+
+\begin{align}
+  t_v \underset{z_F \ll z_\text{max}}{\approx} \frac{2}{3 \sqrt{a}} \frac{\sqrt{z_\text{max} \times 1 \text{m}}}{2.3 \text{m/s}}\frac{z_\text{max}}{z_F}
+\end{align}
+
+<p>
+Plugging in Pyretechnics' choice of \(z_\text{max} = 117 \text{m}\)
+yields:
+</p>
+
+\begin{align}
+  t_v \underset{z_F \ll z_\text{max}}{\approx} 1.28 \text{s} \times \frac{117 \text{m}}{z_F}
+\end{align}
+
+<p>
+In other words, in the limit of small-enough flame lengths, the
+firebrand is assumed to elevate at a constant vertical speed
+\((z_F/1.28 \text{s})\) which is proportional to the flame length, until
+it reaches \(z_\text{max} = 117 \text{m}\). For example, if the flame
+length is 1.17m (100x smaller than \(z_\text{max}\)), \(t_v\) is about
+128s.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="firebrands-time-of-ignition"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">albini_firebrand_maximum_height</span>(firebrand_diameter):
+    <span class="org-keyword">return</span> 0.39e5 <span class="org-operator">*</span> firebrand_diameter
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">albini_t_max</span>(flame_length):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns the time of spot ignition using Albini1979spot in minutes given:</span>
+<span class="org-doc">    - flame_length :: meters [z_F]</span>
+
+<span class="org-doc">    a           = 5.963                                                             (D33)</span>
+<span class="org-doc">    b           = a - 1.4                                                           (D34)</span>
+<span class="org-doc">    D           = 0.003</span>
+<span class="org-doc">    z           = 0.39 * D * 10^5</span>
+<span class="org-doc">    w_F         = 2.3 * z_F^0.5                                                     (A58)</span>
+<span class="org-doc">    t_c         = 1</span>
+<span class="org-doc">    t_o         = t_c / (2 * z_F / w_F)</span>
+<span class="org-doc">    travel_time = t_1 + t_2 + t_3 = 1.2 + (a / 3) * (((b + (z/z_F)) / a)^3/2 - 1)   (D43)</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">a</span>           <span class="org-operator">=</span> 5.963  <span class="org-comment-delimiter"># </span><span class="org-comment">dimensionless constant from (D33)</span>
+    <span class="org-variable-name">b</span>           <span class="org-operator">=</span> 4.563  <span class="org-comment-delimiter"># </span><span class="org-comment">dimensionless constant from (D34)</span>
+    <span class="org-variable-name">z</span>           <span class="org-operator">=</span> 117.0  <span class="org-comment-delimiter"># </span><span class="org-comment">maximum altitude of firebrands in meters [derived for (D44) in (Albini1979spot)]</span>
+    <span class="org-variable-name">z_F</span>         <span class="org-operator">=</span> flame_length                      <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-variable-name">w_F</span>         <span class="org-operator">=</span> 2.3 <span class="org-operator">*</span> sqrt(flame_length)          <span class="org-comment-delimiter"># </span><span class="org-comment">m/s</span>
+    <span class="org-variable-name">charact_t</span>   <span class="org-operator">=</span> conv.sec_to_min(2.0 <span class="org-operator">*</span> z_F <span class="org-operator">/</span> w_F)  <span class="org-comment-delimiter"># </span><span class="org-comment">min</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">The following dimensionless factor is equal to t_T - t_o, with t_T defined by (D43) in Albini1979spot.</span>
+    <span class="org-variable-name">travel_time</span> <span class="org-operator">=</span> 1.2 <span class="org-operator">+</span> (a <span class="org-operator">/</span> 3.0) <span class="org-operator">*</span> (((b <span class="org-operator">+</span> z <span class="org-operator">/</span> z_F) <span class="org-operator">/</span> a) <span class="org-operator">**</span> 1.5 <span class="org-operator">-</span> 1.0)
+    <span class="org-keyword">return</span> charact_t <span class="org-operator">*</span> travel_time
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">spot_ignition_time</span>(time_of_arrival, flame_length):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns the time of spot ignition using Albini 1979 and Perryman 2012 in minutes given:</span>
+<span class="org-doc">    - time_of_arrival :: minutes</span>
+<span class="org-doc">    - flame_length    :: meters</span>
+
+<span class="org-doc">    t_spot = time_of_arrival + (2 * t_max) + t_ss</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">t_max</span>          <span class="org-operator">=</span> albini_t_max(flame_length)
+    <span class="org-variable-name">t_steady_state</span> <span class="org-operator">=</span> 20.0 <span class="org-comment-delimiter"># </span><span class="org-comment">period of building up to steady state from ignition (min)</span>
+    <span class="org-keyword">return</span> time_of_arrival <span class="org-operator">+</span> 2.0 <span class="org-operator">*</span> t_max <span class="org-operator">+</span> t_steady_state
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-spreading-firebrands" class="outline-4">
+<h4 id="spreading-firebrands"><span class="section-number-4">10.1.9.</span> Spreading Firebrands</h4>
+<div class="outline-text-4" id="text-spreading-firebrands">
+<p>
+Once the locations, ignition probabilities, and times of ignition have
+been calculated for each of the firebrands, a sequence of space-time
+coordinates <b>(spot_time,y,x)</b> are returned, to be processed in the
+fire spread algorithm (see section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9</a>), where <b>spot_time</b>
+is the ignition time of the spot fire in minutes, and <b>y,x</b> is the
+cell in which the firebrand will land.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="spread-firebrands"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sin, cos, hypot, radians
+<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
+<span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">is_in_bounds</span>(y, x, rows, cols):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> (y <span class="org-operator">&gt;=</span> 0) <span class="org-keyword">and</span> (x <span class="org-operator">&gt;=</span> 0) <span class="org-keyword">and</span> (y <span class="org-operator">&lt;</span> rows) <span class="org-keyword">and</span> (x <span class="org-operator">&lt;</span> cols)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">is_burnable_cell</span>(fuel_model_cube, t, y, x):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">fuel_model_number</span> <span class="org-operator">=</span> fuel_model_cube.get(t,y,x)
+    <span class="org-variable-name">fuel_model</span>        <span class="org-operator">=</span> fm.fuel_model_table.get(fuel_model_number)
+    <span class="org-keyword">return</span> fuel_model <span class="org-keyword">and</span> fuel_model[<span class="org-string">"burnable"</span>]
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">is_spot_ignition</span>(rand_gen, spot_ignition_probability):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns True if a real value drawn uniformly from the range [0,1) is &lt;= spot_ignition_probability.</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spot_ignition_probability
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">cast_firebrand</span>(rand_gen,
+                   fuel_model_cube,
+                   temperature_cube,
+                   fuel_moisture_dead_1hr_cube,
+                   fire_type_matrix,
+                   firebrand_count_matrix,
+                   rows,
+                   cols,
+                   cell_height,
+                   cell_width,
+                   source_t,
+                   source_y,
+                   source_x,
+                   decay_constant,
+                   cos_wdir,
+                   sin_wdir,
+                   sample_delta_y_fn,
+                   sample_delta_x_fn):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    """</span>
+    <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Determine where the firebrand will land</span>
+    <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+    <span class="org-variable-name">delta_y</span>  <span class="org-operator">=</span> sample_delta_y_fn(rand_gen)                            <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">delta_x</span>  <span class="org-operator">=</span> sample_delta_x_fn(rand_gen)                            <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">grid_dy</span>  <span class="org-operator">=</span> delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">grid_dx</span>  <span class="org-operator">=</span> delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">target_y</span> <span class="org-operator">=</span> source_y <span class="org-operator">+</span> distance_to_n_cells(grid_dy, cell_height)
+    <span class="org-variable-name">target_x</span> <span class="org-operator">=</span> source_x <span class="org-operator">+</span> distance_to_n_cells(grid_dx, cell_width)
+
+    <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Determine whether the firebrand will start a fire or fizzle out</span>
+    <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+    <span class="org-keyword">if</span> is_in_bounds(target_y, target_x, rows, cols) <span class="org-keyword">and</span> fire_type_matrix[target_y,target_x] <span class="org-operator">==</span> 0:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix</span>
+        <span class="org-variable-name">firebrand_count_matrix</span>[<span class="org-variable-name">target_y</span>,<span class="org-variable-name">target_x</span>] <span class="org-operator">+=</span> 1
+
+        <span class="org-keyword">if</span> is_burnable_cell(fuel_model_cube, source_t, target_y, target_x):
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability</span>
+            <span class="org-variable-name">spotting_distance</span>         <span class="org-operator">=</span> hypot(grid_dx, grid_dy)                                       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+            <span class="org-variable-name">temperature</span>               <span class="org-operator">=</span> temperature_cube.get(source_t, target_y, target_x)            <span class="org-comment-delimiter"># </span><span class="org-comment">degrees Celsius</span>
+            <span class="org-variable-name">fine_fuel_moisture</span>        <span class="org-operator">=</span> fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) <span class="org-comment-delimiter"># </span><span class="org-comment">kg/kg</span>
+            <span class="org-variable-name">spot_ignition_probability</span> <span class="org-operator">=</span> spot_ignition_probability(temperature, fine_fuel_moisture,
+                                                                  decay_constant, spotting_distance)
+            <span class="org-keyword">if</span> is_spot_ignition(rand_gen, spot_ignition_probability):
+                <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand ignited the target cell, so return its coordinates for later processing</span>
+                <span class="org-keyword">return</span> (target_y, target_x)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">spread_firebrands</span>(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
+                      rand_gen, expected_ember_count, spotting_config):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Given these inputs:</span>
+<span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
+<span class="org-doc">      - fuel_model                    :: integer index in fm.fuel_model_table</span>
+<span class="org-doc">      - temperature                   :: degrees Celsius</span>
+<span class="org-doc">      - wind_speed_10m                :: km/hr</span>
+<span class="org-doc">      - upwind_direction              :: degrees clockwise from North</span>
+<span class="org-doc">      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">    - output_matrices           :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes</span>
+<span class="org-doc">      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)</span>
+<span class="org-doc">      - fireline_intensity            :: 2D float array (kW/m)</span>
+<span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
+<span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
+<span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands)</span>
+<span class="org-doc">    - cube_resolution           :: tuple with these fields</span>
+<span class="org-doc">      - band_duration                 :: minutes</span>
+<span class="org-doc">      - cell_height                   :: meters</span>
+<span class="org-doc">      - cell_width                    :: meters</span>
+<span class="org-doc">    - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns</span>
+<span class="org-doc">    - rand_gen                  :: numpy.random.Generator</span>
+<span class="org-doc">    - expected_ember_count      :: expected number of firebrands to cast</span>
+<span class="org-doc">    - spotting_config           :: dictionary of spotting parameters</span>
+<span class="org-doc">      - mean_distance                 :: ? TODO: Record these parameters' types</span>
+<span class="org-doc">      - flin_exp                      :: ?</span>
+<span class="org-doc">      - ws_exp                        :: ?</span>
+<span class="org-doc">      - normalized_distance_variance  :: ?</span>
+<span class="org-doc">      - delta_y_sigma                 :: ?</span>
+<span class="org-doc">      - decay_constant                :: ?</span>
+
+<span class="org-doc">    samples a number of firebrands from a Poisson distribution parameterized by expected_ember_count,</span>
+<span class="org-doc">    casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing</span>
+<span class="org-doc">    locations in output_matrices["firebrand_count"], filters out all of the firebrands that fizzle out in either</span>
+<span class="org-doc">    burnable or non-burnable fuels, and returns any that ignite new spot fires in a tuple with these fields:</span>
+
+<span class="org-doc">    - target_ignition_time :: minutes</span>
+<span class="org-doc">    - ignited_cells        :: list of (y,x) grid coordinates</span>
+<span class="org-doc">    """</span>
+    <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Sample the number of firebrands to cast from the source cell</span>
+    <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+    <span class="org-variable-name">num_firebrands</span> <span class="org-operator">=</span> sample_number_of_firebrands(rand_gen, expected_ember_count)
+
+    <span class="org-keyword">if</span> num_firebrands <span class="org-operator">&gt;</span> 0:
+
+        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack all firebrand-related features of the source cell</span>
+        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+        <span class="org-variable-name">fuel_model_cube</span>              <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_model"</span>]
+        <span class="org-variable-name">temperature_cube</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"temperature"</span>]
+        <span class="org-variable-name">fuel_moisture_dead_1hr_cube</span>  <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_moisture_dead_1hr"</span>]
+        <span class="org-variable-name">fire_type_matrix</span>             <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
+        <span class="org-variable-name">firebrand_count_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"firebrand_count"</span>]
+        (<span class="org-variable-name">_</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)              <span class="org-operator">=</span> fuel_model_cube.shape
+        (<span class="org-variable-name">_</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
+        (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                    <span class="org-operator">=</span> space_time_coordinate
+        <span class="org-variable-name">decay_constant</span>               <span class="org-operator">=</span> spotting_config[<span class="org-string">"decay_constant"</span>]
+        <span class="org-variable-name">upwind_direction</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"upwind_direction"</span>].get(t,y,x)
+        <span class="org-variable-name">downwind_direction</span>           <span class="org-operator">=</span> radians(conv.opposite_direction(upwind_direction))
+        <span class="org-variable-name">cos_wdir</span>                     <span class="org-operator">=</span> cos(downwind_direction)
+        <span class="org-variable-name">sin_wdir</span>                     <span class="org-operator">=</span> sin(downwind_direction)
+        <span class="org-variable-name">fireline_intensity</span>           <span class="org-operator">=</span> output_matrices[<span class="org-string">"fireline_intensity"</span>][y,x]             <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+        <span class="org-variable-name">wind_speed_10m</span>               <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"wind_speed_10m"</span>].get(t,y,x)          <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+        <span class="org-variable-name">wind_speed_20ft</span>              <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+        <span class="org-variable-name">wind_speed_20ft_mps</span>          <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)                     <span class="org-comment-delimiter"># </span><span class="org-comment">m/s</span>
+        <span class="org-variable-name">sample_delta_y_fn</span>            <span class="org-operator">=</span> delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+        <span class="org-variable-name">sample_delta_x_fn</span>            <span class="org-operator">=</span> delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+
+        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells</span>
+        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+        <span class="org-variable-name">ignited_cells</span> <span class="org-operator">=</span> [ignited_cell <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)
+                         <span class="org-keyword">if</span> (ignited_cell :<span class="org-operator">=</span> cast_firebrand(rand_gen,
+                                                            fuel_model_cube,
+                                                            temperature_cube,
+                                                            fuel_moisture_dead_1hr_cube,
+                                                            fire_type_matrix,
+                                                            firebrand_count_matrix,
+                                                            rows,
+                                                            cols,
+                                                            cell_height,
+                                                            cell_width,
+                                                            t,
+                                                            y,
+                                                            x,
+                                                            decay_constant,
+                                                            cos_wdir,
+                                                            sin_wdir,
+                                                            sample_delta_y_fn,
+                                                            sample_delta_x_fn))
+                         <span class="org-keyword">is</span> <span class="org-keyword">not</span> <span class="org-constant">None</span>]
+
+        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return any cells ignited by firebrands along with their time of ignition</span>
+        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+        <span class="org-keyword">if</span> <span class="org-builtin">len</span>(ignited_cells) <span class="org-operator">&gt;</span> 0:
+            <span class="org-variable-name">time_of_arrival</span>      <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>][y,x]           <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+            <span class="org-variable-name">flame_length</span>         <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>][y,x]              <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+            <span class="org-variable-name">target_ignition_time</span> <span class="org-operator">=</span> spot_ignition_time(time_of_arrival, flame_length) <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+
+            <span class="org-keyword">return</span> (target_ignition_time, ignited_cells)
+</pre>
+</div>
+</div>
+</div>
 </div>
 <div id="outline-container-for-users-spot" class="outline-3">
 <h3 id="for-users-spot"><span class="section-number-3">10.2.</span> For Users</h3>
 <div class="outline-text-3" id="text-for-users-spot">
 </div>
-<div id="outline-container-how-to-calculate-the-areal-heat-output-for-all-surface-fuel-models" class="outline-4">
-<h4 id="how-to-calculate-the-areal-heat-output-for-all-surface-fuel-models"><span class="section-number-4">10.2.1.</span> How to Estimate the Areal Heat Output for All Surface Fuel Models</h4>
-<div class="outline-text-4" id="text-how-to-calculate-the-areal-heat-output-for-all-surface-fuel-models">
+<div id="outline-container-how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models" class="outline-4">
+<h4 id="how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models"><span class="section-number-4">10.2.1.</span> How to Estimate the Areal Heat Output for All Surface Fuel Models</h4>
+<div class="outline-text-4" id="text-how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models">
 <div class="org-src-container">
 <pre class="src src-python" id="estimate-areal-heat-output"><span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
@@ -7757,6 +8795,231 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 </pre>
 </div>
 </div>
+<div id="outline-container-how-to-estimate-spot-fire-count-from-ember-production-rate" class="outline-4">
+<h4 id="how-to-estimate-spot-fire-count-from-ember-production-rate"><span class="section-number-4">10.2.2.</span> [WIP] How to Estimate Spot Fire Count from Ember Production Rate</h4>
+<div class="outline-text-4" id="text-how-to-estimate-spot-fire-count-from-ember-production-rate">
+<p>
+And&#x2026;we're back! I put together another range tester for the probability of spot fire ignition.
+</p>
+
+<p>
+These are the ranges I used for the relevant input variables:
+</p>
+
+<ul class="org-ul">
+<li>temperature: 20-40 degrees Celsius</li>
+<li>fine fuel moisture: 5-20%</li>
+<li>distance from burning cell: 30-990 meters (&lt;= 1-33 cells)</li>
+<li>distance decay constant: 0.005-0.100 m^-1</li>
+</ul>
+
+<p>
+Here's the code:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-clojure" id="estimate-spot-fire-count">(require '[gridfire.spotting :refer [schroeder-ign-prob]])
+(import 'org.apache.commons.math3.util.FastMath)
+
+(def sigs
+  (sort
+   (for [temperature (range 20 41 5)
+         moisture    (range 0.05 0.21 0.05)]
+     (schroeder-ign-prob temperature moisture))))
+
+(def distance-penalties
+  (sort
+   (for [decay    (range 0.005 0.11 0.005)
+         distance (range 30.0 1000.0 30.0)]
+     (FastMath/exp (* -1.0 decay distance)))))
+
+(def ignition-probs
+  (sort
+   (for [sig sigs
+         dp  distance-penalties]
+     (* sig dp))))
+
+(defn percentile-indices [coll]
+  "Return the 0th, 25th, 50th, 75th, and 100th percentile indices for coll."
+  (let [max-index (dec (count coll))]
+    (map #(int (* % max-index))
+         [0.0 0.25 0.5 0.75 1.0])))
+
+(def rep-sigs
+  (map #(nth sigs %) (percentile-indices sigs)))
+
+(def rep-dps
+  (map #(nth distance-penalties %) (percentile-indices distance-penalties)))
+
+(def rep-ignition-probs
+  (map #(nth ignition-probs %) (percentile-indices ignition-probs)))
+
+{:representative-schroeder-ignition-probabilities rep-sigs
+ :representative-distance-penalties               rep-dps
+ :representative-spot-ignition-probabilities      rep-ignition-probs}
+</pre>
+</div>
+
+<p>
+And here's the result:
+</p>
+
+<p>
+```clojure
+{:representative-schroeder-ignition-probabilities
+ (0.0410643084416302
+  0.05806152126033939
+  0.1462606114856146
+  0.32092711244047045
+  0.6532412198970651),
+ :representative-distance-penalties
+ (7.162895350006142E-46
+  2.7158820118920623E-19
+  4.161397394224164E-10
+  2.248673241788482E-4
+  0.8607079764250578),
+ :representative-spot-ignition-probabilities
+ (2.941393439877709E-47
+  7.50193220126481E-20
+  9.65780746160267E-11
+  3.650896835973886E-5
+  0.5622499284950391)}
+```
+</p>
+
+<p>
+So if we multiply the `representative-spot-ignition-probabilities` by the ember count range given with an `ember_production_rate` of 0.03 (see above), we get the following:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-clojure" id="estimate-spot-fire-count2">(for [num-embers [256500 1471500]]
+  (map #(* num-embers %)
+       rep-ignition-probs))
+</pre>
+</div>
+
+<p>
+which results in:
+</p>
+
+<p>
+```clojure
+((7.544674173286323E-42
+  1.9242456096244238E-14
+  2.4772276139010847E-5
+  9.364550384273018
+  144217.10665897751)
+ (4.3282604467800485E-41
+  1.1039093234161168E-13
+  1.4211463679748328E-4
+  53.72294694135574
+  827350.76978045))
+```
+</p>
+
+<p>
+We can see that depending on the surface fuel model, we can get
+anywhere from 9 to 827,350 spot fires ignited by one burning cell per
+timestep in the upper quartile of temperature/moisture/distance/decay
+conditions with that ridiculously high `ember_production_rate`.
+Hopefully this provides sufficient direction for selecting a more
+reasonable default for that parameter.
+</p>
+</div>
+</div>
+<div id="outline-container-how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics" class="outline-4">
+<h4 id="how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics"><span class="section-number-4">10.2.3.</span> How to Estimate Typical Ranges for the \(\vec{\Delta}\) Distribution Characteristics</h4>
+<div class="outline-text-4" id="text-how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics">
+<div class="org-src-container">
+<pre class="src src-python" id="himoto-typical-ranges"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, log
+
+<span class="org-keyword">def</span> <span class="org-function-name">himoto_eq_28_values</span>(B_star):
+    <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The following value for D seems absurdly low, and so does</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">the predicted E[&#916;X]. I suspect a typo in the Himoto2005 paper.</span>
+    <span class="org-variable-name">D</span>                  <span class="org-operator">=</span> 0.08
+    <span class="org-variable-name">std_delta_x_over_D</span> <span class="org-operator">=</span> 0.88 <span class="org-operator">*</span> (B_star <span class="org-operator">**</span> (1.0 <span class="org-operator">/</span> 3.0))
+    <span class="org-variable-name">exp_delta_x_over_D</span> <span class="org-operator">=</span> 0.47 <span class="org-operator">*</span> (B_star <span class="org-operator">**</span> (2.0 <span class="org-operator">/</span> 3.0))
+    <span class="org-variable-name">cv_delta_x</span>         <span class="org-operator">=</span> std_delta_x_over_D <span class="org-operator">/</span> exp_delta_x_over_D
+    <span class="org-variable-name">sigma_x</span>            <span class="org-operator">=</span> sqrt(log(1.0 <span class="org-operator">+</span> cv_delta_x))
+    <span class="org-variable-name">exp_delta_x</span>        <span class="org-operator">=</span> exp_delta_x_over_D <span class="org-operator">*</span> D
+    <span class="org-variable-name">mu_x</span>               <span class="org-operator">=</span> log(exp_delta_x) <span class="org-operator">-</span> (sigma_x <span class="org-operator">**</span> 2.0) <span class="org-operator">/</span> 2.0
+    <span class="org-variable-name">sigma_y</span>            <span class="org-operator">=</span> D <span class="org-operator">*</span> 0.92
+    <span class="org-keyword">return</span> {
+        <span class="org-string">"$B^*$"</span>                             : B_star,
+        <span class="org-string">"$</span><span class="org-constant">\\</span><span class="org-string">text{CV}[</span><span class="org-constant">\\</span><span class="org-string">Delta_X]$"</span>           : <span class="org-string">"{:.0f}%"</span>.<span class="org-builtin">format</span>(100.0 <span class="org-operator">*</span> cv_delta_x),
+        <span class="org-string">"$</span><span class="org-constant">\\</span><span class="org-string">sigma_X$"</span>                       : <span class="org-string">"{:.2f}"</span>.<span class="org-builtin">format</span>(sigma_x),
+        <span class="org-string">"$</span><span class="org-constant">\\</span><span class="org-string">sigma_Y/</span><span class="org-constant">\\</span><span class="org-string">mathbb{E}[</span><span class="org-constant">\\</span><span class="org-string">Delta_X]$"</span>: <span class="org-string">"{:.2f}"</span>.<span class="org-builtin">format</span>(sigma_y <span class="org-operator">/</span> exp_delta_x),
+        <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE the following ended up being nonsensical:</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">"E[&#916;X] (m)" exp_delta_x</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">"&#956;_X"       mu_x</span>
+    }
+
+<span class="org-variable-name">himoto_typical_ranges</span> <span class="org-operator">=</span> [himoto_eq_28_values(B_star) <span class="org-keyword">for</span> B_star <span class="org-keyword">in</span> [20, 50, 100, 150, 200]]
+<span class="org-variable-name">table_header</span>          <span class="org-operator">=</span> <span class="org-builtin">list</span>(himoto_typical_ranges[0].keys())
+<span class="org-variable-name">table_rows</span>            <span class="org-operator">=</span> [<span class="org-builtin">list</span>(d.values()) <span class="org-keyword">for</span> d <span class="org-keyword">in</span> himoto_typical_ranges]
+
+<span class="org-builtin">print</span>([table_header, <span class="org-operator">*</span>table_rows])
+</pre>
+</div>
+
+<table id="run-himoto-typical-ranges">
+
+
+<colgroup>
+<col  class="org-right">
+
+<col  class="org-right">
+
+<col  class="org-right">
+
+<col  class="org-right">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">\(B^*\)</td>
+<td class="org-right">\(\text{CV}[\Delta_X]\)</td>
+<td class="org-right">\(\sigma_X\)</td>
+<td class="org-right">\(\sigma_Y/\mathbb{E}[\Delta_X]\)</td>
+</tr>
+
+<tr>
+<td class="org-right">20</td>
+<td class="org-right">69%</td>
+<td class="org-right">0.72</td>
+<td class="org-right">0.27</td>
+</tr>
+
+<tr>
+<td class="org-right">50</td>
+<td class="org-right">51%</td>
+<td class="org-right">0.64</td>
+<td class="org-right">0.14</td>
+</tr>
+
+<tr>
+<td class="org-right">100</td>
+<td class="org-right">40%</td>
+<td class="org-right">0.58</td>
+<td class="org-right">0.09</td>
+</tr>
+
+<tr>
+<td class="org-right">150</td>
+<td class="org-right">35%</td>
+<td class="org-right">0.55</td>
+<td class="org-right">0.07</td>
+</tr>
+
+<tr>
+<td class="org-right">200</td>
+<td class="org-right">32%</td>
+<td class="org-right">0.53</td>
+<td class="org-right">0.06</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="outline-container-appendices" class="outline-2">
@@ -7828,6 +9091,16 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 <span class="org-keyword">def</span> <span class="org-function-name">mps_to_mph</span>(mps):
     <span class="org-doc">"""Convert meters per second to miles per hour."""</span>
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 2.237045454545455
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mps</span>(km_hr):
+    <span class="org-doc">"""Convert kilometers per hour to meters per second."""</span>
+    <span class="org-keyword">return</span> km_hr <span class="org-operator">*</span> 0.277764222883701
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">mps_to_km_hr</span>(mps):
+    <span class="org-doc">"""Convert meters per second to kilometers per hour."""</span>
+    <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 3.6001756800000004
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">mph_to_km_hr</span>(mph):
@@ -8201,12 +9474,12 @@ first create a collection of <code>SpaceTimeCube</code> objects, representing al
 of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
-provided by the US LANDFIRE program<sup><a id="fnr.34" class="footref" href="#fn.34" role="doc-backlink">34</a></sup> (see
-table <a href="#tab:landfire-layers">4</a> for details).
+provided by the US LANDFIRE program<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a></sup> (see
+table <a href="#tab:landfire-layers">6</a> for details).
 </p>
 
 <table id="tab:landfire-layers">
-<caption class="t-above"><span class="table-number">Table 4:</span> 2022 LANDFIRE Raster Layers</caption>
+<caption class="t-above"><span class="table-number">Table 6:</span> 2022 LANDFIRE Raster Layers</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -8404,7 +9677,7 @@ these keys:
 <div class="outline-text-4" id="text-converting-landfire-units-and-datatypes">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table <a href="#tab:landfire-layers">4</a>. In order to make them match those required
+Table <a href="#tab:landfire-layers">6</a>. In order to make them match those required
 by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 </p>
@@ -8555,7 +9828,7 @@ with a <code>SpaceTimeCube</code> object.
 <div class="outline-text-3" id="text-[wip]-testing-pyretechnics.burn_cells-on-worcester,-vt-(pyretechnics_test.test_burn_cells)">
 <p>
 <b>Note:</b> For testing purposes, we have downloaded the LANDFIRE rasters
-described in table <a href="#tab:landfire-layers">4</a>, clipped to a small region in
+described in table <a href="#tab:landfire-layers">6</a>, clipped to a small region in
 central Vermont, and stored them in the <a href="../test/data/landfire_inputs">../test/data/landfire_inputs</a>
 directory of this repository.
 </p>
@@ -8833,7 +10106,7 @@ savefig(title<span class="org-operator">=</span><span class="org-string">"Max Fl
 </div>
 
 <table id="max-fire-behavior-matplotlib-heatmaps">
-<caption class="t-above"><span class="table-number">Table 5:</span> Max fire behavior attributes</caption>
+<caption class="t-above"><span class="table-number">Table 7:</span> Max fire behavior attributes</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -8934,7 +10207,55 @@ Layer Disagreement: [-10.93608, 8.9857025] inches/min
 
 <div class="footdef"><sup><a id="fn.33" class="footnum" href="#fnr.33" role="doc-backlink">33</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://elmfire.io">https://elmfire.io</a></p></div></div>
 
-<div class="footdef"><sup><a id="fn.34" class="footnum" href="#fnr.34" role="doc-backlink">34</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://landfire.gov">https://landfire.gov</a></p></div></div>
+<div class="footdef"><sup><a id="fn.34" class="footnum" href="#fnr.34" role="doc-backlink">34</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+
+<div class="footdef"><sup><a id="fn.35" class="footnum" href="#fnr.35" role="doc-backlink">35</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.36" class="footnum" href="#fnr.36" role="doc-backlink">36</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+
+<div class="footdef"><sup><a id="fn.37" class="footnum" href="#fnr.37" role="doc-backlink">37</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.38" class="footnum" href="#fnr.38" role="doc-backlink">38</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://elmfire.io">https://elmfire.io</a></p></div></div>
+
+<div class="footdef"><sup><a id="fn.39" class="footnum" href="#fnr.39" role="doc-backlink">39</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+
+<div class="footdef"><sup><a id="fn.40" class="footnum" href="#fnr.40" role="doc-backlink">40</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+
+<div class="footdef"><sup><a id="fn.41" class="footnum" href="#fnr.41" role="doc-backlink">41</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.42" class="footnum" href="#fnr.42" role="doc-backlink">42</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.43" class="footnum" href="#fnr.43" role="doc-backlink">43</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+
+<div class="footdef"><sup><a id="fn.44" class="footnum" href="#fnr.44" role="doc-backlink">44</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.45" class="footnum" href="#fnr.45" role="doc-backlink">45</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+
+<div class="footdef"><sup><a id="fn.46" class="footnum" href="#fnr.46" role="doc-backlink">46</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.47" class="footnum" href="#fnr.47" role="doc-backlink">47</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+
+<div class="footdef"><sup><a id="fn.48" class="footnum" href="#fnr.48" role="doc-backlink">48</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+
+<div class="footdef"><sup><a id="fn.49" class="footnum" href="#fnr.49" role="doc-backlink">49</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Schroeder1969</p></div></div>
+
+<div class="footdef"><sup><a id="fn.50" class="footnum" href="#fnr.50" role="doc-backlink">50</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979</p></div></div>
+
+<div class="footdef"><sup><a id="fn.51" class="footnum" href="#fnr.51" role="doc-backlink">51</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Stauffer2008</p></div></div>
+
+<div class="footdef"><sup><a id="fn.52" class="footnum" href="#fnr.52" role="doc-backlink">52</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+
+<div class="footdef"><sup><a id="fn.53" class="footnum" href="#fnr.53" role="doc-backlink">53</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+
+<div class="footdef"><sup><a id="fn.54" class="footnum" href="#fnr.54" role="doc-backlink">54</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">McAlpine1991</p></div></div>
+
+<div class="footdef"><sup><a id="fn.55" class="footnum" href="#fnr.55" role="doc-backlink">55</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+
+<div class="footdef"><sup><a id="fn.56" class="footnum" href="#fnr.56" role="doc-backlink">56</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+
+<div class="footdef"><sup><a id="fn.57" class="footnum" href="#fnr.57" role="doc-backlink">57</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+
+<div class="footdef"><sup><a id="fn.58" class="footnum" href="#fnr.58" role="doc-backlink">58</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://landfire.gov">https://landfire.gov</a></p></div></div>
 
 
 </div>

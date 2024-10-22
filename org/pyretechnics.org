@@ -6508,6 +6508,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                 flame_length_matrix[y,x]       = fire_behavior["flame_length"]
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
                 # TODO: Cast firebrands and accumulate their landing locations and ignition times in a global data structure
+                # TODO: Create rand_gen with numpy.random.default_rng(seed=1234567890)
 
     # TODO: Set phi_matrix to -1.0 in all cells whosee ignition times occur before start_time + dt
 
@@ -7907,78 +7908,6 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             return (target_ignition_time, ignited_cells)
 #+end_src
 
-*** Sampling of Parameters
-    :PROPERTIES:
-    :CUSTOM_ID: sampling-of-parameters
-    :END:
-
-To represent uncertainty about the physical models, the spotting
-parameters can be configured to be drawn randomly from a uniform
-distribution at the beginning of each simulation.
-
-#+NAME: spotting-firebrands-params-sampling
-#+begin_src python
-# (:require
-#  [gridfire.common              :refer [terrain-distance-fn
-#                                        terrain-distance-invoke]]
-#  [tech.v3.tensor               :as t]
-#  [vvvvalvalval.supdate.api     :as supd])
-#
-# TODO: Create rand_gen with numpy.random.default_rng(seed=1234567890)
-(defn- sample-spotting-param
-  ^double
-  [param rand-gen]
-  (if (and (map? param) (contains? param :lo) (contains? param :hi))
-    (let [{:keys [lo hi]} param
-          ;; FIXME REVIEW Why on Earth are we sampling from a range with random bounds? (Val, 17 Mar 2023)
-          l               (if (vector? lo) (my-rand-range rand-gen (lo 0) (lo 1)) lo)
-          h               (if (vector? hi) (my-rand-range rand-gen (hi 0) (hi 1)) hi)]
-      (my-rand-range rand-gen l h))
-    param))
-
-(defn- sample-from-uniform
-  "Draws a random number from a Uniform Distribution,
-  encoded as either a single number (no randomness, a.k.a. Constant Distribution)
-  or a [min max] range."
-  ^double [values-range rand-gen]
-  (cond
-    (number? values-range) (double values-range)
-    (vector? values-range) (let [[min max] values-range]
-                             (my-rand-range rand-gen min max))))
-
-(defn- sample-intranges-mapping-values
-  [pairs rand-gen]
-  (if (sequential? pairs)
-    (supd/supdate pairs [{1 #(sample-from-uniform % rand-gen)}])
-    pairs))
-
-(defn sample-spotting-params
-  "Resolves values for the spotting parameters which are configured as a range to draw from.
-
-  Given a GridFire spotting configuration map,
-  replaces those parameters which are configured as a range
-  with randomly drawn values from that range,
-  returning a new map."
-  [spotting-config rand-gen]
-  (-> spotting-config
-      ;; Yes, it' a mess, that's what we get for having made the configuration so irregular. (Val, 17 Mar 2023)
-      (as-> sp-params
-            (reduce (fn [sp k]
-                      (supd/supdate sp {k #(sample-spotting-param % rand-gen)}))
-                    sp-params
-                    [:num-firebrands
-                     :decay-constant
-                     :mean-distance
-                     :normalized-distance-variance
-                     :flin-exp
-                     :ws-exp
-                     :delta-y-sigma])
-            (supd/supdate sp-params
-                          {:crown-fire-spotting-percent #(some-> % (sample-from-uniform rand-gen))
-                           :surface-fire-spotting       {:critical-fire-line-intensity #(sample-intranges-mapping-values % rand-gen)
-                                                         :spotting-percent             #(sample-intranges-mapping-values % rand-gen)}}))))
-#+end_src
-
 ** For Users
    :PROPERTIES:
    :CUSTOM_ID: for-users-spot
@@ -8095,7 +8024,7 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 {'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
 #+end_example
 
-*** How to Estimate Spot Fire Count from Ember Production Rate
+*** [WIP] How to Estimate Spot Fire Count from Ember Production Rate
     :PROPERTIES:
     :CUSTOM_ID: how-to-estimate-spot-fire-count-from-ember-production-rate
     :END:

@@ -62,6 +62,16 @@ def mps_to_mph(mps):
     return mps * 2.237045454545455
 
 
+def km_hr_to_mps(km_hr):
+    """Convert kilometers per hour to meters per second."""
+    return km_hr * 0.277764222883701
+
+
+def mps_to_km_hr(mps):
+    """Convert meters per second to kilometers per hour."""
+    return mps * 3.6001756800000004
+
+
 def mph_to_km_hr(mph):
     """Convert miles per hour to kilometers per hour."""
     return mph * 1.609344

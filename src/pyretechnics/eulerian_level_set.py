@@ -887,6 +887,10 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                 fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
                 flame_length_matrix[y,x]       = fire_behavior["flame_length"]
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
+                # TODO: Cast firebrands and accumulate their landing locations and ignition times in a global data structure
+                # TODO: Create rand_gen with numpy.random.default_rng(seed=1234567890)
+
+    # TODO: Set phi_matrix to -1.0 in all cells whosee ignition times occur before start_time + dt
 
     # Save the new phi_matrix values in phi_star_matrix
     for (y,x) in tracked_cells:
@@ -937,7 +941,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - fireline_intensity            :: 2D float array (kW/m)
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
-    - cube_resolution           :: tuple with these fields:
+    - cube_resolution           :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
       - cell_width                    :: meters
