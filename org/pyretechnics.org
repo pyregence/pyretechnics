@@ -6712,7 +6712,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
-    } | ({"spot_ignitions" : spot_ignitions} if spot_config else {})
+    } | ({"spot_ignitions" : spot_ignitions} if spotting_config else {})
 #+end_src
 
 ** For Users
