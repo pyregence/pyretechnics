@@ -1002,14 +1002,14 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spotting_config           :: dictionary of spotting parameters (Optional: needed for spotting)
-      - mean_distance                 :: ? TODO: Record these parameters' types
-      - flin_exp                      :: ?
-      - ws_exp                        :: ?
-      - normalized_distance_variance  :: ?
-      - delta_y_sigma                 :: ?
-      - decay_constant                :: ?
-      - ember_production_rate         :: embers/kJ
       - random_seed                   :: integer to seed a numpy.random.Generator object
+      - ember_production_rate         :: embers/kJ
+      - mean_distance                 :: meters
+      - flin_exp                      :: mean_distance multiplier [I^flin_exp]
+      - ws_exp                        :: mean_distance multiplier [U^ws_exp]
+      - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]
+      - delta_y_sigma                 :: meters
+      - decay_constant                :: 1/m
 
     return a dictionary with these keys:
     - stop_time            :: minutes
