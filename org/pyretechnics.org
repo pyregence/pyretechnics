@@ -7382,7 +7382,6 @@ def delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft):
     return lambda rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) # meters
 
 
-# FIXME: REVIEW Should I have kept this as sigma_y_scalar_ft? Is GridFire incorrect here?
 # When will we have the default sigma_Y > E[ΔX]?
 # It can be seen that this nonsensical situation
 # happens iff sigma_X exceeds the following number:
@@ -7394,9 +7393,9 @@ sigma_y_scalar_m = 0.92 * 0.47 / (0.88 ** 2.0)
 
 
 def himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x):
-    es2h         = exp((sigma_x ** 2.0) / 2.0)
-    avg_deltax_m = exp(mu_x) * es2h
-    return sigma_y_scalar_m * avg_deltax_m * (es2h + 1.0) * (es2h - 1.0) # meters
+    es2h       = exp((sigma_x ** 2.0) / 2.0)
+    avg_deltax = exp(mu_x) * es2h
+    return sigma_y_scalar_m * avg_deltax * (es2h + 1.0) * (es2h - 1.0) # meters
 
 
 def himoto_resolve_default_sigma_y(spotting_config, fireline_intensity, wind_speed_20ft):
