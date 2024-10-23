@@ -476,12 +476,12 @@ def cast_firebrand(rand_gen,
 
         if is_burnable_cell(fuel_model_cube, source_t, target_y, target_x):
             # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
-            spotting_distance         = hypot(grid_dx, grid_dy)                                       # meters
-            temperature               = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
-            fine_fuel_moisture        = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
-            spot_ignition_probability = spot_ignition_probability(temperature, fine_fuel_moisture,
-                                                                  decay_constant, spotting_distance)
-            if is_spot_ignition(rand_gen, spot_ignition_probability):
+            spotting_distance  = hypot(grid_dx, grid_dy)                                       # meters
+            temperature        = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
+            fine_fuel_moisture = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
+            probability        = spot_ignition_probability(temperature, fine_fuel_moisture,
+                                                           decay_constant, spotting_distance)
+            if is_spot_ignition(rand_gen, probability):
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
 
