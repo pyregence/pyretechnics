@@ -65,7 +65,7 @@ def delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y):
     Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
     Returns a signed distance (same unit as ΔX and ΔY).
     """
-    wdir_y      = -cos_wdir  # TODO: Why is this negative? Perhaps because origin is in upper-left in GridFire...
+    wdir_y      = cos_wdir  # FIXME: Should this be negative or positive?
     wdir_perp_y = sin_wdir
     return delta_x * wdir_y + delta_y * wdir_perp_y
 
