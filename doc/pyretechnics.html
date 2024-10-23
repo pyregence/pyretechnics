@@ -7441,8 +7441,8 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
-                                                     cube_resolution, start_time, max_duration)
+<span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
+                                                     start_time, max_duration)
 
 <span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
@@ -7461,13 +7461,13 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter"># </span><span class="org-comment">Used as a filter in get_array_stats below</span>
 <span class="org-variable-name">burned_cells</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>] <span class="org-operator">&gt;</span> 0
 
-<span class="org-keyword">def</span> <span class="org-function-name">get_array_stats</span>(array):
-    <span class="org-variable-name">array_values_in_burn_scar</span> <span class="org-operator">=</span> array[burned_cells]
+<span class="org-keyword">def</span> <span class="org-function-name">get_array_stats</span>(array, use_burn_scar_mask<span class="org-operator">=</span><span class="org-constant">True</span>):
+    <span class="org-variable-name">array_values_to_analyze</span> <span class="org-operator">=</span> array[burned_cells] <span class="org-keyword">if</span> use_burn_scar_mask <span class="org-keyword">else</span> array
     <span class="org-keyword">return</span> {
-        <span class="org-string">"Min"</span>  : np.<span class="org-builtin">min</span>(array_values_in_burn_scar),
-        <span class="org-string">"Max"</span>  : np.<span class="org-builtin">max</span>(array_values_in_burn_scar),
-        <span class="org-string">"Mean"</span> : np.mean(array_values_in_burn_scar),
-        <span class="org-string">"Stdev"</span>: np.std(array_values_in_burn_scar),
+        <span class="org-string">"Min"</span>  : np.<span class="org-builtin">min</span>(array_values_to_analyze),
+        <span class="org-string">"Max"</span>  : np.<span class="org-builtin">max</span>(array_values_to_analyze),
+        <span class="org-string">"Mean"</span> : np.mean(array_values_to_analyze),
+        <span class="org-string">"Stdev"</span>: np.std(array_values_to_analyze),
     }
 
 <span class="org-builtin">print</span>(<span class="org-string">"Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 100)
@@ -7476,7 +7476,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-builtin">print</span>(<span class="org-string">"Stop Condition: "</span> <span class="org-operator">+</span> stop_condition)
 
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Phi (phi &lt;= 0: burned, phi &gt; 0: unburned"</span>)
-pprint(get_array_stats(output_matrices[<span class="org-string">"phi"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
+pprint(get_array_stats(output_matrices[<span class="org-string">"phi"</span>], use_burn_scar_mask<span class="org-operator">=</span><span class="org-constant">False</span>), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
 
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)"</span>)
 pprint(get_array_stats(output_matrices[<span class="org-string">"fire_type"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
@@ -7505,10 +7505,7 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9240959,
- 'Max': -0.027171956,
- 'Mean': -0.7502774,
- 'Stdev': 0.21447739}
+{'Min': -0.92568916, 'Max': 1.0, 'Mean': 0.9060592, 'Stdev': 0.38920075}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -7667,6 +7664,10 @@ Time of Arrival (minutes)
 <div id="outline-container-how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled" class="outline-4">
 <h4 id="how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled"><span class="section-number-4">9.2.2.</span> How to Spread a Fire from a Point Ignition with Spotting Enabled</h4>
 <div class="outline-text-4" id="text-how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled">
+</div>
+<ol class="org-ol">
+<li><a id="configure-and-run-the-fire-spread-simulation-with-spotting-enabled"></a>Configure and Run the Fire Spread Simulation with Spotting Enabled<br>
+<div class="outline-text-5" id="text-configure-and-run-the-fire-spread-simulation-with-spotting-enabled">
 <div class="org-src-container">
 <pre class="src src-python" id="run-spread-fire-with-phi-field-with-spotting"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
@@ -7768,27 +7769,34 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
-                                                     start_time, max_duration, spotting_config<span class="org-operator">=</span>spotting_config)
+                                                     start_time, max_duration, spot_ignitions<span class="org-operator">=</span>{},
+                                                     spotting_config<span class="org-operator">=</span>spotting_config)
 
 <span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]              <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]         <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]        <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 <span class="org-variable-name">spot_ignitions</span>  <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {}) <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
-
-<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="display-summary-statistics-of-the-output-matrices-and-spot-ignitions"></a>Display Summary Statistics of the Output Matrices and Spot Ignitions<br>
+<div class="outline-text-5" id="text-display-summary-statistics-of-the-output-matrices-and-spot-ignitions">
+<div class="org-src-container">
+<pre class="src src-python" id="run-spread-fire-with-phi-field-with-spotting-stats"><span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Display summary statistics of our fire spread results</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Used as a filter in get_array_stats below</span>
 <span class="org-variable-name">burned_cells</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>] <span class="org-operator">&gt;</span> 0
 
-<span class="org-keyword">def</span> <span class="org-function-name">get_array_stats</span>(array):
-    <span class="org-variable-name">array_values_in_burn_scar</span> <span class="org-operator">=</span> array[burned_cells]
+<span class="org-keyword">def</span> <span class="org-function-name">get_array_stats</span>(array, use_burn_scar_mask<span class="org-operator">=</span><span class="org-constant">True</span>):
+    <span class="org-variable-name">array_values_to_analyze</span> <span class="org-operator">=</span> array[burned_cells] <span class="org-keyword">if</span> use_burn_scar_mask <span class="org-keyword">else</span> array
     <span class="org-keyword">return</span> {
-        <span class="org-string">"Min"</span>  : np.<span class="org-builtin">min</span>(array_values_in_burn_scar),
-        <span class="org-string">"Max"</span>  : np.<span class="org-builtin">max</span>(array_values_in_burn_scar),
-        <span class="org-string">"Mean"</span> : np.mean(array_values_in_burn_scar),
-        <span class="org-string">"Stdev"</span>: np.std(array_values_in_burn_scar),
+        <span class="org-string">"Min"</span>  : np.<span class="org-builtin">min</span>(array_values_to_analyze),
+        <span class="org-string">"Max"</span>  : np.<span class="org-builtin">max</span>(array_values_to_analyze),
+        <span class="org-string">"Mean"</span> : np.mean(array_values_to_analyze),
+        <span class="org-string">"Stdev"</span>: np.std(array_values_to_analyze),
     }
 
 <span class="org-builtin">print</span>(<span class="org-string">"Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 100)
@@ -7797,7 +7805,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-builtin">print</span>(<span class="org-string">"Stop Condition: "</span> <span class="org-operator">+</span> stop_condition)
 
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Phi (phi &lt;= 0: burned, phi &gt; 0: unburned"</span>)
-pprint(get_array_stats(output_matrices[<span class="org-string">"phi"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
+pprint(get_array_stats(output_matrices[<span class="org-string">"phi"</span>], use_burn_scar_mask<span class="org-operator">=</span><span class="org-constant">False</span>), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
 
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)"</span>)
 pprint(get_array_stats(output_matrices[<span class="org-string">"fire_type"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
@@ -7818,7 +7826,7 @@ pprint(get_array_stats(output_matrices[<span class="org-string">"flame_length"</
 pprint(get_array_stats(output_matrices[<span class="org-string">"time_of_arrival"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
 
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Firebrand Count (number of firebrands)"</span>)
-pprint(get_array_stats(output_matrices[<span class="org-string">"firebrand_count"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
+pprint(get_array_stats(output_matrices[<span class="org-string">"firebrand_count"</span>], use_burn_scar_mask<span class="org-operator">=</span><span class="org-constant">False</span>), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
 
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Total Firebrands on Grid: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(np.<span class="org-builtin">sum</span>(output_matrices[<span class="org-string">"firebrand_count"</span>])))
 
@@ -7827,14 +7835,14 @@ pprint(spot_ignitions)
 </pre>
 </div>
 
-<pre class="example" id="run-spread-fire-with-phi-field-with-spotting-results">
+<pre class="example" id="run-spread-fire-with-phi-field-with-spotting-stats-results">
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
 ====================================================================================================
 Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -1.000753, 'Max': -0.0001608223, 'Mean': -0.8233493, 'Stdev': 0.2099079}
+{'Min': -1.0022439, 'Max': 1.0, 'Mean': -0.32236132, 'Stdev': 0.8609734}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -7855,7 +7863,7 @@ Time of Arrival (minutes)
 {'Min': 2081.8513, 'Max': 2549.9822, 'Mean': 2363.271, 'Stdev': 94.5235}
 
 Firebrand Count (number of firebrands)
-{'Min': 0, 'Max': 25, 'Mean': 6.383684337932704, 'Stdev': 3.579063772601807}
+{'Min': 0, 'Max': 45, 'Mean': 6.7359, 'Stdev': 6.356378779619729}
 
 Total Firebrands on Grid: 67359
 
@@ -8154,6 +8162,154 @@ Future Spot Ignitions:
  2605.720094385563: [(10, 15), (7, 8), (10, 5)]}
 </pre>
 </div>
+</li>
+<li><a id="create-images-of-the-output-matrices-with-spotting-enabled"></a>Create Images of the Output Matrices with Spotting Enabled<br>
+<div class="outline-text-5" id="text-create-images-of-the-output-matrices-with-spotting-enabled">
+<div class="org-src-container">
+<pre class="src src-python" id="run-spread-fire-with-phi-field-with-spotting-images"><span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">save_matrix_as_heatmap</span>(matrix, colors, units, title, filename, vmin<span class="org-operator">=</span><span class="org-constant">None</span>, vmax<span class="org-operator">=</span><span class="org-constant">None</span>, ticks<span class="org-operator">=</span><span class="org-constant">None</span>):
+    <span class="org-variable-name">image</span>    <span class="org-operator">=</span> plt.imshow(matrix, origin<span class="org-operator">=</span><span class="org-string">"lower"</span>, cmap<span class="org-operator">=</span>colors, vmin<span class="org-operator">=</span>vmin, vmax<span class="org-operator">=</span>vmax)
+    <span class="org-variable-name">colorbar</span> <span class="org-operator">=</span> plt.colorbar(image, orientation<span class="org-operator">=</span><span class="org-string">"vertical"</span>, ticks<span class="org-operator">=</span>ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close(<span class="org-string">"all"</span>)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">save_matrix_as_contours</span>(matrix, title, filename, levels<span class="org-operator">=</span><span class="org-constant">None</span>):
+    <span class="org-variable-name">fig</span>, <span class="org-variable-name">ax</span> <span class="org-operator">=</span> plt.subplots()
+    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(matrix, levels<span class="org-operator">=</span>levels)
+    ax.clabel(cs, inline<span class="org-operator">=</span><span class="org-constant">True</span>, fontsize<span class="org-operator">=</span>10)
+    ax.set_aspect(<span class="org-string">'equal'</span>, <span class="org-string">'box'</span>)
+    ax.set_title(title)
+    plt.savefig(filename)
+    plt.close(<span class="org-string">"all"</span>)
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"</span>
+<span class="org-variable-name">heatmap_configs</span> <span class="org-operator">=</span> [
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"phi"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_phi.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_fire_type.png"</span>,
+        <span class="org-string">"vmin"</span>    : 0,
+        <span class="org-string">"vmax"</span>    : 3,
+        <span class="org-string">"ticks"</span>   : [0,1,2,3],
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_rate"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_spread_rate.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_spread_direction.png"</span>,
+        <span class="org-string">"vmin"</span>    : 0,
+        <span class="org-string">"vmax"</span>    : 360,
+        <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fireline_intensity"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_fireline_intensity.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_flame_length.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"firebrand_count"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"number of firebrands"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Firebrand Count"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_firebrand_count.png"</span>,
+    },
+]
+
+
+<span class="org-variable-name">contour_configs</span> <span class="org-operator">=</span> [
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"time_of_arrival"</span>],
+        <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_time_of_arrival.png"</span>,
+        <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
+    },
+]
+
+
+<span class="org-keyword">for</span> heatmap_config <span class="org-keyword">in</span> heatmap_configs:
+    save_matrix_as_heatmap(<span class="org-operator">**</span>heatmap_config)
+
+
+<span class="org-keyword">for</span> contour_config <span class="org-keyword">in</span> contour_configs:
+    save_matrix_as_contours(<span class="org-operator">**</span>contour_config)
+</pre>
+</div>
+
+<table id="spot-fire-behavior-matplotlib-heatmaps">
+<caption class="t-above"><span class="table-number">Table 4:</span> Fire behavior attributes after 8 hours of spread with spotting enabled</caption>
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><img src="../doc/pics/els_spot_phi.png" alt="els_spot_phi.png"></td>
+<td class="org-left"><img src="../doc/pics/els_spot_fire_type.png" alt="els_spot_fire_type.png"></td>
+</tr>
+
+<tr>
+<td class="org-left"><img src="../doc/pics/els_spot_spread_rate.png" alt="els_spot_spread_rate.png"></td>
+<td class="org-left"><img src="../doc/pics/els_spot_spread_direction.png" alt="els_spot_spread_direction.png"></td>
+</tr>
+
+<tr>
+<td class="org-left"><img src="../doc/pics/els_spot_fireline_intensity.png" alt="els_spot_fireline_intensity.png"></td>
+<td class="org-left"><img src="../doc/pics/els_spot_flame_length.png" alt="els_spot_flame_length.png"></td>
+</tr>
+</tbody>
+</table>
+
+
+<div id="spot-firebrand-count-matplotlib-heatmap" class="figure">
+<p><img src="../doc/pics/els_spot_firebrand_count.png" alt="els_spot_firebrand_count.png">
+</p>
+<p><span class="figure-number">Figure 2: </span>Firebrand count with spotting enabled</p>
+</div>
+
+
+<div id="spot-time-of-arrival-matplotlib-countours" class="figure">
+<p><img src="../doc/pics/els_spot_time_of_arrival.png" alt="els_spot_time_of_arrival.png">
+</p>
+<p><span class="figure-number">Figure 3: </span>Time of arrival with hourly perimeters with spotting enabled</p>
+</div>
+</div>
+</li>
+</ol>
 </div>
 </div>
 </div>
@@ -8332,11 +8488,11 @@ of the distribution and the fireline intensity \(I\) and wind speed \(U\):
 
 <p>
 in which \(\Delta_1, e_I, e_U, r_\frac{V}{E}\) are configured by the
-keys shown in table <a href="#tab:spotting-elmfire-params">4</a>.
+keys shown in table <a href="#tab:spotting-elmfire-params">5</a>.
 </p>
 
 <table id="tab:spotting-elmfire-params">
-<caption class="t-above"><span class="table-number">Table 4:</span> Spotting parameters for the downwind distribution per the ELMFIRE model</caption>
+<caption class="t-above"><span class="table-number">Table 5:</span> Spotting parameters for the downwind distribution per the ELMFIRE model</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -8498,11 +8654,11 @@ formula for \(\sigma_Y\):
 \end{align}
 
 <p>
-Typical values are shown in table <a href="#tab:himoto2005-example-values">5</a>.
+Typical values are shown in table <a href="#tab:himoto2005-example-values">6</a>.
 </p>
 
 <table id="tab:himoto2005-example-values">
-<caption class="t-above"><span class="table-number">Table 5:</span> Typical values for \(\vec{\Delta}\) distribution characteristics derived from Himoto2005</caption>
+<caption class="t-above"><span class="table-number">Table 6:</span> Typical values for \(\vec{\Delta}\) distribution characteristics derived from Himoto2005</caption>
 
 <colgroup>
 <col  class="org-right">
@@ -10049,11 +10205,11 @@ of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
 provided by the US LANDFIRE program<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a></sup> (see
-table <a href="#tab:landfire-layers">6</a> for details).
+table <a href="#tab:landfire-layers">7</a> for details).
 </p>
 
 <table id="tab:landfire-layers">
-<caption class="t-above"><span class="table-number">Table 6:</span> 2022 LANDFIRE Raster Layers</caption>
+<caption class="t-above"><span class="table-number">Table 7:</span> 2022 LANDFIRE Raster Layers</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -10251,7 +10407,7 @@ these keys:
 <div class="outline-text-4" id="text-converting-landfire-units-and-datatypes">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table <a href="#tab:landfire-layers">6</a>. In order to make them match those required
+Table <a href="#tab:landfire-layers">7</a>. In order to make them match those required
 by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 </p>
@@ -10402,7 +10558,7 @@ with a <code>SpaceTimeCube</code> object.
 <div class="outline-text-3" id="text-[wip]-testing-pyretechnics.burn_cells-on-worcester,-vt-(pyretechnics_test.test_burn_cells)">
 <p>
 <b>Note:</b> For testing purposes, we have downloaded the LANDFIRE rasters
-described in table <a href="#tab:landfire-layers">6</a>, clipped to a small region in
+described in table <a href="#tab:landfire-layers">7</a>, clipped to a small region in
 central Vermont, and stored them in the <a href="../test/data/landfire_inputs">../test/data/landfire_inputs</a>
 directory of this repository.
 </p>
@@ -10680,7 +10836,7 @@ savefig(title<span class="org-operator">=</span><span class="org-string">"Max Fl
 </div>
 
 <table id="max-fire-behavior-matplotlib-heatmaps">
-<caption class="t-above"><span class="table-number">Table 7:</span> Max fire behavior attributes</caption>
+<caption class="t-above"><span class="table-number">Table 8:</span> Max fire behavior attributes</caption>
 
 <colgroup>
 <col  class="org-left">

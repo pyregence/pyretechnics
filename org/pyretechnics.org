@@ -6817,8 +6817,8 @@ output_matrices["phi"][50,50] = -1.0
 # Spread fire from the start time for the max duration
 #============================================================================================
 
-fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
-                                                     cube_resolution, start_time, max_duration)
+fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
+                                                     start_time, max_duration)
 
 stop_time       = fire_spread_results["stop_time"]       # minutes
 stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached" or "no burnable cells"
@@ -6839,13 +6839,13 @@ output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mu
 # Used as a filter in get_array_stats below
 burned_cells = output_matrices["fire_type"] > 0
 
-def get_array_stats(array):
-    array_values_in_burn_scar = array[burned_cells]
+def get_array_stats(array, use_burn_scar_mask=True):
+    array_values_to_analyze = array[burned_cells] if use_burn_scar_mask else array
     return {
-        "Min"  : np.min(array_values_in_burn_scar),
-        "Max"  : np.max(array_values_in_burn_scar),
-        "Mean" : np.mean(array_values_in_burn_scar),
-        "Stdev": np.std(array_values_in_burn_scar),
+        "Min"  : np.min(array_values_to_analyze),
+        "Max"  : np.max(array_values_to_analyze),
+        "Mean" : np.mean(array_values_to_analyze),
+        "Stdev": np.std(array_values_to_analyze),
     }
 
 print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)\n" + "=" * 100)
@@ -6854,7 +6854,7 @@ print("Stop Time: " + str(stop_time) + " (minutes)")
 print("Stop Condition: " + stop_condition)
 
 print("\nPhi (phi <= 0: burned, phi > 0: unburned")
-pprint(get_array_stats(output_matrices["phi"]), sort_dicts=False)
+pprint(get_array_stats(output_matrices["phi"], use_burn_scar_mask=False), sort_dicts=False)
 
 print("\nFire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)")
 pprint(get_array_stats(output_matrices["fire_type"]), sort_dicts=False)
@@ -6884,10 +6884,7 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.9240959,
- 'Max': -0.027171956,
- 'Mean': -0.7502774,
- 'Stdev': 0.21447739}
+{'Min': -0.92568916, 'Max': 1.0, 'Mean': 0.9060592, 'Stdev': 0.38920075}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -7020,6 +7017,638 @@ for contour_config in contour_configs:
 #+NAME: time-of-arrival-matplotlib-countours
 #+caption: Time of arrival with hourly perimeters
 file:../doc/pics/els_time_of_arrival.png
+
+*** How to Spread a Fire from a Point Ignition with Spotting Enabled
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled
+    :END:
+
+**** Configure and Run the Fire Spread Simulation with Spotting Enabled
+     :PROPERTIES:
+     :CUSTOM_ID: configure-and-run-the-fire-spread-simulation-with-spotting-enabled
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-with-spotting
+#+begin_src python :results silent
+import numpy as np
+from pprint import pprint
+import pyretechnics.eulerian_level_set as els
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240, # bands: 10 days @ 1 hour/band
+    100, # rows:  3 km @ 30 meters/row
+    100, # cols:  3 km @ 30 meters/col
+)
+
+grid_shape = cube_shape[1:]
+
+#============================================================================================
+# Specify the SpaceTimeCube resolution
+#============================================================================================
+
+cube_resolution = (
+    60, # band_duration: minutes
+    30, # cell_height:   meters
+    30, # cell_width:    meters
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "temperature"                  : SpaceTimeCube(cube_shape, 30.0),  # degrees Celsius
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Create an output dictionary of 2D Numpy arrays
+#============================================================================================
+
+output_matrices = {
+    "phi"               : np.ones(grid_shape, dtype="float32"),       # 2D float array of values in [-1,1]
+    "fire_type"         : np.zeros(grid_shape, dtype="uint8"),        # 2D byte array (0-3)
+    "spread_rate"       : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m/min)
+    "spread_direction"  : np.zeros(grid_shape, dtype="float32"),      # 2D float array (degrees clockwise from North)
+    "fireline_intensity": np.zeros(grid_shape, dtype="float32"),      # 2D float array (kW/m)
+    "flame_length"      : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m)
+    "time_of_arrival"   : np.full(grid_shape, -1.0, dtype="float32"), # 2D float array (min)
+    "firebrand_count"   : np.zeros(grid_shape, dtype="int32"),        # 2D integer array (number of firebrands)
+}
+
+#============================================================================================
+# Set the start time, max duration, and initially ignited cell
+#============================================================================================
+
+# Day 2 @ 10:30am
+start_time = 2070  # minutes
+
+# 8 hours
+max_duration = 480 # minutes
+
+# Burn initially ignited cell into the phi matrix by setting it to -1.0
+output_matrices["phi"][50,50] = -1.0
+
+#============================================================================================
+# Specify the spotting parameters
+#============================================================================================
+
+spotting_config = {
+    "mean_distance"               : 10.0,
+    "flin_exp"                    : 0.3,
+    "ws_exp"                      : 0.55,
+    "normalized_distance_variance": 425.0,
+    "delta_y_sigma"               : None,
+    "decay_constant"              : 0.005,
+    "ember_production_rate"       : 0.00003,
+    "random_seed"                 : 1234567890,
+}
+
+#============================================================================================
+# Spread fire from the start time for the max duration
+#============================================================================================
+
+fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
+                                                     start_time, max_duration, spot_ignitions={},
+                                                     spotting_config=spotting_config)
+
+stop_time       = fire_spread_results["stop_time"]              # minutes
+stop_condition  = fire_spread_results["stop_condition"]         # "max duration reached" or "no burnable cells"
+output_matrices = fire_spread_results["output_matrices"]        # updated 2D arrays (mutated from inputs)
+spot_ignitions  = fire_spread_results.get("spot_ignitions", {}) # remaining firebrands on the landscape
+#+end_src
+
+**** Display Summary Statistics of the Output Matrices and Spot Ignitions
+     :PROPERTIES:
+     :CUSTOM_ID: display-summary-statistics-of-the-output-matrices-and-spot-ignitions
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-with-spotting-stats
+#+begin_src python
+#============================================================================================
+# Display summary statistics of our fire spread results
+#============================================================================================
+
+# Used as a filter in get_array_stats below
+burned_cells = output_matrices["fire_type"] > 0
+
+def get_array_stats(array, use_burn_scar_mask=True):
+    array_values_to_analyze = array[burned_cells] if use_burn_scar_mask else array
+    return {
+        "Min"  : np.min(array_values_to_analyze),
+        "Max"  : np.max(array_values_to_analyze),
+        "Mean" : np.mean(array_values_to_analyze),
+        "Stdev": np.std(array_values_to_analyze),
+    }
+
+print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)\n" + "=" * 100)
+
+print("Stop Time: " + str(stop_time) + " (minutes)")
+print("Stop Condition: " + stop_condition)
+
+print("\nPhi (phi <= 0: burned, phi > 0: unburned")
+pprint(get_array_stats(output_matrices["phi"], use_burn_scar_mask=False), sort_dicts=False)
+
+print("\nFire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)")
+pprint(get_array_stats(output_matrices["fire_type"]), sort_dicts=False)
+
+print("\nSpread Rate (m/min)")
+pprint(get_array_stats(output_matrices["spread_rate"]), sort_dicts=False)
+
+print("\nSpread Direction (degrees clockwise from North)")
+pprint(get_array_stats(output_matrices["spread_direction"]), sort_dicts=False)
+
+print("\nFireline Intensity (kW/m)")
+pprint(get_array_stats(output_matrices["fireline_intensity"]), sort_dicts=False)
+
+print("\nFlame Length (meters)")
+pprint(get_array_stats(output_matrices["flame_length"]), sort_dicts=False)
+
+print("\nTime of Arrival (minutes)")
+pprint(get_array_stats(output_matrices["time_of_arrival"]), sort_dicts=False)
+
+print("\nFirebrand Count (number of firebrands)")
+pprint(get_array_stats(output_matrices["firebrand_count"], use_burn_scar_mask=False), sort_dicts=False)
+
+print("\nTotal Firebrands on Grid: " + str(np.sum(output_matrices["firebrand_count"])))
+
+print("\nFuture Spot Ignitions:")
+pprint(spot_ignitions)
+#+end_src
+
+#+NAME: run-spread-fire-with-phi-field-with-spotting-stats-results
+#+RESULTS: run-spread-fire-with-phi-field-with-spotting-stats
+#+begin_example
+Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
+====================================================================================================
+Stop Time: 2550.0 (minutes)
+Stop Condition: max duration reached
+
+Phi (phi <= 0: burned, phi > 0: unburned
+{'Min': -1.0022439, 'Max': 1.0, 'Mean': -0.32236132, 'Stdev': 0.8609734}
+
+Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+{'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
+
+Spread Rate (m/min)
+{'Min': 0.16055427, 'Max': 2.2964668, 'Mean': 1.4726286, 'Stdev': 0.5814528}
+
+Spread Direction (degrees clockwise from North)
+{'Min': 0.028660063, 'Max': 359.9873, 'Mean': 205.4076, 'Stdev': 133.53265}
+
+Fireline Intensity (kW/m)
+{'Min': 2.274166, 'Max': 32.528236, 'Mean': 20.859005, 'Stdev': 8.23597}
+
+Flame Length (meters)
+{'Min': 0.11305093, 'Max': 0.38439324, 'Mean': 0.3053159, 'Stdev': 0.065566674}
+
+Time of Arrival (minutes)
+{'Min': 2081.8513, 'Max': 2549.9822, 'Mean': 2363.271, 'Stdev': 94.5235}
+
+Firebrand Count (number of firebrands)
+{'Min': 0, 'Max': 45, 'Mean': 6.7359, 'Stdev': 6.356378779619729}
+
+Total Firebrands on Grid: 67359
+
+Future Spot Ignitions:
+{2550.5333195716066: [(72, 67), (72, 67), (72, 73)],
+ 2550.6201354302816: [(0, 46), (1, 51), (0, 38), (0, 37), (0, 39)],
+ 2550.68482215493: [(70, 35), (69, 35), (70, 42)],
+ 2550.765369848744: [(3, 8),
+                     (4, 14),
+                     (3, 9),
+                     (3, 15),
+                     (0, 10),
+                     (4, 19),
+                     (3, 14),
+                     (4, 9)],
+ 2550.8599046434697: [(17, 99), (16, 94), (17, 98), (16, 86)],
+ 2550.8622206274463: [(0, 15), (5, 9), (6, 21), (2, 14)],
+ 2550.9445586778675: [(9, 13),
+                      (9, 6),
+                      (9, 21),
+                      (1, 17),
+                      (7, 7),
+                      (9, 10),
+                      (8, 8),
+                      (9, 15),
+                      (9, 14)],
+ 2551.1708022271923: [(4, 92), (5, 99)],
+ 2551.1719021931553: [(70, 80)],
+ 2551.1983884884244: [(41, 8), (40, 8), (40, 7)],
+ 2551.246482943256: [(70, 80)],
+ 2551.6392048549865: [(2, 3), (3, 10), (2, 2), (0, 3), (0, 0)],
+ 2552.182456287394: [(67, 99)],
+ 2552.3512988802418: [(68, 24), (68, 29)],
+ 2552.3541009795554: [(68, 96)],
+ 2552.848379191613: [(71, 51)],
+ 2552.8546132567185: [(6, 10),
+                      (9, 16),
+                      (9, 10),
+                      (5, 13),
+                      (8, 3),
+                      (8, 10),
+                      (5, 8)],
+ 2552.8761028541076: [(10, 85), (10, 86)],
+ 2553.034979408824: [(70, 41)],
+ 2553.07746382833: [(70, 82)],
+ 2553.086466862811: [(0, 34)],
+ 2553.2485901567466: [(71, 53), (71, 49), (70, 46), (71, 46)],
+ 2553.499978526217: [(64, 10), (64, 1)],
+ 2553.515923779405: [(0, 19), (1, 17), (1, 26), (1, 18), (0, 22)],
+ 2553.51661220671: [(69, 33), (68, 26), (68, 28)],
+ 2554.545481667062: [(69, 91)],
+ 2554.578896769064: [(68, 95)],
+ 2554.806119177812: [(66, 9), (66, 4), (66, 15), (65, 7), (65, 7)],
+ 2554.826825265126: [(72, 54), (72, 58)],
+ 2555.0022115298875: [(69, 86), (68, 94), (64, 90), (69, 85)],
+ 2555.2363219535873: [(1, 8), (2, 8), (2, 4), (1, 2), (0, 7), (2, 11), (2, 6)],
+ 2555.6914191206183: [(8, 6), (11, 3), (12, 6), (13, 12)],
+ 2556.8231895655485: [(5, 13), (9, 16), (5, 10)],
+ 2557.1651234712576: [(3, 26), (2, 23), (3, 26), (3, 22), (3, 22)],
+ 2557.4633818207044: [(12, 1), (13, 2), (5, 8), (12, 2)],
+ 2557.483158426082: [(73, 52), (73, 60)],
+ 2557.6283748709593: [(67, 18), (67, 19)],
+ 2557.6382159668315: [(69, 26), (70, 39)],
+ 2557.722017030546: [(69, 87), (69, 89), (69, 84)],
+ 2557.812578502706: [(69, 32), (69, 34)],
+ 2557.91422187807: [(73, 58), (73, 68), (72, 67)],
+ 2557.929206966189: [(0, 95),
+                     (1, 93),
+                     (0, 95),
+                     (0, 90),
+                     (1, 92),
+                     (0, 90),
+                     (2, 85)],
+ 2557.987968413592: [(70, 82),
+                     (70, 86),
+                     (71, 83),
+                     (71, 88),
+                     (71, 85),
+                     (70, 85)],
+ 2558.1026930062117: [(10, 7), (8, 10), (10, 2), (9, 7), (10, 5), (9, 13)],
+ 2558.1979792845914: [(8, 4), (9, 5), (8, 6), (3, 9)],
+ 2558.323694394515: [(4, 86),
+                     (4, 86),
+                     (4, 89),
+                     (4, 92),
+                     (3, 90),
+                     (3, 88),
+                     (4, 85),
+                     (4, 73),
+                     (3, 96)],
+ 2558.630829823344: [(70, 85), (71, 86), (71, 80), (70, 86), (69, 86)],
+ 2558.974875836572: [(0, 79), (0, 86), (0, 83)],
+ 2558.994052064332: [(1, 27)],
+ 2559.0758047366508: [(65, 3), (65, 16)],
+ 2559.107718439633: [(66, 8)],
+ 2559.4900506867025: [(68, 96), (68, 93)],
+ 2559.5030761855323: [(68, 95), (68, 97)],
+ 2559.6647449572974: [(73, 78), (73, 52), (72, 68)],
+ 2559.7890176779497: [(7, 35), (4, 34), (6, 23), (6, 35)],
+ 2560.2401253151493: [(1, 34), (0, 24), (0, 35), (1, 37), (1, 29)],
+ 2560.2502518520214: [(72, 71)],
+ 2560.2777726311474: [(66, 13), (66, 13)],
+ 2560.2911811577387: [(4, 99), (4, 92), (3, 83), (2, 90), (4, 98), (4, 99)],
+ 2560.4573905748916: [(72, 68)],
+ 2560.504482843725: [(67, 18)],
+ 2560.922560486298: [(69, 36)],
+ 2561.230437648173: [(42, 1), (42, 1), (42, 2)],
+ 2561.3976540013773: [(27, 5), (27, 6), (28, 3), (28, 10)],
+ 2561.469150760551: [(69, 86), (70, 81)],
+ 2561.5687887519803: [(67, 17), (68, 11)],
+ 2561.8101074564474: [(2, 30), (0, 29), (2, 19), (1, 45), (1, 37)],
+ 2562.20597262502: [(68, 17)],
+ 2562.5823368587157: [(69, 91), (68, 95), (68, 97)],
+ 2562.6276676708744: [(68, 26), (68, 19)],
+ 2562.827350344808: [(68, 20), (68, 29), (68, 18)],
+ 2563.0602230054365: [(1, 73), (1, 76), (1, 71), (1, 73), (0, 71)],
+ 2563.254761944807: [(71, 35), (71, 46)],
+ 2563.2920240383223: [(72, 57), (72, 56), (72, 57)],
+ 2563.3456042944053: [(10, 0), (10, 0), (10, 7), (10, 15), (9, 0)],
+ 2563.674227518056: [(68, 95)],
+ 2563.6988766237682: [(71, 78)],
+ 2563.9775055006708: [(3, 33), (3, 24), (1, 26), (3, 37), (2, 33), (1, 21)],
+ 2564.303393247855: [(10, 21), (12, 8), (13, 25), (13, 15)],
+ 2564.5113384045344: [(73, 59), (73, 66), (73, 56), (73, 67), (73, 58)],
+ 2564.5784814830095: [(72, 73), (72, 78)],
+ 2564.6240601871: [(69, 30), (68, 29)],
+ 2564.9546134004886: [(69, 21)],
+ 2565.027214714459: [(70, 87), (70, 82)],
+ 2565.1257063063035: [(4, 13),
+                      (4, 10),
+                      (6, 12),
+                      (5, 7),
+                      (6, 6),
+                      (5, 1),
+                      (5, 10),
+                      (5, 1),
+                      (4, 8),
+                      (6, 11)],
+ 2565.2647712534076: [(73, 67), (73, 71)],
+ 2565.447929913366: [(69, 31), (69, 28)],
+ 2565.4536861982183: [(67, 14), (67, 13)],
+ 2565.6841040499153: [(71, 77)],
+ 2565.822488182071: [(64, 21), (69, 28), (58, 33)],
+ 2565.911818606571: [(70, 30)],
+ 2565.9188494611467: [(2, 88)],
+ 2566.01327580721: [(69, 24), (68, 29)],
+ 2566.2349223262595: [(69, 28), (69, 27)],
+ 2566.3249951026246: [(69, 33)],
+ 2566.3284554958486: [(72, 55)],
+ 2566.5590488639946: [(71, 79)],
+ 2566.608127661732: [(70, 88), (70, 87), (70, 89)],
+ 2566.7123002478224: [(70, 35)],
+ 2567.049918822101: [(72, 56), (72, 52)],
+ 2567.0762409686117: [(72, 73)],
+ 2567.1858303282083: [(68, 19), (68, 21), (67, 10), (67, 15)],
+ 2567.244560137909: [(66, 9)],
+ 2567.354213135241: [(51, 6), (59, 22), (67, 3)],
+ 2568.003381108596: [(2, 33), (0, 40), (1, 47), (1, 32)],
+ 2568.616427473654: [(72, 39), (72, 46), (72, 47)],
+ 2568.6473628624362: [(66, 4), (66, 4), (65, 4), (65, 4), (66, 1)],
+ 2568.8878911052952: [(67, 14), (66, 1)],
+ 2568.9875501858214: [(70, 33)],
+ 2569.3168385638655: [(70, 28)],
+ 2569.326476982314: [(7, 4), (7, 4), (8, 2)],
+ 2569.331060960039: [(4, 9), (4, 7)],
+ 2569.3720186256805: [(71, 87), (72, 74), (72, 83)],
+ 2569.3873519635504: [(3, 19), (1, 19), (5, 9), (4, 9)],
+ 2569.4208716049197: [(69, 96)],
+ 2569.565301895406: [(3, 11), (2, 7), (2, 18)],
+ 2570.1129473474152: [(69, 91), (69, 90)],
+ 2570.1455457390007: [(64, 1)],
+ 2570.2381740379274: [(72, 86)],
+ 2570.6665145914512: [(72, 48)],
+ 2571.4768418213366: [(10, 15),
+                      (10, 19),
+                      (11, 11),
+                      (9, 13),
+                      (11, 12),
+                      (11, 12)],
+ 2571.5087777187555: [(70, 87), (70, 92)],
+ 2571.5963938106097: [(70, 82)],
+ 2571.895386950171: [(67, 15), (67, 12)],
+ 2572.140197317707: [(69, 95), (70, 85)],
+ 2572.165758935323: [(70, 92), (71, 87), (71, 88), (71, 80)],
+ 2572.1844268183445: [(1, 32),
+                      (2, 30),
+                      (0, 36),
+                      (2, 39),
+                      (0, 37),
+                      (0, 29),
+                      (2, 33)],
+ 2572.187676553407: [(65, 7), (65, 8)],
+ 2572.2420812339187: [(4, 8), (3, 2), (1, 4), (4, 0), (2, 2), (4, 7)],
+ 2572.3745795433847: [(0, 34), (1, 37), (0, 34), (0, 30), (0, 32), (2, 25)],
+ 2572.875447513918: [(4, 93), (2, 95)],
+ 2572.985297027841: [(68, 18),
+                     (68, 16),
+                     (65, 16),
+                     (68, 20),
+                     (68, 18),
+                     (64, 21)],
+ 2573.4689390571248: [(72, 49)],
+ 2573.9261814793645: [(70, 94), (70, 92)],
+ 2574.239443111851: [(0, 29), (0, 23)],
+ 2574.2439857533295: [(72, 76), (73, 58)],
+ 2574.313601738296: [(9, 18), (10, 13), (9, 21), (10, 24), (10, 10)],
+ 2574.4429423514557: [(69, 94)],
+ 2574.8180679405764: [(65, 2), (64, 0)],
+ 2574.9078633149984: [(71, 42), (71, 41)],
+ 2575.143065033661: [(5, 0), (8, 6), (9, 2)],
+ 2575.1724191201884: [(2, 4), (6, 5)],
+ 2575.3964599430124: [(72, 47), (72, 47), (72, 48)],
+ 2575.4319689665726: [(4, 14),
+                      (4, 7),
+                      (1, 17),
+                      (5, 13),
+                      (5, 22),
+                      (5, 22),
+                      (3, 11)],
+ 2575.587676920726: [(72, 76), (71, 86)],
+ 2575.609065687368: [(70, 91), (70, 90), (69, 93), (70, 92)],
+ 2576.074500430359: [(70, 36)],
+ 2576.1177514989113: [(71, 80), (71, 81), (71, 81)],
+ 2576.2187550741: [(67, 14), (66, 8)],
+ 2576.4356145053885: [(9, 22), (8, 8), (8, 11)],
+ 2576.590475778463: [(1, 32),
+                     (0, 45),
+                     (0, 44),
+                     (0, 38),
+                     (1, 50),
+                     (1, 44),
+                     (1, 45),
+                     (0, 44)],
+ 2576.892791626283: [(0, 25), (0, 21)],
+ 2577.3705093646918: [(74, 61),
+                      (74, 69),
+                      (73, 68),
+                      (74, 55),
+                      (74, 69),
+                      (74, 65)],
+ 2577.717345565455: [(72, 82), (72, 94)],
+ 2577.8398185637575: [(11, 3), (10, 5), (11, 11), (11, 3), (6, 3)],
+ 2577.862708414512: [(74, 81), (74, 66), (73, 70), (73, 73)],
+ 2578.0136263130275: [(69, 24)],
+ 2578.8689068972453: [(74, 65)],
+ 2578.8867940187647: [(10, 7), (9, 0), (9, 4), (10, 9), (8, 0), (10, 0)],
+ 2578.9906115408608: [(73, 57), (73, 52), (73, 58), (73, 56), (73, 58)],
+ 2579.2746497681437: [(72, 42), (72, 49), (72, 36)],
+ 2579.3418304219153: [(70, 23)],
+ 2580.0144607422626: [(4, 1),
+                      (2, 8),
+                      (5, 3),
+                      (5, 2),
+                      (5, 3),
+                      (2, 1),
+                      (5, 3),
+                      (5, 9),
+                      (1, 3),
+                      (1, 3),
+                      (5, 2)],
+ 2580.122737904149: [(72, 46)],
+ 2580.288022909849: [(72, 77)],
+ 2580.414380566559: [(71, 41), (71, 40)],
+ 2580.6543292064175: [(1, 5), (3, 11)],
+ 2580.6595190281564: [(9, 7), (5, 6), (8, 3), (3, 9)],
+ 2580.960964500824: [(69, 96)],
+ 2581.0788193589187: [(73, 53), (73, 68)],
+ 2581.246355049439: [(5, 8), (6, 4), (7, 13)],
+ 2581.510333543812: [(2, 9), (2, 15), (3, 3), (2, 1), (4, 3), (3, 9)],
+ 2581.8470046175894: [(72, 81), (71, 88)],
+ 2582.1401773438924: [(74, 60), (74, 63), (73, 57), (74, 66)],
+ 2582.4450200209194: [(72, 80)],
+ 2582.6413248841523: [(68, 29), (68, 29), (69, 22), (69, 19)],
+ 2582.691931161082: [(70, 27)],
+ 2583.186729513667: [(5, 1), (6, 7), (4, 7), (6, 1), (5, 0), (6, 2), (4, 10)],
+ 2583.343612371458: [(68, 16), (68, 10)],
+ 2583.6355514305224: [(69, 23), (69, 26), (69, 23)],
+ 2583.923032589281: [(69, 98), (69, 86)],
+ 2584.3146889169498: [(66, 4)],
+ 2584.3409476257134: [(72, 81), (72, 85), (72, 78)],
+ 2584.3931742091627: [(73, 69)],
+ 2585.0090793251807: [(69, 19), (65, 16), (69, 17)],
+ 2585.304307091023: [(73, 70), (73, 72)],
+ 2585.4412302645987: [(70, 29), (70, 33), (70, 26)],
+ 2585.461624449498: [(6, 26), (6, 12), (4, 19), (6, 23)],
+ 2586.1116774771112: [(0, 22), (2, 16), (3, 29), (3, 13), (2, 23), (2, 19)],
+ 2586.273499927495: [(0, 91)],
+ 2586.8987514518208: [(66, 6), (65, 0)],
+ 2587.1586629584535: [(8, 8), (8, 6), (8, 5), (8, 3)],
+ 2587.2321017064764: [(73, 57), (73, 53)],
+ 2588.58567908967: [(4, 8), (3, 2), (2, 0), (2, 2)],
+ 2592.2221424664067: [(2, 15), (1, 22), (1, 20), (2, 35), (0, 28), (0, 20)],
+ 2594.086867949847: [(10, 21), (10, 13), (10, 21), (4, 14), (5, 9), (9, 13)],
+ 2599.7212112042444: [(1, 50), (1, 35)],
+ 2599.820500094031: [(23, 0)],
+ 2605.720094385563: [(10, 15), (7, 8), (10, 5)]}
+#+end_example
+
+**** Create Images of the Output Matrices with Spotting Enabled
+     :PROPERTIES:
+     :CUSTOM_ID: create-images-of-the-output-matrices-with-spotting-enabled
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-with-spotting-images
+#+begin_src python :results silent
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+def save_matrix_as_contours(matrix, title, filename, levels=None):
+    fig, ax = plt.subplots()
+    cs      = ax.contour(matrix, levels=levels)
+    ax.clabel(cs, inline=True, fontsize=10)
+    ax.set_aspect('equal', 'box')
+    ax.set_title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+heatmap_configs = [
+    {
+        "matrix"  : output_matrices["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "../doc/pics/els_spot_phi.png",
+    },
+    {
+        "matrix"  : output_matrices["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "../doc/pics/els_spot_fire_type.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
+    },
+    {
+        "matrix"  : output_matrices["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "../doc/pics/els_spot_spread_rate.png",
+    },
+    {
+        "matrix"  : output_matrices["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "../doc/pics/els_spot_spread_direction.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        "matrix"  : output_matrices["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "../doc/pics/els_spot_fireline_intensity.png",
+    },
+    {
+        "matrix"  : output_matrices["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "../doc/pics/els_spot_flame_length.png",
+    },
+    {
+        "matrix"  : output_matrices["firebrand_count"],
+        "colors"  : "hot",
+        "units"   : "number of firebrands",
+        "title"   : "Firebrand Count",
+        "filename": "../doc/pics/els_spot_firebrand_count.png",
+    },
+]
+
+
+contour_configs = [
+    {
+        "matrix"  : output_matrices["time_of_arrival"],
+        "title"   : "Time of Arrival",
+        "filename": "../doc/pics/els_spot_time_of_arrival.png",
+        "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_matrix_as_heatmap(**heatmap_config)
+
+
+for contour_config in contour_configs:
+    save_matrix_as_contours(**contour_config)
+#+end_src
+
+#+NAME: spot-fire-behavior-matplotlib-heatmaps
+#+caption: Fire behavior attributes after 8 hours of spread with spotting enabled
+|--------------------------------------------------+------------------------------------------------|
+| file:../doc/pics/els_spot_phi.png                | file:../doc/pics/els_spot_fire_type.png        |
+| file:../doc/pics/els_spot_spread_rate.png        | file:../doc/pics/els_spot_spread_direction.png |
+| file:../doc/pics/els_spot_fireline_intensity.png | file:../doc/pics/els_spot_flame_length.png     |
+|--------------------------------------------------+------------------------------------------------|
+
+#+NAME: spot-firebrand-count-matplotlib-heatmap
+#+caption: Firebrand count with spotting enabled
+file:../doc/pics/els_spot_firebrand_count.png
+
+#+NAME: spot-time-of-arrival-matplotlib-countours
+#+caption: Time of arrival with hourly perimeters with spotting enabled
+file:../doc/pics/els_spot_time_of_arrival.png
 
 * [WIP] Spot Fire Equations (pyretechnics.spot_fire)
   :PROPERTIES:
