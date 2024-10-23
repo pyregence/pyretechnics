@@ -6728,8 +6728,13 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     :CUSTOM_ID: how-to-spread-a-fire-from-a-point-ignition
     :END:
 
+**** Configure and Run the Fire Spread Simulation
+     :PROPERTIES:
+     :CUSTOM_ID: configure-and-run-the-fire-spread-simulation
+     :END:
+
 #+NAME: run-spread-fire-with-phi-field
-#+begin_src python
+#+begin_src python :results silent
 import numpy as np
 from pprint import pprint
 import pyretechnics.eulerian_level_set as els
@@ -6818,7 +6823,15 @@ fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_ma
 stop_time       = fire_spread_results["stop_time"]       # minutes
 stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached" or "no burnable cells"
 output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mutated from inputs)
+#+end_src
 
+**** Display Summary Statistics of the Output Matrices
+     :PROPERTIES:
+     :CUSTOM_ID: display-summary-statistics-of-the-output-matrices
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-stats
+#+begin_src python
 #============================================================================================
 # Display summary statistics of our fire spread results
 #============================================================================================
@@ -6862,8 +6875,8 @@ print("\nTime of Arrival (minutes)")
 pprint(get_array_stats(output_matrices["time_of_arrival"]), sort_dicts=False)
 #+end_src
 
-#+NAME: run-spread-fire-with-phi-field-results
-#+RESULTS: run-spread-fire-with-phi-field
+#+NAME: run-spread-fire-with-phi-field-stats-results
+#+RESULTS: run-spread-fire-with-phi-field-stats
 #+begin_example
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
 ====================================================================================================
@@ -6895,12 +6908,12 @@ Time of Arrival (minutes)
 {'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83745}
 #+end_example
 
-*** How to Create Images of Fire Behavior Outputs
-    :PROPERTIES:
-    :CUSTOM_ID: how-to-create-images-of-fire-behavior-outputs
-    :END:
+**** Create Images of the Output Matrices
+     :PROPERTIES:
+     :CUSTOM_ID: create-images-of-the-output-matrices
+     :END:
 
-#+NAME: save-matrix-as-figure
+#+NAME: run-spread-fire-with-phi-field-images
 #+begin_src python :results silent
 import matplotlib.pyplot as plt
 import numpy as np
