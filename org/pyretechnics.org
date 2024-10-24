@@ -8234,64 +8234,71 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     if num_firebrands > 0:
 
         #=======================================================================================
-        # Unpack all firebrand-related features of the source cell
+        # Ensure that there is wind to transport the firebrands
         #=======================================================================================
 
-        fuel_model_cube              = space_time_cubes["fuel_model"]
-        temperature_cube             = space_time_cubes["temperature"]
-        fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
-        fire_type_matrix             = output_matrices["fire_type"]
-        firebrand_count_matrix       = output_matrices.get("firebrand_count")
-        (_, rows, cols)              = fuel_model_cube.shape
-        (_, cell_height, cell_width) = cube_resolution
-        (t, y, x)                    = space_time_coordinate
-        decay_distance               = spot_config["decay_distance"]
-        upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
-        downwind_direction           = radians(conv.opposite_direction(upwind_direction))
-        cos_wdir                     = cos(downwind_direction)
-        sin_wdir                     = sin(downwind_direction)
-        fireline_intensity           = output_matrices["fireline_intensity"][y,x]             # m
-        wind_speed_10m               = space_time_cubes["wind_speed_10m"].get(t,y,x)          # km/hr
-        wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
-        wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
-        sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-        sample_delta_x_fn            = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+        (t, y, x)      = space_time_coordinate
+        wind_speed_10m = space_time_cubes["wind_speed_10m"].get(t,y,x) # km/hr
 
-        #=======================================================================================
-        # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
-        #=======================================================================================
+        if wind_speed_10m > 0.0:
 
-        ignited_cells = {ignited_cell for _i in range(num_firebrands)
-                         if (ignited_cell := cast_firebrand(rand_gen,
-                                                            fuel_model_cube,
-                                                            temperature_cube,
-                                                            fuel_moisture_dead_1hr_cube,
-                                                            fire_type_matrix,
-                                                            firebrand_count_matrix,
-                                                            rows,
-                                                            cols,
-                                                            cell_height,
-                                                            cell_width,
-                                                            t,
-                                                            y,
-                                                            x,
-                                                            decay_distance,
-                                                            cos_wdir,
-                                                            sin_wdir,
-                                                            sample_delta_y_fn,
-                                                            sample_delta_x_fn))
-                         is not None}
+            #=======================================================================================
+            # Unpack all firebrand-related features of the source cell
+            #=======================================================================================
 
-        #=======================================================================================
-        # Return any cells ignited by firebrands along with their time of ignition
-        #=======================================================================================
+            fuel_model_cube              = space_time_cubes["fuel_model"]
+            temperature_cube             = space_time_cubes["temperature"]
+            fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
+            fire_type_matrix             = output_matrices["fire_type"]
+            firebrand_count_matrix       = output_matrices.get("firebrand_count")
+            (_, rows, cols)              = fuel_model_cube.shape
+            (_, cell_height, cell_width) = cube_resolution
+            decay_distance               = spot_config["decay_distance"]
+            upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
+            downwind_direction           = radians(conv.opposite_direction(upwind_direction))
+            cos_wdir                     = cos(downwind_direction)
+            sin_wdir                     = sin(downwind_direction)
+            fireline_intensity           = output_matrices["fireline_intensity"][y,x]             # m
+            wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+            wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
+            sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+            sample_delta_x_fn            = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
 
-        if len(ignited_cells) > 0:
-            time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
-            flame_length    = output_matrices["flame_length"][y,x]              # meters
-            ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
+            #=======================================================================================
+            # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
+            #=======================================================================================
 
-            return (ignition_time, ignited_cells)
+            ignited_cells = {ignited_cell for _i in range(num_firebrands)
+                             if (ignited_cell := cast_firebrand(rand_gen,
+                                                                fuel_model_cube,
+                                                                temperature_cube,
+                                                                fuel_moisture_dead_1hr_cube,
+                                                                fire_type_matrix,
+                                                                firebrand_count_matrix,
+                                                                rows,
+                                                                cols,
+                                                                cell_height,
+                                                                cell_width,
+                                                                t,
+                                                                y,
+                                                                x,
+                                                                decay_distance,
+                                                                cos_wdir,
+                                                                sin_wdir,
+                                                                sample_delta_y_fn,
+                                                                sample_delta_x_fn))
+                             is not None}
+
+            #=======================================================================================
+            # Return any cells ignited by firebrands along with their time of ignition
+            #=======================================================================================
+
+            if len(ignited_cells) > 0:
+                time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
+                flame_length    = output_matrices["flame_length"][y,x]              # meters
+                ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
+
+                return (ignition_time, ignited_cells)
 #+end_src
 
 ** For Users

@@ -9024,64 +9024,71 @@ ignited.
     <span class="org-keyword">if</span> num_firebrands <span class="org-operator">&gt;</span> 0:
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack all firebrand-related features of the source cell</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that there is wind to transport the firebrands</span>
         <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
-        <span class="org-variable-name">fuel_model_cube</span>              <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_model"</span>]
-        <span class="org-variable-name">temperature_cube</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"temperature"</span>]
-        <span class="org-variable-name">fuel_moisture_dead_1hr_cube</span>  <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_moisture_dead_1hr"</span>]
-        <span class="org-variable-name">fire_type_matrix</span>             <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
-        <span class="org-variable-name">firebrand_count_matrix</span>       <span class="org-operator">=</span> output_matrices.get(<span class="org-string">"firebrand_count"</span>)
-        (<span class="org-variable-name">_</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)              <span class="org-operator">=</span> fuel_model_cube.shape
-        (<span class="org-variable-name">_</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
-        (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                    <span class="org-operator">=</span> space_time_coordinate
-        <span class="org-variable-name">decay_distance</span>               <span class="org-operator">=</span> spot_config[<span class="org-string">"decay_distance"</span>]
-        <span class="org-variable-name">upwind_direction</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"upwind_direction"</span>].get(t,y,x)
-        <span class="org-variable-name">downwind_direction</span>           <span class="org-operator">=</span> radians(conv.opposite_direction(upwind_direction))
-        <span class="org-variable-name">cos_wdir</span>                     <span class="org-operator">=</span> cos(downwind_direction)
-        <span class="org-variable-name">sin_wdir</span>                     <span class="org-operator">=</span> sin(downwind_direction)
-        <span class="org-variable-name">fireline_intensity</span>           <span class="org-operator">=</span> output_matrices[<span class="org-string">"fireline_intensity"</span>][y,x]             <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-        <span class="org-variable-name">wind_speed_10m</span>               <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"wind_speed_10m"</span>].get(t,y,x)          <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
-        <span class="org-variable-name">wind_speed_20ft</span>              <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
-        <span class="org-variable-name">wind_speed_20ft_mps</span>          <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)                     <span class="org-comment-delimiter"># </span><span class="org-comment">m/s</span>
-        <span class="org-variable-name">sample_delta_y_fn</span>            <span class="org-operator">=</span> delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-        <span class="org-variable-name">sample_delta_x_fn</span>            <span class="org-operator">=</span> delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+        (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)      <span class="org-operator">=</span> space_time_coordinate
+        <span class="org-variable-name">wind_speed_10m</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"wind_speed_10m"</span>].get(t,y,x) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
 
-        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells</span>
-        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+        <span class="org-keyword">if</span> wind_speed_10m <span class="org-operator">&gt;</span> 0.0:
 
-        <span class="org-variable-name">ignited_cells</span> <span class="org-operator">=</span> {ignited_cell <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)
-                         <span class="org-keyword">if</span> (ignited_cell :<span class="org-operator">=</span> cast_firebrand(rand_gen,
-                                                            fuel_model_cube,
-                                                            temperature_cube,
-                                                            fuel_moisture_dead_1hr_cube,
-                                                            fire_type_matrix,
-                                                            firebrand_count_matrix,
-                                                            rows,
-                                                            cols,
-                                                            cell_height,
-                                                            cell_width,
-                                                            t,
-                                                            y,
-                                                            x,
-                                                            decay_distance,
-                                                            cos_wdir,
-                                                            sin_wdir,
-                                                            sample_delta_y_fn,
-                                                            sample_delta_x_fn))
-                         <span class="org-keyword">is</span> <span class="org-keyword">not</span> <span class="org-constant">None</span>}
+            <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack all firebrand-related features of the source cell</span>
+            <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
-        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Return any cells ignited by firebrands along with their time of ignition</span>
-        <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+            <span class="org-variable-name">fuel_model_cube</span>              <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_model"</span>]
+            <span class="org-variable-name">temperature_cube</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"temperature"</span>]
+            <span class="org-variable-name">fuel_moisture_dead_1hr_cube</span>  <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_moisture_dead_1hr"</span>]
+            <span class="org-variable-name">fire_type_matrix</span>             <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
+            <span class="org-variable-name">firebrand_count_matrix</span>       <span class="org-operator">=</span> output_matrices.get(<span class="org-string">"firebrand_count"</span>)
+            (<span class="org-variable-name">_</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)              <span class="org-operator">=</span> fuel_model_cube.shape
+            (<span class="org-variable-name">_</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
+            <span class="org-variable-name">decay_distance</span>               <span class="org-operator">=</span> spot_config[<span class="org-string">"decay_distance"</span>]
+            <span class="org-variable-name">upwind_direction</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"upwind_direction"</span>].get(t,y,x)
+            <span class="org-variable-name">downwind_direction</span>           <span class="org-operator">=</span> radians(conv.opposite_direction(upwind_direction))
+            <span class="org-variable-name">cos_wdir</span>                     <span class="org-operator">=</span> cos(downwind_direction)
+            <span class="org-variable-name">sin_wdir</span>                     <span class="org-operator">=</span> sin(downwind_direction)
+            <span class="org-variable-name">fireline_intensity</span>           <span class="org-operator">=</span> output_matrices[<span class="org-string">"fireline_intensity"</span>][y,x]             <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+            <span class="org-variable-name">wind_speed_20ft</span>              <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+            <span class="org-variable-name">wind_speed_20ft_mps</span>          <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)                     <span class="org-comment-delimiter"># </span><span class="org-comment">m/s</span>
+            <span class="org-variable-name">sample_delta_y_fn</span>            <span class="org-operator">=</span> delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+            <span class="org-variable-name">sample_delta_x_fn</span>            <span class="org-operator">=</span> delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
 
-        <span class="org-keyword">if</span> <span class="org-builtin">len</span>(ignited_cells) <span class="org-operator">&gt;</span> 0:
-            <span class="org-variable-name">time_of_arrival</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>][y,x]           <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-            <span class="org-variable-name">flame_length</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>][y,x]              <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-            <span class="org-variable-name">ignition_time</span>   <span class="org-operator">=</span> spot_ignition_time(time_of_arrival, flame_length) <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+            <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells</span>
+            <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
-            <span class="org-keyword">return</span> (ignition_time, ignited_cells)
+            <span class="org-variable-name">ignited_cells</span> <span class="org-operator">=</span> {ignited_cell <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)
+                             <span class="org-keyword">if</span> (ignited_cell :<span class="org-operator">=</span> cast_firebrand(rand_gen,
+                                                                fuel_model_cube,
+                                                                temperature_cube,
+                                                                fuel_moisture_dead_1hr_cube,
+                                                                fire_type_matrix,
+                                                                firebrand_count_matrix,
+                                                                rows,
+                                                                cols,
+                                                                cell_height,
+                                                                cell_width,
+                                                                t,
+                                                                y,
+                                                                x,
+                                                                decay_distance,
+                                                                cos_wdir,
+                                                                sin_wdir,
+                                                                sample_delta_y_fn,
+                                                                sample_delta_x_fn))
+                             <span class="org-keyword">is</span> <span class="org-keyword">not</span> <span class="org-constant">None</span>}
+
+            <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Return any cells ignited by firebrands along with their time of ignition</span>
+            <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
+
+            <span class="org-keyword">if</span> <span class="org-builtin">len</span>(ignited_cells) <span class="org-operator">&gt;</span> 0:
+                <span class="org-variable-name">time_of_arrival</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>][y,x]           <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+                <span class="org-variable-name">flame_length</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>][y,x]              <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+                <span class="org-variable-name">ignition_time</span>   <span class="org-operator">=</span> spot_ignition_time(time_of_arrival, flame_length) <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+
+                <span class="org-keyword">return</span> (ignition_time, ignited_cells)
 </pre>
 </div>
 </div>
