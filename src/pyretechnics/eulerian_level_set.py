@@ -922,7 +922,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                         (ignition_time, ignited_cells) = new_ignitions
                         concurrent_ignited_cells       = spot_ignitions.get(ignition_time)
                         if concurrent_ignited_cells:
-                            spot_ignitions[ignition_time] = concurrent_ignited_cells + ignited_cells
+                            spot_ignitions[ignition_time] = set.union(ignited_cells, concurrent_ignited_cells)
                         else:
                             spot_ignitions[ignition_time] = ignited_cells
 

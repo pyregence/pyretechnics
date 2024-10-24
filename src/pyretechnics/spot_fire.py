@@ -526,7 +526,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     a tuple with these fields:
 
     - ignition_time :: minutes
-    - ignited_cells :: list of (y,x) grid coordinates
+    - ignited_cells :: set of (y,x) grid coordinates
     """
     #=======================================================================================
     # Sample the number of firebrands to cast from the source cell
@@ -564,7 +564,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
         #=======================================================================================
 
-        ignited_cells = [ignited_cell for _i in range(num_firebrands)
+        ignited_cells = {ignited_cell for _i in range(num_firebrands)
                          if (ignited_cell := cast_firebrand(rand_gen,
                                                             fuel_model_cube,
                                                             temperature_cube,
@@ -583,7 +583,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
                                                             sin_wdir,
                                                             sample_delta_y_fn,
                                                             sample_delta_x_fn))
-                         is not None]
+                         is not None}
 
         #=======================================================================================
         # Return any cells ignited by firebrands along with their time of ignition
