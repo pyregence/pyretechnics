@@ -87,10 +87,12 @@ def resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft):
     - fireline_intensity :: kW/m
     - wind_speed_20ft    :: m/s
     """
-    mean_distance = spot_config["mean_distance"]
-    flin_exp      = spot_config["flin_exp"]
-    ws_exp        = spot_config["ws_exp"]
-    return mean_distance * (fireline_intensity ** flin_exp) * (wind_speed_20ft ** ws_exp)
+    downwind_distance_mean      = spot_config["downwind_distance_mean"]
+    fireline_intensity_exponent = spot_config["fireline_intensity_exponent"]
+    wind_speed_exponent         = spot_config["wind_speed_exponent"]
+    return (downwind_distance_mean
+            * (fireline_intensity ** fireline_intensity_exponent)
+            * (wind_speed_20ft ** wind_speed_exponent))
 
 
 def resolve_var_delta_x(spot_config, exp_delta_x):
@@ -99,7 +101,7 @@ def resolve_var_delta_x(spot_config, exp_delta_x):
     - spot_config :: a map of spotting parameters
     - exp_delta_x :: meters (E[ΔX])
     """
-    return spot_config["normalized_distance_variance"] * exp_delta_x
+    return spot_config["downwind_variance_mean_ratio"] * exp_delta_x
 
 
 def lognormal_mu_from_moments(mean, variance):
@@ -190,10 +192,10 @@ def himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_2
     return himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) # meters
 
 
-def resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft):
-    delta_y_sigma = spot_config.get("delta_y_sigma")
-    if delta_y_sigma != None:
-        return delta_y_sigma # meters
+def resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft):
+    crosswind_distance_stdev = spot_config.get("crosswind_distance_stdev")
+    if crosswind_distance_stdev != None:
+        return crosswind_distance_stdev # meters
     else:
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
 
@@ -202,7 +204,7 @@ def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     """
     Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
     """
-    sigma_y = resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) # meters
+    sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
     return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
 # sardoy-firebrand-dispersal ends here
 # [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
@@ -427,11 +429,11 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     - rand_gen                  :: numpy.random.Generator
     - expected_firebrand_count  :: expected number of firebrands to cast
     - spot_config               :: dictionary of spotting parameters
-      - mean_distance                 :: ? TODO: Record these parameters' types
-      - flin_exp                      :: ?
-      - ws_exp                        :: ?
-      - normalized_distance_variance  :: ?
-      - delta_y_sigma                 :: ?
+      - downwind_distance_mean        :: meters
+      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
+      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+      - crosswind_distance_stdev      :: meters
       - decay_distance                :: meters
 
     samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,

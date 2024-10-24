@@ -7253,11 +7253,11 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)</span>
 <span class="org-doc">      - random_seed                   :: integer to seed a numpy.random.Generator object</span>
 <span class="org-doc">      - heat_per_firebrand            :: kJ/firebrand</span>
-<span class="org-doc">      - mean_distance                 :: meters</span>
-<span class="org-doc">      - flin_exp                      :: mean_distance multiplier [I^flin_exp]</span>
-<span class="org-doc">      - ws_exp                        :: mean_distance multiplier [U^ws_exp]</span>
-<span class="org-doc">      - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]</span>
-<span class="org-doc">      - delta_y_sigma                 :: meters</span>
+<span class="org-doc">      - downwind_distance_mean        :: meters</span>
+<span class="org-doc">      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]</span>
+<span class="org-doc">      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]</span>
+<span class="org-doc">      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]</span>
+<span class="org-doc">      - crosswind_distance_stdev      :: meters</span>
 <span class="org-doc">      - decay_distance                :: meters</span>
 
 <span class="org-doc">    return a dictionary with these keys:</span>
@@ -7758,11 +7758,11 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> {
     <span class="org-string">"random_seed"</span>                 : 1234567890,
     <span class="org-string">"heat_per_firebrand"</span>          : 1e6,        <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/firebrand</span>
-    <span class="org-string">"mean_distance"</span>               : 10.0,       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-string">"flin_exp"</span>                    : 0.3,        <span class="org-comment-delimiter"># </span><span class="org-comment">mean_distance multiplier [I^flin_exp]</span>
-    <span class="org-string">"ws_exp"</span>                      : 0.55,       <span class="org-comment-delimiter"># </span><span class="org-comment">mean_distance multiplier [U^ws_exp]</span>
-    <span class="org-string">"normalized_distance_variance"</span>: 425.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters [Var(dx) = normalized_distance_variance * E(dx)]</span>
-    <span class="org-string">"delta_y_sigma"</span>               : 100.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-string">"downwind_distance_mean"</span>      : 10.0,       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-string">"fireline_intensity_exponent"</span> : 0.3,        <span class="org-comment-delimiter"># </span><span class="org-comment">downwind_distance_mean multiplier [I^fireline_intensity_exponent]</span>
+    <span class="org-string">"wind_speed_exponent"</span>         : 0.55,       <span class="org-comment-delimiter"># </span><span class="org-comment">downwind_distance_mean multiplier [U^wind_speed_exponent]</span>
+    <span class="org-string">"downwind_variance_mean_ratio"</span>: 425.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]</span>
+    <span class="org-string">"crosswind_distance_stdev"</span>    : 100.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-string">"decay_distance"</span>              : 200.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 }
 
@@ -8271,28 +8271,28 @@ keys shown in table <a href="#tab:spotting-elmfire-params">5</a>.
 <td class="org-left">\(\Delta_1\)</td>
 <td class="org-left">m</td>
 <td class="org-left">Mean landing distance in unit conditions</td>
-<td class="org-left">mean_distance</td>
+<td class="org-left">downwind_distance_mean</td>
 </tr>
 
 <tr>
 <td class="org-left">\(e_I\)</td>
 <td class="org-left">-</td>
-<td class="org-left">Intensity exponent</td>
-<td class="org-left">flin_exp</td>
+<td class="org-left">Fireline intensity exponent</td>
+<td class="org-left">fireline_intensity_exponent</td>
 </tr>
 
 <tr>
 <td class="org-left">\(e_U\)</td>
 <td class="org-left">-</td>
-<td class="org-left">Wind exponent</td>
-<td class="org-left">ws_exp</td>
+<td class="org-left">Wind speed exponent</td>
+<td class="org-left">wind_speed_exponent</td>
 </tr>
 
 <tr>
 <td class="org-left">\(r_\frac{V}{E}\)</td>
 <td class="org-left">m</td>
 <td class="org-left">Variance-over-Mean ratio</td>
-<td class="org-left">normalized_distance_variance</td>
+<td class="org-left">downwind_variance_mean_ratio</td>
 </tr>
 </tbody>
 </table>
@@ -8329,10 +8329,12 @@ the properties of the log-normal distribution:
 <span class="org-doc">    - fireline_intensity :: kW/m</span>
 <span class="org-doc">    - wind_speed_20ft    :: m/s</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">mean_distance</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"mean_distance"</span>]
-    <span class="org-variable-name">flin_exp</span>      <span class="org-operator">=</span> spot_config[<span class="org-string">"flin_exp"</span>]
-    <span class="org-variable-name">ws_exp</span>        <span class="org-operator">=</span> spot_config[<span class="org-string">"ws_exp"</span>]
-    <span class="org-keyword">return</span> mean_distance <span class="org-operator">*</span> (fireline_intensity <span class="org-operator">**</span> flin_exp) <span class="org-operator">*</span> (wind_speed_20ft <span class="org-operator">**</span> ws_exp)
+    <span class="org-variable-name">downwind_distance_mean</span>      <span class="org-operator">=</span> spot_config[<span class="org-string">"downwind_distance_mean"</span>]
+    <span class="org-variable-name">fireline_intensity_exponent</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"fireline_intensity_exponent"</span>]
+    <span class="org-variable-name">wind_speed_exponent</span>         <span class="org-operator">=</span> spot_config[<span class="org-string">"wind_speed_exponent"</span>]
+    <span class="org-keyword">return</span> (downwind_distance_mean
+            <span class="org-operator">*</span> (fireline_intensity <span class="org-operator">**</span> fireline_intensity_exponent)
+            <span class="org-operator">*</span> (wind_speed_20ft <span class="org-operator">**</span> wind_speed_exponent))
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">resolve_var_delta_x</span>(spot_config, exp_delta_x):
@@ -8341,7 +8343,7 @@ the properties of the log-normal distribution:
 <span class="org-doc">    - spot_config :: a map of spotting parameters</span>
 <span class="org-doc">    - exp_delta_x :: meters (E[&#916;X])</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> spot_config[<span class="org-string">"normalized_distance_variance"</span>] <span class="org-operator">*</span> exp_delta_x
+    <span class="org-keyword">return</span> spot_config[<span class="org-string">"downwind_variance_mean_ratio"</span>] <span class="org-operator">*</span> exp_delta_x
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">lognormal_mu_from_moments</span>(mean, variance):
@@ -8378,10 +8380,10 @@ the properties of the log-normal distribution:
 <div class="outline-text-4" id="text-wind-perpendicular-dispersal">
 <p>
 For \(\sigma_Y\), we either let the user specify an explicit value with
-key <b>delta_y_sigma</b> (in meters), which makes it equivalent to the
-model of Perryman 2012<sup><a id="fnr.39" class="footref" href="#fn.39" role="doc-backlink">39</a></sup>, or we default to deriving
-them from equation (28) of Himoto 2005<sup><a id="fnr.40" class="footref" href="#fn.40" role="doc-backlink">40</a></sup>, which is
-equivalent to:
+key <b>crosswind_distance_stdev</b> (in meters), which makes it equivalent
+to the model of Perryman 2012<sup><a id="fnr.39" class="footref" href="#fn.39" role="doc-backlink">39</a></sup>, or we default to
+deriving them from equation (28) of Himoto 2005<sup><a id="fnr.40" class="footref" href="#fn.40" role="doc-backlink">40</a></sup>, which
+is equivalent to:
 </p>
 
 \begin{align}
@@ -8495,7 +8497,7 @@ suggests coefficients of variation ranging from 95% to 210%, whereas
 Figure 6 of Himoto 2005<sup><a id="fnr.47" class="footref" href="#fn.47" role="doc-backlink">47</a></sup> suggests coefficients of
 variation ranging from 30% to 70%. For this reason, we <b>strongly
 recommend to supply \(\sigma_Y\) directly</b> through the configuration key
-<b>delta_y_sigma</b>.
+<b>crosswind_distance_stdev</b>.
 </p>
 </div>
 </div>
@@ -8572,10 +8574,10 @@ exponential functions:
     <span class="org-keyword">return</span> himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">resolve_delta_y_sigma</span>(spot_config, fireline_intensity, wind_speed_20ft):
-    <span class="org-variable-name">delta_y_sigma</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"delta_y_sigma"</span>)
-    <span class="org-keyword">if</span> delta_y_sigma <span class="org-operator">!=</span> <span class="org-constant">None</span>:
-        <span class="org-keyword">return</span> delta_y_sigma <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_crosswind_distance_stdev</span>(spot_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-variable-name">crosswind_distance_stdev</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"crosswind_distance_stdev"</span>)
+    <span class="org-keyword">if</span> crosswind_distance_stdev <span class="org-operator">!=</span> <span class="org-constant">None</span>:
+        <span class="org-keyword">return</span> crosswind_distance_stdev <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">else</span>:
         <span class="org-keyword">return</span> himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
@@ -8584,7 +8586,7 @@ exponential functions:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns a function for randomly sampling &#916;Y, the spotting jump perpendicular to the wind direction (in meters).</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_normal(rand_gen, 0.0, sigma_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 </pre>
 </div>
@@ -9001,11 +9003,11 @@ ignited.
 <span class="org-doc">    - rand_gen                  :: numpy.random.Generator</span>
 <span class="org-doc">    - expected_firebrand_count  :: expected number of firebrands to cast</span>
 <span class="org-doc">    - spot_config               :: dictionary of spotting parameters</span>
-<span class="org-doc">      - mean_distance                 :: ? TODO: Record these parameters' types</span>
-<span class="org-doc">      - flin_exp                      :: ?</span>
-<span class="org-doc">      - ws_exp                        :: ?</span>
-<span class="org-doc">      - normalized_distance_variance  :: ?</span>
-<span class="org-doc">      - delta_y_sigma                 :: ?</span>
+<span class="org-doc">      - downwind_distance_mean        :: meters</span>
+<span class="org-doc">      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]</span>
+<span class="org-doc">      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]</span>
+<span class="org-doc">      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]</span>
+<span class="org-doc">      - crosswind_distance_stdev      :: meters</span>
 <span class="org-doc">      - decay_distance                :: meters</span>
 
 <span class="org-doc">    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,</span>

@@ -1004,11 +1004,11 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: integer to seed a numpy.random.Generator object
       - heat_per_firebrand            :: kJ/firebrand
-      - mean_distance                 :: meters
-      - flin_exp                      :: mean_distance multiplier [I^flin_exp]
-      - ws_exp                        :: mean_distance multiplier [U^ws_exp]
-      - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]
-      - delta_y_sigma                 :: meters
+      - downwind_distance_mean        :: meters
+      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
+      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+      - crosswind_distance_stdev      :: meters
       - decay_distance                :: meters
 
     return a dictionary with these keys:

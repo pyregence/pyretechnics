@@ -6624,11 +6624,11 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: integer to seed a numpy.random.Generator object
       - heat_per_firebrand            :: kJ/firebrand
-      - mean_distance                 :: meters
-      - flin_exp                      :: mean_distance multiplier [I^flin_exp]
-      - ws_exp                        :: mean_distance multiplier [U^ws_exp]
-      - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]
-      - delta_y_sigma                 :: meters
+      - downwind_distance_mean        :: meters
+      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
+      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+      - crosswind_distance_stdev      :: meters
       - decay_distance                :: meters
 
     return a dictionary with these keys:
@@ -7119,11 +7119,11 @@ output_matrices["phi"][50,50] = -1.0
 spot_config = {
     "random_seed"                 : 1234567890,
     "heat_per_firebrand"          : 1e6,        # kJ/firebrand
-    "mean_distance"               : 10.0,       # meters
-    "flin_exp"                    : 0.3,        # mean_distance multiplier [I^flin_exp]
-    "ws_exp"                      : 0.55,       # mean_distance multiplier [U^ws_exp]
-    "normalized_distance_variance": 425.0,      # meters [Var(dx) = normalized_distance_variance * E(dx)]
-    "delta_y_sigma"               : 100.0,      # meters
+    "downwind_distance_mean"      : 10.0,       # meters
+    "fireline_intensity_exponent" : 0.3,        # downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+    "wind_speed_exponent"         : 0.55,       # downwind_distance_mean multiplier [U^wind_speed_exponent]
+    "downwind_variance_mean_ratio": 425.0,      # meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+    "crosswind_distance_stdev"    : 100.0,      # meters
     "decay_distance"              : 200.0,      # meters
 }
 
@@ -7578,14 +7578,14 @@ keys shown in table [[tab:spotting-elmfire-params]].
 
 #+NAME: tab:spotting-elmfire-params
 #+CAPTION: Spotting parameters for the downwind distribution per the ELMFIRE model
-|-----------------+------+------------------------------------------+-------------------------------|
-| Parameter       | Unit | Description                              | Configuration Key             |
-|-----------------+------+------------------------------------------+-------------------------------|
-| $\Delta_1$      | m    | Mean landing distance in unit conditions | mean_distance                 |
-| $e_I$           | -    | Intensity exponent                       | flin_exp                      |
-| $e_U$           | -    | Wind exponent                            | ws_exp                        |
-| $r_\frac{V}{E}$ | m    | Variance-over-Mean ratio                 | normalized_distance_variance  |
-|-----------------+------+------------------------------------------+-------------------------------|
+|-----------------+------+------------------------------------------+------------------------------|
+| Parameter       | Unit | Description                              | Configuration Key            |
+|-----------------+------+------------------------------------------+------------------------------|
+| $\Delta_1$      | m    | Mean landing distance in unit conditions | downwind_distance_mean       |
+| $e_I$           | -    | Fireline intensity exponent              | fireline_intensity_exponent  |
+| $e_U$           | -    | Wind speed exponent                      | wind_speed_exponent          |
+| $r_\frac{V}{E}$ | m    | Variance-over-Mean ratio                 | downwind_variance_mean_ratio |
+|-----------------+------+------------------------------------------+------------------------------|
 
 *Note:* One potential way in which this model can misbehave is that
 the variance is proportional to the expected value, and therefore the
@@ -7616,10 +7616,12 @@ def resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft):
     - fireline_intensity :: kW/m
     - wind_speed_20ft    :: m/s
     """
-    mean_distance = spot_config["mean_distance"]
-    flin_exp      = spot_config["flin_exp"]
-    ws_exp        = spot_config["ws_exp"]
-    return mean_distance * (fireline_intensity ** flin_exp) * (wind_speed_20ft ** ws_exp)
+    downwind_distance_mean      = spot_config["downwind_distance_mean"]
+    fireline_intensity_exponent = spot_config["fireline_intensity_exponent"]
+    wind_speed_exponent         = spot_config["wind_speed_exponent"]
+    return (downwind_distance_mean
+            * (fireline_intensity ** fireline_intensity_exponent)
+            * (wind_speed_20ft ** wind_speed_exponent))
 
 
 def resolve_var_delta_x(spot_config, exp_delta_x):
@@ -7628,7 +7630,7 @@ def resolve_var_delta_x(spot_config, exp_delta_x):
     - spot_config :: a map of spotting parameters
     - exp_delta_x :: meters (E[ΔX])
     """
-    return spot_config["normalized_distance_variance"] * exp_delta_x
+    return spot_config["downwind_variance_mean_ratio"] * exp_delta_x
 
 
 def lognormal_mu_from_moments(mean, variance):
@@ -7664,10 +7666,10 @@ def resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft):
     :END:
 
 For $\sigma_Y$, we either let the user specify an explicit value with
-key *delta_y_sigma* (in meters), which makes it equivalent to the
-model of Perryman 2012[fn::Perryman2012], or we default to deriving
-them from equation (28) of Himoto 2005[fn::Himoto2005], which is
-equivalent to:
+key *crosswind_distance_stdev* (in meters), which makes it equivalent
+to the model of Perryman 2012[fn::Perryman2012], or we default to
+deriving them from equation (28) of Himoto 2005[fn::Himoto2005], which
+is equivalent to:
 
 \begin{align}
   \sigma_Y = 0.92 D = 0.92 \frac{0.47}{0.88^2}\frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]}
@@ -7726,7 +7728,7 @@ suggests coefficients of variation ranging from 95% to 210%, whereas
 Figure 6 of Himoto 2005[fn::Himoto2005] suggests coefficients of
 variation ranging from 30% to 70%. For this reason, we *strongly
 recommend to supply $\sigma_Y$ directly* through the configuration key
-*delta_y_sigma*.
+*crosswind_distance_stdev*.
 
 *** Sampling Firebrand Casting Distances
     :PROPERTIES:
@@ -7802,10 +7804,10 @@ def himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_2
     return himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) # meters
 
 
-def resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft):
-    delta_y_sigma = spot_config.get("delta_y_sigma")
-    if delta_y_sigma != None:
-        return delta_y_sigma # meters
+def resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft):
+    crosswind_distance_stdev = spot_config.get("crosswind_distance_stdev")
+    if crosswind_distance_stdev != None:
+        return crosswind_distance_stdev # meters
     else:
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
 
@@ -7814,7 +7816,7 @@ def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     """
     Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
     """
-    sigma_y = resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) # meters
+    sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
     return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
 #+end_src
 
@@ -8211,11 +8213,11 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     - rand_gen                  :: numpy.random.Generator
     - expected_firebrand_count  :: expected number of firebrands to cast
     - spot_config               :: dictionary of spotting parameters
-      - mean_distance                 :: ? TODO: Record these parameters' types
-      - flin_exp                      :: ?
-      - ws_exp                        :: ?
-      - normalized_distance_variance  :: ?
-      - delta_y_sigma                 :: ?
+      - downwind_distance_mean        :: meters
+      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
+      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+      - crosswind_distance_stdev      :: meters
       - decay_distance                :: meters
 
     samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
@@ -8681,29 +8683,29 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 
   - spotting :: a dictionary of parameter names to their values for the spotting algorithm:
 
-  |--------------------------------+---------+------------------------------------------------------+------------|
-  | Parameter Name                 | Type    | Units                                                | Fire Model |
-  |--------------------------------+---------+------------------------------------------------------+------------|
-  | firebrands_per_cell            | int     | number of firebrands to cast from each spotting cell | GridFire   |
-  | decay_distance                 | float   | meters                                               | GridFire   |
-  | mean_distance                  | float   | TODO: find units range                               | GridFire   |
-  | flin_exp                       | float   | TODO: find units range                               | GridFire   |
-  | ws_exp                         | float   | TODO: find units range                               | GridFire   |
-  | normalized_distance_variance   | float   | TODO: find units range                               | GridFire   |
-  | delta_y_sigma                  | float   | TODO: find units range                               | GridFire   |
-  |--------------------------------+---------+------------------------------------------------------+------------|
-  | ember_gr                       | int     | TODO: find units range                               | ELMFIRE    |
-  | pign                           | float   | percent [0-100]                                      | ELMFIRE    |
-  | pign_max                       | float   | percent [0-100]                                      | ELMFIRE    |
-  | pign_min                       | float   | percent [0-100]                                      | ELMFIRE    |
-  | tau_embergen                   | float   | TODO: find units range                               | ELMFIRE    |
-  | use_umd_spotting_model         | boolean | True or False                                        | ELMFIRE    |
-  | p_eps                          | float   | TODO: find units range                               | ELMFIRE    |
-  | use_physical_spotting_duration | boolean | True or False                                        | ELMFIRE    |
-  | use_physical_ember_number      | boolean | True or False                                        | ELMFIRE    |
-  | ember_sampling_factor          | float   | TODO: find units range                               | ELMFIRE    |
-  | use_superseded_spotting        | boolean | True or False                                        | ELMFIRE    |
-  |--------------------------------+---------+------------------------------------------------------+------------|
+  |--------------------------------+---------+------------------------+------------|
+  | Parameter Name                 | Type    | Units                  | Fire Model |
+  |--------------------------------+---------+------------------------+------------|
+  | heat_per_firebrand             | float   | kJ                     | Yiren Qin  |
+  | downwind_distance_mean         | float   | meters                 | GridFire   |
+  | fireline_intensity_exponent    | float   | unitless               | GridFire   |
+  | wind_speed_exponent            | float   | unitless               | GridFire   |
+  | downwind_variance_mean_ratio   | float   | meters^2 / meters      | GridFire   |
+  | crosswind_distance_stdev       | float   | meters                 | GridFire   |
+  | decay_distance                 | float   | meters                 | GridFire   |
+  |--------------------------------+---------+------------------------+------------|
+  | ember_gr                       | int     | TODO: find units range | ELMFIRE    |
+  | pign                           | float   | percent [0-100]        | ELMFIRE    |
+  | pign_max                       | float   | percent [0-100]        | ELMFIRE    |
+  | pign_min                       | float   | percent [0-100]        | ELMFIRE    |
+  | tau_embergen                   | float   | TODO: find units range | ELMFIRE    |
+  | use_umd_spotting_model         | boolean | True or False          | ELMFIRE    |
+  | p_eps                          | float   | TODO: find units range | ELMFIRE    |
+  | use_physical_spotting_duration | boolean | True or False          | ELMFIRE    |
+  | use_physical_ember_number      | boolean | True or False          | ELMFIRE    |
+  | ember_sampling_factor          | float   | TODO: find units range | ELMFIRE    |
+  | use_superseded_spotting        | boolean | True or False          | ELMFIRE    |
+  |--------------------------------+---------+------------------------+------------|
 
 - input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions for accessing the numeric values at each =(y,x)= or =(z,y,x)= coordinate in the simulated space-time cube:
 
