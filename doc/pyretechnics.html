@@ -8687,6 +8687,17 @@ meter decreases \(P(I)_l\) by 0.5%.
 <pre class="src src-python" id="firebrand-ignition-probability"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> exp
 
 
+<span class="org-keyword">def</span> <span class="org-function-name">firebrand_flight_survival_probability</span>(spotting_distance, decay_distance):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:</span>
+<span class="org-doc">    - spotting_distance :: meters (d)</span>
+<span class="org-doc">    - decay_distance    :: meters (1/lambda)</span>
+
+<span class="org-doc">    P(Survival) = exp(-d * lambda)</span>
+<span class="org-doc">    """</span>
+    <span class="org-keyword">return</span> exp(<span class="org-operator">-</span>spotting_distance <span class="org-operator">/</span> decay_distance)
+
+
 <span class="org-keyword">def</span> <span class="org-function-name">heat_of_preignition</span>(temperature, fine_fuel_moisture):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns heat of preignition given:</span>
@@ -8714,28 +8725,13 @@ meter decreases \(P(I)_l\) by 0.5%.
 <span class="org-doc">    - temperature        :: degrees Celsius</span>
 <span class="org-doc">    - fine_fuel_moisture :: 0-1</span>
 
-<span class="org-doc">    X = (400 - Q_ig) / 10</span>
-<span class="org-doc">    P(I) = (0.000048 * X^4.3) / 50 (pg. 15)</span>
+<span class="org-doc">    X           = (400 - Q_ig) / 10</span>
+<span class="org-doc">    P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">Q_ig</span> <span class="org-operator">=</span> heat_of_preignition(temperature, fine_fuel_moisture)
-    <span class="org-variable-name">X</span>    <span class="org-operator">=</span> <span class="org-builtin">max</span>(0.0, 400.0 <span class="org-operator">-</span> Q_ig) <span class="org-operator">/</span> 10.0
-    <span class="org-variable-name">P_I</span>  <span class="org-operator">=</span> 0.000048 <span class="org-operator">*</span> (X <span class="org-operator">**</span> 4.3) <span class="org-operator">/</span> 50.0
-    <span class="org-keyword">return</span> <span class="org-builtin">min</span>(P_I, 1.0)
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">spot_ignition_probability</span>(temperature, fine_fuel_moisture, decay_distance, spotting_distance):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Returns the distance-decayed probability of spot fire ignition (Perryman 2012) given:</span>
-<span class="org-doc">    - temperature        :: degrees Celsius</span>
-<span class="org-doc">    - fine_fuel_moisture :: 0-1</span>
-<span class="org-doc">    - decay_distance     :: meters (1/lambda)</span>
-<span class="org-doc">    - spotting_distance  :: meters (d)</span>
-
-<span class="org-doc">    P(Spot Ignition) = P(I) * exp(-lambda * d)</span>
-<span class="org-doc">    """</span>
-    <span class="org-variable-name">flight_survival_probability</span> <span class="org-operator">=</span> exp(<span class="org-operator">-</span>spotting_distance <span class="org-operator">/</span> decay_distance)
-    <span class="org-variable-name">ignition_probability</span>        <span class="org-operator">=</span> schroeder_ignition_probability(temperature, fine_fuel_moisture)
-    <span class="org-keyword">return</span> flight_survival_probability <span class="org-operator">*</span> ignition_probability
+    <span class="org-variable-name">Q_ig</span>        <span class="org-operator">=</span> heat_of_preignition(temperature, fine_fuel_moisture)
+    <span class="org-variable-name">X</span>           <span class="org-operator">=</span> <span class="org-builtin">max</span>(0.0, 400.0 <span class="org-operator">-</span> Q_ig) <span class="org-operator">/</span> 10.0
+    <span class="org-variable-name">P_Ignition</span>  <span class="org-operator">=</span> 0.000048 <span class="org-operator">*</span> (X <span class="org-operator">**</span> 4.3) <span class="org-operator">/</span> 50.0
+    <span class="org-keyword">return</span> <span class="org-builtin">min</span>(P_Ignition, 1.0)
 </pre>
 </div>
 
@@ -8915,13 +8911,6 @@ ignited.
     <span class="org-keyword">return</span> fuel_model <span class="org-keyword">and</span> fuel_model[<span class="org-string">"burnable"</span>]
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">is_spot_ignition</span>(rand_gen, spot_ignition_probability):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Returns True if a real value drawn uniformly from the range [0,1) is &lt;= spot_ignition_probability.</span>
-<span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spot_ignition_probability
-
-
 <span class="org-keyword">def</span> <span class="org-function-name">cast_firebrand</span>(rand_gen,
                    fuel_model_cube,
                    temperature_cube,
@@ -8967,14 +8956,21 @@ ignited.
         <span class="org-keyword">if</span> <span class="org-builtin">isinstance</span>(firebrand_count_matrix, np.ndarray):
             <span class="org-variable-name">firebrand_count_matrix</span>[<span class="org-variable-name">target_y</span>,<span class="org-variable-name">target_x</span>] <span class="org-operator">+=</span> 1
 
-        <span class="org-keyword">if</span> is_burnable_cell(fuel_model_cube, source_t, target_y, target_x):
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the probability that the firebrand survived its flight and landed while still burning</span>
+        <span class="org-variable-name">spotting_distance</span>           <span class="org-operator">=</span> hypot(grid_dx, grid_dy) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+        <span class="org-variable-name">flight_survival_probability</span> <span class="org-operator">=</span> firebrand_flight_survival_probability(spotting_distance, decay_distance)
+
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Roll the dice</span>
+        <span class="org-variable-name">uniform_sample</span> <span class="org-operator">=</span> rand_gen.uniform(0.0, 1.0)
+
+        <span class="org-keyword">if</span> (uniform_sample <span class="org-operator">&lt;=</span> flight_survival_probability
+            <span class="org-keyword">and</span> is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
             <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability</span>
-            <span class="org-variable-name">spotting_distance</span>  <span class="org-operator">=</span> hypot(grid_dx, grid_dy)                                       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-            <span class="org-variable-name">temperature</span>        <span class="org-operator">=</span> temperature_cube.get(source_t, target_y, target_x)            <span class="org-comment-delimiter"># </span><span class="org-comment">degrees Celsius</span>
-            <span class="org-variable-name">fine_fuel_moisture</span> <span class="org-operator">=</span> fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) <span class="org-comment-delimiter"># </span><span class="org-comment">kg/kg</span>
-            <span class="org-variable-name">probability</span>        <span class="org-operator">=</span> spot_ignition_probability(temperature, fine_fuel_moisture,
-                                                           decay_distance, spotting_distance)
-            <span class="org-keyword">if</span> is_spot_ignition(rand_gen, probability):
+            <span class="org-variable-name">temperature</span>          <span class="org-operator">=</span> temperature_cube.get(source_t, target_y, target_x)            <span class="org-comment-delimiter"># </span><span class="org-comment">degrees Celsius</span>
+            <span class="org-variable-name">fine_fuel_moisture</span>   <span class="org-operator">=</span> fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) <span class="org-comment-delimiter"># </span><span class="org-comment">kg/kg</span>
+            <span class="org-variable-name">ignition_probability</span> <span class="org-operator">=</span> schroeder_ignition_probability(temperature, fine_fuel_moisture)
+
+            <span class="org-keyword">if</span> uniform_sample <span class="org-operator">&lt;=</span> flight_survival_probability <span class="org-operator">*</span> ignition_probability:
                 <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand ignited the target cell, so return its coordinates for later processing</span>
                 <span class="org-keyword">return</span> (target_y, target_x)
 

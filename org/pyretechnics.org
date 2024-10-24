@@ -7905,6 +7905,17 @@ meter decreases $P(I)_l$ by 0.5%.
 from math import exp
 
 
+def firebrand_flight_survival_probability(spotting_distance, decay_distance):
+    """
+    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
+    - spotting_distance :: meters (d)
+    - decay_distance    :: meters (1/lambda)
+
+    P(Survival) = exp(-d * lambda)
+    """
+    return exp(-spotting_distance / decay_distance)
+
+
 def heat_of_preignition(temperature, fine_fuel_moisture):
     """
     Returns heat of preignition given:
@@ -7932,28 +7943,13 @@ def schroeder_ignition_probability(temperature, fine_fuel_moisture):
     - temperature        :: degrees Celsius
     - fine_fuel_moisture :: 0-1
 
-    X = (400 - Q_ig) / 10
-    P(I) = (0.000048 * X^4.3) / 50 (pg. 15)
+    X           = (400 - Q_ig) / 10
+    P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
     """
-    Q_ig = heat_of_preignition(temperature, fine_fuel_moisture)
-    X    = max(0.0, 400.0 - Q_ig) / 10.0
-    P_I  = 0.000048 * (X ** 4.3) / 50.0
-    return min(P_I, 1.0)
-
-
-def spot_ignition_probability(temperature, fine_fuel_moisture, decay_distance, spotting_distance):
-    """
-    Returns the distance-decayed probability of spot fire ignition (Perryman 2012) given:
-    - temperature        :: degrees Celsius
-    - fine_fuel_moisture :: 0-1
-    - decay_distance     :: meters (1/lambda)
-    - spotting_distance  :: meters (d)
-
-    P(Spot Ignition) = P(I) * exp(-lambda * d)
-    """
-    flight_survival_probability = exp(-spotting_distance / decay_distance)
-    ignition_probability        = schroeder_ignition_probability(temperature, fine_fuel_moisture)
-    return flight_survival_probability * ignition_probability
+    Q_ig        = heat_of_preignition(temperature, fine_fuel_moisture)
+    X           = max(0.0, 400.0 - Q_ig) / 10.0
+    P_Ignition  = 0.000048 * (X ** 4.3) / 50.0
+    return min(P_Ignition, 1.0)
 #+end_src
 
 A firebrand will cause an unburned cell to transition to a burned
@@ -8125,13 +8121,6 @@ def is_burnable_cell(fuel_model_cube, t, y, x):
     return fuel_model and fuel_model["burnable"]
 
 
-def is_spot_ignition(rand_gen, spot_ignition_probability):
-    """
-    Returns True if a real value drawn uniformly from the range [0,1) is <= spot_ignition_probability.
-    """
-    return rand_gen.uniform(0.0, 1.0) <= spot_ignition_probability
-
-
 def cast_firebrand(rand_gen,
                    fuel_model_cube,
                    temperature_cube,
@@ -8177,14 +8166,21 @@ def cast_firebrand(rand_gen,
         if isinstance(firebrand_count_matrix, np.ndarray):
             firebrand_count_matrix[target_y,target_x] += 1
 
-        if is_burnable_cell(fuel_model_cube, source_t, target_y, target_x):
+        # Calculate the probability that the firebrand survived its flight and landed while still burning
+        spotting_distance           = hypot(grid_dx, grid_dy) # meters
+        flight_survival_probability = firebrand_flight_survival_probability(spotting_distance, decay_distance)
+
+        # Roll the dice
+        uniform_sample = rand_gen.uniform(0.0, 1.0)
+
+        if (uniform_sample <= flight_survival_probability
+            and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
             # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
-            spotting_distance  = hypot(grid_dx, grid_dy)                                       # meters
-            temperature        = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
-            fine_fuel_moisture = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
-            probability        = spot_ignition_probability(temperature, fine_fuel_moisture,
-                                                           decay_distance, spotting_distance)
-            if is_spot_ignition(rand_gen, probability):
+            temperature          = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
+            fine_fuel_moisture   = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
+            ignition_probability = schroeder_ignition_probability(temperature, fine_fuel_moisture)
+
+            if uniform_sample <= flight_survival_probability * ignition_probability:
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
 
