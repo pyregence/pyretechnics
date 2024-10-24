@@ -7359,7 +7359,7 @@ heatmap_configs = [
 
 firebrand_count_matrix = output_matrices.get("firebrand_count")
 if isinstance(firebrand_count_matrix, np.ndarray):
-    heat_map_config.append(
+    heatmap_configs.append(
         {
             "matrix"  : firebrand_count_matrix,
             "colors"  : "hot",
