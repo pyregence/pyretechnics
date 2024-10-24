@@ -424,7 +424,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - cell_width                    :: meters
     - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
     - rand_gen                  :: numpy.random.Generator
-    - expected_ember_count      :: expected number of firebrands to cast
+    - expected_firebrand_count  :: expected number of firebrands to cast
     - spot_config               :: dictionary of spotting parameters
       - mean_distance                 :: ? TODO: Record these parameters' types
       - flin_exp                      :: ?
@@ -433,7 +433,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - delta_y_sigma                 :: ?
       - decay_constant                :: ?
 
-    samples a number of firebrands from a Poisson distribution parameterized by expected_ember_count,
+    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
     casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
     locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that
     fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in
@@ -446,7 +446,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     # Sample the number of firebrands to cast from the source cell
     #=======================================================================================
 
-    num_firebrands = sample_number_of_firebrands(rand_gen, expected_ember_count)
+    num_firebrands = sample_number_of_firebrands(rand_gen, expected_firebrand_count)
 
     if num_firebrands > 0:
 

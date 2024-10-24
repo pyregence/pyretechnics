@@ -410,7 +410,7 @@ org_html_manager.setup();  // activate after the parameters are set
 <li><a href="#for-users-spot">10.2. For Users</a>
 <ul>
 <li><a href="#how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models">10.2.1. How to Estimate the Areal Heat Output for All Surface Fuel Models</a></li>
-<li><a href="#how-to-estimate-spot-fire-count-from-ember-production-rate">10.2.2. [WIP] How to Estimate Spot Fire Count from Ember Production Rate</a></li>
+<li><a href="#how-to-estimate-spot-fire-count-from-firebrand-production-rate">10.2.2. [WIP] How to Estimate Spot Fire Count from Firebrand Production Rate</a></li>
 <li><a href="#how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics">10.2.3. How to Estimate Typical Ranges for the \(\vec{\Delta}\) Distribution Characteristics</a></li>
 </ul>
 </li>
@@ -8998,7 +8998,7 @@ ignited.
 <span class="org-doc">      - cell_width                    :: meters</span>
 <span class="org-doc">    - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns</span>
 <span class="org-doc">    - rand_gen                  :: numpy.random.Generator</span>
-<span class="org-doc">    - expected_ember_count      :: expected number of firebrands to cast</span>
+<span class="org-doc">    - expected_firebrand_count  :: expected number of firebrands to cast</span>
 <span class="org-doc">    - spot_config               :: dictionary of spotting parameters</span>
 <span class="org-doc">      - mean_distance                 :: ? TODO: Record these parameters' types</span>
 <span class="org-doc">      - flin_exp                      :: ?</span>
@@ -9007,7 +9007,7 @@ ignited.
 <span class="org-doc">      - delta_y_sigma                 :: ?</span>
 <span class="org-doc">      - decay_constant                :: ?</span>
 
-<span class="org-doc">    samples a number of firebrands from a Poisson distribution parameterized by expected_ember_count,</span>
+<span class="org-doc">    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,</span>
 <span class="org-doc">    casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing</span>
 <span class="org-doc">    locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that</span>
 <span class="org-doc">    fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in</span>
@@ -9020,7 +9020,7 @@ ignited.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Sample the number of firebrands to cast from the source cell</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
-    <span class="org-variable-name">num_firebrands</span> <span class="org-operator">=</span> sample_number_of_firebrands(rand_gen, expected_ember_count)
+    <span class="org-variable-name">num_firebrands</span> <span class="org-operator">=</span> sample_number_of_firebrands(rand_gen, expected_firebrand_count)
 
     <span class="org-keyword">if</span> num_firebrands <span class="org-operator">&gt;</span> 0:
 
@@ -9197,9 +9197,9 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 </pre>
 </div>
 </div>
-<div id="outline-container-how-to-estimate-spot-fire-count-from-ember-production-rate" class="outline-4">
-<h4 id="how-to-estimate-spot-fire-count-from-ember-production-rate"><span class="section-number-4">10.2.2.</span> [WIP] How to Estimate Spot Fire Count from Ember Production Rate</h4>
-<div class="outline-text-4" id="text-how-to-estimate-spot-fire-count-from-ember-production-rate">
+<div id="outline-container-how-to-estimate-spot-fire-count-from-firebrand-production-rate" class="outline-4">
+<h4 id="how-to-estimate-spot-fire-count-from-firebrand-production-rate"><span class="section-number-4">10.2.2.</span> [WIP] How to Estimate Spot Fire Count from Firebrand Production Rate</h4>
+<div class="outline-text-4" id="text-how-to-estimate-spot-fire-count-from-firebrand-production-rate">
 <p>
 And&#x2026;we're back! I put together another range tester for the probability of spot fire ignition.
 </p>
@@ -9290,12 +9290,12 @@ And here's the result:
 </p>
 
 <p>
-So if we multiply the `representative-spot-ignition-probabilities` by the ember count range given with an `ember_production_rate` of 0.03 (see above), we get the following:
+So if we multiply the `representative-spot-ignition-probabilities` by the firebrand count range given with an `firebrand_production_rate` of 0.03 (see above), we get the following:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-clojure" id="estimate-spot-fire-count2">(for [num-embers [256500 1471500]]
-  (map #(* num-embers %)
+<pre class="src src-clojure" id="estimate-spot-fire-count2">(for [num-firebrands [256500 1471500]]
+  (map #(* num-firebrands %)
        rep-ignition-probs))
 </pre>
 </div>
@@ -9323,7 +9323,7 @@ which results in:
 We can see that depending on the surface fuel model, we can get
 anywhere from 9 to 827,350 spot fires ignited by one burning cell per
 timestep in the upper quartile of temperature/moisture/distance/decay
-conditions with that ridiculously high `ember_production_rate`.
+conditions with that ridiculously high `firebrand_production_rate`.
 Hopefully this provides sufficient direction for selecting a more
 reasonable default for that parameter.
 </p>

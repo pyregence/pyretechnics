@@ -8208,7 +8208,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - cell_width                    :: meters
     - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
     - rand_gen                  :: numpy.random.Generator
-    - expected_ember_count      :: expected number of firebrands to cast
+    - expected_firebrand_count  :: expected number of firebrands to cast
     - spot_config               :: dictionary of spotting parameters
       - mean_distance                 :: ? TODO: Record these parameters' types
       - flin_exp                      :: ?
@@ -8217,7 +8217,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - delta_y_sigma                 :: ?
       - decay_constant                :: ?
 
-    samples a number of firebrands from a Poisson distribution parameterized by expected_ember_count,
+    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
     casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
     locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that
     fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in
@@ -8230,7 +8230,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     # Sample the number of firebrands to cast from the source cell
     #=======================================================================================
 
-    num_firebrands = sample_number_of_firebrands(rand_gen, expected_ember_count)
+    num_firebrands = sample_number_of_firebrands(rand_gen, expected_firebrand_count)
 
     if num_firebrands > 0:
 
@@ -8411,9 +8411,9 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 {'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
 #+end_example
 
-*** [WIP] How to Estimate Spot Fire Count from Ember Production Rate
+*** [WIP] How to Estimate Spot Fire Count from Firebrand Production Rate
     :PROPERTIES:
-    :CUSTOM_ID: how-to-estimate-spot-fire-count-from-ember-production-rate
+    :CUSTOM_ID: how-to-estimate-spot-fire-count-from-firebrand-production-rate
     :END:
 
 And...we're back! I put together another range tester for the probability of spot fire ignition.
@@ -8493,12 +8493,12 @@ And here's the result:
   0.5622499284950391)}
 ```
 
-So if we multiply the `representative-spot-ignition-probabilities` by the ember count range given with an `ember_production_rate` of 0.03 (see above), we get the following:
+So if we multiply the `representative-spot-ignition-probabilities` by the firebrand count range given with an `firebrand_production_rate` of 0.03 (see above), we get the following:
 
 #+NAME: estimate-spot-fire-count2
 #+begin_src clojure
-(for [num-embers [256500 1471500]]
-  (map #(* num-embers %)
+(for [num-firebrands [256500 1471500]]
+  (map #(* num-firebrands %)
        rep-ignition-probs))
 #+end_src
 
@@ -8520,7 +8520,7 @@ which results in:
 We can see that depending on the surface fuel model, we can get
 anywhere from 9 to 827,350 spot fires ignited by one burning cell per
 timestep in the upper quartile of temperature/moisture/distance/decay
-conditions with that ridiculously high `ember_production_rate`.
+conditions with that ridiculously high `firebrand_production_rate`.
 Hopefully this provides sufficient direction for selecting a more
 reasonable default for that parameter.
 
@@ -8680,29 +8680,29 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
 
   - spotting :: a dictionary of parameter names to their values for the spotting algorithm:
 
-  |--------------------------------+---------+--------------------------------------------------+------------|
-  | Parameter Name                 | Type    | Units                                            | Fire Model |
-  |--------------------------------+---------+--------------------------------------------------+------------|
-  | firebrands_per_cell            | int     | number of embers to cast from each spotting cell | GridFire   |
-  | decay_constant                 | float   | TODO: find units range                           | GridFire   |
-  | mean_distance                  | float   | TODO: find units range                           | GridFire   |
-  | flin_exp                       | float   | TODO: find units range                           | GridFire   |
-  | ws_exp                         | float   | TODO: find units range                           | GridFire   |
-  | normalized_distance_variance   | float   | TODO: find units range                           | GridFire   |
-  | delta_y_sigma                  | float   | TODO: find units range                           | GridFire   |
-  |--------------------------------+---------+--------------------------------------------------+------------|
-  | ember_gr                       | int     | TODO: find units range                           | ELMFIRE    |
-  | pign                           | float   | percent [0-100]                                  | ELMFIRE    |
-  | pign_max                       | float   | percent [0-100]                                  | ELMFIRE    |
-  | pign_min                       | float   | percent [0-100]                                  | ELMFIRE    |
-  | tau_embergen                   | float   | TODO: find units range                           | ELMFIRE    |
-  | use_umd_spotting_model         | boolean | True or False                                    | ELMFIRE    |
-  | p_eps                          | float   | TODO: find units range                           | ELMFIRE    |
-  | use_physical_spotting_duration | boolean | True or False                                    | ELMFIRE    |
-  | use_physical_ember_number      | boolean | True or False                                    | ELMFIRE    |
-  | ember_sampling_factor          | float   | TODO: find units range                           | ELMFIRE    |
-  | use_superseded_spotting        | boolean | True or False                                    | ELMFIRE    |
-  |--------------------------------+---------+--------------------------------------------------+------------|
+  |--------------------------------+---------+------------------------------------------------------+------------|
+  | Parameter Name                 | Type    | Units                                                | Fire Model |
+  |--------------------------------+---------+------------------------------------------------------+------------|
+  | firebrands_per_cell            | int     | number of firebrands to cast from each spotting cell | GridFire   |
+  | decay_constant                 | float   | TODO: find units range                               | GridFire   |
+  | mean_distance                  | float   | TODO: find units range                               | GridFire   |
+  | flin_exp                       | float   | TODO: find units range                               | GridFire   |
+  | ws_exp                         | float   | TODO: find units range                               | GridFire   |
+  | normalized_distance_variance   | float   | TODO: find units range                               | GridFire   |
+  | delta_y_sigma                  | float   | TODO: find units range                               | GridFire   |
+  |--------------------------------+---------+------------------------------------------------------+------------|
+  | ember_gr                       | int     | TODO: find units range                               | ELMFIRE    |
+  | pign                           | float   | percent [0-100]                                      | ELMFIRE    |
+  | pign_max                       | float   | percent [0-100]                                      | ELMFIRE    |
+  | pign_min                       | float   | percent [0-100]                                      | ELMFIRE    |
+  | tau_embergen                   | float   | TODO: find units range                               | ELMFIRE    |
+  | use_umd_spotting_model         | boolean | True or False                                        | ELMFIRE    |
+  | p_eps                          | float   | TODO: find units range                               | ELMFIRE    |
+  | use_physical_spotting_duration | boolean | True or False                                        | ELMFIRE    |
+  | use_physical_ember_number      | boolean | True or False                                        | ELMFIRE    |
+  | ember_sampling_factor          | float   | TODO: find units range                               | ELMFIRE    |
+  | use_superseded_spotting        | boolean | True or False                                        | ELMFIRE    |
+  |--------------------------------+---------+------------------------------------------------------+------------|
 
 - input_layer_dict :: a dictionary of layer names to either 2-arity (2D) or 3-arity (3D) functions for accessing the numeric values at each =(y,x)= or =(z,y,x)= coordinate in the simulated space-time cube:
 
@@ -8758,8 +8758,8 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | max_crown_flame_length         | float16 | meters                                                         | Yes       |
   | perimeter_flame_length         | float16 | meters                                                         | Yes       |
   | fire_type                      | uint8   | 0 = unburned, 1 = surface, 2 = passive_crown, 3 = active_crown | Yes       |
-  | ember_count                    | uint32  | number of embers landing in each cell                          | Yes       |
-  | ember_ignition                 | bool8   | True for cells ignited by embers, False otherwise              | Yes       |
+  | firebrand_count                | uint32  | number of firebrands landing in each cell                      | Yes       |
+  | firebrand_ignition             | bool8   | True for cells ignited by firebrands, False otherwise          | Yes       |
   |--------------------------------+---------+----------------------------------------------------------------+-----------|
 
 - ignited_cells_set :: set of cells that are actively burning at the simulation start time, specified as 3D coordinates =(z,y,x)= in the simulated space-time cube
@@ -8988,8 +8988,8 @@ def grow_fire(world_state):
     #   max_crown_flame_length           :flame-length-matrix
     #   perimeter_flame_length           :directional-flame-length-matrix
     #   fire_type                        :fire-type-matrix
-    #   ember_count                      :firebrand-count-matrix
-    #   ember_ignition                   :spot-matrix
+    #   firebrand_count                  :firebrand-count-matrix
+    #   firebrand_ignition               :spot-matrix
     #
     #   ======================== Internal 2D Arrays ========================
     #   surface_eccentricity             :eccentricity-matrix
@@ -9031,8 +9031,8 @@ def grow_fire(world_state):
         "max_crown_flame_length"        : supply_layer(output_layer_dict, "max_crown_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
         "perimeter_flame_length"        : supply_layer(output_layer_dict, "perimeter_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
         "fire_type"                     : supply_layer(output_layer_dict, "fire_type"                     , layer_shape, "uint8"  ,      0, overwrite_outputs),
-        "ember_count"                   : supply_layer(output_layer_dict, "ember_count"                   , layer_shape, "uint32" ,      0, overwrite_outputs),
-        "ember_ignition"                : supply_layer(output_layer_dict, "ember_ignition"                , layer_shape, "bool8"  ,  False, overwrite_outputs),
+        "firebrand_count"               : supply_layer(output_layer_dict, "firebrand_count"                   , layer_shape, "uint32" ,      0, overwrite_outputs),
+        "firebrand_ignition"            : supply_layer(output_layer_dict, "firebrand_ignition"                , layer_shape, "bool8"  ,  False, overwrite_outputs),
     }
 
     # RESUME at [[file:~/code/sig-gis/gridfire/src/gridfire/fire_spread.clj::(defn- run-loop]]
