@@ -765,7 +765,7 @@ def spread_direction_vector_to_angle(vector_3d):
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit=True,
                              max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
-                             spot_ignitions={}, spotting_config=None, rand_gen=None):
+                             spot_ignitions={}, spot_config=None, rand_gen=None):
     """
     TODO: Add docstring
     NOTE:
@@ -793,8 +793,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
-    # Extract the ember_production_rate from the spotting_config if provided
-    ember_production_rate = spotting_config["ember_production_rate"] if spotting_config else None
+    # Extract the ember_production_rate from the spot_config if provided
+    ember_production_rate = spot_config["ember_production_rate"] if spot_config else None
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
@@ -905,7 +905,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
-                if spotting_config:
+                if spot_config:
                     t_cast                = int(time_of_arrival_matrix[y,x] // band_duration)
                     space_time_coordinate = (t_cast, y, x)
                     slope                 = slope_cube.get(t_cast, y, x)
@@ -917,7 +917,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                                                                       ember_production_rate)
                     new_ignitions         = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
                                                               space_time_coordinate, rand_gen, expected_ember_count,
-                                                              spotting_config)
+                                                              spot_config)
                     if new_ignitions:
                         (ignition_time, ignited_cells) = new_ignitions
                         concurrent_ignited_cells       = spot_ignitions.get(ignition_time)
@@ -959,7 +959,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
 def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration=None, use_wind_limit=True, max_length_to_width_ratio=None,
-                               max_cells_per_timestep=0.4, buffer_width=3, spot_ignitions={}, spotting_config=None):
+                               max_cells_per_timestep=0.4, buffer_width=3, spot_ignitions={}, spot_config=None):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -1001,7 +1001,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)
     - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
-    - spotting_config           :: dictionary of spotting parameters (Optional: needed for spotting)
+    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: integer to seed a numpy.random.Generator object
       - ember_production_rate         :: embers/kJ
       - mean_distance                 :: meters
@@ -1059,8 +1059,8 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     # Make a copy of the phi matrix to use for intermediate calculations in each timestep
     output_matrices["phi_star"] = np.copy(phi_matrix)
 
-    # Create a numpy.random.Generator object to produce random samples if spotting_config is provided
-    rand_gen = np.random.default_rng(seed=spotting_config["random_seed"]) if spotting_config else None
+    # Create a numpy.random.Generator object to produce random samples if spot_config is provided
+    rand_gen = np.random.default_rng(seed=spot_config["random_seed"]) if spot_config else None
 
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
@@ -1075,7 +1075,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
                                            max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spotting_config, rand_gen)
+                                           spot_ignitions, spot_config, rand_gen)
 
         # Reset spread inputs
         simulation_time = results["simulation_time"]
@@ -1092,5 +1092,5 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
-    } | ({"spot_ignitions" : spot_ignitions} if spotting_config else {})
+    } | ({"spot_ignitions" : spot_ignitions} if spot_config else {})
 # spread-phi-field ends here

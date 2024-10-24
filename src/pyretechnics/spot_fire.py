@@ -80,26 +80,26 @@ def distance_to_n_cells(distance, cell_size):
 from math import log, sqrt
 
 
-def resolve_exp_delta_x(spotting_config, fireline_intensity, wind_speed_20ft):
+def resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft):
     """
     Computes the expected value E[ΔX] (in meters) of the downwind spotting distance ΔX given:
-    - spotting_config    :: a map of spotting parameters
+    - spot_config        :: a map of spotting parameters
     - fireline_intensity :: kW/m
     - wind_speed_20ft    :: m/s
     """
-    mean_distance = spotting_config["mean_distance"]
-    flin_exp      = spotting_config["flin_exp"]
-    ws_exp        = spotting_config["ws_exp"]
+    mean_distance = spot_config["mean_distance"]
+    flin_exp      = spot_config["flin_exp"]
+    ws_exp        = spot_config["ws_exp"]
     return mean_distance * (fireline_intensity ** flin_exp) * (wind_speed_20ft ** ws_exp)
 
 
-def resolve_var_delta_x(spotting_config, exp_delta_x):
+def resolve_var_delta_x(spot_config, exp_delta_x):
     """
     Computes the variance Var[ΔX] (in m^2) of the downwind spotting distance ΔX given:
-    - spotting_config :: a map of spotting parameters
-    - exp_delta_x     :: meters (E[ΔX])
+    - spot_config :: a map of spotting parameters
+    - exp_delta_x :: meters (E[ΔX])
     """
-    return spotting_config["normalized_distance_variance"] * exp_delta_x
+    return spot_config["normalized_distance_variance"] * exp_delta_x
 
 
 def lognormal_mu_from_moments(mean, variance):
@@ -117,12 +117,12 @@ def lognormal_sigma_from_moments(mean, variance):
     return sqrt(log(1.0 + variance / (mean ** 2.0)))
 
 
-def resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft):
+def resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft):
     """
     TODO: Add docstring
     """
-    exp_delta_x = resolve_exp_delta_x(spotting_config, fireline_intensity, wind_speed_20ft)
-    var_delta_x = resolve_var_delta_x(spotting_config, exp_delta_x)
+    exp_delta_x = resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft)
+    var_delta_x = resolve_var_delta_x(spot_config, exp_delta_x)
     return {
         "prob.lognormal.mu"   : lognormal_mu_from_moments(exp_delta_x, var_delta_x),
         "prob.lognormal.sigma": lognormal_sigma_from_moments(exp_delta_x, var_delta_x),
@@ -157,11 +157,11 @@ def deltax_coefficient_of_variation(sigma_x):
     return sqrt(exp(sigma_x ** 2.0) - 1.0)
 
 
-def delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft):
+def delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     """
     Returns a function for randomly sampling ΔX, the spotting jump along the wind direction (in meters).
     """
-    ln_params = resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft)
+    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     mu_x      = ln_params["prob.lognormal.mu"]    # meters
     sigma_x   = ln_params["prob.lognormal.sigma"] # meters
     return lambda rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) # meters
@@ -183,26 +183,26 @@ def himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x):
     return sigma_y_scalar_m * avg_deltax * (es2h + 1.0) * (es2h - 1.0) # meters
 
 
-def himoto_resolve_default_sigma_y(spotting_config, fireline_intensity, wind_speed_20ft):
-    ln_params = resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft)
+def himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft):
+    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     mu_x      = ln_params["prob.lognormal.mu"]    # meters
     sigma_x   = ln_params["prob.lognormal.sigma"] # meters
     return himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) # meters
 
 
-def resolve_delta_y_sigma(spotting_config, fireline_intensity, wind_speed_20ft):
-    delta_y_sigma = spotting_config.get("delta_y_sigma")
+def resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft):
+    delta_y_sigma = spot_config.get("delta_y_sigma")
     if delta_y_sigma != None:
         return delta_y_sigma # meters
     else:
-        return himoto_resolve_default_sigma_y(spotting_config, fireline_intensity, wind_speed_20ft) # meters
+        return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
 
 
-def delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft):
+def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     """
     Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
     """
-    sigma_y = resolve_delta_y_sigma(spotting_config, fireline_intensity, wind_speed_20ft) # meters
+    sigma_y = resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) # meters
     return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
 
 
@@ -214,11 +214,11 @@ def sample_wind_dir_deltas(inputs, fireline_intensity, wind_speed_20ft, num_fire
     parallel and perpendicular to the wind. ΔX will typically be positive (downwind),
     and positive ΔY means to the right of the downwind direction.
     """
-    spotting_config     = inputs["spotting"]
+    spot_config         = inputs["spotting"]
     rand_gen            = inputs["rand_gen"]
     wind_speed_20ft_mps = conv.km_hr_to_mps(wind_speed_20ft)
-    sample_delta_x_fn   = delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
-    sample_delta_y_fn   = delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+    sample_delta_x_fn   = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+    sample_delta_y_fn   = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
     return [(sample_delta_x_fn(rand_gen), sample_delta_y_fn(rand_gen)) for _i in range(num_firebrands)]
 # sardoy-firebrand-dispersal ends here
 # [[file:../../org/pyretechnics.org::spotting-probability][spotting-probability]]
@@ -249,16 +249,16 @@ def intranges_mapping_lookup(intranges_mapping, fuel_model_number):
 
 
 def is_surface_spot_fire(inputs, fuel_model_number, fireline_intensity):
-    spotting_config = inputs.get("spotting")
-    if spotting_config:
-        surface_fire_spotting_config = spotting_config.get("surface_fire_spotting")
-        if surface_fire_spotting_config:
-            critical_fireline_intensity_mapping = surface_fire_spotting_config.get("critical_fireline_intensity")
+    spot_config = inputs.get("spotting")
+    if spot_config:
+        surface_fire_spot_config = spot_config.get("surface_fire_spotting")
+        if surface_fire_spot_config:
+            critical_fireline_intensity_mapping = surface_fire_spot_config.get("critical_fireline_intensity")
             critical_fireline_intensity         = (intranges_mapping_lookup(critical_fireline_intensity_mapping,
                                                                             fuel_model_number)
                                                    or 0.0)
             if fireline_intensity > critical_fireline_intensity:
-                spotting_percent_mapping = surface_fire_spotting_config.get("surface_fire_spotting_percent")
+                spotting_percent_mapping = surface_fire_spot_config.get("surface_fire_spotting_percent")
                 spotting_percent         = intranges_mapping_lookup(spotting_percent_mapping, fuel_model_number) or 0.0
                 rand_gen                 = inputs["rand_gen"]
                 return rand_gen.uniform(0.0, 1.0) <= spotting_percent
@@ -275,9 +275,9 @@ def is_crown_spot_fire(inputs):
     Determine whether crowning causes spot fires. Config key `spotting` should
     take either a vector of probabilities (0-1) or a single spotting probability.
     """
-    spotting_config = inputs.get("spotting")
-    if spotting_config:
-        spotting_percent = spotting_config.get("crown_fire_spotting_percent")
+    spot_config = inputs.get("spotting")
+    if spot_config:
+        spotting_percent = spot_config.get("crown_fire_spotting_percent")
         if spotting_percent:
             rand_gen = inputs["rand_gen"]
             return rand_gen.uniform(0.0, 1.0) <= spotting_percent
@@ -489,7 +489,7 @@ def cast_firebrand(rand_gen,
 
 
 def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_ember_count, spotting_config):
+                      rand_gen, expected_ember_count, spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -511,7 +511,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
     - rand_gen                  :: numpy.random.Generator
     - expected_ember_count      :: expected number of firebrands to cast
-    - spotting_config           :: dictionary of spotting parameters
+    - spot_config               :: dictionary of spotting parameters
       - mean_distance                 :: ? TODO: Record these parameters' types
       - flin_exp                      :: ?
       - ws_exp                        :: ?
@@ -548,7 +548,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         (_, rows, cols)              = fuel_model_cube.shape
         (_, cell_height, cell_width) = cube_resolution
         (t, y, x)                    = space_time_coordinate
-        decay_constant               = spotting_config["decay_constant"]
+        decay_constant               = spot_config["decay_constant"]
         upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
         downwind_direction           = radians(conv.opposite_direction(upwind_direction))
         cos_wdir                     = cos(downwind_direction)
@@ -557,8 +557,8 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         wind_speed_10m               = space_time_cubes["wind_speed_10m"].get(t,y,x)          # km/hr
         wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
         wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
-        sample_delta_y_fn            = delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
-        sample_delta_x_fn            = delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+        sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+        sample_delta_x_fn            = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
 
         #=======================================================================================
         # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells

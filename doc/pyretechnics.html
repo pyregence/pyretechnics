@@ -7014,7 +7014,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
                              max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
-                             spot_ignitions<span class="org-operator">=</span>{}, spotting_config<span class="org-operator">=</span><span class="org-constant">None</span>, rand_gen<span class="org-operator">=</span><span class="org-constant">None</span>):
+                             spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>, rand_gen<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    NOTE:</span>
@@ -7042,8 +7042,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">flame_length_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
     <span class="org-variable-name">time_of_arrival_matrix</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the ember_production_rate from the spotting_config if provided</span>
-    <span class="org-variable-name">ember_production_rate</span> <span class="org-operator">=</span> spotting_config[<span class="org-string">"ember_production_rate"</span>] <span class="org-keyword">if</span> spotting_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the ember_production_rate from the spot_config if provided</span>
+    <span class="org-variable-name">ember_production_rate</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"ember_production_rate"</span>] <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize max spread rates in the x and y dimensions to 0.0</span>
     <span class="org-variable-name">max_spread_rate_x</span> <span class="org-operator">=</span> 0.0
@@ -7154,7 +7154,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                 <span class="org-variable-name">time_of_arrival_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]    <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt <span class="org-operator">*</span> phi <span class="org-operator">/</span> (phi <span class="org-operator">-</span> phi_next)
 
                 <span class="org-comment-delimiter"># </span><span class="org-comment">Cast firebrands, update firebrand_count_matrix, and update spot_ignitions</span>
-                <span class="org-keyword">if</span> spotting_config:
+                <span class="org-keyword">if</span> spot_config:
                     <span class="org-variable-name">t_cast</span>                <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
                     <span class="org-variable-name">space_time_coordinate</span> <span class="org-operator">=</span> (t_cast, y, x)
                     <span class="org-variable-name">slope</span>                 <span class="org-operator">=</span> slope_cube.get(t_cast, y, x)
@@ -7166,7 +7166,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                       ember_production_rate)
                     <span class="org-variable-name">new_ignitions</span>         <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
                                                               space_time_coordinate, rand_gen, expected_ember_count,
-                                                              spotting_config)
+                                                              spot_config)
                     <span class="org-keyword">if</span> new_ignitions:
                         (<span class="org-variable-name">ignition_time</span>, <span class="org-variable-name">ignited_cells</span>) <span class="org-operator">=</span> new_ignitions
                         <span class="org-variable-name">concurrent_ignited_cells</span>       <span class="org-operator">=</span> spot_ignitions.get(ignition_time)
@@ -7208,7 +7208,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration<span class="org-operator">=</span><span class="org-constant">None</span>, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>,
-                               max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3, spot_ignitions<span class="org-operator">=</span>{}, spotting_config<span class="org-operator">=</span><span class="org-constant">None</span>):
+                               max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3, spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
@@ -7250,7 +7250,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)</span>
 <span class="org-doc">    - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
 <span class="org-doc">    - spot_ignitions            :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
-<span class="org-doc">    - spotting_config           :: dictionary of spotting parameters (Optional: needed for spotting)</span>
+<span class="org-doc">    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)</span>
 <span class="org-doc">      - random_seed                   :: integer to seed a numpy.random.Generator object</span>
 <span class="org-doc">      - ember_production_rate         :: embers/kJ</span>
 <span class="org-doc">      - mean_distance                 :: meters</span>
@@ -7308,8 +7308,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Make a copy of the phi matrix to use for intermediate calculations in each timestep</span>
     <span class="org-variable-name">output_matrices</span>[<span class="org-string">"phi_star"</span>] <span class="org-operator">=</span> np.copy(phi_matrix)
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a numpy.random.Generator object to produce random samples if spotting_config is provided</span>
-    <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> np.random.default_rng(seed<span class="org-operator">=</span>spotting_config[<span class="org-string">"random_seed"</span>]) <span class="org-keyword">if</span> spotting_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a numpy.random.Generator object to produce random samples if spot_config is provided</span>
+    <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> np.random.default_rng(seed<span class="org-operator">=</span>spot_config[<span class="org-string">"random_seed"</span>]) <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the fire until an exit condition is reached</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: I don't think the "no burnable cells" condition can ever be met currently.</span>
@@ -7324,7 +7324,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-variable-name">results</span> <span class="org-operator">=</span> spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
                                            max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spotting_config, rand_gen)
+                                           spot_ignitions, spot_config, rand_gen)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Reset spread inputs</span>
         <span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> results[<span class="org-string">"simulation_time"</span>]
@@ -7341,7 +7341,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-string">"stop_time"</span>      : simulation_time,
         <span class="org-string">"stop_condition"</span> : <span class="org-string">"max duration reached"</span> <span class="org-keyword">if</span> <span class="org-builtin">len</span>(tracked_cells) <span class="org-operator">&gt;</span> 0 <span class="org-keyword">else</span> <span class="org-string">"no burnable cells"</span>,
         <span class="org-string">"output_matrices"</span>: output_matrices,
-    } <span class="org-operator">|</span> ({<span class="org-string">"spot_ignitions"</span> : spot_ignitions} <span class="org-keyword">if</span> spotting_config <span class="org-keyword">else</span> {})
+    } <span class="org-operator">|</span> ({<span class="org-string">"spot_ignitions"</span> : spot_ignitions} <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> {})
 </pre>
 </div>
 </div>
@@ -7755,7 +7755,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the spotting parameters</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-variable-name">spotting_config</span> <span class="org-operator">=</span> {
+<span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> {
     <span class="org-string">"random_seed"</span>                 : 1234567890,
     <span class="org-string">"ember_production_rate"</span>       : 1e<span class="org-operator">-</span>6,       <span class="org-comment-delimiter"># </span><span class="org-comment">embers/kJ</span>
     <span class="org-string">"mean_distance"</span>               : 10.0,       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
@@ -7772,7 +7772,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
                                                      start_time, max_duration, spot_ignitions<span class="org-operator">=</span>{},
-                                                     spotting_config<span class="org-operator">=</span>spotting_config)
+                                                     spot_config<span class="org-operator">=</span>spot_config)
 
 <span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]              <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]         <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
@@ -8321,26 +8321,26 @@ the properties of the log-normal distribution:
 <pre class="src src-python" id="resolve-spotting-lognormal-elmfire"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> log, sqrt
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">resolve_exp_delta_x</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_exp_delta_x</span>(spot_config, fireline_intensity, wind_speed_20ft):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Computes the expected value E[&#916;X] (in meters) of the downwind spotting distance &#916;X given:</span>
-<span class="org-doc">    - spotting_config    :: a map of spotting parameters</span>
+<span class="org-doc">    - spot_config        :: a map of spotting parameters</span>
 <span class="org-doc">    - fireline_intensity :: kW/m</span>
 <span class="org-doc">    - wind_speed_20ft    :: m/s</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">mean_distance</span> <span class="org-operator">=</span> spotting_config[<span class="org-string">"mean_distance"</span>]
-    <span class="org-variable-name">flin_exp</span>      <span class="org-operator">=</span> spotting_config[<span class="org-string">"flin_exp"</span>]
-    <span class="org-variable-name">ws_exp</span>        <span class="org-operator">=</span> spotting_config[<span class="org-string">"ws_exp"</span>]
+    <span class="org-variable-name">mean_distance</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"mean_distance"</span>]
+    <span class="org-variable-name">flin_exp</span>      <span class="org-operator">=</span> spot_config[<span class="org-string">"flin_exp"</span>]
+    <span class="org-variable-name">ws_exp</span>        <span class="org-operator">=</span> spot_config[<span class="org-string">"ws_exp"</span>]
     <span class="org-keyword">return</span> mean_distance <span class="org-operator">*</span> (fireline_intensity <span class="org-operator">**</span> flin_exp) <span class="org-operator">*</span> (wind_speed_20ft <span class="org-operator">**</span> ws_exp)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">resolve_var_delta_x</span>(spotting_config, exp_delta_x):
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_var_delta_x</span>(spot_config, exp_delta_x):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Computes the variance Var[&#916;X] (in m^2) of the downwind spotting distance &#916;X given:</span>
-<span class="org-doc">    - spotting_config :: a map of spotting parameters</span>
-<span class="org-doc">    - exp_delta_x     :: meters (E[&#916;X])</span>
+<span class="org-doc">    - spot_config :: a map of spotting parameters</span>
+<span class="org-doc">    - exp_delta_x :: meters (E[&#916;X])</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> spotting_config[<span class="org-string">"normalized_distance_variance"</span>] <span class="org-operator">*</span> exp_delta_x
+    <span class="org-keyword">return</span> spot_config[<span class="org-string">"normalized_distance_variance"</span>] <span class="org-operator">*</span> exp_delta_x
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">lognormal_mu_from_moments</span>(mean, variance):
@@ -8358,12 +8358,12 @@ the properties of the log-normal distribution:
     <span class="org-keyword">return</span> sqrt(log(1.0 <span class="org-operator">+</span> variance <span class="org-operator">/</span> (mean <span class="org-operator">**</span> 2.0)))
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">resolve_lognormal_params</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_lognormal_params</span>(spot_config, fireline_intensity, wind_speed_20ft):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">exp_delta_x</span> <span class="org-operator">=</span> resolve_exp_delta_x(spotting_config, fireline_intensity, wind_speed_20ft)
-    <span class="org-variable-name">var_delta_x</span> <span class="org-operator">=</span> resolve_var_delta_x(spotting_config, exp_delta_x)
+    <span class="org-variable-name">exp_delta_x</span> <span class="org-operator">=</span> resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft)
+    <span class="org-variable-name">var_delta_x</span> <span class="org-operator">=</span> resolve_var_delta_x(spot_config, exp_delta_x)
     <span class="org-keyword">return</span> {
         <span class="org-string">"prob.lognormal.mu"</span>   : lognormal_mu_from_moments(exp_delta_x, var_delta_x),
         <span class="org-string">"prob.lognormal.sigma"</span>: lognormal_sigma_from_moments(exp_delta_x, var_delta_x),
@@ -8538,11 +8538,11 @@ exponential functions:
     <span class="org-keyword">return</span> sqrt(exp(sigma_x <span class="org-operator">**</span> 2.0) <span class="org-operator">-</span> 1.0)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">delta_x_sampler</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+<span class="org-keyword">def</span> <span class="org-function-name">delta_x_sampler</span>(spot_config, fireline_intensity, wind_speed_20ft):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns a function for randomly sampling &#916;X, the spotting jump along the wind direction (in meters).</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft)
+    <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     <span class="org-variable-name">mu_x</span>      <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.mu"</span>]    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-variable-name">sigma_x</span>   <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.sigma"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
@@ -8564,26 +8564,26 @@ exponential functions:
     <span class="org-keyword">return</span> sigma_y_scalar_m <span class="org-operator">*</span> avg_deltax <span class="org-operator">*</span> (es2h <span class="org-operator">+</span> 1.0) <span class="org-operator">*</span> (es2h <span class="org-operator">-</span> 1.0) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">himoto_resolve_default_sigma_y</span>(spotting_config, fireline_intensity, wind_speed_20ft):
-    <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spotting_config, fireline_intensity, wind_speed_20ft)
+<span class="org-keyword">def</span> <span class="org-function-name">himoto_resolve_default_sigma_y</span>(spot_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     <span class="org-variable-name">mu_x</span>      <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.mu"</span>]    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-variable-name">sigma_x</span>   <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.sigma"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">return</span> himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">resolve_delta_y_sigma</span>(spotting_config, fireline_intensity, wind_speed_20ft):
-    <span class="org-variable-name">delta_y_sigma</span> <span class="org-operator">=</span> spotting_config.get(<span class="org-string">"delta_y_sigma"</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">resolve_delta_y_sigma</span>(spot_config, fireline_intensity, wind_speed_20ft):
+    <span class="org-variable-name">delta_y_sigma</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"delta_y_sigma"</span>)
     <span class="org-keyword">if</span> delta_y_sigma <span class="org-operator">!=</span> <span class="org-constant">None</span>:
         <span class="org-keyword">return</span> delta_y_sigma <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">else</span>:
-        <span class="org-keyword">return</span> himoto_resolve_default_sigma_y(spotting_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+        <span class="org-keyword">return</span> himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">delta_y_sampler</span>(spotting_config, fireline_intensity, wind_speed_20ft):
+<span class="org-keyword">def</span> <span class="org-function-name">delta_y_sampler</span>(spot_config, fireline_intensity, wind_speed_20ft):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns a function for randomly sampling &#916;Y, the spotting jump perpendicular to the wind direction (in meters).</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_delta_y_sigma(spotting_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_normal(rand_gen, 0.0, sigma_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
 
@@ -8595,11 +8595,11 @@ exponential functions:
 <span class="org-doc">    parallel and perpendicular to the wind. &#916;X will typically be positive (downwind),</span>
 <span class="org-doc">    and positive &#916;Y means to the right of the downwind direction.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">spotting_config</span>     <span class="org-operator">=</span> inputs[<span class="org-string">"spotting"</span>]
+    <span class="org-variable-name">spot_config</span>         <span class="org-operator">=</span> inputs[<span class="org-string">"spotting"</span>]
     <span class="org-variable-name">rand_gen</span>            <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
     <span class="org-variable-name">wind_speed_20ft_mps</span> <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)
-    <span class="org-variable-name">sample_delta_x_fn</span>   <span class="org-operator">=</span> delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
-    <span class="org-variable-name">sample_delta_y_fn</span>   <span class="org-operator">=</span> delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+    <span class="org-variable-name">sample_delta_x_fn</span>   <span class="org-operator">=</span> delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+    <span class="org-variable-name">sample_delta_y_fn</span>   <span class="org-operator">=</span> delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
     <span class="org-keyword">return</span> [(sample_delta_x_fn(rand_gen), sample_delta_y_fn(rand_gen)) <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)]
 </pre>
 </div>
@@ -8652,16 +8652,16 @@ probability can be configured per fuel model.
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">is_surface_spot_fire</span>(inputs, fuel_model_number, fireline_intensity):
-    <span class="org-variable-name">spotting_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
-    <span class="org-keyword">if</span> spotting_config:
-        <span class="org-variable-name">surface_fire_spotting_config</span> <span class="org-operator">=</span> spotting_config.get(<span class="org-string">"surface_fire_spotting"</span>)
-        <span class="org-keyword">if</span> surface_fire_spotting_config:
-            <span class="org-variable-name">critical_fireline_intensity_mapping</span> <span class="org-operator">=</span> surface_fire_spotting_config.get(<span class="org-string">"critical_fireline_intensity"</span>)
+    <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
+    <span class="org-keyword">if</span> spot_config:
+        <span class="org-variable-name">surface_fire_spot_config</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"surface_fire_spotting"</span>)
+        <span class="org-keyword">if</span> surface_fire_spot_config:
+            <span class="org-variable-name">critical_fireline_intensity_mapping</span> <span class="org-operator">=</span> surface_fire_spot_config.get(<span class="org-string">"critical_fireline_intensity"</span>)
             <span class="org-variable-name">critical_fireline_intensity</span>         <span class="org-operator">=</span> (intranges_mapping_lookup(critical_fireline_intensity_mapping,
                                                                             fuel_model_number)
                                                    <span class="org-keyword">or</span> 0.0)
             <span class="org-keyword">if</span> fireline_intensity <span class="org-operator">&gt;</span> critical_fireline_intensity:
-                <span class="org-variable-name">spotting_percent_mapping</span> <span class="org-operator">=</span> surface_fire_spotting_config.get(<span class="org-string">"surface_fire_spotting_percent"</span>)
+                <span class="org-variable-name">spotting_percent_mapping</span> <span class="org-operator">=</span> surface_fire_spot_config.get(<span class="org-string">"surface_fire_spotting_percent"</span>)
                 <span class="org-variable-name">spotting_percent</span>         <span class="org-operator">=</span> intranges_mapping_lookup(spotting_percent_mapping, fuel_model_number) <span class="org-keyword">or</span> 0.0
                 <span class="org-variable-name">rand_gen</span>                 <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
                 <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spotting_percent
@@ -8678,9 +8678,9 @@ probability can be configured per fuel model.
 <span class="org-doc">    Determine whether crowning causes spot fires. Config key `spotting` should</span>
 <span class="org-doc">    take either a vector of probabilities (0-1) or a single spotting probability.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">spotting_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
-    <span class="org-keyword">if</span> spotting_config:
-        <span class="org-variable-name">spotting_percent</span> <span class="org-operator">=</span> spotting_config.get(<span class="org-string">"crown_fire_spotting_percent"</span>)
+    <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
+    <span class="org-keyword">if</span> spot_config:
+        <span class="org-variable-name">spotting_percent</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"crown_fire_spotting_percent"</span>)
         <span class="org-keyword">if</span> spotting_percent:
             <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
             <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spotting_percent
@@ -9062,7 +9062,7 @@ ignited.
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_firebrands</span>(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_ember_count, spotting_config):
+                      rand_gen, expected_ember_count, spot_config):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
@@ -9084,7 +9084,7 @@ ignited.
 <span class="org-doc">    - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns</span>
 <span class="org-doc">    - rand_gen                  :: numpy.random.Generator</span>
 <span class="org-doc">    - expected_ember_count      :: expected number of firebrands to cast</span>
-<span class="org-doc">    - spotting_config           :: dictionary of spotting parameters</span>
+<span class="org-doc">    - spot_config               :: dictionary of spotting parameters</span>
 <span class="org-doc">      - mean_distance                 :: ? TODO: Record these parameters' types</span>
 <span class="org-doc">      - flin_exp                      :: ?</span>
 <span class="org-doc">      - ws_exp                        :: ?</span>
@@ -9121,7 +9121,7 @@ ignited.
         (<span class="org-variable-name">_</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)              <span class="org-operator">=</span> fuel_model_cube.shape
         (<span class="org-variable-name">_</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
         (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                    <span class="org-operator">=</span> space_time_coordinate
-        <span class="org-variable-name">decay_constant</span>               <span class="org-operator">=</span> spotting_config[<span class="org-string">"decay_constant"</span>]
+        <span class="org-variable-name">decay_constant</span>               <span class="org-operator">=</span> spot_config[<span class="org-string">"decay_constant"</span>]
         <span class="org-variable-name">upwind_direction</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"upwind_direction"</span>].get(t,y,x)
         <span class="org-variable-name">downwind_direction</span>           <span class="org-operator">=</span> radians(conv.opposite_direction(upwind_direction))
         <span class="org-variable-name">cos_wdir</span>                     <span class="org-operator">=</span> cos(downwind_direction)
@@ -9130,8 +9130,8 @@ ignited.
         <span class="org-variable-name">wind_speed_10m</span>               <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"wind_speed_10m"</span>].get(t,y,x)          <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
         <span class="org-variable-name">wind_speed_20ft</span>              <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
         <span class="org-variable-name">wind_speed_20ft_mps</span>          <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)                     <span class="org-comment-delimiter"># </span><span class="org-comment">m/s</span>
-        <span class="org-variable-name">sample_delta_y_fn</span>            <span class="org-operator">=</span> delta_y_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
-        <span class="org-variable-name">sample_delta_x_fn</span>            <span class="org-operator">=</span> delta_x_sampler(spotting_config, fireline_intensity, wind_speed_20ft_mps)
+        <span class="org-variable-name">sample_delta_y_fn</span>            <span class="org-operator">=</span> delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+        <span class="org-variable-name">sample_delta_x_fn</span>            <span class="org-operator">=</span> delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells</span>
