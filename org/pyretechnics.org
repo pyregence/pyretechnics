@@ -6629,7 +6629,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - ws_exp                        :: mean_distance multiplier [U^ws_exp]
       - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]
       - delta_y_sigma                 :: meters
-      - decay_constant                :: 1/m
+      - decay_distance                :: meters
 
     return a dictionary with these keys:
     - stop_time            :: minutes
@@ -7124,7 +7124,7 @@ spot_config = {
     "ws_exp"                      : 0.55,       # mean_distance multiplier [U^ws_exp]
     "normalized_distance_variance": 425.0,      # meters [Var(dx) = normalized_distance_variance * E(dx)]
     "delta_y_sigma"               : 100.0,      # meters
-    "decay_constant"              : 0.005,      # 1/m
+    "decay_distance"              : 200.0,      # meters
 }
 
 #============================================================================================
@@ -7896,7 +7896,7 @@ decays exponentially with distance (i.e. adding $1/\lambda_s$ to the
 distance divides the probability by $e$, or equivalently $l \mapsto
 P(I)_l$ has derivative $\lambda_s P(I)_l$). Yet another way to say
 this is that, if $\lambda_s = \text{0.005 m}^{-1}$, then each added
-meter decreases $P(I)_l$ by 5%.
+meter decreases $P(I)_l$ by 0.5%.
 
 #+NAME: firebrand-ignition-probability
 #+begin_src python
@@ -7939,18 +7939,19 @@ def schroeder_ignition_probability(temperature, fine_fuel_moisture):
     return min(P_I, 1.0)
 
 
-def spot_ignition_probability(temperature, fine_fuel_moisture, decay_constant, spotting_distance):
+def spot_ignition_probability(temperature, fine_fuel_moisture, decay_distance, spotting_distance):
     """
     Returns the distance-decayed probability of spot fire ignition (Perryman 2012) given:
     - temperature        :: degrees Celsius
     - fine_fuel_moisture :: 0-1
-    - decay_constant     :: m^-1   (lambda)
+    - decay_distance     :: meters (1/lambda)
     - spotting_distance  :: meters (d)
 
     P(Spot Ignition) = P(I) * exp(-lambda * d)
     """
-    P_I = schroeder_ignition_probability(temperature, fine_fuel_moisture)
-    return P_I * exp(-decay_constant * spotting_distance)
+    flight_survival_probability = exp(-spotting_distance / decay_distance)
+    ignition_probability        = schroeder_ignition_probability(temperature, fine_fuel_moisture)
+    return flight_survival_probability * ignition_probability
 #+end_src
 
 A firebrand will cause an unburned cell to transition to a burned
@@ -8142,7 +8143,7 @@ def cast_firebrand(rand_gen,
                    source_t,
                    source_y,
                    source_x,
-                   decay_constant,
+                   decay_distance,
                    cos_wdir,
                    sin_wdir,
                    sample_delta_y_fn,
@@ -8180,7 +8181,7 @@ def cast_firebrand(rand_gen,
             temperature        = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
             fine_fuel_moisture = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
             probability        = spot_ignition_probability(temperature, fine_fuel_moisture,
-                                                           decay_constant, spotting_distance)
+                                                           decay_distance, spotting_distance)
             if is_spot_ignition(rand_gen, probability):
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
@@ -8215,7 +8216,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - ws_exp                        :: ?
       - normalized_distance_variance  :: ?
       - delta_y_sigma                 :: ?
-      - decay_constant                :: ?
+      - decay_distance                :: meters
 
     samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
     casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
@@ -8246,7 +8247,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         (_, rows, cols)              = fuel_model_cube.shape
         (_, cell_height, cell_width) = cube_resolution
         (t, y, x)                    = space_time_coordinate
-        decay_constant               = spot_config["decay_constant"]
+        decay_distance               = spot_config["decay_distance"]
         upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
         downwind_direction           = radians(conv.opposite_direction(upwind_direction))
         cos_wdir                     = cos(downwind_direction)
@@ -8276,7 +8277,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
                                                             t,
                                                             y,
                                                             x,
-                                                            decay_constant,
+                                                            decay_distance,
                                                             cos_wdir,
                                                             sin_wdir,
                                                             sample_delta_y_fn,
@@ -8684,7 +8685,7 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   | Parameter Name                 | Type    | Units                                                | Fire Model |
   |--------------------------------+---------+------------------------------------------------------+------------|
   | firebrands_per_cell            | int     | number of firebrands to cast from each spotting cell | GridFire   |
-  | decay_constant                 | float   | TODO: find units range                               | GridFire   |
+  | decay_distance                 | float   | meters                                               | GridFire   |
   | mean_distance                  | float   | TODO: find units range                               | GridFire   |
   | flin_exp                       | float   | TODO: find units range                               | GridFire   |
   | ws_exp                         | float   | TODO: find units range                               | GridFire   |

@@ -1009,7 +1009,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - ws_exp                        :: mean_distance multiplier [U^ws_exp]
       - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]
       - delta_y_sigma                 :: meters
-      - decay_constant                :: 1/m
+      - decay_distance                :: meters
 
     return a dictionary with these keys:
     - stop_time            :: minutes

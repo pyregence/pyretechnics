@@ -7258,7 +7258,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - ws_exp                        :: mean_distance multiplier [U^ws_exp]</span>
 <span class="org-doc">      - normalized_distance_variance  :: meters [Var(dx) = normalized_distance_variance * E(dx)]</span>
 <span class="org-doc">      - delta_y_sigma                 :: meters</span>
-<span class="org-doc">      - decay_constant                :: 1/m</span>
+<span class="org-doc">      - decay_distance                :: meters</span>
 
 <span class="org-doc">    return a dictionary with these keys:</span>
 <span class="org-doc">    - stop_time            :: minutes</span>
@@ -7763,7 +7763,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
     <span class="org-string">"ws_exp"</span>                      : 0.55,       <span class="org-comment-delimiter"># </span><span class="org-comment">mean_distance multiplier [U^ws_exp]</span>
     <span class="org-string">"normalized_distance_variance"</span>: 425.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters [Var(dx) = normalized_distance_variance * E(dx)]</span>
     <span class="org-string">"delta_y_sigma"</span>               : 100.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-string">"decay_constant"</span>              : 0.005,      <span class="org-comment-delimiter"># </span><span class="org-comment">1/m</span>
+    <span class="org-string">"decay_distance"</span>              : 200.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -8678,7 +8678,7 @@ decays exponentially with distance (i.e. adding \(1/\lambda_s\) to the
 distance divides the probability by \(e\), or equivalently \(l \mapsto
 P(I)_l\) has derivative \(\lambda_s P(I)_l\)). Yet another way to say
 this is that, if \(\lambda_s = \text{0.005 m}^{-1}\), then each added
-meter decreases \(P(I)_l\) by 5%.
+meter decreases \(P(I)_l\) by 0.5%.
 </p>
 
 <div class="org-src-container">
@@ -8721,18 +8721,19 @@ meter decreases \(P(I)_l\) by 5%.
     <span class="org-keyword">return</span> <span class="org-builtin">min</span>(P_I, 1.0)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">spot_ignition_probability</span>(temperature, fine_fuel_moisture, decay_constant, spotting_distance):
+<span class="org-keyword">def</span> <span class="org-function-name">spot_ignition_probability</span>(temperature, fine_fuel_moisture, decay_distance, spotting_distance):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns the distance-decayed probability of spot fire ignition (Perryman 2012) given:</span>
 <span class="org-doc">    - temperature        :: degrees Celsius</span>
 <span class="org-doc">    - fine_fuel_moisture :: 0-1</span>
-<span class="org-doc">    - decay_constant     :: m^-1   (lambda)</span>
+<span class="org-doc">    - decay_distance     :: meters (1/lambda)</span>
 <span class="org-doc">    - spotting_distance  :: meters (d)</span>
 
 <span class="org-doc">    P(Spot Ignition) = P(I) * exp(-lambda * d)</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">P_I</span> <span class="org-operator">=</span> schroeder_ignition_probability(temperature, fine_fuel_moisture)
-    <span class="org-keyword">return</span> P_I <span class="org-operator">*</span> exp(<span class="org-operator">-</span>decay_constant <span class="org-operator">*</span> spotting_distance)
+    <span class="org-variable-name">flight_survival_probability</span> <span class="org-operator">=</span> exp(<span class="org-operator">-</span>spotting_distance <span class="org-operator">/</span> decay_distance)
+    <span class="org-variable-name">ignition_probability</span>        <span class="org-operator">=</span> schroeder_ignition_probability(temperature, fine_fuel_moisture)
+    <span class="org-keyword">return</span> flight_survival_probability <span class="org-operator">*</span> ignition_probability
 </pre>
 </div>
 
@@ -8932,7 +8933,7 @@ ignited.
                    source_t,
                    source_y,
                    source_x,
-                   decay_constant,
+                   decay_distance,
                    cos_wdir,
                    sin_wdir,
                    sample_delta_y_fn,
@@ -8970,7 +8971,7 @@ ignited.
             <span class="org-variable-name">temperature</span>        <span class="org-operator">=</span> temperature_cube.get(source_t, target_y, target_x)            <span class="org-comment-delimiter"># </span><span class="org-comment">degrees Celsius</span>
             <span class="org-variable-name">fine_fuel_moisture</span> <span class="org-operator">=</span> fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) <span class="org-comment-delimiter"># </span><span class="org-comment">kg/kg</span>
             <span class="org-variable-name">probability</span>        <span class="org-operator">=</span> spot_ignition_probability(temperature, fine_fuel_moisture,
-                                                           decay_constant, spotting_distance)
+                                                           decay_distance, spotting_distance)
             <span class="org-keyword">if</span> is_spot_ignition(rand_gen, probability):
                 <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand ignited the target cell, so return its coordinates for later processing</span>
                 <span class="org-keyword">return</span> (target_y, target_x)
@@ -9005,7 +9006,7 @@ ignited.
 <span class="org-doc">      - ws_exp                        :: ?</span>
 <span class="org-doc">      - normalized_distance_variance  :: ?</span>
 <span class="org-doc">      - delta_y_sigma                 :: ?</span>
-<span class="org-doc">      - decay_constant                :: ?</span>
+<span class="org-doc">      - decay_distance                :: meters</span>
 
 <span class="org-doc">    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,</span>
 <span class="org-doc">    casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing</span>
@@ -9036,7 +9037,7 @@ ignited.
         (<span class="org-variable-name">_</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)              <span class="org-operator">=</span> fuel_model_cube.shape
         (<span class="org-variable-name">_</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
         (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                    <span class="org-operator">=</span> space_time_coordinate
-        <span class="org-variable-name">decay_constant</span>               <span class="org-operator">=</span> spot_config[<span class="org-string">"decay_constant"</span>]
+        <span class="org-variable-name">decay_distance</span>               <span class="org-operator">=</span> spot_config[<span class="org-string">"decay_distance"</span>]
         <span class="org-variable-name">upwind_direction</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"upwind_direction"</span>].get(t,y,x)
         <span class="org-variable-name">downwind_direction</span>           <span class="org-operator">=</span> radians(conv.opposite_direction(upwind_direction))
         <span class="org-variable-name">cos_wdir</span>                     <span class="org-operator">=</span> cos(downwind_direction)
@@ -9066,7 +9067,7 @@ ignited.
                                                             t,
                                                             y,
                                                             x,
-                                                            decay_constant,
+                                                            decay_distance,
                                                             cos_wdir,
                                                             sin_wdir,
                                                             sample_delta_y_fn,

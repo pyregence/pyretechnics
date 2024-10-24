@@ -256,18 +256,19 @@ def schroeder_ignition_probability(temperature, fine_fuel_moisture):
     return min(P_I, 1.0)
 
 
-def spot_ignition_probability(temperature, fine_fuel_moisture, decay_constant, spotting_distance):
+def spot_ignition_probability(temperature, fine_fuel_moisture, decay_distance, spotting_distance):
     """
     Returns the distance-decayed probability of spot fire ignition (Perryman 2012) given:
     - temperature        :: degrees Celsius
     - fine_fuel_moisture :: 0-1
-    - decay_constant     :: m^-1   (lambda)
+    - decay_distance     :: meters (1/lambda)
     - spotting_distance  :: meters (d)
 
     P(Spot Ignition) = P(I) * exp(-lambda * d)
     """
-    P_I = schroeder_ignition_probability(temperature, fine_fuel_moisture)
-    return P_I * exp(-decay_constant * spotting_distance)
+    flight_survival_probability = exp(-spotting_distance / decay_distance)
+    ignition_probability        = schroeder_ignition_probability(temperature, fine_fuel_moisture)
+    return flight_survival_probability * ignition_probability
 # firebrand-ignition-probability ends here
 # [[file:../../org/pyretechnics.org::firebrands-time-of-ignition][firebrands-time-of-ignition]]
 from math import sqrt
@@ -358,7 +359,7 @@ def cast_firebrand(rand_gen,
                    source_t,
                    source_y,
                    source_x,
-                   decay_constant,
+                   decay_distance,
                    cos_wdir,
                    sin_wdir,
                    sample_delta_y_fn,
@@ -396,7 +397,7 @@ def cast_firebrand(rand_gen,
             temperature        = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
             fine_fuel_moisture = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
             probability        = spot_ignition_probability(temperature, fine_fuel_moisture,
-                                                           decay_constant, spotting_distance)
+                                                           decay_distance, spotting_distance)
             if is_spot_ignition(rand_gen, probability):
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
@@ -431,7 +432,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - ws_exp                        :: ?
       - normalized_distance_variance  :: ?
       - delta_y_sigma                 :: ?
-      - decay_constant                :: ?
+      - decay_distance                :: meters
 
     samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
     casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
@@ -462,7 +463,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         (_, rows, cols)              = fuel_model_cube.shape
         (_, cell_height, cell_width) = cube_resolution
         (t, y, x)                    = space_time_coordinate
-        decay_constant               = spot_config["decay_constant"]
+        decay_distance               = spot_config["decay_distance"]
         upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
         downwind_direction           = radians(conv.opposite_direction(upwind_direction))
         cos_wdir                     = cos(downwind_direction)
@@ -492,7 +493,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
                                                             t,
                                                             y,
                                                             x,
-                                                            decay_constant,
+                                                            decay_distance,
                                                             cos_wdir,
                                                             sin_wdir,
                                                             sample_delta_y_fn,
