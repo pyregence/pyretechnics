@@ -396,7 +396,7 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#for-developers-spot">10.1. For Developers</a>
 <ul>
-<li><a href="#expected-ember-production">10.1.1. Expected Ember Production</a></li>
+<li><a href="#expected-firebrand-production">10.1.1. Expected Firebrand Production</a></li>
 <li><a href="#firebrand-dispersal-model">10.1.2. Firebrand Dispersal Model</a></li>
 <li><a href="#resolution-of-log-normal-parameters">10.1.3. Resolution of Log-Normal Parameters</a></li>
 <li><a href="#wind-perpendicular-dispersal">10.1.4. Wind-Perpendicular Dispersal</a></li>
@@ -6988,7 +6988,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <div class="org-src-container">
 <pre class="src src-python" id="spread-phi-field"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
-<span class="org-keyword">from</span> pyretechnics.spot_fire <span class="org-keyword">import</span> expected_ember_production, spread_firebrands
+<span class="org-keyword">from</span> pyretechnics.spot_fire <span class="org-keyword">import</span> expected_firebrand_production, spread_firebrands
 <span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
 
 
@@ -7042,8 +7042,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">flame_length_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
     <span class="org-variable-name">time_of_arrival_matrix</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the ember_production_rate from the spot_config if provided</span>
-    <span class="org-variable-name">ember_production_rate</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"ember_production_rate"</span>] <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the firebrand_production_rate from the spot_config if provided</span>
+    <span class="org-variable-name">firebrand_production_rate</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"firebrand_production_rate"</span>] <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize max spread rates in the x and y dimensions to 0.0</span>
     <span class="org-variable-name">max_spread_rate_x</span> <span class="org-operator">=</span> 0.0
@@ -7155,18 +7155,18 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
                 <span class="org-comment-delimiter"># </span><span class="org-comment">Cast firebrands, update firebrand_count_matrix, and update spot_ignitions</span>
                 <span class="org-keyword">if</span> spot_config:
-                    <span class="org-variable-name">t_cast</span>                <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
-                    <span class="org-variable-name">space_time_coordinate</span> <span class="org-operator">=</span> (t_cast, y, x)
-                    <span class="org-variable-name">slope</span>                 <span class="org-operator">=</span> slope_cube.get(t_cast, y, x)
-                    <span class="org-variable-name">aspect</span>                <span class="org-operator">=</span> aspect_cube.get(t_cast, y, x)
-                    <span class="org-variable-name">elevation_gradient</span>    <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
-                    <span class="org-variable-name">expected_ember_count</span>  <span class="org-operator">=</span> expected_ember_production(fire_behavior,
-                                                                      elevation_gradient,
-                                                                      cube_resolution,
-                                                                      ember_production_rate)
-                    <span class="org-variable-name">new_ignitions</span>         <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                              space_time_coordinate, rand_gen, expected_ember_count,
-                                                              spot_config)
+                    <span class="org-variable-name">t_cast</span>                   <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
+                    <span class="org-variable-name">space_time_coordinate</span>    <span class="org-operator">=</span> (t_cast, y, x)
+                    <span class="org-variable-name">slope</span>                    <span class="org-operator">=</span> slope_cube.get(t_cast, y, x)
+                    <span class="org-variable-name">aspect</span>                   <span class="org-operator">=</span> aspect_cube.get(t_cast, y, x)
+                    <span class="org-variable-name">elevation_gradient</span>       <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
+                    <span class="org-variable-name">expected_firebrand_count</span> <span class="org-operator">=</span> expected_firebrand_production(fire_behavior,
+                                                                             elevation_gradient,
+                                                                             cube_resolution,
+                                                                             firebrand_production_rate)
+                    <span class="org-variable-name">new_ignitions</span>            <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
+                                                                 space_time_coordinate, rand_gen,
+                                                                 expected_firebrand_count, spot_config)
                     <span class="org-keyword">if</span> new_ignitions:
                         (<span class="org-variable-name">ignition_time</span>, <span class="org-variable-name">ignited_cells</span>) <span class="org-operator">=</span> new_ignitions
                         <span class="org-variable-name">concurrent_ignited_cells</span>       <span class="org-operator">=</span> spot_ignitions.get(ignition_time)
@@ -7252,7 +7252,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - spot_ignitions            :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
 <span class="org-doc">    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)</span>
 <span class="org-doc">      - random_seed                   :: integer to seed a numpy.random.Generator object</span>
-<span class="org-doc">      - ember_production_rate         :: embers/kJ</span>
+<span class="org-doc">      - firebrand_production_rate     :: firebrands/kJ</span>
 <span class="org-doc">      - mean_distance                 :: meters</span>
 <span class="org-doc">      - flin_exp                      :: mean_distance multiplier [I^flin_exp]</span>
 <span class="org-doc">      - ws_exp                        :: mean_distance multiplier [U^ws_exp]</span>
@@ -7757,7 +7757,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 
 <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> {
     <span class="org-string">"random_seed"</span>                 : 1234567890,
-    <span class="org-string">"ember_production_rate"</span>       : 1e<span class="org-operator">-</span>6,       <span class="org-comment-delimiter"># </span><span class="org-comment">embers/kJ</span>
+    <span class="org-string">"firebrand_production_rate"</span>   : 1e<span class="org-operator">-</span>6,       <span class="org-comment-delimiter"># </span><span class="org-comment">firebrands/kJ</span>
     <span class="org-string">"mean_distance"</span>               : 10.0,       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-string">"flin_exp"</span>                    : 0.3,        <span class="org-comment-delimiter"># </span><span class="org-comment">mean_distance multiplier [I^flin_exp]</span>
     <span class="org-string">"ws_exp"</span>                      : 0.55,       <span class="org-comment-delimiter"># </span><span class="org-comment">mean_distance multiplier [U^ws_exp]</span>
@@ -8077,26 +8077,27 @@ Future Spot Ignitions:
 <p>
 Whether a fire is spreading through surface or canopy fuels, it is
 possible that small pieces of the burning fuels may be lofted by winds
-ahead of the fire front. When these burning embers land in
+ahead of the fire front. When these burning firebrands land in
 sufficiently dry fuels, they may ignite new fires under the right
 circumstances. Fires created in this way are called "spot fires" and
 are the subject of this chapter. The following sections provide
-functions for calculating the probability and rate of ember generation
-from burning fuels, the lofting distance and direction of these
-embers, the times at which they will be deposited ahead of the fire
-front, and their likelihood of igniting spot fires once deposited.
+functions for calculating the probability and rate of firebrand
+generation from burning fuels, the lofting distance and direction of
+these firebrands, the times at which they will be deposited ahead of
+the fire front, and their likelihood of igniting spot fires once
+deposited.
 </p>
 </div>
-<div id="outline-container-expected-ember-production" class="outline-4">
-<h4 id="expected-ember-production"><span class="section-number-4">10.1.1.</span> Expected Ember Production</h4>
-<div class="outline-text-4" id="text-expected-ember-production">
+<div id="outline-container-expected-firebrand-production" class="outline-4">
+<h4 id="expected-firebrand-production"><span class="section-number-4">10.1.1.</span> Expected Firebrand Production</h4>
+<div class="outline-text-4" id="text-expected-firebrand-production">
 <div class="org-src-container">
-<pre class="src src-python" id="expected-ember-production"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+<pre class="src src-python" id="expected-firebrand-production"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">expected_ember_production</span>(fire_behavior, elevation_gradient, cube_resolution, ember_production_rate<span class="org-operator">=</span>0.03):
+<span class="org-keyword">def</span> <span class="org-function-name">expected_firebrand_production</span>(fire_behavior, elevation_gradient, cube_resolution, firebrand_production_rate<span class="org-operator">=</span>0.03):
     <span class="org-doc">"""</span>
-<span class="org-doc">    Return the expected number of embers produced by an entire cell when it burns given:</span>
+<span class="org-doc">    Return the expected number of firebrands produced by an entire cell when it burns given:</span>
 <span class="org-doc">    - fire_behavior         :: dictionary of surface or crown fire behavior values</span>
 <span class="org-doc">      - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"</span>
 <span class="org-doc">      - spread_rate              :: m/min</span>
@@ -8110,7 +8111,7 @@ front, and their likelihood of igniting spot fires once deposited.
 <span class="org-doc">      - band_duration            :: minutes</span>
 <span class="org-doc">      - cell_height              :: meters</span>
 <span class="org-doc">      - cell_width               :: meters</span>
-<span class="org-doc">    - ember_production_rate :: embers/kJ</span>
+<span class="org-doc">    - firebrand_production_rate  :: firebrands/kJ</span>
 <span class="org-doc">    """</span>
     <span class="org-keyword">if</span> fire_behavior[<span class="org-string">"spread_rate"</span>] <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> 0.0
@@ -8134,12 +8135,12 @@ front, and their likelihood of igniting spot fires once deposited.
         <span class="org-variable-name">cell_area</span>      <span class="org-operator">=</span> cell_height <span class="org-operator">*</span> cell_width <span class="org-operator">*</span> slope_factor <span class="org-comment-delimiter"># </span><span class="org-comment">m^2</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the expected number of embers produced in this cell</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the expected number of firebrands produced in this cell</span>
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-        <span class="org-variable-name">cell_heat_output</span> <span class="org-operator">=</span> heat_output_per_area <span class="org-operator">*</span> cell_area         <span class="org-comment-delimiter"># </span><span class="org-comment">kJ</span>
-        <span class="org-variable-name">ember_count</span>      <span class="org-operator">=</span> cell_heat_output <span class="org-operator">*</span> ember_production_rate <span class="org-comment-delimiter"># </span><span class="org-comment">number of embers</span>
-        <span class="org-keyword">return</span> ember_count
+        <span class="org-variable-name">cell_heat_output</span> <span class="org-operator">=</span> heat_output_per_area <span class="org-operator">*</span> cell_area             <span class="org-comment-delimiter"># </span><span class="org-comment">kJ</span>
+        <span class="org-variable-name">firebrand_count</span>  <span class="org-operator">=</span> cell_heat_output <span class="org-operator">*</span> firebrand_production_rate <span class="org-comment-delimiter"># </span><span class="org-comment">number of firebrands</span>
+        <span class="org-keyword">return</span> firebrand_count
 </pre>
 </div>
 </div>
@@ -8616,8 +8617,8 @@ probability can be configured per fuel model.
     <span class="org-keyword">return</span> rand_gen.poisson(mu)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">sample_number_of_firebrands</span>(rand_gen, expected_ember_count):
-    <span class="org-keyword">return</span> sample_poisson(rand_gen, expected_ember_count)
+<span class="org-keyword">def</span> <span class="org-function-name">sample_number_of_firebrands</span>(rand_gen, expected_firebrand_count):
+    <span class="org-keyword">return</span> sample_poisson(rand_gen, expected_firebrand_count)
 </pre>
 </div>
 
@@ -8976,7 +8977,7 @@ ignited.
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_firebrands</span>(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_ember_count, spot_config):
+                      rand_gen, expected_firebrand_count, spot_config):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>

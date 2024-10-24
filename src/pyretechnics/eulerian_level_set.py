@@ -739,7 +739,7 @@ def update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, 
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 import numpy as np
 import pyretechnics.conversion as conv
-from pyretechnics.spot_fire import expected_ember_production, spread_firebrands
+from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
 import pyretechnics.vector_utils as vu
 
 
@@ -793,8 +793,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
-    # Extract the ember_production_rate from the spot_config if provided
-    ember_production_rate = spot_config["ember_production_rate"] if spot_config else None
+    # Extract the firebrand_production_rate from the spot_config if provided
+    firebrand_production_rate = spot_config["firebrand_production_rate"] if spot_config else None
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
@@ -906,18 +906,18 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
-                    t_cast                = int(time_of_arrival_matrix[y,x] // band_duration)
-                    space_time_coordinate = (t_cast, y, x)
-                    slope                 = slope_cube.get(t_cast, y, x)
-                    aspect                = aspect_cube.get(t_cast, y, x)
-                    elevation_gradient    = calc_elevation_gradient(slope, aspect)
-                    expected_ember_count  = expected_ember_production(fire_behavior,
-                                                                      elevation_gradient,
-                                                                      cube_resolution,
-                                                                      ember_production_rate)
-                    new_ignitions         = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                              space_time_coordinate, rand_gen, expected_ember_count,
-                                                              spot_config)
+                    t_cast                   = int(time_of_arrival_matrix[y,x] // band_duration)
+                    space_time_coordinate    = (t_cast, y, x)
+                    slope                    = slope_cube.get(t_cast, y, x)
+                    aspect                   = aspect_cube.get(t_cast, y, x)
+                    elevation_gradient       = calc_elevation_gradient(slope, aspect)
+                    expected_firebrand_count = expected_firebrand_production(fire_behavior,
+                                                                             elevation_gradient,
+                                                                             cube_resolution,
+                                                                             firebrand_production_rate)
+                    new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
+                                                                 space_time_coordinate, rand_gen,
+                                                                 expected_firebrand_count, spot_config)
                     if new_ignitions:
                         (ignition_time, ignited_cells) = new_ignitions
                         concurrent_ignited_cells       = spot_ignitions.get(ignition_time)
@@ -1003,7 +1003,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: integer to seed a numpy.random.Generator object
-      - ember_production_rate         :: embers/kJ
+      - firebrand_production_rate     :: firebrands/kJ
       - mean_distance                 :: meters
       - flin_exp                      :: mean_distance multiplier [I^flin_exp]
       - ws_exp                        :: mean_distance multiplier [U^ws_exp]

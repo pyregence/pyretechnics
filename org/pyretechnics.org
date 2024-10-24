@@ -6359,7 +6359,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 #+begin_src python
 import numpy as np
 import pyretechnics.conversion as conv
-from pyretechnics.spot_fire import expected_ember_production, spread_firebrands
+from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
 import pyretechnics.vector_utils as vu
 
 
@@ -6413,8 +6413,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
-    # Extract the ember_production_rate from the spot_config if provided
-    ember_production_rate = spot_config["ember_production_rate"] if spot_config else None
+    # Extract the firebrand_production_rate from the spot_config if provided
+    firebrand_production_rate = spot_config["firebrand_production_rate"] if spot_config else None
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
@@ -6526,18 +6526,18 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
-                    t_cast                = int(time_of_arrival_matrix[y,x] // band_duration)
-                    space_time_coordinate = (t_cast, y, x)
-                    slope                 = slope_cube.get(t_cast, y, x)
-                    aspect                = aspect_cube.get(t_cast, y, x)
-                    elevation_gradient    = calc_elevation_gradient(slope, aspect)
-                    expected_ember_count  = expected_ember_production(fire_behavior,
-                                                                      elevation_gradient,
-                                                                      cube_resolution,
-                                                                      ember_production_rate)
-                    new_ignitions         = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                              space_time_coordinate, rand_gen, expected_ember_count,
-                                                              spot_config)
+                    t_cast                   = int(time_of_arrival_matrix[y,x] // band_duration)
+                    space_time_coordinate    = (t_cast, y, x)
+                    slope                    = slope_cube.get(t_cast, y, x)
+                    aspect                   = aspect_cube.get(t_cast, y, x)
+                    elevation_gradient       = calc_elevation_gradient(slope, aspect)
+                    expected_firebrand_count = expected_firebrand_production(fire_behavior,
+                                                                             elevation_gradient,
+                                                                             cube_resolution,
+                                                                             firebrand_production_rate)
+                    new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
+                                                                 space_time_coordinate, rand_gen,
+                                                                 expected_firebrand_count, spot_config)
                     if new_ignitions:
                         (ignition_time, ignited_cells) = new_ignitions
                         concurrent_ignited_cells       = spot_ignitions.get(ignition_time)
@@ -6623,7 +6623,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: integer to seed a numpy.random.Generator object
-      - ember_production_rate         :: embers/kJ
+      - firebrand_production_rate     :: firebrands/kJ
       - mean_distance                 :: meters
       - flin_exp                      :: mean_distance multiplier [I^flin_exp]
       - ws_exp                        :: mean_distance multiplier [U^ws_exp]
@@ -7118,7 +7118,7 @@ output_matrices["phi"][50,50] = -1.0
 
 spot_config = {
     "random_seed"                 : 1234567890,
-    "ember_production_rate"       : 1e-6,       # embers/kJ
+    "firebrand_production_rate"   : 1e-6,       # firebrands/kJ
     "mean_distance"               : 10.0,       # meters
     "flin_exp"                    : 0.3,        # mean_distance multiplier [I^flin_exp]
     "ws_exp"                      : 0.55,       # mean_distance multiplier [U^ws_exp]
@@ -7418,28 +7418,29 @@ file:../doc/pics/els_spot_time_of_arrival.png
 
 Whether a fire is spreading through surface or canopy fuels, it is
 possible that small pieces of the burning fuels may be lofted by winds
-ahead of the fire front. When these burning embers land in
+ahead of the fire front. When these burning firebrands land in
 sufficiently dry fuels, they may ignite new fires under the right
 circumstances. Fires created in this way are called "spot fires" and
 are the subject of this chapter. The following sections provide
-functions for calculating the probability and rate of ember generation
-from burning fuels, the lofting distance and direction of these
-embers, the times at which they will be deposited ahead of the fire
-front, and their likelihood of igniting spot fires once deposited.
+functions for calculating the probability and rate of firebrand
+generation from burning fuels, the lofting distance and direction of
+these firebrands, the times at which they will be deposited ahead of
+the fire front, and their likelihood of igniting spot fires once
+deposited.
 
-*** Expected Ember Production
+*** Expected Firebrand Production
     :PROPERTIES:
-    :CUSTOM_ID: expected-ember-production
+    :CUSTOM_ID: expected-firebrand-production
     :END:
 
-#+NAME: expected-ember-production
+#+NAME: expected-firebrand-production
 #+begin_src python
 from math import sqrt
 
 
-def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution, ember_production_rate=0.03):
+def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, firebrand_production_rate=0.03):
     """
-    Return the expected number of embers produced by an entire cell when it burns given:
+    Return the expected number of firebrands produced by an entire cell when it burns given:
     - fire_behavior         :: dictionary of surface or crown fire behavior values
       - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"
       - spread_rate              :: m/min
@@ -7453,7 +7454,7 @@ def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution
       - band_duration            :: minutes
       - cell_height              :: meters
       - cell_width               :: meters
-    - ember_production_rate :: embers/kJ
+    - firebrand_production_rate  :: firebrands/kJ
     """
     if fire_behavior["spread_rate"] == 0.0:
         return 0.0
@@ -7477,12 +7478,12 @@ def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution
         cell_area      = cell_height * cell_width * slope_factor # m^2
 
         #================================================================================================
-        # Calculate the expected number of embers produced in this cell
+        # Calculate the expected number of firebrands produced in this cell
         #================================================================================================
 
-        cell_heat_output = heat_output_per_area * cell_area         # kJ
-        ember_count      = cell_heat_output * ember_production_rate # number of embers
-        return ember_count
+        cell_heat_output = heat_output_per_area * cell_area             # kJ
+        firebrand_count  = cell_heat_output * firebrand_production_rate # number of firebrands
+        return firebrand_count
 #+end_src
 
 *** Firebrand Dispersal Model
@@ -7843,8 +7844,8 @@ def sample_poisson(rand_gen, mu):
     return rand_gen.poisson(mu)
 
 
-def sample_number_of_firebrands(rand_gen, expected_ember_count):
-    return sample_poisson(rand_gen, expected_ember_count)
+def sample_number_of_firebrands(rand_gen, expected_firebrand_count):
+    return sample_poisson(rand_gen, expected_firebrand_count)
 #+end_src
 
 If spotting occurs at a cell, the number of firebrands is randomly
@@ -8186,7 +8187,7 @@ def cast_firebrand(rand_gen,
 
 
 def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_ember_count, spot_config):
+                      rand_gen, expected_firebrand_count, spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types

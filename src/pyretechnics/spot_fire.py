@@ -1,10 +1,10 @@
-# [[file:../../org/pyretechnics.org::expected-ember-production][expected-ember-production]]
+# [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
 from math import sqrt
 
 
-def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution, ember_production_rate=0.03):
+def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, firebrand_production_rate=0.03):
     """
-    Return the expected number of embers produced by an entire cell when it burns given:
+    Return the expected number of firebrands produced by an entire cell when it burns given:
     - fire_behavior         :: dictionary of surface or crown fire behavior values
       - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"
       - spread_rate              :: m/min
@@ -18,7 +18,7 @@ def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution
       - band_duration            :: minutes
       - cell_height              :: meters
       - cell_width               :: meters
-    - ember_production_rate :: embers/kJ
+    - firebrand_production_rate  :: firebrands/kJ
     """
     if fire_behavior["spread_rate"] == 0.0:
         return 0.0
@@ -42,13 +42,13 @@ def expected_ember_production(fire_behavior, elevation_gradient, cube_resolution
         cell_area      = cell_height * cell_width * slope_factor # m^2
 
         #================================================================================================
-        # Calculate the expected number of embers produced in this cell
+        # Calculate the expected number of firebrands produced in this cell
         #================================================================================================
 
-        cell_heat_output = heat_output_per_area * cell_area         # kJ
-        ember_count      = cell_heat_output * ember_production_rate # number of embers
-        return ember_count
-# expected-ember-production ends here
+        cell_heat_output = heat_output_per_area * cell_area             # kJ
+        firebrand_count  = cell_heat_output * firebrand_production_rate # number of firebrands
+        return firebrand_count
+# expected-firebrand-production ends here
 # [[file:../../org/pyretechnics.org::convert-deltas][convert-deltas]]
 def delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y):
     """
@@ -213,8 +213,8 @@ def sample_poisson(rand_gen, mu):
     return rand_gen.poisson(mu)
 
 
-def sample_number_of_firebrands(rand_gen, expected_ember_count):
-    return sample_poisson(rand_gen, expected_ember_count)
+def sample_number_of_firebrands(rand_gen, expected_firebrand_count):
+    return sample_poisson(rand_gen, expected_firebrand_count)
 # sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 from math import exp
@@ -403,7 +403,7 @@ def cast_firebrand(rand_gen,
 
 
 def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_ember_count, spot_config):
+                      rand_gen, expected_firebrand_count, spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
