@@ -2,7 +2,7 @@
 from math import sqrt
 
 
-def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, firebrand_production_rate=0.03):
+def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
     """
     Return the expected number of firebrands produced by an entire cell when it burns given:
     - fire_behavior         :: dictionary of surface or crown fire behavior values
@@ -18,7 +18,7 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
       - band_duration            :: minutes
       - cell_height              :: meters
       - cell_width               :: meters
-    - firebrand_production_rate  :: firebrands/kJ
+    - heat_per_firebrand    :: kJ/firebrand
     """
     if fire_behavior["spread_rate"] == 0.0:
         return 0.0
@@ -45,8 +45,8 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
         # Calculate the expected number of firebrands produced in this cell
         #================================================================================================
 
-        cell_heat_output = heat_output_per_area * cell_area             # kJ
-        firebrand_count  = cell_heat_output * firebrand_production_rate # number of firebrands
+        cell_heat_output = heat_output_per_area * cell_area      # kJ
+        firebrand_count  = cell_heat_output / heat_per_firebrand # number of firebrands
         return firebrand_count
 # expected-firebrand-production ends here
 # [[file:../../org/pyretechnics.org::convert-deltas][convert-deltas]]

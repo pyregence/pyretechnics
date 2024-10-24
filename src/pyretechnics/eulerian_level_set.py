@@ -793,8 +793,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
-    # Extract the firebrand_production_rate from the spot_config if provided
-    firebrand_production_rate = spot_config["firebrand_production_rate"] if spot_config else None
+    # Extract the heat_per_firebrand from the spot_config if provided
+    heat_per_firebrand = spot_config["heat_per_firebrand"] if spot_config else None
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
@@ -914,7 +914,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                     expected_firebrand_count = expected_firebrand_production(fire_behavior,
                                                                              elevation_gradient,
                                                                              cube_resolution,
-                                                                             firebrand_production_rate)
+                                                                             heat_per_firebrand)
                     new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
                                                                  space_time_coordinate, rand_gen,
                                                                  expected_firebrand_count, spot_config)
@@ -1003,7 +1003,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: integer to seed a numpy.random.Generator object
-      - firebrand_production_rate     :: firebrands/kJ
+      - heat_per_firebrand            :: kJ/firebrand
       - mean_distance                 :: meters
       - flin_exp                      :: mean_distance multiplier [I^flin_exp]
       - ws_exp                        :: mean_distance multiplier [U^ws_exp]
