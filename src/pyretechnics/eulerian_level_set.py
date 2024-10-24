@@ -989,7 +989,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - fireline_intensity            :: 2D float array (kW/m)
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
-      - firebrand_count               :: 2D integer array (number of firebrands) (Optional: needed for spotting)
+      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)
     - cube_resolution           :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
@@ -1022,7 +1022,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - fireline_intensity    :: 2D float array (kW/m)
       - flame_length          :: 2D float array (m)
       - time_of_arrival       :: 2D float array (min)
-      - firebrand_count       :: 2D integer array (number of firebrands) (only included when spotting is used)
+      - firebrand_count       :: 2D integer array (number of firebrands) (only included when provided as an input)
     - spot_ignitions       :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
     """
     # Extract simulation dimensions

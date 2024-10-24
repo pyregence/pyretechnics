@@ -7238,7 +7238,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - fireline_intensity            :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
-<span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands) (Optional: needed for spotting)</span>
+<span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)</span>
 <span class="org-doc">    - cube_resolution           :: tuple with these fields</span>
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
@@ -7271,7 +7271,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - fireline_intensity    :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length          :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival       :: 2D float array (min)</span>
-<span class="org-doc">      - firebrand_count       :: 2D integer array (number of firebrands) (only included when spotting is used)</span>
+<span class="org-doc">      - firebrand_count       :: 2D integer array (number of firebrands) (only included when provided as an input)</span>
 <span class="org-doc">    - spot_ignitions       :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
@@ -8041,7 +8041,7 @@ Future Spot Ignitions:
 <div id="spot-firebrand-count-matplotlib-heatmap" class="figure">
 <p><img src="../doc/pics/els_spot_firebrand_count.png" alt="els_spot_firebrand_count.png">
 </p>
-<p><span class="figure-number">Figure 2: </span>Firebrand count with spotting enabled</p>
+<p><span class="figure-number">Figure 2: </span>Firebrand count with spotting enabled (NOTE: This is not the same as ember exposure.)</p>
 </div>
 
 
@@ -9001,7 +9001,7 @@ ignited.
                    temperature_cube,
                    fuel_moisture_dead_1hr_cube,
                    fire_type_matrix,
-                   firebrand_count_matrix,
+                   firebrand_count_matrix, <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: May be None</span>
                    rows,
                    cols,
                    cell_height,
@@ -9033,8 +9033,9 @@ ignited.
     <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
     <span class="org-keyword">if</span> is_in_bounds(target_y, target_x, rows, cols) <span class="org-keyword">and</span> fire_type_matrix[target_y,target_x] <span class="org-operator">==</span> 0:
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix</span>
-        <span class="org-variable-name">firebrand_count_matrix</span>[<span class="org-variable-name">target_y</span>,<span class="org-variable-name">target_x</span>] <span class="org-operator">+=</span> 1
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)</span>
+        <span class="org-keyword">if</span> firebrand_count_matrix:
+            <span class="org-variable-name">firebrand_count_matrix</span>[<span class="org-variable-name">target_y</span>,<span class="org-variable-name">target_x</span>] <span class="org-operator">+=</span> 1
 
         <span class="org-keyword">if</span> is_burnable_cell(fuel_model_cube, source_t, target_y, target_x):
             <span class="org-comment-delimiter"># </span><span class="org-comment">Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability</span>
@@ -9063,7 +9064,7 @@ ignited.
 <span class="org-doc">      - fireline_intensity            :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
-<span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands)</span>
+<span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)</span>
 <span class="org-doc">    - cube_resolution           :: tuple with these fields</span>
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
@@ -9081,8 +9082,9 @@ ignited.
 
 <span class="org-doc">    samples a number of firebrands from a Poisson distribution parameterized by expected_ember_count,</span>
 <span class="org-doc">    casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing</span>
-<span class="org-doc">    locations in output_matrices["firebrand_count"], filters out all of the firebrands that fizzle out in either</span>
-<span class="org-doc">    burnable or non-burnable fuels, and returns any that ignite new spot fires in a tuple with these fields:</span>
+<span class="org-doc">    locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that</span>
+<span class="org-doc">    fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in</span>
+<span class="org-doc">    a tuple with these fields:</span>
 
 <span class="org-doc">    - ignition_time :: minutes</span>
 <span class="org-doc">    - ignited_cells :: list of (y,x) grid coordinates</span>
@@ -9103,7 +9105,7 @@ ignited.
         <span class="org-variable-name">temperature_cube</span>             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"temperature"</span>]
         <span class="org-variable-name">fuel_moisture_dead_1hr_cube</span>  <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_moisture_dead_1hr"</span>]
         <span class="org-variable-name">fire_type_matrix</span>             <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
-        <span class="org-variable-name">firebrand_count_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"firebrand_count"</span>]
+        <span class="org-variable-name">firebrand_count_matrix</span>       <span class="org-operator">=</span> output_matrices.get(<span class="org-string">"firebrand_count"</span>)
         (<span class="org-variable-name">_</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)              <span class="org-operator">=</span> fuel_model_cube.shape
         (<span class="org-variable-name">_</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
         (<span class="org-variable-name">t</span>, <span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                    <span class="org-operator">=</span> space_time_coordinate

@@ -407,6 +407,7 @@ def spot_ignition_time(time_of_arrival, flame_length):
 # firebrands-time-of-ignition ends here
 # [[file:../../org/pyretechnics.org::spread-firebrands][spread-firebrands]]
 from math import sin, cos, hypot, radians
+import numpy as np
 import pyretechnics.conversion as conv
 import pyretechnics.fuel_models as fm
 
@@ -439,7 +440,7 @@ def cast_firebrand(rand_gen,
                    temperature_cube,
                    fuel_moisture_dead_1hr_cube,
                    fire_type_matrix,
-                   firebrand_count_matrix,
+                   firebrand_count_matrix, # NOTE: May be None
                    rows,
                    cols,
                    cell_height,
@@ -471,8 +472,9 @@ def cast_firebrand(rand_gen,
     #=======================================================================================
 
     if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0:
-        # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix
-        firebrand_count_matrix[target_y,target_x] += 1
+        # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)
+        if isinstance(firebrand_count_matrix, np.ndarray):
+            firebrand_count_matrix[target_y,target_x] += 1
 
         if is_burnable_cell(fuel_model_cube, source_t, target_y, target_x):
             # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
@@ -501,7 +503,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - fireline_intensity            :: 2D float array (kW/m)
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
-      - firebrand_count               :: 2D integer array (number of firebrands)
+      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)
     - cube_resolution           :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
@@ -519,8 +521,9 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
 
     samples a number of firebrands from a Poisson distribution parameterized by expected_ember_count,
     casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
-    locations in output_matrices["firebrand_count"], filters out all of the firebrands that fizzle out in either
-    burnable or non-burnable fuels, and returns any that ignite new spot fires in a tuple with these fields:
+    locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that
+    fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in
+    a tuple with these fields:
 
     - ignition_time :: minutes
     - ignited_cells :: list of (y,x) grid coordinates
@@ -541,7 +544,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
         temperature_cube             = space_time_cubes["temperature"]
         fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
         fire_type_matrix             = output_matrices["fire_type"]
-        firebrand_count_matrix       = output_matrices["firebrand_count"]
+        firebrand_count_matrix       = output_matrices.get("firebrand_count")
         (_, rows, cols)              = fuel_model_cube.shape
         (_, cell_height, cell_width) = cube_resolution
         (t, y, x)                    = space_time_coordinate
