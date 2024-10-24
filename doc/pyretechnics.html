@@ -8585,22 +8585,6 @@ exponential functions:
 <span class="org-doc">    """</span>
     <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_normal(rand_gen, 0.0, sigma_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: unused</span>
-<span class="org-keyword">def</span> <span class="org-function-name">sample_wind_dir_deltas</span>(inputs, fireline_intensity, wind_speed_20ft, num_firebrands):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Draws a random sequence of [&#916;X, &#916;Y] pairs of signed distances (in meters) from</span>
-<span class="org-doc">    the supplied cell, representing the coordinates of the spotting jump in the directions</span>
-<span class="org-doc">    parallel and perpendicular to the wind. &#916;X will typically be positive (downwind),</span>
-<span class="org-doc">    and positive &#916;Y means to the right of the downwind direction.</span>
-<span class="org-doc">    """</span>
-    <span class="org-variable-name">spot_config</span>         <span class="org-operator">=</span> inputs[<span class="org-string">"spotting"</span>]
-    <span class="org-variable-name">rand_gen</span>            <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
-    <span class="org-variable-name">wind_speed_20ft_mps</span> <span class="org-operator">=</span> conv.km_hr_to_mps(wind_speed_20ft)
-    <span class="org-variable-name">sample_delta_x_fn</span>   <span class="org-operator">=</span> delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-    <span class="org-variable-name">sample_delta_y_fn</span>   <span class="org-operator">=</span> delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-    <span class="org-keyword">return</span> [(sample_delta_x_fn(rand_gen), sample_delta_y_fn(rand_gen)) <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)]
 </pre>
 </div>
 </div>
@@ -8625,81 +8609,7 @@ probability can be configured per fuel model.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="spotting-probability"><span class="org-keyword">def</span> <span class="org-function-name">in_range</span>(bounds, fuel_model_number):
-    (<span class="org-builtin">min</span>, <span class="org-builtin">max</span>) <span class="org-operator">=</span> bounds
-    <span class="org-keyword">return</span> <span class="org-builtin">min</span> <span class="org-operator">&lt;=</span> fuel_model_number <span class="org-operator">&lt;=</span> <span class="org-builtin">max</span>
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">intranges_mapping_lookup</span>(intranges_mapping, fuel_model_number):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Looks up a value in a mapping from fuel number to anything,</span>
-<span class="org-doc">    encoded as either a single value v (constant mapping),</span>
-<span class="org-doc">    or as a vector of [[min_fuel_number max_fuel_number] v] pairs,</span>
-<span class="org-doc">    such as:</span>
-<span class="org-doc">    [[[  1 140] 0.0]</span>
-<span class="org-doc">     [[141 149] 1.0]</span>
-<span class="org-doc">     [[150 256] 1.0]]</span>
-<span class="org-doc">    """</span>
-    <span class="org-keyword">if</span> intranges_mapping <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">or</span> <span class="org-builtin">isinstance</span>(intranges_mapping, (<span class="org-builtin">int</span>, <span class="org-builtin">float</span>)):
-        <span class="org-keyword">return</span> intranges_mapping
-    <span class="org-keyword">else</span>:
-        <span class="org-comment-delimiter"># </span><span class="org-comment">IMPROVEMENT for performance, we could do a non_sequential lookup, (Val, 02 Nov 2022)</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">e.g. a dichotomic search,</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">or even better just (aget) an array into which we have indexed the decompressed mapping.</span>
-        <span class="org-variable-name">kv_match</span> <span class="org-operator">=</span> <span class="org-builtin">next</span>(<span class="org-builtin">filter</span>(<span class="org-keyword">lambda</span> kv: in_range(kv[0], fuel_model_number), intranges_mapping), <span class="org-constant">None</span>)
-        <span class="org-keyword">if</span> kv_match:
-            <span class="org-keyword">return</span> kv_match[1]
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">is_surface_spot_fire</span>(inputs, fuel_model_number, fireline_intensity):
-    <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
-    <span class="org-keyword">if</span> spot_config:
-        <span class="org-variable-name">surface_fire_spot_config</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"surface_fire_spotting"</span>)
-        <span class="org-keyword">if</span> surface_fire_spot_config:
-            <span class="org-variable-name">critical_fireline_intensity_mapping</span> <span class="org-operator">=</span> surface_fire_spot_config.get(<span class="org-string">"critical_fireline_intensity"</span>)
-            <span class="org-variable-name">critical_fireline_intensity</span>         <span class="org-operator">=</span> (intranges_mapping_lookup(critical_fireline_intensity_mapping,
-                                                                            fuel_model_number)
-                                                   <span class="org-keyword">or</span> 0.0)
-            <span class="org-keyword">if</span> fireline_intensity <span class="org-operator">&gt;</span> critical_fireline_intensity:
-                <span class="org-variable-name">spotting_percent_mapping</span> <span class="org-operator">=</span> surface_fire_spot_config.get(<span class="org-string">"surface_fire_spotting_percent"</span>)
-                <span class="org-variable-name">spotting_percent</span>         <span class="org-operator">=</span> intranges_mapping_lookup(spotting_percent_mapping, fuel_model_number) <span class="org-keyword">or</span> 0.0
-                <span class="org-variable-name">rand_gen</span>                 <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
-                <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spotting_percent
-            <span class="org-keyword">else</span>:
-                <span class="org-keyword">return</span> <span class="org-constant">False</span>
-        <span class="org-keyword">else</span>:
-            <span class="org-keyword">return</span> <span class="org-constant">False</span>
-    <span class="org-keyword">else</span>:
-        <span class="org-keyword">return</span> <span class="org-constant">False</span>
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">is_crown_spot_fire</span>(inputs):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Determine whether crowning causes spot fires. Config key `spotting` should</span>
-<span class="org-doc">    take either a vector of probabilities (0-1) or a single spotting probability.</span>
-<span class="org-doc">    """</span>
-    <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> inputs.get(<span class="org-string">"spotting"</span>)
-    <span class="org-keyword">if</span> spot_config:
-        <span class="org-variable-name">spotting_percent</span> <span class="org-operator">=</span> spot_config.get(<span class="org-string">"crown_fire_spotting_percent"</span>)
-        <span class="org-keyword">if</span> spotting_percent:
-            <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> inputs[<span class="org-string">"rand_gen"</span>]
-            <span class="org-keyword">return</span> rand_gen.uniform(0.0, 1.0) <span class="org-operator">&lt;=</span> spotting_percent
-        <span class="org-keyword">else</span>:
-            <span class="org-keyword">return</span> <span class="org-constant">False</span>
-    <span class="org-keyword">else</span>:
-        <span class="org-keyword">return</span> <span class="org-constant">False</span>
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">is_spot_fire</span>(inputs, fire_type, fireline_intensity, fuel_model_number):
-    <span class="org-keyword">if</span> fire_type <span class="org-operator">&gt;</span> 1:
-        <span class="org-keyword">return</span> is_crown_spot_fire(inputs)
-    <span class="org-keyword">elif</span> fire_type <span class="org-operator">==</span> 1:
-        <span class="org-keyword">return</span> is_surface_spot_fire(inputs, fuel_model_number, fireline_intensity)
-    <span class="org-keyword">else</span>:
-        <span class="org-keyword">return</span> <span class="org-constant">False</span>
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">sample_poisson</span>(rand_gen, mu):
+<pre class="src src-python" id="sample-number-of-firebrands"><span class="org-keyword">def</span> <span class="org-function-name">sample_poisson</span>(rand_gen, mu):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns sample from poisson distribution given mu.</span>
 <span class="org-doc">    """</span>
@@ -9028,6 +8938,10 @@ ignited.
                    sample_delta_x_fn):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    Draws a random [&#916;X, &#916;Y] pair of signed distances (in meters) from</span>
+<span class="org-doc">    the supplied cell, representing the coordinates of the spotting jump in the directions</span>
+<span class="org-doc">    parallel and perpendicular to the wind. &#916;X will typically be positive (downwind),</span>
+<span class="org-doc">    and positive &#916;Y means to the right of the downwind direction.</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine where the firebrand will land</span>

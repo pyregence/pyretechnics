@@ -204,98 +204,8 @@ def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     """
     sigma_y = resolve_delta_y_sigma(spot_config, fireline_intensity, wind_speed_20ft) # meters
     return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
-
-
-# FIXME: unused
-def sample_wind_dir_deltas(inputs, fireline_intensity, wind_speed_20ft, num_firebrands):
-    """
-    Draws a random sequence of [ΔX, ΔY] pairs of signed distances (in meters) from
-    the supplied cell, representing the coordinates of the spotting jump in the directions
-    parallel and perpendicular to the wind. ΔX will typically be positive (downwind),
-    and positive ΔY means to the right of the downwind direction.
-    """
-    spot_config         = inputs["spotting"]
-    rand_gen            = inputs["rand_gen"]
-    wind_speed_20ft_mps = conv.km_hr_to_mps(wind_speed_20ft)
-    sample_delta_x_fn   = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-    sample_delta_y_fn   = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-    return [(sample_delta_x_fn(rand_gen), sample_delta_y_fn(rand_gen)) for _i in range(num_firebrands)]
 # sardoy-firebrand-dispersal ends here
-# [[file:../../org/pyretechnics.org::spotting-probability][spotting-probability]]
-def in_range(bounds, fuel_model_number):
-    (min, max) = bounds
-    return min <= fuel_model_number <= max
-
-
-def intranges_mapping_lookup(intranges_mapping, fuel_model_number):
-    """
-    Looks up a value in a mapping from fuel number to anything,
-    encoded as either a single value v (constant mapping),
-    or as a vector of [[min_fuel_number max_fuel_number] v] pairs,
-    such as:
-    [[[  1 140] 0.0]
-     [[141 149] 1.0]
-     [[150 256] 1.0]]
-    """
-    if intranges_mapping == None or isinstance(intranges_mapping, (int, float)):
-        return intranges_mapping
-    else:
-        # IMPROVEMENT for performance, we could do a non_sequential lookup, (Val, 02 Nov 2022)
-        # e.g. a dichotomic search,
-        # or even better just (aget) an array into which we have indexed the decompressed mapping.
-        kv_match = next(filter(lambda kv: in_range(kv[0], fuel_model_number), intranges_mapping), None)
-        if kv_match:
-            return kv_match[1]
-
-
-def is_surface_spot_fire(inputs, fuel_model_number, fireline_intensity):
-    spot_config = inputs.get("spotting")
-    if spot_config:
-        surface_fire_spot_config = spot_config.get("surface_fire_spotting")
-        if surface_fire_spot_config:
-            critical_fireline_intensity_mapping = surface_fire_spot_config.get("critical_fireline_intensity")
-            critical_fireline_intensity         = (intranges_mapping_lookup(critical_fireline_intensity_mapping,
-                                                                            fuel_model_number)
-                                                   or 0.0)
-            if fireline_intensity > critical_fireline_intensity:
-                spotting_percent_mapping = surface_fire_spot_config.get("surface_fire_spotting_percent")
-                spotting_percent         = intranges_mapping_lookup(spotting_percent_mapping, fuel_model_number) or 0.0
-                rand_gen                 = inputs["rand_gen"]
-                return rand_gen.uniform(0.0, 1.0) <= spotting_percent
-            else:
-                return False
-        else:
-            return False
-    else:
-        return False
-
-
-def is_crown_spot_fire(inputs):
-    """
-    Determine whether crowning causes spot fires. Config key `spotting` should
-    take either a vector of probabilities (0-1) or a single spotting probability.
-    """
-    spot_config = inputs.get("spotting")
-    if spot_config:
-        spotting_percent = spot_config.get("crown_fire_spotting_percent")
-        if spotting_percent:
-            rand_gen = inputs["rand_gen"]
-            return rand_gen.uniform(0.0, 1.0) <= spotting_percent
-        else:
-            return False
-    else:
-        return False
-
-
-def is_spot_fire(inputs, fire_type, fireline_intensity, fuel_model_number):
-    if fire_type > 1:
-        return is_crown_spot_fire(inputs)
-    elif fire_type == 1:
-        return is_surface_spot_fire(inputs, fuel_model_number, fireline_intensity)
-    else:
-        return False
-
-
+# [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
 def sample_poisson(rand_gen, mu):
     """
     Returns sample from poisson distribution given mu.
@@ -305,7 +215,7 @@ def sample_poisson(rand_gen, mu):
 
 def sample_number_of_firebrands(rand_gen, expected_ember_count):
     return sample_poisson(rand_gen, expected_ember_count)
-# spotting-probability ends here
+# sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 from math import exp
 
@@ -455,6 +365,10 @@ def cast_firebrand(rand_gen,
                    sample_delta_x_fn):
     """
     TODO: Add docstring
+    Draws a random [ΔX, ΔY] pair of signed distances (in meters) from
+    the supplied cell, representing the coordinates of the spotting jump in the directions
+    parallel and perpendicular to the wind. ΔX will typically be positive (downwind),
+    and positive ΔY means to the right of the downwind direction.
     """
     #=======================================================================================
     # Determine where the firebrand will land
