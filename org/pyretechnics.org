@@ -4547,6 +4547,1178 @@ else:
 :  'spread_direction': array([0.87038828, 0.        , 0.49236596]),
 :  'spread_rate': 0.8215818916531423}
 
+* Spot Fire Equations (pyretechnics.spot_fire)
+  :PROPERTIES:
+  :CUSTOM_ID: spot-fire-equations-(pyretechnics.spot_fire)
+  :END:
+** For Developers
+   :PROPERTIES:
+   :CUSTOM_ID: for-developers-spot
+   :header-args:python+: :session *pyretechnics.spot_fire*
+   :header-args:python+: :tangle  ../src/pyretechnics/spot_fire.py
+   :header-args:python+: :exports code
+   :END:
+
+Whether a fire is spreading through surface or canopy fuels, it is
+possible that small pieces of the burning fuels may be lofted by winds
+ahead of the fire front. When these burning firebrands land in
+sufficiently dry fuels, they may ignite new fires under the right
+circumstances. Fires created in this way are called "spot fires" and
+are the subject of this chapter. The following sections provide
+functions for calculating the probability and rate of firebrand
+generation from burning fuels, the lofting distance and direction of
+these firebrands, the times at which they will be deposited ahead of
+the fire front, and their likelihood of igniting spot fires once
+deposited.
+
+*** Expected Firebrand Production
+    :PROPERTIES:
+    :CUSTOM_ID: expected-firebrand-production
+    :END:
+
+#+NAME: expected-firebrand-production
+#+begin_src python
+from math import sqrt
+
+
+def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
+    """
+    Return the expected number of firebrands produced by an entire cell when it burns given:
+    - fire_behavior         :: dictionary of surface or crown fire behavior values
+      - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"
+      - spread_rate              :: m/min
+      - spread_direction         :: (x, y, z) unit vector on the slope-tangential plane
+      - fireline_intensity       :: kW/m
+      - flame_length             :: m
+    - elevation_gradient    :: tuple with these fields
+      - dz_dx                    :: rise/run
+      - dz_dy                    :: rise/run
+    - cube_resolution       :: tuple with these fields
+      - band_duration            :: minutes
+      - cell_height              :: meters
+      - cell_width               :: meters
+    - heat_per_firebrand    :: kJ/firebrand
+    """
+    if fire_behavior["spread_rate"] == 0.0:
+        return 0.0
+    else:
+        #================================================================================================
+        # Calculate the heat output per unit area
+        #================================================================================================
+
+        spread_rate          = fire_behavior["spread_rate"]            # m/min
+        fireline_intensity   = fire_behavior["fireline_intensity"]     # kW/m
+        heat_output_per_area = 60.0 * fireline_intensity / spread_rate # kJ/m^2 (reaction_intensity * residence_time)
+
+        #================================================================================================
+        # Calculate the slope-adjusted cell area
+        #================================================================================================
+
+        (dz_dx, dz_dy) = elevation_gradient                      # (rise/run, rise/run)
+        slope_factor   = sqrt(1.0 + dz_dx ** 2.0 + dz_dy ** 2.0) # unitless
+        cell_height    = cube_resolution[1]                      # meters
+        cell_width     = cube_resolution[2]                      # meters
+        cell_area      = cell_height * cell_width * slope_factor # m^2
+
+        #================================================================================================
+        # Calculate the expected number of firebrands produced in this cell
+        #================================================================================================
+
+        cell_heat_output = heat_output_per_area * cell_area      # kJ
+        firebrand_count  = cell_heat_output / heat_per_firebrand # number of firebrands
+        return firebrand_count
+#+end_src
+
+*** Firebrand Dispersal Model
+    :PROPERTIES:
+    :CUSTOM_ID: firebrand-dispersal-model
+    :END:
+
+The Firebrand Dispersal model describes the distributions of
+firebrands relative to the wind direction. The location where the
+firebrand lands is represented by the random vector $\vec{\Delta}$
+from the location of origin:
+
+\begin{align}
+  \vec{\Delta} := \Delta_X.\vec{w} + \Delta_Y.\vec{w}_\perp
+\end{align}
+
+in which $\vec{w}, \vec{w}_\perp$ are unit vectors respectively
+parallel and perpendicular to the wind direction, and $\Delta_X,
+\Delta_Y$ are the random variables for coordinates.
+
+Following Perryman 2012, Sardoy 2008, and Himoto 2005, we model
+$\Delta_X$ and $\Delta_Y$ to be independent, with $\Delta_X$ following
+a log-normal distribution, and $\Delta_Y$ following a zero-mean normal
+distribution, conditional on the fire behavior $\Phi$ at the cell of
+origin:[fn::Perryman2012][fn::Sardoy2008][fn::Himoto2005]
+
+\begin{align}
+  \ln (\Delta_X / \text{1m}) | \Phi \sim & \text{Normal}(\mu = \mu_X(\Phi), \sigma = \sigma_X(\Phi)) & \\
+  \nonumber \\
+  \Delta_Y | \Phi \sim & \text{Normal}(\mu = 0, \sigma = \sigma_Y(\Phi)) &
+\end{align}
+
+where $\text{Normal}(\mu, \sigma)$ denotes a one-dimensional Gaussian
+distribution with mean $\mu$ and standard deviation $\sigma$. Note
+that $\mu_X$ and $\sigma_X$ are in log-space, therefore dimensionless.
+For the sake of light notation, the conditioning on $\Phi$ will be
+implicit from now on, e.g. we will write $\Delta_X$ instead of
+$\Delta_X | \Phi$.
+
+Since the results are distance deltas relative to the wind direction,
+we must convert this to deltas in our coordinate plane. We can convert
+these deltas by using trigonometric functions.
+
+#+NAME: convert-deltas
+#+begin_src python
+def delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y):
+    """
+    Computes the grid-aligned x coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
+    Returns a signed distance (same unit as ΔX and ΔY).
+    """
+    wdir_x      = sin_wdir
+    wdir_perp_x = cos_wdir
+    return delta_x * wdir_x + delta_y * wdir_perp_x
+
+
+def delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y):
+    """
+    Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
+    Returns a signed distance (same unit as ΔX and ΔY).
+    """
+    wdir_y      = cos_wdir  # FIXME: Should this be negative or positive?
+    wdir_perp_y = sin_wdir
+    return delta_x * wdir_y + delta_y * wdir_perp_y
+
+
+def distance_to_n_cells(distance, cell_size):
+    """
+    Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
+    """
+    return round(distance / cell_size)
+#+end_src
+
+*** Resolution of Log-Normal Parameters
+    :PROPERTIES:
+    :CUSTOM_ID: resolution-of-log-normal-parameters
+    :END:
+
+We now need to define the functions $\mu_X(\Phi)$ and
+$\sigma_X(\Phi)$. Here we depart from Sardoy 2008[fn::Sardoy2008] and
+reproduce the model of ELMFIRE[fn::https://elmfire.io], which models
+that dependency using the following relationships between the moments
+of the distribution and the fireline intensity $I$ and wind speed $U$:
+
+\begin{align}
+  \mathbb{E}[\Delta_X] = & \Delta_1 \left(\frac{I}{\text{1 kW/m}}\right)^{e_I} \left(\frac{U}{\text{1 m/s}}\right)^{e_U} & \\
+  \nonumber \\
+  \text{Var}[\Delta_X] = & r_\frac{V}{E} \mathbb{E}[\Delta_X] &
+\end{align}
+
+in which $\Delta_1, e_I, e_U, r_\frac{V}{E}$ are configured by the
+keys shown in table [[tab:spotting-elmfire-params]].
+
+#+NAME: tab:spotting-elmfire-params
+#+CAPTION: Spotting parameters for the downwind distribution per the ELMFIRE model
+|-----------------+------+------------------------------------------+------------------------------|
+| Parameter       | Unit | Description                              | Configuration Key            |
+|-----------------+------+------------------------------------------+------------------------------|
+| $\Delta_1$      | m    | Mean landing distance in unit conditions | downwind_distance_mean       |
+| $e_I$           | -    | Fireline intensity exponent              | fireline_intensity_exponent  |
+| $e_U$           | -    | Wind speed exponent                      | wind_speed_exponent          |
+| $r_\frac{V}{E}$ | m    | Variance-over-Mean ratio                 | downwind_variance_mean_ratio |
+|-----------------+------+------------------------------------------+------------------------------|
+
+*Note:* One potential way in which this model can misbehave is that
+the variance is proportional to the expected value, and therefore the
+coefficient of variation is driven to zero as the expected value goes
+to infinity, making the distribution less and less dispersed around
+its mean. This means that, in high-wind/high-intensity conditions, all
+the firebrands will tend to land at approximately the same (large)
+distance, following a narrow near-normal distribution.
+
+From the above moments, $\mu_X$ and $\sigma_X$ can be obtained using
+the properties of the log-normal distribution:
+
+\begin{align}
+  \sigma_X^2 = & \ln \left(1 + \frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]^2}\right) & \\
+  \nonumber \\
+  \mu_X = & \ln \frac{\mathbb{E}[\Delta_X]^2}{\sqrt{\text{Var}[\Delta_X] + \mathbb{E}[\Delta_X]^2}} &
+\end{align}
+
+#+NAME: resolve-spotting-lognormal-elmfire
+#+begin_src python
+from math import log, sqrt
+
+
+def resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft):
+    """
+    Computes the expected value E[ΔX] (in meters) of the downwind spotting distance ΔX given:
+    - spot_config        :: a map of spotting parameters
+    - fireline_intensity :: kW/m
+    - wind_speed_20ft    :: m/s
+    """
+    downwind_distance_mean      = spot_config["downwind_distance_mean"]
+    fireline_intensity_exponent = spot_config["fireline_intensity_exponent"]
+    wind_speed_exponent         = spot_config["wind_speed_exponent"]
+    return (downwind_distance_mean
+            * (fireline_intensity ** fireline_intensity_exponent)
+            * (wind_speed_20ft ** wind_speed_exponent))
+
+
+def resolve_var_delta_x(spot_config, exp_delta_x):
+    """
+    Computes the variance Var[ΔX] (in m^2) of the downwind spotting distance ΔX given:
+    - spot_config :: a map of spotting parameters
+    - exp_delta_x :: meters (E[ΔX])
+    """
+    return spot_config["downwind_variance_mean_ratio"] * exp_delta_x
+
+
+def lognormal_mu_from_moments(mean, variance):
+    """
+    TODO: Add docstring
+    """
+    m2 = mean ** 2.0
+    return log(m2 / sqrt(m2 + variance))
+
+
+def lognormal_sigma_from_moments(mean, variance):
+    """
+    TODO: Add docstring
+    """
+    return sqrt(log(1.0 + variance / (mean ** 2.0)))
+
+
+def resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft):
+    """
+    TODO: Add docstring
+    """
+    exp_delta_x = resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft)
+    var_delta_x = resolve_var_delta_x(spot_config, exp_delta_x)
+    return {
+        "prob.lognormal.mu"   : lognormal_mu_from_moments(exp_delta_x, var_delta_x),
+        "prob.lognormal.sigma": lognormal_sigma_from_moments(exp_delta_x, var_delta_x),
+    }
+#+end_src
+
+*** Wind-Perpendicular Dispersal
+    :PROPERTIES:
+    :CUSTOM_ID: wind-perpendicular-dispersal
+    :END:
+
+For $\sigma_Y$, we either let the user specify an explicit value with
+key *crosswind_distance_stdev* (in meters), which makes it equivalent
+to the model of Perryman 2012[fn::Perryman2012], or we default to
+deriving them from equation (28) of Himoto 2005[fn::Himoto2005], which
+is equivalent to:
+
+\begin{align}
+  \sigma_Y = 0.92 D = 0.92 \frac{0.47}{0.88^2}\frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]}
+\end{align}
+
+$\text{Var}[\Delta_X]$ and $\mathbb{E}[\Delta_X]$ can be calculated
+from the properties of the log-normal distribution:
+
+\begin{align}
+  \mathbb{E}[\Delta_X] = \text{1m} \times \exp \left(\mu_X + \frac{1}{2}\sigma_X^2 \right) \\
+  \nonumber \\
+  \text{Var}[\Delta_X] = \mathbb{E}[\Delta_X]^2 \left(e^{\sigma_X^2} - 1\right)
+\end{align}
+
+Combining the above equations and applying some algebra yields a
+formula for $\sigma_Y$:
+
+\begin{align}
+  \sigma_Y = 0.92 D = \text{1m} \times 0.5584 \times e^{\mu_X} \times e^{\frac{1}{2}\sigma_X^2} \left(e^{\frac{1}{2}\sigma_X^2} - 1\right) \left(e^{\frac{1}{2}\sigma_X^2} + 1\right)
+\end{align}
+
+Typical values are shown in table [[tab:himoto2005-example-values]].
+
+#+NAME: tab:himoto2005-example-values
+#+CAPTION: Typical values for $\vec{\Delta}$ distribution characteristics derived from Himoto2005
+|-------+-----------------------+------------+---------------------------------|
+| $B^*$ | $\text{CV}[\Delta_X]$ | $\sigma_X$ | $\sigma_Y/\mathbb{E}[\Delta_X]$ |
+|-------+-----------------------+------------+---------------------------------|
+|    20 |                   69% |       0.72 |                            0.27 |
+|    50 |                   51% |       0.64 |                            0.14 |
+|   100 |                   40% |       0.58 |                            0.09 |
+|   150 |                   35% |       0.55 |                            0.07 |
+|   200 |                   32% |       0.53 |                            0.06 |
+|-------+-----------------------+------------+---------------------------------|
+
+See section [[How to Estimate Typical Ranges for the $\vec{\Delta}$
+Distribution Characteristics]] for more information on how these values
+were obtained.
+
+*CAUTION:* (FIXME REVIEW) We have found the above formula to be
+problematic when applied to the parameters values found in Sardoy
+2008[fn::Sardoy2008] because it tends to yield nonsensical $\sigma_Y >
+\mathbb{E}[\Delta_X]$. In fact, it can be seen that $\sigma_Y > s
+\mathbb{E}[\Delta_X]$ if and only if $\sigma_X > \sqrt{\ln \left(1 +
+\frac{.88^2}{.92 \times .47} s \right)}$, in particular $\sigma_X >
+1.013$ for $s = 1$, which is unfortunately the case with the range of
+$\sigma_X$ values in Sardoy 2008[fn::Sardoy2008]. This reflects a
+divergence between Himoto 2005[fn::Himoto2005] and Sardoy
+2008[fn::Sardoy2008], the latter allowing for more dispersed
+$\Delta_X$ distributions (higher coefficient of variation
+$\text{Var}[\Delta_X]^{\frac{1}{2}}/\mathbb{E}[\Delta_X] =
+\sqrt{e^{\sigma_X^2} - 1}$), whereas the former typically predicts a
+low coefficient of variation, as is perceptible in figure 6 of Himoto
+2005[fn::Himoto2005]. Figure 10 of Sardoy 2008[fn::Sardoy2008]
+suggests coefficients of variation ranging from 95% to 210%, whereas
+Figure 6 of Himoto 2005[fn::Himoto2005] suggests coefficients of
+variation ranging from 30% to 70%. For this reason, we *strongly
+recommend to supply $\sigma_Y$ directly* through the configuration key
+*crosswind_distance_stdev*.
+
+*** Sampling Firebrand Casting Distances
+    :PROPERTIES:
+    :CUSTOM_ID: sampling-firebrand-casting-distances
+    :END:
+
+Having computed the $\mu_X$, $\sigma_X$ and $\sigma_Y$ parameters, it
+remains to draw values of $\Delta_X$ and $\Delta_Y$ by sampling from
+log-normal and normal distributions. This can be done by sampling from
+a standard normal distribution, then transforming by affine and
+exponential functions:
+
+#+NAME: sardoy-firebrand-dispersal
+#+begin_src python
+from math import exp, sqrt, log
+import pyretechnics.conversion as conv
+
+
+def sample_normal(rand_gen, mu, sd):
+    """
+    Returns sample from normal/gaussian distribution given mu and sd.
+    """
+    return rand_gen.normal(mu, sd)
+
+
+def sample_lognormal(rand_gen, mu, sd):
+    """
+    Returns sample from log-normal distribution given mu and sd.
+    """
+    return rand_gen.lognormal(mu, sd)
+
+
+# FIXME: unused
+def deltax_expected_value(mu_x, sigma_x):
+    return conv.m_to_ft(exp(mu_x + (sigma_x ** 2.0) / 2.0))
+
+
+# FIXME: unused
+def deltax_coefficient_of_variation(sigma_x):
+    return sqrt(exp(sigma_x ** 2.0) - 1.0)
+
+
+def delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft):
+    """
+    Returns a function for randomly sampling ΔX, the spotting jump along the wind direction (in meters).
+    """
+    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
+    mu_x      = ln_params["prob.lognormal.mu"]    # meters
+    sigma_x   = ln_params["prob.lognormal.sigma"] # meters
+    return lambda rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) # meters
+
+
+# When will we have the default sigma_Y > E[ΔX]?
+# It can be seen that this nonsensical situation
+# happens iff sigma_X exceeds the following number:
+#
+# sqrt(log(1.0 + (0.88 ** 2.0) / (0.92 * 0.47))
+#
+# => 1.0131023746492023
+sigma_y_scalar_m = 0.92 * 0.47 / (0.88 ** 2.0)
+
+
+def himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x):
+    es2h       = exp((sigma_x ** 2.0) / 2.0)
+    avg_deltax = exp(mu_x) * es2h
+    return sigma_y_scalar_m * avg_deltax * (es2h + 1.0) * (es2h - 1.0) # meters
+
+
+def himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft):
+    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
+    mu_x      = ln_params["prob.lognormal.mu"]    # meters
+    sigma_x   = ln_params["prob.lognormal.sigma"] # meters
+    return himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) # meters
+
+
+def resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft):
+    crosswind_distance_stdev = spot_config.get("crosswind_distance_stdev")
+    if crosswind_distance_stdev != None:
+        return crosswind_distance_stdev # meters
+    else:
+        return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
+
+
+def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
+    """
+    Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
+    """
+    sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
+    return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
+#+end_src
+
+*** Spotting Probability and Number of Firebrands
+    :PROPERTIES:
+    :CUSTOM_ID: spotting-probability-and-number-of-firebrands
+    :END:
+
+Whether or not a cell emits firebrands is determined by a spotting
+probability. Pyretechnics lets users configure separate spotting
+probabilities for crown fires (*crown_fire_spotting_percent*) and for
+surface fires under certain conditions
+(*surface_fire_spotting_percent*). Note that these configuration keys
+have misleading names (the values must be between 0 and 1).
+
+Surface fire spotting can only happen when the fireline intensity
+exceeds a certain threshold (configured with
+*critical_fireline_intensity*). Both that threshold and the spotting
+probability can be configured per fuel model.
+
+#+NAME: sample-number-of-firebrands
+#+begin_src python
+def sample_poisson(rand_gen, mu):
+    """
+    Returns sample from poisson distribution given mu.
+    """
+    return rand_gen.poisson(mu)
+
+
+def sample_number_of_firebrands(rand_gen, expected_firebrand_count):
+    return sample_poisson(rand_gen, expected_firebrand_count)
+#+end_src
+
+If spotting occurs at a cell, the number of firebrands is randomly
+drawn from a Poisson distribution, the mean of which is configured
+with key *num_firebrands*. As such, non-integer values are allowed for
+*num_firebrands*. The use of a Poisson distribution can help make the
+behavior robust to changes in simulation resolution. That being said,
+note that *num_firebrands* and/or the spotting probabilities will need
+to be adjusted if you change the simulation resolution, the essential
+invariant being the average number of firebrands per unit area. What's
+more, it may be sensible to set the spotting probability to 1 and
+compensate with a low Poisson mean.
+
+*** Spot Ignition Model
+    :PROPERTIES:
+    :CUSTOM_ID: spot-ignition-model
+    :END:
+
+The Spot Ignition model describes the probability of a spot ignition
+as well as when the spot ignition should occur. Perryman 2012 uses the
+method described in Schroeder 1969 but adjusts the result to take into
+account the distance a firebrand lands from the source tree (using
+Albini 1979) and the number of firebrands that land in a cell (using
+Stauffer
+2008).[fn::Perryman2012][fn::Schroeder1969][fn::Albini1979][fn::Stauffer2008]
+
+\begin{align}
+  P(I)_l = P(I)\exp(-\lambda_s l) \\
+  \nonumber \\
+  P(I)_l^{FB} = 1 - (1 - P(I)_l)^{n_b}
+\end{align}
+
+where $\lambda_s$ is a positive number representing the decay
+constant, $l$ is the firebrand's landing distance away from the source
+cell. $P(I)_l$ is the probability of spot ignition taking into
+consideration $l$. $P(I)_l^{FB}$ is the probability of spot fire
+ignition taking into consideration $n_b$, the number of firebrands
+landing in a cell.
+
+We observe that the second formula is equivalent to a model where the
+firebrands are i.i.d causes of ignition (this is consistent with the
+goal of making the model insensitive to grid resolution). Therefore,
+Pyretechnics will simply draw an independent Bernoulli trial for each
+firebrand rather than apply the above formula.
+
+The first formula simply says that the per-firebrand probability
+decays exponentially with distance (i.e. adding $1/\lambda_s$ to the
+distance divides the probability by $e$, or equivalently $l \mapsto
+P(I)_l$ has derivative $\lambda_s P(I)_l$). Yet another way to say
+this is that, if $\lambda_s = \text{0.005 m}^{-1}$, then each added
+meter decreases $P(I)_l$ by 0.5%.
+
+#+NAME: firebrand-ignition-probability
+#+begin_src python
+from math import exp
+
+
+def firebrand_flight_survival_probability(spotting_distance, decay_distance):
+    """
+    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
+    - spotting_distance :: meters (d)
+    - decay_distance    :: meters (1/lambda)
+
+    P(Survival) = exp(-d * lambda)
+    """
+    return exp(-spotting_distance / decay_distance)
+
+
+def heat_of_preignition(temperature, fine_fuel_moisture):
+    """
+    Returns heat of preignition given:
+    - temperature        :: degrees Celsius
+    - fine_fuel_moisture :: 0-1
+
+    Q_ig = 144.512 - 0.266 * T_o - 0.00058 * (T_o)^2 - T_o * M + 18.54 * (1 - exp(-15.1 * M)) + 640 * M (eq. 10)
+    """
+    T_o = temperature
+    M   = fine_fuel_moisture
+    # Heat required to reach ignition temperature
+    Q_a = 144.512 - 0.266 * T_o - 0.00058 * (T_o ** 2.0)
+    # Heat required to raise moisture to the boiling point
+    Q_b = -T_o * M
+    # Heat of desorption
+    Q_c = 18.54 * (1.0 - exp(-15.1 * M))
+    # Heat required to vaporize moisture
+    Q_d = 640.0 * M
+    return Q_a + Q_b + Q_c + Q_d
+
+
+def schroeder_ignition_probability(temperature, fine_fuel_moisture):
+    """
+    Returns the probability of spot fire ignition (Schroeder 1969) given:
+    - temperature        :: degrees Celsius
+    - fine_fuel_moisture :: 0-1
+
+    X           = (400 - Q_ig) / 10
+    P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
+    """
+    Q_ig        = heat_of_preignition(temperature, fine_fuel_moisture)
+    X           = max(0.0, 400.0 - Q_ig) / 10.0
+    P_Ignition  = 0.000048 * (X ** 4.3) / 50.0
+    return min(P_Ignition, 1.0)
+#+end_src
+
+A firebrand will cause an unburned cell to transition to a burned
+state if the cell receives at least one firebrand and the cell's
+probability of ignition as calculated by the above equations is
+greater than a randomly generated uniform number.
+
+*** Time to Spot Ignition
+    :PROPERTIES:
+    :CUSTOM_ID: time-to-spot-ignition
+    :END:
+
+# FIXME: Simplify the text in this section based on the following observation:
+#
+# We see that $t_v$ will only be a few seconds for high flamelengths,
+# and a few minutes for small ones, amounting to insignificant
+# contributions compared to the $t_I = 20 \text{min}$ term, which will
+# dominate the time to ignition. Given that $t_I$ is only a ballpark
+# guess, this questions the relevance of computing $t_v$ at all.
+
+Once a cell has been determined to ignite, then the time until
+ignition is calculated. The time until ignition is a sum of three time
+intervals: the amount of time required for the firebrand to reach its
+maximum vertical height $t_v$, the amount of time required for the
+firebrand to descend from the maximum vertical height to the forest
+floor $t_g$, and the amount of time required for a spot fire to ignite
+and build up to the steady-state $t_I$. Perryman
+2012[fn::Perryman2012] assumes $t_v$ and $t_g$ to be equal and used
+the formula from Albini 1979[fn::Albini1979spot] to calculate it.
+$t_I$ is also assumed to be 20 min as used in McAlpine
+1991[fn::McAlpine1991].
+
+By Albini 1979[fn::Albini1979spot], the time $t_v$ for a firebrand to
+reach height $z$ when the flame length is $z_F$ is given by:
+
+\begin{align}
+  t_v &= \frac{2 z_F}{w_F} \left(1.2 + \frac{a}{3} \left[ \left(\frac{b + (z/z_F)}{a}\right)^\frac{3}{2} - 1 \right] \right) & \\
+  \nonumber \\
+  w_F &= 2.3 \text{ m/s} \sqrt{\frac{z_F}{1 \text{ m}}} & \\
+  \nonumber \\
+  a   &= 5.963 & \\
+  \nonumber \\
+  b   &=  a - 1.4 & \\
+\end{align}
+
+In the notation of Albini 1979[fn::Albini1979spot], we would have $t_v
+= \frac{2 z_F}{w_F}(t_T - t_o)$.
+
+Albini 1979[fn::Albini1979spot] also provides a formula - (D44) - for
+the maximum height $z_\text{max}$ that a firebrand can reach while
+still glowing when it hits the ground, as a function of the firebrand
+diameter $D$ in a cylinder model:
+
+\begin{align}
+  z_\text{max} = D \times 0.39 \times 10^5
+\end{align}
+
+To estimate firebrand travel time, Pyretechnics makes the assumption
+that each firebrand will reach $z_\text{max}$, where $z_\text{max}$ is
+computed for $D = 3\text{mm}$, yielding $z_\text{max} = 117 \text{m}$.
+
+To make the above formulas more tangible, observe that when the flame
+length is small enough that $z_F \ll z_\text{max}$, the above formulas
+simplify into the following approximation:
+
+\begin{align}
+  t_v \underset{z_F \ll z_\text{max}}{\approx} \frac{2}{3 \sqrt{a}} \frac{\sqrt{z_\text{max} \times 1 \text{m}}}{2.3 \text{m/s}}\frac{z_\text{max}}{z_F}
+\end{align}
+
+Plugging in Pyretechnics' choice of $z_\text{max} = 117 \text{m}$
+yields:
+
+\begin{align}
+  t_v \underset{z_F \ll z_\text{max}}{\approx} 1.28 \text{s} \times \frac{117 \text{m}}{z_F}
+\end{align}
+
+In other words, in the limit of small-enough flame lengths, the
+firebrand is assumed to elevate at a constant vertical speed
+$(z_F/1.28 \text{s})$ which is proportional to the flame length, until
+it reaches $z_\text{max} = 117 \text{m}$. For example, if the flame
+length is 1.17m (100x smaller than $z_\text{max}$), $t_v$ is about
+128s.
+
+#+NAME: firebrands-time-of-ignition
+#+begin_src python
+from math import sqrt
+import pyretechnics.conversion as conv
+
+
+def albini_firebrand_maximum_height(firebrand_diameter):
+    return 0.39e5 * firebrand_diameter
+
+
+def albini_t_max(flame_length):
+    """
+    Returns the time of spot ignition using Albini1979spot in minutes given:
+    - flame_length :: meters [z_F]
+
+    a           = 5.963                                                             (D33)
+    b           = a - 1.4                                                           (D34)
+    D           = 0.003
+    z           = 0.39 * D * 10^5
+    w_F         = 2.3 * z_F^0.5                                                     (A58)
+    t_c         = 1
+    t_o         = t_c / (2 * z_F / w_F)
+    travel_time = t_1 + t_2 + t_3 = 1.2 + (a / 3) * (((b + (z/z_F)) / a)^3/2 - 1)   (D43)
+    """
+    a           = 5.963  # dimensionless constant from (D33)
+    b           = 4.563  # dimensionless constant from (D34)
+    z           = 117.0  # maximum altitude of firebrands in meters [derived for (D44) in (Albini1979spot)]
+    z_F         = flame_length                      # m
+    w_F         = 2.3 * sqrt(flame_length)          # m/s
+    charact_t   = conv.sec_to_min(2.0 * z_F / w_F)  # min
+    # The following dimensionless factor is equal to t_T - t_o, with t_T defined by (D43) in Albini1979spot.
+    travel_time = 1.2 + (a / 3.0) * (((b + z / z_F) / a) ** 1.5 - 1.0)
+    return charact_t * travel_time
+
+
+def spot_ignition_time(time_of_arrival, flame_length):
+    """
+    Returns the time of spot ignition using Albini 1979 and Perryman 2012 in minutes given:
+    - time_of_arrival :: minutes
+    - flame_length    :: meters
+
+    t_spot = time_of_arrival + (2 * t_max) + t_ss
+    """
+    t_max          = albini_t_max(flame_length)
+    t_steady_state = 20.0 # period of building up to steady state from ignition (min)
+    return time_of_arrival + 2.0 * t_max + t_steady_state
+#+end_src
+
+*** Spreading Firebrands
+    :PROPERTIES:
+    :CUSTOM_ID: spreading-firebrands
+    :END:
+
+Once the locations, ignition probabilities, and times of ignition have
+been calculated for each of the firebrands, a tuple of
+*(spot_ignition_time, ignition_locations)* are returned, to be
+processed in the fire spread algorithm (see section [[Fire Spread
+Algorithm: Eulerian Level Set Method
+(pyretechnics.eulerian_level_set)]]), where *spot_ignition_time* is the
+ignition time of the spot fire in minutes, and *ignition_locations* is
+a list of *(y,x)* grid coordinates in which spot fires will be
+ignited.
+
+
+#+NAME: spread-firebrands
+#+begin_src python
+from math import sin, cos, hypot, radians
+import numpy as np
+import pyretechnics.conversion as conv
+import pyretechnics.fuel_models as fm
+
+
+def is_in_bounds(y, x, rows, cols):
+    """
+    Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
+    """
+    return (y >= 0) and (x >= 0) and (y < rows) and (x < cols)
+
+
+def is_burnable_cell(fuel_model_cube, t, y, x):
+    """
+    Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
+    """
+    fuel_model_number = fuel_model_cube.get(t,y,x)
+    fuel_model        = fm.fuel_model_table.get(fuel_model_number)
+    return fuel_model and fuel_model["burnable"]
+
+
+def cast_firebrand(rand_gen,
+                   fuel_model_cube,
+                   temperature_cube,
+                   fuel_moisture_dead_1hr_cube,
+                   fire_type_matrix,
+                   firebrand_count_matrix, # NOTE: May be None
+                   rows,
+                   cols,
+                   cell_height,
+                   cell_width,
+                   source_t,
+                   source_y,
+                   source_x,
+                   decay_distance,
+                   cos_wdir,
+                   sin_wdir,
+                   sample_delta_y_fn,
+                   sample_delta_x_fn):
+    """
+    TODO: Add docstring
+    Draws a random [ΔX, ΔY] pair of signed distances (in meters) from
+    the supplied cell, representing the coordinates of the spotting jump in the directions
+    parallel and perpendicular to the wind. ΔX will typically be positive (downwind),
+    and positive ΔY means to the right of the downwind direction.
+    """
+    #=======================================================================================
+    # Determine where the firebrand will land
+    #=======================================================================================
+
+    delta_y  = sample_delta_y_fn(rand_gen)                            # meters
+    delta_x  = sample_delta_x_fn(rand_gen)                            # meters
+    grid_dy  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
+    grid_dx  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
+    target_y = source_y + distance_to_n_cells(grid_dy, cell_height)
+    target_x = source_x + distance_to_n_cells(grid_dx, cell_width)
+
+    #=======================================================================================
+    # Determine whether the firebrand will start a fire or fizzle out
+    #=======================================================================================
+
+    if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0:
+        # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)
+        if isinstance(firebrand_count_matrix, np.ndarray):
+            firebrand_count_matrix[target_y,target_x] += 1
+
+        # Calculate the probability that the firebrand survived its flight and landed while still burning
+        spotting_distance           = hypot(grid_dx, grid_dy) # meters
+        flight_survival_probability = firebrand_flight_survival_probability(spotting_distance, decay_distance)
+
+        # Roll the dice
+        uniform_sample = rand_gen.uniform(0.0, 1.0)
+
+        if (uniform_sample <= flight_survival_probability
+            and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
+            # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
+            temperature          = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
+            fine_fuel_moisture   = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
+            ignition_probability = schroeder_ignition_probability(temperature, fine_fuel_moisture)
+
+            if uniform_sample <= flight_survival_probability * ignition_probability:
+                # Firebrand ignited the target cell, so return its coordinates for later processing
+                return (target_y, target_x)
+
+
+def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
+                      rand_gen, expected_firebrand_count, spot_config):
+    """
+    Given these inputs:
+    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+      - fuel_model                    :: integer index in fm.fuel_model_table
+      - temperature                   :: degrees Celsius
+      - wind_speed_10m                :: km/hr
+      - upwind_direction              :: degrees clockwise from North
+      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
+    - output_matrices           :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
+      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+      - fireline_intensity            :: 2D float array (kW/m)
+      - flame_length                  :: 2D float array (m)
+      - time_of_arrival               :: 2D float array (min)
+      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)
+    - cube_resolution           :: tuple with these fields
+      - band_duration                 :: minutes
+      - cell_height                   :: meters
+      - cell_width                    :: meters
+    - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
+    - rand_gen                  :: numpy.random.Generator
+    - expected_firebrand_count  :: expected number of firebrands to cast
+    - spot_config               :: dictionary of spotting parameters
+      - downwind_distance_mean        :: meters
+      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
+      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+      - crosswind_distance_stdev      :: meters
+      - decay_distance                :: meters
+
+    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
+    casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
+    locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that
+    fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in
+    a tuple with these fields:
+
+    - ignition_time :: minutes
+    - ignited_cells :: set of (y,x) grid coordinates
+    """
+    #=======================================================================================
+    # Sample the number of firebrands to cast from the source cell
+    #=======================================================================================
+
+    num_firebrands = sample_number_of_firebrands(rand_gen, expected_firebrand_count)
+
+    if num_firebrands > 0:
+
+        #=======================================================================================
+        # Ensure that there is wind to transport the firebrands
+        #=======================================================================================
+
+        (t, y, x)      = space_time_coordinate
+        wind_speed_10m = space_time_cubes["wind_speed_10m"].get(t,y,x) # km/hr
+
+        if wind_speed_10m > 0.0:
+
+            #=======================================================================================
+            # Unpack all firebrand-related features of the source cell
+            #=======================================================================================
+
+            fuel_model_cube              = space_time_cubes["fuel_model"]
+            temperature_cube             = space_time_cubes["temperature"]
+            fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
+            fire_type_matrix             = output_matrices["fire_type"]
+            firebrand_count_matrix       = output_matrices.get("firebrand_count")
+            (_, rows, cols)              = fuel_model_cube.shape
+            (_, cell_height, cell_width) = cube_resolution
+            decay_distance               = spot_config["decay_distance"]
+            upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
+            downwind_direction           = radians(conv.opposite_direction(upwind_direction))
+            cos_wdir                     = cos(downwind_direction)
+            sin_wdir                     = sin(downwind_direction)
+            fireline_intensity           = output_matrices["fireline_intensity"][y,x]             # m
+            wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+            wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
+            sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+            sample_delta_x_fn            = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+
+            #=======================================================================================
+            # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
+            #=======================================================================================
+
+            ignited_cells = {ignited_cell for _i in range(num_firebrands)
+                             if (ignited_cell := cast_firebrand(rand_gen,
+                                                                fuel_model_cube,
+                                                                temperature_cube,
+                                                                fuel_moisture_dead_1hr_cube,
+                                                                fire_type_matrix,
+                                                                firebrand_count_matrix,
+                                                                rows,
+                                                                cols,
+                                                                cell_height,
+                                                                cell_width,
+                                                                t,
+                                                                y,
+                                                                x,
+                                                                decay_distance,
+                                                                cos_wdir,
+                                                                sin_wdir,
+                                                                sample_delta_y_fn,
+                                                                sample_delta_x_fn))
+                             is not None}
+
+            #=======================================================================================
+            # Return any cells ignited by firebrands along with their time of ignition
+            #=======================================================================================
+
+            if len(ignited_cells) > 0:
+                time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
+                flame_length    = output_matrices["flame_length"][y,x]              # meters
+                ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
+
+                return (ignition_time, ignited_cells)
+#+end_src
+
+** For Users
+   :PROPERTIES:
+   :CUSTOM_ID: for-users-spot
+   :header-args:python+: :session *examples:pyretechnics.spot_fire*
+   :header-args:python+: :results output replace
+   :header-args:python+: :exports both
+   :END:
+
+*** How to Estimate the Areal Heat Output for All Surface Fuel Models
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models
+    :END:
+
+#+NAME: estimate-areal-heat-output
+#+begin_src python
+import matplotlib.pyplot as plt
+import numpy as np
+from pprint import pprint
+import pyretechnics.fuel_models as fm
+import pyretechnics.surface_fire as sf
+
+def calc_areal_heat_output(moisturized_fuel_model):
+    fire_behavior        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+    spread_rate          = fire_behavior["base_spread_rate"]        # m/min
+    fireline_intensity   = fire_behavior["base_fireline_intensity"] # kW/m
+    heat_output_per_area = 60.0 * fireline_intensity / spread_rate if spread_rate > 0.0 else 0.0 # kJ/m^2
+    return heat_output_per_area
+
+def save_areal_heat_output_as_histogram(areal_heat_output, moisture_category):
+    plt.hist(areal_heat_output[moisture_category],
+             range=(0, 60000),
+             bins=12,
+             density=True,
+             histtype="bar",
+             color="darkred",
+             edgecolor="black")
+    plt.title("Areal Heat Output for All Surface Fuel Models - " + str.capitalize(moisture_category) + " Conditions")
+    plt.xlabel("Areal Heat Output (kJ/m^2)")
+    plt.ylabel("Probability Density")
+    plt.savefig("../doc/pics/fm_areal_heat_output_" + moisture_category + ".png")
+    plt.close("all")
+
+fuel_moisture_dry = [
+    0.025, # dead_1hr
+    0.050, # dead_10hr
+    0.075, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.45, # live_herbaceous
+    0.30, # live_woody
+]
+
+fuel_moisture_mod = [
+    0.05, # dead_1hr
+    0.10, # dead_10hr
+    0.15, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    0.90, # live_herbaceous
+    0.60, # live_woody
+]
+
+fuel_moisture_wet = [
+    0.10, # dead_1hr
+    0.20, # dead_10hr
+    0.30, # dead_100hr
+    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
+    1.80, # live_herbaceous
+    1.20, # live_woody
+]
+
+areal_heat_output = {
+    "dry": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_dry)) for v in fm.fuel_model_table.values()],
+    "mod": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_mod)) for v in fm.fuel_model_table.values()],
+    "wet": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_wet)) for v in fm.fuel_model_table.values()],
+}
+
+for moisture_category in ["dry", "mod", "wet"]:
+    save_areal_heat_output_as_histogram(areal_heat_output, moisture_category)
+
+print("Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
+pprint({
+    "dry": np.median(areal_heat_output["dry"]),
+    "mod": np.median(areal_heat_output["mod"]),
+    "wet": np.median(areal_heat_output["wet"]),
+})
+
+print("\nMean Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
+pprint({
+    "dry": np.mean(areal_heat_output["dry"]),
+    "mod": np.mean(areal_heat_output["mod"]),
+    "wet": np.mean(areal_heat_output["wet"]),
+})
+
+print("\nMax Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
+pprint({
+    "dry": np.max(areal_heat_output["dry"]),
+    "mod": np.max(areal_heat_output["mod"]),
+    "wet": np.max(areal_heat_output["wet"]),
+})
+#+end_src
+
+#+NAME: run-estimate-areal-heat-output
+#+RESULTS: estimate-areal-heat-output
+#+begin_example
+Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models
+================================================================================
+{'dry': 9517.751902280774, 'mod': 7050.167242235583, 'wet': 3533.8204025496834}
+
+Mean Areal Heat Output (kJ/m^2) for All Surface Fuel Models
+================================================================================
+{'dry': 14270.339257437603, 'mod': 10954.33091872254, 'wet': 5705.411098489761}
+
+Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
+================================================================================
+{'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
+#+end_example
+
+*** [WIP] How to Estimate Spot Fire Count from Firebrand Production Rate
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-estimate-spot-fire-count-from-firebrand-production-rate
+    :END:
+
+And...we're back! I put together another range tester for the probability of spot fire ignition.
+
+These are the ranges I used for the relevant input variables:
+
+- temperature: 20-40 degrees Celsius
+- fine fuel moisture: 5-20%
+- distance from burning cell: 30-990 meters (<= 1-33 cells)
+- distance decay constant: 0.005-0.100 m^-1
+
+Here's the code:
+
+#+NAME: estimate-spot-fire-count
+#+begin_src clojure
+(require '[gridfire.spotting :refer [schroeder-ign-prob]])
+(import 'org.apache.commons.math3.util.FastMath)
+
+(def sigs
+  (sort
+   (for [temperature (range 20 41 5)
+         moisture    (range 0.05 0.21 0.05)]
+     (schroeder-ign-prob temperature moisture))))
+
+(def distance-penalties
+  (sort
+   (for [decay    (range 0.005 0.11 0.005)
+         distance (range 30.0 1000.0 30.0)]
+     (FastMath/exp (* -1.0 decay distance)))))
+
+(def ignition-probs
+  (sort
+   (for [sig sigs
+         dp  distance-penalties]
+     (* sig dp))))
+
+(defn percentile-indices [coll]
+  "Return the 0th, 25th, 50th, 75th, and 100th percentile indices for coll."
+  (let [max-index (dec (count coll))]
+    (map #(int (* % max-index))
+         [0.0 0.25 0.5 0.75 1.0])))
+
+(def rep-sigs
+  (map #(nth sigs %) (percentile-indices sigs)))
+
+(def rep-dps
+  (map #(nth distance-penalties %) (percentile-indices distance-penalties)))
+
+(def rep-ignition-probs
+  (map #(nth ignition-probs %) (percentile-indices ignition-probs)))
+
+{:representative-schroeder-ignition-probabilities rep-sigs
+ :representative-distance-penalties               rep-dps
+ :representative-spot-ignition-probabilities      rep-ignition-probs}
+#+end_src
+
+And here's the result:
+
+```clojure
+{:representative-schroeder-ignition-probabilities
+ (0.0410643084416302
+  0.05806152126033939
+  0.1462606114856146
+  0.32092711244047045
+  0.6532412198970651),
+ :representative-distance-penalties
+ (7.162895350006142E-46
+  2.7158820118920623E-19
+  4.161397394224164E-10
+  2.248673241788482E-4
+  0.8607079764250578),
+ :representative-spot-ignition-probabilities
+ (2.941393439877709E-47
+  7.50193220126481E-20
+  9.65780746160267E-11
+  3.650896835973886E-5
+  0.5622499284950391)}
+```
+
+So if we multiply the `representative-spot-ignition-probabilities` by the firebrand count range given with a `heat_per_firebrand` of 33.33 kJ (see above), we get the following:
+
+#+NAME: estimate-spot-fire-count2
+#+begin_src clojure
+(for [num-firebrands [256500 1471500]]
+  (map #(* num-firebrands %)
+       rep-ignition-probs))
+#+end_src
+
+which results in:
+
+```clojure
+((7.544674173286323E-42
+  1.9242456096244238E-14
+  2.4772276139010847E-5
+  9.364550384273018
+  144217.10665897751)
+ (4.3282604467800485E-41
+  1.1039093234161168E-13
+  1.4211463679748328E-4
+  53.72294694135574
+  827350.76978045))
+```
+
+We can see that depending on the surface fuel model, we can get
+anywhere from 9 to 827,350 spot fires ignited by one burning cell per
+timestep in the upper quartile of temperature/moisture/distance/decay
+conditions with that ridiculously low `heat_per_firebrand`.
+Hopefully this provides sufficient direction for selecting a more
+reasonable default for that parameter.
+
+*** How to Estimate Typical Ranges for the $\vec{\Delta}$ Distribution Characteristics
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics
+    :END:
+
+#+NAME: himoto-typical-ranges
+#+begin_src python :results table raw
+from math import sqrt, log
+
+def himoto_eq_28_values(B_star):
+    # NOTE: The following value for D seems absurdly low, and so does
+    # the predicted E[ΔX]. I suspect a typo in the Himoto2005 paper.
+    D                  = 0.08
+    std_delta_x_over_D = 0.88 * (B_star ** (1.0 / 3.0))
+    exp_delta_x_over_D = 0.47 * (B_star ** (2.0 / 3.0))
+    cv_delta_x         = std_delta_x_over_D / exp_delta_x_over_D
+    sigma_x            = sqrt(log(1.0 + cv_delta_x))
+    exp_delta_x        = exp_delta_x_over_D * D
+    mu_x               = log(exp_delta_x) - (sigma_x ** 2.0) / 2.0
+    sigma_y            = D * 0.92
+    return {
+        "$B^*$"                             : B_star,
+        "$\\text{CV}[\\Delta_X]$"           : "{:.0f}%".format(100.0 * cv_delta_x),
+        "$\\sigma_X$"                       : "{:.2f}".format(sigma_x),
+        "$\\sigma_Y/\\mathbb{E}[\\Delta_X]$": "{:.2f}".format(sigma_y / exp_delta_x),
+        # NOTE the following ended up being nonsensical:
+        # "E[ΔX] (m)" exp_delta_x
+        # "μ_X"       mu_x
+    }
+
+himoto_typical_ranges = [himoto_eq_28_values(B_star) for B_star in [20, 50, 100, 150, 200]]
+table_header          = list(himoto_typical_ranges[0].keys())
+table_rows            = [list(d.values()) for d in himoto_typical_ranges]
+
+print([table_header, *table_rows])
+#+end_src
+
+#+NAME: run-himoto-typical-ranges
+#+RESULTS: himoto-typical-ranges
+| $B^*$ | $\text{CV}[\Delta_X]$ | $\sigma_X$ | $\sigma_Y/\mathbb{E}[\Delta_X]$ |
+|    20 |                   69% |       0.72 |                            0.27 |
+|    50 |                   51% |       0.64 |                            0.14 |
+|   100 |                   40% |       0.58 |                            0.09 |
+|   150 |                   35% |       0.55 |                            0.07 |
+|   200 |                   32% |       0.53 |                            0.06 |
+
 * Burning Cells on a Grid (pyretechnics.burn_cells)
   :PROPERTIES:
   :CUSTOM_ID: burning-cells-on-a-grid-(pyretechnics.burn_cells)
@@ -7403,1178 +8575,6 @@ file:../doc/pics/els_spot_firebrand_count.png
 #+NAME: spot-time-of-arrival-matplotlib-countours
 #+caption: Time of arrival with hourly perimeters with spotting enabled
 file:../doc/pics/els_spot_time_of_arrival.png
-
-* [WIP] Spot Fire Equations (pyretechnics.spot_fire)
-  :PROPERTIES:
-  :CUSTOM_ID: [wip]-spot-fire-equations-(pyretechnics.spot_fire)
-  :END:
-** For Developers
-   :PROPERTIES:
-   :CUSTOM_ID: for-developers-spot
-   :header-args:python+: :session *pyretechnics.spot_fire*
-   :header-args:python+: :tangle  ../src/pyretechnics/spot_fire.py
-   :header-args:python+: :exports code
-   :END:
-
-Whether a fire is spreading through surface or canopy fuels, it is
-possible that small pieces of the burning fuels may be lofted by winds
-ahead of the fire front. When these burning firebrands land in
-sufficiently dry fuels, they may ignite new fires under the right
-circumstances. Fires created in this way are called "spot fires" and
-are the subject of this chapter. The following sections provide
-functions for calculating the probability and rate of firebrand
-generation from burning fuels, the lofting distance and direction of
-these firebrands, the times at which they will be deposited ahead of
-the fire front, and their likelihood of igniting spot fires once
-deposited.
-
-*** Expected Firebrand Production
-    :PROPERTIES:
-    :CUSTOM_ID: expected-firebrand-production
-    :END:
-
-#+NAME: expected-firebrand-production
-#+begin_src python
-from math import sqrt
-
-
-def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
-    """
-    Return the expected number of firebrands produced by an entire cell when it burns given:
-    - fire_behavior         :: dictionary of surface or crown fire behavior values
-      - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"
-      - spread_rate              :: m/min
-      - spread_direction         :: (x, y, z) unit vector on the slope-tangential plane
-      - fireline_intensity       :: kW/m
-      - flame_length             :: m
-    - elevation_gradient    :: tuple with these fields
-      - dz_dx                    :: rise/run
-      - dz_dy                    :: rise/run
-    - cube_resolution       :: tuple with these fields
-      - band_duration            :: minutes
-      - cell_height              :: meters
-      - cell_width               :: meters
-    - heat_per_firebrand    :: kJ/firebrand
-    """
-    if fire_behavior["spread_rate"] == 0.0:
-        return 0.0
-    else:
-        #================================================================================================
-        # Calculate the heat output per unit area
-        #================================================================================================
-
-        spread_rate          = fire_behavior["spread_rate"]            # m/min
-        fireline_intensity   = fire_behavior["fireline_intensity"]     # kW/m
-        heat_output_per_area = 60.0 * fireline_intensity / spread_rate # kJ/m^2 (reaction_intensity * residence_time)
-
-        #================================================================================================
-        # Calculate the slope-adjusted cell area
-        #================================================================================================
-
-        (dz_dx, dz_dy) = elevation_gradient                      # (rise/run, rise/run)
-        slope_factor   = sqrt(1.0 + dz_dx ** 2.0 + dz_dy ** 2.0) # unitless
-        cell_height    = cube_resolution[1]                      # meters
-        cell_width     = cube_resolution[2]                      # meters
-        cell_area      = cell_height * cell_width * slope_factor # m^2
-
-        #================================================================================================
-        # Calculate the expected number of firebrands produced in this cell
-        #================================================================================================
-
-        cell_heat_output = heat_output_per_area * cell_area      # kJ
-        firebrand_count  = cell_heat_output / heat_per_firebrand # number of firebrands
-        return firebrand_count
-#+end_src
-
-*** Firebrand Dispersal Model
-    :PROPERTIES:
-    :CUSTOM_ID: firebrand-dispersal-model
-    :END:
-
-The Firebrand Dispersal model describes the distributions of
-firebrands relative to the wind direction. The location where the
-firebrand lands is represented by the random vector $\vec{\Delta}$
-from the location of origin:
-
-\begin{align}
-  \vec{\Delta} := \Delta_X.\vec{w} + \Delta_Y.\vec{w}_\perp
-\end{align}
-
-in which $\vec{w}, \vec{w}_\perp$ are unit vectors respectively
-parallel and perpendicular to the wind direction, and $\Delta_X,
-\Delta_Y$ are the random variables for coordinates.
-
-Following Perryman 2012, Sardoy 2008, and Himoto 2005, we model
-$\Delta_X$ and $\Delta_Y$ to be independent, with $\Delta_X$ following
-a log-normal distribution, and $\Delta_Y$ following a zero-mean normal
-distribution, conditional on the fire behavior $\Phi$ at the cell of
-origin:[fn::Perryman2012][fn::Sardoy2008][fn::Himoto2005]
-
-\begin{align}
-  \ln (\Delta_X / \text{1m}) | \Phi \sim & \text{Normal}(\mu = \mu_X(\Phi), \sigma = \sigma_X(\Phi)) & \\
-  \nonumber \\
-  \Delta_Y | \Phi \sim & \text{Normal}(\mu = 0, \sigma = \sigma_Y(\Phi)) &
-\end{align}
-
-where $\text{Normal}(\mu, \sigma)$ denotes a one-dimensional Gaussian
-distribution with mean $\mu$ and standard deviation $\sigma$. Note
-that $\mu_X$ and $\sigma_X$ are in log-space, therefore dimensionless.
-For the sake of light notation, the conditioning on $\Phi$ will be
-implicit from now on, e.g. we will write $\Delta_X$ instead of
-$\Delta_X | \Phi$.
-
-Since the results are distance deltas relative to the wind direction,
-we must convert this to deltas in our coordinate plane. We can convert
-these deltas by using trigonometric functions.
-
-#+NAME: convert-deltas
-#+begin_src python
-def delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y):
-    """
-    Computes the grid-aligned x coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
-    Returns a signed distance (same unit as ΔX and ΔY).
-    """
-    wdir_x      = sin_wdir
-    wdir_perp_x = cos_wdir
-    return delta_x * wdir_x + delta_y * wdir_perp_x
-
-
-def delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y):
-    """
-    Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
-    Returns a signed distance (same unit as ΔX and ΔY).
-    """
-    wdir_y      = cos_wdir  # FIXME: Should this be negative or positive?
-    wdir_perp_y = sin_wdir
-    return delta_x * wdir_y + delta_y * wdir_perp_y
-
-
-def distance_to_n_cells(distance, cell_size):
-    """
-    Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
-    """
-    return round(distance / cell_size)
-#+end_src
-
-*** Resolution of Log-Normal Parameters
-    :PROPERTIES:
-    :CUSTOM_ID: resolution-of-log-normal-parameters
-    :END:
-
-We now need to define the functions $\mu_X(\Phi)$ and
-$\sigma_X(\Phi)$. Here we depart from Sardoy 2008[fn::Sardoy2008] and
-reproduce the model of ELMFIRE[fn::https://elmfire.io], which models
-that dependency using the following relationships between the moments
-of the distribution and the fireline intensity $I$ and wind speed $U$:
-
-\begin{align}
-  \mathbb{E}[\Delta_X] = & \Delta_1 \left(\frac{I}{\text{1 kW/m}}\right)^{e_I} \left(\frac{U}{\text{1 m/s}}\right)^{e_U} & \\
-  \nonumber \\
-  \text{Var}[\Delta_X] = & r_\frac{V}{E} \mathbb{E}[\Delta_X] &
-\end{align}
-
-in which $\Delta_1, e_I, e_U, r_\frac{V}{E}$ are configured by the
-keys shown in table [[tab:spotting-elmfire-params]].
-
-#+NAME: tab:spotting-elmfire-params
-#+CAPTION: Spotting parameters for the downwind distribution per the ELMFIRE model
-|-----------------+------+------------------------------------------+------------------------------|
-| Parameter       | Unit | Description                              | Configuration Key            |
-|-----------------+------+------------------------------------------+------------------------------|
-| $\Delta_1$      | m    | Mean landing distance in unit conditions | downwind_distance_mean       |
-| $e_I$           | -    | Fireline intensity exponent              | fireline_intensity_exponent  |
-| $e_U$           | -    | Wind speed exponent                      | wind_speed_exponent          |
-| $r_\frac{V}{E}$ | m    | Variance-over-Mean ratio                 | downwind_variance_mean_ratio |
-|-----------------+------+------------------------------------------+------------------------------|
-
-*Note:* One potential way in which this model can misbehave is that
-the variance is proportional to the expected value, and therefore the
-coefficient of variation is driven to zero as the expected value goes
-to infinity, making the distribution less and less dispersed around
-its mean. This means that, in high-wind/high-intensity conditions, all
-the firebrands will tend to land at approximately the same (large)
-distance, following a narrow near-normal distribution.
-
-From the above moments, $\mu_X$ and $\sigma_X$ can be obtained using
-the properties of the log-normal distribution:
-
-\begin{align}
-  \sigma_X^2 = & \ln \left(1 + \frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]^2}\right) & \\
-  \nonumber \\
-  \mu_X = & \ln \frac{\mathbb{E}[\Delta_X]^2}{\sqrt{\text{Var}[\Delta_X] + \mathbb{E}[\Delta_X]^2}} &
-\end{align}
-
-#+NAME: resolve-spotting-lognormal-elmfire
-#+begin_src python
-from math import log, sqrt
-
-
-def resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft):
-    """
-    Computes the expected value E[ΔX] (in meters) of the downwind spotting distance ΔX given:
-    - spot_config        :: a map of spotting parameters
-    - fireline_intensity :: kW/m
-    - wind_speed_20ft    :: m/s
-    """
-    downwind_distance_mean      = spot_config["downwind_distance_mean"]
-    fireline_intensity_exponent = spot_config["fireline_intensity_exponent"]
-    wind_speed_exponent         = spot_config["wind_speed_exponent"]
-    return (downwind_distance_mean
-            * (fireline_intensity ** fireline_intensity_exponent)
-            * (wind_speed_20ft ** wind_speed_exponent))
-
-
-def resolve_var_delta_x(spot_config, exp_delta_x):
-    """
-    Computes the variance Var[ΔX] (in m^2) of the downwind spotting distance ΔX given:
-    - spot_config :: a map of spotting parameters
-    - exp_delta_x :: meters (E[ΔX])
-    """
-    return spot_config["downwind_variance_mean_ratio"] * exp_delta_x
-
-
-def lognormal_mu_from_moments(mean, variance):
-    """
-    TODO: Add docstring
-    """
-    m2 = mean ** 2.0
-    return log(m2 / sqrt(m2 + variance))
-
-
-def lognormal_sigma_from_moments(mean, variance):
-    """
-    TODO: Add docstring
-    """
-    return sqrt(log(1.0 + variance / (mean ** 2.0)))
-
-
-def resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft):
-    """
-    TODO: Add docstring
-    """
-    exp_delta_x = resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft)
-    var_delta_x = resolve_var_delta_x(spot_config, exp_delta_x)
-    return {
-        "prob.lognormal.mu"   : lognormal_mu_from_moments(exp_delta_x, var_delta_x),
-        "prob.lognormal.sigma": lognormal_sigma_from_moments(exp_delta_x, var_delta_x),
-    }
-#+end_src
-
-*** Wind-Perpendicular Dispersal
-    :PROPERTIES:
-    :CUSTOM_ID: wind-perpendicular-dispersal
-    :END:
-
-For $\sigma_Y$, we either let the user specify an explicit value with
-key *crosswind_distance_stdev* (in meters), which makes it equivalent
-to the model of Perryman 2012[fn::Perryman2012], or we default to
-deriving them from equation (28) of Himoto 2005[fn::Himoto2005], which
-is equivalent to:
-
-\begin{align}
-  \sigma_Y = 0.92 D = 0.92 \frac{0.47}{0.88^2}\frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]}
-\end{align}
-
-$\text{Var}[\Delta_X]$ and $\mathbb{E}[\Delta_X]$ can be calculated
-from the properties of the log-normal distribution:
-
-\begin{align}
-  \mathbb{E}[\Delta_X] = \text{1m} \times \exp \left(\mu_X + \frac{1}{2}\sigma_X^2 \right) \\
-  \nonumber \\
-  \text{Var}[\Delta_X] = \mathbb{E}[\Delta_X]^2 \left(e^{\sigma_X^2} - 1\right)
-\end{align}
-
-Combining the above equations and applying some algebra yields a
-formula for $\sigma_Y$:
-
-\begin{align}
-  \sigma_Y = 0.92 D = \text{1m} \times 0.5584 \times e^{\mu_X} \times e^{\frac{1}{2}\sigma_X^2} \left(e^{\frac{1}{2}\sigma_X^2} - 1\right) \left(e^{\frac{1}{2}\sigma_X^2} + 1\right)
-\end{align}
-
-Typical values are shown in table [[tab:himoto2005-example-values]].
-
-#+NAME: tab:himoto2005-example-values
-#+CAPTION: Typical values for $\vec{\Delta}$ distribution characteristics derived from Himoto2005
-|-------+-----------------------+------------+---------------------------------|
-| $B^*$ | $\text{CV}[\Delta_X]$ | $\sigma_X$ | $\sigma_Y/\mathbb{E}[\Delta_X]$ |
-|-------+-----------------------+------------+---------------------------------|
-|    20 |                   69% |       0.72 |                            0.27 |
-|    50 |                   51% |       0.64 |                            0.14 |
-|   100 |                   40% |       0.58 |                            0.09 |
-|   150 |                   35% |       0.55 |                            0.07 |
-|   200 |                   32% |       0.53 |                            0.06 |
-|-------+-----------------------+------------+---------------------------------|
-
-See section [[How to Estimate Typical Ranges for the $\vec{\Delta}$
-Distribution Characteristics]] for more information on how these values
-were obtained.
-
-*CAUTION:* (FIXME REVIEW) We have found the above formula to be
-problematic when applied to the parameters values found in Sardoy
-2008[fn::Sardoy2008] because it tends to yield nonsensical $\sigma_Y >
-\mathbb{E}[\Delta_X]$. In fact, it can be seen that $\sigma_Y > s
-\mathbb{E}[\Delta_X]$ if and only if $\sigma_X > \sqrt{\ln \left(1 +
-\frac{.88^2}{.92 \times .47} s \right)}$, in particular $\sigma_X >
-1.013$ for $s = 1$, which is unfortunately the case with the range of
-$\sigma_X$ values in Sardoy 2008[fn::Sardoy2008]. This reflects a
-divergence between Himoto 2005[fn::Himoto2005] and Sardoy
-2008[fn::Sardoy2008], the latter allowing for more dispersed
-$\Delta_X$ distributions (higher coefficient of variation
-$\text{Var}[\Delta_X]^{\frac{1}{2}}/\mathbb{E}[\Delta_X] =
-\sqrt{e^{\sigma_X^2} - 1}$), whereas the former typically predicts a
-low coefficient of variation, as is perceptible in figure 6 of Himoto
-2005[fn::Himoto2005]. Figure 10 of Sardoy 2008[fn::Sardoy2008]
-suggests coefficients of variation ranging from 95% to 210%, whereas
-Figure 6 of Himoto 2005[fn::Himoto2005] suggests coefficients of
-variation ranging from 30% to 70%. For this reason, we *strongly
-recommend to supply $\sigma_Y$ directly* through the configuration key
-*crosswind_distance_stdev*.
-
-*** Sampling Firebrand Casting Distances
-    :PROPERTIES:
-    :CUSTOM_ID: sampling-firebrand-casting-distances
-    :END:
-
-Having computed the $\mu_X$, $\sigma_X$ and $\sigma_Y$ parameters, it
-remains to draw values of $\Delta_X$ and $\Delta_Y$ by sampling from
-log-normal and normal distributions. This can be done by sampling from
-a standard normal distribution, then transforming by affine and
-exponential functions:
-
-#+NAME: sardoy-firebrand-dispersal
-#+begin_src python
-from math import exp, sqrt, log
-import pyretechnics.conversion as conv
-
-
-def sample_normal(rand_gen, mu, sd):
-    """
-    Returns sample from normal/gaussian distribution given mu and sd.
-    """
-    return rand_gen.normal(mu, sd)
-
-
-def sample_lognormal(rand_gen, mu, sd):
-    """
-    Returns sample from log-normal distribution given mu and sd.
-    """
-    return rand_gen.lognormal(mu, sd)
-
-
-# FIXME: unused
-def deltax_expected_value(mu_x, sigma_x):
-    return conv.m_to_ft(exp(mu_x + (sigma_x ** 2.0) / 2.0))
-
-
-# FIXME: unused
-def deltax_coefficient_of_variation(sigma_x):
-    return sqrt(exp(sigma_x ** 2.0) - 1.0)
-
-
-def delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft):
-    """
-    Returns a function for randomly sampling ΔX, the spotting jump along the wind direction (in meters).
-    """
-    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
-    mu_x      = ln_params["prob.lognormal.mu"]    # meters
-    sigma_x   = ln_params["prob.lognormal.sigma"] # meters
-    return lambda rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) # meters
-
-
-# When will we have the default sigma_Y > E[ΔX]?
-# It can be seen that this nonsensical situation
-# happens iff sigma_X exceeds the following number:
-#
-# sqrt(log(1.0 + (0.88 ** 2.0) / (0.92 * 0.47))
-#
-# => 1.0131023746492023
-sigma_y_scalar_m = 0.92 * 0.47 / (0.88 ** 2.0)
-
-
-def himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x):
-    es2h       = exp((sigma_x ** 2.0) / 2.0)
-    avg_deltax = exp(mu_x) * es2h
-    return sigma_y_scalar_m * avg_deltax * (es2h + 1.0) * (es2h - 1.0) # meters
-
-
-def himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft):
-    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
-    mu_x      = ln_params["prob.lognormal.mu"]    # meters
-    sigma_x   = ln_params["prob.lognormal.sigma"] # meters
-    return himoto_resolve_default_sigma_y_from_lognormal_params(mu_x, sigma_x) # meters
-
-
-def resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft):
-    crosswind_distance_stdev = spot_config.get("crosswind_distance_stdev")
-    if crosswind_distance_stdev != None:
-        return crosswind_distance_stdev # meters
-    else:
-        return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
-
-
-def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
-    """
-    Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
-    """
-    sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
-    return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
-#+end_src
-
-*** Spotting Probability and Number of Firebrands
-    :PROPERTIES:
-    :CUSTOM_ID: spotting-probability-and-number-of-firebrands
-    :END:
-
-Whether or not a cell emits firebrands is determined by a spotting
-probability. Pyretechnics lets users configure separate spotting
-probabilities for crown fires (*crown_fire_spotting_percent*) and for
-surface fires under certain conditions
-(*surface_fire_spotting_percent*). Note that these configuration keys
-have misleading names (the values must be between 0 and 1).
-
-Surface fire spotting can only happen when the fireline intensity
-exceeds a certain threshold (configured with
-*critical_fireline_intensity*). Both that threshold and the spotting
-probability can be configured per fuel model.
-
-#+NAME: sample-number-of-firebrands
-#+begin_src python
-def sample_poisson(rand_gen, mu):
-    """
-    Returns sample from poisson distribution given mu.
-    """
-    return rand_gen.poisson(mu)
-
-
-def sample_number_of_firebrands(rand_gen, expected_firebrand_count):
-    return sample_poisson(rand_gen, expected_firebrand_count)
-#+end_src
-
-If spotting occurs at a cell, the number of firebrands is randomly
-drawn from a Poisson distribution, the mean of which is configured
-with key *num_firebrands*. As such, non-integer values are allowed for
-*num_firebrands*. The use of a Poisson distribution can help make the
-behavior robust to changes in simulation resolution. That being said,
-note that *num_firebrands* and/or the spotting probabilities will need
-to be adjusted if you change the simulation resolution, the essential
-invariant being the average number of firebrands per unit area. What's
-more, it may be sensible to set the spotting probability to 1 and
-compensate with a low Poisson mean.
-
-*** Spot Ignition Model
-    :PROPERTIES:
-    :CUSTOM_ID: spot-ignition-model
-    :END:
-
-The Spot Ignition model describes the probability of a spot ignition
-as well as when the spot ignition should occur. Perryman 2012 uses the
-method described in Schroeder 1969 but adjusts the result to take into
-account the distance a firebrand lands from the source tree (using
-Albini 1979) and the number of firebrands that land in a cell (using
-Stauffer
-2008).[fn::Perryman2012][fn::Schroeder1969][fn::Albini1979][fn::Stauffer2008]
-
-\begin{align}
-  P(I)_l = P(I)\exp(-\lambda_s l) \\
-  \nonumber \\
-  P(I)_l^{FB} = 1 - (1 - P(I)_l)^{n_b}
-\end{align}
-
-where $\lambda_s$ is a positive number representing the decay
-constant, $l$ is the firebrand's landing distance away from the source
-cell. $P(I)_l$ is the probability of spot ignition taking into
-consideration $l$. $P(I)_l^{FB}$ is the probability of spot fire
-ignition taking into consideration $n_b$, the number of firebrands
-landing in a cell.
-
-We observe that the second formula is equivalent to a model where the
-firebrands are i.i.d causes of ignition (this is consistent with the
-goal of making the model insensitive to grid resolution). Therefore,
-Pyretechnics will simply draw an independent Bernoulli trial for each
-firebrand rather than apply the above formula.
-
-The first formula simply says that the per-firebrand probability
-decays exponentially with distance (i.e. adding $1/\lambda_s$ to the
-distance divides the probability by $e$, or equivalently $l \mapsto
-P(I)_l$ has derivative $\lambda_s P(I)_l$). Yet another way to say
-this is that, if $\lambda_s = \text{0.005 m}^{-1}$, then each added
-meter decreases $P(I)_l$ by 0.5%.
-
-#+NAME: firebrand-ignition-probability
-#+begin_src python
-from math import exp
-
-
-def firebrand_flight_survival_probability(spotting_distance, decay_distance):
-    """
-    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
-    - spotting_distance :: meters (d)
-    - decay_distance    :: meters (1/lambda)
-
-    P(Survival) = exp(-d * lambda)
-    """
-    return exp(-spotting_distance / decay_distance)
-
-
-def heat_of_preignition(temperature, fine_fuel_moisture):
-    """
-    Returns heat of preignition given:
-    - temperature        :: degrees Celsius
-    - fine_fuel_moisture :: 0-1
-
-    Q_ig = 144.512 - 0.266 * T_o - 0.00058 * (T_o)^2 - T_o * M + 18.54 * (1 - exp(-15.1 * M)) + 640 * M (eq. 10)
-    """
-    T_o = temperature
-    M   = fine_fuel_moisture
-    # Heat required to reach ignition temperature
-    Q_a = 144.512 - 0.266 * T_o - 0.00058 * (T_o ** 2.0)
-    # Heat required to raise moisture to the boiling point
-    Q_b = -T_o * M
-    # Heat of desorption
-    Q_c = 18.54 * (1.0 - exp(-15.1 * M))
-    # Heat required to vaporize moisture
-    Q_d = 640.0 * M
-    return Q_a + Q_b + Q_c + Q_d
-
-
-def schroeder_ignition_probability(temperature, fine_fuel_moisture):
-    """
-    Returns the probability of spot fire ignition (Schroeder 1969) given:
-    - temperature        :: degrees Celsius
-    - fine_fuel_moisture :: 0-1
-
-    X           = (400 - Q_ig) / 10
-    P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
-    """
-    Q_ig        = heat_of_preignition(temperature, fine_fuel_moisture)
-    X           = max(0.0, 400.0 - Q_ig) / 10.0
-    P_Ignition  = 0.000048 * (X ** 4.3) / 50.0
-    return min(P_Ignition, 1.0)
-#+end_src
-
-A firebrand will cause an unburned cell to transition to a burned
-state if the cell receives at least one firebrand and the cell's
-probability of ignition as calculated by the above equations is
-greater than a randomly generated uniform number.
-
-*** Time to Spot Ignition
-    :PROPERTIES:
-    :CUSTOM_ID: time-to-spot-ignition
-    :END:
-
-# FIXME: Simplify the text in this section based on the following observation:
-#
-# We see that $t_v$ will only be a few seconds for high flamelengths,
-# and a few minutes for small ones, amounting to insignificant
-# contributions compared to the $t_I = 20 \text{min}$ term, which will
-# dominate the time to ignition. Given that $t_I$ is only a ballpark
-# guess, this questions the relevance of computing $t_v$ at all.
-
-Once a cell has been determined to ignite, then the time until
-ignition is calculated. The time until ignition is a sum of three time
-intervals: the amount of time required for the firebrand to reach its
-maximum vertical height $t_v$, the amount of time required for the
-firebrand to descend from the maximum vertical height to the forest
-floor $t_g$, and the amount of time required for a spot fire to ignite
-and build up to the steady-state $t_I$. Perryman
-2012[fn::Perryman2012] assumes $t_v$ and $t_g$ to be equal and used
-the formula from Albini 1979[fn::Albini1979spot] to calculate it.
-$t_I$ is also assumed to be 20 min as used in McAlpine
-1991[fn::McAlpine1991].
-
-By Albini 1979[fn::Albini1979spot], the time $t_v$ for a firebrand to
-reach height $z$ when the flame length is $z_F$ is given by:
-
-\begin{align}
-  t_v &= \frac{2 z_F}{w_F} \left(1.2 + \frac{a}{3} \left[ \left(\frac{b + (z/z_F)}{a}\right)^\frac{3}{2} - 1 \right] \right) & \\
-  \nonumber \\
-  w_F &= 2.3 \text{ m/s} \sqrt{\frac{z_F}{1 \text{ m}}} & \\
-  \nonumber \\
-  a   &= 5.963 & \\
-  \nonumber \\
-  b   &=  a - 1.4 & \\
-\end{align}
-
-In the notation of Albini 1979[fn::Albini1979spot], we would have $t_v
-= \frac{2 z_F}{w_F}(t_T - t_o)$.
-
-Albini 1979[fn::Albini1979spot] also provides a formula - (D44) - for
-the maximum height $z_\text{max}$ that a firebrand can reach while
-still glowing when it hits the ground, as a function of the firebrand
-diameter $D$ in a cylinder model:
-
-\begin{align}
-  z_\text{max} = D \times 0.39 \times 10^5
-\end{align}
-
-To estimate firebrand travel time, Pyretechnics makes the assumption
-that each firebrand will reach $z_\text{max}$, where $z_\text{max}$ is
-computed for $D = 3\text{mm}$, yielding $z_\text{max} = 117 \text{m}$.
-
-To make the above formulas more tangible, observe that when the flame
-length is small enough that $z_F \ll z_\text{max}$, the above formulas
-simplify into the following approximation:
-
-\begin{align}
-  t_v \underset{z_F \ll z_\text{max}}{\approx} \frac{2}{3 \sqrt{a}} \frac{\sqrt{z_\text{max} \times 1 \text{m}}}{2.3 \text{m/s}}\frac{z_\text{max}}{z_F}
-\end{align}
-
-Plugging in Pyretechnics' choice of $z_\text{max} = 117 \text{m}$
-yields:
-
-\begin{align}
-  t_v \underset{z_F \ll z_\text{max}}{\approx} 1.28 \text{s} \times \frac{117 \text{m}}{z_F}
-\end{align}
-
-In other words, in the limit of small-enough flame lengths, the
-firebrand is assumed to elevate at a constant vertical speed
-$(z_F/1.28 \text{s})$ which is proportional to the flame length, until
-it reaches $z_\text{max} = 117 \text{m}$. For example, if the flame
-length is 1.17m (100x smaller than $z_\text{max}$), $t_v$ is about
-128s.
-
-#+NAME: firebrands-time-of-ignition
-#+begin_src python
-from math import sqrt
-import pyretechnics.conversion as conv
-
-
-def albini_firebrand_maximum_height(firebrand_diameter):
-    return 0.39e5 * firebrand_diameter
-
-
-def albini_t_max(flame_length):
-    """
-    Returns the time of spot ignition using Albini1979spot in minutes given:
-    - flame_length :: meters [z_F]
-
-    a           = 5.963                                                             (D33)
-    b           = a - 1.4                                                           (D34)
-    D           = 0.003
-    z           = 0.39 * D * 10^5
-    w_F         = 2.3 * z_F^0.5                                                     (A58)
-    t_c         = 1
-    t_o         = t_c / (2 * z_F / w_F)
-    travel_time = t_1 + t_2 + t_3 = 1.2 + (a / 3) * (((b + (z/z_F)) / a)^3/2 - 1)   (D43)
-    """
-    a           = 5.963  # dimensionless constant from (D33)
-    b           = 4.563  # dimensionless constant from (D34)
-    z           = 117.0  # maximum altitude of firebrands in meters [derived for (D44) in (Albini1979spot)]
-    z_F         = flame_length                      # m
-    w_F         = 2.3 * sqrt(flame_length)          # m/s
-    charact_t   = conv.sec_to_min(2.0 * z_F / w_F)  # min
-    # The following dimensionless factor is equal to t_T - t_o, with t_T defined by (D43) in Albini1979spot.
-    travel_time = 1.2 + (a / 3.0) * (((b + z / z_F) / a) ** 1.5 - 1.0)
-    return charact_t * travel_time
-
-
-def spot_ignition_time(time_of_arrival, flame_length):
-    """
-    Returns the time of spot ignition using Albini 1979 and Perryman 2012 in minutes given:
-    - time_of_arrival :: minutes
-    - flame_length    :: meters
-
-    t_spot = time_of_arrival + (2 * t_max) + t_ss
-    """
-    t_max          = albini_t_max(flame_length)
-    t_steady_state = 20.0 # period of building up to steady state from ignition (min)
-    return time_of_arrival + 2.0 * t_max + t_steady_state
-#+end_src
-
-*** Spreading Firebrands
-    :PROPERTIES:
-    :CUSTOM_ID: spreading-firebrands
-    :END:
-
-Once the locations, ignition probabilities, and times of ignition have
-been calculated for each of the firebrands, a tuple of
-*(spot_ignition_time, ignition_locations)* are returned, to be
-processed in the fire spread algorithm (see section [[Fire Spread
-Algorithm: Eulerian Level Set Method
-(pyretechnics.eulerian_level_set)]]), where *spot_ignition_time* is the
-ignition time of the spot fire in minutes, and *ignition_locations* is
-a list of *(y,x)* grid coordinates in which spot fires will be
-ignited.
-
-
-#+NAME: spread-firebrands
-#+begin_src python
-from math import sin, cos, hypot, radians
-import numpy as np
-import pyretechnics.conversion as conv
-import pyretechnics.fuel_models as fm
-
-
-def is_in_bounds(y, x, rows, cols):
-    """
-    Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
-    """
-    return (y >= 0) and (x >= 0) and (y < rows) and (x < cols)
-
-
-def is_burnable_cell(fuel_model_cube, t, y, x):
-    """
-    Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
-    """
-    fuel_model_number = fuel_model_cube.get(t,y,x)
-    fuel_model        = fm.fuel_model_table.get(fuel_model_number)
-    return fuel_model and fuel_model["burnable"]
-
-
-def cast_firebrand(rand_gen,
-                   fuel_model_cube,
-                   temperature_cube,
-                   fuel_moisture_dead_1hr_cube,
-                   fire_type_matrix,
-                   firebrand_count_matrix, # NOTE: May be None
-                   rows,
-                   cols,
-                   cell_height,
-                   cell_width,
-                   source_t,
-                   source_y,
-                   source_x,
-                   decay_distance,
-                   cos_wdir,
-                   sin_wdir,
-                   sample_delta_y_fn,
-                   sample_delta_x_fn):
-    """
-    TODO: Add docstring
-    Draws a random [ΔX, ΔY] pair of signed distances (in meters) from
-    the supplied cell, representing the coordinates of the spotting jump in the directions
-    parallel and perpendicular to the wind. ΔX will typically be positive (downwind),
-    and positive ΔY means to the right of the downwind direction.
-    """
-    #=======================================================================================
-    # Determine where the firebrand will land
-    #=======================================================================================
-
-    delta_y  = sample_delta_y_fn(rand_gen)                            # meters
-    delta_x  = sample_delta_x_fn(rand_gen)                            # meters
-    grid_dy  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
-    grid_dx  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
-    target_y = source_y + distance_to_n_cells(grid_dy, cell_height)
-    target_x = source_x + distance_to_n_cells(grid_dx, cell_width)
-
-    #=======================================================================================
-    # Determine whether the firebrand will start a fire or fizzle out
-    #=======================================================================================
-
-    if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0:
-        # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)
-        if isinstance(firebrand_count_matrix, np.ndarray):
-            firebrand_count_matrix[target_y,target_x] += 1
-
-        # Calculate the probability that the firebrand survived its flight and landed while still burning
-        spotting_distance           = hypot(grid_dx, grid_dy) # meters
-        flight_survival_probability = firebrand_flight_survival_probability(spotting_distance, decay_distance)
-
-        # Roll the dice
-        uniform_sample = rand_gen.uniform(0.0, 1.0)
-
-        if (uniform_sample <= flight_survival_probability
-            and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
-            # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
-            temperature          = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
-            fine_fuel_moisture   = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
-            ignition_probability = schroeder_ignition_probability(temperature, fine_fuel_moisture)
-
-            if uniform_sample <= flight_survival_probability * ignition_probability:
-                # Firebrand ignited the target cell, so return its coordinates for later processing
-                return (target_y, target_x)
-
-
-def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_firebrand_count, spot_config):
-    """
-    Given these inputs:
-    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
-      - fuel_model                    :: integer index in fm.fuel_model_table
-      - temperature                   :: degrees Celsius
-      - wind_speed_10m                :: km/hr
-      - upwind_direction              :: degrees clockwise from North
-      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
-    - output_matrices           :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
-      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
-      - fireline_intensity            :: 2D float array (kW/m)
-      - flame_length                  :: 2D float array (m)
-      - time_of_arrival               :: 2D float array (min)
-      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)
-    - cube_resolution           :: tuple with these fields
-      - band_duration                 :: minutes
-      - cell_height                   :: meters
-      - cell_width                    :: meters
-    - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
-    - rand_gen                  :: numpy.random.Generator
-    - expected_firebrand_count  :: expected number of firebrands to cast
-    - spot_config               :: dictionary of spotting parameters
-      - downwind_distance_mean        :: meters
-      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
-      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
-      - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
-      - crosswind_distance_stdev      :: meters
-      - decay_distance                :: meters
-
-    samples a number of firebrands from a Poisson distribution parameterized by expected_firebrand_count,
-    casts these from the space_time_coordinate into grid cells in the space-time cube, records their landing
-    locations in output_matrices["firebrand_count"] (if provided), filters out all of the firebrands that
-    fizzle out in either burnable or non-burnable fuels, and returns any that ignite new spot fires in
-    a tuple with these fields:
-
-    - ignition_time :: minutes
-    - ignited_cells :: set of (y,x) grid coordinates
-    """
-    #=======================================================================================
-    # Sample the number of firebrands to cast from the source cell
-    #=======================================================================================
-
-    num_firebrands = sample_number_of_firebrands(rand_gen, expected_firebrand_count)
-
-    if num_firebrands > 0:
-
-        #=======================================================================================
-        # Ensure that there is wind to transport the firebrands
-        #=======================================================================================
-
-        (t, y, x)      = space_time_coordinate
-        wind_speed_10m = space_time_cubes["wind_speed_10m"].get(t,y,x) # km/hr
-
-        if wind_speed_10m > 0.0:
-
-            #=======================================================================================
-            # Unpack all firebrand-related features of the source cell
-            #=======================================================================================
-
-            fuel_model_cube              = space_time_cubes["fuel_model"]
-            temperature_cube             = space_time_cubes["temperature"]
-            fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
-            fire_type_matrix             = output_matrices["fire_type"]
-            firebrand_count_matrix       = output_matrices.get("firebrand_count")
-            (_, rows, cols)              = fuel_model_cube.shape
-            (_, cell_height, cell_width) = cube_resolution
-            decay_distance               = spot_config["decay_distance"]
-            upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
-            downwind_direction           = radians(conv.opposite_direction(upwind_direction))
-            cos_wdir                     = cos(downwind_direction)
-            sin_wdir                     = sin(downwind_direction)
-            fireline_intensity           = output_matrices["fireline_intensity"][y,x]             # m
-            wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
-            wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
-            sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-            sample_delta_x_fn            = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-
-            #=======================================================================================
-            # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
-            #=======================================================================================
-
-            ignited_cells = {ignited_cell for _i in range(num_firebrands)
-                             if (ignited_cell := cast_firebrand(rand_gen,
-                                                                fuel_model_cube,
-                                                                temperature_cube,
-                                                                fuel_moisture_dead_1hr_cube,
-                                                                fire_type_matrix,
-                                                                firebrand_count_matrix,
-                                                                rows,
-                                                                cols,
-                                                                cell_height,
-                                                                cell_width,
-                                                                t,
-                                                                y,
-                                                                x,
-                                                                decay_distance,
-                                                                cos_wdir,
-                                                                sin_wdir,
-                                                                sample_delta_y_fn,
-                                                                sample_delta_x_fn))
-                             is not None}
-
-            #=======================================================================================
-            # Return any cells ignited by firebrands along with their time of ignition
-            #=======================================================================================
-
-            if len(ignited_cells) > 0:
-                time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
-                flame_length    = output_matrices["flame_length"][y,x]              # meters
-                ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
-
-                return (ignition_time, ignited_cells)
-#+end_src
-
-** For Users
-   :PROPERTIES:
-   :CUSTOM_ID: for-users-spot
-   :header-args:python+: :session *examples:pyretechnics.spot_fire*
-   :header-args:python+: :results output replace
-   :header-args:python+: :exports both
-   :END:
-
-*** How to Estimate the Areal Heat Output for All Surface Fuel Models
-    :PROPERTIES:
-    :CUSTOM_ID: how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models
-    :END:
-
-#+NAME: estimate-areal-heat-output
-#+begin_src python
-import matplotlib.pyplot as plt
-import numpy as np
-from pprint import pprint
-import pyretechnics.fuel_models as fm
-import pyretechnics.surface_fire as sf
-
-def calc_areal_heat_output(moisturized_fuel_model):
-    fire_behavior        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
-    spread_rate          = fire_behavior["base_spread_rate"]        # m/min
-    fireline_intensity   = fire_behavior["base_fireline_intensity"] # kW/m
-    heat_output_per_area = 60.0 * fireline_intensity / spread_rate if spread_rate > 0.0 else 0.0 # kJ/m^2
-    return heat_output_per_area
-
-def save_areal_heat_output_as_histogram(areal_heat_output, moisture_category):
-    plt.hist(areal_heat_output[moisture_category],
-             range=(0, 60000),
-             bins=12,
-             density=True,
-             histtype="bar",
-             color="darkred",
-             edgecolor="black")
-    plt.title("Areal Heat Output for All Surface Fuel Models - " + str.capitalize(moisture_category) + " Conditions")
-    plt.xlabel("Areal Heat Output (kJ/m^2)")
-    plt.ylabel("Probability Density")
-    plt.savefig("../doc/pics/fm_areal_heat_output_" + moisture_category + ".png")
-    plt.close("all")
-
-fuel_moisture_dry = [
-    0.025, # dead_1hr
-    0.050, # dead_10hr
-    0.075, # dead_100hr
-    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
-    0.45, # live_herbaceous
-    0.30, # live_woody
-]
-
-fuel_moisture_mod = [
-    0.05, # dead_1hr
-    0.10, # dead_10hr
-    0.15, # dead_100hr
-    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
-    0.90, # live_herbaceous
-    0.60, # live_woody
-]
-
-fuel_moisture_wet = [
-    0.10, # dead_1hr
-    0.20, # dead_10hr
-    0.30, # dead_100hr
-    0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
-    1.80, # live_herbaceous
-    1.20, # live_woody
-]
-
-areal_heat_output = {
-    "dry": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_dry)) for v in fm.fuel_model_table.values()],
-    "mod": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_mod)) for v in fm.fuel_model_table.values()],
-    "wet": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_wet)) for v in fm.fuel_model_table.values()],
-}
-
-for moisture_category in ["dry", "mod", "wet"]:
-    save_areal_heat_output_as_histogram(areal_heat_output, moisture_category)
-
-print("Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
-pprint({
-    "dry": np.median(areal_heat_output["dry"]),
-    "mod": np.median(areal_heat_output["mod"]),
-    "wet": np.median(areal_heat_output["wet"]),
-})
-
-print("\nMean Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
-pprint({
-    "dry": np.mean(areal_heat_output["dry"]),
-    "mod": np.mean(areal_heat_output["mod"]),
-    "wet": np.mean(areal_heat_output["wet"]),
-})
-
-print("\nMax Areal Heat Output (kJ/m^2) for All Surface Fuel Models\n" + "=" * 80)
-pprint({
-    "dry": np.max(areal_heat_output["dry"]),
-    "mod": np.max(areal_heat_output["mod"]),
-    "wet": np.max(areal_heat_output["wet"]),
-})
-#+end_src
-
-#+NAME: run-estimate-areal-heat-output
-#+RESULTS: estimate-areal-heat-output
-#+begin_example
-Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models
-================================================================================
-{'dry': 9517.751902280774, 'mod': 7050.167242235583, 'wet': 3533.8204025496834}
-
-Mean Areal Heat Output (kJ/m^2) for All Surface Fuel Models
-================================================================================
-{'dry': 14270.339257437603, 'mod': 10954.33091872254, 'wet': 5705.411098489761}
-
-Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
-================================================================================
-{'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
-#+end_example
-
-*** [WIP] How to Estimate Spot Fire Count from Firebrand Production Rate
-    :PROPERTIES:
-    :CUSTOM_ID: how-to-estimate-spot-fire-count-from-firebrand-production-rate
-    :END:
-
-And...we're back! I put together another range tester for the probability of spot fire ignition.
-
-These are the ranges I used for the relevant input variables:
-
-- temperature: 20-40 degrees Celsius
-- fine fuel moisture: 5-20%
-- distance from burning cell: 30-990 meters (<= 1-33 cells)
-- distance decay constant: 0.005-0.100 m^-1
-
-Here's the code:
-
-#+NAME: estimate-spot-fire-count
-#+begin_src clojure
-(require '[gridfire.spotting :refer [schroeder-ign-prob]])
-(import 'org.apache.commons.math3.util.FastMath)
-
-(def sigs
-  (sort
-   (for [temperature (range 20 41 5)
-         moisture    (range 0.05 0.21 0.05)]
-     (schroeder-ign-prob temperature moisture))))
-
-(def distance-penalties
-  (sort
-   (for [decay    (range 0.005 0.11 0.005)
-         distance (range 30.0 1000.0 30.0)]
-     (FastMath/exp (* -1.0 decay distance)))))
-
-(def ignition-probs
-  (sort
-   (for [sig sigs
-         dp  distance-penalties]
-     (* sig dp))))
-
-(defn percentile-indices [coll]
-  "Return the 0th, 25th, 50th, 75th, and 100th percentile indices for coll."
-  (let [max-index (dec (count coll))]
-    (map #(int (* % max-index))
-         [0.0 0.25 0.5 0.75 1.0])))
-
-(def rep-sigs
-  (map #(nth sigs %) (percentile-indices sigs)))
-
-(def rep-dps
-  (map #(nth distance-penalties %) (percentile-indices distance-penalties)))
-
-(def rep-ignition-probs
-  (map #(nth ignition-probs %) (percentile-indices ignition-probs)))
-
-{:representative-schroeder-ignition-probabilities rep-sigs
- :representative-distance-penalties               rep-dps
- :representative-spot-ignition-probabilities      rep-ignition-probs}
-#+end_src
-
-And here's the result:
-
-```clojure
-{:representative-schroeder-ignition-probabilities
- (0.0410643084416302
-  0.05806152126033939
-  0.1462606114856146
-  0.32092711244047045
-  0.6532412198970651),
- :representative-distance-penalties
- (7.162895350006142E-46
-  2.7158820118920623E-19
-  4.161397394224164E-10
-  2.248673241788482E-4
-  0.8607079764250578),
- :representative-spot-ignition-probabilities
- (2.941393439877709E-47
-  7.50193220126481E-20
-  9.65780746160267E-11
-  3.650896835973886E-5
-  0.5622499284950391)}
-```
-
-So if we multiply the `representative-spot-ignition-probabilities` by the firebrand count range given with a `heat_per_firebrand` of 33.33 kJ (see above), we get the following:
-
-#+NAME: estimate-spot-fire-count2
-#+begin_src clojure
-(for [num-firebrands [256500 1471500]]
-  (map #(* num-firebrands %)
-       rep-ignition-probs))
-#+end_src
-
-which results in:
-
-```clojure
-((7.544674173286323E-42
-  1.9242456096244238E-14
-  2.4772276139010847E-5
-  9.364550384273018
-  144217.10665897751)
- (4.3282604467800485E-41
-  1.1039093234161168E-13
-  1.4211463679748328E-4
-  53.72294694135574
-  827350.76978045))
-```
-
-We can see that depending on the surface fuel model, we can get
-anywhere from 9 to 827,350 spot fires ignited by one burning cell per
-timestep in the upper quartile of temperature/moisture/distance/decay
-conditions with that ridiculously low `heat_per_firebrand`.
-Hopefully this provides sufficient direction for selecting a more
-reasonable default for that parameter.
-
-*** How to Estimate Typical Ranges for the $\vec{\Delta}$ Distribution Characteristics
-    :PROPERTIES:
-    :CUSTOM_ID: how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics
-    :END:
-
-#+NAME: himoto-typical-ranges
-#+begin_src python :results table raw
-from math import sqrt, log
-
-def himoto_eq_28_values(B_star):
-    # NOTE: The following value for D seems absurdly low, and so does
-    # the predicted E[ΔX]. I suspect a typo in the Himoto2005 paper.
-    D                  = 0.08
-    std_delta_x_over_D = 0.88 * (B_star ** (1.0 / 3.0))
-    exp_delta_x_over_D = 0.47 * (B_star ** (2.0 / 3.0))
-    cv_delta_x         = std_delta_x_over_D / exp_delta_x_over_D
-    sigma_x            = sqrt(log(1.0 + cv_delta_x))
-    exp_delta_x        = exp_delta_x_over_D * D
-    mu_x               = log(exp_delta_x) - (sigma_x ** 2.0) / 2.0
-    sigma_y            = D * 0.92
-    return {
-        "$B^*$"                             : B_star,
-        "$\\text{CV}[\\Delta_X]$"           : "{:.0f}%".format(100.0 * cv_delta_x),
-        "$\\sigma_X$"                       : "{:.2f}".format(sigma_x),
-        "$\\sigma_Y/\\mathbb{E}[\\Delta_X]$": "{:.2f}".format(sigma_y / exp_delta_x),
-        # NOTE the following ended up being nonsensical:
-        # "E[ΔX] (m)" exp_delta_x
-        # "μ_X"       mu_x
-    }
-
-himoto_typical_ranges = [himoto_eq_28_values(B_star) for B_star in [20, 50, 100, 150, 200]]
-table_header          = list(himoto_typical_ranges[0].keys())
-table_rows            = [list(d.values()) for d in himoto_typical_ranges]
-
-print([table_header, *table_rows])
-#+end_src
-
-#+NAME: run-himoto-typical-ranges
-#+RESULTS: himoto-typical-ranges
-| $B^*$ | $\text{CV}[\Delta_X]$ | $\sigma_X$ | $\sigma_Y/\mathbb{E}[\Delta_X]$ |
-|    20 |                   69% |       0.72 |                            0.27 |
-|    50 |                   51% |       0.64 |                            0.14 |
-|   100 |                   40% |       0.58 |                            0.09 |
-|   150 |                   35% |       0.55 |                            0.07 |
-|   200 |                   32% |       0.53 |                            0.06 |
 
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
   :PROPERTIES:
