@@ -4563,18 +4563,76 @@ Whether a fire is spreading through surface or canopy fuels, it is
 possible that small pieces of the burning fuels may be lofted by winds
 ahead of the fire front. When these burning firebrands land in
 sufficiently dry fuels, they may ignite new fires under the right
-circumstances. Fires created in this way are called "spot fires" and
-are the subject of this chapter. The following sections provide
-functions for calculating the probability and rate of firebrand
-generation from burning fuels, the lofting distance and direction of
-these firebrands, the times at which they will be deposited ahead of
-the fire front, and their likelihood of igniting spot fires once
-deposited.
+conditions. Fires created in this way are called "spot fires" and are
+the subject of this chapter. The following sections provide functions
+for calculating the probability and rate of firebrand generation from
+burning fuels, the lofting distance and direction of these firebrands,
+their likelihood of surviving their flight until landing, their
+likelihood of igniting spot fires once deposited, and the time to grow
+from a spark to a fire capable of spreading on its own.
 
 *** Expected Firebrand Production
     :PROPERTIES:
     :CUSTOM_ID: expected-firebrand-production
     :END:
+
+When surface or canopy fuels burn, they emit a certain amount of heat
+(in kilojoules) before burning out as a function of their fuel model
+and moisture values. From section [[Surface Fire Intensity Functions]], we
+can see the following relationship between the surface fire spread
+rate $R_s$, fireline intensity $I_s$, reaction intensity $I_{Rs}$, and
+residence time $t_{\text{res_s}}$:
+
+\begin{align}
+  I_s = \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} \\
+\end{align}
+
+Rearranging these terms yields the formula for the surface fire heat
+per unit area $H_{As}$:
+
+\begin{align}
+  H_{As} = I_{Rs} \, t_{\text{res_s}} = 60 \, \frac{I_s}{R_s} \\
+\end{align}
+
+With $I_{Rs}$ in $kJ/m^2/\text{min}$ and $t_{\text{res_s}}$ in
+$\text{min}$, their product gives us $H_{As}$ in $kJ/m^2$.
+
+Although there are no equivalent formulas for the crown fire reaction
+intensity $I_{Rc}$ and residence time $t_{\text{res_c}}$, we can infer
+that the same physical relationships still hold regarding heat per
+unit area for crown fires:
+
+\begin{align}
+  I_c &= \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
+  \nonumber \\
+  H_{Ac} &= I_{Rc} \, t_{\text{res_c}} = 60 \, \frac{I_c}{R_c} \\
+\end{align}
+
+From section [[Crown Fire Intensity Functions]], we see that the total
+fireline intensity $I$ in the event of crowning is the sum of the
+surface fireline intensity $I_s$ and the crown fireline intensity
+$I_c$. The following algebraic derivation shows that the total heat
+per unit area of the combined surface fire and crown fire $H_A$ (in
+$kJ/m^2$) is also the sum of the surface heat per unit area $H_{As}$
+and the crown fire heat per unit area $H_{Ac}$:
+
+\begin{align}
+  I_s + I_c &= I \\
+  \nonumber \\
+  I_s + I_c &= \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} + \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
+  \nonumber \\
+  I_s \, R_c + I_c \, R_s &= \frac{I_{Rs} \, R_s \, R_c \, t_{\text{res_s}}}{60} + \frac{I_{Rc} \, R_s \, R_c \, t_{\text{res_c}}}{60} \\
+  \nonumber \\
+  I_s \, R_c + I_c \, R_s &= \frac{R_s \, R_c}{60} (I_{Rs} \, t_{\text{res_s}} + I_{Rc} \, t_{\text{res_c}}) \\
+  \nonumber \\
+  \frac{60}{R_s \, R_c} (I_s \, R_c + I_c \, R_s) &= I_{Rs} \, t_{\text{res_s}} + I_{Rc} \, t_{\text{res_c}} \\
+  \nonumber \\
+  60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) &= H_{As} + H_{Ac} = H_A \\
+\end{align}
+
+Although $I_{Rc}$ and $t_{\text{res_c}}$ are undefined, we can
+fortunately recover $H_{Ac}$ (and ultimately $H_A$) from the surface
+and crown fire spread rates and reaction intensities alone.
 
 #+NAME: expected-firebrand-production
 #+begin_src python
