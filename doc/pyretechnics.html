@@ -4512,13 +4512,9 @@ this plane from \(\vec{u_{\max}}\).
 <div class="outline-text-4" id="text-combining-surface-and-crown-fire-behavior">
 <p>
 When both surface fire and crown fire are present in the same
-location, their combined behavior determines the spread rate and
-intensity values associated with this location. Specifically, their
-combined spread rate is the maximum of the two spread rates and their
-combined fireline intensity is the sum of their two fireline
-intensities. Their combined flame length is the flame length of their
-combined fireline intensities. The fire type associated with this
-combined fire will be the crown fire type.
+location, their combined behavior determines the fire type, spread
+rate and direction, fireline intensity, and flame length values
+associated with this location.
 </p>
 
 <p>
@@ -4527,9 +4523,142 @@ fire spread ellipses with potentially different maximum spread
 directions, their relative spread rates and intensities should only be
 compared in a given absolute direction in the slope-tangential plane.
 </p>
+</div>
+<ol class="org-ol">
+<li><a id="combined-fire-type"></a>Combined Fire Type<br>
+<div class="outline-text-5" id="text-combined-fire-type">
+<p>
+The fire type associated with the combined fire is the crown fire
+type, either "passive_crown" or "active_crown".
+</p>
+</div>
+</li>
+<li><a id="combined-spread-rate-and-direction"></a>Combined Spread Rate and Direction<br>
+<div class="outline-text-5" id="text-combined-spread-rate-and-direction">
+<p>
+The combined spread rate is defined to be the maximum of the surface
+and crown spread rates as follows:
+</p>
 
+\begin{align}
+  R_{s+c} = \max(R_s, R_c) \\
+\end{align}
+
+<p>
+The combined spread direction is the spread direction associated with
+whichever fire front has the fastest spread rate.
+</p>
+</div>
+</li>
+<li><a id="combined-fireline-intensity"></a>Combined Fireline Intensity<br>
+<div class="outline-text-5" id="text-combined-fireline-intensity">
+<p>
+Combining surface and crown fireline intensities is slightly more
+complicated. From section <a href="#surface-fire-intensity-functions">6.1.3</a>, we can see
+the following relationship between the surface fire spread rate \(R_s\),
+fireline intensity \(I_s\), reaction intensity \(I_{Rs}\), and residence
+time \(t_{\text{res_s}}\):
+</p>
+
+\begin{align}
+  I_s = \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} \\
+\end{align}
+
+<p>
+Rearranging these terms yields the formula for the surface fire heat
+per unit area \(H_s\):
+</p>
+
+\begin{align}
+  H_s = I_{Rs} \, t_{\text{res_s}} = 60 \, \frac{I_s}{R_s} \\
+\end{align}
+
+<p>
+Similarly, we can infer that the same physical relationships also hold
+regarding heat per unit area for crown fires:
+</p>
+
+\begin{align}
+  I_c &= \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
+  \nonumber \\
+  H_c &= I_{Rc} \, t_{\text{res_c}} = 60 \, \frac{I_c}{R_c} \\
+\end{align}
+
+<p>
+Although \(I_{Rc}\) and \(t_{\text{res_c}}\) are undefined, we can
+fortunately recover \(H_c\) from the crown fire spread rate \(R_c\) and
+fireline intensity \(I_c\) alone.
+</p>
+
+<p>
+When both surface and canopy fuels burn in the same area, their
+combined heat per unit area \(H_{s+c}\) is their sum:
+</p>
+
+\begin{align}
+  H_{s+c} = H_s + H_c \\
+\end{align}
+
+<p>
+Applying the relationship between fireline intensity and spread rate
+shown above to the combined heat per unit area then yields this
+formula:
+</p>
+
+\begin{align}
+  H_{s+c} = 60 \, \frac{I_{s+c}}{R_{s+c}} \\
+\end{align}
+
+<p>
+Combining these two equations and substituting in the definitions for
+\(H_s\) and \(H_c\) above gives us the following derivation for the
+combined fireline intensity \(I_{s+c}\):
+</p>
+
+\begin{align}
+  H_{s+c} &= H_s + H_c \\
+  \nonumber \\
+  60 \, \frac{I_{s+c}}{R_{s+c}} &= 60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) \\
+  \nonumber \\
+  I_{s+c} &= R_{s+c} \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) \\
+\end{align}
+
+<p>
+Note that by definition \(R_{s+c} \le R_s + R_c\) and therefore \(I_{s+c}
+\ge I_s + I_c\). Substituting in the definition of \(R_{s+c}\) gives us
+this piecewise formula:
+</p>
+
+\begin{align}
+  I_{s+c} &= \left\{
+    \begin{array}{lr}
+      I_s + I_c \frac{R_s}{R_c} & \text{when}\ R_s > R_c \\
+      I_s \frac{R_c}{R_s} + I_c & \text{when}\  R_s < R_c \\
+      I_s + I_c & \text{when}\ R_s = R_c \\
+    \end{array}
+  \right. \\
+\end{align}
+</div>
+</li>
+<li><a id="combined-flame-length"></a>Combined Flame Length<br>
+<div class="outline-text-5" id="text-combined-flame-length">
+<p>
+The combined flame length is the flame length of the combined fireline
+intensity as follows:
+</p>
+
+\begin{align}
+  L_{s+c} = 0.45(I_{s+c})^{0.46}
+\end{align}
+</div>
+</li>
+<li><a id="combined-fire-behavior-implementation"></a>Combined Fire Behavior Implementation<br>
+<div class="outline-text-5" id="text-combined-fire-behavior-implementation">
 <div class="org-src-container">
-<pre class="src src-python" id="combined-fire-behavior"><span class="org-keyword">def</span> <span class="org-function-name">calc_combined_fire_behavior</span>(surface_fire_behavior, crown_fire_behavior):
+<pre class="src src-python" id="combined-fire-behavior"><span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">calc_combined_fire_behavior</span>(surface_fire_behavior, crown_fire_behavior):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - surface_fire_behavior :: dictionary of surface fire behavior values</span>
@@ -4563,25 +4692,31 @@ compared in a given absolute direction in the slope-tangential plane.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine whether the surface or crown fire has the fastest spread rate</span>
     <span class="org-keyword">if</span> surface_spread_rate <span class="org-operator">&gt;</span> crown_spread_rate:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Surface fire spreads faster</span>
+        <span class="org-variable-name">combined_fireline_intensity</span> <span class="org-operator">=</span> (surface_fireline_intensity
+                                       <span class="org-operator">+</span> crown_fireline_intensity <span class="org-operator">*</span> surface_spread_rate <span class="org-operator">/</span> crown_spread_rate)
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : crown_fire_type,
             <span class="org-string">"spread_rate"</span>       : surface_spread_rate,
             <span class="org-string">"spread_direction"</span>  : surface_spread_direction,
-            <span class="org-string">"fireline_intensity"</span>: surface_fireline_intensity <span class="org-operator">+</span> crown_fireline_intensity,
-            <span class="org-string">"flame_length"</span>      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
+            <span class="org-string">"fireline_intensity"</span>: combined_fireline_intensity,
+            <span class="org-string">"flame_length"</span>      : sf.calc_flame_length(combined_fireline_intensity),
         }
     <span class="org-keyword">else</span>:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Crown fire spreads faster</span>
+        <span class="org-variable-name">combined_fireline_intensity</span> <span class="org-operator">=</span> (surface_fireline_intensity <span class="org-operator">*</span> crown_spread_rate <span class="org-operator">/</span> surface_spread_rate
+                                       <span class="org-operator">+</span> crown_fireline_intensity)
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : crown_fire_type,
             <span class="org-string">"spread_rate"</span>       : crown_spread_rate,
             <span class="org-string">"spread_direction"</span>  : crown_spread_direction,
-            <span class="org-string">"fireline_intensity"</span>: surface_fireline_intensity <span class="org-operator">+</span> crown_fireline_intensity,
-            <span class="org-string">"flame_length"</span>      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
+            <span class="org-string">"fireline_intensity"</span>: combined_fireline_intensity,
+            <span class="org-string">"flame_length"</span>      : sf.calc_flame_length(combined_fireline_intensity),
         }
 </pre>
 </div>
 </div>
+</li>
+</ol>
 </div>
 </div>
 <div id="outline-container-for-users-crown" class="outline-3">
@@ -5238,7 +5373,7 @@ and the crown fire heat per unit area \(H_{Ac}\):
 <p>
 Although \(I_{Rc}\) and \(t_{\text{res_c}}\) are undefined, we can
 fortunately recover \(H_{Ac}\) (and ultimately \(H_A\)) from the surface
-and crown fire spread rates and reaction intensities alone.
+and crown fire spread rates and fireline intensities alone.
 </p>
 
 <div class="org-src-container">

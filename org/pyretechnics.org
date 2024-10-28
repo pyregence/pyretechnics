@@ -3912,21 +3912,136 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     :END:
 
 When both surface fire and crown fire are present in the same
-location, their combined behavior determines the spread rate and
-intensity values associated with this location. Specifically, their
-combined spread rate is the maximum of the two spread rates and their
-combined fireline intensity is the sum of their two fireline
-intensities. Their combined flame length is the flame length of their
-combined fireline intensities. The fire type associated with this
-combined fire will be the crown fire type.
+location, their combined behavior determines the fire type, spread
+rate and direction, fireline intensity, and flame length values
+associated with this location.
 
 *Note:* Since the surface fire and crown fire each define separate
 fire spread ellipses with potentially different maximum spread
 directions, their relative spread rates and intensities should only be
 compared in a given absolute direction in the slope-tangential plane.
 
+**** Combined Fire Type
+     :PROPERTIES:
+     :CUSTOM_ID: combined-fire-type
+     :END:
+
+The fire type associated with the combined fire is the crown fire
+type, either "passive_crown" or "active_crown".
+
+**** Combined Spread Rate and Direction
+     :PROPERTIES:
+     :CUSTOM_ID: combined-spread-rate-and-direction
+     :END:
+
+The combined spread rate is defined to be the maximum of the surface
+and crown spread rates as follows:
+
+\begin{align}
+  R_{s+c} = \max(R_s, R_c) \\
+\end{align}
+
+The combined spread direction is the spread direction associated with
+whichever fire front has the fastest spread rate.
+
+**** Combined Fireline Intensity
+     :PROPERTIES:
+     :CUSTOM_ID: combined-fireline-intensity
+     :END:
+
+Combining surface and crown fireline intensities is slightly more
+complicated. From section [[Surface Fire Intensity Functions]], we can see
+the following relationship between the surface fire spread rate $R_s$,
+fireline intensity $I_s$, reaction intensity $I_{Rs}$, and residence
+time $t_{\text{res_s}}$:
+
+\begin{align}
+  I_s = \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} \\
+\end{align}
+
+Rearranging these terms yields the formula for the surface fire heat
+per unit area $H_s$:
+
+\begin{align}
+  H_s = I_{Rs} \, t_{\text{res_s}} = 60 \, \frac{I_s}{R_s} \\
+\end{align}
+
+Similarly, we can infer that the same physical relationships also hold
+regarding heat per unit area for crown fires:
+
+\begin{align}
+  I_c &= \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
+  \nonumber \\
+  H_c &= I_{Rc} \, t_{\text{res_c}} = 60 \, \frac{I_c}{R_c} \\
+\end{align}
+
+Although $I_{Rc}$ and $t_{\text{res_c}}$ are undefined, we can
+fortunately recover $H_c$ from the crown fire spread rate $R_c$ and
+fireline intensity $I_c$ alone.
+
+When both surface and canopy fuels burn in the same area, their
+combined heat per unit area $H_{s+c}$ is their sum:
+
+\begin{align}
+  H_{s+c} = H_s + H_c \\
+\end{align}
+
+Applying the relationship between fireline intensity and spread rate
+shown above to the combined heat per unit area then yields this
+formula:
+
+\begin{align}
+  H_{s+c} = 60 \, \frac{I_{s+c}}{R_{s+c}} \\
+\end{align}
+
+Combining these two equations and substituting in the definitions for
+$H_s$ and $H_c$ above gives us the following derivation for the
+combined fireline intensity $I_{s+c}$:
+
+\begin{align}
+  H_{s+c} &= H_s + H_c \\
+  \nonumber \\
+  60 \, \frac{I_{s+c}}{R_{s+c}} &= 60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) \\
+  \nonumber \\
+  I_{s+c} &= R_{s+c} \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) \\
+\end{align}
+
+Note that by definition $R_{s+c} \le R_s + R_c$ and therefore $I_{s+c}
+\ge I_s + I_c$. Substituting in the definition of $R_{s+c}$ gives us
+this piecewise formula:
+
+\begin{align}
+  I_{s+c} &= \left\{
+    \begin{array}{lr}
+      I_s + I_c \frac{R_s}{R_c} & \text{when}\ R_s > R_c \\
+      I_s \frac{R_c}{R_s} + I_c & \text{when}\  R_s < R_c \\
+      I_s + I_c & \text{when}\ R_s = R_c \\
+    \end{array}
+  \right. \\
+\end{align}
+
+**** Combined Flame Length
+     :PROPERTIES:
+     :CUSTOM_ID: combined-flame-length
+     :END:
+
+The combined flame length is the flame length of the combined fireline
+intensity as follows:
+
+\begin{align}
+  L_{s+c} = 0.45(I_{s+c})^{0.46}
+\end{align}
+
+**** Combined Fire Behavior Implementation
+     :PROPERTIES:
+     :CUSTOM_ID: combined-fire-behavior-implementation
+     :END:
+
 #+NAME: combined-fire-behavior
 #+begin_src python
+import pyretechnics.surface_fire as sf
+
+
 def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     """
     Given these inputs:
@@ -3961,21 +4076,25 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     # Determine whether the surface or crown fire has the fastest spread rate
     if surface_spread_rate > crown_spread_rate:
         # Surface fire spreads faster
+        combined_fireline_intensity = (surface_fireline_intensity
+                                       + crown_fireline_intensity * surface_spread_rate / crown_spread_rate)
         return {
             "fire_type"         : crown_fire_type,
             "spread_rate"       : surface_spread_rate,
             "spread_direction"  : surface_spread_direction,
-            "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
-            "flame_length"      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
+            "fireline_intensity": combined_fireline_intensity,
+            "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
         }
     else:
         # Crown fire spreads faster
+        combined_fireline_intensity = (surface_fireline_intensity * crown_spread_rate / surface_spread_rate
+                                       + crown_fireline_intensity)
         return {
             "fire_type"         : crown_fire_type,
             "spread_rate"       : crown_spread_rate,
             "spread_direction"  : crown_spread_direction,
-            "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
-            "flame_length"      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
+            "fireline_intensity": combined_fireline_intensity,
+            "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
         }
 #+end_src
 
@@ -4632,7 +4751,7 @@ and the crown fire heat per unit area $H_{Ac}$:
 
 Although $I_{Rc}$ and $t_{\text{res_c}}$ are undefined, we can
 fortunately recover $H_{Ac}$ (and ultimately $H_A$) from the surface
-and crown fire spread rates and reaction intensities alone.
+and crown fire spread rates and fireline intensities alone.
 
 #+NAME: expected-firebrand-production
 #+begin_src python

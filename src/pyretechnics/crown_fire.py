@@ -281,6 +281,9 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         }
 # crown-fire-behavior-in-direction ends here
 # [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
+import pyretechnics.surface_fire as sf
+
+
 def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     """
     Given these inputs:
@@ -315,20 +318,24 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     # Determine whether the surface or crown fire has the fastest spread rate
     if surface_spread_rate > crown_spread_rate:
         # Surface fire spreads faster
+        combined_fireline_intensity = (surface_fireline_intensity
+                                       + crown_fireline_intensity * surface_spread_rate / crown_spread_rate)
         return {
             "fire_type"         : crown_fire_type,
             "spread_rate"       : surface_spread_rate,
             "spread_direction"  : surface_spread_direction,
-            "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
-            "flame_length"      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
+            "fireline_intensity": combined_fireline_intensity,
+            "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
         }
     else:
         # Crown fire spreads faster
+        combined_fireline_intensity = (surface_fireline_intensity * crown_spread_rate / surface_spread_rate
+                                       + crown_fireline_intensity)
         return {
             "fire_type"         : crown_fire_type,
             "spread_rate"       : crown_spread_rate,
             "spread_direction"  : crown_spread_direction,
-            "fireline_intensity": surface_fireline_intensity + crown_fireline_intensity,
-            "flame_length"      : calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity),
+            "fireline_intensity": combined_fireline_intensity,
+            "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
         }
 # combined-fire-behavior ends here
