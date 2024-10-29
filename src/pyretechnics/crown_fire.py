@@ -96,9 +96,6 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
         }
 # cruz-crown-fire-spread-info ends here
 # [[file:../../org/pyretechnics.org::crown-fireline-intensity][crown-fireline-intensity]]
-from pyretechnics.surface_fire import calc_flame_length
-
-
 # NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb)
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
 def calc_crown_fireline_intensity(crown_spread_rate, canopy_bulk_density, canopy_height,
@@ -117,15 +114,6 @@ def calc_crown_fireline_intensity(crown_spread_rate, canopy_bulk_density, canopy
     """
     canopy_height_difference = canopy_height - canopy_base_height
     return (crown_spread_rate * canopy_bulk_density * canopy_height_difference * heat_of_combustion) / 60.0
-
-
-def calc_crown_fire_flame_length(surface_fireline_intensity, crown_fireline_intensity):
-    """
-    Returns the crown fire flame length (m) given:
-    - surface_fireline_intensity :: kW/m
-    - crown_fireline_intensity   :: kW/m
-    """
-    return calc_flame_length(surface_fireline_intensity + crown_fireline_intensity) # m
 # crown-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::crown-fire-eccentricity][crown-fire-eccentricity]]
 from math import sqrt
