@@ -5301,76 +5301,57 @@ from a spark to a fire capable of spreading on its own.
 <div class="outline-text-4" id="text-expected-firebrand-production">
 <p>
 When surface or canopy fuels burn, they emit a certain amount of heat
-(in kilojoules) before burning out as a function of their fuel model
-and moisture values. From section <a href="#surface-fire-intensity-functions">6.1.3</a>, we
-can see the following relationship between the surface fire spread
-rate \(R_s\), fireline intensity \(I_s\), reaction intensity \(I_{Rs}\), and
-residence time \(t_{\text{res_s}}\):
+\(H_C\) (in \(\text{kJ}\)) before burning out as a function of their fuel
+model and moisture values. In this section, we provide a function that
+relates this total heat output per cell to the number of firebrands
+that our spotting model will cast from that cell when it burns.
+</p>
+
+<p>
+From section <a href="#surface-fire-intensity-functions">6.1.3</a>, we can see the
+following relationship between a fire's spread rate \(R\) (in
+\(\text{m}/\text{min}\)), fireline intensity \(I\) (in
+\(\text{kW}/\text{m}\)), and heat per unit area \(H\) (in
+\(\text{kJ}/\text{m}^2\)):
 </p>
 
 \begin{align}
-  I_s = \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} \\
+  H = 60 \frac{I}{R}
 \end{align}
 
 <p>
-Rearranging these terms yields the formula for the surface fire heat
-per unit area \(H_{As}\):
+We can calculate the total heat emitted by a cell on a gridded
+landscape \(H_C\) by multiplying its \(H\) value by the slope-adjusted
+area of the cell \(A_C\) (in \(\text{m}^2\)) as follows:
 </p>
 
 \begin{align}
-  H_{As} = I_{Rs} \, t_{\text{res_s}} = 60 \, \frac{I_s}{R_s} \\
+  A_C &= \Delta x \, \Delta y \left[1 + \left(\frac{\partial z}{\partial x}\right)^2 + \left(\frac{\partial z}{\partial y}\right)^2 \right] \\
+  \nonumber \\
+  H_C &= H \, A_C
 \end{align}
 
 <p>
-With \(I_{Rs}\) in \(kJ/m^2/\text{min}\) and \(t_{\text{res_s}}\) in
-\(\text{min}\), their product gives us \(H_{As}\) in \(kJ/m^2\).
+where \(\Delta x\) is the cell width (in \(\text{m}\)), \(\Delta y\) is the
+cell height (in \(\text{m}\)), and \((\frac{\partial z}{\partial x}\),
+\(\frac{\partial z}{\partial y})\) is the elevation gradient of the
+cell.
 </p>
 
 <p>
-Although there are no equivalent formulas for the crown fire reaction
-intensity \(I_{Rc}\) and residence time \(t_{\text{res_c}}\), we can infer
-that the same physical relationships still hold regarding heat per
-unit area for crown fires:
+A user-provided coefficient \(H_F\) ("heat_per_firebrand" in
+\(\text{kJ}/\text{firebrand}\)) is then combined with the total heat
+\(H_C\) (in \(\text{kJ}\)) to calculate the number of firebrands to cast
+per cell \(F_C\):
 </p>
 
 \begin{align}
-  I_c &= \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
-  \nonumber \\
-  H_{Ac} &= I_{Rc} \, t_{\text{res_c}} = 60 \, \frac{I_c}{R_c} \\
+  F_C = \frac{H_C}{H_F}
 \end{align}
-
-<p>
-From section <a href="#crown-fire-intensity-functions">7.1.3</a>, we see that the total
-fireline intensity \(I\) in the event of crowning is the sum of the
-surface fireline intensity \(I_s\) and the crown fireline intensity
-\(I_c\). The following algebraic derivation shows that the total heat
-per unit area of the combined surface fire and crown fire \(H_A\) (in
-\(kJ/m^2\)) is also the sum of the surface heat per unit area \(H_{As}\)
-and the crown fire heat per unit area \(H_{Ac}\):
-</p>
-
-\begin{align}
-  I_s + I_c &= I \\
-  \nonumber \\
-  I_s + I_c &= \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} + \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
-  \nonumber \\
-  I_s \, R_c + I_c \, R_s &= \frac{I_{Rs} \, R_s \, R_c \, t_{\text{res_s}}}{60} + \frac{I_{Rc} \, R_s \, R_c \, t_{\text{res_c}}}{60} \\
-  \nonumber \\
-  I_s \, R_c + I_c \, R_s &= \frac{R_s \, R_c}{60} (I_{Rs} \, t_{\text{res_s}} + I_{Rc} \, t_{\text{res_c}}) \\
-  \nonumber \\
-  \frac{60}{R_s \, R_c} (I_s \, R_c + I_c \, R_s) &= I_{Rs} \, t_{\text{res_s}} + I_{Rc} \, t_{\text{res_c}} \\
-  \nonumber \\
-  60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) &= H_{As} + H_{Ac} = H_A \\
-\end{align}
-
-<p>
-Although \(I_{Rc}\) and \(t_{\text{res_c}}\) are undefined, we can
-fortunately recover \(H_{Ac}\) (and ultimately \(H_A\)) from the surface
-and crown fire spread rates and fireline intensities alone.
-</p>
 
 <div class="org-src-container">
 <pre class="src src-python" id="expected-firebrand-production"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+<span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">expected_firebrand_production</span>(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand<span class="org-operator">=</span>1e6):
@@ -5398,9 +5379,9 @@ and crown fire spread rates and fireline intensities alone.
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the heat output per unit area</span>
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-        <span class="org-variable-name">spread_rate</span>          <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
-        <span class="org-variable-name">fireline_intensity</span>   <span class="org-operator">=</span> fire_behavior[<span class="org-string">"fireline_intensity"</span>]     <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
-        <span class="org-variable-name">heat_output_per_area</span> <span class="org-operator">=</span> 60.0 <span class="org-operator">*</span> fireline_intensity <span class="org-operator">/</span> spread_rate <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/m^2 (reaction_intensity * residence_time)</span>
+        <span class="org-variable-name">spread_rate</span>          <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>]                               <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+        <span class="org-variable-name">fireline_intensity</span>   <span class="org-operator">=</span> fire_behavior[<span class="org-string">"fireline_intensity"</span>]                        <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
+        <span class="org-variable-name">heat_output_per_area</span> <span class="org-operator">=</span> sf.calc_areal_heat_output(spread_rate, fireline_intensity) <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/m^2</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the slope-adjusted cell area</span>

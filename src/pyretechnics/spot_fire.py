@@ -1,5 +1,6 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
 from math import sqrt
+import pyretechnics.surface_fire as sf
 
 
 def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
@@ -27,9 +28,9 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
         # Calculate the heat output per unit area
         #================================================================================================
 
-        spread_rate          = fire_behavior["spread_rate"]            # m/min
-        fireline_intensity   = fire_behavior["fireline_intensity"]     # kW/m
-        heat_output_per_area = 60.0 * fireline_intensity / spread_rate # kJ/m^2 (reaction_intensity * residence_time)
+        spread_rate          = fire_behavior["spread_rate"]                               # m/min
+        fireline_intensity   = fire_behavior["fireline_intensity"]                        # kW/m
+        heat_output_per_area = sf.calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
 
         #================================================================================================
         # Calculate the slope-adjusted cell area

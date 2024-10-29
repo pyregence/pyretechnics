@@ -4694,66 +4694,49 @@ from a spark to a fire capable of spreading on its own.
     :END:
 
 When surface or canopy fuels burn, they emit a certain amount of heat
-(in kilojoules) before burning out as a function of their fuel model
-and moisture values. From section [[Surface Fire Intensity Functions]], we
-can see the following relationship between the surface fire spread
-rate $R_s$, fireline intensity $I_s$, reaction intensity $I_{Rs}$, and
-residence time $t_{\text{res_s}}$:
+$H_C$ (in $\text{kJ}$) before burning out as a function of their fuel
+model and moisture values. In this section, we provide a function that
+relates this total heat output per cell to the number of firebrands
+that our spotting model will cast from that cell when it burns.
+
+From section [[Surface Fire Intensity Functions]], we can see the
+following relationship between a fire's spread rate $R$ (in
+$\text{m}/\text{min}$), fireline intensity $I$ (in
+$\text{kW}/\text{m}$), and heat per unit area $H$ (in
+$\text{kJ}/\text{m}^2$):
 
 \begin{align}
-  I_s = \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} \\
+  H = 60 \frac{I}{R}
 \end{align}
 
-Rearranging these terms yields the formula for the surface fire heat
-per unit area $H_{As}$:
+We can calculate the total heat emitted by a cell on a gridded
+landscape $H_C$ by multiplying its $H$ value by the slope-adjusted
+area of the cell $A_C$ (in $\text{m}^2$) as follows:
 
 \begin{align}
-  H_{As} = I_{Rs} \, t_{\text{res_s}} = 60 \, \frac{I_s}{R_s} \\
+  A_C &= \Delta x \, \Delta y \left[1 + \left(\frac{\partial z}{\partial x}\right)^2 + \left(\frac{\partial z}{\partial y}\right)^2 \right] \\
+  \nonumber \\
+  H_C &= H \, A_C
 \end{align}
 
-With $I_{Rs}$ in $kJ/m^2/\text{min}$ and $t_{\text{res_s}}$ in
-$\text{min}$, their product gives us $H_{As}$ in $kJ/m^2$.
+where $\Delta x$ is the cell width (in $\text{m}$), $\Delta y$ is the
+cell height (in $\text{m}$), and $(\frac{\partial z}{\partial x}$,
+$\frac{\partial z}{\partial y})$ is the elevation gradient of the
+cell.
 
-Although there are no equivalent formulas for the crown fire reaction
-intensity $I_{Rc}$ and residence time $t_{\text{res_c}}$, we can infer
-that the same physical relationships still hold regarding heat per
-unit area for crown fires:
+A user-provided coefficient $H_F$ ("heat_per_firebrand" in
+$\text{kJ}/\text{firebrand}$) is then combined with the total heat
+$H_C$ (in $\text{kJ}$) to calculate the number of firebrands to cast
+per cell $F_C$:
 
 \begin{align}
-  I_c &= \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
-  \nonumber \\
-  H_{Ac} &= I_{Rc} \, t_{\text{res_c}} = 60 \, \frac{I_c}{R_c} \\
+  F_C = \frac{H_C}{H_F}
 \end{align}
-
-From section [[Crown Fire Intensity Functions]], we see that the total
-fireline intensity $I$ in the event of crowning is the sum of the
-surface fireline intensity $I_s$ and the crown fireline intensity
-$I_c$. The following algebraic derivation shows that the total heat
-per unit area of the combined surface fire and crown fire $H_A$ (in
-$kJ/m^2$) is also the sum of the surface heat per unit area $H_{As}$
-and the crown fire heat per unit area $H_{Ac}$:
-
-\begin{align}
-  I_s + I_c &= I \\
-  \nonumber \\
-  I_s + I_c &= \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} + \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
-  \nonumber \\
-  I_s \, R_c + I_c \, R_s &= \frac{I_{Rs} \, R_s \, R_c \, t_{\text{res_s}}}{60} + \frac{I_{Rc} \, R_s \, R_c \, t_{\text{res_c}}}{60} \\
-  \nonumber \\
-  I_s \, R_c + I_c \, R_s &= \frac{R_s \, R_c}{60} (I_{Rs} \, t_{\text{res_s}} + I_{Rc} \, t_{\text{res_c}}) \\
-  \nonumber \\
-  \frac{60}{R_s \, R_c} (I_s \, R_c + I_c \, R_s) &= I_{Rs} \, t_{\text{res_s}} + I_{Rc} \, t_{\text{res_c}} \\
-  \nonumber \\
-  60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) &= H_{As} + H_{Ac} = H_A \\
-\end{align}
-
-Although $I_{Rc}$ and $t_{\text{res_c}}$ are undefined, we can
-fortunately recover $H_{Ac}$ (and ultimately $H_A$) from the surface
-and crown fire spread rates and fireline intensities alone.
 
 #+NAME: expected-firebrand-production
 #+begin_src python
 from math import sqrt
+import pyretechnics.surface_fire as sf
 
 
 def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
@@ -4781,9 +4764,9 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
         # Calculate the heat output per unit area
         #================================================================================================
 
-        spread_rate          = fire_behavior["spread_rate"]            # m/min
-        fireline_intensity   = fire_behavior["fireline_intensity"]     # kW/m
-        heat_output_per_area = 60.0 * fireline_intensity / spread_rate # kJ/m^2 (reaction_intensity * residence_time)
+        spread_rate          = fire_behavior["spread_rate"]                               # m/min
+        fireline_intensity   = fire_behavior["fireline_intensity"]                        # kW/m
+        heat_output_per_area = sf.calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
 
         #================================================================================================
         # Calculate the slope-adjusted cell area
