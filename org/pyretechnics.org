@@ -2449,54 +2449,60 @@ def calc_spread_rate(heat_source, heat_sink):
     :CUSTOM_ID: surface-fire-intensity-functions
     :END:
 
-Using these surface fire spread rate and reaction intensity values, we
-can now calculate surface fire intensity values by applying Anderson's
-flame depth formula and Byram's fireline intensity and flame length
-equations as described below.[fn::Anderson1969][fn::Byram1959]
+Using the surface fire spread rate and reaction intensity values, we
+can now calculate several surface fire intensity metrics by applying
+Anderson's residence time and flame depth formulas, Byram's fireline
+intensity and flame length equations, and Andrews & Rothermel's heat
+per unit area
+equation:[fn::Anderson1969][fn::Byram1959][fn::AndrewsRothermel1982]
 
 \begin{align}
   t_{\text{res}} &= \frac{384}{\sigma'} \\
   \nonumber \\
-  D_A &= R \, t_{\text{res}} \\
+  D_A &= R_s \, t_{\text{res}} \\
   \nonumber \\
   I_s &= \frac{I_R \, D_A}{60} \\
   \nonumber \\
-  L_s &= 0.45(I_s)^{0.46}
+  L_s &= 0.45 (I_s)^{0.46} \\
+  \nonumber \\
+  H_s &= I_R \, t_{\text{res}} = 60 \frac{I_s}{R_s} \\
 \end{align}
 
 where $\sigma'$ is the weighted sum by size class of the fuel model's
 surface area to volume ratio in $\text{ft}^2/\text{ft}^3$,
-$t_{\text{res}}$ is the residence time in $\text{minutes}$, $R$ is the
-surface fire spread rate in $\text{ft}/\min$, $D_A$ is the flame depth
-in $\text{ft}$, $I_R$ is the reaction intensity in
+$t_{\text{res}}$ is the residence time in $\text{minutes}$, $R_s$ is
+the surface fire spread rate in $\text{ft}/\min$, $D_A$ is the flame
+depth in $\text{ft}$, $I_R$ is the reaction intensity in
 $\text{Btu}/\text{ft}^2/\min$, $I_s$ is the fireline intensity in
-$\text{Btu}/\text{ft}/\text{s}$, and $L_s$ is the flame length in
-$\text{ft}$.
+$\text{Btu}/\text{ft}/\text{s}$, $L_s$ is the flame length in
+$\text{ft}$, and $H_s$ is the heat per unit area in
+$\text{Btu}/\text{ft}^2$.
 
 #+NAME: surface-fire-intensity-functions
 #+begin_src python
-import pyretechnics.conversion as conv
-
-
 def calc_residence_time(sigma_prime):
+    """
+    Returns the residence time (total burning time) of fuel (min) given:
+    - sigma_prime :: ft^2/ft^3 (surface area to volume ratio)
+    """
     return 384.0 / sigma_prime if (sigma_prime > 0.0) else 0.0
 
 
 def calc_flame_depth(spread_rate, residence_time):
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone
-    of a free-spreading fire in ft given:
-    - spread_rate (ft/min) orthogonal to the fireline.
-    - residence_time (min)
+    of a free-spreading fire (ft) given:
+    - spread_rate    :: ft/min (orthogonal to the fireline)
+    - residence_time :: min
     """
     return spread_rate * residence_time
 
 
 def calc_fireline_intensity(reaction_intensity, flame_depth):
     """
-    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
-    - reaction_intensity (Btu/ft^2/min)
-    - flame_depth (ft)
+    Returns the rate of heat release per unit of fire edge (Btu/ft/s) given:
+    - reaction_intensity :: Btu/ft^2/min
+    - flame_depth        :: ft
     """
     return (reaction_intensity * flame_depth) / 60.0
 
@@ -2506,7 +2512,16 @@ def calc_flame_length(fireline_intensity):
     Returns the average flame length (m) given:
     - fireline_intensity :: kW/m
     """
-    return conv.ft_to_m(0.45 * (conv.kW_m_to_Btu_ft_s(fireline_intensity) ** 0.46))
+    return 0.07747042253266703 * (fireline_intensity ** 0.46)
+
+
+def calc_areal_heat_output(spread_rate, fireline_intensity):
+    """
+    Returns the heat per unit area (kJ/m^2) given:
+    - spread_rate        :: m/min
+    - fireline_intensity :: kW/m
+    """
+    return 60.0 * fireline_intensity / spread_rate if spread_rate > 0.0 else 0.0
 #+end_src
 
 Because of the linear relationship between spread rate, flame depth,
@@ -3304,7 +3319,7 @@ Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.0
 {'eccentricity': 0.8693098652160369,
  'length_to_width_ratio': 2.0231959552088243,
  'max_fireline_intensity': 32.52824122084378,
- 'max_flame_length': 0.3843932850124078,
+ 'max_flame_length': 0.38439328501240777,
  'max_spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
  'max_spread_rate': 2.2964672435747526}
 
@@ -3312,7 +3327,7 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 {'eccentricity': 0.9845208632281957,
  'length_to_width_ratio': 5.705566830080509,
  'max_fireline_intensity': 330.523270465988,
- 'max_flame_length': 1.1167831782666553,
+ 'max_flame_length': 1.116783178266655,
  'max_spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
  'max_spread_rate': 23.334672745170035}
 #+end_example
@@ -3388,7 +3403,7 @@ pprint(backing_fire_behavior)
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
  'fireline_intensity': 32.528241220843725,
- 'flame_length': 0.38439328501240755,
+ 'flame_length': 0.3843932850124075,
  'spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
  'spread_rate': 2.2964672435747486}
 
@@ -3402,7 +3417,7 @@ Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15,
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
  'fireline_intensity': 2.2741656204473273,
- 'flame_length': 0.11305091610423659,
+ 'flame_length': 0.11305091610423658,
  'spread_direction': array([-0.57514211, -0.80992593, -0.11502842]),
  'spread_rate': 0.160554234038162}
 #+end_example
@@ -3920,6 +3935,8 @@ associated with this location.
 fire spread ellipses with potentially different maximum spread
 directions, their relative spread rates and intensities should only be
 compared in a given absolute direction in the slope-tangential plane.
+In most applications, this will be the direction normal to the fire
+front.
 
 **** Combined Fire Type
      :PROPERTIES:
@@ -3934,11 +3951,12 @@ type, either "passive_crown" or "active_crown".
      :CUSTOM_ID: combined-spread-rate-and-direction
      :END:
 
-The combined spread rate is defined to be the maximum of the surface
-and crown spread rates as follows:
+The combined spread rate $R_{s+c}$ (in $\text{m}/\text{min}$) is
+defined to be the maximum of the surface spread rate $R_s$ and the
+crown spread rate $R_c$ as follows:
 
 \begin{align}
-  R_{s+c} = \max(R_s, R_c) \\
+  R_{s+c} = \max(R_s, R_c)
 \end{align}
 
 The combined spread direction is the spread direction associated with
@@ -3951,64 +3969,38 @@ whichever fire front has the fastest spread rate.
 
 Combining surface and crown fireline intensities is slightly more
 complicated. From section [[Surface Fire Intensity Functions]], we can see
-the following relationship between the surface fire spread rate $R_s$,
-fireline intensity $I_s$, reaction intensity $I_{Rs}$, and residence
-time $t_{\text{res_s}}$:
+the following relationship between the surface fire spread rate $R_s$
+(in $\text{m}/\text{min}$), the surface fireline intensity $I_s$ (in
+$\text{kW}/\text{m}$), and the heat per unit area of the burning
+surface fuel $H_s$ (in $\text{kJ}/\text{m}^2$), which we here
+generalize to calculate the heat per unit area of a crown fire $H_c$
+and a combined surface and crown fire $H_{s+c}$:
 
 \begin{align}
-  I_s = \frac{I_{Rs} \, R_s \, t_{\text{res_s}}}{60} \\
-\end{align}
-
-Rearranging these terms yields the formula for the surface fire heat
-per unit area $H_s$:
-
-\begin{align}
-  H_s = I_{Rs} \, t_{\text{res_s}} = 60 \, \frac{I_s}{R_s} \\
-\end{align}
-
-Similarly, we can infer that the same physical relationships also hold
-regarding heat per unit area for crown fires:
-
-\begin{align}
-  I_c &= \frac{I_{Rc} \, R_c \, t_{\text{res_c}}}{60} \\
+  H_s &= 60 \frac{I_s}{R_s} \\
   \nonumber \\
-  H_c &= I_{Rc} \, t_{\text{res_c}} = 60 \, \frac{I_c}{R_c} \\
+  H_c &= 60 \frac{I_c}{R_c} \\
+  \nonumber \\
+  H_{s+c} &= 60 \frac{I_{s+c}}{R_{s+c}} \\
 \end{align}
 
-Although $I_{Rc}$ and $t_{\text{res_c}}$ are undefined, we can
-fortunately recover $H_c$ from the crown fire spread rate $R_c$ and
-fireline intensity $I_c$ alone.
-
-When both surface and canopy fuels burn in the same area, their
+When surface and canopy fuels both burn in the same area, their
 combined heat per unit area $H_{s+c}$ is their sum:
 
 \begin{align}
-  H_{s+c} = H_s + H_c \\
+  H_{s+c} = H_s + H_c = 60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right)
 \end{align}
 
-Applying the relationship between fireline intensity and spread rate
-shown above to the combined heat per unit area then yields this
+Equating the two definitions for $H_{s+c}$ above gives us the
+following definition for the combined fireline intensity $I_{s+c}$ (in
+$\text{kW}/\text{m}$):
+
+\begin{align}
+  I_{s+c} = R_{s+c} \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right)
+\end{align}
+
+Substituting in the definition of $R_{s+c}$ gives us this piecewise
 formula:
-
-\begin{align}
-  H_{s+c} = 60 \, \frac{I_{s+c}}{R_{s+c}} \\
-\end{align}
-
-Combining these two equations and substituting in the definitions for
-$H_s$ and $H_c$ above gives us the following derivation for the
-combined fireline intensity $I_{s+c}$:
-
-\begin{align}
-  H_{s+c} &= H_s + H_c \\
-  \nonumber \\
-  60 \, \frac{I_{s+c}}{R_{s+c}} &= 60 \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) \\
-  \nonumber \\
-  I_{s+c} &= R_{s+c} \left(\frac{I_s}{R_s} + \frac{I_c}{R_c}\right) \\
-\end{align}
-
-Note that by definition $R_{s+c} \le R_s + R_c$ and therefore $I_{s+c}
-\ge I_s + I_c$. Substituting in the definition of $R_{s+c}$ gives us
-this piecewise formula:
 
 \begin{align}
   I_{s+c} &= \left\{
@@ -4020,16 +4012,30 @@ this piecewise formula:
   \right. \\
 \end{align}
 
+Some fire behavior models have calculated the combined fireline
+intensity by simply adding the surface and crown fireline intensities
+together as we do in the $R_s = R_c$ case above. However, that would
+misrepresent the physical behavior of the combined fire whenever $R_s
+\neq R_c$. For example, when the crown fire makes the fire front
+spread faster, then the surface fireline intensity is amplified due to
+more surface fuel burning simultaneously (i.e., greater flame depth).
+Similarly, if the surface fire outpaces the crown fire, then it can
+ignite a longer span of canopy fuels as it progresses, thereby
+increasing the flame depth and fireline intensity of the crown fire in
+the direction normal to the fire perimeter. The piecewise definition
+of $I_{s+c}$ above accounts for this co-amplification behavior.
+
 **** Combined Flame Length
      :PROPERTIES:
      :CUSTOM_ID: combined-flame-length
      :END:
 
-The combined flame length is the flame length of the combined fireline
-intensity as follows:
+The combined flame length $L_{s+c}$ (in meters) is the flame length of
+the combined fireline intensity $I_{s+c}$ (in $\text{kW}/\text{m}$) as
+follows:
 
 \begin{align}
-  L_{s+c} = 0.45(I_{s+c})^{0.46}
+  L_{s+c} = 0.07747042253266703 (I_{s+c})^{0.46}
 \end{align}
 
 **** Combined Fire Behavior Implementation
@@ -6482,7 +6488,7 @@ Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordina
 ====================================================================================================
 {'fire_type': 'surface',
  'fireline_intensity': 32.52824122084378,
- 'flame_length': 0.3843932850124078,
+ 'flame_length': 0.38439328501240777,
  'spread_direction': array([0.48686888, 0.61304249, 0.62220383]),
  'spread_rate': 2.2964672435747526}
 
@@ -6597,7 +6603,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 ====================================================================================================
 {'fire_type': 'surface',
  'fireline_intensity': 13.898200796816093,
- 'flame_length': 0.2599542202128164,
+ 'flame_length': 0.25995422021281633,
  'spread_direction': array([8.70388280e-01, 5.32959110e-17, 4.92365964e-01]),
  'spread_rate': 0.9812016167065538}
 #+end_example

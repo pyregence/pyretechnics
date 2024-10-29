@@ -120,28 +120,29 @@ def calc_spread_rate(heat_source, heat_sink):
     return heat_source / heat_sink if (heat_sink > 0.0) else 0.0
 # surface-fire-spread-rate-no-wind-no-slope ends here
 # [[file:../../org/pyretechnics.org::surface-fire-intensity-functions][surface-fire-intensity-functions]]
-import pyretechnics.conversion as conv
-
-
 def calc_residence_time(sigma_prime):
+    """
+    Returns the residence time (total burning time) of fuel (min) given:
+    - sigma_prime :: ft^2/ft^3 (surface area to volume ratio)
+    """
     return 384.0 / sigma_prime if (sigma_prime > 0.0) else 0.0
 
 
 def calc_flame_depth(spread_rate, residence_time):
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone
-    of a free-spreading fire in ft given:
-    - spread_rate (ft/min) orthogonal to the fireline.
-    - residence_time (min)
+    of a free-spreading fire (ft) given:
+    - spread_rate    :: ft/min (orthogonal to the fireline)
+    - residence_time :: min
     """
     return spread_rate * residence_time
 
 
 def calc_fireline_intensity(reaction_intensity, flame_depth):
     """
-    Returns the rate of heat release per unit of fire edge in Btu/ft/s given:
-    - reaction_intensity (Btu/ft^2/min)
-    - flame_depth (ft)
+    Returns the rate of heat release per unit of fire edge (Btu/ft/s) given:
+    - reaction_intensity :: Btu/ft^2/min
+    - flame_depth        :: ft
     """
     return (reaction_intensity * flame_depth) / 60.0
 
@@ -151,7 +152,16 @@ def calc_flame_length(fireline_intensity):
     Returns the average flame length (m) given:
     - fireline_intensity :: kW/m
     """
-    return conv.ft_to_m(0.45 * (conv.kW_m_to_Btu_ft_s(fireline_intensity) ** 0.46))
+    return 0.07747042253266703 * (fireline_intensity ** 0.46)
+
+
+def calc_areal_heat_output(spread_rate, fireline_intensity):
+    """
+    Returns the heat per unit area (kJ/m^2) given:
+    - spread_rate        :: m/min
+    - fireline_intensity :: kW/m
+    """
+    return 60.0 * fireline_intensity / spread_rate if spread_rate > 0.0 else 0.0
 # surface-fire-intensity-functions ends here
 # [[file:../../org/pyretechnics.org::surface-fire-max-effective-wind-speed][surface-fire-max-effective-wind-speed]]
 def calc_max_effective_wind_speed(reaction_intensity):
