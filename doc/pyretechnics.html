@@ -6386,12 +6386,11 @@ ignited.
 <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
-<span class="org-keyword">def</span> <span class="org-function-name">calc_areal_heat_output</span>(moisturized_fuel_model):
-    <span class="org-variable-name">fire_behavior</span>        <span class="org-operator">=</span> sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
-    <span class="org-variable-name">spread_rate</span>          <span class="org-operator">=</span> fire_behavior[<span class="org-string">"base_spread_rate"</span>]        <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
-    <span class="org-variable-name">fireline_intensity</span>   <span class="org-operator">=</span> fire_behavior[<span class="org-string">"base_fireline_intensity"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
-    <span class="org-variable-name">heat_output_per_area</span> <span class="org-operator">=</span> 60.0 <span class="org-operator">*</span> fireline_intensity <span class="org-operator">/</span> spread_rate <span class="org-keyword">if</span> spread_rate <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> 0.0 <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/m^2</span>
-    <span class="org-keyword">return</span> heat_output_per_area
+<span class="org-keyword">def</span> <span class="org-function-name">calc_areal_heat_output_from_fuel_model</span>(moisturized_fuel_model):
+    <span class="org-variable-name">fire_behavior</span>      <span class="org-operator">=</span> sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+    <span class="org-variable-name">spread_rate</span>        <span class="org-operator">=</span> fire_behavior[<span class="org-string">"base_spread_rate"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+    <span class="org-variable-name">fireline_intensity</span> <span class="org-operator">=</span> fire_behavior[<span class="org-string">"base_fireline_intensity"</span>]     <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
+    <span class="org-keyword">return</span> sf.calc_areal_heat_output(spread_rate, fireline_intensity) <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/m^2</span>
 
 <span class="org-keyword">def</span> <span class="org-function-name">save_areal_heat_output_as_histogram</span>(areal_heat_output, moisture_category):
     plt.hist(areal_heat_output[moisture_category],
@@ -6435,9 +6434,12 @@ ignited.
 ]
 
 <span class="org-variable-name">areal_heat_output</span> <span class="org-operator">=</span> {
-    <span class="org-string">"dry"</span>: [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_dry)) <span class="org-keyword">for</span> v <span class="org-keyword">in</span> fm.fuel_model_table.values()],
-    <span class="org-string">"mod"</span>: [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_mod)) <span class="org-keyword">for</span> v <span class="org-keyword">in</span> fm.fuel_model_table.values()],
-    <span class="org-string">"wet"</span>: [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_wet)) <span class="org-keyword">for</span> v <span class="org-keyword">in</span> fm.fuel_model_table.values()],
+    <span class="org-string">"dry"</span>: [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_dry))
+            <span class="org-keyword">for</span> v <span class="org-keyword">in</span> fm.fuel_model_table.values()],
+    <span class="org-string">"mod"</span>: [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_mod))
+            <span class="org-keyword">for</span> v <span class="org-keyword">in</span> fm.fuel_model_table.values()],
+    <span class="org-string">"wet"</span>: [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_wet))
+            <span class="org-keyword">for</span> v <span class="org-keyword">in</span> fm.fuel_model_table.values()],
 }
 
 <span class="org-keyword">for</span> moisture_category <span class="org-keyword">in</span> [<span class="org-string">"dry"</span>, <span class="org-string">"mod"</span>, <span class="org-string">"wet"</span>]:

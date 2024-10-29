@@ -5640,12 +5640,11 @@ from pprint import pprint
 import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
 
-def calc_areal_heat_output(moisturized_fuel_model):
-    fire_behavior        = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
-    spread_rate          = fire_behavior["base_spread_rate"]        # m/min
-    fireline_intensity   = fire_behavior["base_fireline_intensity"] # kW/m
-    heat_output_per_area = 60.0 * fireline_intensity / spread_rate if spread_rate > 0.0 else 0.0 # kJ/m^2
-    return heat_output_per_area
+def calc_areal_heat_output_from_fuel_model(moisturized_fuel_model):
+    fire_behavior      = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model)
+    spread_rate        = fire_behavior["base_spread_rate"]            # m/min
+    fireline_intensity = fire_behavior["base_fireline_intensity"]     # kW/m
+    return sf.calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
 
 def save_areal_heat_output_as_histogram(areal_heat_output, moisture_category):
     plt.hist(areal_heat_output[moisture_category],
@@ -5689,9 +5688,12 @@ fuel_moisture_wet = [
 ]
 
 areal_heat_output = {
-    "dry": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_dry)) for v in fm.fuel_model_table.values()],
-    "mod": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_mod)) for v in fm.fuel_model_table.values()],
-    "wet": [calc_areal_heat_output(fm.moisturize(v, fuel_moisture_wet)) for v in fm.fuel_model_table.values()],
+    "dry": [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_dry))
+            for v in fm.fuel_model_table.values()],
+    "mod": [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_mod))
+            for v in fm.fuel_model_table.values()],
+    "wet": [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_wet))
+            for v in fm.fuel_model_table.values()],
 }
 
 for moisture_category in ["dry", "mod", "wet"]:
