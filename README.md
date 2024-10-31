@@ -108,14 +108,39 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
 
 5.  Building the Pyretechnics Library with Guix
 
-    To build the Pyretechnics library, including running its tests and
-    constructing Python wheels, simply run this command:
+    To build the Pyretechnics library, including running its tests,
+    constructing a Python wheel, and unpacking it into the Guix
+    /gnu/store directory, simply run this command:
 
     ```sh
-    ./make.sh build
+    ./make.sh build-guix
     ```
 
-6.  Installing the Pyretechnics Library with Guix
+6.  Building the Pyretechnics Library as a Distribution
+
+    To create a *dist* folder containing source (*.tar.gz*) and built (*.whl*)
+    distributions of the Pyretechnics library, you can run this command:
+
+    ```sh
+    ./make.sh build-dist
+    ```
+
+7.  Uploading the Built Distribution to PyPI
+
+    To upload the distribution built in the previous step to
+    [PyPI](https://pypi.org/), you can use this command:
+
+    ```sh
+    ./make.sh upload-pypi
+    ```
+
+    You will be prompted for a username and password. For the
+    username, use `__token__`. For the password, use the PyPI API
+    token value that you created
+    [here](https://pypi.org/manage/account/#api-tokens), including the
+    `pypi-` prefix.
+
+8.  Installing the Pyretechnics Library with Guix
 
     You have two options for installing the Pyretechnics library locally:
 
@@ -149,11 +174,12 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
     `$HOME/.bash_profile`, so that they are run automatically each
     time you login.
 
-7.  Using the Pyretechnics Library
+9.  Using the Pyretechnics Library
 
-    Once you have installed the library either into a temporary shell
-    environment or into your Guix profile, you should be able to
-    launch `python` and load the library as follows:
+    Once you have installed the library into a temporary shell
+    environment, installed it into your Guix profile, or downloaded it
+    from [PyPI](https://pypi.org/), you should be able to launch
+    `python` and load the library as follows:
 
     ```python
     import pyretechnics
@@ -233,4 +259,4 @@ Copyright © 2023-2024 Spatial Informatics Group, LLC.
 
 Pyretechnics is distributed by Spatial Informatics Group, LLC. under
 the terms of the Eclipse Public License version 2.0 (EPLv2). See
-[LICENSE.txt](LICENSE.txt) in this directory for more information.
+[LICENSE](LICENSE) in this directory for more information.

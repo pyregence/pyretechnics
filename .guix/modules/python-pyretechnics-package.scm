@@ -8,7 +8,7 @@
   #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-hatchling))
-  #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio python-matplotlib))
+  #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio python-matplotlib python-twine))
   #:use-module ((gnu packages ssh)             #:select (openssh))
   #:use-module ((gnu packages version-control) #:select (git))
   #:use-module ((guix build-system pyproject)  #:select (pyproject-build-system))
@@ -26,7 +26,7 @@
 (define-public python-pyretechnics
   (package
    (name "python-pyretechnics")
-   (version "2024.8.30")
+   (version "2024.10.31")
    (source (local-file "../.."
                        "pyretechnics-checkout"
                        #:recursive? #t
@@ -51,7 +51,8 @@
                    emacs-minimal
                    emacs-htmlize
                    python-hatchling
-                   python-pytest))
+                   python-pytest
+                   python-twine))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper

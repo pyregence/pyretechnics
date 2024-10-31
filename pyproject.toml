@@ -1,6 +1,6 @@
 [project]
 name = "pyretechnics"
-version = "2024.8.30"
+version = "2024.10.31"
 authors = [
         {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
         {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
@@ -9,6 +9,22 @@ authors = [
 description = "A Python library for simulating fire behavior in a variety of ways."
 readme = "README.md"
 requires-python = ">=3.10"
+dependencies = [
+        "hatchling",
+        "pytest",
+        "twine",
+        "numpy",
+        "rasterio",
+        "matplotlib",
+]
+classifiers = [
+        "Programming Language :: Python :: 3",
+        "Natural Language :: English",
+        "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
+        "Operating System :: OS Independent",
+        "Development Status :: 4 - Beta",
+        "Topic :: Scientific/Engineering",
+]
 
 [project.urls]
 Homepage = "https://github.com/pyregence/pyretechnics"

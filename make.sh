@@ -8,7 +8,9 @@ Usage: $0 <command>
   - shell
   - container-shell
   - test
-  - build
+  - build-guix
+  - build-dist
+  - upload-pypi
   - install-shell
   - install-user
   - weave
@@ -48,8 +50,16 @@ case $CMD in
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv $ARGS
         ;;
 
-    "build")
+    "build-guix")
         guix time-machine -C channels.scm -- build -f guix.scm $ARGS
+        ;;
+
+    "build-dist")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m build $ARGS
+        ;;
+
+    "upload-pypi")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload --repository testpypi dist/* $ARGS
         ;;
 
     "install-shell")
