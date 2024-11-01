@@ -59,7 +59,7 @@ case $CMD in
         ;;
 
     "upload-pypi")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload --repository testpypi dist/* $ARGS
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload dist/* $ARGS
         ;;
 
     "install-shell")
