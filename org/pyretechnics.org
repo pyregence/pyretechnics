@@ -5720,118 +5720,170 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 {'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
 #+end_example
 
-*** [WIP] How to Estimate Spot Fire Count from Firebrand Production Rate
+#+NAME: areal-heat-output-all-fm-dry
+#+caption: Areal Heat Output for All Surface Fuel Models - Dry Conditions
+file:../doc/pics/fm_areal_heat_output_dry.png
+
+#+NAME: areal-heat-output-all-fm-mod
+#+caption: Areal Heat Output for All Surface Fuel Models - Mod Conditions
+file:../doc/pics/fm_areal_heat_output_mod.png
+
+#+NAME: areal-heat-output-all-fm-wet
+#+caption: Areal Heat Output for All Surface Fuel Models - Wet Conditions
+file:../doc/pics/fm_areal_heat_output_wet.png
+
+*** How to Estimate the Number of Firebrands Cast per Burned Cell
     :PROPERTIES:
-    :CUSTOM_ID: how-to-estimate-spot-fire-count-from-firebrand-production-rate
+    :CUSTOM_ID: how-to-estimate-the-number-of-firebrands-cast-per-burned-cell
     :END:
 
-And...we're back! I put together another range tester for the probability of spot fire ignition.
+Several spotting parameters can be adjusted by the user:
 
-These are the ranges I used for the relevant input variables:
+#+NAME: tab:spotting-parameters
+#+caption: User adjustable spotting parameters
+|------------------------------+------------------------------+------------------------------------------------------------------------|
+| Parameter                    | Units                        | Description                                                            |
+|------------------------------+------------------------------+------------------------------------------------------------------------|
+| random_seed                  | $\text{integer}$             | seed for a numpy.random.Generator                                      |
+| heat_per_firebrand           | $\text{kJ}/\text{firebrand}$ | number of kilojoules to produce one firebrand                          |
+| downwind_distance_mean       | $\text{m}$                   | normal distribution mean underpinning lognormal distribution           |
+| fireline_intensity_exponent  | $\text{-}$                   | downwind_distance_mean multiplier [I^fireline_intensity_exponent]      |
+| wind_speed_exponent          | $\text{-}$                   | downwind_distance_mean multiplier [U^wind_speed_exponent]              |
+| downwind_variance_mean_ratio | $\text{m}^2/\text{m}$        | normal distribution variance divided by expected value [Var(X) / E(X)] |
+| crosswind_distance_stdev     | $\text{m}$                   | crosswind normal distribution standard deviation (mean = 0)            |
+| decay_distance               | $\text{m}$                   | spotting distance at which ignition probability is divided by $e$      |
+|------------------------------+------------------------------+------------------------------------------------------------------------|
 
-- temperature: 20-40 degrees Celsius
-- fine fuel moisture: 5-20%
-- distance from burning cell: 30-990 meters (<= 1-33 cells)
-- distance decay constant: 0.005-0.100 m^-1
+In this section, we will look at *heat_per_firebrand* and
+*decay_distance* specifically as they have the most direct bearing on
+the number of firebrands produced from each burning cell as well as
+how many of these will ignite new spot fires rather than fizzle out.
 
-Here's the code:
+From section [[How to Estimate the Areal Heat Output for All Surface
+Fuel Models]], we can see that heat outputs across all surface fuel
+models under moderately dry conditions range from about 0-45,000
+$\text{kJ}/\text{m}^2$.
 
-#+NAME: estimate-spot-fire-count
-#+begin_src clojure
-(require '[gridfire.spotting :refer [schroeder-ign-prob]])
-(import 'org.apache.commons.math3.util.FastMath)
+Here, we will calculate some representative ignition probabilities and
+expected spot fire counts per burning cell given the following input
+variable ranges:
 
-(def sigs
-  (sort
-   (for [temperature (range 20 41 5)
-         moisture    (range 0.05 0.21 0.05)]
-     (schroeder-ign-prob temperature moisture))))
+- *heat output per area*: 0-45,000 $\text{kJ}/{m}^2$
+- *heat per firebrand*: 500,000-2,000,000 $\text{kJ}/\text{firebrand}$
+- *spotting distance from burning cell*: 30-900 meters (e.g., <= 1-30 cells @ 30m resolution)
+- *decay distance*: 30-900 meters (e.g., <= 1-30 cells @ 30m resolution)
+- *temperature at target cell*: 20-40 degrees Celsius
+- *fine fuel moisture at target cell*: 5-20%
 
-(def distance-penalties
-  (sort
-   (for [decay    (range 0.005 0.11 0.005)
-         distance (range 30.0 1000.0 30.0)]
-     (FastMath/exp (* -1.0 decay distance)))))
+In this example, we will assume a flat landscape (no slope) with 30
+meter resolution grid cells. This gives us a cell area of 900 $\text{m}^2$.
 
-(def ignition-probs
-  (sort
-   (for [sig sigs
-         dp  distance-penalties]
-     (* sig dp))))
+#+NAME: estimate-spot-fire-ignition-probability
+#+begin_src python
+from pprint import pprint
+import pyretechnics.spot_fire as spot
 
-(defn percentile-indices [coll]
-  "Return the 0th, 25th, 50th, 75th, and 100th percentile indices for coll."
-  (let [max-index (dec (count coll))]
-    (map #(int (* % max-index))
-         [0.0 0.25 0.5 0.75 1.0])))
 
-(def rep-sigs
-  (map #(nth sigs %) (percentile-indices sigs)))
+cell_area = 900 # m^2
 
-(def rep-dps
-  (map #(nth distance-penalties %) (percentile-indices distance-penalties)))
 
-(def rep-ignition-probs
-  (map #(nth ignition-probs %) (percentile-indices ignition-probs)))
+firebrand_counts = sorted([heat_output_per_area * cell_area / heat_per_firebrand
+                           for heat_output_per_area in range(0, 45001, 5000)
+                           for heat_per_firebrand in range(int(5e5), int(2e6 + 1), int(5e5))])
 
-{:representative-schroeder-ignition-probabilities rep-sigs
- :representative-distance-penalties               rep-dps
- :representative-spot-ignition-probabilities      rep-ignition-probs}
+
+distance_penalties = sorted([spot.firebrand_flight_survival_probability(spotting_distance, decay_distance)
+                             for spotting_distance in range(30, 901, 30)
+                             for decay_distance in range(30, 901, 30)])
+
+
+schroeder_probs = sorted([spot.schroeder_ignition_probability(temperature, moisture / 100)
+                          for temperature in range(20, 41, 5)
+                          for moisture in range(5, 21, 5)])
+
+
+ignition_probs = sorted([dp * sp
+                         for dp in distance_penalties
+                         for sp in schroeder_probs])
+
+
+spot_fire_counts = sorted([fb * ip
+                           for fb in firebrand_counts
+                           for ip in ignition_probs])
+
+
+def percentile_indices(coll):
+    """
+    Return the 0th, 25th, 50th, 75th, and 100th percentile indices for coll.
+    """
+    max_index = len(coll) - 1
+    return map(lambda p: (p, int(p * max_index)),
+               [0.0, 0.25, 0.5, 0.75, 1.0])
+
+
+firebrand_count_percs = {int(100 * p_v[0]): firebrand_counts[p_v[1]]
+                         for p_v in percentile_indices(firebrand_counts)}
+
+
+distance_penalty_percs = {int(100 * p_v[0]): distance_penalties[p_v[1]]
+                          for p_v in percentile_indices(distance_penalties)}
+
+
+schroeder_prob_percs = {int(100 * p_v[0]): schroeder_probs[p_v[1]]
+                        for p_v in percentile_indices(schroeder_probs)}
+
+
+ignition_prob_percs = {int(100 * p_v[0]): ignition_probs[p_v[1]]
+                       for p_v in percentile_indices(ignition_probs)}
+
+
+spot_fire_count_percs = {int(100 * p_v[0]): spot_fire_counts[p_v[1]]
+                         for p_v in percentile_indices(spot_fire_counts)}
+
+
+pprint({
+    "firebrand_count_percentiles"               : firebrand_count_percs,
+    "flight_distance_penalty_percentiles"       : distance_penalty_percs,
+    "schroeder_ignition_probability_percentiles": schroeder_prob_percs,
+    "spot_ignition_probability_percentiles"     : ignition_prob_percs,
+    "spot_fire_count_percentiles"               : spot_fire_count_percs,
+}, sort_dicts=False)
 #+end_src
 
-And here's the result:
+#+NAME: estimate-spot-fire-ignition-probability-results
+#+RESULTS: estimate-spot-fire-ignition-probability
+#+begin_example
+{'firebrand_count_percentiles': {0: 0.0,
+                                 25: 6.75,
+                                 50: 15.75,
+                                 75: 27.0,
+                                 100: 81.0},
+ 'flight_distance_penalty_percentiles': {0: 9.357622968840175e-14,
+                                         25: 0.1353352832366127,
+                                         50: 0.36787944117144233,
+                                         75: 0.5961628688829711,
+                                         100: 0.9672161004820059},
+ 'schroeder_ignition_probability_percentiles': {0: 0.0410643084416302,
+                                                25: 0.05806152126033939,
+                                                50: 0.1462606114856146,
+                                                75: 0.32092711244047045,
+                                                100: 0.6532412198970651},
+ 'spot_ignition_probability_percentiles': {0: 3.842643158729363e-15,
+                                           25: 0.016675322729050666,
+                                           50: 0.05110365673058294,
+                                           75: 0.1456615550998886,
+                                           100: 0.6318254253829478},
+ 'spot_fire_count_percentiles': {0: 0.0,
+                                 25: 0.09538065053197298,
+                                 50: 0.6628202779508812,
+                                 75: 2.3768372423970905,
+                                 100: 51.17785945601877}}
+#+end_example
 
-```clojure
-{:representative-schroeder-ignition-probabilities
- (0.0410643084416302
-  0.05806152126033939
-  0.1462606114856146
-  0.32092711244047045
-  0.6532412198970651),
- :representative-distance-penalties
- (7.162895350006142E-46
-  2.7158820118920623E-19
-  4.161397394224164E-10
-  2.248673241788482E-4
-  0.8607079764250578),
- :representative-spot-ignition-probabilities
- (2.941393439877709E-47
-  7.50193220126481E-20
-  9.65780746160267E-11
-  3.650896835973886E-5
-  0.5622499284950391)}
-```
-
-So if we multiply the `representative-spot-ignition-probabilities` by the firebrand count range given with a `heat_per_firebrand` of 33.33 kJ (see above), we get the following:
-
-#+NAME: estimate-spot-fire-count2
-#+begin_src clojure
-(for [num-firebrands [256500 1471500]]
-  (map #(* num-firebrands %)
-       rep-ignition-probs))
-#+end_src
-
-which results in:
-
-```clojure
-((7.544674173286323E-42
-  1.9242456096244238E-14
-  2.4772276139010847E-5
-  9.364550384273018
-  144217.10665897751)
- (4.3282604467800485E-41
-  1.1039093234161168E-13
-  1.4211463679748328E-4
-  53.72294694135574
-  827350.76978045))
-```
-
-We can see that depending on the surface fuel model, we can get
-anywhere from 9 to 827,350 spot fires ignited by one burning cell per
-timestep in the upper quartile of temperature/moisture/distance/decay
-conditions with that ridiculously low `heat_per_firebrand`.
-Hopefully this provides sufficient direction for selecting a more
-reasonable default for that parameter.
+We can see that depending on the surface fuel model and weather
+conditions at the cells receiving firebrands, we can get anywhere from
+0-51 spot fires ignited by one burning cell per timestep using the
+ranges for *heat_per_firebrand* and *decay_distance* provided above.
 
 *** How to Estimate Typical Ranges for the $\vec{\Delta}$ Distribution Characteristics
     :PROPERTIES:
