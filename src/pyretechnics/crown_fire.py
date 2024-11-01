@@ -304,7 +304,13 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
     # Determine whether the surface or crown fire has the fastest spread rate
-    if surface_spread_rate > crown_spread_rate:
+    if surface_spread_rate == 0.0:
+        # Independent crown fire (This is probably user error.)
+        return crown_fire_behavior
+    elif crown_spread_rate == 0.0:
+        # No crown fire
+        return surface_fire_behavior
+    elif surface_spread_rate > crown_spread_rate:
         # Surface fire spreads faster
         combined_fireline_intensity = (surface_fireline_intensity
                                        + crown_fireline_intensity * surface_spread_rate / crown_spread_rate)

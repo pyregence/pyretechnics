@@ -4637,7 +4637,13 @@ follows:
     <span class="org-variable-name">crown_spread_direction</span>   <span class="org-operator">=</span> crown_fire_behavior[<span class="org-string">"spread_direction"</span>]   <span class="org-comment-delimiter"># </span><span class="org-comment">(x, y, z) unit vector</span>
     <span class="org-variable-name">crown_fireline_intensity</span> <span class="org-operator">=</span> crown_fire_behavior[<span class="org-string">"fireline_intensity"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine whether the surface or crown fire has the fastest spread rate</span>
-    <span class="org-keyword">if</span> surface_spread_rate <span class="org-operator">&gt;</span> crown_spread_rate:
+    <span class="org-keyword">if</span> surface_spread_rate <span class="org-operator">==</span> 0.0:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Independent crown fire (This is probably user error.)</span>
+        <span class="org-keyword">return</span> crown_fire_behavior
+    <span class="org-keyword">elif</span> crown_spread_rate <span class="org-operator">==</span> 0.0:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">No crown fire</span>
+        <span class="org-keyword">return</span> surface_fire_behavior
+    <span class="org-keyword">elif</span> surface_spread_rate <span class="org-operator">&gt;</span> crown_spread_rate:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Surface fire spreads faster</span>
         <span class="org-variable-name">combined_fireline_intensity</span> <span class="org-operator">=</span> (surface_fireline_intensity
                                        <span class="org-operator">+</span> crown_fireline_intensity <span class="org-operator">*</span> surface_spread_rate <span class="org-operator">/</span> crown_spread_rate)
