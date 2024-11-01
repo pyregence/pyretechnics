@@ -5774,10 +5774,10 @@ Here, we will calculate some representative ignition probabilities and
 expected spot fire counts per burning cell given the following input
 variable ranges:
 
-- *heat output per area*: 0-45,000 $\text{kJ}/{m}^2$
+- *heat output per area*: 0-45,000 $\text{kJ}/\text{m}^2$
 - *heat per firebrand*: 500,000-2,000,000 $\text{kJ}/\text{firebrand}$
-- *spotting distance from burning cell*: 30-900 meters (e.g., <= 1-30 cells @ 30m resolution)
-- *decay distance*: 30-900 meters (e.g., <= 1-30 cells @ 30m resolution)
+- *spotting distance from burning cell*: 30-900 meters (e.g., 1-30 cells @ 30m resolution)
+- *decay distance*: 30-900 meters (e.g., 1-30 cells @ 30m resolution)
 - *temperature at target cell*: 20-40 degrees Celsius
 - *fine fuel moisture at target cell*: 5-20%
 
