@@ -5646,7 +5646,7 @@ def save_areal_heat_output_as_histogram(areal_heat_output, moisture_category):
     plt.title("Areal Heat Output for All Surface Fuel Models - " + str.capitalize(moisture_category) + " Conditions")
     plt.xlabel("Areal Heat Output (kJ/m^2)")
     plt.ylabel("Probability Density")
-    plt.savefig("../docs/pics/fm_areal_heat_output_" + moisture_category + ".png")
+    plt.savefig("pics/fm_areal_heat_output_" + moisture_category + ".png")
     plt.close("all")
 
 fuel_moisture_dry = [
@@ -5728,15 +5728,15 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 
 #+NAME: areal-heat-output-all-fm-dry
 #+caption: Areal Heat Output for All Surface Fuel Models - Dry Conditions
-file:../docs/pics/fm_areal_heat_output_dry.png
+file:pics/fm_areal_heat_output_dry.png
 
 #+NAME: areal-heat-output-all-fm-mod
 #+caption: Areal Heat Output for All Surface Fuel Models - Mod Conditions
-file:../docs/pics/fm_areal_heat_output_mod.png
+file:pics/fm_areal_heat_output_mod.png
 
 #+NAME: areal-heat-output-all-fm-wet
 #+caption: Areal Heat Output for All Surface Fuel Models - Wet Conditions
-file:../docs/pics/fm_areal_heat_output_wet.png
+file:pics/fm_areal_heat_output_wet.png
 
 *** How to Estimate the Number of Firebrands Cast per Burned Cell
     :PROPERTIES:
@@ -8334,14 +8334,14 @@ heatmap_configs = [
         "colors"  : "plasma",
         "units"   : "phi <= 0: burned, phi > 0: unburned",
         "title"   : "Phi",
-        "filename": "../docs/pics/els_phi.png",
+        "filename": "pics/els_phi.png",
     },
     {
         "matrix"  : output_matrices["fire_type"],
         "colors"  : "viridis",
         "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
         "title"   : "Fire Type",
-        "filename": "../docs/pics/els_fire_type.png",
+        "filename": "pics/els_fire_type.png",
         "vmin"    : 0,
         "vmax"    : 3,
         "ticks"   : [0,1,2,3],
@@ -8351,14 +8351,14 @@ heatmap_configs = [
         "colors"  : "hot",
         "units"   : "m/min",
         "title"   : "Spread Rate",
-        "filename": "../docs/pics/els_spread_rate.png",
+        "filename": "pics/els_spread_rate.png",
     },
     {
         "matrix"  : output_matrices["spread_direction"],
         "colors"  : "viridis",
         "units"   : "degrees clockwise from North",
         "title"   : "Spread Direction",
-        "filename": "../docs/pics/els_spread_direction.png",
+        "filename": "pics/els_spread_direction.png",
         "vmin"    : 0,
         "vmax"    : 360,
         "ticks"   : [0,45,90,135,180,225,270,315,360]
@@ -8368,14 +8368,14 @@ heatmap_configs = [
         "colors"  : "hot",
         "units"   : "kW/m",
         "title"   : "Fireline Intensity",
-        "filename": "../docs/pics/els_fireline_intensity.png",
+        "filename": "pics/els_fireline_intensity.png",
     },
     {
         "matrix"  : output_matrices["flame_length"],
         "colors"  : "hot",
         "units"   : "meters",
         "title"   : "Flame Length",
-        "filename": "../docs/pics/els_flame_length.png",
+        "filename": "pics/els_flame_length.png",
     },
 ]
 
@@ -8384,7 +8384,7 @@ contour_configs = [
     {
         "matrix"  : output_matrices["time_of_arrival"],
         "title"   : "Time of Arrival",
-        "filename": "../docs/pics/els_time_of_arrival.png",
+        "filename": "pics/els_time_of_arrival.png",
         "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
     },
 ]
@@ -8400,15 +8400,15 @@ for contour_config in contour_configs:
 
 #+NAME: fire-behavior-matplotlib-heatmaps
 #+caption: Fire behavior attributes after 8 hours of spread
-|----------------------------------------------+--------------------------------------------|
-| file:../docs/pics/els_phi.png                | file:../docs/pics/els_fire_type.png        |
-| file:../docs/pics/els_spread_rate.png        | file:../docs/pics/els_spread_direction.png |
-| file:../docs/pics/els_fireline_intensity.png | file:../docs/pics/els_flame_length.png     |
-|----------------------------------------------+--------------------------------------------|
+|--------------------------------------+------------------------------------|
+| file:pics/els_phi.png                | file:pics/els_fire_type.png        |
+| file:pics/els_spread_rate.png        | file:pics/els_spread_direction.png |
+| file:pics/els_fireline_intensity.png | file:pics/els_flame_length.png     |
+|--------------------------------------+------------------------------------|
 
 #+NAME: time-of-arrival-matplotlib-countours
 #+caption: Time of arrival with hourly perimeters
-file:../docs/pics/els_time_of_arrival.png
+file:pics/els_time_of_arrival.png
 
 *** How to Spread a Fire from a Point Ignition with Spotting Enabled
     :PROPERTIES:
@@ -8701,14 +8701,14 @@ heatmap_configs = [
         "colors"  : "plasma",
         "units"   : "phi <= 0: burned, phi > 0: unburned",
         "title"   : "Phi",
-        "filename": "../docs/pics/els_spot_phi.png",
+        "filename": "pics/els_spot_phi.png",
     },
     {
         "matrix"  : output_matrices["fire_type"],
         "colors"  : "viridis",
         "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
         "title"   : "Fire Type",
-        "filename": "../docs/pics/els_spot_fire_type.png",
+        "filename": "pics/els_spot_fire_type.png",
         "vmin"    : 0,
         "vmax"    : 3,
         "ticks"   : [0,1,2,3],
@@ -8718,14 +8718,14 @@ heatmap_configs = [
         "colors"  : "hot",
         "units"   : "m/min",
         "title"   : "Spread Rate",
-        "filename": "../docs/pics/els_spot_spread_rate.png",
+        "filename": "pics/els_spot_spread_rate.png",
     },
     {
         "matrix"  : output_matrices["spread_direction"],
         "colors"  : "viridis",
         "units"   : "degrees clockwise from North",
         "title"   : "Spread Direction",
-        "filename": "../docs/pics/els_spot_spread_direction.png",
+        "filename": "pics/els_spot_spread_direction.png",
         "vmin"    : 0,
         "vmax"    : 360,
         "ticks"   : [0,45,90,135,180,225,270,315,360]
@@ -8735,14 +8735,14 @@ heatmap_configs = [
         "colors"  : "hot",
         "units"   : "kW/m",
         "title"   : "Fireline Intensity",
-        "filename": "../docs/pics/els_spot_fireline_intensity.png",
+        "filename": "pics/els_spot_fireline_intensity.png",
     },
     {
         "matrix"  : output_matrices["flame_length"],
         "colors"  : "hot",
         "units"   : "meters",
         "title"   : "Flame Length",
-        "filename": "../docs/pics/els_spot_flame_length.png",
+        "filename": "pics/els_spot_flame_length.png",
     },
 ]
 
@@ -8755,7 +8755,7 @@ if isinstance(firebrand_count_matrix, np.ndarray):
             "colors"  : "hot",
             "units"   : "number of firebrands",
             "title"   : "Firebrand Count",
-            "filename": "../docs/pics/els_spot_firebrand_count.png",
+            "filename": "pics/els_spot_firebrand_count.png",
         }
     )
 
@@ -8764,7 +8764,7 @@ contour_configs = [
     {
         "matrix"  : output_matrices["time_of_arrival"],
         "title"   : "Time of Arrival",
-        "filename": "../docs/pics/els_spot_time_of_arrival.png",
+        "filename": "pics/els_spot_time_of_arrival.png",
         "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
     },
 ]
@@ -8780,19 +8780,19 @@ for contour_config in contour_configs:
 
 #+NAME: spot-fire-behavior-matplotlib-heatmaps
 #+caption: Fire behavior attributes after 8 hours of spread with spotting enabled
-|---------------------------------------------------+-------------------------------------------------|
-| file:../docs/pics/els_spot_phi.png                | file:../docs/pics/els_spot_fire_type.png        |
-| file:../docs/pics/els_spot_spread_rate.png        | file:../docs/pics/els_spot_spread_direction.png |
-| file:../docs/pics/els_spot_fireline_intensity.png | file:../docs/pics/els_spot_flame_length.png     |
-|---------------------------------------------------+-------------------------------------------------|
+|-------------------------------------------+-----------------------------------------|
+| file:pics/els_spot_phi.png                | file:pics/els_spot_fire_type.png        |
+| file:pics/els_spot_spread_rate.png        | file:pics/els_spot_spread_direction.png |
+| file:pics/els_spot_fireline_intensity.png | file:pics/els_spot_flame_length.png     |
+|-------------------------------------------+-----------------------------------------|
 
 #+NAME: spot-firebrand-count-matplotlib-heatmap
 #+caption: Firebrand count with spotting enabled (NOTE: This is not the same as ember exposure.)
-file:../docs/pics/els_spot_firebrand_count.png
+file:pics/els_spot_firebrand_count.png
 
 #+NAME: spot-time-of-arrival-matplotlib-countours
 #+caption: Time of arrival with hourly perimeters with spotting enabled
-file:../docs/pics/els_spot_time_of_arrival.png
+file:pics/els_spot_time_of_arrival.png
 
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
   :PROPERTIES:
@@ -10307,7 +10307,7 @@ flammap      = test_read_flammap_outputs()
 
 def savefig(title, layer, units, colors):
     title     = "Worcester, VT - " + title
-    file_name = "../docs/pics/worcester_" + layer + ".png"
+    file_name = "pics/worcester_" + layer + ".png"
     image     = plt.imshow(pyretechnics[layer], cmap=colors)
     # image     = plt.imshow(flammap[layer][0], cmap=colors)
     # image     = plt.imshow(pyretechnics[layer] - flammap[layer][0], cmap=colors)
@@ -10330,17 +10330,17 @@ savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="h
 
 #+NAME: max-fire-behavior-matplotlib-heatmaps
 #+caption: Max fire behavior attributes
-|--------------------------------------------------------+------------------------------------------------------|
-|                                                        | file:../docs/pics/worcester_max_fire_type.png        |
-| file:../docs/pics/worcester_max_spread_rate.png        | file:../docs/pics/worcester_max_spread_direction.png |
-| file:../docs/pics/worcester_max_fireline_intensity.png | file:../docs/pics/worcester_max_flame_length.png     |
-|--------------------------------------------------------+------------------------------------------------------|
+|------------------------------------------------+----------------------------------------------|
+|                                                | file:pics/worcester_max_fire_type.png        |
+| file:pics/worcester_max_spread_rate.png        | file:pics/worcester_max_spread_direction.png |
+| file:pics/worcester_max_fireline_intensity.png | file:pics/worcester_max_flame_length.png     |
+|------------------------------------------------+----------------------------------------------|
 
 # #+begin_src python
 # frq, edges = np.histogram(copy)
 # fig, ax = plt.subplots()
 # ax.bar(edges[:-1], frq, width=np.diff(edges), edgecolor="black", align="edge")
-# plt.savefig("../docs/pics/worcester_max_spread_rate_diff.png")
+# plt.savefig("pics/worcester_max_spread_rate_diff.png")
 # #+end_src
 
 Layer Disagreement: [-10.93608, 8.9857025] inches/min
