@@ -195,7 +195,7 @@
 <link rel="stylesheet" type="text/css" href="pyretechnics-base.css" />
 <link rel="stylesheet" type="text/css" href="pyretechnics-custom.css" />
 
-<script src="../doc/org-info.js">
+<script src="org-info.js">
 // @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&amp;dn=gpl-3.0.txt GPL-v3-or-Later
 // @license-end
 </script>
@@ -6344,7 +6344,7 @@ ignited.
     plt.title(<span class="org-string">"Areal Heat Output for All Surface Fuel Models - "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>.capitalize(moisture_category) <span class="org-operator">+</span> <span class="org-string">" Conditions"</span>)
     plt.xlabel(<span class="org-string">"Areal Heat Output (kJ/m^2)"</span>)
     plt.ylabel(<span class="org-string">"Probability Density"</span>)
-    plt.savefig(<span class="org-string">"../doc/pics/fm_areal_heat_output_"</span> <span class="org-operator">+</span> moisture_category <span class="org-operator">+</span> <span class="org-string">".png"</span>)
+    plt.savefig(<span class="org-string">"../docs/pics/fm_areal_heat_output_"</span> <span class="org-operator">+</span> moisture_category <span class="org-operator">+</span> <span class="org-string">".png"</span>)
     plt.close(<span class="org-string">"all"</span>)
 
 <span class="org-variable-name">fuel_moisture_dry</span> <span class="org-operator">=</span> [
@@ -6425,21 +6425,21 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 
 
 <div id="areal-heat-output-all-fm-dry" class="figure">
-<p><img src="../doc/pics/fm_areal_heat_output_dry.png" alt="fm_areal_heat_output_dry.png">
+<p><img src="../docs/pics/fm_areal_heat_output_dry.png" alt="fm_areal_heat_output_dry.png">
 </p>
 <p><span class="figure-number">Figure 1: </span>Areal Heat Output for All Surface Fuel Models - Dry Conditions</p>
 </div>
 
 
 <div id="areal-heat-output-all-fm-mod" class="figure">
-<p><img src="../doc/pics/fm_areal_heat_output_mod.png" alt="fm_areal_heat_output_mod.png">
+<p><img src="../docs/pics/fm_areal_heat_output_mod.png" alt="fm_areal_heat_output_mod.png">
 </p>
 <p><span class="figure-number">Figure 2: </span>Areal Heat Output for All Surface Fuel Models - Mod Conditions</p>
 </div>
 
 
 <div id="areal-heat-output-all-fm-wet" class="figure">
-<p><img src="../doc/pics/fm_areal_heat_output_wet.png" alt="fm_areal_heat_output_wet.png">
+<p><img src="../docs/pics/fm_areal_heat_output_wet.png" alt="fm_areal_heat_output_wet.png">
 </p>
 <p><span class="figure-number">Figure 3: </span>Areal Heat Output for All Surface Fuel Models - Wet Conditions</p>
 </div>
@@ -9171,14 +9171,14 @@ Time of Arrival (minutes)
         <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_phi.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_phi.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_fire_type.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_fire_type.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 3,
         <span class="org-string">"ticks"</span>   : [0,1,2,3],
@@ -9188,14 +9188,14 @@ Time of Arrival (minutes)
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spread_rate.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spread_rate.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spread_direction.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spread_direction.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 360,
         <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
@@ -9205,14 +9205,14 @@ Time of Arrival (minutes)
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_fireline_intensity.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_fireline_intensity.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_flame_length.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_flame_length.png"</span>,
     },
 ]
 
@@ -9221,7 +9221,7 @@ Time of Arrival (minutes)
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"time_of_arrival"</span>],
         <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_time_of_arrival.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_time_of_arrival.png"</span>,
         <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
     },
 ]
@@ -9246,25 +9246,25 @@ Time of Arrival (minutes)
 </colgroup>
 <tbody>
 <tr>
-<td class="org-left"><img src="../doc/pics/els_phi.png" alt="els_phi.png"></td>
-<td class="org-left"><img src="../doc/pics/els_fire_type.png" alt="els_fire_type.png"></td>
+<td class="org-left"><img src="../docs/pics/els_phi.png" alt="els_phi.png"></td>
+<td class="org-left"><img src="../docs/pics/els_fire_type.png" alt="els_fire_type.png"></td>
 </tr>
 
 <tr>
-<td class="org-left"><img src="../doc/pics/els_spread_rate.png" alt="els_spread_rate.png"></td>
-<td class="org-left"><img src="../doc/pics/els_spread_direction.png" alt="els_spread_direction.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spread_rate.png" alt="els_spread_rate.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spread_direction.png" alt="els_spread_direction.png"></td>
 </tr>
 
 <tr>
-<td class="org-left"><img src="../doc/pics/els_fireline_intensity.png" alt="els_fireline_intensity.png"></td>
-<td class="org-left"><img src="../doc/pics/els_flame_length.png" alt="els_flame_length.png"></td>
+<td class="org-left"><img src="../docs/pics/els_fireline_intensity.png" alt="els_fireline_intensity.png"></td>
+<td class="org-left"><img src="../docs/pics/els_flame_length.png" alt="els_flame_length.png"></td>
 </tr>
 </tbody>
 </table>
 
 
 <div id="time-of-arrival-matplotlib-countours" class="figure">
-<p><img src="../doc/pics/els_time_of_arrival.png" alt="els_time_of_arrival.png">
+<p><img src="../docs/pics/els_time_of_arrival.png" alt="els_time_of_arrival.png">
 </p>
 <p><span class="figure-number">Figure 4: </span>Time of arrival with hourly perimeters</p>
 </div>
@@ -9553,14 +9553,14 @@ Future Spot Ignitions:
         <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_phi.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_phi.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_fire_type.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_fire_type.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 3,
         <span class="org-string">"ticks"</span>   : [0,1,2,3],
@@ -9570,14 +9570,14 @@ Future Spot Ignitions:
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_spread_rate.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_spread_rate.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_spread_direction.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_spread_direction.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 360,
         <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
@@ -9587,14 +9587,14 @@ Future Spot Ignitions:
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_fireline_intensity.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_fireline_intensity.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_flame_length.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_flame_length.png"</span>,
     },
 ]
 
@@ -9607,7 +9607,7 @@ Future Spot Ignitions:
             <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
             <span class="org-string">"units"</span>   : <span class="org-string">"number of firebrands"</span>,
             <span class="org-string">"title"</span>   : <span class="org-string">"Firebrand Count"</span>,
-            <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_firebrand_count.png"</span>,
+            <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_firebrand_count.png"</span>,
         }
     )
 
@@ -9616,7 +9616,7 @@ Future Spot Ignitions:
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"time_of_arrival"</span>],
         <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"../doc/pics/els_spot_time_of_arrival.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"../docs/pics/els_spot_time_of_arrival.png"</span>,
         <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
     },
 ]
@@ -9641,32 +9641,32 @@ Future Spot Ignitions:
 </colgroup>
 <tbody>
 <tr>
-<td class="org-left"><img src="../doc/pics/els_spot_phi.png" alt="els_spot_phi.png"></td>
-<td class="org-left"><img src="../doc/pics/els_spot_fire_type.png" alt="els_spot_fire_type.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spot_phi.png" alt="els_spot_phi.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spot_fire_type.png" alt="els_spot_fire_type.png"></td>
 </tr>
 
 <tr>
-<td class="org-left"><img src="../doc/pics/els_spot_spread_rate.png" alt="els_spot_spread_rate.png"></td>
-<td class="org-left"><img src="../doc/pics/els_spot_spread_direction.png" alt="els_spot_spread_direction.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spot_spread_rate.png" alt="els_spot_spread_rate.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spot_spread_direction.png" alt="els_spot_spread_direction.png"></td>
 </tr>
 
 <tr>
-<td class="org-left"><img src="../doc/pics/els_spot_fireline_intensity.png" alt="els_spot_fireline_intensity.png"></td>
-<td class="org-left"><img src="../doc/pics/els_spot_flame_length.png" alt="els_spot_flame_length.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spot_fireline_intensity.png" alt="els_spot_fireline_intensity.png"></td>
+<td class="org-left"><img src="../docs/pics/els_spot_flame_length.png" alt="els_spot_flame_length.png"></td>
 </tr>
 </tbody>
 </table>
 
 
 <div id="spot-firebrand-count-matplotlib-heatmap" class="figure">
-<p><img src="../doc/pics/els_spot_firebrand_count.png" alt="els_spot_firebrand_count.png">
+<p><img src="../docs/pics/els_spot_firebrand_count.png" alt="els_spot_firebrand_count.png">
 </p>
 <p><span class="figure-number">Figure 5: </span>Firebrand count with spotting enabled (NOTE: This is not the same as ember exposure.)</p>
 </div>
 
 
 <div id="spot-time-of-arrival-matplotlib-countours" class="figure">
-<p><img src="../doc/pics/els_spot_time_of_arrival.png" alt="els_spot_time_of_arrival.png">
+<p><img src="../docs/pics/els_spot_time_of_arrival.png" alt="els_spot_time_of_arrival.png">
 </p>
 <p><span class="figure-number">Figure 6: </span>Time of arrival with hourly perimeters with spotting enabled</p>
 </div>

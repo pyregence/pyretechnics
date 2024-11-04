@@ -207,8 +207,8 @@ files within this repository.
 1.  Regenerating HTML Documentation
 
     The latest HTML documentation can always be found in
-    [doc/pyretechnics.html](doc/pyretechnics.html).
-    
+    [docs/index.html](docs/index.html).
+
     After editing [org/pyretechnics.org](org/pyretechnics.org), you can
     regenerate the HTML documentation by running this command:
 
