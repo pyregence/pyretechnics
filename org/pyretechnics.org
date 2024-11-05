@@ -8810,6 +8810,503 @@ file:pics/els_spot_firebrand_count.png
 #+caption: Time of arrival with hourly perimeters with spotting enabled
 file:pics/els_spot_time_of_arrival.png
 
+*** How to Spread a Fire, Pause, Fork, and Continue
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-spread-a-fire,-pause,-fork,-and-continue
+    :END:
+
+**** Configure and Run the Initial Fire Spread Simulation
+     :PROPERTIES:
+     :CUSTOM_ID: configure-and-run-the-initial-fire-spread-simulation
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-initial
+#+begin_src python :results silent
+import numpy as np
+import pyretechnics.eulerian_level_set as els
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240, # bands: 10 days @ 1 hour/band
+    100, # rows:  3 km @ 30 meters/row
+    100, # cols:  3 km @ 30 meters/col
+)
+
+grid_shape = cube_shape[1:]
+
+#============================================================================================
+# Specify the SpaceTimeCube resolution
+#============================================================================================
+
+cube_resolution = (
+    60, # band_duration: minutes
+    30, # cell_height:   meters
+    30, # cell_width:    meters
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Create an output dictionary of 2D Numpy arrays
+#============================================================================================
+
+output_matrices = {
+    "phi"               : np.ones(grid_shape, dtype="float32"),       # 2D float array of values in [-1,1]
+    "fire_type"         : np.zeros(grid_shape, dtype="uint8"),        # 2D byte array (0-3)
+    "spread_rate"       : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m/min)
+    "spread_direction"  : np.zeros(grid_shape, dtype="float32"),      # 2D float array (degrees clockwise from North)
+    "fireline_intensity": np.zeros(grid_shape, dtype="float32"),      # 2D float array (kW/m)
+    "flame_length"      : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m)
+    "time_of_arrival"   : np.full(grid_shape, -1.0, dtype="float32"), # 2D float array (min)
+}
+
+#============================================================================================
+# Set the start time, max duration, and initially ignited cell
+#============================================================================================
+
+# Day 2 @ 10:30am
+start_time = 2070  # minutes
+
+# 8 hours
+max_duration = 480 # minutes
+
+# Burn initially ignited cell into the phi matrix by setting it to -1.0
+output_matrices["phi"][50,50] = -1.0
+
+#============================================================================================
+# Spread fire from the start time for the max duration
+#============================================================================================
+
+fire_spread_results_8 = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
+                                                       start_time, max_duration)
+
+stop_time       = fire_spread_results_8["stop_time"]       # minutes
+stop_condition  = fire_spread_results_8["stop_condition"]  # "max duration reached" or "no burnable cells"
+output_matrices = fire_spread_results_8["output_matrices"] # updated 2D arrays (mutated from inputs)
+#+end_src
+
+**** Fork and Run Two Fire Spread Scenarios
+     :PROPERTIES:
+     :CUSTOM_ID: fork-and-run-two-fire-spread-scenarios
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-forked
+#+begin_src python :results silent
+#============================================================================================
+# Fork the simulation by creating a copy of the space_time_cubes and output_matrices
+#============================================================================================
+
+def copy_matrices(matrix_dict):
+    return {k: np.copy(matrix_dict[k]) for k in matrix_dict}
+
+space_time_cubes_fork = space_time_cubes.copy()
+
+output_matrices_fork = copy_matrices(output_matrices)
+
+#============================================================================================
+# Add a non-burnable fire-break to the forked space_time_cubes fuel model
+#============================================================================================
+
+# Extract 2D array of fuel_model values at the cube's spatial dimensions (100 x 100)
+fuel_model_grid_ro = space_time_cubes["fuel_model"].getSpatialPlane(0, (None, None), (None, None)) # read-only
+fuel_model_grid    = np.copy(fuel_model_grid_ro)                                                   # writable
+
+# Add a non-burnable fire-break in the northeastern corner of the grid
+(ys, xs) = np.diag_indices(40)
+fuel_model_grid[60:,60:][(list(reversed(ys)), xs)] = 91 # NB1
+
+# Replace the old fuel_model cube with a new fire-break-containing cube
+space_time_cubes_fork["fuel_model"] = SpaceTimeCube(cube_shape, fuel_model_grid)
+
+#============================================================================================
+# Run both simulations for another 4 hours
+#============================================================================================
+
+# Day 2 @ 6:30pm
+new_start_time = stop_time # minutes
+
+# 4 hours
+new_max_duration = 240     # minutes
+
+# Spread the main simulation
+fire_spread_results_12 = els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
+                                                        cube_resolution, new_start_time, new_max_duration)
+
+stop_time       = fire_spread_results_12["stop_time"]       # minutes
+stop_condition  = fire_spread_results_12["stop_condition"]  # "max duration reached" or "no burnable cells"
+output_matrices = fire_spread_results_12["output_matrices"] # updated 2D arrays (mutated from inputs)
+
+# Spread the forked simulation
+fire_spread_results_12_fork = els.spread_fire_with_phi_field(space_time_cubes_fork, output_matrices_fork,
+                                                             cube_resolution, new_start_time, new_max_duration)
+
+stop_time_fork       = fire_spread_results_12_fork["stop_time"]       # minutes
+stop_condition_fork  = fire_spread_results_12_fork["stop_condition"]  # "max duration reached" or "no burnable cells"
+output_matrices_fork = fire_spread_results_12_fork["output_matrices"] # updated 2D arrays (mutated from inputs)
+#+end_src
+
+**** Display Summary Statistics of the Two Scenarios' Outputs
+     :PROPERTIES:
+     :CUSTOM_ID: display-summary-statistics-of-the-two-scenarios'-outputs
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-stats-forked
+#+begin_src python
+import numpy as np
+from pprint import pprint
+
+#============================================================================================
+# Display summary statistics of our fire spread results
+#============================================================================================
+
+# Used as filters in get_array_stats and get_array_stats_fork below
+burned_cells      = output_matrices["fire_type"] > 0
+burned_cells_fork = output_matrices_fork["fire_type"] > 0
+
+def get_array_stats(array, use_burn_scar_mask=True):
+    array_values_to_analyze = array[burned_cells] if use_burn_scar_mask else array
+    if len(array_values_to_analyze) > 0:
+        return {
+            "Min"  : np.min(array_values_to_analyze),
+            "Max"  : np.max(array_values_to_analyze),
+            "Mean" : np.mean(array_values_to_analyze),
+            "Stdev": np.std(array_values_to_analyze),
+        }
+    else:
+        return {
+            "Min"  : "No Data",
+            "Max"  : "No Data",
+            "Mean" : "No Data",
+            "Stdev": "No Data",
+        }
+
+def get_array_stats_fork(array, use_burn_scar_mask=True):
+    array_values_to_analyze = array[burned_cells_fork] if use_burn_scar_mask else array
+    if len(array_values_to_analyze) > 0:
+        return {
+            "Min"  : np.min(array_values_to_analyze),
+            "Max"  : np.max(array_values_to_analyze),
+            "Mean" : np.mean(array_values_to_analyze),
+            "Stdev": np.std(array_values_to_analyze),
+        }
+    else:
+        return {
+            "Min"  : "No Data",
+            "Max"  : "No Data",
+            "Mean" : "No Data",
+            "Stdev": "No Data",
+        }
+
+print("Fire Behavior from Day 2 @ 10:30am - Day 2 @ 10:30pm Spreading from Coordinate (50,50)\n" + "=" * 100)
+
+print("Stop Time (Main): " + str(stop_time) + " (minutes)")
+print("Stop Time (Fork): " + str(stop_time_fork) + " (minutes)")
+print("Stop Condition (Main): " + stop_condition)
+print("Stop Condition (Fork): " + stop_condition_fork)
+
+print("\nPhi (phi <= 0: burned, phi > 0: unburned")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["phi"], use_burn_scar_mask=False), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["phi"], use_burn_scar_mask=False), sort_dicts=False)
+
+print("\nFire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["fire_type"]), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["fire_type"]), sort_dicts=False)
+
+print("\nSpread Rate (m/min)")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["spread_rate"]), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["spread_rate"]), sort_dicts=False)
+
+print("\nSpread Direction (degrees clockwise from North)")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["spread_direction"]), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["spread_direction"]), sort_dicts=False)
+
+print("\nFireline Intensity (kW/m)")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["fireline_intensity"]), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["fireline_intensity"]), sort_dicts=False)
+
+print("\nFlame Length (meters)")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["flame_length"]), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["flame_length"]), sort_dicts=False)
+
+print("\nTime of Arrival (minutes)")
+print("Main: ", end="")
+pprint(get_array_stats(output_matrices["time_of_arrival"]), sort_dicts=False)
+print("Fork: ", end="")
+pprint(get_array_stats_fork(output_matrices_fork["time_of_arrival"]), sort_dicts=False)
+#+end_src
+
+#+RESULTS: run-spread-fire-with-phi-field-stats-forked
+#+begin_example
+Fire Behavior from Day 2 @ 10:30am - Day 2 @ 10:30pm Spreading from Coordinate (50,50)
+====================================================================================================
+Stop Time (Main): 2790.0 (minutes)
+Stop Time (Fork): 2790.0 (minutes)
+Stop Condition (Main): max duration reached
+Stop Condition (Fork): max duration reached
+
+Phi (phi <= 0: burned, phi > 0: unburned
+Main: {'Min': -0.9252461, 'Max': 1.0, 'Mean': 0.7945676, 'Stdev': 0.5639851}
+Fork: {'Min': -0.9252461, 'Max': 1.0, 'Mean': 0.7984583, 'Stdev': 0.5611056}
+
+Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
+Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
+
+Spread Rate (m/min)
+Main: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2057383, 'Stdev': 0.63797617}
+Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890503, 'Stdev': 0.63051194}
+
+Spread Direction (degrees clockwise from North)
+Main: {'Min': 0.27232167, 'Max': 359.69888, 'Mean': 190.26033, 'Stdev': 117.35212}
+Fork: {'Min': 0.27232167, 'Max': 359.69888, 'Mean': 192.25833, 'Stdev': 116.70386}
+
+Fireline Intensity (kW/m)
+Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078642, 'Stdev': 9.036593}
+Fork: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 16.842266, 'Stdev': 8.930867}
+
+Flame Length (meters)
+Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27460188, 'Stdev': 0.07341512}
+Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.2728712, 'Stdev': 0.07285747}
+
+Time of Arrival (minutes)
+Main: {'Min': 2081.8513, 'Max': 2789.7427, 'Mean': 2543.6892, 'Stdev': 173.15504}
+Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
+#+end_example
+
+**** Create Images of the Two Scenarios' Outputs
+     :PROPERTIES:
+     :CUSTOM_ID: create-images-of-the-two-scenarios'-outputs
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-images-forked
+#+begin_src python :results silent
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+def save_matrix_as_contours(matrix, title, filename, levels=None):
+    fig, ax = plt.subplots()
+    cs      = ax.contour(matrix, levels=levels)
+    ax.clabel(cs, inline=True, fontsize=10)
+    ax.set_aspect('equal', 'box')
+    ax.set_title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+heatmap_configs = [
+    {
+        "matrix"  : space_time_cubes["fuel_model"].getSpatialPlane(0, (None, None), (None, None)),
+        "colors"  : "plasma",
+        "units"   : "fuel model number: 91-204",
+        "title"   : "Fuel Model",
+        "filename": "pics/els_fuel_model_main.png",
+        "vmin"    : 91,
+        "vmax"    : 204,
+    },
+    {
+        "matrix"  : space_time_cubes_fork["fuel_model"].getSpatialPlane(0, (None, None), (None, None)),
+        "colors"  : "plasma",
+        "units"   : "fuel model number: 91-204",
+        "title"   : "Fuel Model",
+        "filename": "pics/els_fuel_model_fork.png",
+        "vmin"    : 91,
+        "vmax"    : 204,
+    },
+    {
+        "matrix"  : output_matrices["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "pics/els_phi_main.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "pics/els_phi_fork.png",
+    },
+    {
+        "matrix"  : output_matrices["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "pics/els_fire_type_main.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
+    },
+    {
+        "matrix"  : output_matrices_fork["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "pics/els_fire_type_fork.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
+    },
+    {
+        "matrix"  : output_matrices["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "pics/els_spread_rate_main.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "pics/els_spread_rate_fork.png",
+    },
+    {
+        "matrix"  : output_matrices["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "pics/els_spread_direction_main.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        "matrix"  : output_matrices_fork["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "pics/els_spread_direction_fork.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        "matrix"  : output_matrices["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "pics/els_fireline_intensity_main.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "pics/els_fireline_intensity_fork.png",
+    },
+    {
+        "matrix"  : output_matrices["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "pics/els_flame_length_main.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "pics/els_flame_length_fork.png",
+    },
+]
+
+
+contour_configs = [
+    {
+        "matrix"  : output_matrices["time_of_arrival"],
+        "title"   : "Time of Arrival",
+        "filename": "pics/els_time_of_arrival_main.png",
+        "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
+    },
+    {
+        "matrix"  : output_matrices_fork["time_of_arrival"],
+        "title"   : "Time of Arrival",
+        "filename": "pics/els_time_of_arrival_fork.png",
+        "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_matrix_as_heatmap(**heatmap_config)
+
+
+for contour_config in contour_configs:
+    save_matrix_as_contours(**contour_config)
+#+end_src
+
+#+NAME: fuel-model-matplotlib-heatmaps-forked
+#+caption: Fuel model [Left: Main, Right: Fork]
+|-----------------------------------+-----------------------------------|
+| file:pics/els_fuel_model_main.png | file:pics/els_fuel_model_fork.png |
+|-----------------------------------+-----------------------------------|
+
+#+NAME: fire-behavior-matplotlib-heatmaps-forked
+#+caption: Fire behavior attributes after 12 hours of spread [Left: Main, Right: Fork]
+|-------------------------------------------+-------------------------------------------|
+| file:pics/els_phi_main.png                | file:pics/els_phi_fork.png                |
+| file:pics/els_fire_type_main.png          | file:pics/els_fire_type_fork.png          |
+| file:pics/els_spread_rate_main.png        | file:pics/els_spread_rate_fork.png        |
+| file:pics/els_spread_direction_main.png   | file:pics/els_spread_direction_fork.png   |
+| file:pics/els_fireline_intensity_main.png | file:pics/els_fireline_intensity_fork.png |
+| file:pics/els_flame_length_main.png       | file:pics/els_flame_length_fork.png       |
+|-------------------------------------------+-------------------------------------------|
+
+#+NAME: time-of-arrival-matplotlib-countours-forked
+#+caption: Time of arrival with hourly perimeters [Left: Main, Right: Fork]
+|----------------------------------------+----------------------------------------|
+| file:pics/els_time_of_arrival_main.png | file:pics/els_time_of_arrival_fork.png |
+|----------------------------------------+----------------------------------------|
+
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-fire-suppression-algorithms-(pyretechnics.suppression)
