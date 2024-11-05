@@ -5740,18 +5740,18 @@ exponential functions:
 <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">sample_normal</span>(rand_gen, mu, sd):
+<span class="org-keyword">def</span> <span class="org-function-name">sample_normal</span>(random_generator, mu, sd):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns sample from normal/gaussian distribution given mu and sd.</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> rand_gen.normal(mu, sd)
+    <span class="org-keyword">return</span> random_generator.normal(mu, sd)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">sample_lognormal</span>(rand_gen, mu, sd):
+<span class="org-keyword">def</span> <span class="org-function-name">sample_lognormal</span>(random_generator, mu, sd):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns sample from log-normal distribution given mu and sd.</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> rand_gen.lognormal(mu, sd)
+    <span class="org-keyword">return</span> random_generator.lognormal(mu, sd)
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: unused</span>
@@ -5771,7 +5771,7 @@ exponential functions:
     <span class="org-variable-name">ln_params</span> <span class="org-operator">=</span> resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     <span class="org-variable-name">mu_x</span>      <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.mu"</span>]    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-variable-name">sigma_x</span>   <span class="org-operator">=</span> ln_params[<span class="org-string">"prob.lognormal.sigma"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> random_generator: sample_lognormal(random_generator, mu_x, sigma_x) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">When will we have the default sigma_Y &gt; E[&#916;X]?</span>
@@ -5810,7 +5810,7 @@ exponential functions:
 <span class="org-doc">    Returns a function for randomly sampling &#916;Y, the spotting jump perpendicular to the wind direction (in meters).</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">sigma_y</span> <span class="org-operator">=</span> resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> rand_gen: sample_normal(rand_gen, 0.0, sigma_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-keyword">return</span> <span class="org-keyword">lambda</span> random_generator: sample_normal(random_generator, 0.0, sigma_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
 </pre>
 </div>
 </div>
@@ -5835,15 +5835,15 @@ probability can be configured per fuel model.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="sample-number-of-firebrands"><span class="org-keyword">def</span> <span class="org-function-name">sample_poisson</span>(rand_gen, mu):
+<pre class="src src-python" id="sample-number-of-firebrands"><span class="org-keyword">def</span> <span class="org-function-name">sample_poisson</span>(random_generator, mu):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns sample from poisson distribution given mu.</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> rand_gen.poisson(mu)
+    <span class="org-keyword">return</span> random_generator.poisson(mu)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">sample_number_of_firebrands</span>(rand_gen, expected_firebrand_count):
-    <span class="org-keyword">return</span> sample_poisson(rand_gen, expected_firebrand_count)
+<span class="org-keyword">def</span> <span class="org-function-name">sample_number_of_firebrands</span>(random_generator, expected_firebrand_count):
+    <span class="org-keyword">return</span> sample_poisson(random_generator, expected_firebrand_count)
 </pre>
 </div>
 
@@ -6134,7 +6134,7 @@ ignited.
     <span class="org-keyword">return</span> fuel_model <span class="org-keyword">and</span> fuel_model[<span class="org-string">"burnable"</span>]
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">cast_firebrand</span>(rand_gen,
+<span class="org-keyword">def</span> <span class="org-function-name">cast_firebrand</span>(random_generator,
                    fuel_model_cube,
                    temperature_cube,
                    fuel_moisture_dead_1hr_cube,
@@ -6163,8 +6163,8 @@ ignited.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine where the firebrand will land</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
-    <span class="org-variable-name">delta_y</span>  <span class="org-operator">=</span> sample_delta_y_fn(rand_gen)                            <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-variable-name">delta_x</span>  <span class="org-operator">=</span> sample_delta_x_fn(rand_gen)                            <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">delta_y</span>  <span class="org-operator">=</span> sample_delta_y_fn(random_generator)                    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+    <span class="org-variable-name">delta_x</span>  <span class="org-operator">=</span> sample_delta_x_fn(random_generator)                    <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-variable-name">grid_dy</span>  <span class="org-operator">=</span> delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-variable-name">grid_dx</span>  <span class="org-operator">=</span> delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-variable-name">target_y</span> <span class="org-operator">=</span> source_y <span class="org-operator">+</span> distance_to_n_cells(grid_dy, cell_height)
@@ -6184,7 +6184,7 @@ ignited.
         <span class="org-variable-name">flight_survival_probability</span> <span class="org-operator">=</span> firebrand_flight_survival_probability(spotting_distance, decay_distance)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Roll the dice</span>
-        <span class="org-variable-name">uniform_sample</span> <span class="org-operator">=</span> rand_gen.uniform(0.0, 1.0)
+        <span class="org-variable-name">uniform_sample</span> <span class="org-operator">=</span> random_generator.uniform(0.0, 1.0)
 
         <span class="org-keyword">if</span> (uniform_sample <span class="org-operator">&lt;=</span> flight_survival_probability
             <span class="org-keyword">and</span> is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
@@ -6199,7 +6199,7 @@ ignited.
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_firebrands</span>(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_firebrand_count, spot_config):
+                      random_generator, expected_firebrand_count, spot_config):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
@@ -6219,7 +6219,7 @@ ignited.
 <span class="org-doc">      - cell_height                   :: meters</span>
 <span class="org-doc">      - cell_width                    :: meters</span>
 <span class="org-doc">    - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns</span>
-<span class="org-doc">    - rand_gen                  :: numpy.random.Generator</span>
+<span class="org-doc">    - random_generator          :: numpy.random.Generator</span>
 <span class="org-doc">    - expected_firebrand_count  :: expected number of firebrands to cast</span>
 <span class="org-doc">    - spot_config               :: dictionary of spotting parameters</span>
 <span class="org-doc">      - downwind_distance_mean        :: meters</span>
@@ -6242,7 +6242,7 @@ ignited.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Sample the number of firebrands to cast from the source cell</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
-    <span class="org-variable-name">num_firebrands</span> <span class="org-operator">=</span> sample_number_of_firebrands(rand_gen, expected_firebrand_count)
+    <span class="org-variable-name">num_firebrands</span> <span class="org-operator">=</span> sample_number_of_firebrands(random_generator, expected_firebrand_count)
 
     <span class="org-keyword">if</span> num_firebrands <span class="org-operator">&gt;</span> 0:
 
@@ -6282,7 +6282,7 @@ ignited.
             <span class="org-comment-delimiter">#</span><span class="org-comment">=======================================================================================</span>
 
             <span class="org-variable-name">ignited_cells</span> <span class="org-operator">=</span> {ignited_cell <span class="org-keyword">for</span> _i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands)
-                             <span class="org-keyword">if</span> (ignited_cell :<span class="org-operator">=</span> cast_firebrand(rand_gen,
+                             <span class="org-keyword">if</span> (ignited_cell :<span class="org-operator">=</span> cast_firebrand(random_generator,
                                                                 fuel_model_cube,
                                                                 temperature_cube,
                                                                 fuel_moisture_dead_1hr_cube,
@@ -8628,7 +8628,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
                              max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
-                             spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>, rand_gen<span class="org-operator">=</span><span class="org-constant">None</span>):
+                             spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>, random_generator<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    NOTE:</span>
@@ -8779,7 +8779,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                              cube_resolution,
                                                                              firebrands_per_unit_heat)
                     <span class="org-variable-name">new_ignitions</span>            <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                                 space_time_coordinate, rand_gen,
+                                                                 space_time_coordinate, random_generator,
                                                                  expected_firebrand_count, spot_config)
                     <span class="org-keyword">if</span> new_ignitions:
                         (<span class="org-variable-name">ignition_time</span>, <span class="org-variable-name">ignited_cells</span>) <span class="org-operator">=</span> new_ignitions
@@ -8812,11 +8812,12 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated world state</span>
     <span class="org-keyword">return</span> {
-        <span class="org-string">"simulation_time"</span>: stop_time,
-        <span class="org-string">"output_matrices"</span>: output_matrices,
-        <span class="org-string">"frontier_cells"</span> : frontier_cells_new,
-        <span class="org-string">"tracked_cells"</span>  : tracked_cells_new,
-        <span class="org-string">"spot_ignitions"</span> : spot_ignitions,
+        <span class="org-string">"simulation_time"</span> : stop_time,
+        <span class="org-string">"output_matrices"</span> : output_matrices,
+        <span class="org-string">"frontier_cells"</span>  : frontier_cells_new,
+        <span class="org-string">"tracked_cells"</span>   : tracked_cells_new,
+        <span class="org-string">"spot_ignitions"</span>  : spot_ignitions,
+        <span class="org-string">"random_generator"</span>: random_generator,
     }
 
 
@@ -8923,7 +8924,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">output_matrices</span>[<span class="org-string">"phi_star"</span>] <span class="org-operator">=</span> np.copy(phi_matrix)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Create a numpy.random.Generator object to produce random samples if spot_config is provided</span>
-    <span class="org-variable-name">rand_gen</span> <span class="org-operator">=</span> np.random.default_rng(seed<span class="org-operator">=</span>spot_config[<span class="org-string">"random_seed"</span>]) <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+    <span class="org-variable-name">random_generator</span> <span class="org-operator">=</span> np.random.default_rng(seed<span class="org-operator">=</span>spot_config[<span class="org-string">"random_seed"</span>]) <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the fire until an exit condition is reached</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: I don't think the "no burnable cells" condition can ever be met currently.</span>
@@ -8938,14 +8939,15 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-variable-name">results</span> <span class="org-operator">=</span> spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
                                            max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spot_config, rand_gen)
+                                           spot_ignitions, spot_config, random_generator)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Reset spread inputs</span>
-        <span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> results[<span class="org-string">"simulation_time"</span>]
-        <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> results[<span class="org-string">"output_matrices"</span>]
-        <span class="org-variable-name">frontier_cells</span>  <span class="org-operator">=</span> results[<span class="org-string">"frontier_cells"</span>]
-        <span class="org-variable-name">tracked_cells</span>   <span class="org-operator">=</span> results[<span class="org-string">"tracked_cells"</span>]
-        <span class="org-variable-name">spot_ignitions</span>  <span class="org-operator">=</span> results[<span class="org-string">"spot_ignitions"</span>]
+        <span class="org-variable-name">simulation_time</span>  <span class="org-operator">=</span> results[<span class="org-string">"simulation_time"</span>]
+        <span class="org-variable-name">output_matrices</span>  <span class="org-operator">=</span> results[<span class="org-string">"output_matrices"</span>]
+        <span class="org-variable-name">frontier_cells</span>   <span class="org-operator">=</span> results[<span class="org-string">"frontier_cells"</span>]
+        <span class="org-variable-name">tracked_cells</span>    <span class="org-operator">=</span> results[<span class="org-string">"tracked_cells"</span>]
+        <span class="org-variable-name">spot_ignitions</span>   <span class="org-operator">=</span> results[<span class="org-string">"spot_ignitions"</span>]
+        <span class="org-variable-name">random_generator</span> <span class="org-operator">=</span> results[<span class="org-string">"random_generator"</span>]
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Remove the temporary copy of the phi matrix from output_matrices</span>
     output_matrices.pop(<span class="org-string">"phi_star"</span>)
@@ -8955,7 +8957,10 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-string">"stop_time"</span>      : simulation_time,
         <span class="org-string">"stop_condition"</span> : <span class="org-string">"max duration reached"</span> <span class="org-keyword">if</span> <span class="org-builtin">len</span>(tracked_cells) <span class="org-operator">&gt;</span> 0 <span class="org-keyword">else</span> <span class="org-string">"no burnable cells"</span>,
         <span class="org-string">"output_matrices"</span>: output_matrices,
-    } <span class="org-operator">|</span> ({<span class="org-string">"spot_ignitions"</span> : spot_ignitions} <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> {})
+    } <span class="org-operator">|</span> ({
+        <span class="org-string">"spot_ignitions"</span>  : spot_ignitions,
+        <span class="org-string">"random_generator"</span>: random_generator,
+    } <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> {})
 </pre>
 </div>
 </div>
@@ -9395,10 +9400,11 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
                                                      start_time, max_duration, spot_ignitions<span class="org-operator">=</span>{},
                                                      spot_config<span class="org-operator">=</span>spot_config)
 
-<span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]              <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]         <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]        <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
-<span class="org-variable-name">spot_ignitions</span>  <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {}) <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
+<span class="org-variable-name">stop_time</span>        <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]                  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>   <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]             <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">output_matrices</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">spot_ignitions</span>   <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {})     <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
+<span class="org-variable-name">random_generator</span> <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"random_generator"</span>, <span class="org-constant">None</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">numpy.random.Generator object</span>
 </pre>
 </div>
 </div>

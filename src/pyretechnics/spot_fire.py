@@ -136,18 +136,18 @@ from math import exp, sqrt, log
 import pyretechnics.conversion as conv
 
 
-def sample_normal(rand_gen, mu, sd):
+def sample_normal(random_generator, mu, sd):
     """
     Returns sample from normal/gaussian distribution given mu and sd.
     """
-    return rand_gen.normal(mu, sd)
+    return random_generator.normal(mu, sd)
 
 
-def sample_lognormal(rand_gen, mu, sd):
+def sample_lognormal(random_generator, mu, sd):
     """
     Returns sample from log-normal distribution given mu and sd.
     """
-    return rand_gen.lognormal(mu, sd)
+    return random_generator.lognormal(mu, sd)
 
 
 # FIXME: unused
@@ -167,7 +167,7 @@ def delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     mu_x      = ln_params["prob.lognormal.mu"]    # meters
     sigma_x   = ln_params["prob.lognormal.sigma"] # meters
-    return lambda rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) # meters
+    return lambda random_generator: sample_lognormal(random_generator, mu_x, sigma_x) # meters
 
 
 # When will we have the default sigma_Y > E[ΔX]?
@@ -206,18 +206,18 @@ def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
     """
     sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
-    return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
+    return lambda random_generator: sample_normal(random_generator, 0.0, sigma_y) # meters
 # sardoy-firebrand-dispersal ends here
 # [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
-def sample_poisson(rand_gen, mu):
+def sample_poisson(random_generator, mu):
     """
     Returns sample from poisson distribution given mu.
     """
-    return rand_gen.poisson(mu)
+    return random_generator.poisson(mu)
 
 
-def sample_number_of_firebrands(rand_gen, expected_firebrand_count):
-    return sample_poisson(rand_gen, expected_firebrand_count)
+def sample_number_of_firebrands(random_generator, expected_firebrand_count):
+    return sample_poisson(random_generator, expected_firebrand_count)
 # sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 from math import exp
@@ -338,7 +338,7 @@ def is_burnable_cell(fuel_model_cube, t, y, x):
     return fuel_model and fuel_model["burnable"]
 
 
-def cast_firebrand(rand_gen,
+def cast_firebrand(random_generator,
                    fuel_model_cube,
                    temperature_cube,
                    fuel_moisture_dead_1hr_cube,
@@ -367,8 +367,8 @@ def cast_firebrand(rand_gen,
     # Determine where the firebrand will land
     #=======================================================================================
 
-    delta_y  = sample_delta_y_fn(rand_gen)                            # meters
-    delta_x  = sample_delta_x_fn(rand_gen)                            # meters
+    delta_y  = sample_delta_y_fn(random_generator)                    # meters
+    delta_x  = sample_delta_x_fn(random_generator)                    # meters
     grid_dy  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     grid_dx  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     target_y = source_y + distance_to_n_cells(grid_dy, cell_height)
@@ -388,7 +388,7 @@ def cast_firebrand(rand_gen,
         flight_survival_probability = firebrand_flight_survival_probability(spotting_distance, decay_distance)
 
         # Roll the dice
-        uniform_sample = rand_gen.uniform(0.0, 1.0)
+        uniform_sample = random_generator.uniform(0.0, 1.0)
 
         if (uniform_sample <= flight_survival_probability
             and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
@@ -403,7 +403,7 @@ def cast_firebrand(rand_gen,
 
 
 def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_firebrand_count, spot_config):
+                      random_generator, expected_firebrand_count, spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -423,7 +423,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - cell_height                   :: meters
       - cell_width                    :: meters
     - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
-    - rand_gen                  :: numpy.random.Generator
+    - random_generator          :: numpy.random.Generator
     - expected_firebrand_count  :: expected number of firebrands to cast
     - spot_config               :: dictionary of spotting parameters
       - downwind_distance_mean        :: meters
@@ -446,7 +446,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     # Sample the number of firebrands to cast from the source cell
     #=======================================================================================
 
-    num_firebrands = sample_number_of_firebrands(rand_gen, expected_firebrand_count)
+    num_firebrands = sample_number_of_firebrands(random_generator, expected_firebrand_count)
 
     if num_firebrands > 0:
 
@@ -486,7 +486,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             #=======================================================================================
 
             ignited_cells = {ignited_cell for _i in range(num_firebrands)
-                             if (ignited_cell := cast_firebrand(rand_gen,
+                             if (ignited_cell := cast_firebrand(random_generator,
                                                                 fuel_model_cube,
                                                                 temperature_cube,
                                                                 fuel_moisture_dead_1hr_cube,

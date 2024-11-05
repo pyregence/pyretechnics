@@ -765,7 +765,7 @@ def spread_direction_vector_to_angle(vector_3d):
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit=True,
                              max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
-                             spot_ignitions={}, spot_config=None, rand_gen=None):
+                             spot_ignitions={}, spot_config=None, random_generator=None):
     """
     TODO: Add docstring
     NOTE:
@@ -916,7 +916,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                                                                              cube_resolution,
                                                                              firebrands_per_unit_heat)
                     new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                                 space_time_coordinate, rand_gen,
+                                                                 space_time_coordinate, random_generator,
                                                                  expected_firebrand_count, spot_config)
                     if new_ignitions:
                         (ignition_time, ignited_cells) = new_ignitions
@@ -949,11 +949,12 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
     # Return the updated world state
     return {
-        "simulation_time": stop_time,
-        "output_matrices": output_matrices,
-        "frontier_cells" : frontier_cells_new,
-        "tracked_cells"  : tracked_cells_new,
-        "spot_ignitions" : spot_ignitions,
+        "simulation_time" : stop_time,
+        "output_matrices" : output_matrices,
+        "frontier_cells"  : frontier_cells_new,
+        "tracked_cells"   : tracked_cells_new,
+        "spot_ignitions"  : spot_ignitions,
+        "random_generator": random_generator,
     }
 
 
@@ -1060,7 +1061,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     output_matrices["phi_star"] = np.copy(phi_matrix)
 
     # Create a numpy.random.Generator object to produce random samples if spot_config is provided
-    rand_gen = np.random.default_rng(seed=spot_config["random_seed"]) if spot_config else None
+    random_generator = np.random.default_rng(seed=spot_config["random_seed"]) if spot_config else None
 
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
@@ -1075,14 +1076,15 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
                                            max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spot_config, rand_gen)
+                                           spot_ignitions, spot_config, random_generator)
 
         # Reset spread inputs
-        simulation_time = results["simulation_time"]
-        output_matrices = results["output_matrices"]
-        frontier_cells  = results["frontier_cells"]
-        tracked_cells   = results["tracked_cells"]
-        spot_ignitions  = results["spot_ignitions"]
+        simulation_time  = results["simulation_time"]
+        output_matrices  = results["output_matrices"]
+        frontier_cells   = results["frontier_cells"]
+        tracked_cells    = results["tracked_cells"]
+        spot_ignitions   = results["spot_ignitions"]
+        random_generator = results["random_generator"]
 
     # Remove the temporary copy of the phi matrix from output_matrices
     output_matrices.pop("phi_star")
@@ -1092,5 +1094,8 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
-    } | ({"spot_ignitions" : spot_ignitions} if spot_config else {})
+    } | ({
+        "spot_ignitions"  : spot_ignitions,
+        "random_generator": random_generator,
+    } if spot_config else {})
 # spread-phi-field ends here

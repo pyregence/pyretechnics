@@ -5057,18 +5057,18 @@ from math import exp, sqrt, log
 import pyretechnics.conversion as conv
 
 
-def sample_normal(rand_gen, mu, sd):
+def sample_normal(random_generator, mu, sd):
     """
     Returns sample from normal/gaussian distribution given mu and sd.
     """
-    return rand_gen.normal(mu, sd)
+    return random_generator.normal(mu, sd)
 
 
-def sample_lognormal(rand_gen, mu, sd):
+def sample_lognormal(random_generator, mu, sd):
     """
     Returns sample from log-normal distribution given mu and sd.
     """
-    return rand_gen.lognormal(mu, sd)
+    return random_generator.lognormal(mu, sd)
 
 
 # FIXME: unused
@@ -5088,7 +5088,7 @@ def delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     mu_x      = ln_params["prob.lognormal.mu"]    # meters
     sigma_x   = ln_params["prob.lognormal.sigma"] # meters
-    return lambda rand_gen: sample_lognormal(rand_gen, mu_x, sigma_x) # meters
+    return lambda random_generator: sample_lognormal(random_generator, mu_x, sigma_x) # meters
 
 
 # When will we have the default sigma_Y > E[ΔX]?
@@ -5127,7 +5127,7 @@ def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
     """
     sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
-    return lambda rand_gen: sample_normal(rand_gen, 0.0, sigma_y) # meters
+    return lambda random_generator: sample_normal(random_generator, 0.0, sigma_y) # meters
 #+end_src
 
 *** Spotting Probability and Number of Firebrands
@@ -5149,15 +5149,15 @@ probability can be configured per fuel model.
 
 #+NAME: sample-number-of-firebrands
 #+begin_src python
-def sample_poisson(rand_gen, mu):
+def sample_poisson(random_generator, mu):
     """
     Returns sample from poisson distribution given mu.
     """
-    return rand_gen.poisson(mu)
+    return random_generator.poisson(mu)
 
 
-def sample_number_of_firebrands(rand_gen, expected_firebrand_count):
-    return sample_poisson(rand_gen, expected_firebrand_count)
+def sample_number_of_firebrands(random_generator, expected_firebrand_count):
+    return sample_poisson(random_generator, expected_firebrand_count)
 #+end_src
 
 If spotting occurs at a cell, the number of firebrands is randomly
@@ -5431,7 +5431,7 @@ def is_burnable_cell(fuel_model_cube, t, y, x):
     return fuel_model and fuel_model["burnable"]
 
 
-def cast_firebrand(rand_gen,
+def cast_firebrand(random_generator,
                    fuel_model_cube,
                    temperature_cube,
                    fuel_moisture_dead_1hr_cube,
@@ -5460,8 +5460,8 @@ def cast_firebrand(rand_gen,
     # Determine where the firebrand will land
     #=======================================================================================
 
-    delta_y  = sample_delta_y_fn(rand_gen)                            # meters
-    delta_x  = sample_delta_x_fn(rand_gen)                            # meters
+    delta_y  = sample_delta_y_fn(random_generator)                    # meters
+    delta_x  = sample_delta_x_fn(random_generator)                    # meters
     grid_dy  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     grid_dx  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     target_y = source_y + distance_to_n_cells(grid_dy, cell_height)
@@ -5481,7 +5481,7 @@ def cast_firebrand(rand_gen,
         flight_survival_probability = firebrand_flight_survival_probability(spotting_distance, decay_distance)
 
         # Roll the dice
-        uniform_sample = rand_gen.uniform(0.0, 1.0)
+        uniform_sample = random_generator.uniform(0.0, 1.0)
 
         if (uniform_sample <= flight_survival_probability
             and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
@@ -5496,7 +5496,7 @@ def cast_firebrand(rand_gen,
 
 
 def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      rand_gen, expected_firebrand_count, spot_config):
+                      random_generator, expected_firebrand_count, spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -5516,7 +5516,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
       - cell_height                   :: meters
       - cell_width                    :: meters
     - space_time_coordinate     :: (t,y,x) coordinate in which the source cell burns
-    - rand_gen                  :: numpy.random.Generator
+    - random_generator          :: numpy.random.Generator
     - expected_firebrand_count  :: expected number of firebrands to cast
     - spot_config               :: dictionary of spotting parameters
       - downwind_distance_mean        :: meters
@@ -5539,7 +5539,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     # Sample the number of firebrands to cast from the source cell
     #=======================================================================================
 
-    num_firebrands = sample_number_of_firebrands(rand_gen, expected_firebrand_count)
+    num_firebrands = sample_number_of_firebrands(random_generator, expected_firebrand_count)
 
     if num_firebrands > 0:
 
@@ -5579,7 +5579,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             #=======================================================================================
 
             ignited_cells = {ignited_cell for _i in range(num_firebrands)
-                             if (ignited_cell := cast_firebrand(rand_gen,
+                             if (ignited_cell := cast_firebrand(random_generator,
                                                                 fuel_model_cube,
                                                                 temperature_cube,
                                                                 fuel_moisture_dead_1hr_cube,
@@ -7779,7 +7779,7 @@ def spread_direction_vector_to_angle(vector_3d):
 def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                              cube_resolution, start_time, max_timestep, use_wind_limit=True,
                              max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
-                             spot_ignitions={}, spot_config=None, rand_gen=None):
+                             spot_ignitions={}, spot_config=None, random_generator=None):
     """
     TODO: Add docstring
     NOTE:
@@ -7930,7 +7930,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                                                                              cube_resolution,
                                                                              firebrands_per_unit_heat)
                     new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                                 space_time_coordinate, rand_gen,
+                                                                 space_time_coordinate, random_generator,
                                                                  expected_firebrand_count, spot_config)
                     if new_ignitions:
                         (ignition_time, ignited_cells) = new_ignitions
@@ -7963,11 +7963,12 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
     # Return the updated world state
     return {
-        "simulation_time": stop_time,
-        "output_matrices": output_matrices,
-        "frontier_cells" : frontier_cells_new,
-        "tracked_cells"  : tracked_cells_new,
-        "spot_ignitions" : spot_ignitions,
+        "simulation_time" : stop_time,
+        "output_matrices" : output_matrices,
+        "frontier_cells"  : frontier_cells_new,
+        "tracked_cells"   : tracked_cells_new,
+        "spot_ignitions"  : spot_ignitions,
+        "random_generator": random_generator,
     }
 
 
@@ -8074,7 +8075,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     output_matrices["phi_star"] = np.copy(phi_matrix)
 
     # Create a numpy.random.Generator object to produce random samples if spot_config is provided
-    rand_gen = np.random.default_rng(seed=spot_config["random_seed"]) if spot_config else None
+    random_generator = np.random.default_rng(seed=spot_config["random_seed"]) if spot_config else None
 
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
@@ -8089,14 +8090,15 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
                                            max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spot_config, rand_gen)
+                                           spot_ignitions, spot_config, random_generator)
 
         # Reset spread inputs
-        simulation_time = results["simulation_time"]
-        output_matrices = results["output_matrices"]
-        frontier_cells  = results["frontier_cells"]
-        tracked_cells   = results["tracked_cells"]
-        spot_ignitions  = results["spot_ignitions"]
+        simulation_time  = results["simulation_time"]
+        output_matrices  = results["output_matrices"]
+        frontier_cells   = results["frontier_cells"]
+        tracked_cells    = results["tracked_cells"]
+        spot_ignitions   = results["spot_ignitions"]
+        random_generator = results["random_generator"]
 
     # Remove the temporary copy of the phi matrix from output_matrices
     output_matrices.pop("phi_star")
@@ -8106,7 +8108,10 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
-    } | ({"spot_ignitions" : spot_ignitions} if spot_config else {})
+    } | ({
+        "spot_ignitions"  : spot_ignitions,
+        "random_generator": random_generator,
+    } if spot_config else {})
 #+end_src
 
 ** For Users
@@ -8536,10 +8541,11 @@ fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_ma
                                                      start_time, max_duration, spot_ignitions={},
                                                      spot_config=spot_config)
 
-stop_time       = fire_spread_results["stop_time"]              # minutes
-stop_condition  = fire_spread_results["stop_condition"]         # "max duration reached" or "no burnable cells"
-output_matrices = fire_spread_results["output_matrices"]        # updated 2D arrays (mutated from inputs)
-spot_ignitions  = fire_spread_results.get("spot_ignitions", {}) # remaining firebrands on the landscape
+stop_time        = fire_spread_results["stop_time"]                  # minutes
+stop_condition   = fire_spread_results["stop_condition"]             # "max duration reached" or "no burnable cells"
+output_matrices  = fire_spread_results["output_matrices"]            # updated 2D arrays (mutated from inputs)
+spot_ignitions   = fire_spread_results.get("spot_ignitions", {})     # remaining firebrands on the landscape
+random_generator = fire_spread_results.get("random_generator", None) # numpy.random.Generator object
 #+end_src
 
 **** Display Summary Statistics of the Output Matrices and Spot Ignitions
