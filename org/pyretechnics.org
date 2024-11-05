@@ -9074,6 +9074,7 @@ print("Fork: ", end="")
 pprint(get_array_stats_fork(output_matrices_fork["time_of_arrival"]), sort_dicts=False)
 #+end_src
 
+#+NAME: run-spread-fire-with-phi-field-stats-forked-results
 #+RESULTS: run-spread-fire-with-phi-field-stats-forked
 #+begin_example
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 10:30pm Spreading from Coordinate (50,50)
