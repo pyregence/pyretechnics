@@ -9145,7 +9145,7 @@ def save_matrix_as_contours(matrix, title, filename, levels=None):
 heatmap_configs = [
     {
         "matrix"  : space_time_cubes["fuel_model"].getSpatialPlane(0, (None, None), (None, None)),
-        "colors"  : "plasma",
+        "colors"  : "viridis_r",
         "units"   : "fuel model number: 91-204",
         "title"   : "Fuel Model",
         "filename": "pics/els_fuel_model_main.png",
@@ -9154,7 +9154,7 @@ heatmap_configs = [
     },
     {
         "matrix"  : space_time_cubes_fork["fuel_model"].getSpatialPlane(0, (None, None), (None, None)),
-        "colors"  : "plasma",
+        "colors"  : "viridis_r",
         "units"   : "fuel model number: 91-204",
         "title"   : "Fuel Model",
         "filename": "pics/els_fuel_model_fork.png",
