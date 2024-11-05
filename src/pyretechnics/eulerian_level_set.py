@@ -1002,7 +1002,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
-      - random_seed                   :: integer to seed a numpy.random.Generator object
+      - random_seed                   :: seed for a numpy.random.Generator object
       - heat_per_firebrand            :: kJ/firebrand
       - downwind_distance_mean        :: meters
       - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
