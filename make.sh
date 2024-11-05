@@ -16,6 +16,7 @@ Usage: $0 <command>
   - weave
   - tangle
   - detangle
+  - org-eval
 
   See README.md for more information.
 EOM
@@ -80,6 +81,10 @@ case $CMD in
 
     "detangle")
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/detangle.el $ARGS
+        ;;
+
+    "org-eval")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/eval.el $ARGS
         ;;
 
     *)

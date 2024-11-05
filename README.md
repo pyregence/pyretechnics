@@ -236,6 +236,17 @@ files within this repository.
     ./make.sh detangle
     ```
 
+4.  Running All the Source Code Blocks in the Literate Program
+
+    If your changes would impact the results of the example code
+    blocks in the literate program, then you can run them again to
+    update their results in
+    [org/pyretechnics.org](org/pyretechnics.org) with this command:
+
+    ```sh
+    ./make.sh org-eval
+    ```
+
 ## Contact
 
 ### Authors
