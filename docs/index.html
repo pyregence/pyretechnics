@@ -644,11 +644,14 @@ various types of input datasets.
     <span class="org-doc">"""</span>
 <span class="org-doc">    Translate None and negative indices to positive indices.</span>
 <span class="org-doc">    """</span>
-    (<span class="org-variable-name">start</span>, <span class="org-variable-name">stop</span>) <span class="org-operator">=</span> index_range
-    <span class="org-keyword">return</span> (
-        0 <span class="org-keyword">if</span> start <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> start <span class="org-keyword">if</span> start <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> start,
-        axis_length <span class="org-keyword">if</span> stop <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> stop <span class="org-keyword">if</span> stop <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> stop
-    )
+    <span class="org-keyword">if</span> index_range <span class="org-operator">==</span> <span class="org-constant">None</span>:
+        <span class="org-keyword">return</span> (0, axis_length)
+    <span class="org-keyword">else</span>:
+        (<span class="org-variable-name">start</span>, <span class="org-variable-name">stop</span>) <span class="org-operator">=</span> index_range
+        <span class="org-keyword">return</span> (
+            0 <span class="org-keyword">if</span> start <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> start <span class="org-keyword">if</span> start <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> start,
+            axis_length <span class="org-keyword">if</span> stop <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> stop <span class="org-keyword">if</span> stop <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> stop
+        )
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">maybe_repeat_array</span>(array, axis_repetitions):
@@ -9810,8 +9813,8 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Extract 2D array of fuel_model values at the cube's spatial dimensions (100 x 100)</span>
-<span class="org-variable-name">fuel_model_grid_ro</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_model"</span>].getSpatialPlane(0, (<span class="org-constant">None</span>, <span class="org-constant">None</span>), (<span class="org-constant">None</span>, <span class="org-constant">None</span>)) <span class="org-comment-delimiter"># </span><span class="org-comment">read-only</span>
-<span class="org-variable-name">fuel_model_grid</span>    <span class="org-operator">=</span> np.copy(fuel_model_grid_ro)                                                   <span class="org-comment-delimiter"># </span><span class="org-comment">writable</span>
+<span class="org-variable-name">fuel_model_grid_ro</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_model"</span>].getSpatialPlane(0, <span class="org-constant">None</span>, <span class="org-constant">None</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">read-only</span>
+<span class="org-variable-name">fuel_model_grid</span>    <span class="org-operator">=</span> np.copy(fuel_model_grid_ro)                                   <span class="org-comment-delimiter"># </span><span class="org-comment">writable</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Add a non-burnable fire-break in the northeastern corner of the grid</span>
 (<span class="org-variable-name">ys</span>, <span class="org-variable-name">xs</span>) <span class="org-operator">=</span> np.diag_indices(40)
@@ -10015,7 +10018,7 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
 <span class="org-comment-delimiter"># </span><span class="org-comment">See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"</span>
 <span class="org-variable-name">heatmap_configs</span> <span class="org-operator">=</span> [
     {
-        <span class="org-string">"matrix"</span>  : space_time_cubes[<span class="org-string">"fuel_model"</span>].getSpatialPlane(0, (<span class="org-constant">None</span>, <span class="org-constant">None</span>), (<span class="org-constant">None</span>, <span class="org-constant">None</span>)),
+        <span class="org-string">"matrix"</span>  : space_time_cubes[<span class="org-string">"fuel_model"</span>].getSpatialPlane(0, <span class="org-constant">None</span>, <span class="org-constant">None</span>),
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis_r"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"fuel model number: 91-204"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fuel Model"</span>,
@@ -10024,7 +10027,7 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
         <span class="org-string">"vmax"</span>    : 204,
     },
     {
-        <span class="org-string">"matrix"</span>  : space_time_cubes_fork[<span class="org-string">"fuel_model"</span>].getSpatialPlane(0, (<span class="org-constant">None</span>, <span class="org-constant">None</span>), (<span class="org-constant">None</span>, <span class="org-constant">None</span>)),
+        <span class="org-string">"matrix"</span>  : space_time_cubes_fork[<span class="org-string">"fuel_model"</span>].getSpatialPlane(0, <span class="org-constant">None</span>, <span class="org-constant">None</span>),
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis_r"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"fuel model number: 91-204"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fuel Model"</span>,

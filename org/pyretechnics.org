@@ -229,11 +229,14 @@ def to_positive_index_range(index_range, axis_length):
     """
     Translate None and negative indices to positive indices.
     """
-    (start, stop) = index_range
-    return (
-        0 if start == None else axis_length + start if start < 0 else start,
-        axis_length if stop == None else axis_length + stop if stop < 0 else stop
-    )
+    if index_range == None:
+        return (0, axis_length)
+    else:
+        (start, stop) = index_range
+        return (
+            0 if start == None else axis_length + start if start < 0 else start,
+            axis_length if stop == None else axis_length + stop if stop < 0 else stop
+        )
 
 
 def maybe_repeat_array(array, axis_repetitions):
@@ -8935,8 +8938,8 @@ output_matrices_fork = copy_matrices(output_matrices)
 #============================================================================================
 
 # Extract 2D array of fuel_model values at the cube's spatial dimensions (100 x 100)
-fuel_model_grid_ro = space_time_cubes["fuel_model"].getSpatialPlane(0, (None, None), (None, None)) # read-only
-fuel_model_grid    = np.copy(fuel_model_grid_ro)                                                   # writable
+fuel_model_grid_ro = space_time_cubes["fuel_model"].getSpatialPlane(0, None, None) # read-only
+fuel_model_grid    = np.copy(fuel_model_grid_ro)                                   # writable
 
 # Add a non-burnable fire-break in the northeastern corner of the grid
 (ys, xs) = np.diag_indices(40)
@@ -9146,7 +9149,7 @@ def save_matrix_as_contours(matrix, title, filename, levels=None):
 # See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
 heatmap_configs = [
     {
-        "matrix"  : space_time_cubes["fuel_model"].getSpatialPlane(0, (None, None), (None, None)),
+        "matrix"  : space_time_cubes["fuel_model"].getSpatialPlane(0, None, None),
         "colors"  : "viridis_r",
         "units"   : "fuel model number: 91-204",
         "title"   : "Fuel Model",
@@ -9155,7 +9158,7 @@ heatmap_configs = [
         "vmax"    : 204,
     },
     {
-        "matrix"  : space_time_cubes_fork["fuel_model"].getSpatialPlane(0, (None, None), (None, None)),
+        "matrix"  : space_time_cubes_fork["fuel_model"].getSpatialPlane(0, None, None),
         "colors"  : "viridis_r",
         "units"   : "fuel model number: 91-204",
         "title"   : "Fuel Model",

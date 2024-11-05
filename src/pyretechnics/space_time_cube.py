@@ -19,11 +19,14 @@ def to_positive_index_range(index_range, axis_length):
     """
     Translate None and negative indices to positive indices.
     """
-    (start, stop) = index_range
-    return (
-        0 if start == None else axis_length + start if start < 0 else start,
-        axis_length if stop == None else axis_length + stop if stop < 0 else stop
-    )
+    if index_range == None:
+        return (0, axis_length)
+    else:
+        (start, stop) = index_range
+        return (
+            0 if start == None else axis_length + start if start < 0 else start,
+            axis_length if stop == None else axis_length + stop if stop < 0 else stop
+        )
 
 
 def maybe_repeat_array(array, axis_repetitions):
