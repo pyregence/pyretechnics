@@ -3,23 +3,23 @@ from math import sqrt
 import pyretechnics.surface_fire as sf
 
 
-def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
+def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, firebrands_per_unit_heat=1e-6):
     """
     Return the expected number of firebrands produced by an entire cell when it burns given:
-    - fire_behavior         :: dictionary of surface or crown fire behavior values
-      - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"
-      - spread_rate              :: m/min
-      - spread_direction         :: (x, y, z) unit vector on the slope-tangential plane
-      - fireline_intensity       :: kW/m
-      - flame_length             :: m
-    - elevation_gradient    :: tuple with these fields
-      - dz_dx                    :: rise/run
-      - dz_dy                    :: rise/run
-    - cube_resolution       :: tuple with these fields
-      - band_duration            :: minutes
-      - cell_height              :: meters
-      - cell_width               :: meters
-    - heat_per_firebrand    :: kJ/firebrand
+    - fire_behavior            :: dictionary of surface or crown fire behavior values
+      - fire_type                 :: "unburned", "surface", "passive_crown", or "active_crown"
+      - spread_rate               :: m/min
+      - spread_direction          :: (x, y, z) unit vector on the slope-tangential plane
+      - fireline_intensity        :: kW/m
+      - flame_length              :: m
+    - elevation_gradient       :: tuple with these fields
+      - dz_dx                     :: rise/run
+      - dz_dy                     :: rise/run
+    - cube_resolution          :: tuple with these fields
+      - band_duration             :: minutes
+      - cell_height               :: meters
+      - cell_width                :: meters
+    - firebrands_per_unit_heat :: firebrands/kJ
     """
     if fire_behavior["spread_rate"] == 0.0:
         return 0.0
@@ -46,8 +46,8 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
         # Calculate the expected number of firebrands produced in this cell
         #================================================================================================
 
-        cell_heat_output = heat_output_per_area * cell_area      # kJ
-        firebrand_count  = cell_heat_output / heat_per_firebrand # number of firebrands
+        cell_heat_output = heat_output_per_area * cell_area            # kJ
+        firebrand_count  = firebrands_per_unit_heat * cell_heat_output # number of firebrands
         return firebrand_count
 # expected-firebrand-production ends here
 # [[file:../../org/pyretechnics.org::convert-deltas][convert-deltas]]

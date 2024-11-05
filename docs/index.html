@@ -5300,14 +5300,14 @@ cell.
 </p>
 
 <p>
-A user-provided coefficient \(H_F\) ("heat_per_firebrand" in
-\(\text{kJ}/\text{firebrand}\)) is then combined with the total heat
-\(H_C\) (in \(\text{kJ}\)) to calculate the number of firebrands to cast
-per cell \(F_C\):
+A user-provided coefficient \(F_H\) ("firebrands_per_unit_heat" in
+\(\text{firebrands}/\text{kJ}\)) is then combined with the total heat
+per cell \(H_C\) (in \(\text{kJ}\)) to calculate the number of firebrands
+to cast per cell \(F_C\):
 </p>
 
 \begin{align}
-  F_C = \frac{H_C}{H_F}
+  F_C = F_H \, H_C
 \end{align}
 
 <div class="org-src-container">
@@ -5315,23 +5315,23 @@ per cell \(F_C\):
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">expected_firebrand_production</span>(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand<span class="org-operator">=</span>1e6):
+<span class="org-keyword">def</span> <span class="org-function-name">expected_firebrand_production</span>(fire_behavior, elevation_gradient, cube_resolution, firebrands_per_unit_heat<span class="org-operator">=</span>1e<span class="org-operator">-</span>6):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Return the expected number of firebrands produced by an entire cell when it burns given:</span>
-<span class="org-doc">    - fire_behavior         :: dictionary of surface or crown fire behavior values</span>
-<span class="org-doc">      - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"</span>
-<span class="org-doc">      - spread_rate              :: m/min</span>
-<span class="org-doc">      - spread_direction         :: (x, y, z) unit vector on the slope-tangential plane</span>
-<span class="org-doc">      - fireline_intensity       :: kW/m</span>
-<span class="org-doc">      - flame_length             :: m</span>
-<span class="org-doc">    - elevation_gradient    :: tuple with these fields</span>
-<span class="org-doc">      - dz_dx                    :: rise/run</span>
-<span class="org-doc">      - dz_dy                    :: rise/run</span>
-<span class="org-doc">    - cube_resolution       :: tuple with these fields</span>
-<span class="org-doc">      - band_duration            :: minutes</span>
-<span class="org-doc">      - cell_height              :: meters</span>
-<span class="org-doc">      - cell_width               :: meters</span>
-<span class="org-doc">    - heat_per_firebrand    :: kJ/firebrand</span>
+<span class="org-doc">    - fire_behavior            :: dictionary of surface or crown fire behavior values</span>
+<span class="org-doc">      - fire_type                 :: "unburned", "surface", "passive_crown", or "active_crown"</span>
+<span class="org-doc">      - spread_rate               :: m/min</span>
+<span class="org-doc">      - spread_direction          :: (x, y, z) unit vector on the slope-tangential plane</span>
+<span class="org-doc">      - fireline_intensity        :: kW/m</span>
+<span class="org-doc">      - flame_length              :: m</span>
+<span class="org-doc">    - elevation_gradient       :: tuple with these fields</span>
+<span class="org-doc">      - dz_dx                     :: rise/run</span>
+<span class="org-doc">      - dz_dy                     :: rise/run</span>
+<span class="org-doc">    - cube_resolution          :: tuple with these fields</span>
+<span class="org-doc">      - band_duration             :: minutes</span>
+<span class="org-doc">      - cell_height               :: meters</span>
+<span class="org-doc">      - cell_width                :: meters</span>
+<span class="org-doc">    - firebrands_per_unit_heat :: firebrands/kJ</span>
 <span class="org-doc">    """</span>
     <span class="org-keyword">if</span> fire_behavior[<span class="org-string">"spread_rate"</span>] <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> 0.0
@@ -5358,8 +5358,8 @@ per cell \(F_C\):
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the expected number of firebrands produced in this cell</span>
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-        <span class="org-variable-name">cell_heat_output</span> <span class="org-operator">=</span> heat_output_per_area <span class="org-operator">*</span> cell_area      <span class="org-comment-delimiter"># </span><span class="org-comment">kJ</span>
-        <span class="org-variable-name">firebrand_count</span>  <span class="org-operator">=</span> cell_heat_output <span class="org-operator">/</span> heat_per_firebrand <span class="org-comment-delimiter"># </span><span class="org-comment">number of firebrands</span>
+        <span class="org-variable-name">cell_heat_output</span> <span class="org-operator">=</span> heat_output_per_area <span class="org-operator">*</span> cell_area            <span class="org-comment-delimiter"># </span><span class="org-comment">kJ</span>
+        <span class="org-variable-name">firebrand_count</span>  <span class="org-operator">=</span> firebrands_per_unit_heat <span class="org-operator">*</span> cell_heat_output <span class="org-comment-delimiter"># </span><span class="org-comment">number of firebrands</span>
         <span class="org-keyword">return</span> firebrand_count
 </pre>
 </div>
@@ -6478,9 +6478,9 @@ Several spotting parameters can be adjusted by the user:
 </tr>
 
 <tr>
-<td class="org-left">heat_per_firebrand</td>
-<td class="org-left">\(\text{kJ}/\text{firebrand}\)</td>
-<td class="org-left">number of kilojoules to produce one firebrand</td>
+<td class="org-left">firebrands_per_unit_heat</td>
+<td class="org-left">\(\text{firebrands}/\text{kJ}\)</td>
+<td class="org-left">number of firebrands to emit per kilojoule</td>
 </tr>
 
 <tr>
@@ -6522,7 +6522,7 @@ Several spotting parameters can be adjusted by the user:
 </table>
 
 <p>
-In this section, we will look at <b>heat_per_firebrand</b> and
+In this section, we will look at <b>firebrands_per_unit_heat</b> and
 <b>decay_distance</b> specifically as they have the most direct bearing on
 the number of firebrands produced from each burning cell as well as
 how many of these will ignite new spot fires rather than fizzle out.
@@ -6562,9 +6562,9 @@ meter resolution grid cells. This gives us a cell area of 900 \(\text{m}^2\).
 <span class="org-variable-name">cell_area</span> <span class="org-operator">=</span> 900 <span class="org-comment-delimiter"># </span><span class="org-comment">m^2</span>
 
 
-<span class="org-variable-name">firebrand_counts</span> <span class="org-operator">=</span> <span class="org-builtin">sorted</span>([heat_output_per_area <span class="org-operator">*</span> cell_area <span class="org-operator">/</span> heat_per_firebrand
+<span class="org-variable-name">firebrand_counts</span> <span class="org-operator">=</span> <span class="org-builtin">sorted</span>([heat_output_per_area <span class="org-operator">*</span> cell_area <span class="org-operator">*</span> firebrands_per_unit_heat
                            <span class="org-keyword">for</span> heat_output_per_area <span class="org-keyword">in</span> <span class="org-builtin">range</span>(0, 45001, 5000)
-                           <span class="org-keyword">for</span> heat_per_firebrand <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">int</span>(5e5), <span class="org-builtin">int</span>(2e6 <span class="org-operator">+</span> 1), <span class="org-builtin">int</span>(5e5))])
+                           <span class="org-keyword">for</span> firebrands_per_unit_heat <span class="org-keyword">in</span> <span class="org-builtin">map</span>(<span class="org-keyword">lambda</span> x: 1<span class="org-operator">/</span>x, <span class="org-builtin">range</span>(<span class="org-builtin">int</span>(5e5), <span class="org-builtin">int</span>(2e6)<span class="org-operator">+</span>1, <span class="org-builtin">int</span>(5e5)))])
 
 
 <span class="org-variable-name">distance_penalties</span> <span class="org-operator">=</span> <span class="org-builtin">sorted</span>([spot.firebrand_flight_survival_probability(spotting_distance, decay_distance)
@@ -6658,7 +6658,8 @@ pprint({
 We can see that depending on the surface fuel model and weather
 conditions at the cells receiving firebrands, we can get anywhere from
 0-51 spot fires ignited by one burning cell per timestep using the
-ranges for <b>heat_per_firebrand</b> and <b>decay_distance</b> provided above.
+ranges for <b>firebrands_per_unit_heat</b> and <b>decay_distance</b> provided
+above.
 </p>
 </div>
 </div>
@@ -8652,8 +8653,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">flame_length_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
     <span class="org-variable-name">time_of_arrival_matrix</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the heat_per_firebrand from the spot_config if provided</span>
-    <span class="org-variable-name">heat_per_firebrand</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"heat_per_firebrand"</span>] <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the firebrands_per_unit_heat from the spot_config if provided</span>
+    <span class="org-variable-name">firebrands_per_unit_heat</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"firebrands_per_unit_heat"</span>] <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize max spread rates in the x and y dimensions to 0.0</span>
     <span class="org-variable-name">max_spread_rate_x</span> <span class="org-operator">=</span> 0.0
@@ -8773,7 +8774,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                     <span class="org-variable-name">expected_firebrand_count</span> <span class="org-operator">=</span> expected_firebrand_production(fire_behavior,
                                                                              elevation_gradient,
                                                                              cube_resolution,
-                                                                             heat_per_firebrand)
+                                                                             firebrands_per_unit_heat)
                     <span class="org-variable-name">new_ignitions</span>            <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
                                                                  space_time_coordinate, rand_gen,
                                                                  expected_firebrand_count, spot_config)
@@ -8862,7 +8863,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - spot_ignitions            :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
 <span class="org-doc">    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)</span>
 <span class="org-doc">      - random_seed                   :: seed for a numpy.random.Generator object</span>
-<span class="org-doc">      - heat_per_firebrand            :: kJ/firebrand</span>
+<span class="org-doc">      - firebrands_per_unit_heat      :: firebrands/kJ</span>
 <span class="org-doc">      - downwind_distance_mean        :: meters</span>
 <span class="org-doc">      - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]</span>
 <span class="org-doc">      - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]</span>
@@ -9374,7 +9375,7 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 
 <span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> {
     <span class="org-string">"random_seed"</span>                 : 1234567890,
-    <span class="org-string">"heat_per_firebrand"</span>          : 1e6,        <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/firebrand</span>
+    <span class="org-string">"firebrands_per_unit_heat"</span>    : 1e<span class="org-operator">-</span>6,       <span class="org-comment-delimiter"># </span><span class="org-comment">firebrands/kJ</span>
     <span class="org-string">"downwind_distance_mean"</span>      : 10.0,       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
     <span class="org-string">"fireline_intensity_exponent"</span> : 0.3,        <span class="org-comment-delimiter"># </span><span class="org-comment">downwind_distance_mean multiplier [I^fireline_intensity_exponent]</span>
     <span class="org-string">"wind_speed_exponent"</span>         : 0.55,       <span class="org-comment-delimiter"># </span><span class="org-comment">downwind_distance_mean multiplier [U^wind_speed_exponent]</span>
@@ -9947,7 +9948,7 @@ pprint(get_array_stats_fork(output_matrices_fork[<span class="org-string">"time_
 </pre>
 </div>
 
-<pre class="example" id="orgdc9a444">
+<pre class="example" id="org2bd1290">
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 10:30pm Spreading from Coordinate (50,50)
 ====================================================================================================
 Stop Time (Main): 2790.0 (minutes)

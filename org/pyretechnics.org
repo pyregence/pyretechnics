@@ -4730,13 +4730,13 @@ cell height (in $\text{m}$), and $(\frac{\partial z}{\partial x}$,
 $\frac{\partial z}{\partial y})$ is the elevation gradient of the
 cell.
 
-A user-provided coefficient $H_F$ ("heat_per_firebrand" in
-$\text{kJ}/\text{firebrand}$) is then combined with the total heat
-$H_C$ (in $\text{kJ}$) to calculate the number of firebrands to cast
-per cell $F_C$:
+A user-provided coefficient $F_H$ ("firebrands_per_unit_heat" in
+$\text{firebrands}/\text{kJ}$) is then combined with the total heat
+per cell $H_C$ (in $\text{kJ}$) to calculate the number of firebrands
+to cast per cell $F_C$:
 
 \begin{align}
-  F_C = \frac{H_C}{H_F}
+  F_C = F_H \, H_C
 \end{align}
 
 #+NAME: expected-firebrand-production
@@ -4745,23 +4745,23 @@ from math import sqrt
 import pyretechnics.surface_fire as sf
 
 
-def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, heat_per_firebrand=1e6):
+def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, firebrands_per_unit_heat=1e-6):
     """
     Return the expected number of firebrands produced by an entire cell when it burns given:
-    - fire_behavior         :: dictionary of surface or crown fire behavior values
-      - fire_type                :: "unburned", "surface", "passive_crown", or "active_crown"
-      - spread_rate              :: m/min
-      - spread_direction         :: (x, y, z) unit vector on the slope-tangential plane
-      - fireline_intensity       :: kW/m
-      - flame_length             :: m
-    - elevation_gradient    :: tuple with these fields
-      - dz_dx                    :: rise/run
-      - dz_dy                    :: rise/run
-    - cube_resolution       :: tuple with these fields
-      - band_duration            :: minutes
-      - cell_height              :: meters
-      - cell_width               :: meters
-    - heat_per_firebrand    :: kJ/firebrand
+    - fire_behavior            :: dictionary of surface or crown fire behavior values
+      - fire_type                 :: "unburned", "surface", "passive_crown", or "active_crown"
+      - spread_rate               :: m/min
+      - spread_direction          :: (x, y, z) unit vector on the slope-tangential plane
+      - fireline_intensity        :: kW/m
+      - flame_length              :: m
+    - elevation_gradient       :: tuple with these fields
+      - dz_dx                     :: rise/run
+      - dz_dy                     :: rise/run
+    - cube_resolution          :: tuple with these fields
+      - band_duration             :: minutes
+      - cell_height               :: meters
+      - cell_width                :: meters
+    - firebrands_per_unit_heat :: firebrands/kJ
     """
     if fire_behavior["spread_rate"] == 0.0:
         return 0.0
@@ -4788,8 +4788,8 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
         # Calculate the expected number of firebrands produced in this cell
         #================================================================================================
 
-        cell_heat_output = heat_output_per_area * cell_area      # kJ
-        firebrand_count  = cell_heat_output / heat_per_firebrand # number of firebrands
+        cell_heat_output = heat_output_per_area * cell_area            # kJ
+        firebrand_count  = firebrands_per_unit_heat * cell_heat_output # number of firebrands
         return firebrand_count
 #+end_src
 
@@ -5751,7 +5751,7 @@ Several spotting parameters can be adjusted by the user:
 | Parameter                    | Units                                  | Description                                                            |
 |------------------------------+----------------------------------------+------------------------------------------------------------------------|
 | random_seed                  | $\text{integer}$ or $\text{Generator}$ | seed for a numpy.random.Generator object                               |
-| heat_per_firebrand           | $\text{kJ}/\text{firebrand}$           | number of kilojoules to produce one firebrand                          |
+| firebrands_per_unit_heat     | $\text{firebrands}/\text{kJ}$          | number of firebrands to emit per kilojoule                             |
 | downwind_distance_mean       | $\text{m}$                             | normal distribution mean underpinning lognormal distribution           |
 | fireline_intensity_exponent  | $\text{-}$                             | downwind_distance_mean multiplier [I^fireline_intensity_exponent]      |
 | wind_speed_exponent          | $\text{-}$                             | downwind_distance_mean multiplier [U^wind_speed_exponent]              |
@@ -5760,7 +5760,7 @@ Several spotting parameters can be adjusted by the user:
 | decay_distance               | $\text{m}$                             | spotting distance at which ignition probability is divided by $e$      |
 |------------------------------+----------------------------------------+------------------------------------------------------------------------|
 
-In this section, we will look at *heat_per_firebrand* and
+In this section, we will look at *firebrands_per_unit_heat* and
 *decay_distance* specifically as they have the most direct bearing on
 the number of firebrands produced from each burning cell as well as
 how many of these will ignite new spot fires rather than fizzle out.
@@ -5793,9 +5793,9 @@ import pyretechnics.spot_fire as spot
 cell_area = 900 # m^2
 
 
-firebrand_counts = sorted([heat_output_per_area * cell_area / heat_per_firebrand
+firebrand_counts = sorted([heat_output_per_area * cell_area * firebrands_per_unit_heat
                            for heat_output_per_area in range(0, 45001, 5000)
-                           for heat_per_firebrand in range(int(5e5), int(2e6 + 1), int(5e5))])
+                           for firebrands_per_unit_heat in map(lambda x: 1/x, range(int(5e5), int(2e6)+1, int(5e5)))])
 
 
 distance_penalties = sorted([spot.firebrand_flight_survival_probability(spotting_distance, decay_distance)
@@ -5889,7 +5889,8 @@ pprint({
 We can see that depending on the surface fuel model and weather
 conditions at the cells receiving firebrands, we can get anywhere from
 0-51 spot fires ignited by one burning cell per timestep using the
-ranges for *heat_per_firebrand* and *decay_distance* provided above.
+ranges for *firebrands_per_unit_heat* and *decay_distance* provided
+above.
 
 *** How to Estimate Typical Ranges for the $\vec{\Delta}$ Distribution Characteristics
     :PROPERTIES:
@@ -7803,8 +7804,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     flame_length_matrix       = output_matrices["flame_length"]
     time_of_arrival_matrix    = output_matrices["time_of_arrival"]
 
-    # Extract the heat_per_firebrand from the spot_config if provided
-    heat_per_firebrand = spot_config["heat_per_firebrand"] if spot_config else None
+    # Extract the firebrands_per_unit_heat from the spot_config if provided
+    firebrands_per_unit_heat = spot_config["firebrands_per_unit_heat"] if spot_config else None
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x = 0.0
@@ -7924,7 +7925,7 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                     expected_firebrand_count = expected_firebrand_production(fire_behavior,
                                                                              elevation_gradient,
                                                                              cube_resolution,
-                                                                             heat_per_firebrand)
+                                                                             firebrands_per_unit_heat)
                     new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
                                                                  space_time_coordinate, rand_gen,
                                                                  expected_firebrand_count, spot_config)
@@ -8013,7 +8014,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: seed for a numpy.random.Generator object
-      - heat_per_firebrand            :: kJ/firebrand
+      - firebrands_per_unit_heat      :: firebrands/kJ
       - downwind_distance_mean        :: meters
       - fireline_intensity_exponent   :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
       - wind_speed_exponent           :: downwind_distance_mean multiplier [U^wind_speed_exponent]
@@ -8515,7 +8516,7 @@ output_matrices["phi"][50,50] = -1.0
 
 spot_config = {
     "random_seed"                 : 1234567890,
-    "heat_per_firebrand"          : 1e6,        # kJ/firebrand
+    "firebrands_per_unit_heat"    : 1e-6,       # firebrands/kJ
     "downwind_distance_mean"      : 10.0,       # meters
     "fireline_intensity_exponent" : 0.3,        # downwind_distance_mean multiplier [I^fireline_intensity_exponent]
     "wind_speed_exponent"         : 0.55,       # downwind_distance_mean multiplier [U^wind_speed_exponent]
@@ -9420,7 +9421,7 @@ The ~grow_fire~ function takes a single =world_state= dictionary as input with t
   |--------------------------------+---------+------------------------+------------|
   | Parameter Name                 | Type    | Units                  | Fire Model |
   |--------------------------------+---------+------------------------+------------|
-  | heat_per_firebrand             | float   | kJ                     | Yiren Qin  |
+  | firebrands_per_unit_heat       | float   | firebrands/kJ          | Yiren Qin  |
   | downwind_distance_mean         | float   | meters                 | GridFire   |
   | fireline_intensity_exponent    | float   | unitless               | GridFire   |
   | wind_speed_exponent            | float   | unitless               | GridFire   |
