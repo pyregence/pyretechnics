@@ -3523,21 +3523,22 @@ off.
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: No longer takes ellipse_adjustment_factor parameter</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_surface_fire_behavior_max</span>(surface_fire_min, midflame_wind_speed, upwind_direction,
-                                   slope, aspect, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>):
+                                   slope, aspect, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
-<span class="org-doc">    - surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values</span>
-<span class="org-doc">      - base_spread_rate         :: m/min</span>
-<span class="org-doc">      - base_fireline_intensity  :: kW/m</span>
-<span class="org-doc">      - max_effective_wind_speed :: m/min</span>
-<span class="org-doc">      - get_phi_S                :: lambda: slope (rise/run) =&gt; phi_S (unitless)</span>
-<span class="org-doc">      - get_phi_W                :: lambda: midflame_wind_speed (m/min) =&gt; phi_W (unitless)</span>
-<span class="org-doc">      - get_wind_speed           :: lambda: phi_W (unitless) =&gt; midflame_wind_speed (m/min)</span>
-<span class="org-doc">    - midflame_wind_speed    :: m/min</span>
-<span class="org-doc">    - upwind_direction       :: degrees clockwise from North</span>
-<span class="org-doc">    - slope                  :: rise/run</span>
-<span class="org-doc">    - aspect                 :: degrees clockwise from North</span>
-<span class="org-doc">    - use_wind_limit         :: boolean (Optional)</span>
+<span class="org-doc">    - surface_fire_min            :: dictionary of no-wind-no-slope surface fire behavior values</span>
+<span class="org-doc">      - base_spread_rate             :: m/min</span>
+<span class="org-doc">      - base_fireline_intensity      :: kW/m</span>
+<span class="org-doc">      - max_effective_wind_speed     :: m/min</span>
+<span class="org-doc">      - get_phi_S                    :: lambda: slope (rise/run) =&gt; phi_S (unitless)</span>
+<span class="org-doc">      - get_phi_W                    :: lambda: midflame_wind_speed (m/min) =&gt; phi_W (unitless)</span>
+<span class="org-doc">      - get_wind_speed               :: lambda: phi_W (unitless) =&gt; midflame_wind_speed (m/min)</span>
+<span class="org-doc">    - midflame_wind_speed         :: m/min</span>
+<span class="org-doc">    - upwind_direction            :: degrees clockwise from North</span>
+<span class="org-doc">    - slope                       :: rise/run</span>
+<span class="org-doc">    - aspect                      :: degrees clockwise from North</span>
+<span class="org-doc">    - use_wind_limit              :: boolean (Optional)</span>
+<span class="org-doc">    - surface_lw_ratio_model      :: "rothermel" or "behave" (Optional)</span>
 
 <span class="org-doc">    return a dictionary containing these keys:</span>
 <span class="org-doc">    - max_spread_rate        :: m/min</span>
@@ -3574,7 +3575,7 @@ off.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate and return max surface fire behavior values</span>
     <span class="org-variable-name">max_spread_rate</span>        <span class="org-operator">=</span> spread_rate <span class="org-operator">*</span> (1.0 <span class="org-operator">+</span> limited_phi_E)
     <span class="org-variable-name">max_fireline_intensity</span> <span class="org-operator">=</span> fireline_intensity <span class="org-operator">*</span> (1.0 <span class="org-operator">+</span> limited_phi_E)
-    <span class="org-variable-name">length_to_width_ratio</span>  <span class="org-operator">=</span> surface_length_to_width_ratio(limited_wind_speed)
+    <span class="org-variable-name">length_to_width_ratio</span>  <span class="org-operator">=</span> surface_length_to_width_ratio(limited_wind_speed, surface_lw_ratio_model)
     <span class="org-keyword">return</span> {
         <span class="org-string">"max_spread_rate"</span>       : max_spread_rate,
         <span class="org-string">"max_spread_direction"</span>  : max_spread_direction, <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector</span>
@@ -4307,7 +4308,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
 
 <span class="org-keyword">def</span> <span class="org-function-name">calc_crown_fire_behavior_max</span>(canopy_height, canopy_base_height, canopy_bulk_density, heat_of_combustion,
                                  estimated_fine_fuel_moisture, wind_speed_10m, upwind_direction,
-                                 slope, aspect, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
+                                 slope, aspect, crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - canopy_height                                    :: m</span>
@@ -4319,7 +4320,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
 <span class="org-doc">    - upwind_direction                                 :: degrees clockwise from North</span>
 <span class="org-doc">    - slope                                            :: rise/run</span>
 <span class="org-doc">    - aspect                                           :: degrees clockwise from North</span>
-<span class="org-doc">    - max_length_to_width_ratio                        :: float &gt; 0.0 (Optional)</span>
+<span class="org-doc">    - crown_max_lw_ratio                               :: float &gt; 0.0 (Optional)</span>
 
 <span class="org-doc">    return a dictionary containing these keys:</span>
 <span class="org-doc">    - max_fire_type          :: "passive_crown" or "active_crown"</span>
@@ -4350,7 +4351,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
     <span class="org-variable-name">spread_rate</span>           <span class="org-operator">=</span> spread_info[<span class="org-string">"spread_rate"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
     <span class="org-variable-name">fireline_intensity</span>    <span class="org-operator">=</span> calc_crown_fireline_intensity(spread_rate, canopy_bulk_density, canopy_height,
                                                           canopy_base_height, heat_of_combustion) <span class="org-comment-delimiter"># </span><span class="org-comment">kW/m</span>
-    <span class="org-variable-name">length_to_width_ratio</span> <span class="org-operator">=</span> crown_length_to_width_ratio(wind_speed_10m_3d, max_length_to_width_ratio) <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
+    <span class="org-variable-name">length_to_width_ratio</span> <span class="org-operator">=</span> crown_length_to_width_ratio(wind_speed_10m_3d, crown_max_lw_ratio) <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
     <span class="org-variable-name">eccentricity</span>          <span class="org-operator">=</span> crown_fire_eccentricity(length_to_width_ratio) <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
     <span class="org-keyword">return</span> {
         <span class="org-string">"max_fire_type"</span>         : spread_info[<span class="org-string">"fire_type"</span>],
@@ -6801,11 +6802,11 @@ surface fire behavior is returned.
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a version of this function that runs efficiently over a space_time_region</span>
-<span class="org-keyword">def</span> <span class="org-function-name">burn_cell_as_head_fire</span>(space_time_cubes, space_time_coordinate,
-                           use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
+<span class="org-keyword">def</span> <span class="org-function-name">burn_cell_as_head_fire</span>(space_time_cubes, space_time_coordinate, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
+                           surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>, crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
-<span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
+<span class="org-doc">    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
 <span class="org-doc">      - slope                         :: rise/run</span>
 <span class="org-doc">      - aspect                        :: degrees clockwise from North</span>
 <span class="org-doc">      - fuel_model                    :: integer index in fm.fuel_model_table</span>
@@ -6823,9 +6824,10 @@ surface fire behavior is returned.
 <span class="org-doc">      - foliar_moisture               :: kg moisture/kg ovendry weight</span>
 <span class="org-doc">      - fuel_spread_adjustment        :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 <span class="org-doc">      - weather_spread_adjustment     :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-<span class="org-doc">    - space_time_coordinate     :: (t,y,x)</span>
-<span class="org-doc">    - use_wind_limit            :: boolean (Optional)</span>
-<span class="org-doc">    - max_length_to_width_ratio :: float &gt; 0.0 (Optional)</span>
+<span class="org-doc">    - space_time_coordinate        :: (t,y,x)</span>
+<span class="org-doc">    - use_wind_limit               :: boolean (Optional)</span>
+<span class="org-doc">    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)</span>
+<span class="org-doc">    - crown_max_lw_ratio           :: float &gt; 0.0 (Optional)</span>
 
 <span class="org-doc">    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):</span>
 <span class="org-doc">    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"</span>
@@ -6953,7 +6955,8 @@ surface fire behavior is returned.
                                                              upwind_direction,
                                                              slope,
                                                              aspect,
-                                                             use_wind_limit)
+                                                             use_wind_limit,
+                                                             surface_lw_ratio_model)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Simplify the surface fire behavior fields for future comparison/combination with the crown fire behavior values</span>
         <span class="org-variable-name">surface_fire_max_simple</span> <span class="org-operator">=</span> sf.calc_surface_fire_behavior_in_direction(surface_fire_max,
@@ -6977,7 +6980,7 @@ surface fire behavior is returned.
                                                              canopy_bulk_density, heat_of_combustion,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
-                                                             slope, aspect, max_length_to_width_ratio)
+                                                             slope, aspect, crown_max_lw_ratio)
 
             <span class="org-comment-delimiter"># </span><span class="org-comment">Simplify the crown fire behavior fields for future comparison/combination with the surface fire behavior values</span>
             <span class="org-variable-name">crown_fire_max_simple</span> <span class="org-operator">=</span> cf.calc_crown_fire_behavior_in_direction(crown_fire_max,
@@ -7035,11 +7038,11 @@ azimuth direction is returned.
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a version of this function that runs efficiently over a space_time_region</span>
-<span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_azimuth</span>(space_time_cubes, space_time_coordinate, azimuth,
-                             use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
+<span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_azimuth</span>(space_time_cubes, space_time_coordinate, azimuth, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
+                             surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>, crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
-<span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
+<span class="org-doc">    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
 <span class="org-doc">      - slope                         :: rise/run</span>
 <span class="org-doc">      - aspect                        :: degrees clockwise from North</span>
 <span class="org-doc">      - fuel_model                    :: integer index in fm.fuel_model_table</span>
@@ -7057,10 +7060,11 @@ azimuth direction is returned.
 <span class="org-doc">      - foliar_moisture               :: kg moisture/kg ovendry weight</span>
 <span class="org-doc">      - fuel_spread_adjustment        :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 <span class="org-doc">      - weather_spread_adjustment     :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-<span class="org-doc">    - space_time_coordinate     :: (t,y,x)</span>
-<span class="org-doc">    - azimuth                   :: degrees clockwise from North on the horizontal plane</span>
-<span class="org-doc">    - use_wind_limit            :: boolean (Optional)</span>
-<span class="org-doc">    - max_length_to_width_ratio :: float &gt; 0.0 (Optional)</span>
+<span class="org-doc">    - space_time_coordinate        :: (t,y,x)</span>
+<span class="org-doc">    - azimuth                      :: degrees clockwise from North on the horizontal plane</span>
+<span class="org-doc">    - use_wind_limit               :: boolean (Optional)</span>
+<span class="org-doc">    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)</span>
+<span class="org-doc">    - crown_max_lw_ratio           :: float &gt; 0.0 (Optional)</span>
 
 <span class="org-doc">    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):</span>
 <span class="org-doc">    - fire_type          :: "unburned", "surface", "passive_crown", or "active_crown"</span>
@@ -7188,7 +7192,8 @@ azimuth direction is returned.
                                                              upwind_direction,
                                                              slope,
                                                              aspect,
-                                                             use_wind_limit)
+                                                             use_wind_limit,
+                                                             surface_lw_ratio_model)
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior in the direction of the azimuth vector</span>
@@ -7213,7 +7218,7 @@ azimuth direction is returned.
                                                              canopy_bulk_density, heat_of_combustion,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
-                                                             slope, aspect, max_length_to_width_ratio)
+                                                             slope, aspect, crown_max_lw_ratio)
 
             <span class="org-comment-delimiter">#</span><span class="org-comment">========================================================================================</span>
             <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate crown fire behavior in the direction of the azimuth vector</span>
@@ -8171,11 +8176,11 @@ is returned.
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a version of this function that runs efficiently over a space_time_region</span>
-<span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_phi_gradient</span>(space_time_cubes, space_time_coordinate, phi_gradient_xy,
-                                  use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
+<span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_phi_gradient</span>(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
+                                  surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>, crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
-<span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
+<span class="org-doc">    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
 <span class="org-doc">      - slope                         :: rise/run</span>
 <span class="org-doc">      - aspect                        :: degrees clockwise from North</span>
 <span class="org-doc">      - fuel_model                    :: integer index in fm.fuel_model_table</span>
@@ -8193,10 +8198,11 @@ is returned.
 <span class="org-doc">      - foliar_moisture               :: kg moisture/kg ovendry weight</span>
 <span class="org-doc">      - fuel_spread_adjustment        :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 <span class="org-doc">      - weather_spread_adjustment     :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-<span class="org-doc">    - space_time_coordinate     :: (t,y,x)</span>
-<span class="org-doc">    - phi_gradient_xy           :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane</span>
-<span class="org-doc">    - use_wind_limit            :: boolean (Optional)</span>
-<span class="org-doc">    - max_length_to_width_ratio :: float &gt; 0.0 (Optional)</span>
+<span class="org-doc">    - space_time_coordinate        :: (t,y,x)</span>
+<span class="org-doc">    - phi_gradient_xy              :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane</span>
+<span class="org-doc">    - use_wind_limit               :: boolean (Optional)</span>
+<span class="org-doc">    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)</span>
+<span class="org-doc">    - crown_max_lw_ratio           :: float &gt; 0.0 (Optional)</span>
 
 <span class="org-doc">    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):</span>
 <span class="org-doc">    - dphi_dt            :: phi/min (on the slope-tangential plane)</span>
@@ -8347,7 +8353,8 @@ is returned.
                                                              upwind_direction,
                                                              slope,
                                                              aspect,
-                                                             use_wind_limit)
+                                                             use_wind_limit,
+                                                             surface_lw_ratio_model)
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior normal to the fire perimeter</span>
@@ -8372,7 +8379,7 @@ is returned.
                                                              canopy_bulk_density, heat_of_combustion,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
-                                                             slope, aspect, max_length_to_width_ratio)
+                                                             slope, aspect, crown_max_lw_ratio)
 
             <span class="org-comment-delimiter">#</span><span class="org-comment">========================================================================================</span>
             <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate crown fire behavior normal to the fire perimeter</span>
@@ -8625,9 +8632,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-keyword">return</span> azimuth
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
-                             cube_resolution, start_time, max_timestep, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
-                             max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
+<span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes, output_matrices, frontier_cells, tracked_cells, cube_resolution,
+                             start_time, max_timestep, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>,
+                             crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
                              spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>, random_generator<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
@@ -8679,7 +8686,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fire behavior normal to the fire front on the slope-tangential plane</span>
         <span class="org-variable-name">fire_behavior</span> <span class="org-operator">=</span> burn_cell_toward_phi_gradient(space_time_cubes, (t0, y, x),
                                                       phi_gradient_xy, use_wind_limit,
-                                                      max_length_to_width_ratio)
+                                                      surface_lw_ratio_model,
+                                                      crown_max_lw_ratio)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell has a positive phi magnitude</span>
         <span class="org-keyword">if</span> phi_magnitude_xy <span class="org-operator">&gt;</span> 0.0:
@@ -8735,7 +8743,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fire behavior normal to the fire front on the slope-tangential plane</span>
         <span class="org-variable-name">fire_behavior_star</span> <span class="org-operator">=</span> burn_cell_toward_phi_gradient(space_time_cubes, (t1, y, x),
                                                            phi_gradient_xy_star, use_wind_limit,
-                                                           max_length_to_width_ratio)
+                                                           surface_lw_ratio_model,
+                                                           crown_max_lw_ratio)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell has a positive phi magnitude</span>
         <span class="org-keyword">if</span> phi_magnitude_xy_star <span class="org-operator">&gt;</span> 0.0:
@@ -8822,11 +8831,12 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes, output_matrices, cube_resolution, start_time,
-                               max_duration<span class="org-operator">=</span><span class="org-constant">None</span>, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, max_length_to_width_ratio<span class="org-operator">=</span><span class="org-constant">None</span>,
-                               max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3, spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>):
+                               max_duration<span class="org-operator">=</span><span class="org-constant">None</span>, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>,
+                               crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
+                               spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
-<span class="org-doc">    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
+<span class="org-doc">    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
 <span class="org-doc">      - slope                         :: rise/run</span>
 <span class="org-doc">      - aspect                        :: degrees clockwise from North</span>
 <span class="org-doc">      - fuel_model                    :: integer index in fm.fuel_model_table</span>
@@ -8845,7 +8855,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - foliar_moisture               :: kg moisture/kg ovendry weight</span>
 <span class="org-doc">      - fuel_spread_adjustment        :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 <span class="org-doc">      - weather_spread_adjustment     :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-<span class="org-doc">    - output_matrices           :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes</span>
+<span class="org-doc">    - output_matrices              :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes</span>
 <span class="org-doc">      - phi                           :: 2D float array of values in [-1,1]</span>
 <span class="org-doc">      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)</span>
 <span class="org-doc">      - spread_rate                   :: 2D float array (m/min)</span>
@@ -8854,18 +8864,19 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
 <span class="org-doc">      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)</span>
-<span class="org-doc">    - cube_resolution           :: tuple with these fields</span>
+<span class="org-doc">    - cube_resolution              :: tuple with these fields</span>
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
 <span class="org-doc">      - cell_width                    :: meters</span>
-<span class="org-doc">    - start_time                :: minutes (from the start of the space_time_cube's temporal origin)</span>
-<span class="org-doc">    - max_duration              :: minutes (Optional)</span>
-<span class="org-doc">    - use_wind_limit            :: boolean (Optional)</span>
-<span class="org-doc">    - max_length_to_width_ratio :: float &gt; 0.0 (Optional)</span>
-<span class="org-doc">    - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)</span>
-<span class="org-doc">    - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
-<span class="org-doc">    - spot_ignitions            :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
-<span class="org-doc">    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)</span>
+<span class="org-doc">    - start_time                   :: minutes (from the start of the space_time_cube's temporal origin)</span>
+<span class="org-doc">    - max_duration                 :: minutes (Optional)</span>
+<span class="org-doc">    - use_wind_limit               :: boolean (Optional)</span>
+<span class="org-doc">    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)</span>
+<span class="org-doc">    - crown_max_lw_ratio           :: float &gt; 0.0 (Optional)</span>
+<span class="org-doc">    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)</span>
+<span class="org-doc">    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
+<span class="org-doc">    - spot_ignitions               :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
+<span class="org-doc">    - spot_config                  :: dictionary of spotting parameters (Optional: needed for spotting)</span>
 <span class="org-doc">      - random_seed                   :: seed for a numpy.random.Generator object</span>
 <span class="org-doc">      - firebrands_per_unit_heat      :: firebrands/kJ</span>
 <span class="org-doc">      - downwind_distance_mean        :: meters</span>
@@ -8938,8 +8949,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire one timestep</span>
         <span class="org-variable-name">results</span> <span class="org-operator">=</span> spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
-                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spot_config, random_generator)
+                                           surface_lw_ratio_model, crown_max_lw_ratio, max_cells_per_timestep,
+                                           buffer_width, spot_ignitions, spot_config, random_generator)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Reset spread inputs</span>
         <span class="org-variable-name">simulation_time</span>  <span class="org-operator">=</span> results[<span class="org-string">"simulation_time"</span>]

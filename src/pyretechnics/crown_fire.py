@@ -152,7 +152,7 @@ import pyretechnics.vector_utils as vu
 
 def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_density, heat_of_combustion,
                                  estimated_fine_fuel_moisture, wind_speed_10m, upwind_direction,
-                                 slope, aspect, max_length_to_width_ratio=None):
+                                 slope, aspect, crown_max_lw_ratio=None):
     """
     Given these inputs:
     - canopy_height                                    :: m
@@ -164,7 +164,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     - upwind_direction                                 :: degrees clockwise from North
     - slope                                            :: rise/run
     - aspect                                           :: degrees clockwise from North
-    - max_length_to_width_ratio                        :: float > 0.0 (Optional)
+    - crown_max_lw_ratio                               :: float > 0.0 (Optional)
 
     return a dictionary containing these keys:
     - max_fire_type          :: "passive_crown" or "active_crown"
@@ -195,7 +195,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     spread_rate           = spread_info["spread_rate"] # m/min
     fireline_intensity    = calc_crown_fireline_intensity(spread_rate, canopy_bulk_density, canopy_height,
                                                           canopy_base_height, heat_of_combustion) # kW/m
-    length_to_width_ratio = crown_length_to_width_ratio(wind_speed_10m_3d, max_length_to_width_ratio) # unitless
+    length_to_width_ratio = crown_length_to_width_ratio(wind_speed_10m_3d, crown_max_lw_ratio) # unitless
     eccentricity          = crown_fire_eccentricity(length_to_width_ratio) # unitless
     return {
         "max_fire_type"         : spread_info["fire_type"],

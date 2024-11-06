@@ -433,21 +433,22 @@ def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_s
 
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind_direction,
-                                   slope, aspect, use_wind_limit=True):
+                                   slope, aspect, use_wind_limit=True, surface_lw_ratio_model="rothermel"):
     """
     Given these inputs:
-    - surface_fire_min       :: dictionary of no-wind-no-slope surface fire behavior values
-      - base_spread_rate         :: m/min
-      - base_fireline_intensity  :: kW/m
-      - max_effective_wind_speed :: m/min
-      - get_phi_S                :: lambda: slope (rise/run) => phi_S (unitless)
-      - get_phi_W                :: lambda: midflame_wind_speed (m/min) => phi_W (unitless)
-      - get_wind_speed           :: lambda: phi_W (unitless) => midflame_wind_speed (m/min)
-    - midflame_wind_speed    :: m/min
-    - upwind_direction       :: degrees clockwise from North
-    - slope                  :: rise/run
-    - aspect                 :: degrees clockwise from North
-    - use_wind_limit         :: boolean (Optional)
+    - surface_fire_min            :: dictionary of no-wind-no-slope surface fire behavior values
+      - base_spread_rate             :: m/min
+      - base_fireline_intensity      :: kW/m
+      - max_effective_wind_speed     :: m/min
+      - get_phi_S                    :: lambda: slope (rise/run) => phi_S (unitless)
+      - get_phi_W                    :: lambda: midflame_wind_speed (m/min) => phi_W (unitless)
+      - get_wind_speed               :: lambda: phi_W (unitless) => midflame_wind_speed (m/min)
+    - midflame_wind_speed         :: m/min
+    - upwind_direction            :: degrees clockwise from North
+    - slope                       :: rise/run
+    - aspect                      :: degrees clockwise from North
+    - use_wind_limit              :: boolean (Optional)
+    - surface_lw_ratio_model      :: "rothermel" or "behave" (Optional)
 
     return a dictionary containing these keys:
     - max_spread_rate        :: m/min
@@ -484,7 +485,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     # Calculate and return max surface fire behavior values
     max_spread_rate        = spread_rate * (1.0 + limited_phi_E)
     max_fireline_intensity = fireline_intensity * (1.0 + limited_phi_E)
-    length_to_width_ratio  = surface_length_to_width_ratio(limited_wind_speed)
+    length_to_width_ratio  = surface_length_to_width_ratio(limited_wind_speed, surface_lw_ratio_model)
     return {
         "max_spread_rate"       : max_spread_rate,
         "max_spread_direction"  : max_spread_direction, # unit vector

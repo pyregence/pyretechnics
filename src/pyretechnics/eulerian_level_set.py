@@ -416,11 +416,11 @@ import pyretechnics.vector_utils as vu
 
 
 # TODO: Create a version of this function that runs efficiently over a space_time_region
-def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy,
-                                  use_wind_limit=True, max_length_to_width_ratio=None):
+def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit=True,
+                                  surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
     """
     Given these inputs:
-    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
       - slope                         :: rise/run
       - aspect                        :: degrees clockwise from North
       - fuel_model                    :: integer index in fm.fuel_model_table
@@ -438,10 +438,11 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
       - foliar_moisture               :: kg moisture/kg ovendry weight
       - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
       - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
-    - space_time_coordinate     :: (t,y,x)
-    - phi_gradient_xy           :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane
-    - use_wind_limit            :: boolean (Optional)
-    - max_length_to_width_ratio :: float > 0.0 (Optional)
+    - space_time_coordinate        :: (t,y,x)
+    - phi_gradient_xy              :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane
+    - use_wind_limit               :: boolean (Optional)
+    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
+    - crown_max_lw_ratio           :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
     - dphi_dt            :: phi/min (on the slope-tangential plane)
@@ -592,7 +593,8 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
                                                              upwind_direction,
                                                              slope,
                                                              aspect,
-                                                             use_wind_limit)
+                                                             use_wind_limit,
+                                                             surface_lw_ratio_model)
 
         #============================================================================================
         # Calculate surface fire behavior normal to the fire perimeter
@@ -617,7 +619,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
                                                              canopy_bulk_density, heat_of_combustion,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
-                                                             slope, aspect, max_length_to_width_ratio)
+                                                             slope, aspect, crown_max_lw_ratio)
 
             #========================================================================================
             # Calculate crown fire behavior normal to the fire perimeter
@@ -762,9 +764,9 @@ def spread_direction_vector_to_angle(vector_3d):
     return azimuth
 
 
-def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
-                             cube_resolution, start_time, max_timestep, use_wind_limit=True,
-                             max_length_to_width_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
+def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells, cube_resolution,
+                             start_time, max_timestep, use_wind_limit=True, surface_lw_ratio_model="rothermel",
+                             crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
                              spot_ignitions={}, spot_config=None, random_generator=None):
     """
     TODO: Add docstring
@@ -816,7 +818,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         fire_behavior = burn_cell_toward_phi_gradient(space_time_cubes, (t0, y, x),
                                                       phi_gradient_xy, use_wind_limit,
-                                                      max_length_to_width_ratio)
+                                                      surface_lw_ratio_model,
+                                                      crown_max_lw_ratio)
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
@@ -872,7 +875,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         fire_behavior_star = burn_cell_toward_phi_gradient(space_time_cubes, (t1, y, x),
                                                            phi_gradient_xy_star, use_wind_limit,
-                                                           max_length_to_width_ratio)
+                                                           surface_lw_ratio_model,
+                                                           crown_max_lw_ratio)
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy_star > 0.0:
@@ -959,11 +963,12 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
 
 def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution, start_time,
-                               max_duration=None, use_wind_limit=True, max_length_to_width_ratio=None,
-                               max_cells_per_timestep=0.4, buffer_width=3, spot_ignitions={}, spot_config=None):
+                               max_duration=None, use_wind_limit=True, surface_lw_ratio_model="rothermel",
+                               crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
+                               spot_ignitions={}, spot_config=None):
     """
     Given these inputs:
-    - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
       - slope                         :: rise/run
       - aspect                        :: degrees clockwise from North
       - fuel_model                    :: integer index in fm.fuel_model_table
@@ -982,7 +987,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - foliar_moisture               :: kg moisture/kg ovendry weight
       - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
       - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
-    - output_matrices           :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
+    - output_matrices              :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
       - phi                           :: 2D float array of values in [-1,1]
       - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
       - spread_rate                   :: 2D float array (m/min)
@@ -991,18 +996,19 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
       - firebrand_count               :: 2D integer array (number of firebrands) (Optional)
-    - cube_resolution           :: tuple with these fields
+    - cube_resolution              :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
       - cell_width                    :: meters
-    - start_time                :: minutes (from the start of the space_time_cube's temporal origin)
-    - max_duration              :: minutes (Optional)
-    - use_wind_limit            :: boolean (Optional)
-    - max_length_to_width_ratio :: float > 0.0 (Optional)
-    - max_cells_per_timestep    :: max number of cells the fire front can travel in one timestep (Optional)
-    - buffer_width              :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
-    - spot_ignitions            :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
-    - spot_config               :: dictionary of spotting parameters (Optional: needed for spotting)
+    - start_time                   :: minutes (from the start of the space_time_cube's temporal origin)
+    - max_duration                 :: minutes (Optional)
+    - use_wind_limit               :: boolean (Optional)
+    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
+    - crown_max_lw_ratio           :: float > 0.0 (Optional)
+    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)
+    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
+    - spot_ignitions               :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
+    - spot_config                  :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: seed for a numpy.random.Generator object
       - firebrands_per_unit_heat      :: firebrands/kJ
       - downwind_distance_mean        :: meters
@@ -1075,8 +1081,8 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         # Spread fire one timestep
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, use_wind_limit,
-                                           max_length_to_width_ratio, max_cells_per_timestep, buffer_width,
-                                           spot_ignitions, spot_config, random_generator)
+                                           surface_lw_ratio_model, crown_max_lw_ratio, max_cells_per_timestep,
+                                           buffer_width, spot_ignitions, spot_config, random_generator)
 
         # Reset spread inputs
         simulation_time  = results["simulation_time"]
