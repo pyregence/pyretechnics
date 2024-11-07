@@ -125,10 +125,25 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
     ./make.sh build-dist
     ```
 
-7.  Uploading the Built Distribution to PyPI
+7.  Uploading the Built Distribution to TestPyPI
 
-    To upload the distribution built in the previous step to
-    [PyPI](https://pypi.org/), you can use this command:
+    To upload the built distribution to
+    [TestPyPI](https://test.pypi.org/), you can use this command:
+
+    ```sh
+    ./make.sh upload-testpypi
+    ```
+
+    You will be prompted for a username and password. For the
+    username, use `__token__`. For the password, use the TestPyPI API
+    token value that you created
+    [here](https://test.pypi.org/manage/account/#api-tokens), including the
+    `pypi-` prefix.
+
+8.  Uploading the Built Distribution to PyPI
+
+    To upload the built distribution to [PyPI](https://pypi.org/), you
+    can use this command:
 
     ```sh
     ./make.sh upload-pypi
@@ -140,7 +155,7 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
     [here](https://pypi.org/manage/account/#api-tokens), including the
     `pypi-` prefix.
 
-8.  Installing the Pyretechnics Library with Guix
+9.  Installing the Pyretechnics Library with Guix
 
     You have two options for installing the Pyretechnics library locally:
 
@@ -174,7 +189,7 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
     `$HOME/.bash_profile`, so that they are run automatically each
     time you login.
 
-9.  Using the Pyretechnics Library
+10. Using the Pyretechnics Library
 
     Once you have installed the library into a temporary shell
     environment, installed it into your Guix profile, or downloaded it

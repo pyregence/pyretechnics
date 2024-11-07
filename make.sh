@@ -10,6 +10,7 @@ Usage: $0 <command>
   - test
   - build-guix
   - build-dist
+  - upload-testpypi
   - upload-pypi
   - install-shell
   - install-user
@@ -57,6 +58,10 @@ case $CMD in
 
     "build-dist")
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m build $ARGS
+        ;;
+
+    "upload-testpypi")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload --repository testpypi dist/* $ARGS
         ;;
 
     "upload-pypi")
