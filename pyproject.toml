@@ -7,12 +7,11 @@ authors = [
         {name="Chris Lautenberger, PhD, PE", email="chris@cloudfire.ai"},
 ]
 description = "A Python library for simulating fire behavior in a variety of ways."
+keywords = ["fire", "wildfire", "fire behavior", "fire spread"]
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = [
-        "hatchling",
-        "pytest",
-        "twine",
         "numpy",
         "rasterio",
         "matplotlib",
@@ -27,8 +26,17 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pyregence/pyretechnics"
+Homepage = "https://pyregence.github.io/pyretechnics"
+Documentation = "https://pyregence.github.io/pyretechnics"
+Repository = "https://github.com/pyregence/pyretechnics"
 Issues = "https://github.com/pyregence/pyretechnics/issues"
+Changelog = "https://github.com/pyregence/pyretechnics/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "twine",
+]
 
 [build-system]
 requires = ["hatchling"]
