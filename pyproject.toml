@@ -5,6 +5,7 @@ authors = [
         {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
         {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
         {name="Chris Lautenberger, PhD, PE", email="chris@cloudfire.ai"},
+        {name="David Saah, PhD", email="dsaah@sig-gis.com"},
 ]
 description = "A Python library for simulating fire behavior in a variety of ways."
 keywords = ["fire", "wildfire", "fire behavior", "fire spread"]

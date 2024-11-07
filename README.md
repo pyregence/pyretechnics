@@ -270,15 +270,19 @@ files within this repository.
 
 - Gary W. Johnson, PhD
   - Email: gjohnson@sig-gis.com
-  - Web: <https://sig-gis.com>
+  - Web: https://sig-gis.com
 
 - Valentin Waeselynck
   - Email: vwaeselynck@sig-gis.com
-  - Web: <https://sig-gis.com>
+  - Web: https://sig-gis.com
 
 - Chris Lautenberger, PhD, PE
   - Email: chris@cloudfire.ai
-  - Web: <https://cloudfire.ai>
+  - Web: https://cloudfire.ai
+
+- David Saah, PhD
+  - Email: dsaah@sig-gis.com
+  - Web: https://sig-gis.com
 
 <a id="license"></a>
 ## License
