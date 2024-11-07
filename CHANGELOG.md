@@ -12,7 +12,7 @@ Initial beta release, containing functions for:
 - units conversion functions
 - LANDFIRE data loading functions
 
-# Version 2024.11.07
+# Version 2024.11.7
 
 Changes for Developers:
 - Added `org-eval` command to `make.sh` to complete Emacs-free developer tooling.
