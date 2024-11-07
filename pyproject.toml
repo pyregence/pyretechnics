@@ -1,6 +1,6 @@
 [project]
 name = "pyretechnics"
-version = "2024.10.31"
+version = "2024.11.07"
 authors = [
         {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
         {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
@@ -26,10 +26,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://pyregence.github.io/pyretechnics"
-Documentation = "https://pyregence.github.io/pyretechnics"
-Repository = "https://github.com/pyregence/pyretechnics"
-Issues = "https://github.com/pyregence/pyretechnics/issues"
+Homepage = "https://pyregence.github.io/pyretechnics/"
+Documentation = "https://pyregence.github.io/pyretechnics/"
+Repository = "https://github.com/pyregence/pyretechnics/"
+Issues = "https://github.com/pyregence/pyretechnics/issues/"
 Changelog = "https://github.com/pyregence/pyretechnics/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]

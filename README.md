@@ -2,6 +2,8 @@
 
 A Python library for simulating fire behavior in a variety of ways.
 
+Latest API Documentation: https://pyregence.github.io/pyretechnics/
+
 ## Design Principles
 
 ### Free and Open Source Software
