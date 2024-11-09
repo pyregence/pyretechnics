@@ -16,7 +16,8 @@
   #:use-module ((guix git-download)            #:select (git-predicate))
   #:use-module ((guix licenses)                #:select (epl2.0))
   #:use-module ((guix packages)                #:select (package))
-  #:use-module ((guix utils)                   #:select (current-source-directory)))
+  #:use-module ((guix utils)                   #:select (current-source-directory))
+  #:use-module ((lambdatronic python-packages) #:select (python-snakeviz)))
 
 (define vcs-file?
   ;; Return true if the given file is under version control.
@@ -52,7 +53,8 @@
                    emacs-htmlize
                    python-hatchling
                    python-pytest
-                   python-twine))
+                   python-twine
+                   python-snakeviz))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper

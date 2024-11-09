@@ -37,6 +37,7 @@ Changelog = "https://github.com/pyregence/pyretechnics/blob/main/CHANGELOG.md"
 dev = [
     "pytest",
     "twine",
+    "snakeviz",
 ]
 
 [build-system]
