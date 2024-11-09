@@ -14,4 +14,4 @@
        (url "https://git.sr.ht/~lambdatronic/guix-packages")
        (branch "main")
        (commit
-        "ef33ab7b6fcc08f4b01477901f74cda1e2f9e7b1")))
+        "fe59afe0267b2a678aa67e61b82c1df991b1ad95")))

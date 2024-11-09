@@ -16,6 +16,7 @@ dependencies = [
         "numpy",
         "rasterio",
         "matplotlib",
+        "cython",
 ]
 classifiers = [
         "Programming Language :: Python :: 3",
