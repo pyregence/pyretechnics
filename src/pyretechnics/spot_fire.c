@@ -1744,6 +1744,244 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,
     const char* function_name);
 
+/* Profile.proto */
+#ifndef CYTHON_PROFILE
+#if CYTHON_COMPILING_IN_LIMITED_API || CYTHON_COMPILING_IN_PYPY
+  #define CYTHON_PROFILE 0
+#else
+  #define CYTHON_PROFILE 1
+#endif
+#endif
+#ifndef CYTHON_TRACE_NOGIL
+  #define CYTHON_TRACE_NOGIL 0
+#else
+  #if CYTHON_TRACE_NOGIL && !defined(CYTHON_TRACE)
+    #define CYTHON_TRACE 1
+  #endif
+#endif
+#ifndef CYTHON_TRACE
+  #define CYTHON_TRACE 0
+#endif
+#if CYTHON_TRACE
+  #undef CYTHON_PROFILE_REUSE_FRAME
+#endif
+#ifndef CYTHON_PROFILE_REUSE_FRAME
+  #define CYTHON_PROFILE_REUSE_FRAME 0
+#endif
+#if CYTHON_PROFILE || CYTHON_TRACE
+  #include "compile.h"
+  #include "frameobject.h"
+  #include "traceback.h"
+#if PY_VERSION_HEX >= 0x030b00a6
+  #ifndef Py_BUILD_CORE
+    #define Py_BUILD_CORE 1
+  #endif
+  #include "internal/pycore_frame.h"
+#endif
+  #if CYTHON_PROFILE_REUSE_FRAME
+    #define CYTHON_FRAME_MODIFIER static
+    #define CYTHON_FRAME_DEL(frame)
+  #else
+    #define CYTHON_FRAME_MODIFIER
+    #define CYTHON_FRAME_DEL(frame) Py_CLEAR(frame)
+  #endif
+  #define __Pyx_TraceDeclarations\
+      static PyCodeObject *__pyx_frame_code = NULL;\
+      CYTHON_FRAME_MODIFIER PyFrameObject *__pyx_frame = NULL;\
+      int __Pyx_use_tracing = 0;
+  #define __Pyx_TraceFrameInit(codeobj)\
+      if (codeobj) __pyx_frame_code = (PyCodeObject*) codeobj;
+#if PY_VERSION_HEX >= 0x030b00a2
+  #if PY_VERSION_HEX >= 0x030C00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     ((!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #endif
+  #define __Pyx_EnterTracing(tstate)  PyThreadState_EnterTracing(tstate)
+  #define __Pyx_LeaveTracing(tstate)  PyThreadState_LeaveTracing(tstate)
+#elif PY_VERSION_HEX >= 0x030a00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->cframe->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->cframe->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                 || tstate->c_profilefunc != NULL);\
+      } while (0)
+#else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                         || tstate->c_profilefunc != NULL);\
+      } while (0)
+#endif
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  if (nogil) {\
+      if (CYTHON_TRACE_NOGIL) {\
+          PyThreadState *tstate;\
+          PyGILState_STATE state = PyGILState_Ensure();\
+          tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 1, 1)) {\
+              __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          }\
+          PyGILState_Release(state);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  } else {\
+      PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #else
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  {   PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #endif
+  #define __Pyx_TraceException()\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 1)) {\
+          __Pyx_EnterTracing(tstate);\
+          PyObject *exc_info = __Pyx_GetExceptionTuple(tstate);\
+          if (exc_info) {\
+              if (CYTHON_TRACE && tstate->c_tracefunc)\
+                  tstate->c_tracefunc(\
+                      tstate->c_traceobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              tstate->c_profilefunc(\
+                  tstate->c_profileobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              Py_DECREF(exc_info);\
+          }\
+          __Pyx_LeaveTracing(tstate);\
+      }\
+  }
+  static void __Pyx_call_return_trace_func(PyThreadState *tstate, PyFrameObject *frame, PyObject *result) {
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_EnterTracing(tstate);
+      if (CYTHON_TRACE && tstate->c_tracefunc)
+          tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_RETURN, result);
+      if (tstate->c_profilefunc)
+          tstate->c_profilefunc(tstate->c_profileobj, frame, PyTrace_RETURN, result);
+      CYTHON_FRAME_DEL(frame);
+      __Pyx_LeaveTracing(tstate);
+      __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0)) {\
+                  __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+              }\
+              PyGILState_Release(state);\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0)) {\
+              __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0)) {\
+          __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+      }\
+  }
+  #endif
+  static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno);
+  static int __Pyx_TraceSetupAndCall(PyCodeObject** code, PyFrameObject** frame, PyThreadState* tstate, const char *funcname, const char *srcfile, int firstlineno);
+#else
+  #define __Pyx_TraceDeclarations
+  #define __Pyx_TraceFrameInit(codeobj)
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)   if ((1)); else goto_error;
+  #define __Pyx_TraceException()
+  #define __Pyx_TraceReturn(result, nogil)
+#endif
+#if CYTHON_TRACE
+  static int __Pyx_call_line_trace_func(PyThreadState *tstate, PyFrameObject *frame, int lineno) {
+      int ret;
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_PyFrame_SetLineNumber(frame, lineno);
+      __Pyx_EnterTracing(tstate);
+      ret = tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_LINE, NULL);
+      __Pyx_LeaveTracing(tstate);
+      if (likely(!ret)) {
+          __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+      } else {
+          Py_XDECREF(type);
+          Py_XDECREF(value);
+          Py_XDECREF(traceback);
+      }
+      return ret;
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              int ret = 0;\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = __Pyx_PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+                  ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              }\
+              __Pyx_PyGILState_Release(state);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+              int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+          int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+          if (unlikely(ret)) goto_error;\
+      }\
+  }
+  #endif
+#else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)   if ((1)); else goto_error;
+#endif
+
 /* DictGetItem.proto */
 #if PY_MAJOR_VERSION >= 3 && !CYTHON_COMPILING_IN_PYPY
 static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key);
@@ -2245,8 +2483,6 @@ static const char __pyx_k_t[] = "t";
 static const char __pyx_k_x[] = "x";
 static const char __pyx_k_y[] = "y";
 static const char __pyx_k_z[] = "z";
-static const char __pyx_k__2[] = ".";
-static const char __pyx_k__4[] = "*";
 static const char __pyx_k_fm[] = "fm";
 static const char __pyx_k_gc[] = "gc";
 static const char __pyx_k_m2[] = "m2";
@@ -2259,7 +2495,9 @@ static const char __pyx_k_Q_b[] = "Q_b";
 static const char __pyx_k_Q_c[] = "Q_c";
 static const char __pyx_k_Q_d[] = "Q_d";
 static const char __pyx_k_T_o[] = "T_o";
-static const char __pyx_k__64[] = "_";
+static const char __pyx_k__32[] = ".";
+static const char __pyx_k__34[] = "*";
+static const char __pyx_k__65[] = "_";
 static const char __pyx_k__67[] = "?";
 static const char __pyx_k_cos[] = "cos";
 static const char __pyx_k_exp[] = "exp";
@@ -2515,9 +2753,9 @@ typedef struct {
   PyObject *__pyx_n_s_Q_ig;
   PyObject *__pyx_n_s_T_o;
   PyObject *__pyx_n_s_X;
-  PyObject *__pyx_kp_u__2;
-  PyObject *__pyx_n_s__4;
-  PyObject *__pyx_n_s__64;
+  PyObject *__pyx_kp_u__32;
+  PyObject *__pyx_n_s__34;
+  PyObject *__pyx_n_s__65;
   PyObject *__pyx_n_s__67;
   PyObject *__pyx_n_s_a;
   PyObject *__pyx_n_s_albini_firebrand_maximum_height;
@@ -2729,69 +2967,69 @@ typedef struct {
   PyObject *__pyx_float_neg_15_1;
   PyObject *__pyx_int_0;
   PyObject *__pyx_int_1;
-  PyObject *__pyx_tuple_;
-  PyObject *__pyx_tuple__3;
-  PyObject *__pyx_tuple__5;
-  PyObject *__pyx_tuple__7;
-  PyObject *__pyx_tuple__8;
-  PyObject *__pyx_tuple__10;
-  PyObject *__pyx_tuple__12;
-  PyObject *__pyx_tuple__14;
-  PyObject *__pyx_tuple__16;
-  PyObject *__pyx_tuple__18;
-  PyObject *__pyx_tuple__20;
-  PyObject *__pyx_tuple__22;
-  PyObject *__pyx_tuple__24;
-  PyObject *__pyx_tuple__25;
-  PyObject *__pyx_tuple__28;
+  PyObject *__pyx_codeobj_;
   PyObject *__pyx_tuple__30;
-  PyObject *__pyx_tuple__32;
-  PyObject *__pyx_tuple__34;
+  PyObject *__pyx_tuple__33;
+  PyObject *__pyx_tuple__35;
+  PyObject *__pyx_tuple__36;
   PyObject *__pyx_tuple__37;
+  PyObject *__pyx_tuple__38;
   PyObject *__pyx_tuple__39;
+  PyObject *__pyx_tuple__40;
   PyObject *__pyx_tuple__41;
+  PyObject *__pyx_tuple__42;
   PyObject *__pyx_tuple__43;
+  PyObject *__pyx_tuple__44;
   PyObject *__pyx_tuple__45;
+  PyObject *__pyx_tuple__46;
   PyObject *__pyx_tuple__47;
+  PyObject *__pyx_tuple__48;
   PyObject *__pyx_tuple__49;
+  PyObject *__pyx_tuple__50;
   PyObject *__pyx_tuple__51;
+  PyObject *__pyx_tuple__52;
   PyObject *__pyx_tuple__53;
+  PyObject *__pyx_tuple__54;
   PyObject *__pyx_tuple__55;
+  PyObject *__pyx_tuple__56;
   PyObject *__pyx_tuple__57;
   PyObject *__pyx_tuple__58;
+  PyObject *__pyx_tuple__59;
   PyObject *__pyx_tuple__60;
+  PyObject *__pyx_tuple__61;
   PyObject *__pyx_tuple__62;
-  PyObject *__pyx_tuple__65;
+  PyObject *__pyx_tuple__63;
+  PyObject *__pyx_tuple__64;
+  PyObject *__pyx_tuple__66;
+  PyObject *__pyx_codeobj__2;
+  PyObject *__pyx_codeobj__3;
+  PyObject *__pyx_codeobj__4;
+  PyObject *__pyx_codeobj__5;
   PyObject *__pyx_codeobj__6;
+  PyObject *__pyx_codeobj__7;
+  PyObject *__pyx_codeobj__8;
   PyObject *__pyx_codeobj__9;
+  PyObject *__pyx_codeobj__10;
   PyObject *__pyx_codeobj__11;
+  PyObject *__pyx_codeobj__12;
   PyObject *__pyx_codeobj__13;
+  PyObject *__pyx_codeobj__14;
   PyObject *__pyx_codeobj__15;
+  PyObject *__pyx_codeobj__16;
   PyObject *__pyx_codeobj__17;
+  PyObject *__pyx_codeobj__18;
   PyObject *__pyx_codeobj__19;
+  PyObject *__pyx_codeobj__20;
   PyObject *__pyx_codeobj__21;
+  PyObject *__pyx_codeobj__22;
   PyObject *__pyx_codeobj__23;
+  PyObject *__pyx_codeobj__24;
+  PyObject *__pyx_codeobj__25;
   PyObject *__pyx_codeobj__26;
   PyObject *__pyx_codeobj__27;
+  PyObject *__pyx_codeobj__28;
   PyObject *__pyx_codeobj__29;
   PyObject *__pyx_codeobj__31;
-  PyObject *__pyx_codeobj__33;
-  PyObject *__pyx_codeobj__35;
-  PyObject *__pyx_codeobj__36;
-  PyObject *__pyx_codeobj__38;
-  PyObject *__pyx_codeobj__40;
-  PyObject *__pyx_codeobj__42;
-  PyObject *__pyx_codeobj__44;
-  PyObject *__pyx_codeobj__46;
-  PyObject *__pyx_codeobj__48;
-  PyObject *__pyx_codeobj__50;
-  PyObject *__pyx_codeobj__52;
-  PyObject *__pyx_codeobj__54;
-  PyObject *__pyx_codeobj__56;
-  PyObject *__pyx_codeobj__59;
-  PyObject *__pyx_codeobj__61;
-  PyObject *__pyx_codeobj__63;
-  PyObject *__pyx_codeobj__66;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2847,9 +3085,9 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_Q_ig);
   Py_CLEAR(clear_module_state->__pyx_n_s_T_o);
   Py_CLEAR(clear_module_state->__pyx_n_s_X);
-  Py_CLEAR(clear_module_state->__pyx_kp_u__2);
-  Py_CLEAR(clear_module_state->__pyx_n_s__4);
-  Py_CLEAR(clear_module_state->__pyx_n_s__64);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__32);
+  Py_CLEAR(clear_module_state->__pyx_n_s__34);
+  Py_CLEAR(clear_module_state->__pyx_n_s__65);
   Py_CLEAR(clear_module_state->__pyx_n_s__67);
   Py_CLEAR(clear_module_state->__pyx_n_s_a);
   Py_CLEAR(clear_module_state->__pyx_n_s_albini_firebrand_maximum_height);
@@ -3061,69 +3299,69 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_float_neg_15_1);
   Py_CLEAR(clear_module_state->__pyx_int_0);
   Py_CLEAR(clear_module_state->__pyx_int_1);
-  Py_CLEAR(clear_module_state->__pyx_tuple_);
-  Py_CLEAR(clear_module_state->__pyx_tuple__3);
-  Py_CLEAR(clear_module_state->__pyx_tuple__5);
-  Py_CLEAR(clear_module_state->__pyx_tuple__7);
-  Py_CLEAR(clear_module_state->__pyx_tuple__8);
-  Py_CLEAR(clear_module_state->__pyx_tuple__10);
-  Py_CLEAR(clear_module_state->__pyx_tuple__12);
-  Py_CLEAR(clear_module_state->__pyx_tuple__14);
-  Py_CLEAR(clear_module_state->__pyx_tuple__16);
-  Py_CLEAR(clear_module_state->__pyx_tuple__18);
-  Py_CLEAR(clear_module_state->__pyx_tuple__20);
-  Py_CLEAR(clear_module_state->__pyx_tuple__22);
-  Py_CLEAR(clear_module_state->__pyx_tuple__24);
-  Py_CLEAR(clear_module_state->__pyx_tuple__25);
-  Py_CLEAR(clear_module_state->__pyx_tuple__28);
+  Py_CLEAR(clear_module_state->__pyx_codeobj_);
   Py_CLEAR(clear_module_state->__pyx_tuple__30);
-  Py_CLEAR(clear_module_state->__pyx_tuple__32);
-  Py_CLEAR(clear_module_state->__pyx_tuple__34);
+  Py_CLEAR(clear_module_state->__pyx_tuple__33);
+  Py_CLEAR(clear_module_state->__pyx_tuple__35);
+  Py_CLEAR(clear_module_state->__pyx_tuple__36);
   Py_CLEAR(clear_module_state->__pyx_tuple__37);
+  Py_CLEAR(clear_module_state->__pyx_tuple__38);
   Py_CLEAR(clear_module_state->__pyx_tuple__39);
+  Py_CLEAR(clear_module_state->__pyx_tuple__40);
   Py_CLEAR(clear_module_state->__pyx_tuple__41);
+  Py_CLEAR(clear_module_state->__pyx_tuple__42);
   Py_CLEAR(clear_module_state->__pyx_tuple__43);
+  Py_CLEAR(clear_module_state->__pyx_tuple__44);
   Py_CLEAR(clear_module_state->__pyx_tuple__45);
+  Py_CLEAR(clear_module_state->__pyx_tuple__46);
   Py_CLEAR(clear_module_state->__pyx_tuple__47);
+  Py_CLEAR(clear_module_state->__pyx_tuple__48);
   Py_CLEAR(clear_module_state->__pyx_tuple__49);
+  Py_CLEAR(clear_module_state->__pyx_tuple__50);
   Py_CLEAR(clear_module_state->__pyx_tuple__51);
+  Py_CLEAR(clear_module_state->__pyx_tuple__52);
   Py_CLEAR(clear_module_state->__pyx_tuple__53);
+  Py_CLEAR(clear_module_state->__pyx_tuple__54);
   Py_CLEAR(clear_module_state->__pyx_tuple__55);
+  Py_CLEAR(clear_module_state->__pyx_tuple__56);
   Py_CLEAR(clear_module_state->__pyx_tuple__57);
   Py_CLEAR(clear_module_state->__pyx_tuple__58);
+  Py_CLEAR(clear_module_state->__pyx_tuple__59);
   Py_CLEAR(clear_module_state->__pyx_tuple__60);
+  Py_CLEAR(clear_module_state->__pyx_tuple__61);
   Py_CLEAR(clear_module_state->__pyx_tuple__62);
-  Py_CLEAR(clear_module_state->__pyx_tuple__65);
+  Py_CLEAR(clear_module_state->__pyx_tuple__63);
+  Py_CLEAR(clear_module_state->__pyx_tuple__64);
+  Py_CLEAR(clear_module_state->__pyx_tuple__66);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__2);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__3);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__4);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__5);
   Py_CLEAR(clear_module_state->__pyx_codeobj__6);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__7);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__8);
   Py_CLEAR(clear_module_state->__pyx_codeobj__9);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__10);
   Py_CLEAR(clear_module_state->__pyx_codeobj__11);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__12);
   Py_CLEAR(clear_module_state->__pyx_codeobj__13);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__14);
   Py_CLEAR(clear_module_state->__pyx_codeobj__15);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__16);
   Py_CLEAR(clear_module_state->__pyx_codeobj__17);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__18);
   Py_CLEAR(clear_module_state->__pyx_codeobj__19);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__20);
   Py_CLEAR(clear_module_state->__pyx_codeobj__21);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__22);
   Py_CLEAR(clear_module_state->__pyx_codeobj__23);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__24);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__25);
   Py_CLEAR(clear_module_state->__pyx_codeobj__26);
   Py_CLEAR(clear_module_state->__pyx_codeobj__27);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__28);
   Py_CLEAR(clear_module_state->__pyx_codeobj__29);
   Py_CLEAR(clear_module_state->__pyx_codeobj__31);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__33);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__35);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__36);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__38);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__40);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__42);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__44);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__46);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__48);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__50);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__52);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__54);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__56);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__59);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__61);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__63);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__66);
   return 0;
 }
 #endif
@@ -3157,9 +3395,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_Q_ig);
   Py_VISIT(traverse_module_state->__pyx_n_s_T_o);
   Py_VISIT(traverse_module_state->__pyx_n_s_X);
-  Py_VISIT(traverse_module_state->__pyx_kp_u__2);
-  Py_VISIT(traverse_module_state->__pyx_n_s__4);
-  Py_VISIT(traverse_module_state->__pyx_n_s__64);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__32);
+  Py_VISIT(traverse_module_state->__pyx_n_s__34);
+  Py_VISIT(traverse_module_state->__pyx_n_s__65);
   Py_VISIT(traverse_module_state->__pyx_n_s__67);
   Py_VISIT(traverse_module_state->__pyx_n_s_a);
   Py_VISIT(traverse_module_state->__pyx_n_s_albini_firebrand_maximum_height);
@@ -3371,69 +3609,69 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_float_neg_15_1);
   Py_VISIT(traverse_module_state->__pyx_int_0);
   Py_VISIT(traverse_module_state->__pyx_int_1);
-  Py_VISIT(traverse_module_state->__pyx_tuple_);
-  Py_VISIT(traverse_module_state->__pyx_tuple__3);
-  Py_VISIT(traverse_module_state->__pyx_tuple__5);
-  Py_VISIT(traverse_module_state->__pyx_tuple__7);
-  Py_VISIT(traverse_module_state->__pyx_tuple__8);
-  Py_VISIT(traverse_module_state->__pyx_tuple__10);
-  Py_VISIT(traverse_module_state->__pyx_tuple__12);
-  Py_VISIT(traverse_module_state->__pyx_tuple__14);
-  Py_VISIT(traverse_module_state->__pyx_tuple__16);
-  Py_VISIT(traverse_module_state->__pyx_tuple__18);
-  Py_VISIT(traverse_module_state->__pyx_tuple__20);
-  Py_VISIT(traverse_module_state->__pyx_tuple__22);
-  Py_VISIT(traverse_module_state->__pyx_tuple__24);
-  Py_VISIT(traverse_module_state->__pyx_tuple__25);
-  Py_VISIT(traverse_module_state->__pyx_tuple__28);
+  Py_VISIT(traverse_module_state->__pyx_codeobj_);
   Py_VISIT(traverse_module_state->__pyx_tuple__30);
-  Py_VISIT(traverse_module_state->__pyx_tuple__32);
-  Py_VISIT(traverse_module_state->__pyx_tuple__34);
+  Py_VISIT(traverse_module_state->__pyx_tuple__33);
+  Py_VISIT(traverse_module_state->__pyx_tuple__35);
+  Py_VISIT(traverse_module_state->__pyx_tuple__36);
   Py_VISIT(traverse_module_state->__pyx_tuple__37);
+  Py_VISIT(traverse_module_state->__pyx_tuple__38);
   Py_VISIT(traverse_module_state->__pyx_tuple__39);
+  Py_VISIT(traverse_module_state->__pyx_tuple__40);
   Py_VISIT(traverse_module_state->__pyx_tuple__41);
+  Py_VISIT(traverse_module_state->__pyx_tuple__42);
   Py_VISIT(traverse_module_state->__pyx_tuple__43);
+  Py_VISIT(traverse_module_state->__pyx_tuple__44);
   Py_VISIT(traverse_module_state->__pyx_tuple__45);
+  Py_VISIT(traverse_module_state->__pyx_tuple__46);
   Py_VISIT(traverse_module_state->__pyx_tuple__47);
+  Py_VISIT(traverse_module_state->__pyx_tuple__48);
   Py_VISIT(traverse_module_state->__pyx_tuple__49);
+  Py_VISIT(traverse_module_state->__pyx_tuple__50);
   Py_VISIT(traverse_module_state->__pyx_tuple__51);
+  Py_VISIT(traverse_module_state->__pyx_tuple__52);
   Py_VISIT(traverse_module_state->__pyx_tuple__53);
+  Py_VISIT(traverse_module_state->__pyx_tuple__54);
   Py_VISIT(traverse_module_state->__pyx_tuple__55);
+  Py_VISIT(traverse_module_state->__pyx_tuple__56);
   Py_VISIT(traverse_module_state->__pyx_tuple__57);
   Py_VISIT(traverse_module_state->__pyx_tuple__58);
+  Py_VISIT(traverse_module_state->__pyx_tuple__59);
   Py_VISIT(traverse_module_state->__pyx_tuple__60);
+  Py_VISIT(traverse_module_state->__pyx_tuple__61);
   Py_VISIT(traverse_module_state->__pyx_tuple__62);
-  Py_VISIT(traverse_module_state->__pyx_tuple__65);
+  Py_VISIT(traverse_module_state->__pyx_tuple__63);
+  Py_VISIT(traverse_module_state->__pyx_tuple__64);
+  Py_VISIT(traverse_module_state->__pyx_tuple__66);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__2);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__3);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__4);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__5);
   Py_VISIT(traverse_module_state->__pyx_codeobj__6);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__7);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__8);
   Py_VISIT(traverse_module_state->__pyx_codeobj__9);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__10);
   Py_VISIT(traverse_module_state->__pyx_codeobj__11);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__12);
   Py_VISIT(traverse_module_state->__pyx_codeobj__13);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__14);
   Py_VISIT(traverse_module_state->__pyx_codeobj__15);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__16);
   Py_VISIT(traverse_module_state->__pyx_codeobj__17);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__18);
   Py_VISIT(traverse_module_state->__pyx_codeobj__19);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__20);
   Py_VISIT(traverse_module_state->__pyx_codeobj__21);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__22);
   Py_VISIT(traverse_module_state->__pyx_codeobj__23);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__24);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__25);
   Py_VISIT(traverse_module_state->__pyx_codeobj__26);
   Py_VISIT(traverse_module_state->__pyx_codeobj__27);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__28);
   Py_VISIT(traverse_module_state->__pyx_codeobj__29);
   Py_VISIT(traverse_module_state->__pyx_codeobj__31);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__33);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__35);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__36);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__38);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__40);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__42);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__44);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__46);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__48);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__50);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__52);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__54);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__56);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__59);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__61);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__63);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__66);
   return 0;
 }
 #endif
@@ -3477,9 +3715,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_Q_ig __pyx_mstate_global->__pyx_n_s_Q_ig
 #define __pyx_n_s_T_o __pyx_mstate_global->__pyx_n_s_T_o
 #define __pyx_n_s_X __pyx_mstate_global->__pyx_n_s_X
-#define __pyx_kp_u__2 __pyx_mstate_global->__pyx_kp_u__2
-#define __pyx_n_s__4 __pyx_mstate_global->__pyx_n_s__4
-#define __pyx_n_s__64 __pyx_mstate_global->__pyx_n_s__64
+#define __pyx_kp_u__32 __pyx_mstate_global->__pyx_kp_u__32
+#define __pyx_n_s__34 __pyx_mstate_global->__pyx_n_s__34
+#define __pyx_n_s__65 __pyx_mstate_global->__pyx_n_s__65
 #define __pyx_n_s__67 __pyx_mstate_global->__pyx_n_s__67
 #define __pyx_n_s_a __pyx_mstate_global->__pyx_n_s_a
 #define __pyx_n_s_albini_firebrand_maximum_height __pyx_mstate_global->__pyx_n_s_albini_firebrand_maximum_height
@@ -3691,69 +3929,69 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_float_neg_15_1 __pyx_mstate_global->__pyx_float_neg_15_1
 #define __pyx_int_0 __pyx_mstate_global->__pyx_int_0
 #define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
-#define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
-#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
-#define __pyx_tuple__5 __pyx_mstate_global->__pyx_tuple__5
-#define __pyx_tuple__7 __pyx_mstate_global->__pyx_tuple__7
-#define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
-#define __pyx_tuple__10 __pyx_mstate_global->__pyx_tuple__10
-#define __pyx_tuple__12 __pyx_mstate_global->__pyx_tuple__12
-#define __pyx_tuple__14 __pyx_mstate_global->__pyx_tuple__14
-#define __pyx_tuple__16 __pyx_mstate_global->__pyx_tuple__16
-#define __pyx_tuple__18 __pyx_mstate_global->__pyx_tuple__18
-#define __pyx_tuple__20 __pyx_mstate_global->__pyx_tuple__20
-#define __pyx_tuple__22 __pyx_mstate_global->__pyx_tuple__22
-#define __pyx_tuple__24 __pyx_mstate_global->__pyx_tuple__24
-#define __pyx_tuple__25 __pyx_mstate_global->__pyx_tuple__25
-#define __pyx_tuple__28 __pyx_mstate_global->__pyx_tuple__28
+#define __pyx_codeobj_ __pyx_mstate_global->__pyx_codeobj_
 #define __pyx_tuple__30 __pyx_mstate_global->__pyx_tuple__30
-#define __pyx_tuple__32 __pyx_mstate_global->__pyx_tuple__32
-#define __pyx_tuple__34 __pyx_mstate_global->__pyx_tuple__34
+#define __pyx_tuple__33 __pyx_mstate_global->__pyx_tuple__33
+#define __pyx_tuple__35 __pyx_mstate_global->__pyx_tuple__35
+#define __pyx_tuple__36 __pyx_mstate_global->__pyx_tuple__36
 #define __pyx_tuple__37 __pyx_mstate_global->__pyx_tuple__37
+#define __pyx_tuple__38 __pyx_mstate_global->__pyx_tuple__38
 #define __pyx_tuple__39 __pyx_mstate_global->__pyx_tuple__39
+#define __pyx_tuple__40 __pyx_mstate_global->__pyx_tuple__40
 #define __pyx_tuple__41 __pyx_mstate_global->__pyx_tuple__41
+#define __pyx_tuple__42 __pyx_mstate_global->__pyx_tuple__42
 #define __pyx_tuple__43 __pyx_mstate_global->__pyx_tuple__43
+#define __pyx_tuple__44 __pyx_mstate_global->__pyx_tuple__44
 #define __pyx_tuple__45 __pyx_mstate_global->__pyx_tuple__45
+#define __pyx_tuple__46 __pyx_mstate_global->__pyx_tuple__46
 #define __pyx_tuple__47 __pyx_mstate_global->__pyx_tuple__47
+#define __pyx_tuple__48 __pyx_mstate_global->__pyx_tuple__48
 #define __pyx_tuple__49 __pyx_mstate_global->__pyx_tuple__49
+#define __pyx_tuple__50 __pyx_mstate_global->__pyx_tuple__50
 #define __pyx_tuple__51 __pyx_mstate_global->__pyx_tuple__51
+#define __pyx_tuple__52 __pyx_mstate_global->__pyx_tuple__52
 #define __pyx_tuple__53 __pyx_mstate_global->__pyx_tuple__53
+#define __pyx_tuple__54 __pyx_mstate_global->__pyx_tuple__54
 #define __pyx_tuple__55 __pyx_mstate_global->__pyx_tuple__55
+#define __pyx_tuple__56 __pyx_mstate_global->__pyx_tuple__56
 #define __pyx_tuple__57 __pyx_mstate_global->__pyx_tuple__57
 #define __pyx_tuple__58 __pyx_mstate_global->__pyx_tuple__58
+#define __pyx_tuple__59 __pyx_mstate_global->__pyx_tuple__59
 #define __pyx_tuple__60 __pyx_mstate_global->__pyx_tuple__60
+#define __pyx_tuple__61 __pyx_mstate_global->__pyx_tuple__61
 #define __pyx_tuple__62 __pyx_mstate_global->__pyx_tuple__62
-#define __pyx_tuple__65 __pyx_mstate_global->__pyx_tuple__65
+#define __pyx_tuple__63 __pyx_mstate_global->__pyx_tuple__63
+#define __pyx_tuple__64 __pyx_mstate_global->__pyx_tuple__64
+#define __pyx_tuple__66 __pyx_mstate_global->__pyx_tuple__66
+#define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
+#define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
+#define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
+#define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
 #define __pyx_codeobj__6 __pyx_mstate_global->__pyx_codeobj__6
+#define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
+#define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
 #define __pyx_codeobj__9 __pyx_mstate_global->__pyx_codeobj__9
+#define __pyx_codeobj__10 __pyx_mstate_global->__pyx_codeobj__10
 #define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
+#define __pyx_codeobj__12 __pyx_mstate_global->__pyx_codeobj__12
 #define __pyx_codeobj__13 __pyx_mstate_global->__pyx_codeobj__13
+#define __pyx_codeobj__14 __pyx_mstate_global->__pyx_codeobj__14
 #define __pyx_codeobj__15 __pyx_mstate_global->__pyx_codeobj__15
+#define __pyx_codeobj__16 __pyx_mstate_global->__pyx_codeobj__16
 #define __pyx_codeobj__17 __pyx_mstate_global->__pyx_codeobj__17
+#define __pyx_codeobj__18 __pyx_mstate_global->__pyx_codeobj__18
 #define __pyx_codeobj__19 __pyx_mstate_global->__pyx_codeobj__19
+#define __pyx_codeobj__20 __pyx_mstate_global->__pyx_codeobj__20
 #define __pyx_codeobj__21 __pyx_mstate_global->__pyx_codeobj__21
+#define __pyx_codeobj__22 __pyx_mstate_global->__pyx_codeobj__22
 #define __pyx_codeobj__23 __pyx_mstate_global->__pyx_codeobj__23
+#define __pyx_codeobj__24 __pyx_mstate_global->__pyx_codeobj__24
+#define __pyx_codeobj__25 __pyx_mstate_global->__pyx_codeobj__25
 #define __pyx_codeobj__26 __pyx_mstate_global->__pyx_codeobj__26
 #define __pyx_codeobj__27 __pyx_mstate_global->__pyx_codeobj__27
+#define __pyx_codeobj__28 __pyx_mstate_global->__pyx_codeobj__28
 #define __pyx_codeobj__29 __pyx_mstate_global->__pyx_codeobj__29
 #define __pyx_codeobj__31 __pyx_mstate_global->__pyx_codeobj__31
-#define __pyx_codeobj__33 __pyx_mstate_global->__pyx_codeobj__33
-#define __pyx_codeobj__35 __pyx_mstate_global->__pyx_codeobj__35
-#define __pyx_codeobj__36 __pyx_mstate_global->__pyx_codeobj__36
-#define __pyx_codeobj__38 __pyx_mstate_global->__pyx_codeobj__38
-#define __pyx_codeobj__40 __pyx_mstate_global->__pyx_codeobj__40
-#define __pyx_codeobj__42 __pyx_mstate_global->__pyx_codeobj__42
-#define __pyx_codeobj__44 __pyx_mstate_global->__pyx_codeobj__44
-#define __pyx_codeobj__46 __pyx_mstate_global->__pyx_codeobj__46
-#define __pyx_codeobj__48 __pyx_mstate_global->__pyx_codeobj__48
-#define __pyx_codeobj__50 __pyx_mstate_global->__pyx_codeobj__50
-#define __pyx_codeobj__52 __pyx_mstate_global->__pyx_codeobj__52
-#define __pyx_codeobj__54 __pyx_mstate_global->__pyx_codeobj__54
-#define __pyx_codeobj__56 __pyx_mstate_global->__pyx_codeobj__56
-#define __pyx_codeobj__59 __pyx_mstate_global->__pyx_codeobj__59
-#define __pyx_codeobj__61 __pyx_mstate_global->__pyx_codeobj__61
-#define __pyx_codeobj__63 __pyx_mstate_global->__pyx_codeobj__63
-#define __pyx_codeobj__66 __pyx_mstate_global->__pyx_codeobj__66
 /* #### Code section: module_code ### */
 
 /* "pyretechnics/spot_fire.py":6
@@ -3920,6 +4158,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_expected_firebrand_productio
   PyObject *__pyx_v_cell_heat_output = NULL;
   PyObject *__pyx_v_firebrand_count = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -3932,7 +4171,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_expected_firebrand_productio
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj_)
   __Pyx_RefNannySetupContext("expected_firebrand_production", 1);
+  __Pyx_TraceCall("expected_firebrand_production", __pyx_f[0], 6, 0, __PYX_ERR(0, 6, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":24
  *     - firebrands_per_unit_heat :: firebrands/kJ
@@ -4238,6 +4479,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_expected_firebrand_productio
   __Pyx_XDECREF(__pyx_v_cell_heat_output);
   __Pyx_XDECREF(__pyx_v_firebrand_count);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4396,6 +4638,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_2delta_to_grid_dx(CYTHON_UNU
   PyObject *__pyx_v_wdir_x = NULL;
   PyObject *__pyx_v_wdir_perp_x = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4403,7 +4646,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_2delta_to_grid_dx(CYTHON_UNU
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__2)
   __Pyx_RefNannySetupContext("delta_to_grid_dx", 1);
+  __Pyx_TraceCall("delta_to_grid_dx", __pyx_f[0], 54, 0, __PYX_ERR(0, 54, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":59
  *     Returns a signed distance (same unit as X and Y).
@@ -4464,6 +4709,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_2delta_to_grid_dx(CYTHON_UNU
   __Pyx_XDECREF(__pyx_v_wdir_x);
   __Pyx_XDECREF(__pyx_v_wdir_perp_x);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4622,6 +4868,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_4delta_to_grid_dy(CYTHON_UNU
   PyObject *__pyx_v_wdir_y = NULL;
   PyObject *__pyx_v_wdir_perp_y = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4629,7 +4876,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_4delta_to_grid_dy(CYTHON_UNU
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__3)
   __Pyx_RefNannySetupContext("delta_to_grid_dy", 1);
+  __Pyx_TraceCall("delta_to_grid_dy", __pyx_f[0], 64, 0, __PYX_ERR(0, 64, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":69
  *     Returns a signed distance (same unit as X and Y).
@@ -4690,6 +4939,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_4delta_to_grid_dy(CYTHON_UNU
   __Pyx_XDECREF(__pyx_v_wdir_y);
   __Pyx_XDECREF(__pyx_v_wdir_perp_y);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4816,13 +5066,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_6distance_to_n_cells(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_distance, PyObject *__pyx_v_cell_size) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__4)
   __Pyx_RefNannySetupContext("distance_to_n_cells", 1);
+  __Pyx_TraceCall("distance_to_n_cells", __pyx_f[0], 74, 0, __PYX_ERR(0, 74, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":78
  *     Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
@@ -4857,6 +5110,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_6distance_to_n_cells(CYTHON_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5001,6 +5255,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_8resolve_exp_delta_x(CYTHON_
   PyObject *__pyx_v_fireline_intensity_exponent = NULL;
   PyObject *__pyx_v_wind_speed_exponent = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5008,7 +5263,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_8resolve_exp_delta_x(CYTHON_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__5)
   __Pyx_RefNannySetupContext("resolve_exp_delta_x", 1);
+  __Pyx_TraceCall("resolve_exp_delta_x", __pyx_f[0], 84, 0, __PYX_ERR(0, 84, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":91
  *     - wind_speed_20ft    :: m/s
@@ -5105,6 +5362,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_8resolve_exp_delta_x(CYTHON_
   __Pyx_XDECREF(__pyx_v_fireline_intensity_exponent);
   __Pyx_XDECREF(__pyx_v_wind_speed_exponent);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5231,13 +5489,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_10resolve_var_delta_x(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_spot_config, PyObject *__pyx_v_exp_delta_x) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__6)
   __Pyx_RefNannySetupContext("resolve_var_delta_x", 1);
+  __Pyx_TraceCall("resolve_var_delta_x", __pyx_f[0], 99, 0, __PYX_ERR(0, 99, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":105
  *     - exp_delta_x :: meters (E[X])
@@ -5272,6 +5533,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_10resolve_var_delta_x(CYTHON
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5399,6 +5661,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_12lognormal_mu_from_moments(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mean, PyObject *__pyx_v_variance) {
   PyObject *__pyx_v_m2 = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5410,7 +5673,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_12lognormal_mu_from_moments(
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__7)
   __Pyx_RefNannySetupContext("lognormal_mu_from_moments", 1);
+  __Pyx_TraceCall("lognormal_mu_from_moments", __pyx_f[0], 108, 0, __PYX_ERR(0, 108, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":112
  *     TODO: Add docstring
@@ -5512,6 +5777,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_12lognormal_mu_from_moments(
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_m2);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5638,6 +5904,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_14lognormal_sigma_from_moments(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mean, PyObject *__pyx_v_variance) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5649,7 +5916,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_14lognormal_sigma_from_momen
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__8)
   __Pyx_RefNannySetupContext("lognormal_sigma_from_moments", 1);
+  __Pyx_TraceCall("lognormal_sigma_from_moments", __pyx_f[0], 116, 0, __PYX_ERR(0, 116, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":120
  *     TODO: Add docstring
@@ -5741,6 +6010,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_14lognormal_sigma_from_momen
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5884,6 +6154,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_16resolve_lognormal_params(C
   PyObject *__pyx_v_exp_delta_x = NULL;
   PyObject *__pyx_v_var_delta_x = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5893,7 +6164,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_16resolve_lognormal_params(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__9)
   __Pyx_RefNannySetupContext("resolve_lognormal_params", 1);
+  __Pyx_TraceCall("resolve_lognormal_params", __pyx_f[0], 123, 0, __PYX_ERR(0, 123, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":127
  *     TODO: Add docstring
@@ -6065,6 +6338,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_16resolve_lognormal_params(C
   __Pyx_XDECREF(__pyx_v_exp_delta_x);
   __Pyx_XDECREF(__pyx_v_var_delta_x);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6206,6 +6480,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_18sample_normal(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_random_generator, PyObject *__pyx_v_mu, PyObject *__pyx_v_sd) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6214,7 +6489,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_18sample_normal(CYTHON_UNUSE
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__10)
   __Pyx_RefNannySetupContext("sample_normal", 1);
+  __Pyx_TraceCall("sample_normal", __pyx_f[0], 139, 0, __PYX_ERR(0, 139, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":143
  *     Returns sample from normal/gaussian distribution given mu and sd.
@@ -6269,6 +6546,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_18sample_normal(CYTHON_UNUSE
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6410,6 +6688,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_20sample_lognormal(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_random_generator, PyObject *__pyx_v_mu, PyObject *__pyx_v_sd) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6418,7 +6697,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_20sample_lognormal(CYTHON_UN
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__11)
   __Pyx_RefNannySetupContext("sample_lognormal", 1);
+  __Pyx_TraceCall("sample_lognormal", __pyx_f[0], 146, 0, __PYX_ERR(0, 146, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":150
  *     Returns sample from log-normal distribution given mu and sd.
@@ -6473,6 +6754,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_20sample_lognormal(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6598,6 +6880,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_22deltax_expected_value(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mu_x, PyObject *__pyx_v_sigma_x) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6609,7 +6892,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_22deltax_expected_value(CYTH
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__12)
   __Pyx_RefNannySetupContext("deltax_expected_value", 1);
+  __Pyx_TraceCall("deltax_expected_value", __pyx_f[0], 154, 0, __PYX_ERR(0, 154, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":155
  * # FIXME: unused
@@ -6704,6 +6989,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_22deltax_expected_value(CYTH
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6814,6 +7100,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_24deltax_coefficient_of_variation(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sigma_x) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6825,7 +7112,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_24deltax_coefficient_of_vari
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__13)
   __Pyx_RefNannySetupContext("deltax_coefficient_of_variation", 1);
+  __Pyx_TraceCall("deltax_coefficient_of_variation", __pyx_f[0], 159, 0, __PYX_ERR(0, 159, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":160
  * # FIXME: unused
@@ -6914,6 +7203,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_24deltax_coefficient_of_vari
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7161,6 +7451,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7172,6 +7463,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __Pyx_RefNannySetupContext("lambda", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda", __pyx_f[0], 170, 0, __PYX_ERR(0, 170, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_sample_lognormal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -7212,6 +7504,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7228,6 +7521,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_26delta_x_sampler(CYTHON_UNU
   struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler *__pyx_cur_scope;
   PyObject *__pyx_v_ln_params = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7236,6 +7530,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_26delta_x_sampler(CYTHON_UNU
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__14)
   __Pyx_RefNannySetupContext("delta_x_sampler", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler *)__pyx_tp_new_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler(__pyx_ptype_12pyretechnics_9spot_fire___pyx_scope_struct__delta_x_sampler, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -7245,6 +7540,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_26delta_x_sampler(CYTHON_UNU
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("delta_x_sampler", __pyx_f[0], 163, 0, __PYX_ERR(0, 163, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":167
  *     Returns a function for randomly sampling X, the spotting jump along the wind direction (in meters).
@@ -7339,6 +7635,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_26delta_x_sampler(CYTHON_UNU
   __Pyx_XDECREF(__pyx_v_ln_params);
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7466,6 +7763,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_28himoto_resolve_default_sig
   PyObject *__pyx_v_es2h = NULL;
   PyObject *__pyx_v_avg_deltax = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7475,7 +7773,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_28himoto_resolve_default_sig
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__15)
   __Pyx_RefNannySetupContext("himoto_resolve_default_sigma_y_from_lognormal_params", 1);
+  __Pyx_TraceCall("himoto_resolve_default_sigma_y_from_lognormal_params", __pyx_f[0], 183, 0, __PYX_ERR(0, 183, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":184
  * 
@@ -7603,6 +7903,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_28himoto_resolve_default_sig
   __Pyx_XDECREF(__pyx_v_es2h);
   __Pyx_XDECREF(__pyx_v_avg_deltax);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7746,6 +8047,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_30himoto_resolve_default_sig
   PyObject *__pyx_v_mu_x = NULL;
   PyObject *__pyx_v_sigma_x = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7754,7 +8056,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_30himoto_resolve_default_sig
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__16)
   __Pyx_RefNannySetupContext("himoto_resolve_default_sigma_y", 1);
+  __Pyx_TraceCall("himoto_resolve_default_sigma_y", __pyx_f[0], 189, 0, __PYX_ERR(0, 189, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":190
  * 
@@ -7870,6 +8174,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_30himoto_resolve_default_sig
   __Pyx_XDECREF(__pyx_v_mu_x);
   __Pyx_XDECREF(__pyx_v_sigma_x);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8011,6 +8316,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_32resolve_crosswind_distance_stdev(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_spot_config, PyObject *__pyx_v_fireline_intensity, PyObject *__pyx_v_wind_speed_20ft) {
   PyObject *__pyx_v_crosswind_distance_stdev = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8020,7 +8326,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_32resolve_crosswind_distance
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__17)
   __Pyx_RefNannySetupContext("resolve_crosswind_distance_stdev", 1);
+  __Pyx_TraceCall("resolve_crosswind_distance_stdev", __pyx_f[0], 196, 0, __PYX_ERR(0, 196, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":197
  * 
@@ -8145,6 +8453,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_32resolve_crosswind_distance
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_crosswind_distance_stdev);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8392,6 +8701,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8403,6 +8713,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda1", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda1", __pyx_f[0], 209, 0, __PYX_ERR(0, 209, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_sample_normal); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -8442,6 +8753,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8457,6 +8769,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_34delta_y_sampler(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_spot_config, PyObject *__pyx_v_fireline_intensity, PyObject *__pyx_v_wind_speed_20ft) {
   struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8465,6 +8778,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_34delta_y_sampler(CYTHON_UNU
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__18)
   __Pyx_RefNannySetupContext("delta_y_sampler", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler *)__pyx_tp_new_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler(__pyx_ptype_12pyretechnics_9spot_fire___pyx_scope_struct_1_delta_y_sampler, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -8474,6 +8788,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_34delta_y_sampler(CYTHON_UNU
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("delta_y_sampler", __pyx_f[0], 204, 0, __PYX_ERR(0, 204, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":208
  *     Returns a function for randomly sampling Y, the spotting jump perpendicular to the wind direction (in meters).
@@ -8542,6 +8857,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_34delta_y_sampler(CYTHON_UNU
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8668,6 +8984,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_36sample_poisson(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_random_generator, PyObject *__pyx_v_mu) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8676,7 +8993,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_36sample_poisson(CYTHON_UNUS
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__19)
   __Pyx_RefNannySetupContext("sample_poisson", 1);
+  __Pyx_TraceCall("sample_poisson", __pyx_f[0], 212, 0, __PYX_ERR(0, 212, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":216
  *     Returns sample from poisson distribution given mu.
@@ -8731,6 +9050,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_36sample_poisson(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8856,6 +9176,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_38sample_number_of_firebrands(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_random_generator, PyObject *__pyx_v_expected_firebrand_count) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8864,7 +9185,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_38sample_number_of_firebrand
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__20)
   __Pyx_RefNannySetupContext("sample_number_of_firebrands", 1);
+  __Pyx_TraceCall("sample_number_of_firebrands", __pyx_f[0], 219, 0, __PYX_ERR(0, 219, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":220
  * 
@@ -8919,6 +9242,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_38sample_number_of_firebrand
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9045,6 +9369,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_40firebrand_flight_survival_probability(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_spotting_distance, PyObject *__pyx_v_decay_distance) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9054,7 +9379,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_40firebrand_flight_survival_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__21)
   __Pyx_RefNannySetupContext("firebrand_flight_survival_probability", 1);
+  __Pyx_TraceCall("firebrand_flight_survival_probability", __pyx_f[0], 226, 0, __PYX_ERR(0, 226, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":234
  *     P(Survival) = exp(-d * lambda)
@@ -9116,6 +9443,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_40firebrand_flight_survival_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9248,6 +9576,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_42heat_of_preignition(CYTHON
   PyObject *__pyx_v_Q_c = NULL;
   PyObject *__pyx_v_Q_d = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9257,7 +9586,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_42heat_of_preignition(CYTHON
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__22)
   __Pyx_RefNannySetupContext("heat_of_preignition", 1);
+  __Pyx_TraceCall("heat_of_preignition", __pyx_f[0], 237, 0, __PYX_ERR(0, 237, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":245
  *     Q_ig = 144.512 - 0.266 * T_o - 0.00058 * (T_o)^2 - T_o * M + 18.54 * (1 - exp(-15.1 * M)) + 640 * M (eq. 10)
@@ -9417,6 +9748,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_42heat_of_preignition(CYTHON
   __Pyx_XDECREF(__pyx_v_Q_c);
   __Pyx_XDECREF(__pyx_v_Q_d);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9546,6 +9878,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_44schroeder_ignition_probabi
   PyObject *__pyx_v_X = NULL;
   PyObject *__pyx_v_P_Ignition = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9557,7 +9890,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_44schroeder_ignition_probabi
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__23)
   __Pyx_RefNannySetupContext("schroeder_ignition_probability", 1);
+  __Pyx_TraceCall("schroeder_ignition_probability", __pyx_f[0], 258, 0, __PYX_ERR(0, 258, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":267
  *     P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
@@ -9696,6 +10031,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_44schroeder_ignition_probabi
   __Pyx_XDECREF(__pyx_v_X);
   __Pyx_XDECREF(__pyx_v_P_Ignition);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9806,12 +10142,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_46albini_firebrand_maximum_height(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_firebrand_diameter) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__24)
   __Pyx_RefNannySetupContext("albini_firebrand_maximum_height", 1);
+  __Pyx_TraceCall("albini_firebrand_maximum_height", __pyx_f[0], 277, 0, __PYX_ERR(0, 277, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":278
  * 
@@ -9842,6 +10181,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_46albini_firebrand_maximum_h
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9960,6 +10300,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_48albini_t_max(CYTHON_UNUSED
   PyObject *__pyx_v_charact_t = NULL;
   PyObject *__pyx_v_travel_time = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9969,7 +10310,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_48albini_t_max(CYTHON_UNUSED
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__25)
   __Pyx_RefNannySetupContext("albini_t_max", 1);
+  __Pyx_TraceCall("albini_t_max", __pyx_f[0], 281, 0, __PYX_ERR(0, 281, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":295
  *     travel_time = t_1 + t_2 + t_3 = 1.2 + (a / 3) * (((b + (z/z_F)) / a)^3/2 - 1)   (D43)
@@ -10166,6 +10509,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_48albini_t_max(CYTHON_UNUSED
   __Pyx_XDECREF(__pyx_v_charact_t);
   __Pyx_XDECREF(__pyx_v_travel_time);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10294,6 +10638,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_50spot_ignition_time(CYTHON_
   PyObject *__pyx_v_t_max = NULL;
   double __pyx_v_t_steady_state;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10302,7 +10647,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_50spot_ignition_time(CYTHON_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__26)
   __Pyx_RefNannySetupContext("spot_ignition_time", 1);
+  __Pyx_TraceCall("spot_ignition_time", __pyx_f[0], 306, 0, __PYX_ERR(0, 306, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":314
  *     t_spot = time_of_arrival + (2 * t_max) + t_ss
@@ -10388,6 +10735,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_50spot_ignition_time(CYTHON_
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_t_max);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10544,6 +10892,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_9spot_fire_52is_in_bounds(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_y, PyObject *__pyx_v_x, PyObject *__pyx_v_rows, PyObject *__pyx_v_cols) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10551,7 +10900,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_52is_in_bounds(CYTHON_UNUSED
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__27)
   __Pyx_RefNannySetupContext("is_in_bounds", 1);
+  __Pyx_TraceCall("is_in_bounds", __pyx_f[0], 325, 0, __PYX_ERR(0, 325, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":329
  *     Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
@@ -10616,6 +10967,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_52is_in_bounds(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10774,6 +11126,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_54is_burnable_cell(CYTHON_UN
   PyObject *__pyx_v_fuel_model_number = NULL;
   PyObject *__pyx_v_fuel_model = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10783,7 +11136,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_54is_burnable_cell(CYTHON_UN
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__28)
   __Pyx_RefNannySetupContext("is_burnable_cell", 1);
+  __Pyx_TraceCall("is_burnable_cell", __pyx_f[0], 332, 0, __PYX_ERR(0, 332, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":336
  *     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
@@ -10903,6 +11258,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_54is_burnable_cell(CYTHON_UN
   __Pyx_XDECREF(__pyx_v_fuel_model_number);
   __Pyx_XDECREF(__pyx_v_fuel_model);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11281,6 +11637,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_56cast_firebrand(CYTHON_UNUS
   PyObject *__pyx_v_fine_fuel_moisture = NULL;
   PyObject *__pyx_v_ignition_probability = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11291,7 +11648,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_56cast_firebrand(CYTHON_UNUS
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__29)
   __Pyx_RefNannySetupContext("cast_firebrand", 1);
+  __Pyx_TraceCall("cast_firebrand", __pyx_f[0], 341, 0, __PYX_ERR(0, 341, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":370
  *     #=======================================================================================
@@ -11682,7 +12041,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_56cast_firebrand(CYTHON_UNUS
  */
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_random_generator, __pyx_n_s_uniform); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 391, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 391, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__30, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 391, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_v_uniform_sample = __pyx_t_3;
@@ -11944,6 +12303,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_56cast_firebrand(CYTHON_UNUS
   __Pyx_XDECREF(__pyx_v_fine_fuel_moisture);
   __Pyx_XDECREF(__pyx_v_ignition_probability);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12176,6 +12536,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_58spread_firebrands(CYTHON_U
   CYTHON_UNUSED PyObject *__pyx_7genexpr__pyx_v__i = NULL;
   PyObject *__pyx_v_ignited_cell = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -12190,7 +12551,9 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_58spread_firebrands(CYTHON_U
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__31)
   __Pyx_RefNannySetupContext("spread_firebrands", 1);
+  __Pyx_TraceCall("spread_firebrands", __pyx_f[0], 405, 0, __PYX_ERR(0, 405, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":449
  *     #=======================================================================================
@@ -13278,6 +13641,7 @@ static PyObject *__pyx_pf_12pyretechnics_9spot_fire_58spread_firebrands(CYTHON_U
   __Pyx_XDECREF(__pyx_7genexpr__pyx_v__i);
   __Pyx_XDECREF(__pyx_v_ignited_cell);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13662,9 +14026,9 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_Q_ig, __pyx_k_Q_ig, sizeof(__pyx_k_Q_ig), 0, 0, 1, 1},
     {&__pyx_n_s_T_o, __pyx_k_T_o, sizeof(__pyx_k_T_o), 0, 0, 1, 1},
     {&__pyx_n_s_X, __pyx_k_X, sizeof(__pyx_k_X), 0, 0, 1, 1},
-    {&__pyx_kp_u__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 1, 0, 0},
-    {&__pyx_n_s__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 0, 1, 1},
-    {&__pyx_n_s__64, __pyx_k__64, sizeof(__pyx_k__64), 0, 0, 1, 1},
+    {&__pyx_kp_u__32, __pyx_k__32, sizeof(__pyx_k__32), 0, 1, 0, 0},
+    {&__pyx_n_s__34, __pyx_k__34, sizeof(__pyx_k__34), 0, 0, 1, 1},
+    {&__pyx_n_s__65, __pyx_k__65, sizeof(__pyx_k__65), 0, 0, 1, 1},
     {&__pyx_n_s__67, __pyx_k__67, sizeof(__pyx_k__67), 0, 0, 1, 1},
     {&__pyx_n_s_a, __pyx_k_a, sizeof(__pyx_k_a), 0, 0, 1, 1},
     {&__pyx_n_s_albini_firebrand_maximum_height, __pyx_k_albini_firebrand_maximum_height, sizeof(__pyx_k_albini_firebrand_maximum_height), 0, 0, 1, 1},
@@ -13880,9 +14244,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if (uniform_sample <= flight_survival_probability
  */
-  __pyx_tuple_ = PyTuple_Pack(2, __pyx_float_0_0, __pyx_float_1_0); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 391, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple_);
-  __Pyx_GIVEREF(__pyx_tuple_);
+  __pyx_tuple__30 = PyTuple_Pack(2, __pyx_float_0_0, __pyx_float_1_0); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 391, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
 
   /* "pyretechnics/spot_fire.py":3
  * # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
@@ -13891,9 +14255,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_surface_fire); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 3, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_tuple__33 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_surface_fire); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__33);
+  __Pyx_GIVEREF(__pyx_tuple__33);
 
   /* "pyretechnics/spot_fire.py":6
  * 
@@ -13902,13 +14266,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Return the expected number of firebrands produced by an entire cell when it burns given:
  */
-  __pyx_tuple__5 = PyTuple_Pack(15, __pyx_n_s_fire_behavior, __pyx_n_s_elevation_gradient, __pyx_n_s_cube_resolution, __pyx_n_s_firebrands_per_unit_heat, __pyx_n_s_spread_rate, __pyx_n_s_fireline_intensity, __pyx_n_s_heat_output_per_area, __pyx_n_s_dz_dx, __pyx_n_s_dz_dy, __pyx_n_s_slope_factor, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_cell_area, __pyx_n_s_cell_heat_output, __pyx_n_s_firebrand_count); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__5);
-  __Pyx_GIVEREF(__pyx_tuple__5);
-  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 15, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__5, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_expected_firebrand_production, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __pyx_tuple__7 = PyTuple_Pack(1, ((PyObject*)__pyx_float_1eneg_6)); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__35 = PyTuple_Pack(15, __pyx_n_s_fire_behavior, __pyx_n_s_elevation_gradient, __pyx_n_s_cube_resolution, __pyx_n_s_firebrands_per_unit_heat, __pyx_n_s_spread_rate, __pyx_n_s_fireline_intensity, __pyx_n_s_heat_output_per_area, __pyx_n_s_dz_dx, __pyx_n_s_dz_dy, __pyx_n_s_slope_factor, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_cell_area, __pyx_n_s_cell_heat_output, __pyx_n_s_firebrand_count); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__35);
+  __Pyx_GIVEREF(__pyx_tuple__35);
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 15, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_expected_firebrand_production, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_tuple__36 = PyTuple_Pack(1, ((PyObject*)__pyx_float_1eneg_6)); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__36);
+  __Pyx_GIVEREF(__pyx_tuple__36);
 
   /* "pyretechnics/spot_fire.py":54
  * # expected-firebrand-production ends here
@@ -13917,10 +14281,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Computes the grid-aligned x coordinate of the delta vector, given the wind-aligned [X Y] coordinates.
  */
-  __pyx_tuple__8 = PyTuple_Pack(6, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_delta_x, __pyx_n_s_delta_y, __pyx_n_s_wdir_x, __pyx_n_s_wdir_perp_x); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_to_grid_dx, 54, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_tuple__37 = PyTuple_Pack(6, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_delta_x, __pyx_n_s_delta_y, __pyx_n_s_wdir_x, __pyx_n_s_wdir_perp_x); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__37);
+  __Pyx_GIVEREF(__pyx_tuple__37);
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_to_grid_dx, 54, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 54, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":64
  * 
@@ -13929,10 +14293,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [X Y] coordinates.
  */
-  __pyx_tuple__10 = PyTuple_Pack(6, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_delta_x, __pyx_n_s_delta_y, __pyx_n_s_wdir_y, __pyx_n_s_wdir_perp_y); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_to_grid_dy, 64, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_tuple__38 = PyTuple_Pack(6, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_delta_x, __pyx_n_s_delta_y, __pyx_n_s_wdir_y, __pyx_n_s_wdir_perp_y); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__38);
+  __Pyx_GIVEREF(__pyx_tuple__38);
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_to_grid_dy, 64, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 64, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":74
  * 
@@ -13941,10 +14305,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
  */
-  __pyx_tuple__12 = PyTuple_Pack(2, __pyx_n_s_distance, __pyx_n_s_cell_size); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 74, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_distance_to_n_cells, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_tuple__39 = PyTuple_Pack(2, __pyx_n_s_distance, __pyx_n_s_cell_size); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__39);
+  __Pyx_GIVEREF(__pyx_tuple__39);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_distance_to_n_cells, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 74, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":84
  * 
@@ -13953,10 +14317,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Computes the expected value E[X] (in meters) of the downwind spotting distance X given:
  */
-  __pyx_tuple__14 = PyTuple_Pack(6, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_downwind_distance_mean, __pyx_n_s_fireline_intensity_exponent, __pyx_n_s_wind_speed_exponent); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
-  __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_exp_delta_x, 84, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __pyx_tuple__40 = PyTuple_Pack(6, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_downwind_distance_mean, __pyx_n_s_fireline_intensity_exponent, __pyx_n_s_wind_speed_exponent); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__40);
+  __Pyx_GIVEREF(__pyx_tuple__40);
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_exp_delta_x, 84, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 84, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":99
  * 
@@ -13965,10 +14329,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Computes the variance Var[X] (in m^2) of the downwind spotting distance X given:
  */
-  __pyx_tuple__16 = PyTuple_Pack(2, __pyx_n_s_spot_config, __pyx_n_s_exp_delta_x); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 99, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_var_delta_x, 99, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_tuple__41 = PyTuple_Pack(2, __pyx_n_s_spot_config, __pyx_n_s_exp_delta_x); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__41);
+  __Pyx_GIVEREF(__pyx_tuple__41);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_var_delta_x, 99, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 99, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":108
  * 
@@ -13977,10 +14341,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__18 = PyTuple_Pack(3, __pyx_n_s_mean, __pyx_n_s_variance, __pyx_n_s_m2); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 108, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_lognormal_mu_from_moments, 108, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(3, __pyx_n_s_mean, __pyx_n_s_variance, __pyx_n_s_m2); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__42);
+  __Pyx_GIVEREF(__pyx_tuple__42);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_lognormal_mu_from_moments, 108, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 108, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":116
  * 
@@ -13989,10 +14353,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__20 = PyTuple_Pack(2, __pyx_n_s_mean, __pyx_n_s_variance); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 116, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__20);
-  __Pyx_GIVEREF(__pyx_tuple__20);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_lognormal_sigma_from_moments, 116, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_tuple__43 = PyTuple_Pack(2, __pyx_n_s_mean, __pyx_n_s_variance); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__43);
+  __Pyx_GIVEREF(__pyx_tuple__43);
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_lognormal_sigma_from_moments, 116, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 116, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":123
  * 
@@ -14001,10 +14365,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__22 = PyTuple_Pack(5, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_exp_delta_x, __pyx_n_s_var_delta_x); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 123, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__22);
-  __Pyx_GIVEREF(__pyx_tuple__22);
-  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__22, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_lognormal_params, 123, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_tuple__44 = PyTuple_Pack(5, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_exp_delta_x, __pyx_n_s_var_delta_x); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__44);
+  __Pyx_GIVEREF(__pyx_tuple__44);
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_lognormal_params, 123, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 123, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":136
  * # [[file:../../org/pyretechnics.org::sardoy-firebrand-dispersal][sardoy-firebrand-dispersal]]
@@ -14013,9 +14377,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__24 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_conversion); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 136, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__24);
-  __Pyx_GIVEREF(__pyx_tuple__24);
+  __pyx_tuple__45 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_conversion); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__45);
+  __Pyx_GIVEREF(__pyx_tuple__45);
 
   /* "pyretechnics/spot_fire.py":139
  * 
@@ -14024,10 +14388,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns sample from normal/gaussian distribution given mu and sd.
  */
-  __pyx_tuple__25 = PyTuple_Pack(3, __pyx_n_s_random_generator, __pyx_n_s_mu, __pyx_n_s_sd); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 139, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__25);
-  __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_normal, 139, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __pyx_tuple__46 = PyTuple_Pack(3, __pyx_n_s_random_generator, __pyx_n_s_mu, __pyx_n_s_sd); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__46);
+  __Pyx_GIVEREF(__pyx_tuple__46);
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_normal, 139, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 139, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":146
  * 
@@ -14036,7 +14400,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns sample from log-normal distribution given mu and sd.
  */
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_lognormal, 146, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_lognormal, 146, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 146, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":154
  * 
@@ -14045,10 +14409,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return conv.m_to_ft(exp(mu_x + (sigma_x ** 2.0) / 2.0))
  * 
  */
-  __pyx_tuple__28 = PyTuple_Pack(2, __pyx_n_s_mu_x, __pyx_n_s_sigma_x); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__28);
-  __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_deltax_expected_value, 154, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_tuple__47 = PyTuple_Pack(2, __pyx_n_s_mu_x, __pyx_n_s_sigma_x); if (unlikely(!__pyx_tuple__47)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__47);
+  __Pyx_GIVEREF(__pyx_tuple__47);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__47, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_deltax_expected_value, 154, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 154, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":159
  * 
@@ -14057,10 +14421,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return sqrt(exp(sigma_x ** 2.0) - 1.0)
  * 
  */
-  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_n_s_sigma_x); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 159, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__30);
-  __Pyx_GIVEREF(__pyx_tuple__30);
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_deltax_coefficient_of_variation, 159, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 159, __pyx_L1_error)
+  __pyx_tuple__48 = PyTuple_Pack(1, __pyx_n_s_sigma_x); if (unlikely(!__pyx_tuple__48)) __PYX_ERR(0, 159, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__48);
+  __Pyx_GIVEREF(__pyx_tuple__48);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__48, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_deltax_coefficient_of_variation, 159, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 159, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":163
  * 
@@ -14069,10 +14433,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns a function for randomly sampling X, the spotting jump along the wind direction (in meters).
  */
-  __pyx_tuple__32 = PyTuple_Pack(6, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_ln_params, __pyx_n_s_mu_x, __pyx_n_s_sigma_x); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 163, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__32);
-  __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_x_sampler, 163, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_tuple__49 = PyTuple_Pack(6, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_ln_params, __pyx_n_s_mu_x, __pyx_n_s_sigma_x); if (unlikely(!__pyx_tuple__49)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__49);
+  __Pyx_GIVEREF(__pyx_tuple__49);
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_x_sampler, 163, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 163, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":183
  * 
@@ -14081,10 +14445,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     es2h       = exp((sigma_x ** 2.0) / 2.0)
  *     avg_deltax = exp(mu_x) * es2h
  */
-  __pyx_tuple__34 = PyTuple_Pack(4, __pyx_n_s_mu_x, __pyx_n_s_sigma_x, __pyx_n_s_es2h, __pyx_n_s_avg_deltax); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 183, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__34);
-  __Pyx_GIVEREF(__pyx_tuple__34);
-  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_himoto_resolve_default_sigma_y_f, 183, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_tuple__50 = PyTuple_Pack(4, __pyx_n_s_mu_x, __pyx_n_s_sigma_x, __pyx_n_s_es2h, __pyx_n_s_avg_deltax); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__50);
+  __Pyx_GIVEREF(__pyx_tuple__50);
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__50, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_himoto_resolve_default_sigma_y_f, 183, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 183, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":189
  * 
@@ -14093,7 +14457,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
  *     mu_x      = ln_params["prob.lognormal.mu"]    # meters
  */
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_himoto_resolve_default_sigma_y, 189, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_himoto_resolve_default_sigma_y, 189, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 189, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":196
  * 
@@ -14102,10 +14466,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     crosswind_distance_stdev = spot_config.get("crosswind_distance_stdev")
  *     if crosswind_distance_stdev != None:
  */
-  __pyx_tuple__37 = PyTuple_Pack(4, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_crosswind_distance_stdev); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 196, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__37);
-  __Pyx_GIVEREF(__pyx_tuple__37);
-  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_crosswind_distance_stdev, 196, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_tuple__51 = PyTuple_Pack(4, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_crosswind_distance_stdev); if (unlikely(!__pyx_tuple__51)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__51);
+  __Pyx_GIVEREF(__pyx_tuple__51);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__51, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_resolve_crosswind_distance_stdev, 196, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 196, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":204
  * 
@@ -14114,10 +14478,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns a function for randomly sampling Y, the spotting jump perpendicular to the wind direction (in meters).
  */
-  __pyx_tuple__39 = PyTuple_Pack(4, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_sigma_y); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 204, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__39);
-  __Pyx_GIVEREF(__pyx_tuple__39);
-  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_y_sampler, 204, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_tuple__52 = PyTuple_Pack(4, __pyx_n_s_spot_config, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_sigma_y); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__52);
+  __Pyx_GIVEREF(__pyx_tuple__52);
+  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_delta_y_sampler, 204, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 204, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":212
  * # sardoy-firebrand-dispersal ends here
@@ -14126,10 +14490,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns sample from poisson distribution given mu.
  */
-  __pyx_tuple__41 = PyTuple_Pack(2, __pyx_n_s_random_generator, __pyx_n_s_mu); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 212, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__41);
-  __Pyx_GIVEREF(__pyx_tuple__41);
-  __pyx_codeobj__42 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_poisson, 212, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__42)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_tuple__53 = PyTuple_Pack(2, __pyx_n_s_random_generator, __pyx_n_s_mu); if (unlikely(!__pyx_tuple__53)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__53);
+  __Pyx_GIVEREF(__pyx_tuple__53);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__53, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_poisson, 212, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 212, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":219
  * 
@@ -14138,10 +14502,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return sample_poisson(random_generator, expected_firebrand_count)
  * # sample-number-of-firebrands ends here
  */
-  __pyx_tuple__43 = PyTuple_Pack(2, __pyx_n_s_random_generator, __pyx_n_s_expected_firebrand_count); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 219, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__43);
-  __Pyx_GIVEREF(__pyx_tuple__43);
-  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_number_of_firebrands, 219, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __pyx_tuple__54 = PyTuple_Pack(2, __pyx_n_s_random_generator, __pyx_n_s_expected_firebrand_count); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__54);
+  __Pyx_GIVEREF(__pyx_tuple__54);
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_sample_number_of_firebrands, 219, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 219, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":226
  * 
@@ -14150,10 +14514,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
  */
-  __pyx_tuple__45 = PyTuple_Pack(2, __pyx_n_s_spotting_distance, __pyx_n_s_decay_distance); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 226, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__45);
-  __Pyx_GIVEREF(__pyx_tuple__45);
-  __pyx_codeobj__46 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_firebrand_flight_survival_probab, 226, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__46)) __PYX_ERR(0, 226, __pyx_L1_error)
+  __pyx_tuple__55 = PyTuple_Pack(2, __pyx_n_s_spotting_distance, __pyx_n_s_decay_distance); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 226, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__55);
+  __Pyx_GIVEREF(__pyx_tuple__55);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_firebrand_flight_survival_probab, 226, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 226, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":237
  * 
@@ -14162,10 +14526,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns heat of preignition given:
  */
-  __pyx_tuple__47 = PyTuple_Pack(8, __pyx_n_s_temperature, __pyx_n_s_fine_fuel_moisture, __pyx_n_s_T_o, __pyx_n_s_M, __pyx_n_s_Q_a, __pyx_n_s_Q_b, __pyx_n_s_Q_c, __pyx_n_s_Q_d); if (unlikely(!__pyx_tuple__47)) __PYX_ERR(0, 237, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__47);
-  __Pyx_GIVEREF(__pyx_tuple__47);
-  __pyx_codeobj__48 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__47, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_heat_of_preignition, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__48)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_tuple__56 = PyTuple_Pack(8, __pyx_n_s_temperature, __pyx_n_s_fine_fuel_moisture, __pyx_n_s_T_o, __pyx_n_s_M, __pyx_n_s_Q_a, __pyx_n_s_Q_b, __pyx_n_s_Q_c, __pyx_n_s_Q_d); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__56);
+  __Pyx_GIVEREF(__pyx_tuple__56);
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_heat_of_preignition, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 237, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":258
  * 
@@ -14174,10 +14538,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the probability of spot fire ignition (Schroeder 1969) given:
  */
-  __pyx_tuple__49 = PyTuple_Pack(5, __pyx_n_s_temperature, __pyx_n_s_fine_fuel_moisture, __pyx_n_s_Q_ig, __pyx_n_s_X, __pyx_n_s_P_Ignition); if (unlikely(!__pyx_tuple__49)) __PYX_ERR(0, 258, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__49);
-  __Pyx_GIVEREF(__pyx_tuple__49);
-  __pyx_codeobj__50 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_schroeder_ignition_probability, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__50)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_tuple__57 = PyTuple_Pack(5, __pyx_n_s_temperature, __pyx_n_s_fine_fuel_moisture, __pyx_n_s_Q_ig, __pyx_n_s_X, __pyx_n_s_P_Ignition); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__57);
+  __Pyx_GIVEREF(__pyx_tuple__57);
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_schroeder_ignition_probability, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 258, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":277
  * 
@@ -14186,10 +14550,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return 0.39e5 * firebrand_diameter
  * 
  */
-  __pyx_tuple__51 = PyTuple_Pack(1, __pyx_n_s_firebrand_diameter); if (unlikely(!__pyx_tuple__51)) __PYX_ERR(0, 277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__51);
-  __Pyx_GIVEREF(__pyx_tuple__51);
-  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__51, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_albini_firebrand_maximum_height, 277, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_tuple__58 = PyTuple_Pack(1, __pyx_n_s_firebrand_diameter); if (unlikely(!__pyx_tuple__58)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__58);
+  __Pyx_GIVEREF(__pyx_tuple__58);
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_albini_firebrand_maximum_height, 277, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 277, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":281
  * 
@@ -14198,10 +14562,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the time of spot ignition using Albini1979spot in minutes given:
  */
-  __pyx_tuple__53 = PyTuple_Pack(8, __pyx_n_s_flame_length, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_z, __pyx_n_s_z_F, __pyx_n_s_w_F, __pyx_n_s_charact_t, __pyx_n_s_travel_time); if (unlikely(!__pyx_tuple__53)) __PYX_ERR(0, 281, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__53);
-  __Pyx_GIVEREF(__pyx_tuple__53);
-  __pyx_codeobj__54 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__53, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_albini_t_max, 281, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__54)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_tuple__59 = PyTuple_Pack(8, __pyx_n_s_flame_length, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_z, __pyx_n_s_z_F, __pyx_n_s_w_F, __pyx_n_s_charact_t, __pyx_n_s_travel_time); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__59);
+  __Pyx_GIVEREF(__pyx_tuple__59);
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_albini_t_max, 281, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 281, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":306
  * 
@@ -14210,10 +14574,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the time of spot ignition using Albini 1979 and Perryman 2012 in minutes given:
  */
-  __pyx_tuple__55 = PyTuple_Pack(4, __pyx_n_s_time_of_arrival, __pyx_n_s_flame_length, __pyx_n_s_t_max, __pyx_n_s_t_steady_state); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 306, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__55);
-  __Pyx_GIVEREF(__pyx_tuple__55);
-  __pyx_codeobj__56 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_spot_ignition_time, 306, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__56)) __PYX_ERR(0, 306, __pyx_L1_error)
+  __pyx_tuple__60 = PyTuple_Pack(4, __pyx_n_s_time_of_arrival, __pyx_n_s_flame_length, __pyx_n_s_t_max, __pyx_n_s_t_steady_state); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 306, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__60);
+  __Pyx_GIVEREF(__pyx_tuple__60);
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__60, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_spot_ignition_time, 306, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 306, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":322
  * import numpy as np
@@ -14222,9 +14586,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__57 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_fuel_models); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 322, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__57);
-  __Pyx_GIVEREF(__pyx_tuple__57);
+  __pyx_tuple__61 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_fuel_models); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 322, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__61);
+  __Pyx_GIVEREF(__pyx_tuple__61);
 
   /* "pyretechnics/spot_fire.py":325
  * 
@@ -14233,10 +14597,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
  */
-  __pyx_tuple__58 = PyTuple_Pack(4, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_rows, __pyx_n_s_cols); if (unlikely(!__pyx_tuple__58)) __PYX_ERR(0, 325, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__58);
-  __Pyx_GIVEREF(__pyx_tuple__58);
-  __pyx_codeobj__59 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_is_in_bounds, 325, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__59)) __PYX_ERR(0, 325, __pyx_L1_error)
+  __pyx_tuple__62 = PyTuple_Pack(4, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_rows, __pyx_n_s_cols); if (unlikely(!__pyx_tuple__62)) __PYX_ERR(0, 325, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__62);
+  __Pyx_GIVEREF(__pyx_tuple__62);
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__62, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_is_in_bounds, 325, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 325, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":332
  * 
@@ -14245,10 +14609,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
  */
-  __pyx_tuple__60 = PyTuple_Pack(6, __pyx_n_s_fuel_model_cube, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_fuel_model_number, __pyx_n_s_fuel_model); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 332, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__60);
-  __Pyx_GIVEREF(__pyx_tuple__60);
-  __pyx_codeobj__61 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__60, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_is_burnable_cell, 332, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__61)) __PYX_ERR(0, 332, __pyx_L1_error)
+  __pyx_tuple__63 = PyTuple_Pack(6, __pyx_n_s_fuel_model_cube, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_fuel_model_number, __pyx_n_s_fuel_model); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 332, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__63);
+  __Pyx_GIVEREF(__pyx_tuple__63);
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_is_burnable_cell, 332, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 332, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":341
  * 
@@ -14257,10 +14621,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                    fuel_model_cube,
  *                    temperature_cube,
  */
-  __pyx_tuple__62 = PyTuple_Pack(30, __pyx_n_s_random_generator, __pyx_n_s_fuel_model_cube, __pyx_n_s_temperature_cube, __pyx_n_s_fuel_moisture_dead_1hr_cube, __pyx_n_s_fire_type_matrix, __pyx_n_s_firebrand_count_matrix, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_source_t, __pyx_n_s_source_y, __pyx_n_s_source_x, __pyx_n_s_decay_distance, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_sample_delta_y_fn, __pyx_n_s_sample_delta_x_fn, __pyx_n_s_delta_y, __pyx_n_s_delta_x, __pyx_n_s_grid_dy, __pyx_n_s_grid_dx, __pyx_n_s_target_y, __pyx_n_s_target_x, __pyx_n_s_spotting_distance, __pyx_n_s_flight_survival_probability, __pyx_n_s_uniform_sample, __pyx_n_s_temperature, __pyx_n_s_fine_fuel_moisture, __pyx_n_s_ignition_probability); if (unlikely(!__pyx_tuple__62)) __PYX_ERR(0, 341, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__62);
-  __Pyx_GIVEREF(__pyx_tuple__62);
-  __pyx_codeobj__63 = (PyObject*)__Pyx_PyCode_New(18, 0, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__62, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_cast_firebrand, 341, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__63)) __PYX_ERR(0, 341, __pyx_L1_error)
+  __pyx_tuple__64 = PyTuple_Pack(30, __pyx_n_s_random_generator, __pyx_n_s_fuel_model_cube, __pyx_n_s_temperature_cube, __pyx_n_s_fuel_moisture_dead_1hr_cube, __pyx_n_s_fire_type_matrix, __pyx_n_s_firebrand_count_matrix, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_source_t, __pyx_n_s_source_y, __pyx_n_s_source_x, __pyx_n_s_decay_distance, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_sample_delta_y_fn, __pyx_n_s_sample_delta_x_fn, __pyx_n_s_delta_y, __pyx_n_s_delta_x, __pyx_n_s_grid_dy, __pyx_n_s_grid_dx, __pyx_n_s_target_y, __pyx_n_s_target_x, __pyx_n_s_spotting_distance, __pyx_n_s_flight_survival_probability, __pyx_n_s_uniform_sample, __pyx_n_s_temperature, __pyx_n_s_fine_fuel_moisture, __pyx_n_s_ignition_probability); if (unlikely(!__pyx_tuple__64)) __PYX_ERR(0, 341, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__64);
+  __Pyx_GIVEREF(__pyx_tuple__64);
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(18, 0, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__64, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_cast_firebrand, 341, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 341, __pyx_L1_error)
 
   /* "pyretechnics/spot_fire.py":405
  * 
@@ -14269,10 +14633,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                       random_generator, expected_firebrand_count, spot_config):
  *     """
  */
-  __pyx_tuple__65 = PyTuple_Pack(38, __pyx_n_s_space_time_cubes, __pyx_n_s_output_matrices, __pyx_n_s_cube_resolution, __pyx_n_s_space_time_coordinate, __pyx_n_s_random_generator, __pyx_n_s_expected_firebrand_count, __pyx_n_s_spot_config, __pyx_n_s_num_firebrands, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_wind_speed_10m, __pyx_n_s_fuel_model_cube, __pyx_n_s_temperature_cube, __pyx_n_s_fuel_moisture_dead_1hr_cube, __pyx_n_s_fire_type_matrix, __pyx_n_s_firebrand_count_matrix, __pyx_n_s__64, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_decay_distance, __pyx_n_s_upwind_direction, __pyx_n_s_downwind_direction, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_wind_speed_20ft_mps, __pyx_n_s_sample_delta_y_fn, __pyx_n_s_sample_delta_x_fn, __pyx_n_s_ignited_cells, __pyx_n_s_time_of_arrival, __pyx_n_s_flame_length, __pyx_n_s_ignition_time, __pyx_n_s_i, __pyx_n_s_ignited_cell); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 405, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__65);
-  __Pyx_GIVEREF(__pyx_tuple__65);
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 38, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_spread_firebrands, 405, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 405, __pyx_L1_error)
+  __pyx_tuple__66 = PyTuple_Pack(38, __pyx_n_s_space_time_cubes, __pyx_n_s_output_matrices, __pyx_n_s_cube_resolution, __pyx_n_s_space_time_coordinate, __pyx_n_s_random_generator, __pyx_n_s_expected_firebrand_count, __pyx_n_s_spot_config, __pyx_n_s_num_firebrands, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_wind_speed_10m, __pyx_n_s_fuel_model_cube, __pyx_n_s_temperature_cube, __pyx_n_s_fuel_moisture_dead_1hr_cube, __pyx_n_s_fire_type_matrix, __pyx_n_s_firebrand_count_matrix, __pyx_n_s__65, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_decay_distance, __pyx_n_s_upwind_direction, __pyx_n_s_downwind_direction, __pyx_n_s_cos_wdir, __pyx_n_s_sin_wdir, __pyx_n_s_fireline_intensity, __pyx_n_s_wind_speed_20ft, __pyx_n_s_wind_speed_20ft_mps, __pyx_n_s_sample_delta_y_fn, __pyx_n_s_sample_delta_x_fn, __pyx_n_s_ignited_cells, __pyx_n_s_time_of_arrival, __pyx_n_s_flame_length, __pyx_n_s_ignition_time, __pyx_n_s_i, __pyx_n_s_ignited_cell); if (unlikely(!__pyx_tuple__66)) __PYX_ERR(0, 405, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__66);
+  __Pyx_GIVEREF(__pyx_tuple__66);
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 38, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__66, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_spot_fire_py, __pyx_n_s_spread_firebrands, 405, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 405, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -14584,6 +14948,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_spot_fire(PyObject *__pyx_pyinit_m
   #if CYTHON_USE_MODULE_STATE
   int pystate_addmodule_run = 0;
   #endif
+  __Pyx_TraceDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
@@ -14701,6 +15066,7 @@ if (!__Pyx_RefNanny) {
   #if defined(__Pyx_Generator_USED) || defined(__Pyx_Coroutine_USED)
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
+  __Pyx_TraceCall("__Pyx_PyMODINIT_FUNC PyInit_spot_fire(void)", __pyx_f[0], 1, 0, __PYX_ERR(0, 1, __pyx_L1_error));
 
   /* "pyretechnics/spot_fire.py":2
  * # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
@@ -14729,7 +15095,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_surface_fire, __pyx_tuple__3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_surface_fire, __pyx_tuple__33); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sf, __pyx_t_3) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14741,9 +15107,9 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Return the expected number of firebrands produced by an entire cell when it burns given:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_1expected_firebrand_production, 0, __pyx_n_s_expected_firebrand_production, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_1expected_firebrand_production, 0, __pyx_n_s_expected_firebrand_production, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__7);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__36);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_expected_firebrand_production, __pyx_t_3) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
@@ -14754,7 +15120,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Computes the grid-aligned x coordinate of the delta vector, given the wind-aligned [X Y] coordinates.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_3delta_to_grid_dx, 0, __pyx_n_s_delta_to_grid_dx, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_3delta_to_grid_dx, 0, __pyx_n_s_delta_to_grid_dx, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_delta_to_grid_dx, __pyx_t_3) < 0) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14766,7 +15132,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [X Y] coordinates.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_5delta_to_grid_dy, 0, __pyx_n_s_delta_to_grid_dy, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_5delta_to_grid_dy, 0, __pyx_n_s_delta_to_grid_dy, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_delta_to_grid_dy, __pyx_t_3) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14778,7 +15144,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_7distance_to_n_cells, 0, __pyx_n_s_distance_to_n_cells, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_7distance_to_n_cells, 0, __pyx_n_s_distance_to_n_cells, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_distance_to_n_cells, __pyx_t_3) < 0) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14818,7 +15184,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Computes the expected value E[X] (in meters) of the downwind spotting distance X given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_9resolve_exp_delta_x, 0, __pyx_n_s_resolve_exp_delta_x, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_9resolve_exp_delta_x, 0, __pyx_n_s_resolve_exp_delta_x, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_resolve_exp_delta_x, __pyx_t_2) < 0) __PYX_ERR(0, 84, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14830,7 +15196,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Computes the variance Var[X] (in m^2) of the downwind spotting distance X given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_11resolve_var_delta_x, 0, __pyx_n_s_resolve_var_delta_x, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_11resolve_var_delta_x, 0, __pyx_n_s_resolve_var_delta_x, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_resolve_var_delta_x, __pyx_t_2) < 0) __PYX_ERR(0, 99, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14842,7 +15208,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_13lognormal_mu_from_moments, 0, __pyx_n_s_lognormal_mu_from_moments, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_13lognormal_mu_from_moments, 0, __pyx_n_s_lognormal_mu_from_moments, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_lognormal_mu_from_moments, __pyx_t_2) < 0) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14854,7 +15220,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_15lognormal_sigma_from_moments, 0, __pyx_n_s_lognormal_sigma_from_moments, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_15lognormal_sigma_from_moments, 0, __pyx_n_s_lognormal_sigma_from_moments, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_lognormal_sigma_from_moments, __pyx_t_2) < 0) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14866,7 +15232,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_17resolve_lognormal_params, 0, __pyx_n_s_resolve_lognormal_params, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_17resolve_lognormal_params, 0, __pyx_n_s_resolve_lognormal_params, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_resolve_lognormal_params, __pyx_t_2) < 0) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14913,7 +15279,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__24); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__45); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_3) < 0) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14925,7 +15291,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns sample from normal/gaussian distribution given mu and sd.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_19sample_normal, 0, __pyx_n_s_sample_normal, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_19sample_normal, 0, __pyx_n_s_sample_normal, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sample_normal, __pyx_t_3) < 0) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14937,7 +15303,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns sample from log-normal distribution given mu and sd.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_21sample_lognormal, 0, __pyx_n_s_sample_lognormal, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_21sample_lognormal, 0, __pyx_n_s_sample_lognormal, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sample_lognormal, __pyx_t_3) < 0) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14949,7 +15315,7 @@ if (!__Pyx_RefNanny) {
  *     return conv.m_to_ft(exp(mu_x + (sigma_x ** 2.0) / 2.0))
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_23deltax_expected_value, 0, __pyx_n_s_deltax_expected_value, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_23deltax_expected_value, 0, __pyx_n_s_deltax_expected_value, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_deltax_expected_value, __pyx_t_3) < 0) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14961,7 +15327,7 @@ if (!__Pyx_RefNanny) {
  *     return sqrt(exp(sigma_x ** 2.0) - 1.0)
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_25deltax_coefficient_of_variation, 0, __pyx_n_s_deltax_coefficient_of_variation, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_25deltax_coefficient_of_variation, 0, __pyx_n_s_deltax_coefficient_of_variation, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_deltax_coefficient_of_variation, __pyx_t_3) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14973,7 +15339,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns a function for randomly sampling X, the spotting jump along the wind direction (in meters).
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_27delta_x_sampler, 0, __pyx_n_s_delta_x_sampler, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_27delta_x_sampler, 0, __pyx_n_s_delta_x_sampler, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_delta_x_sampler, __pyx_t_3) < 0) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -14997,7 +15363,7 @@ if (!__Pyx_RefNanny) {
  *     es2h       = exp((sigma_x ** 2.0) / 2.0)
  *     avg_deltax = exp(mu_x) * es2h
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_29himoto_resolve_default_sigma_y_from_lognormal_params, 0, __pyx_n_s_himoto_resolve_default_sigma_y_f, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__35)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_29himoto_resolve_default_sigma_y_from_lognormal_params, 0, __pyx_n_s_himoto_resolve_default_sigma_y_f, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_himoto_resolve_default_sigma_y_f, __pyx_t_3) < 0) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15009,7 +15375,7 @@ if (!__Pyx_RefNanny) {
  *     ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
  *     mu_x      = ln_params["prob.lognormal.mu"]    # meters
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_31himoto_resolve_default_sigma_y, 0, __pyx_n_s_himoto_resolve_default_sigma_y, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_31himoto_resolve_default_sigma_y, 0, __pyx_n_s_himoto_resolve_default_sigma_y, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_himoto_resolve_default_sigma_y, __pyx_t_3) < 0) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15021,7 +15387,7 @@ if (!__Pyx_RefNanny) {
  *     crosswind_distance_stdev = spot_config.get("crosswind_distance_stdev")
  *     if crosswind_distance_stdev != None:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_33resolve_crosswind_distance_stdev, 0, __pyx_n_s_resolve_crosswind_distance_stdev, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_33resolve_crosswind_distance_stdev, 0, __pyx_n_s_resolve_crosswind_distance_stdev, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_resolve_crosswind_distance_stdev, __pyx_t_3) < 0) __PYX_ERR(0, 196, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15033,7 +15399,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns a function for randomly sampling Y, the spotting jump perpendicular to the wind direction (in meters).
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_35delta_y_sampler, 0, __pyx_n_s_delta_y_sampler, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_35delta_y_sampler, 0, __pyx_n_s_delta_y_sampler, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_delta_y_sampler, __pyx_t_3) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15045,7 +15411,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns sample from poisson distribution given mu.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_37sample_poisson, 0, __pyx_n_s_sample_poisson, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__42)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_37sample_poisson, 0, __pyx_n_s_sample_poisson, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sample_poisson, __pyx_t_3) < 0) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15057,7 +15423,7 @@ if (!__Pyx_RefNanny) {
  *     return sample_poisson(random_generator, expected_firebrand_count)
  * # sample-number-of-firebrands ends here
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_39sample_number_of_firebrands, 0, __pyx_n_s_sample_number_of_firebrands, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_39sample_number_of_firebrands, 0, __pyx_n_s_sample_number_of_firebrands, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 219, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sample_number_of_firebrands, __pyx_t_3) < 0) __PYX_ERR(0, 219, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15090,7 +15456,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_41firebrand_flight_survival_probability, 0, __pyx_n_s_firebrand_flight_survival_probab, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__46)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_41firebrand_flight_survival_probability, 0, __pyx_n_s_firebrand_flight_survival_probab, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_firebrand_flight_survival_probab, __pyx_t_2) < 0) __PYX_ERR(0, 226, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15102,7 +15468,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns heat of preignition given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_43heat_of_preignition, 0, __pyx_n_s_heat_of_preignition, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__48)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_43heat_of_preignition, 0, __pyx_n_s_heat_of_preignition, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_heat_of_preignition, __pyx_t_2) < 0) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15114,7 +15480,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the probability of spot fire ignition (Schroeder 1969) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_45schroeder_ignition_probability, 0, __pyx_n_s_schroeder_ignition_probability, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__50)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_45schroeder_ignition_probability, 0, __pyx_n_s_schroeder_ignition_probability, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_schroeder_ignition_probability, __pyx_t_2) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15147,7 +15513,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__24); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__45); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_3) < 0) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15159,7 +15525,7 @@ if (!__Pyx_RefNanny) {
  *     return 0.39e5 * firebrand_diameter
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_47albini_firebrand_maximum_height, 0, __pyx_n_s_albini_firebrand_maximum_height, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__52)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_47albini_firebrand_maximum_height, 0, __pyx_n_s_albini_firebrand_maximum_height, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_albini_firebrand_maximum_height, __pyx_t_3) < 0) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15171,7 +15537,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the time of spot ignition using Albini1979spot in minutes given:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_49albini_t_max, 0, __pyx_n_s_albini_t_max, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__54)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_49albini_t_max, 0, __pyx_n_s_albini_t_max, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 281, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_albini_t_max, __pyx_t_3) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15183,7 +15549,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the time of spot ignition using Albini 1979 and Perryman 2012 in minutes given:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_51spot_ignition_time, 0, __pyx_n_s_spot_ignition_time, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__56)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 306, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_51spot_ignition_time, 0, __pyx_n_s_spot_ignition_time, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 306, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_spot_ignition_time, __pyx_t_3) < 0) __PYX_ERR(0, 306, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -15249,7 +15615,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.fuel_models as fm
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__24); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 321, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__45); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 321, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 321, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15261,7 +15627,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_fuel_models, __pyx_tuple__57); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 322, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_fuel_models, __pyx_tuple__61); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 322, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fm, __pyx_t_2) < 0) __PYX_ERR(0, 322, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15273,7 +15639,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_53is_in_bounds, 0, __pyx_n_s_is_in_bounds, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 325, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_53is_in_bounds, 0, __pyx_n_s_is_in_bounds, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_is_in_bounds, __pyx_t_2) < 0) __PYX_ERR(0, 325, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15285,7 +15651,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_55is_burnable_cell, 0, __pyx_n_s_is_burnable_cell, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__61)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 332, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_55is_burnable_cell, 0, __pyx_n_s_is_burnable_cell, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 332, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_is_burnable_cell, __pyx_t_2) < 0) __PYX_ERR(0, 332, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15297,7 +15663,7 @@ if (!__Pyx_RefNanny) {
  *                    fuel_model_cube,
  *                    temperature_cube,
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_57cast_firebrand, 0, __pyx_n_s_cast_firebrand, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__63)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 341, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_57cast_firebrand, 0, __pyx_n_s_cast_firebrand, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 341, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_cast_firebrand, __pyx_t_2) < 0) __PYX_ERR(0, 341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15309,7 +15675,7 @@ if (!__Pyx_RefNanny) {
  *                       random_generator, expected_firebrand_count, spot_config):
  *     """
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_59spread_firebrands, 0, __pyx_n_s_spread_firebrands, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 405, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_9spot_fire_59spread_firebrands, 0, __pyx_n_s_spread_firebrands, NULL, __pyx_n_s_pyretechnics_spot_fire, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 405, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_spread_firebrands, __pyx_t_2) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -15323,6 +15689,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_TraceReturn(Py_None, 0);
 
   /*--- Wrapped vars code ---*/
 
@@ -15972,6 +16339,96 @@ bad:
     Py_XDECREF(value);
     return -1;
 }
+
+/* Profile */
+#if CYTHON_PROFILE
+static int __Pyx_TraceSetupAndCall(PyCodeObject** code,
+                                   PyFrameObject** frame,
+                                   PyThreadState* tstate,
+                                   const char *funcname,
+                                   const char *srcfile,
+                                   int firstlineno) {
+    PyObject *type, *value, *traceback;
+    int retval;
+    if (*frame == NULL || !CYTHON_PROFILE_REUSE_FRAME) {
+        if (*code == NULL) {
+            *code = __Pyx_createFrameCodeObject(funcname, srcfile, firstlineno);
+            if (*code == NULL) return 0;
+        }
+        *frame = PyFrame_New(
+            tstate,                          /*PyThreadState *tstate*/
+            *code,                           /*PyCodeObject *code*/
+            __pyx_d,                  /*PyObject *globals*/
+            0                                /*PyObject *locals*/
+        );
+        if (*frame == NULL) return 0;
+        if (CYTHON_TRACE && (*frame)->f_trace == NULL) {
+            Py_INCREF(Py_None);
+            (*frame)->f_trace = Py_None;
+        }
+#if PY_VERSION_HEX < 0x030400B1
+    } else {
+        (*frame)->f_tstate = tstate;
+#endif
+    }
+    __Pyx_PyFrame_SetLineNumber(*frame, firstlineno);
+    retval = 1;
+    __Pyx_EnterTracing(tstate);
+    __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+    #if CYTHON_TRACE
+    if (tstate->c_tracefunc)
+        retval = tstate->c_tracefunc(tstate->c_traceobj, *frame, PyTrace_CALL, NULL) == 0;
+    if (retval && tstate->c_profilefunc)
+    #endif
+        retval = tstate->c_profilefunc(tstate->c_profileobj, *frame, PyTrace_CALL, NULL) == 0;
+    __Pyx_LeaveTracing(tstate);
+    if (retval) {
+        __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+        return __Pyx_IsTracing(tstate, 0, 0) && retval;
+    } else {
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+        return -1;
+    }
+}
+static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno) {
+    PyCodeObject *py_code = 0;
+#if PY_MAJOR_VERSION >= 3
+    py_code = PyCode_NewEmpty(srcfile, funcname, firstlineno);
+    if (likely(py_code)) {
+        py_code->co_flags |= CO_OPTIMIZED | CO_NEWLOCALS;
+    }
+#else
+    PyObject *py_srcfile = 0;
+    PyObject *py_funcname = 0;
+    py_funcname = PyString_FromString(funcname);
+    if (unlikely(!py_funcname)) goto bad;
+    py_srcfile = PyString_FromString(srcfile);
+    if (unlikely(!py_srcfile)) goto bad;
+    py_code = PyCode_New(
+        0,
+        0,
+        0,
+        CO_OPTIMIZED | CO_NEWLOCALS,
+        __pyx_empty_bytes,     /*PyObject *code,*/
+        __pyx_empty_tuple,     /*PyObject *consts,*/
+        __pyx_empty_tuple,     /*PyObject *names,*/
+        __pyx_empty_tuple,     /*PyObject *varnames,*/
+        __pyx_empty_tuple,     /*PyObject *freevars,*/
+        __pyx_empty_tuple,     /*PyObject *cellvars,*/
+        py_srcfile,       /*PyObject *filename,*/
+        py_funcname,      /*PyObject *name,*/
+        firstlineno,
+        __pyx_empty_bytes      /*PyObject *lnotab*/
+    );
+bad:
+    Py_XDECREF(py_srcfile);
+    Py_XDECREF(py_funcname);
+#endif
+    return py_code;
+}
+#endif
 
 /* DictGetItem */
 #if PY_MAJOR_VERSION >= 3 && !CYTHON_COMPILING_IN_PYPY
@@ -18875,7 +19332,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
         if (unlikely(!module_name_str)) { goto modbad; }
         module_name = PyUnicode_FromString(module_name_str);
         if (unlikely(!module_name)) { goto modbad; }
-        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__2);
+        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__32);
         if (unlikely(!module_dot)) { goto modbad; }
         full_name = PyUnicode_Concat(module_dot, name);
         if (unlikely(!full_name)) { goto modbad; }
@@ -18983,7 +19440,7 @@ static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *
 #endif
 static PyObject *__Pyx__ImportDottedModule(PyObject *name, PyObject *parts_tuple) {
 #if PY_MAJOR_VERSION < 3
-    PyObject *module, *from_list, *star = __pyx_n_s__4;
+    PyObject *module, *from_list, *star = __pyx_n_s__34;
     CYTHON_UNUSED_VAR(parts_tuple);
     from_list = PyList_New(1);
     if (unlikely(!from_list))

@@ -1651,30 +1651,6 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
-/* PyFloatBinop.proto */
-#if !CYTHON_COMPILING_IN_PYPY
-static PyObject* __Pyx_PyFloat_AddObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
-#else
-#define __Pyx_PyFloat_AddObjC(op1, op2, floatval, inplace, zerodivision_check)\
-    (inplace ? PyNumber_InPlaceAdd(op1, op2) : PyNumber_Add(op1, op2))
-#endif
-
-/* PyFloatBinop.proto */
-#if !CYTHON_COMPILING_IN_PYPY
-static PyObject* __Pyx_PyFloat_SubtractObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
-#else
-#define __Pyx_PyFloat_SubtractObjC(op1, op2, floatval, inplace, zerodivision_check)\
-    (inplace ? PyNumber_InPlaceSubtract(op1, op2) : PyNumber_Subtract(op1, op2))
-#endif
-
-/* PyErrExceptionMatches.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
-#else
-#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
-#endif
-
 /* PyThreadStateGet.proto */
 #if CYTHON_FAST_THREAD_STATE
 #define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
@@ -1716,6 +1692,268 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
 #define __Pyx_ErrFetchInState(tstate, type, value, tb)  PyErr_Fetch(type, value, tb)
 #define __Pyx_ErrRestore(type, value, tb)  PyErr_Restore(type, value, tb)
 #define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
+#endif
+
+/* Profile.proto */
+#ifndef CYTHON_PROFILE
+#if CYTHON_COMPILING_IN_LIMITED_API || CYTHON_COMPILING_IN_PYPY
+  #define CYTHON_PROFILE 0
+#else
+  #define CYTHON_PROFILE 1
+#endif
+#endif
+#ifndef CYTHON_TRACE_NOGIL
+  #define CYTHON_TRACE_NOGIL 0
+#else
+  #if CYTHON_TRACE_NOGIL && !defined(CYTHON_TRACE)
+    #define CYTHON_TRACE 1
+  #endif
+#endif
+#ifndef CYTHON_TRACE
+  #define CYTHON_TRACE 0
+#endif
+#if CYTHON_TRACE
+  #undef CYTHON_PROFILE_REUSE_FRAME
+#endif
+#ifndef CYTHON_PROFILE_REUSE_FRAME
+  #define CYTHON_PROFILE_REUSE_FRAME 0
+#endif
+#if CYTHON_PROFILE || CYTHON_TRACE
+  #include "compile.h"
+  #include "frameobject.h"
+  #include "traceback.h"
+#if PY_VERSION_HEX >= 0x030b00a6
+  #ifndef Py_BUILD_CORE
+    #define Py_BUILD_CORE 1
+  #endif
+  #include "internal/pycore_frame.h"
+#endif
+  #if CYTHON_PROFILE_REUSE_FRAME
+    #define CYTHON_FRAME_MODIFIER static
+    #define CYTHON_FRAME_DEL(frame)
+  #else
+    #define CYTHON_FRAME_MODIFIER
+    #define CYTHON_FRAME_DEL(frame) Py_CLEAR(frame)
+  #endif
+  #define __Pyx_TraceDeclarations\
+      static PyCodeObject *__pyx_frame_code = NULL;\
+      CYTHON_FRAME_MODIFIER PyFrameObject *__pyx_frame = NULL;\
+      int __Pyx_use_tracing = 0;
+  #define __Pyx_TraceFrameInit(codeobj)\
+      if (codeobj) __pyx_frame_code = (PyCodeObject*) codeobj;
+#if PY_VERSION_HEX >= 0x030b00a2
+  #if PY_VERSION_HEX >= 0x030C00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     ((!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #endif
+  #define __Pyx_EnterTracing(tstate)  PyThreadState_EnterTracing(tstate)
+  #define __Pyx_LeaveTracing(tstate)  PyThreadState_LeaveTracing(tstate)
+#elif PY_VERSION_HEX >= 0x030a00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->cframe->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->cframe->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                 || tstate->c_profilefunc != NULL);\
+      } while (0)
+#else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                         || tstate->c_profilefunc != NULL);\
+      } while (0)
+#endif
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  if (nogil) {\
+      if (CYTHON_TRACE_NOGIL) {\
+          PyThreadState *tstate;\
+          PyGILState_STATE state = PyGILState_Ensure();\
+          tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 1, 1)) {\
+              __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          }\
+          PyGILState_Release(state);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  } else {\
+      PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #else
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  {   PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #endif
+  #define __Pyx_TraceException()\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 1)) {\
+          __Pyx_EnterTracing(tstate);\
+          PyObject *exc_info = __Pyx_GetExceptionTuple(tstate);\
+          if (exc_info) {\
+              if (CYTHON_TRACE && tstate->c_tracefunc)\
+                  tstate->c_tracefunc(\
+                      tstate->c_traceobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              tstate->c_profilefunc(\
+                  tstate->c_profileobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              Py_DECREF(exc_info);\
+          }\
+          __Pyx_LeaveTracing(tstate);\
+      }\
+  }
+  static void __Pyx_call_return_trace_func(PyThreadState *tstate, PyFrameObject *frame, PyObject *result) {
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_EnterTracing(tstate);
+      if (CYTHON_TRACE && tstate->c_tracefunc)
+          tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_RETURN, result);
+      if (tstate->c_profilefunc)
+          tstate->c_profilefunc(tstate->c_profileobj, frame, PyTrace_RETURN, result);
+      CYTHON_FRAME_DEL(frame);
+      __Pyx_LeaveTracing(tstate);
+      __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0)) {\
+                  __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+              }\
+              PyGILState_Release(state);\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0)) {\
+              __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0)) {\
+          __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+      }\
+  }
+  #endif
+  static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno);
+  static int __Pyx_TraceSetupAndCall(PyCodeObject** code, PyFrameObject** frame, PyThreadState* tstate, const char *funcname, const char *srcfile, int firstlineno);
+#else
+  #define __Pyx_TraceDeclarations
+  #define __Pyx_TraceFrameInit(codeobj)
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)   if ((1)); else goto_error;
+  #define __Pyx_TraceException()
+  #define __Pyx_TraceReturn(result, nogil)
+#endif
+#if CYTHON_TRACE
+  static int __Pyx_call_line_trace_func(PyThreadState *tstate, PyFrameObject *frame, int lineno) {
+      int ret;
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_PyFrame_SetLineNumber(frame, lineno);
+      __Pyx_EnterTracing(tstate);
+      ret = tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_LINE, NULL);
+      __Pyx_LeaveTracing(tstate);
+      if (likely(!ret)) {
+          __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+      } else {
+          Py_XDECREF(type);
+          Py_XDECREF(value);
+          Py_XDECREF(traceback);
+      }
+      return ret;
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              int ret = 0;\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = __Pyx_PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+                  ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              }\
+              __Pyx_PyGILState_Release(state);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+              int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+          int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+          if (unlikely(ret)) goto_error;\
+      }\
+  }
+  #endif
+#else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)   if ((1)); else goto_error;
+#endif
+
+/* PyFloatBinop.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyFloat_AddObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
+#else
+#define __Pyx_PyFloat_AddObjC(op1, op2, floatval, inplace, zerodivision_check)\
+    (inplace ? PyNumber_InPlaceAdd(op1, op2) : PyNumber_Add(op1, op2))
+#endif
+
+/* PyFloatBinop.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyFloat_SubtractObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
+#else
+#define __Pyx_PyFloat_SubtractObjC(op1, op2, floatval, inplace, zerodivision_check)\
+    (inplace ? PyNumber_InPlaceSubtract(op1, op2) : PyNumber_Subtract(op1, op2))
+#endif
+
+/* PyErrExceptionMatches.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
+#else
+#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
 #endif
 
 /* PyObjectGetAttrStr.proto */
@@ -2090,7 +2328,6 @@ int __pyx_module_is_main_pyretechnics__conversion = 0;
 /* Implementation of "pyretechnics.conversion" */
 /* #### Code section: global_var ### */
 /* #### Code section: string_decls ### */
-static const char __pyx_k_[] = ".";
 static const char __pyx_k_m[] = "m";
 static const char __pyx_k_r[] = "r";
 static const char __pyx_k_x[] = "x";
@@ -2098,6 +2335,7 @@ static const char __pyx_k_y[] = "y";
 static const char __pyx_k_ch[] = "ch";
 static const char __pyx_k_ft[] = "ft";
 static const char __pyx_k_pi[] = "pi";
+static const char __pyx_k__48[] = ".";
 static const char __pyx_k__79[] = "?";
 static const char __pyx_k_cos[] = "cos";
 static const char __pyx_k_fpm[] = "fpm";
@@ -2266,7 +2504,6 @@ typedef struct {
   #endif
   #if CYTHON_USE_MODULE_STATE
   #endif
-  PyObject *__pyx_kp_u_;
   PyObject *__pyx_n_s_Btu_ft_s;
   PyObject *__pyx_n_s_Btu_ft_s_to_kW_m;
   PyObject *__pyx_n_s_Btu_lb;
@@ -2275,6 +2512,7 @@ typedef struct {
   PyObject *__pyx_n_s_F_to_C;
   PyObject *__pyx_n_s_F_to_K;
   PyObject *__pyx_n_s_K_to_F;
+  PyObject *__pyx_kp_u__48;
   PyObject *__pyx_n_s__79;
   PyObject *__pyx_n_s_asyncio_coroutines;
   PyObject *__pyx_n_s_atan;
@@ -2400,83 +2638,83 @@ typedef struct {
   PyObject *__pyx_float_0_30478512648582745;
   PyObject *__pyx_float_0_44701818551254696;
   PyObject *__pyx_float_0_016666666666666666;
-  PyObject *__pyx_tuple__2;
-  PyObject *__pyx_tuple__8;
-  PyObject *__pyx_tuple__10;
-  PyObject *__pyx_tuple__12;
-  PyObject *__pyx_tuple__15;
-  PyObject *__pyx_tuple__17;
-  PyObject *__pyx_tuple__19;
-  PyObject *__pyx_tuple__21;
-  PyObject *__pyx_tuple__26;
-  PyObject *__pyx_tuple__32;
-  PyObject *__pyx_tuple__36;
-  PyObject *__pyx_tuple__38;
-  PyObject *__pyx_tuple__40;
-  PyObject *__pyx_tuple__42;
-  PyObject *__pyx_tuple__44;
-  PyObject *__pyx_tuple__46;
-  PyObject *__pyx_tuple__48;
+  PyObject *__pyx_codeobj_;
+  PyObject *__pyx_tuple__49;
   PyObject *__pyx_tuple__50;
+  PyObject *__pyx_tuple__51;
   PyObject *__pyx_tuple__52;
+  PyObject *__pyx_tuple__53;
   PyObject *__pyx_tuple__54;
+  PyObject *__pyx_tuple__55;
   PyObject *__pyx_tuple__56;
+  PyObject *__pyx_tuple__57;
+  PyObject *__pyx_tuple__58;
   PyObject *__pyx_tuple__59;
+  PyObject *__pyx_tuple__60;
+  PyObject *__pyx_tuple__61;
   PyObject *__pyx_tuple__62;
+  PyObject *__pyx_tuple__63;
+  PyObject *__pyx_tuple__64;
   PyObject *__pyx_tuple__65;
+  PyObject *__pyx_tuple__66;
   PyObject *__pyx_tuple__67;
+  PyObject *__pyx_tuple__68;
   PyObject *__pyx_tuple__69;
+  PyObject *__pyx_tuple__70;
   PyObject *__pyx_tuple__71;
+  PyObject *__pyx_tuple__72;
   PyObject *__pyx_tuple__73;
+  PyObject *__pyx_tuple__74;
   PyObject *__pyx_tuple__75;
+  PyObject *__pyx_tuple__76;
   PyObject *__pyx_tuple__77;
+  PyObject *__pyx_tuple__78;
+  PyObject *__pyx_codeobj__2;
   PyObject *__pyx_codeobj__3;
   PyObject *__pyx_codeobj__4;
   PyObject *__pyx_codeobj__5;
   PyObject *__pyx_codeobj__6;
   PyObject *__pyx_codeobj__7;
+  PyObject *__pyx_codeobj__8;
   PyObject *__pyx_codeobj__9;
+  PyObject *__pyx_codeobj__10;
   PyObject *__pyx_codeobj__11;
+  PyObject *__pyx_codeobj__12;
   PyObject *__pyx_codeobj__13;
   PyObject *__pyx_codeobj__14;
+  PyObject *__pyx_codeobj__15;
   PyObject *__pyx_codeobj__16;
+  PyObject *__pyx_codeobj__17;
   PyObject *__pyx_codeobj__18;
+  PyObject *__pyx_codeobj__19;
   PyObject *__pyx_codeobj__20;
+  PyObject *__pyx_codeobj__21;
   PyObject *__pyx_codeobj__22;
   PyObject *__pyx_codeobj__23;
   PyObject *__pyx_codeobj__24;
   PyObject *__pyx_codeobj__25;
+  PyObject *__pyx_codeobj__26;
   PyObject *__pyx_codeobj__27;
   PyObject *__pyx_codeobj__28;
   PyObject *__pyx_codeobj__29;
   PyObject *__pyx_codeobj__30;
   PyObject *__pyx_codeobj__31;
+  PyObject *__pyx_codeobj__32;
   PyObject *__pyx_codeobj__33;
   PyObject *__pyx_codeobj__34;
   PyObject *__pyx_codeobj__35;
+  PyObject *__pyx_codeobj__36;
   PyObject *__pyx_codeobj__37;
+  PyObject *__pyx_codeobj__38;
   PyObject *__pyx_codeobj__39;
+  PyObject *__pyx_codeobj__40;
   PyObject *__pyx_codeobj__41;
+  PyObject *__pyx_codeobj__42;
   PyObject *__pyx_codeobj__43;
+  PyObject *__pyx_codeobj__44;
   PyObject *__pyx_codeobj__45;
+  PyObject *__pyx_codeobj__46;
   PyObject *__pyx_codeobj__47;
-  PyObject *__pyx_codeobj__49;
-  PyObject *__pyx_codeobj__51;
-  PyObject *__pyx_codeobj__53;
-  PyObject *__pyx_codeobj__55;
-  PyObject *__pyx_codeobj__57;
-  PyObject *__pyx_codeobj__58;
-  PyObject *__pyx_codeobj__60;
-  PyObject *__pyx_codeobj__61;
-  PyObject *__pyx_codeobj__63;
-  PyObject *__pyx_codeobj__64;
-  PyObject *__pyx_codeobj__66;
-  PyObject *__pyx_codeobj__68;
-  PyObject *__pyx_codeobj__70;
-  PyObject *__pyx_codeobj__72;
-  PyObject *__pyx_codeobj__74;
-  PyObject *__pyx_codeobj__76;
-  PyObject *__pyx_codeobj__78;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2519,7 +2757,6 @@ static int __pyx_m_clear(PyObject *m) {
   #ifdef __Pyx_FusedFunction_USED
   Py_CLEAR(clear_module_state->__pyx_FusedFunctionType);
   #endif
-  Py_CLEAR(clear_module_state->__pyx_kp_u_);
   Py_CLEAR(clear_module_state->__pyx_n_s_Btu_ft_s);
   Py_CLEAR(clear_module_state->__pyx_n_s_Btu_ft_s_to_kW_m);
   Py_CLEAR(clear_module_state->__pyx_n_s_Btu_lb);
@@ -2528,6 +2765,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_F_to_C);
   Py_CLEAR(clear_module_state->__pyx_n_s_F_to_K);
   Py_CLEAR(clear_module_state->__pyx_n_s_K_to_F);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__48);
   Py_CLEAR(clear_module_state->__pyx_n_s__79);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
   Py_CLEAR(clear_module_state->__pyx_n_s_atan);
@@ -2653,83 +2891,83 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_float_0_30478512648582745);
   Py_CLEAR(clear_module_state->__pyx_float_0_44701818551254696);
   Py_CLEAR(clear_module_state->__pyx_float_0_016666666666666666);
-  Py_CLEAR(clear_module_state->__pyx_tuple__2);
-  Py_CLEAR(clear_module_state->__pyx_tuple__8);
-  Py_CLEAR(clear_module_state->__pyx_tuple__10);
-  Py_CLEAR(clear_module_state->__pyx_tuple__12);
-  Py_CLEAR(clear_module_state->__pyx_tuple__15);
-  Py_CLEAR(clear_module_state->__pyx_tuple__17);
-  Py_CLEAR(clear_module_state->__pyx_tuple__19);
-  Py_CLEAR(clear_module_state->__pyx_tuple__21);
-  Py_CLEAR(clear_module_state->__pyx_tuple__26);
-  Py_CLEAR(clear_module_state->__pyx_tuple__32);
-  Py_CLEAR(clear_module_state->__pyx_tuple__36);
-  Py_CLEAR(clear_module_state->__pyx_tuple__38);
-  Py_CLEAR(clear_module_state->__pyx_tuple__40);
-  Py_CLEAR(clear_module_state->__pyx_tuple__42);
-  Py_CLEAR(clear_module_state->__pyx_tuple__44);
-  Py_CLEAR(clear_module_state->__pyx_tuple__46);
-  Py_CLEAR(clear_module_state->__pyx_tuple__48);
+  Py_CLEAR(clear_module_state->__pyx_codeobj_);
+  Py_CLEAR(clear_module_state->__pyx_tuple__49);
   Py_CLEAR(clear_module_state->__pyx_tuple__50);
+  Py_CLEAR(clear_module_state->__pyx_tuple__51);
   Py_CLEAR(clear_module_state->__pyx_tuple__52);
+  Py_CLEAR(clear_module_state->__pyx_tuple__53);
   Py_CLEAR(clear_module_state->__pyx_tuple__54);
+  Py_CLEAR(clear_module_state->__pyx_tuple__55);
   Py_CLEAR(clear_module_state->__pyx_tuple__56);
+  Py_CLEAR(clear_module_state->__pyx_tuple__57);
+  Py_CLEAR(clear_module_state->__pyx_tuple__58);
   Py_CLEAR(clear_module_state->__pyx_tuple__59);
+  Py_CLEAR(clear_module_state->__pyx_tuple__60);
+  Py_CLEAR(clear_module_state->__pyx_tuple__61);
   Py_CLEAR(clear_module_state->__pyx_tuple__62);
+  Py_CLEAR(clear_module_state->__pyx_tuple__63);
+  Py_CLEAR(clear_module_state->__pyx_tuple__64);
   Py_CLEAR(clear_module_state->__pyx_tuple__65);
+  Py_CLEAR(clear_module_state->__pyx_tuple__66);
   Py_CLEAR(clear_module_state->__pyx_tuple__67);
+  Py_CLEAR(clear_module_state->__pyx_tuple__68);
   Py_CLEAR(clear_module_state->__pyx_tuple__69);
+  Py_CLEAR(clear_module_state->__pyx_tuple__70);
   Py_CLEAR(clear_module_state->__pyx_tuple__71);
+  Py_CLEAR(clear_module_state->__pyx_tuple__72);
   Py_CLEAR(clear_module_state->__pyx_tuple__73);
+  Py_CLEAR(clear_module_state->__pyx_tuple__74);
   Py_CLEAR(clear_module_state->__pyx_tuple__75);
+  Py_CLEAR(clear_module_state->__pyx_tuple__76);
   Py_CLEAR(clear_module_state->__pyx_tuple__77);
+  Py_CLEAR(clear_module_state->__pyx_tuple__78);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__2);
   Py_CLEAR(clear_module_state->__pyx_codeobj__3);
   Py_CLEAR(clear_module_state->__pyx_codeobj__4);
   Py_CLEAR(clear_module_state->__pyx_codeobj__5);
   Py_CLEAR(clear_module_state->__pyx_codeobj__6);
   Py_CLEAR(clear_module_state->__pyx_codeobj__7);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__8);
   Py_CLEAR(clear_module_state->__pyx_codeobj__9);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__10);
   Py_CLEAR(clear_module_state->__pyx_codeobj__11);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__12);
   Py_CLEAR(clear_module_state->__pyx_codeobj__13);
   Py_CLEAR(clear_module_state->__pyx_codeobj__14);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__15);
   Py_CLEAR(clear_module_state->__pyx_codeobj__16);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__17);
   Py_CLEAR(clear_module_state->__pyx_codeobj__18);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__19);
   Py_CLEAR(clear_module_state->__pyx_codeobj__20);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__21);
   Py_CLEAR(clear_module_state->__pyx_codeobj__22);
   Py_CLEAR(clear_module_state->__pyx_codeobj__23);
   Py_CLEAR(clear_module_state->__pyx_codeobj__24);
   Py_CLEAR(clear_module_state->__pyx_codeobj__25);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__26);
   Py_CLEAR(clear_module_state->__pyx_codeobj__27);
   Py_CLEAR(clear_module_state->__pyx_codeobj__28);
   Py_CLEAR(clear_module_state->__pyx_codeobj__29);
   Py_CLEAR(clear_module_state->__pyx_codeobj__30);
   Py_CLEAR(clear_module_state->__pyx_codeobj__31);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__32);
   Py_CLEAR(clear_module_state->__pyx_codeobj__33);
   Py_CLEAR(clear_module_state->__pyx_codeobj__34);
   Py_CLEAR(clear_module_state->__pyx_codeobj__35);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__36);
   Py_CLEAR(clear_module_state->__pyx_codeobj__37);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__38);
   Py_CLEAR(clear_module_state->__pyx_codeobj__39);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__40);
   Py_CLEAR(clear_module_state->__pyx_codeobj__41);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__42);
   Py_CLEAR(clear_module_state->__pyx_codeobj__43);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__44);
   Py_CLEAR(clear_module_state->__pyx_codeobj__45);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__46);
   Py_CLEAR(clear_module_state->__pyx_codeobj__47);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__49);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__51);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__53);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__55);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__57);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__58);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__60);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__61);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__63);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__64);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__66);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__68);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__70);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__72);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__74);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__76);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__78);
   return 0;
 }
 #endif
@@ -2750,7 +2988,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   #ifdef __Pyx_FusedFunction_USED
   Py_VISIT(traverse_module_state->__pyx_FusedFunctionType);
   #endif
-  Py_VISIT(traverse_module_state->__pyx_kp_u_);
   Py_VISIT(traverse_module_state->__pyx_n_s_Btu_ft_s);
   Py_VISIT(traverse_module_state->__pyx_n_s_Btu_ft_s_to_kW_m);
   Py_VISIT(traverse_module_state->__pyx_n_s_Btu_lb);
@@ -2759,6 +2996,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_F_to_C);
   Py_VISIT(traverse_module_state->__pyx_n_s_F_to_K);
   Py_VISIT(traverse_module_state->__pyx_n_s_K_to_F);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__48);
   Py_VISIT(traverse_module_state->__pyx_n_s__79);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
   Py_VISIT(traverse_module_state->__pyx_n_s_atan);
@@ -2884,83 +3122,83 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_float_0_30478512648582745);
   Py_VISIT(traverse_module_state->__pyx_float_0_44701818551254696);
   Py_VISIT(traverse_module_state->__pyx_float_0_016666666666666666);
-  Py_VISIT(traverse_module_state->__pyx_tuple__2);
-  Py_VISIT(traverse_module_state->__pyx_tuple__8);
-  Py_VISIT(traverse_module_state->__pyx_tuple__10);
-  Py_VISIT(traverse_module_state->__pyx_tuple__12);
-  Py_VISIT(traverse_module_state->__pyx_tuple__15);
-  Py_VISIT(traverse_module_state->__pyx_tuple__17);
-  Py_VISIT(traverse_module_state->__pyx_tuple__19);
-  Py_VISIT(traverse_module_state->__pyx_tuple__21);
-  Py_VISIT(traverse_module_state->__pyx_tuple__26);
-  Py_VISIT(traverse_module_state->__pyx_tuple__32);
-  Py_VISIT(traverse_module_state->__pyx_tuple__36);
-  Py_VISIT(traverse_module_state->__pyx_tuple__38);
-  Py_VISIT(traverse_module_state->__pyx_tuple__40);
-  Py_VISIT(traverse_module_state->__pyx_tuple__42);
-  Py_VISIT(traverse_module_state->__pyx_tuple__44);
-  Py_VISIT(traverse_module_state->__pyx_tuple__46);
-  Py_VISIT(traverse_module_state->__pyx_tuple__48);
+  Py_VISIT(traverse_module_state->__pyx_codeobj_);
+  Py_VISIT(traverse_module_state->__pyx_tuple__49);
   Py_VISIT(traverse_module_state->__pyx_tuple__50);
+  Py_VISIT(traverse_module_state->__pyx_tuple__51);
   Py_VISIT(traverse_module_state->__pyx_tuple__52);
+  Py_VISIT(traverse_module_state->__pyx_tuple__53);
   Py_VISIT(traverse_module_state->__pyx_tuple__54);
+  Py_VISIT(traverse_module_state->__pyx_tuple__55);
   Py_VISIT(traverse_module_state->__pyx_tuple__56);
+  Py_VISIT(traverse_module_state->__pyx_tuple__57);
+  Py_VISIT(traverse_module_state->__pyx_tuple__58);
   Py_VISIT(traverse_module_state->__pyx_tuple__59);
+  Py_VISIT(traverse_module_state->__pyx_tuple__60);
+  Py_VISIT(traverse_module_state->__pyx_tuple__61);
   Py_VISIT(traverse_module_state->__pyx_tuple__62);
+  Py_VISIT(traverse_module_state->__pyx_tuple__63);
+  Py_VISIT(traverse_module_state->__pyx_tuple__64);
   Py_VISIT(traverse_module_state->__pyx_tuple__65);
+  Py_VISIT(traverse_module_state->__pyx_tuple__66);
   Py_VISIT(traverse_module_state->__pyx_tuple__67);
+  Py_VISIT(traverse_module_state->__pyx_tuple__68);
   Py_VISIT(traverse_module_state->__pyx_tuple__69);
+  Py_VISIT(traverse_module_state->__pyx_tuple__70);
   Py_VISIT(traverse_module_state->__pyx_tuple__71);
+  Py_VISIT(traverse_module_state->__pyx_tuple__72);
   Py_VISIT(traverse_module_state->__pyx_tuple__73);
+  Py_VISIT(traverse_module_state->__pyx_tuple__74);
   Py_VISIT(traverse_module_state->__pyx_tuple__75);
+  Py_VISIT(traverse_module_state->__pyx_tuple__76);
   Py_VISIT(traverse_module_state->__pyx_tuple__77);
+  Py_VISIT(traverse_module_state->__pyx_tuple__78);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__2);
   Py_VISIT(traverse_module_state->__pyx_codeobj__3);
   Py_VISIT(traverse_module_state->__pyx_codeobj__4);
   Py_VISIT(traverse_module_state->__pyx_codeobj__5);
   Py_VISIT(traverse_module_state->__pyx_codeobj__6);
   Py_VISIT(traverse_module_state->__pyx_codeobj__7);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__8);
   Py_VISIT(traverse_module_state->__pyx_codeobj__9);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__10);
   Py_VISIT(traverse_module_state->__pyx_codeobj__11);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__12);
   Py_VISIT(traverse_module_state->__pyx_codeobj__13);
   Py_VISIT(traverse_module_state->__pyx_codeobj__14);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__15);
   Py_VISIT(traverse_module_state->__pyx_codeobj__16);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__17);
   Py_VISIT(traverse_module_state->__pyx_codeobj__18);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__19);
   Py_VISIT(traverse_module_state->__pyx_codeobj__20);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__21);
   Py_VISIT(traverse_module_state->__pyx_codeobj__22);
   Py_VISIT(traverse_module_state->__pyx_codeobj__23);
   Py_VISIT(traverse_module_state->__pyx_codeobj__24);
   Py_VISIT(traverse_module_state->__pyx_codeobj__25);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__26);
   Py_VISIT(traverse_module_state->__pyx_codeobj__27);
   Py_VISIT(traverse_module_state->__pyx_codeobj__28);
   Py_VISIT(traverse_module_state->__pyx_codeobj__29);
   Py_VISIT(traverse_module_state->__pyx_codeobj__30);
   Py_VISIT(traverse_module_state->__pyx_codeobj__31);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__32);
   Py_VISIT(traverse_module_state->__pyx_codeobj__33);
   Py_VISIT(traverse_module_state->__pyx_codeobj__34);
   Py_VISIT(traverse_module_state->__pyx_codeobj__35);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__36);
   Py_VISIT(traverse_module_state->__pyx_codeobj__37);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__38);
   Py_VISIT(traverse_module_state->__pyx_codeobj__39);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__40);
   Py_VISIT(traverse_module_state->__pyx_codeobj__41);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__42);
   Py_VISIT(traverse_module_state->__pyx_codeobj__43);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__44);
   Py_VISIT(traverse_module_state->__pyx_codeobj__45);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__46);
   Py_VISIT(traverse_module_state->__pyx_codeobj__47);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__49);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__51);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__53);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__55);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__57);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__58);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__60);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__61);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__63);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__64);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__66);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__68);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__70);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__72);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__74);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__76);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__78);
   return 0;
 }
 #endif
@@ -2991,7 +3229,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #if CYTHON_USE_MODULE_STATE
 #endif
-#define __pyx_kp_u_ __pyx_mstate_global->__pyx_kp_u_
 #define __pyx_n_s_Btu_ft_s __pyx_mstate_global->__pyx_n_s_Btu_ft_s
 #define __pyx_n_s_Btu_ft_s_to_kW_m __pyx_mstate_global->__pyx_n_s_Btu_ft_s_to_kW_m
 #define __pyx_n_s_Btu_lb __pyx_mstate_global->__pyx_n_s_Btu_lb
@@ -3000,6 +3237,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_F_to_C __pyx_mstate_global->__pyx_n_s_F_to_C
 #define __pyx_n_s_F_to_K __pyx_mstate_global->__pyx_n_s_F_to_K
 #define __pyx_n_s_K_to_F __pyx_mstate_global->__pyx_n_s_K_to_F
+#define __pyx_kp_u__48 __pyx_mstate_global->__pyx_kp_u__48
 #define __pyx_n_s__79 __pyx_mstate_global->__pyx_n_s__79
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
 #define __pyx_n_s_atan __pyx_mstate_global->__pyx_n_s_atan
@@ -3125,83 +3363,83 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_float_0_30478512648582745 __pyx_mstate_global->__pyx_float_0_30478512648582745
 #define __pyx_float_0_44701818551254696 __pyx_mstate_global->__pyx_float_0_44701818551254696
 #define __pyx_float_0_016666666666666666 __pyx_mstate_global->__pyx_float_0_016666666666666666
-#define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
-#define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
-#define __pyx_tuple__10 __pyx_mstate_global->__pyx_tuple__10
-#define __pyx_tuple__12 __pyx_mstate_global->__pyx_tuple__12
-#define __pyx_tuple__15 __pyx_mstate_global->__pyx_tuple__15
-#define __pyx_tuple__17 __pyx_mstate_global->__pyx_tuple__17
-#define __pyx_tuple__19 __pyx_mstate_global->__pyx_tuple__19
-#define __pyx_tuple__21 __pyx_mstate_global->__pyx_tuple__21
-#define __pyx_tuple__26 __pyx_mstate_global->__pyx_tuple__26
-#define __pyx_tuple__32 __pyx_mstate_global->__pyx_tuple__32
-#define __pyx_tuple__36 __pyx_mstate_global->__pyx_tuple__36
-#define __pyx_tuple__38 __pyx_mstate_global->__pyx_tuple__38
-#define __pyx_tuple__40 __pyx_mstate_global->__pyx_tuple__40
-#define __pyx_tuple__42 __pyx_mstate_global->__pyx_tuple__42
-#define __pyx_tuple__44 __pyx_mstate_global->__pyx_tuple__44
-#define __pyx_tuple__46 __pyx_mstate_global->__pyx_tuple__46
-#define __pyx_tuple__48 __pyx_mstate_global->__pyx_tuple__48
+#define __pyx_codeobj_ __pyx_mstate_global->__pyx_codeobj_
+#define __pyx_tuple__49 __pyx_mstate_global->__pyx_tuple__49
 #define __pyx_tuple__50 __pyx_mstate_global->__pyx_tuple__50
+#define __pyx_tuple__51 __pyx_mstate_global->__pyx_tuple__51
 #define __pyx_tuple__52 __pyx_mstate_global->__pyx_tuple__52
+#define __pyx_tuple__53 __pyx_mstate_global->__pyx_tuple__53
 #define __pyx_tuple__54 __pyx_mstate_global->__pyx_tuple__54
+#define __pyx_tuple__55 __pyx_mstate_global->__pyx_tuple__55
 #define __pyx_tuple__56 __pyx_mstate_global->__pyx_tuple__56
+#define __pyx_tuple__57 __pyx_mstate_global->__pyx_tuple__57
+#define __pyx_tuple__58 __pyx_mstate_global->__pyx_tuple__58
 #define __pyx_tuple__59 __pyx_mstate_global->__pyx_tuple__59
+#define __pyx_tuple__60 __pyx_mstate_global->__pyx_tuple__60
+#define __pyx_tuple__61 __pyx_mstate_global->__pyx_tuple__61
 #define __pyx_tuple__62 __pyx_mstate_global->__pyx_tuple__62
+#define __pyx_tuple__63 __pyx_mstate_global->__pyx_tuple__63
+#define __pyx_tuple__64 __pyx_mstate_global->__pyx_tuple__64
 #define __pyx_tuple__65 __pyx_mstate_global->__pyx_tuple__65
+#define __pyx_tuple__66 __pyx_mstate_global->__pyx_tuple__66
 #define __pyx_tuple__67 __pyx_mstate_global->__pyx_tuple__67
+#define __pyx_tuple__68 __pyx_mstate_global->__pyx_tuple__68
 #define __pyx_tuple__69 __pyx_mstate_global->__pyx_tuple__69
+#define __pyx_tuple__70 __pyx_mstate_global->__pyx_tuple__70
 #define __pyx_tuple__71 __pyx_mstate_global->__pyx_tuple__71
+#define __pyx_tuple__72 __pyx_mstate_global->__pyx_tuple__72
 #define __pyx_tuple__73 __pyx_mstate_global->__pyx_tuple__73
+#define __pyx_tuple__74 __pyx_mstate_global->__pyx_tuple__74
 #define __pyx_tuple__75 __pyx_mstate_global->__pyx_tuple__75
+#define __pyx_tuple__76 __pyx_mstate_global->__pyx_tuple__76
 #define __pyx_tuple__77 __pyx_mstate_global->__pyx_tuple__77
+#define __pyx_tuple__78 __pyx_mstate_global->__pyx_tuple__78
+#define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
 #define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
 #define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
 #define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
 #define __pyx_codeobj__6 __pyx_mstate_global->__pyx_codeobj__6
 #define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
+#define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
 #define __pyx_codeobj__9 __pyx_mstate_global->__pyx_codeobj__9
+#define __pyx_codeobj__10 __pyx_mstate_global->__pyx_codeobj__10
 #define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
+#define __pyx_codeobj__12 __pyx_mstate_global->__pyx_codeobj__12
 #define __pyx_codeobj__13 __pyx_mstate_global->__pyx_codeobj__13
 #define __pyx_codeobj__14 __pyx_mstate_global->__pyx_codeobj__14
+#define __pyx_codeobj__15 __pyx_mstate_global->__pyx_codeobj__15
 #define __pyx_codeobj__16 __pyx_mstate_global->__pyx_codeobj__16
+#define __pyx_codeobj__17 __pyx_mstate_global->__pyx_codeobj__17
 #define __pyx_codeobj__18 __pyx_mstate_global->__pyx_codeobj__18
+#define __pyx_codeobj__19 __pyx_mstate_global->__pyx_codeobj__19
 #define __pyx_codeobj__20 __pyx_mstate_global->__pyx_codeobj__20
+#define __pyx_codeobj__21 __pyx_mstate_global->__pyx_codeobj__21
 #define __pyx_codeobj__22 __pyx_mstate_global->__pyx_codeobj__22
 #define __pyx_codeobj__23 __pyx_mstate_global->__pyx_codeobj__23
 #define __pyx_codeobj__24 __pyx_mstate_global->__pyx_codeobj__24
 #define __pyx_codeobj__25 __pyx_mstate_global->__pyx_codeobj__25
+#define __pyx_codeobj__26 __pyx_mstate_global->__pyx_codeobj__26
 #define __pyx_codeobj__27 __pyx_mstate_global->__pyx_codeobj__27
 #define __pyx_codeobj__28 __pyx_mstate_global->__pyx_codeobj__28
 #define __pyx_codeobj__29 __pyx_mstate_global->__pyx_codeobj__29
 #define __pyx_codeobj__30 __pyx_mstate_global->__pyx_codeobj__30
 #define __pyx_codeobj__31 __pyx_mstate_global->__pyx_codeobj__31
+#define __pyx_codeobj__32 __pyx_mstate_global->__pyx_codeobj__32
 #define __pyx_codeobj__33 __pyx_mstate_global->__pyx_codeobj__33
 #define __pyx_codeobj__34 __pyx_mstate_global->__pyx_codeobj__34
 #define __pyx_codeobj__35 __pyx_mstate_global->__pyx_codeobj__35
+#define __pyx_codeobj__36 __pyx_mstate_global->__pyx_codeobj__36
 #define __pyx_codeobj__37 __pyx_mstate_global->__pyx_codeobj__37
+#define __pyx_codeobj__38 __pyx_mstate_global->__pyx_codeobj__38
 #define __pyx_codeobj__39 __pyx_mstate_global->__pyx_codeobj__39
+#define __pyx_codeobj__40 __pyx_mstate_global->__pyx_codeobj__40
 #define __pyx_codeobj__41 __pyx_mstate_global->__pyx_codeobj__41
+#define __pyx_codeobj__42 __pyx_mstate_global->__pyx_codeobj__42
 #define __pyx_codeobj__43 __pyx_mstate_global->__pyx_codeobj__43
+#define __pyx_codeobj__44 __pyx_mstate_global->__pyx_codeobj__44
 #define __pyx_codeobj__45 __pyx_mstate_global->__pyx_codeobj__45
+#define __pyx_codeobj__46 __pyx_mstate_global->__pyx_codeobj__46
 #define __pyx_codeobj__47 __pyx_mstate_global->__pyx_codeobj__47
-#define __pyx_codeobj__49 __pyx_mstate_global->__pyx_codeobj__49
-#define __pyx_codeobj__51 __pyx_mstate_global->__pyx_codeobj__51
-#define __pyx_codeobj__53 __pyx_mstate_global->__pyx_codeobj__53
-#define __pyx_codeobj__55 __pyx_mstate_global->__pyx_codeobj__55
-#define __pyx_codeobj__57 __pyx_mstate_global->__pyx_codeobj__57
-#define __pyx_codeobj__58 __pyx_mstate_global->__pyx_codeobj__58
-#define __pyx_codeobj__60 __pyx_mstate_global->__pyx_codeobj__60
-#define __pyx_codeobj__61 __pyx_mstate_global->__pyx_codeobj__61
-#define __pyx_codeobj__63 __pyx_mstate_global->__pyx_codeobj__63
-#define __pyx_codeobj__64 __pyx_mstate_global->__pyx_codeobj__64
-#define __pyx_codeobj__66 __pyx_mstate_global->__pyx_codeobj__66
-#define __pyx_codeobj__68 __pyx_mstate_global->__pyx_codeobj__68
-#define __pyx_codeobj__70 __pyx_mstate_global->__pyx_codeobj__70
-#define __pyx_codeobj__72 __pyx_mstate_global->__pyx_codeobj__72
-#define __pyx_codeobj__74 __pyx_mstate_global->__pyx_codeobj__74
-#define __pyx_codeobj__76 __pyx_mstate_global->__pyx_codeobj__76
-#define __pyx_codeobj__78 __pyx_mstate_global->__pyx_codeobj__78
 /* #### Code section: module_code ### */
 
 /* "pyretechnics/conversion.py":5
@@ -3311,13 +3549,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_F_to_K(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_degrees) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj_)
   __Pyx_RefNannySetupContext("F_to_K", 1);
+  __Pyx_TraceCall("F_to_K", __pyx_f[0], 5, 0, __PYX_ERR(0, 5, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":7
  * def F_to_K(degrees):
@@ -3352,6 +3593,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_F_to_K(CYTHON_UNUSED PyObj
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -3463,13 +3705,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_2K_to_F(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_degrees) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__2)
   __Pyx_RefNannySetupContext("K_to_F", 1);
+  __Pyx_TraceCall("K_to_F", __pyx_f[0], 10, 0, __PYX_ERR(0, 10, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":12
  * def K_to_F(degrees):
@@ -3504,6 +3749,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_2K_to_F(CYTHON_UNUSED PyOb
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -3615,13 +3861,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_4F_to_C(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_degrees) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__3)
   __Pyx_RefNannySetupContext("F_to_C", 1);
+  __Pyx_TraceCall("F_to_C", __pyx_f[0], 15, 0, __PYX_ERR(0, 15, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":17
  * def F_to_C(degrees):
@@ -3656,6 +3905,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_4F_to_C(CYTHON_UNUSED PyOb
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -3767,13 +4017,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_6C_to_F(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_degrees) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__4)
   __Pyx_RefNannySetupContext("C_to_F", 1);
+  __Pyx_TraceCall("C_to_F", __pyx_f[0], 20, 0, __PYX_ERR(0, 20, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":22
  * def C_to_F(degrees):
@@ -3808,6 +4061,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_6C_to_F(CYTHON_UNUSED PyOb
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -3919,6 +4173,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_8deg_to_ratio(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_degrees) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -3929,7 +4184,9 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_8deg_to_ratio(CYTHON_UNUSE
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__5)
   __Pyx_RefNannySetupContext("deg_to_ratio", 1);
+  __Pyx_TraceCall("deg_to_ratio", __pyx_f[0], 25, 0, __PYX_ERR(0, 25, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":27
  * def deg_to_ratio(degrees):
@@ -4011,6 +4268,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_8deg_to_ratio(CYTHON_UNUSE
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4122,6 +4380,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_10ratio_to_deg(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ratio) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4132,7 +4391,9 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_10ratio_to_deg(CYTHON_UNUS
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__6)
   __Pyx_RefNannySetupContext("ratio_to_deg", 1);
+  __Pyx_TraceCall("ratio_to_deg", __pyx_f[0], 30, 0, __PYX_ERR(0, 30, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":32
  * def ratio_to_deg(ratio):
@@ -4214,6 +4475,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_10ratio_to_deg(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4325,12 +4587,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_12ch_to_m(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ch) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__7)
   __Pyx_RefNannySetupContext("ch_to_m", 1);
+  __Pyx_TraceCall("ch_to_m", __pyx_f[0], 35, 0, __PYX_ERR(0, 35, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":37
  * def ch_to_m(ch):
@@ -4361,6 +4626,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_12ch_to_m(CYTHON_UNUSED Py
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4472,12 +4738,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_14m_to_ch(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_m) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__8)
   __Pyx_RefNannySetupContext("m_to_ch", 1);
+  __Pyx_TraceCall("m_to_ch", __pyx_f[0], 40, 0, __PYX_ERR(0, 40, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":42
  * def m_to_ch(m):
@@ -4508,6 +4777,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_14m_to_ch(CYTHON_UNUSED Py
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4619,12 +4889,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_16m_to_ft(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_m) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__9)
   __Pyx_RefNannySetupContext("m_to_ft", 1);
+  __Pyx_TraceCall("m_to_ft", __pyx_f[0], 45, 0, __PYX_ERR(0, 45, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":47
  * def m_to_ft(m):
@@ -4655,6 +4928,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_16m_to_ft(CYTHON_UNUSED Py
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4766,12 +5040,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_18ft_to_m(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ft) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__10)
   __Pyx_RefNannySetupContext("ft_to_m", 1);
+  __Pyx_TraceCall("ft_to_m", __pyx_f[0], 50, 0, __PYX_ERR(0, 50, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":52
  * def ft_to_m(ft):
@@ -4802,6 +5079,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_18ft_to_m(CYTHON_UNUSED Py
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4913,12 +5191,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_20mph_to_mps(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mph) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__11)
   __Pyx_RefNannySetupContext("mph_to_mps", 1);
+  __Pyx_TraceCall("mph_to_mps", __pyx_f[0], 55, 0, __PYX_ERR(0, 55, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":57
  * def mph_to_mps(mph):
@@ -4949,6 +5230,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_20mph_to_mps(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5060,12 +5342,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_22mps_to_mph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mps) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__12)
   __Pyx_RefNannySetupContext("mps_to_mph", 1);
+  __Pyx_TraceCall("mps_to_mph", __pyx_f[0], 60, 0, __PYX_ERR(0, 60, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":62
  * def mps_to_mph(mps):
@@ -5096,6 +5381,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_22mps_to_mph(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5207,12 +5493,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_24km_hr_to_mps(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_km_hr) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__13)
   __Pyx_RefNannySetupContext("km_hr_to_mps", 1);
+  __Pyx_TraceCall("km_hr_to_mps", __pyx_f[0], 65, 0, __PYX_ERR(0, 65, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":67
  * def km_hr_to_mps(km_hr):
@@ -5243,6 +5532,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_24km_hr_to_mps(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5354,12 +5644,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_26mps_to_km_hr(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mps) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__14)
   __Pyx_RefNannySetupContext("mps_to_km_hr", 1);
+  __Pyx_TraceCall("mps_to_km_hr", __pyx_f[0], 70, 0, __PYX_ERR(0, 70, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":72
  * def mps_to_km_hr(mps):
@@ -5390,6 +5683,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_26mps_to_km_hr(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5501,12 +5795,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_28mph_to_km_hr(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mph) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__15)
   __Pyx_RefNannySetupContext("mph_to_km_hr", 1);
+  __Pyx_TraceCall("mph_to_km_hr", __pyx_f[0], 75, 0, __PYX_ERR(0, 75, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":77
  * def mph_to_km_hr(mph):
@@ -5537,6 +5834,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_28mph_to_km_hr(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5648,12 +5946,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_30km_hr_to_mph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_km_hr) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__16)
   __Pyx_RefNannySetupContext("km_hr_to_mph", 1);
+  __Pyx_TraceCall("km_hr_to_mph", __pyx_f[0], 80, 0, __PYX_ERR(0, 80, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":82
  * def km_hr_to_mph(km_hr):
@@ -5684,6 +5985,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_30km_hr_to_mph(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5795,12 +6097,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_32m_min_to_km_hr(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_m_min) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__17)
   __Pyx_RefNannySetupContext("m_min_to_km_hr", 1);
+  __Pyx_TraceCall("m_min_to_km_hr", __pyx_f[0], 85, 0, __PYX_ERR(0, 85, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":87
  * def m_min_to_km_hr(m_min):
@@ -5831,6 +6136,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_32m_min_to_km_hr(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5942,12 +6248,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_34km_hr_to_m_min(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_km_hr) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__18)
   __Pyx_RefNannySetupContext("km_hr_to_m_min", 1);
+  __Pyx_TraceCall("km_hr_to_m_min", __pyx_f[0], 90, 0, __PYX_ERR(0, 90, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":92
  * def km_hr_to_m_min(km_hr):
@@ -5978,6 +6287,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_34km_hr_to_m_min(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6089,12 +6399,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_36m_min_to_mph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_m_min) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__19)
   __Pyx_RefNannySetupContext("m_min_to_mph", 1);
+  __Pyx_TraceCall("m_min_to_mph", __pyx_f[0], 95, 0, __PYX_ERR(0, 95, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":97
  * def m_min_to_mph(m_min):
@@ -6125,6 +6438,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_36m_min_to_mph(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6236,12 +6550,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_38mph_to_m_min(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mph) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__20)
   __Pyx_RefNannySetupContext("mph_to_m_min", 1);
+  __Pyx_TraceCall("mph_to_m_min", __pyx_f[0], 100, 0, __PYX_ERR(0, 100, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":102
  * def mph_to_m_min(mph):
@@ -6272,6 +6589,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_38mph_to_m_min(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6383,12 +6701,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_40mps_to_fpm(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mps) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__21)
   __Pyx_RefNannySetupContext("mps_to_fpm", 1);
+  __Pyx_TraceCall("mps_to_fpm", __pyx_f[0], 105, 0, __PYX_ERR(0, 105, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":107
  * def mps_to_fpm(mps):
@@ -6419,6 +6740,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_40mps_to_fpm(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6530,12 +6852,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_42fpm_to_mps(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fpm) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__22)
   __Pyx_RefNannySetupContext("fpm_to_mps", 1);
+  __Pyx_TraceCall("fpm_to_mps", __pyx_f[0], 110, 0, __PYX_ERR(0, 110, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":112
  * def fpm_to_mps(fpm):
@@ -6566,6 +6891,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_42fpm_to_mps(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6677,12 +7003,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_44mph_to_fpm(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_mph) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__23)
   __Pyx_RefNannySetupContext("mph_to_fpm", 1);
+  __Pyx_TraceCall("mph_to_fpm", __pyx_f[0], 115, 0, __PYX_ERR(0, 115, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":117
  * def mph_to_fpm(mph):
@@ -6713,6 +7042,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_44mph_to_fpm(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6824,12 +7154,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_46fpm_to_mph(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fpm) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__24)
   __Pyx_RefNannySetupContext("fpm_to_mph", 1);
+  __Pyx_TraceCall("fpm_to_mph", __pyx_f[0], 120, 0, __PYX_ERR(0, 120, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":122
  * def fpm_to_mph(fpm):
@@ -6860,6 +7193,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_46fpm_to_mph(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6971,12 +7305,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_48Btu_ft_s_to_kW_m(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_Btu_ft_s) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__25)
   __Pyx_RefNannySetupContext("Btu_ft_s_to_kW_m", 1);
+  __Pyx_TraceCall("Btu_ft_s_to_kW_m", __pyx_f[0], 125, 0, __PYX_ERR(0, 125, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":127
  * def Btu_ft_s_to_kW_m(Btu_ft_s):
@@ -7007,6 +7344,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_48Btu_ft_s_to_kW_m(CYTHON_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7118,12 +7456,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_50kW_m_to_Btu_ft_s(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_kW_m) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__26)
   __Pyx_RefNannySetupContext("kW_m_to_Btu_ft_s", 1);
+  __Pyx_TraceCall("kW_m_to_Btu_ft_s", __pyx_f[0], 130, 0, __PYX_ERR(0, 130, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":132
  * def kW_m_to_Btu_ft_s(kW_m):
@@ -7154,6 +7495,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_50kW_m_to_Btu_ft_s(CYTHON_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7265,12 +7607,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_52Btu_lb_to_kJ_kg(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_Btu_lb) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__27)
   __Pyx_RefNannySetupContext("Btu_lb_to_kJ_kg", 1);
+  __Pyx_TraceCall("Btu_lb_to_kJ_kg", __pyx_f[0], 135, 0, __PYX_ERR(0, 135, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":137
  * def Btu_lb_to_kJ_kg(Btu_lb):
@@ -7301,6 +7646,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_52Btu_lb_to_kJ_kg(CYTHON_U
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7412,12 +7758,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_54kJ_kg_to_Btu_lb(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_kJ_kg) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__28)
   __Pyx_RefNannySetupContext("kJ_kg_to_Btu_lb", 1);
+  __Pyx_TraceCall("kJ_kg_to_Btu_lb", __pyx_f[0], 140, 0, __PYX_ERR(0, 140, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":142
  * def kJ_kg_to_Btu_lb(kJ_kg):
@@ -7448,6 +7797,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_54kJ_kg_to_Btu_lb(CYTHON_U
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7559,12 +7909,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_56kg_m3_to_lb_ft3(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_kg_m3) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__29)
   __Pyx_RefNannySetupContext("kg_m3_to_lb_ft3", 1);
+  __Pyx_TraceCall("kg_m3_to_lb_ft3", __pyx_f[0], 145, 0, __PYX_ERR(0, 145, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":147
  * def kg_m3_to_lb_ft3(kg_m3):
@@ -7595,6 +7948,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_56kg_m3_to_lb_ft3(CYTHON_U
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7706,12 +8060,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_58lb_ft3_to_kg_m3(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_lb_ft3) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__30)
   __Pyx_RefNannySetupContext("lb_ft3_to_kg_m3", 1);
+  __Pyx_TraceCall("lb_ft3_to_kg_m3", __pyx_f[0], 150, 0, __PYX_ERR(0, 150, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":152
  * def lb_ft3_to_kg_m3(lb_ft3):
@@ -7742,6 +8099,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_58lb_ft3_to_kg_m3(CYTHON_U
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7853,12 +8211,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_60percent_to_dec(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_percent) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__31)
   __Pyx_RefNannySetupContext("percent_to_dec", 1);
+  __Pyx_TraceCall("percent_to_dec", __pyx_f[0], 155, 0, __PYX_ERR(0, 155, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":157
  * def percent_to_dec(percent):
@@ -7889,6 +8250,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_60percent_to_dec(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8000,12 +8362,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_62dec_to_percent(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_decimal) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__32)
   __Pyx_RefNannySetupContext("dec_to_percent", 1);
+  __Pyx_TraceCall("dec_to_percent", __pyx_f[0], 160, 0, __PYX_ERR(0, 160, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":162
  * def dec_to_percent(decimal):
@@ -8036,6 +8401,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_62dec_to_percent(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8147,12 +8513,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_64sec_to_min(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_seconds) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__33)
   __Pyx_RefNannySetupContext("sec_to_min", 1);
+  __Pyx_TraceCall("sec_to_min", __pyx_f[0], 165, 0, __PYX_ERR(0, 165, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":167
  * def sec_to_min(seconds):
@@ -8183,6 +8552,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_64sec_to_min(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8294,12 +8664,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_66min_to_sec(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_minutes) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__34)
   __Pyx_RefNannySetupContext("min_to_sec", 1);
+  __Pyx_TraceCall("min_to_sec", __pyx_f[0], 170, 0, __PYX_ERR(0, 170, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":172
  * def min_to_sec(minutes):
@@ -8330,6 +8703,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_66min_to_sec(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8441,12 +8815,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_68ms_to_min(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_milliseconds) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__35)
   __Pyx_RefNannySetupContext("ms_to_min", 1);
+  __Pyx_TraceCall("ms_to_min", __pyx_f[0], 175, 0, __PYX_ERR(0, 175, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":177
  * def ms_to_min(milliseconds):
@@ -8477,6 +8854,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_68ms_to_min(CYTHON_UNUSED 
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8588,13 +8966,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_70min_to_ms(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_minutes) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__36)
   __Pyx_RefNannySetupContext("min_to_ms", 1);
+  __Pyx_TraceCall("min_to_ms", __pyx_f[0], 180, 0, __PYX_ERR(0, 180, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":182
  * def min_to_ms(minutes):
@@ -8629,6 +9010,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_70min_to_ms(CYTHON_UNUSED 
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8740,12 +9122,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_72hour_to_min(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_hours) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__37)
   __Pyx_RefNannySetupContext("hour_to_min", 1);
+  __Pyx_TraceCall("hour_to_min", __pyx_f[0], 185, 0, __PYX_ERR(0, 185, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":187
  * def hour_to_min(hours):
@@ -8776,6 +9161,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_72hour_to_min(CYTHON_UNUSE
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8887,13 +9273,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_74min_to_hour(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_minutes) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__38)
   __Pyx_RefNannySetupContext("min_to_hour", 1);
+  __Pyx_TraceCall("min_to_hour", __pyx_f[0], 190, 0, __PYX_ERR(0, 190, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":192
  * def min_to_hour(minutes):
@@ -8928,6 +9317,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_74min_to_hour(CYTHON_UNUSE
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9039,12 +9429,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_76day_to_min(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_days) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__39)
   __Pyx_RefNannySetupContext("day_to_min", 1);
+  __Pyx_TraceCall("day_to_min", __pyx_f[0], 195, 0, __PYX_ERR(0, 195, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":197
  * def day_to_min(days):
@@ -9075,6 +9468,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_76day_to_min(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9186,12 +9580,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_78min_to_day(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_minutes) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__40)
   __Pyx_RefNannySetupContext("min_to_day", 1);
+  __Pyx_TraceCall("min_to_day", __pyx_f[0], 200, 0, __PYX_ERR(0, 200, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":202
  * def min_to_day(minutes):
@@ -9222,6 +9619,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_78min_to_day(CYTHON_UNUSED
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9351,6 +9749,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_80cartesian_to_polar(CYTHO
   PyObject *__pyx_v_theta_rad = NULL;
   PyObject *__pyx_v_theta = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9361,7 +9760,9 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_80cartesian_to_polar(CYTHO
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__41)
   __Pyx_RefNannySetupContext("cartesian_to_polar", 1);
+  __Pyx_TraceCall("cartesian_to_polar", __pyx_f[0], 205, 0, __PYX_ERR(0, 205, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":207
  * def cartesian_to_polar(x, y):
@@ -9519,6 +9920,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_80cartesian_to_polar(CYTHO
   __Pyx_XDECREF(__pyx_v_theta_rad);
   __Pyx_XDECREF(__pyx_v_theta);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9648,6 +10050,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_82polar_to_cartesian(CYTHO
   PyObject *__pyx_v_x = NULL;
   PyObject *__pyx_v_y = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9656,7 +10059,9 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_82polar_to_cartesian(CYTHO
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__42)
   __Pyx_RefNannySetupContext("polar_to_cartesian", 1);
+  __Pyx_TraceCall("polar_to_cartesian", __pyx_f[0], 213, 0, __PYX_ERR(0, 213, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":215
  * def polar_to_cartesian(r, theta):
@@ -9806,6 +10211,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_82polar_to_cartesian(CYTHO
   __Pyx_XDECREF(__pyx_v_x);
   __Pyx_XDECREF(__pyx_v_y);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9935,6 +10341,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_84cartesian_to_azimuthal(C
   PyObject *__pyx_v_azimuth_rad = NULL;
   PyObject *__pyx_v_azimuth = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9945,7 +10352,9 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_84cartesian_to_azimuthal(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__43)
   __Pyx_RefNannySetupContext("cartesian_to_azimuthal", 1);
+  __Pyx_TraceCall("cartesian_to_azimuthal", __pyx_f[0], 221, 0, __PYX_ERR(0, 221, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":223
  * def cartesian_to_azimuthal(x, y):
@@ -10103,6 +10512,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_84cartesian_to_azimuthal(C
   __Pyx_XDECREF(__pyx_v_azimuth_rad);
   __Pyx_XDECREF(__pyx_v_azimuth);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10232,6 +10642,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_86azimuthal_to_cartesian(C
   PyObject *__pyx_v_x = NULL;
   PyObject *__pyx_v_y = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10240,7 +10651,9 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_86azimuthal_to_cartesian(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__44)
   __Pyx_RefNannySetupContext("azimuthal_to_cartesian", 1);
+  __Pyx_TraceCall("azimuthal_to_cartesian", __pyx_f[0], 229, 0, __PYX_ERR(0, 229, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":231
  * def azimuthal_to_cartesian(r, azimuth):
@@ -10390,6 +10803,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_86azimuthal_to_cartesian(C
   __Pyx_XDECREF(__pyx_v_x);
   __Pyx_XDECREF(__pyx_v_y);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10501,13 +10915,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_88opposite_direction(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_theta) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__45)
   __Pyx_RefNannySetupContext("opposite_direction", 1);
+  __Pyx_TraceCall("opposite_direction", __pyx_f[0], 237, 0, __PYX_ERR(0, 237, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":239
  * def opposite_direction(theta):
@@ -10542,6 +10959,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_88opposite_direction(CYTHO
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10653,12 +11071,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_90wind_speed_10m_to_wind_speed_20ft(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_wind_speed_10m) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__46)
   __Pyx_RefNannySetupContext("wind_speed_10m_to_wind_speed_20ft", 1);
+  __Pyx_TraceCall("wind_speed_10m_to_wind_speed_20ft", __pyx_f[0], 242, 0, __PYX_ERR(0, 242, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":244
  * def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m):
@@ -10689,6 +11110,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_90wind_speed_10m_to_wind_s
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10800,12 +11222,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_10conversion_92wind_speed_20ft_to_wind_speed_10m(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_wind_speed_20ft) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__47)
   __Pyx_RefNannySetupContext("wind_speed_20ft_to_wind_speed_10m", 1);
+  __Pyx_TraceCall("wind_speed_20ft_to_wind_speed_10m", __pyx_f[0], 247, 0, __PYX_ERR(0, 247, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":249
  * def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
@@ -10835,6 +11260,7 @@ static PyObject *__pyx_pf_12pyretechnics_10conversion_92wind_speed_20ft_to_wind_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10855,7 +11281,6 @@ static PyMethodDef __pyx_methods[] = {
 
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
-    {&__pyx_kp_u_, __pyx_k_, sizeof(__pyx_k_), 0, 1, 0, 0},
     {&__pyx_n_s_Btu_ft_s, __pyx_k_Btu_ft_s, sizeof(__pyx_k_Btu_ft_s), 0, 0, 1, 1},
     {&__pyx_n_s_Btu_ft_s_to_kW_m, __pyx_k_Btu_ft_s_to_kW_m, sizeof(__pyx_k_Btu_ft_s_to_kW_m), 0, 0, 1, 1},
     {&__pyx_n_s_Btu_lb, __pyx_k_Btu_lb, sizeof(__pyx_k_Btu_lb), 0, 0, 1, 1},
@@ -10864,6 +11289,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_F_to_C, __pyx_k_F_to_C, sizeof(__pyx_k_F_to_C), 0, 0, 1, 1},
     {&__pyx_n_s_F_to_K, __pyx_k_F_to_K, sizeof(__pyx_k_F_to_K), 0, 0, 1, 1},
     {&__pyx_n_s_K_to_F, __pyx_k_K_to_F, sizeof(__pyx_k_K_to_F), 0, 0, 1, 1},
+    {&__pyx_kp_u__48, __pyx_k__48, sizeof(__pyx_k__48), 0, 1, 0, 0},
     {&__pyx_n_s__79, __pyx_k__79, sizeof(__pyx_k__79), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
     {&__pyx_n_s_atan, __pyx_k_atan, sizeof(__pyx_k_atan), 0, 0, 1, 1},
@@ -10975,10 +11401,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert fahrenheit to kelvin."""
  *     return (degrees + 459.67) * 0.5555555555555556
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_n_s_degrees); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 5, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__2);
-  __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_F_to_K, 5, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_tuple__49 = PyTuple_Pack(1, __pyx_n_s_degrees); if (unlikely(!__pyx_tuple__49)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__49);
+  __Pyx_GIVEREF(__pyx_tuple__49);
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_F_to_K, 5, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 5, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":10
  * 
@@ -10987,7 +11413,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kelvin to fahrenheit."""
  *     return (degrees * 1.8) - 459.67
  */
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_K_to_F, 10, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_K_to_F, 10, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 10, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":15
  * 
@@ -10996,7 +11422,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert fahrenheit to celsius."""
  *     return (degrees - 32.0) * 0.5555555555555556
  */
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_F_to_C, 15, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_F_to_C, 15, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 15, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":20
  * 
@@ -11005,7 +11431,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert celsius to fahrenheit."""
  *     return (degrees * 1.8) + 32.0
  */
-  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_C_to_F, 20, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_C_to_F, 20, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 20, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":25
  * 
@@ -11014,7 +11440,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert degrees to ratio."""
  *     return tan(radians(degrees))
  */
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_deg_to_ratio, 25, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_deg_to_ratio, 25, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 25, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":30
  * 
@@ -11023,10 +11449,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert ratio to degrees."""
  *     return degrees(atan(ratio))
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_ratio); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 30, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ratio_to_deg, 30, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __pyx_tuple__50 = PyTuple_Pack(1, __pyx_n_s_ratio); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__50);
+  __Pyx_GIVEREF(__pyx_tuple__50);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__50, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ratio_to_deg, 30, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 30, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":35
  * 
@@ -11035,10 +11461,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert chains to meters."""
  *     return ch * 20.1168
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_n_s_ch); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 35, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ch_to_m, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_tuple__51 = PyTuple_Pack(1, __pyx_n_s_ch); if (unlikely(!__pyx_tuple__51)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__51);
+  __Pyx_GIVEREF(__pyx_tuple__51);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__51, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ch_to_m, 35, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 35, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":40
  * 
@@ -11047,10 +11473,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters to chains."""
  *     return m * 0.0497097
  */
-  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_n_s_m); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 40, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_to_ch, 40, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_tuple__52 = PyTuple_Pack(1, __pyx_n_s_m); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__52);
+  __Pyx_GIVEREF(__pyx_tuple__52);
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_to_ch, 40, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 40, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":45
  * 
@@ -11059,7 +11485,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters to feet."""
  *     return m * 3.281
  */
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_to_ft, 45, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_to_ft, 45, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 45, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":50
  * 
@@ -11068,10 +11494,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert feet to meters."""
  *     return ft * 0.30478512648582745
  */
-  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_n_s_ft); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
-  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ft_to_m, 50, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_tuple__53 = PyTuple_Pack(1, __pyx_n_s_ft); if (unlikely(!__pyx_tuple__53)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__53);
+  __Pyx_GIVEREF(__pyx_tuple__53);
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__53, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ft_to_m, 50, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 50, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":55
  * 
@@ -11080,10 +11506,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert miles per hour to meters per second."""
  *     return mph * 0.44701818551254696
  */
-  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_n_s_mph); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 55, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__17);
-  __Pyx_GIVEREF(__pyx_tuple__17);
-  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_mps, 55, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_tuple__54 = PyTuple_Pack(1, __pyx_n_s_mph); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__54);
+  __Pyx_GIVEREF(__pyx_tuple__54);
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_mps, 55, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 55, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":60
  * 
@@ -11092,10 +11518,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters per second to miles per hour."""
  *     return mps * 2.237045454545455
  */
-  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_n_s_mps); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 60, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mps_to_mph, 60, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_tuple__55 = PyTuple_Pack(1, __pyx_n_s_mps); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__55);
+  __Pyx_GIVEREF(__pyx_tuple__55);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mps_to_mph, 60, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 60, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":65
  * 
@@ -11104,10 +11530,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kilometers per hour to meters per second."""
  *     return km_hr * 0.277764222883701
  */
-  __pyx_tuple__21 = PyTuple_Pack(1, __pyx_n_s_km_hr); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 65, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_km_hr_to_mps, 65, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_tuple__56 = PyTuple_Pack(1, __pyx_n_s_km_hr); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__56);
+  __Pyx_GIVEREF(__pyx_tuple__56);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_km_hr_to_mps, 65, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 65, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":70
  * 
@@ -11116,7 +11542,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters per second to kilometers per hour."""
  *     return mps * 3.6001756800000004
  */
-  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mps_to_km_hr, 70, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mps_to_km_hr, 70, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 70, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":75
  * 
@@ -11125,7 +11551,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert miles per hour to kilometers per hour."""
  *     return mph * 1.609344
  */
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_km_hr, 75, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_km_hr, 75, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 75, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":80
  * 
@@ -11134,7 +11560,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kilometers per hour to miles per hour."""
  *     return km_hr * 0.621371192237334
  */
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_km_hr_to_mph, 80, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_km_hr_to_mph, 80, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 80, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":85
  * 
@@ -11143,10 +11569,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters per minute to kilometers per hour."""
  *     return m_min * 0.06
  */
-  __pyx_tuple__26 = PyTuple_Pack(1, __pyx_n_s_m_min); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 85, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__26);
-  __Pyx_GIVEREF(__pyx_tuple__26);
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_min_to_km_hr, 85, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_tuple__57 = PyTuple_Pack(1, __pyx_n_s_m_min); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__57);
+  __Pyx_GIVEREF(__pyx_tuple__57);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_min_to_km_hr, 85, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 85, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":90
  * 
@@ -11155,7 +11581,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kilometers per hour to meters per minute."""
  *     return km_hr / 0.06
  */
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_km_hr_to_m_min, 90, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_km_hr_to_m_min, 90, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 90, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":95
  * 
@@ -11164,7 +11590,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters per minute to miles per hour."""
  *     return m_min * 0.0372840909091
  */
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_min_to_mph, 95, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_m_min_to_mph, 95, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 95, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":100
  * 
@@ -11173,7 +11599,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert miles per hour to meters per minute."""
  *     return mph * 26.8210911307
  */
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_m_min, 100, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 100, __pyx_L1_error)
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_m_min, 100, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 100, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":105
  * 
@@ -11182,7 +11608,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert meters per second to feet per minute."""
  *     return mps * 196.86
  */
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mps_to_fpm, 105, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mps_to_fpm, 105, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 105, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":110
  * 
@@ -11191,10 +11617,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert feet per minute to meters per second."""
  *     return fpm / 196.86
  */
-  __pyx_tuple__32 = PyTuple_Pack(1, __pyx_n_s_fpm); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 110, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__32);
-  __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_fpm_to_mps, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_tuple__58 = PyTuple_Pack(1, __pyx_n_s_fpm); if (unlikely(!__pyx_tuple__58)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__58);
+  __Pyx_GIVEREF(__pyx_tuple__58);
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_fpm_to_mps, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 110, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":115
  * 
@@ -11203,7 +11629,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert miles per hour to feet per minute."""
  *     return mph * 88.0
  */
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_fpm, 115, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_mph_to_fpm, 115, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 115, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":120
  * 
@@ -11212,7 +11638,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert feet per minute to miles per hour."""
  *     return fpm / 88.0
  */
-  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_fpm_to_mph, 120, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_fpm_to_mph, 120, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 120, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":125
  * 
@@ -11221,10 +11647,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert BTU per feet per second to kilowatt per meter."""
  *     return Btu_ft_s * 3.46165186
  */
-  __pyx_tuple__36 = PyTuple_Pack(1, __pyx_n_s_Btu_ft_s); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 125, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__36);
-  __Pyx_GIVEREF(__pyx_tuple__36);
-  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_Btu_ft_s_to_kW_m, 125, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_tuple__59 = PyTuple_Pack(1, __pyx_n_s_Btu_ft_s); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__59);
+  __Pyx_GIVEREF(__pyx_tuple__59);
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_Btu_ft_s_to_kW_m, 125, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 125, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":130
  * 
@@ -11233,10 +11659,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kilowatt per meter to BTU per feet per second."""
  *     return kW_m * 0.28887942532730604
  */
-  __pyx_tuple__38 = PyTuple_Pack(1, __pyx_n_s_kW_m); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 130, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__38);
-  __Pyx_GIVEREF(__pyx_tuple__38);
-  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_kW_m_to_Btu_ft_s, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_tuple__60 = PyTuple_Pack(1, __pyx_n_s_kW_m); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__60);
+  __Pyx_GIVEREF(__pyx_tuple__60);
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__60, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_kW_m_to_Btu_ft_s, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 130, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":135
  * 
@@ -11245,10 +11671,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert BTU per lb to kilojoule per kilogram."""
  *     return Btu_lb * 2.3259999996185
  */
-  __pyx_tuple__40 = PyTuple_Pack(1, __pyx_n_s_Btu_lb); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 135, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__40);
-  __Pyx_GIVEREF(__pyx_tuple__40);
-  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_Btu_lb_to_kJ_kg, 135, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_tuple__61 = PyTuple_Pack(1, __pyx_n_s_Btu_lb); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__61);
+  __Pyx_GIVEREF(__pyx_tuple__61);
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_Btu_lb_to_kJ_kg, 135, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 135, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":140
  * 
@@ -11257,10 +11683,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kilojoule per kilogram to BTU per lb."""
  *     return kJ_kg / 2.3259999996185
  */
-  __pyx_tuple__42 = PyTuple_Pack(1, __pyx_n_s_kJ_kg); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 140, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__42);
-  __Pyx_GIVEREF(__pyx_tuple__42);
-  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_kJ_kg_to_Btu_lb, 140, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_tuple__62 = PyTuple_Pack(1, __pyx_n_s_kJ_kg); if (unlikely(!__pyx_tuple__62)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__62);
+  __Pyx_GIVEREF(__pyx_tuple__62);
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__62, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_kJ_kg_to_Btu_lb, 140, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 140, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":145
  * 
@@ -11269,10 +11695,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert kilogram per cubic meter to pound per cubic foot."""
  *     return kg_m3 * 0.0624
  */
-  __pyx_tuple__44 = PyTuple_Pack(1, __pyx_n_s_kg_m3); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 145, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__44);
-  __Pyx_GIVEREF(__pyx_tuple__44);
-  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_kg_m3_to_lb_ft3, 145, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_tuple__63 = PyTuple_Pack(1, __pyx_n_s_kg_m3); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__63);
+  __Pyx_GIVEREF(__pyx_tuple__63);
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_kg_m3_to_lb_ft3, 145, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 145, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":150
  * 
@@ -11281,10 +11707,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert pound per cubic foot to kilogram per cubic meter."""
  *     return lb_ft3 * 16.025641025641026
  */
-  __pyx_tuple__46 = PyTuple_Pack(1, __pyx_n_s_lb_ft3); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__46);
-  __Pyx_GIVEREF(__pyx_tuple__46);
-  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_lb_ft3_to_kg_m3, 150, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_tuple__64 = PyTuple_Pack(1, __pyx_n_s_lb_ft3); if (unlikely(!__pyx_tuple__64)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__64);
+  __Pyx_GIVEREF(__pyx_tuple__64);
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__64, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_lb_ft3_to_kg_m3, 150, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 150, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":155
  * 
@@ -11293,10 +11719,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert percent to decimal."""
  *     return percent * 0.01
  */
-  __pyx_tuple__48 = PyTuple_Pack(1, __pyx_n_s_percent); if (unlikely(!__pyx_tuple__48)) __PYX_ERR(0, 155, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__48);
-  __Pyx_GIVEREF(__pyx_tuple__48);
-  __pyx_codeobj__49 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__48, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_percent_to_dec, 155, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__49)) __PYX_ERR(0, 155, __pyx_L1_error)
+  __pyx_tuple__65 = PyTuple_Pack(1, __pyx_n_s_percent); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 155, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__65);
+  __Pyx_GIVEREF(__pyx_tuple__65);
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_percent_to_dec, 155, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 155, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":160
  * 
@@ -11305,10 +11731,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert decimal to percent."""
  *     return decimal * 100.0
  */
-  __pyx_tuple__50 = PyTuple_Pack(1, __pyx_n_s_decimal); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 160, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__50);
-  __Pyx_GIVEREF(__pyx_tuple__50);
-  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__50, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_dec_to_percent, 160, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 160, __pyx_L1_error)
+  __pyx_tuple__66 = PyTuple_Pack(1, __pyx_n_s_decimal); if (unlikely(!__pyx_tuple__66)) __PYX_ERR(0, 160, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__66);
+  __Pyx_GIVEREF(__pyx_tuple__66);
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__66, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_dec_to_percent, 160, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 160, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":165
  * 
@@ -11317,10 +11743,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert seconds to minutes."""
  *     return seconds * 0.016666666666666666
  */
-  __pyx_tuple__52 = PyTuple_Pack(1, __pyx_n_s_seconds); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 165, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__52);
-  __Pyx_GIVEREF(__pyx_tuple__52);
-  __pyx_codeobj__53 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_sec_to_min, 165, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__53)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_tuple__67 = PyTuple_Pack(1, __pyx_n_s_seconds); if (unlikely(!__pyx_tuple__67)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__67);
+  __Pyx_GIVEREF(__pyx_tuple__67);
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__67, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_sec_to_min, 165, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 165, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":170
  * 
@@ -11329,10 +11755,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert minutes to seconds."""
  *     return minutes * 60.0
  */
-  __pyx_tuple__54 = PyTuple_Pack(1, __pyx_n_s_minutes); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 170, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__54);
-  __Pyx_GIVEREF(__pyx_tuple__54);
-  __pyx_codeobj__55 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_sec, 170, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__55)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_tuple__68 = PyTuple_Pack(1, __pyx_n_s_minutes); if (unlikely(!__pyx_tuple__68)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__68);
+  __Pyx_GIVEREF(__pyx_tuple__68);
+  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__68, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_sec, 170, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 170, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":175
  * 
@@ -11341,10 +11767,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert milliseconds to minutes."""
  *     return milliseconds * 0.000016667
  */
-  __pyx_tuple__56 = PyTuple_Pack(1, __pyx_n_s_milliseconds); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 175, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__56);
-  __Pyx_GIVEREF(__pyx_tuple__56);
-  __pyx_codeobj__57 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ms_to_min, 175, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__57)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_tuple__69 = PyTuple_Pack(1, __pyx_n_s_milliseconds); if (unlikely(!__pyx_tuple__69)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__69);
+  __Pyx_GIVEREF(__pyx_tuple__69);
+  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__69, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_ms_to_min, 175, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 175, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":180
  * 
@@ -11353,7 +11779,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert minutes to milliseconds."""
  *     return int(minutes * 60000.0)
  */
-  __pyx_codeobj__58 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_ms, 180, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__58)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__68, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_ms, 180, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 180, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":185
  * 
@@ -11362,10 +11788,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Converts hours to minutes."""
  *     return hours * 60.0
  */
-  __pyx_tuple__59 = PyTuple_Pack(1, __pyx_n_s_hours); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__59);
-  __Pyx_GIVEREF(__pyx_tuple__59);
-  __pyx_codeobj__60 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_hour_to_min, 185, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__60)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __pyx_tuple__70 = PyTuple_Pack(1, __pyx_n_s_hours); if (unlikely(!__pyx_tuple__70)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__70);
+  __Pyx_GIVEREF(__pyx_tuple__70);
+  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__70, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_hour_to_min, 185, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 185, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":190
  * 
@@ -11374,7 +11800,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Converts minutes to hours. (rounds down)"""
  *     return int(minutes / 60.0)
  */
-  __pyx_codeobj__61 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_hour, 190, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__61)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__68, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_hour, 190, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 190, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":195
  * 
@@ -11383,10 +11809,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert days to minutes."""
  *     return days * 1440.0
  */
-  __pyx_tuple__62 = PyTuple_Pack(1, __pyx_n_s_days); if (unlikely(!__pyx_tuple__62)) __PYX_ERR(0, 195, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__62);
-  __Pyx_GIVEREF(__pyx_tuple__62);
-  __pyx_codeobj__63 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__62, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_day_to_min, 195, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__63)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_tuple__71 = PyTuple_Pack(1, __pyx_n_s_days); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__71);
+  __Pyx_GIVEREF(__pyx_tuple__71);
+  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__71, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_day_to_min, 195, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 195, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":200
  * 
@@ -11395,7 +11821,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert minutes to days."""
  *     return minutes / 1440.0
  */
-  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_day, 200, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__68, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_min_to_day, 200, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 200, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":205
  * 
@@ -11404,10 +11830,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
  *     r         = sqrt(x ** 2.0 + y ** 2.0)
  */
-  __pyx_tuple__65 = PyTuple_Pack(5, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_r, __pyx_n_s_theta_rad, __pyx_n_s_theta); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 205, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__65);
-  __Pyx_GIVEREF(__pyx_tuple__65);
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_cartesian_to_polar, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_tuple__72 = PyTuple_Pack(5, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_r, __pyx_n_s_theta_rad, __pyx_n_s_theta); if (unlikely(!__pyx_tuple__72)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__72);
+  __Pyx_GIVEREF(__pyx_tuple__72);
+  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__72, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_cartesian_to_polar, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 205, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":213
  * 
@@ -11416,10 +11842,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
  *     theta_rad = radians(theta)
  */
-  __pyx_tuple__67 = PyTuple_Pack(5, __pyx_n_s_r, __pyx_n_s_theta, __pyx_n_s_theta_rad, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__67)) __PYX_ERR(0, 213, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__67);
-  __Pyx_GIVEREF(__pyx_tuple__67);
-  __pyx_codeobj__68 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__67, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_polar_to_cartesian, 213, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__68)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_tuple__73 = PyTuple_Pack(5, __pyx_n_s_r, __pyx_n_s_theta, __pyx_n_s_theta_rad, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__73)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__73);
+  __Pyx_GIVEREF(__pyx_tuple__73);
+  __pyx_codeobj__42 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__73, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_polar_to_cartesian, 213, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__42)) __PYX_ERR(0, 213, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":221
  * 
@@ -11428,10 +11854,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
  *     r           = sqrt(x ** 2.0 + y ** 2.0)
  */
-  __pyx_tuple__69 = PyTuple_Pack(5, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_r, __pyx_n_s_azimuth_rad, __pyx_n_s_azimuth); if (unlikely(!__pyx_tuple__69)) __PYX_ERR(0, 221, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__69);
-  __Pyx_GIVEREF(__pyx_tuple__69);
-  __pyx_codeobj__70 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__69, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_cartesian_to_azimuthal, 221, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__70)) __PYX_ERR(0, 221, __pyx_L1_error)
+  __pyx_tuple__74 = PyTuple_Pack(5, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_r, __pyx_n_s_azimuth_rad, __pyx_n_s_azimuth); if (unlikely(!__pyx_tuple__74)) __PYX_ERR(0, 221, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__74);
+  __Pyx_GIVEREF(__pyx_tuple__74);
+  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__74, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_cartesian_to_azimuthal, 221, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 221, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":229
  * 
@@ -11440,10 +11866,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
  *     azimuth_rad = radians(azimuth)
  */
-  __pyx_tuple__71 = PyTuple_Pack(5, __pyx_n_s_r, __pyx_n_s_azimuth, __pyx_n_s_azimuth_rad, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 229, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__71);
-  __Pyx_GIVEREF(__pyx_tuple__71);
-  __pyx_codeobj__72 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__71, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_azimuthal_to_cartesian, 229, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__72)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_tuple__75 = PyTuple_Pack(5, __pyx_n_s_r, __pyx_n_s_azimuth, __pyx_n_s_azimuth_rad, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__75)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__75);
+  __Pyx_GIVEREF(__pyx_tuple__75);
+  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__75, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_azimuthal_to_cartesian, 229, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 229, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":237
  * 
@@ -11452,10 +11878,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert theta to theta + 180 degrees."""
  *     return (theta + 180.0) % 360.0
  */
-  __pyx_tuple__73 = PyTuple_Pack(1, __pyx_n_s_theta); if (unlikely(!__pyx_tuple__73)) __PYX_ERR(0, 237, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__73);
-  __Pyx_GIVEREF(__pyx_tuple__73);
-  __pyx_codeobj__74 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__73, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_opposite_direction, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__74)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_tuple__76 = PyTuple_Pack(1, __pyx_n_s_theta); if (unlikely(!__pyx_tuple__76)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__76);
+  __Pyx_GIVEREF(__pyx_tuple__76);
+  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__76, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_opposite_direction, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 237, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":242
  * 
@@ -11464,10 +11890,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert wind speed at 10m to wind speed at 20ft."""
  *     return 0.87 * wind_speed_10m
  */
-  __pyx_tuple__75 = PyTuple_Pack(1, __pyx_n_s_wind_speed_10m); if (unlikely(!__pyx_tuple__75)) __PYX_ERR(0, 242, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__75);
-  __Pyx_GIVEREF(__pyx_tuple__75);
-  __pyx_codeobj__76 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__75, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_wind_speed_10m_to_wind_speed_20f, 242, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__76)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_tuple__77 = PyTuple_Pack(1, __pyx_n_s_wind_speed_10m); if (unlikely(!__pyx_tuple__77)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__77);
+  __Pyx_GIVEREF(__pyx_tuple__77);
+  __pyx_codeobj__46 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__77, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_wind_speed_10m_to_wind_speed_20f, 242, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__46)) __PYX_ERR(0, 242, __pyx_L1_error)
 
   /* "pyretechnics/conversion.py":247
  * 
@@ -11476,10 +11902,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """Convert wind speed at 20ft to wind speed at 10m."""
  *     return wind_speed_20ft / 0.87
  */
-  __pyx_tuple__77 = PyTuple_Pack(1, __pyx_n_s_wind_speed_20ft); if (unlikely(!__pyx_tuple__77)) __PYX_ERR(0, 247, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__77);
-  __Pyx_GIVEREF(__pyx_tuple__77);
-  __pyx_codeobj__78 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__77, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_wind_speed_20ft_to_wind_speed_10, 247, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__78)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_tuple__78 = PyTuple_Pack(1, __pyx_n_s_wind_speed_20ft); if (unlikely(!__pyx_tuple__78)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__78);
+  __Pyx_GIVEREF(__pyx_tuple__78);
+  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__78, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_conversion_py, __pyx_n_s_wind_speed_20ft_to_wind_speed_10, 247, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -11761,6 +12187,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_conversion(PyObject *__pyx_pyinit_
   #if CYTHON_USE_MODULE_STATE
   int pystate_addmodule_run = 0;
   #endif
+  __Pyx_TraceDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
@@ -11878,6 +12305,7 @@ if (!__Pyx_RefNanny) {
   #if defined(__Pyx_Generator_USED) || defined(__Pyx_Coroutine_USED)
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
+  __Pyx_TraceCall("__Pyx_PyMODINIT_FUNC PyInit_conversion(void)", __pyx_f[0], 1, 0, __PYX_ERR(0, 1, __pyx_L1_error));
 
   /* "pyretechnics/conversion.py":2
  * # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
@@ -11962,7 +12390,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert fahrenheit to kelvin."""
  *     return (degrees + 459.67) * 0.5555555555555556
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_1F_to_K, 0, __pyx_n_s_F_to_K, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_1F_to_K, 0, __pyx_n_s_F_to_K, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_F_to_K, __pyx_t_3) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -11974,7 +12402,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kelvin to fahrenheit."""
  *     return (degrees * 1.8) - 459.67
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_3K_to_F, 0, __pyx_n_s_K_to_F, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_3K_to_F, 0, __pyx_n_s_K_to_F, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_K_to_F, __pyx_t_3) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -11986,7 +12414,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert fahrenheit to celsius."""
  *     return (degrees - 32.0) * 0.5555555555555556
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_5F_to_C, 0, __pyx_n_s_F_to_C, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_5F_to_C, 0, __pyx_n_s_F_to_C, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_F_to_C, __pyx_t_3) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -11998,7 +12426,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert celsius to fahrenheit."""
  *     return (degrees * 1.8) + 32.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_7C_to_F, 0, __pyx_n_s_C_to_F, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 20, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_7C_to_F, 0, __pyx_n_s_C_to_F, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_C_to_F, __pyx_t_3) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12010,7 +12438,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert degrees to ratio."""
  *     return tan(radians(degrees))
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_9deg_to_ratio, 0, __pyx_n_s_deg_to_ratio, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_9deg_to_ratio, 0, __pyx_n_s_deg_to_ratio, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_deg_to_ratio, __pyx_t_3) < 0) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12022,7 +12450,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert ratio to degrees."""
  *     return degrees(atan(ratio))
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_11ratio_to_deg, 0, __pyx_n_s_ratio_to_deg, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_11ratio_to_deg, 0, __pyx_n_s_ratio_to_deg, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_ratio_to_deg, __pyx_t_3) < 0) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12034,7 +12462,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert chains to meters."""
  *     return ch * 20.1168
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_13ch_to_m, 0, __pyx_n_s_ch_to_m, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_13ch_to_m, 0, __pyx_n_s_ch_to_m, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_ch_to_m, __pyx_t_3) < 0) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12046,7 +12474,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters to chains."""
  *     return m * 0.0497097
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_15m_to_ch, 0, __pyx_n_s_m_to_ch, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_15m_to_ch, 0, __pyx_n_s_m_to_ch, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_m_to_ch, __pyx_t_3) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12058,7 +12486,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters to feet."""
  *     return m * 3.281
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_17m_to_ft, 0, __pyx_n_s_m_to_ft, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_17m_to_ft, 0, __pyx_n_s_m_to_ft, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_m_to_ft, __pyx_t_3) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12070,7 +12498,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert feet to meters."""
  *     return ft * 0.30478512648582745
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_19ft_to_m, 0, __pyx_n_s_ft_to_m, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_19ft_to_m, 0, __pyx_n_s_ft_to_m, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_ft_to_m, __pyx_t_3) < 0) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12082,7 +12510,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert miles per hour to meters per second."""
  *     return mph * 0.44701818551254696
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_21mph_to_mps, 0, __pyx_n_s_mph_to_mps, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_21mph_to_mps, 0, __pyx_n_s_mph_to_mps, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mph_to_mps, __pyx_t_3) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12094,7 +12522,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters per second to miles per hour."""
  *     return mps * 2.237045454545455
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_23mps_to_mph, 0, __pyx_n_s_mps_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_23mps_to_mph, 0, __pyx_n_s_mps_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mps_to_mph, __pyx_t_3) < 0) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12106,7 +12534,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kilometers per hour to meters per second."""
  *     return km_hr * 0.277764222883701
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_25km_hr_to_mps, 0, __pyx_n_s_km_hr_to_mps, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_25km_hr_to_mps, 0, __pyx_n_s_km_hr_to_mps, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_km_hr_to_mps, __pyx_t_3) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12118,7 +12546,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters per second to kilometers per hour."""
  *     return mps * 3.6001756800000004
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_27mps_to_km_hr, 0, __pyx_n_s_mps_to_km_hr, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_27mps_to_km_hr, 0, __pyx_n_s_mps_to_km_hr, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mps_to_km_hr, __pyx_t_3) < 0) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12130,7 +12558,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert miles per hour to kilometers per hour."""
  *     return mph * 1.609344
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_29mph_to_km_hr, 0, __pyx_n_s_mph_to_km_hr, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_29mph_to_km_hr, 0, __pyx_n_s_mph_to_km_hr, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mph_to_km_hr, __pyx_t_3) < 0) __PYX_ERR(0, 75, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12142,7 +12570,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kilometers per hour to miles per hour."""
  *     return km_hr * 0.621371192237334
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_31km_hr_to_mph, 0, __pyx_n_s_km_hr_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_31km_hr_to_mph, 0, __pyx_n_s_km_hr_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 80, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_km_hr_to_mph, __pyx_t_3) < 0) __PYX_ERR(0, 80, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12154,7 +12582,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters per minute to kilometers per hour."""
  *     return m_min * 0.06
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_33m_min_to_km_hr, 0, __pyx_n_s_m_min_to_km_hr, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_33m_min_to_km_hr, 0, __pyx_n_s_m_min_to_km_hr, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_m_min_to_km_hr, __pyx_t_3) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12166,7 +12594,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kilometers per hour to meters per minute."""
  *     return km_hr / 0.06
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_35km_hr_to_m_min, 0, __pyx_n_s_km_hr_to_m_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_35km_hr_to_m_min, 0, __pyx_n_s_km_hr_to_m_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_km_hr_to_m_min, __pyx_t_3) < 0) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12178,7 +12606,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters per minute to miles per hour."""
  *     return m_min * 0.0372840909091
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_37m_min_to_mph, 0, __pyx_n_s_m_min_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_37m_min_to_mph, 0, __pyx_n_s_m_min_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_m_min_to_mph, __pyx_t_3) < 0) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12190,7 +12618,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert miles per hour to meters per minute."""
  *     return mph * 26.8210911307
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_39mph_to_m_min, 0, __pyx_n_s_mph_to_m_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_39mph_to_m_min, 0, __pyx_n_s_mph_to_m_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mph_to_m_min, __pyx_t_3) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12202,7 +12630,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert meters per second to feet per minute."""
  *     return mps * 196.86
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_41mps_to_fpm, 0, __pyx_n_s_mps_to_fpm, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_41mps_to_fpm, 0, __pyx_n_s_mps_to_fpm, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mps_to_fpm, __pyx_t_3) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12214,7 +12642,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert feet per minute to meters per second."""
  *     return fpm / 196.86
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_43fpm_to_mps, 0, __pyx_n_s_fpm_to_mps, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_43fpm_to_mps, 0, __pyx_n_s_fpm_to_mps, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fpm_to_mps, __pyx_t_3) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12226,7 +12654,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert miles per hour to feet per minute."""
  *     return mph * 88.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_45mph_to_fpm, 0, __pyx_n_s_mph_to_fpm, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_45mph_to_fpm, 0, __pyx_n_s_mph_to_fpm, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_mph_to_fpm, __pyx_t_3) < 0) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12238,7 +12666,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert feet per minute to miles per hour."""
  *     return fpm / 88.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_47fpm_to_mph, 0, __pyx_n_s_fpm_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__35)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_47fpm_to_mph, 0, __pyx_n_s_fpm_to_mph, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fpm_to_mph, __pyx_t_3) < 0) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12250,7 +12678,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert BTU per feet per second to kilowatt per meter."""
  *     return Btu_ft_s * 3.46165186
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_49Btu_ft_s_to_kW_m, 0, __pyx_n_s_Btu_ft_s_to_kW_m, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_49Btu_ft_s_to_kW_m, 0, __pyx_n_s_Btu_ft_s_to_kW_m, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_Btu_ft_s_to_kW_m, __pyx_t_3) < 0) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12262,7 +12690,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kilowatt per meter to BTU per feet per second."""
  *     return kW_m * 0.28887942532730604
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_51kW_m_to_Btu_ft_s, 0, __pyx_n_s_kW_m_to_Btu_ft_s, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_51kW_m_to_Btu_ft_s, 0, __pyx_n_s_kW_m_to_Btu_ft_s, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_kW_m_to_Btu_ft_s, __pyx_t_3) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12274,7 +12702,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert BTU per lb to kilojoule per kilogram."""
  *     return Btu_lb * 2.3259999996185
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_53Btu_lb_to_kJ_kg, 0, __pyx_n_s_Btu_lb_to_kJ_kg, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_53Btu_lb_to_kJ_kg, 0, __pyx_n_s_Btu_lb_to_kJ_kg, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_Btu_lb_to_kJ_kg, __pyx_t_3) < 0) __PYX_ERR(0, 135, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12286,7 +12714,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kilojoule per kilogram to BTU per lb."""
  *     return kJ_kg / 2.3259999996185
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_55kJ_kg_to_Btu_lb, 0, __pyx_n_s_kJ_kg_to_Btu_lb, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_55kJ_kg_to_Btu_lb, 0, __pyx_n_s_kJ_kg_to_Btu_lb, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 140, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_kJ_kg_to_Btu_lb, __pyx_t_3) < 0) __PYX_ERR(0, 140, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12298,7 +12726,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert kilogram per cubic meter to pound per cubic foot."""
  *     return kg_m3 * 0.0624
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_57kg_m3_to_lb_ft3, 0, __pyx_n_s_kg_m3_to_lb_ft3, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_57kg_m3_to_lb_ft3, 0, __pyx_n_s_kg_m3_to_lb_ft3, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_kg_m3_to_lb_ft3, __pyx_t_3) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12310,7 +12738,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert pound per cubic foot to kilogram per cubic meter."""
  *     return lb_ft3 * 16.025641025641026
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_59lb_ft3_to_kg_m3, 0, __pyx_n_s_lb_ft3_to_kg_m3, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_59lb_ft3_to_kg_m3, 0, __pyx_n_s_lb_ft3_to_kg_m3, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_lb_ft3_to_kg_m3, __pyx_t_3) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12322,7 +12750,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert percent to decimal."""
  *     return percent * 0.01
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_61percent_to_dec, 0, __pyx_n_s_percent_to_dec, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__49)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 155, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_61percent_to_dec, 0, __pyx_n_s_percent_to_dec, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 155, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_percent_to_dec, __pyx_t_3) < 0) __PYX_ERR(0, 155, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12334,7 +12762,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert decimal to percent."""
  *     return decimal * 100.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_63dec_to_percent, 0, __pyx_n_s_dec_to_percent, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__51)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 160, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_63dec_to_percent, 0, __pyx_n_s_dec_to_percent, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 160, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_dec_to_percent, __pyx_t_3) < 0) __PYX_ERR(0, 160, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12346,7 +12774,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert seconds to minutes."""
  *     return seconds * 0.016666666666666666
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_65sec_to_min, 0, __pyx_n_s_sec_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__53)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_65sec_to_min, 0, __pyx_n_s_sec_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sec_to_min, __pyx_t_3) < 0) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12358,7 +12786,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert minutes to seconds."""
  *     return minutes * 60.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_67min_to_sec, 0, __pyx_n_s_min_to_sec, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_67min_to_sec, 0, __pyx_n_s_min_to_sec, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_min_to_sec, __pyx_t_3) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12370,7 +12798,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert milliseconds to minutes."""
  *     return milliseconds * 0.000016667
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_69ms_to_min, 0, __pyx_n_s_ms_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__57)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_69ms_to_min, 0, __pyx_n_s_ms_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__35)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_ms_to_min, __pyx_t_3) < 0) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12382,7 +12810,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert minutes to milliseconds."""
  *     return int(minutes * 60000.0)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_71min_to_ms, 0, __pyx_n_s_min_to_ms, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__58)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_71min_to_ms, 0, __pyx_n_s_min_to_ms, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_min_to_ms, __pyx_t_3) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12394,7 +12822,7 @@ if (!__Pyx_RefNanny) {
  *     """Converts hours to minutes."""
  *     return hours * 60.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_73hour_to_min, 0, __pyx_n_s_hour_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__60)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_73hour_to_min, 0, __pyx_n_s_hour_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_hour_to_min, __pyx_t_3) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12406,7 +12834,7 @@ if (!__Pyx_RefNanny) {
  *     """Converts minutes to hours. (rounds down)"""
  *     return int(minutes / 60.0)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_75min_to_hour, 0, __pyx_n_s_min_to_hour, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__61)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_75min_to_hour, 0, __pyx_n_s_min_to_hour, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_min_to_hour, __pyx_t_3) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12418,7 +12846,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert days to minutes."""
  *     return days * 1440.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_77day_to_min, 0, __pyx_n_s_day_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__63)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_77day_to_min, 0, __pyx_n_s_day_to_min, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_day_to_min, __pyx_t_3) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12430,7 +12858,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert minutes to days."""
  *     return minutes / 1440.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_79min_to_day, 0, __pyx_n_s_min_to_day, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_79min_to_day, 0, __pyx_n_s_min_to_day, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_min_to_day, __pyx_t_3) < 0) __PYX_ERR(0, 200, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12442,7 +12870,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
  *     r         = sqrt(x ** 2.0 + y ** 2.0)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_81cartesian_to_polar, 0, __pyx_n_s_cartesian_to_polar, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_81cartesian_to_polar, 0, __pyx_n_s_cartesian_to_polar, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_cartesian_to_polar, __pyx_t_3) < 0) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12454,7 +12882,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
  *     theta_rad = radians(theta)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_83polar_to_cartesian, 0, __pyx_n_s_polar_to_cartesian, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__68)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_83polar_to_cartesian, 0, __pyx_n_s_polar_to_cartesian, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__42)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_polar_to_cartesian, __pyx_t_3) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12466,7 +12894,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
  *     r           = sqrt(x ** 2.0 + y ** 2.0)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_85cartesian_to_azimuthal, 0, __pyx_n_s_cartesian_to_azimuthal, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__70)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 221, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_85cartesian_to_azimuthal, 0, __pyx_n_s_cartesian_to_azimuthal, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_cartesian_to_azimuthal, __pyx_t_3) < 0) __PYX_ERR(0, 221, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12478,7 +12906,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
  *     azimuth_rad = radians(azimuth)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_87azimuthal_to_cartesian, 0, __pyx_n_s_azimuthal_to_cartesian, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__72)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_87azimuthal_to_cartesian, 0, __pyx_n_s_azimuthal_to_cartesian, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_azimuthal_to_cartesian, __pyx_t_3) < 0) __PYX_ERR(0, 229, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12490,7 +12918,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert theta to theta + 180 degrees."""
  *     return (theta + 180.0) % 360.0
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_89opposite_direction, 0, __pyx_n_s_opposite_direction, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__74)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_89opposite_direction, 0, __pyx_n_s_opposite_direction, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_opposite_direction, __pyx_t_3) < 0) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12502,7 +12930,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert wind speed at 10m to wind speed at 20ft."""
  *     return 0.87 * wind_speed_10m
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_91wind_speed_10m_to_wind_speed_20ft, 0, __pyx_n_s_wind_speed_10m_to_wind_speed_20f, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__76)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 242, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_91wind_speed_10m_to_wind_speed_20ft, 0, __pyx_n_s_wind_speed_10m_to_wind_speed_20f, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__46)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_wind_speed_10m_to_wind_speed_20f, __pyx_t_3) < 0) __PYX_ERR(0, 242, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12514,7 +12942,7 @@ if (!__Pyx_RefNanny) {
  *     """Convert wind speed at 20ft to wind speed at 10m."""
  *     return wind_speed_20ft / 0.87
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_93wind_speed_20ft_to_wind_speed_10m, 0, __pyx_n_s_wind_speed_20ft_to_wind_speed_10, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__78)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_10conversion_93wind_speed_20ft_to_wind_speed_10m, 0, __pyx_n_s_wind_speed_20ft_to_wind_speed_10, NULL, __pyx_n_s_pyretechnics_conversion, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_wind_speed_20ft_to_wind_speed_10, __pyx_t_3) < 0) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12528,6 +12956,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_TraceReturn(Py_None, 0);
 
   /*--- Wrapped vars code ---*/
 
@@ -13019,6 +13448,155 @@ static void __Pyx_RaiseArgtupleInvalid(
                  (num_expected == 1) ? "" : "s", num_found);
 }
 
+/* PyErrFetchRestore */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+#if PY_VERSION_HEX >= 0x030C00A6
+    PyObject *tmp_value;
+    assert(type == NULL || (value != NULL && type == (PyObject*) Py_TYPE(value)));
+    if (value) {
+        #if CYTHON_COMPILING_IN_CPYTHON
+        if (unlikely(((PyBaseExceptionObject*) value)->traceback != tb))
+        #endif
+            PyException_SetTraceback(value, tb);
+    }
+    tmp_value = tstate->current_exception;
+    tstate->current_exception = value;
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(type);
+    Py_XDECREF(tb);
+#else
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    tmp_type = tstate->curexc_type;
+    tmp_value = tstate->curexc_value;
+    tmp_tb = tstate->curexc_traceback;
+    tstate->curexc_type = type;
+    tstate->curexc_value = value;
+    tstate->curexc_traceback = tb;
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+#endif
+}
+static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+#if PY_VERSION_HEX >= 0x030C00A6
+    PyObject* exc_value;
+    exc_value = tstate->current_exception;
+    tstate->current_exception = 0;
+    *value = exc_value;
+    *type = NULL;
+    *tb = NULL;
+    if (exc_value) {
+        *type = (PyObject*) Py_TYPE(exc_value);
+        Py_INCREF(*type);
+        #if CYTHON_COMPILING_IN_CPYTHON
+        *tb = ((PyBaseExceptionObject*) exc_value)->traceback;
+        Py_XINCREF(*tb);
+        #else
+        *tb = PyException_GetTraceback(exc_value);
+        #endif
+    }
+#else
+    *type = tstate->curexc_type;
+    *value = tstate->curexc_value;
+    *tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+#endif
+}
+#endif
+
+/* Profile */
+#if CYTHON_PROFILE
+static int __Pyx_TraceSetupAndCall(PyCodeObject** code,
+                                   PyFrameObject** frame,
+                                   PyThreadState* tstate,
+                                   const char *funcname,
+                                   const char *srcfile,
+                                   int firstlineno) {
+    PyObject *type, *value, *traceback;
+    int retval;
+    if (*frame == NULL || !CYTHON_PROFILE_REUSE_FRAME) {
+        if (*code == NULL) {
+            *code = __Pyx_createFrameCodeObject(funcname, srcfile, firstlineno);
+            if (*code == NULL) return 0;
+        }
+        *frame = PyFrame_New(
+            tstate,                          /*PyThreadState *tstate*/
+            *code,                           /*PyCodeObject *code*/
+            __pyx_d,                  /*PyObject *globals*/
+            0                                /*PyObject *locals*/
+        );
+        if (*frame == NULL) return 0;
+        if (CYTHON_TRACE && (*frame)->f_trace == NULL) {
+            Py_INCREF(Py_None);
+            (*frame)->f_trace = Py_None;
+        }
+#if PY_VERSION_HEX < 0x030400B1
+    } else {
+        (*frame)->f_tstate = tstate;
+#endif
+    }
+    __Pyx_PyFrame_SetLineNumber(*frame, firstlineno);
+    retval = 1;
+    __Pyx_EnterTracing(tstate);
+    __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+    #if CYTHON_TRACE
+    if (tstate->c_tracefunc)
+        retval = tstate->c_tracefunc(tstate->c_traceobj, *frame, PyTrace_CALL, NULL) == 0;
+    if (retval && tstate->c_profilefunc)
+    #endif
+        retval = tstate->c_profilefunc(tstate->c_profileobj, *frame, PyTrace_CALL, NULL) == 0;
+    __Pyx_LeaveTracing(tstate);
+    if (retval) {
+        __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+        return __Pyx_IsTracing(tstate, 0, 0) && retval;
+    } else {
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+        return -1;
+    }
+}
+static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno) {
+    PyCodeObject *py_code = 0;
+#if PY_MAJOR_VERSION >= 3
+    py_code = PyCode_NewEmpty(srcfile, funcname, firstlineno);
+    if (likely(py_code)) {
+        py_code->co_flags |= CO_OPTIMIZED | CO_NEWLOCALS;
+    }
+#else
+    PyObject *py_srcfile = 0;
+    PyObject *py_funcname = 0;
+    py_funcname = PyString_FromString(funcname);
+    if (unlikely(!py_funcname)) goto bad;
+    py_srcfile = PyString_FromString(srcfile);
+    if (unlikely(!py_srcfile)) goto bad;
+    py_code = PyCode_New(
+        0,
+        0,
+        0,
+        CO_OPTIMIZED | CO_NEWLOCALS,
+        __pyx_empty_bytes,     /*PyObject *code,*/
+        __pyx_empty_tuple,     /*PyObject *consts,*/
+        __pyx_empty_tuple,     /*PyObject *names,*/
+        __pyx_empty_tuple,     /*PyObject *varnames,*/
+        __pyx_empty_tuple,     /*PyObject *freevars,*/
+        __pyx_empty_tuple,     /*PyObject *cellvars,*/
+        py_srcfile,       /*PyObject *filename,*/
+        py_funcname,      /*PyObject *name,*/
+        firstlineno,
+        __pyx_empty_bytes      /*PyObject *lnotab*/
+    );
+bad:
+    Py_XDECREF(py_srcfile);
+    Py_XDECREF(py_funcname);
+#endif
+    return py_code;
+}
+#endif
+
 /* PyFloatBinop */
 #if !CYTHON_COMPILING_IN_PYPY
 static PyObject* __Pyx_PyFloat_AddObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check) {
@@ -13225,65 +13803,6 @@ static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tsta
     Py_DECREF(exc_type);
     #endif
     return result;
-}
-#endif
-
-/* PyErrFetchRestore */
-#if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
-#if PY_VERSION_HEX >= 0x030C00A6
-    PyObject *tmp_value;
-    assert(type == NULL || (value != NULL && type == (PyObject*) Py_TYPE(value)));
-    if (value) {
-        #if CYTHON_COMPILING_IN_CPYTHON
-        if (unlikely(((PyBaseExceptionObject*) value)->traceback != tb))
-        #endif
-            PyException_SetTraceback(value, tb);
-    }
-    tmp_value = tstate->current_exception;
-    tstate->current_exception = value;
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(type);
-    Py_XDECREF(tb);
-#else
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    tmp_type = tstate->curexc_type;
-    tmp_value = tstate->curexc_value;
-    tmp_tb = tstate->curexc_traceback;
-    tstate->curexc_type = type;
-    tstate->curexc_value = value;
-    tstate->curexc_traceback = tb;
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-#endif
-}
-static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-#if PY_VERSION_HEX >= 0x030C00A6
-    PyObject* exc_value;
-    exc_value = tstate->current_exception;
-    tstate->current_exception = 0;
-    *value = exc_value;
-    *type = NULL;
-    *tb = NULL;
-    if (exc_value) {
-        *type = (PyObject*) Py_TYPE(exc_value);
-        Py_INCREF(*type);
-        #if CYTHON_COMPILING_IN_CPYTHON
-        *tb = ((PyBaseExceptionObject*) exc_value)->traceback;
-        Py_XINCREF(*tb);
-        #else
-        *tb = PyException_GetTraceback(exc_value);
-        #endif
-    }
-#else
-    *type = tstate->curexc_type;
-    *value = tstate->curexc_value;
-    *tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
-#endif
 }
 #endif
 
@@ -13905,7 +14424,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
         if (unlikely(!module_name_str)) { goto modbad; }
         module_name = PyUnicode_FromString(module_name_str);
         if (unlikely(!module_name)) { goto modbad; }
-        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u_);
+        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__48);
         if (unlikely(!module_dot)) { goto modbad; }
         full_name = PyUnicode_Concat(module_dot, name);
         if (unlikely(!full_name)) { goto modbad; }

@@ -1935,6 +1935,244 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,
     const char* function_name);
 
+/* Profile.proto */
+#ifndef CYTHON_PROFILE
+#if CYTHON_COMPILING_IN_LIMITED_API || CYTHON_COMPILING_IN_PYPY
+  #define CYTHON_PROFILE 0
+#else
+  #define CYTHON_PROFILE 1
+#endif
+#endif
+#ifndef CYTHON_TRACE_NOGIL
+  #define CYTHON_TRACE_NOGIL 0
+#else
+  #if CYTHON_TRACE_NOGIL && !defined(CYTHON_TRACE)
+    #define CYTHON_TRACE 1
+  #endif
+#endif
+#ifndef CYTHON_TRACE
+  #define CYTHON_TRACE 0
+#endif
+#if CYTHON_TRACE
+  #undef CYTHON_PROFILE_REUSE_FRAME
+#endif
+#ifndef CYTHON_PROFILE_REUSE_FRAME
+  #define CYTHON_PROFILE_REUSE_FRAME 0
+#endif
+#if CYTHON_PROFILE || CYTHON_TRACE
+  #include "compile.h"
+  #include "frameobject.h"
+  #include "traceback.h"
+#if PY_VERSION_HEX >= 0x030b00a6
+  #ifndef Py_BUILD_CORE
+    #define Py_BUILD_CORE 1
+  #endif
+  #include "internal/pycore_frame.h"
+#endif
+  #if CYTHON_PROFILE_REUSE_FRAME
+    #define CYTHON_FRAME_MODIFIER static
+    #define CYTHON_FRAME_DEL(frame)
+  #else
+    #define CYTHON_FRAME_MODIFIER
+    #define CYTHON_FRAME_DEL(frame) Py_CLEAR(frame)
+  #endif
+  #define __Pyx_TraceDeclarations\
+      static PyCodeObject *__pyx_frame_code = NULL;\
+      CYTHON_FRAME_MODIFIER PyFrameObject *__pyx_frame = NULL;\
+      int __Pyx_use_tracing = 0;
+  #define __Pyx_TraceFrameInit(codeobj)\
+      if (codeobj) __pyx_frame_code = (PyCodeObject*) codeobj;
+#if PY_VERSION_HEX >= 0x030b00a2
+  #if PY_VERSION_HEX >= 0x030C00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     ((!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #endif
+  #define __Pyx_EnterTracing(tstate)  PyThreadState_EnterTracing(tstate)
+  #define __Pyx_LeaveTracing(tstate)  PyThreadState_LeaveTracing(tstate)
+#elif PY_VERSION_HEX >= 0x030a00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->cframe->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->cframe->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                 || tstate->c_profilefunc != NULL);\
+      } while (0)
+#else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                         || tstate->c_profilefunc != NULL);\
+      } while (0)
+#endif
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  if (nogil) {\
+      if (CYTHON_TRACE_NOGIL) {\
+          PyThreadState *tstate;\
+          PyGILState_STATE state = PyGILState_Ensure();\
+          tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 1, 1)) {\
+              __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          }\
+          PyGILState_Release(state);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  } else {\
+      PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #else
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  {   PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #endif
+  #define __Pyx_TraceException()\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 1)) {\
+          __Pyx_EnterTracing(tstate);\
+          PyObject *exc_info = __Pyx_GetExceptionTuple(tstate);\
+          if (exc_info) {\
+              if (CYTHON_TRACE && tstate->c_tracefunc)\
+                  tstate->c_tracefunc(\
+                      tstate->c_traceobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              tstate->c_profilefunc(\
+                  tstate->c_profileobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              Py_DECREF(exc_info);\
+          }\
+          __Pyx_LeaveTracing(tstate);\
+      }\
+  }
+  static void __Pyx_call_return_trace_func(PyThreadState *tstate, PyFrameObject *frame, PyObject *result) {
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_EnterTracing(tstate);
+      if (CYTHON_TRACE && tstate->c_tracefunc)
+          tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_RETURN, result);
+      if (tstate->c_profilefunc)
+          tstate->c_profilefunc(tstate->c_profileobj, frame, PyTrace_RETURN, result);
+      CYTHON_FRAME_DEL(frame);
+      __Pyx_LeaveTracing(tstate);
+      __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0)) {\
+                  __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+              }\
+              PyGILState_Release(state);\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0)) {\
+              __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0)) {\
+          __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+      }\
+  }
+  #endif
+  static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno);
+  static int __Pyx_TraceSetupAndCall(PyCodeObject** code, PyFrameObject** frame, PyThreadState* tstate, const char *funcname, const char *srcfile, int firstlineno);
+#else
+  #define __Pyx_TraceDeclarations
+  #define __Pyx_TraceFrameInit(codeobj)
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)   if ((1)); else goto_error;
+  #define __Pyx_TraceException()
+  #define __Pyx_TraceReturn(result, nogil)
+#endif
+#if CYTHON_TRACE
+  static int __Pyx_call_line_trace_func(PyThreadState *tstate, PyFrameObject *frame, int lineno) {
+      int ret;
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_PyFrame_SetLineNumber(frame, lineno);
+      __Pyx_EnterTracing(tstate);
+      ret = tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_LINE, NULL);
+      __Pyx_LeaveTracing(tstate);
+      if (likely(!ret)) {
+          __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+      } else {
+          Py_XDECREF(type);
+          Py_XDECREF(value);
+          Py_XDECREF(traceback);
+      }
+      return ret;
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              int ret = 0;\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = __Pyx_PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+                  ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              }\
+              __Pyx_PyGILState_Release(state);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+              int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+          int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+          if (unlikely(ret)) goto_error;\
+      }\
+  }
+  #endif
+#else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)   if ((1)); else goto_error;
+#endif
+
 /* RaiseClosureNameError.proto */
 static CYTHON_INLINE void __Pyx_RaiseClosureNameError(const char *varname);
 
@@ -2425,7 +2663,6 @@ int __pyx_module_is_main_pyretechnics__surface_fire = 0;
 /* #### Code section: global_var ### */
 static PyObject *__pyx_builtin_ValueError;
 /* #### Code section: string_decls ### */
-static const char __pyx_k_[] = "_";
 static const char __pyx_k_A[] = "A";
 static const char __pyx_k_B[] = "B";
 static const char __pyx_k_C[] = "C";
@@ -2435,7 +2672,6 @@ static const char __pyx_k_G[] = "G";
 static const char __pyx_k_h[] = "h";
 static const char __pyx_k_i[] = "i";
 static const char __pyx_k_R0[] = "R0";
-static const char __pyx_k__4[] = ".";
 static const char __pyx_k_gc[] = "gc";
 static const char __pyx_k_np[] = "np";
 static const char __pyx_k_xi[] = "xi";
@@ -2446,7 +2682,9 @@ static const char __pyx_k_M_f[] = "M_f";
 static const char __pyx_k_M_x[] = "M_x";
 static const char __pyx_k_S_T[] = "S_T";
 static const char __pyx_k_S_e[] = "S_e";
-static const char __pyx_k__53[] = "*";
+static const char __pyx_k__24[] = "_";
+static const char __pyx_k__40[] = ".";
+static const char __pyx_k__65[] = "*";
 static const char __pyx_k__81[] = "?";
 static const char __pyx_k_dot[] = "dot";
 static const char __pyx_k_exp[] = "exp";
@@ -2783,7 +3021,6 @@ typedef struct {
   PyTypeObject *__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn;
   PyTypeObject *__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn;
   PyTypeObject *__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn;
-  PyObject *__pyx_n_s_;
   PyObject *__pyx_n_s_A;
   PyObject *__pyx_n_s_B;
   PyObject *__pyx_n_s_B_inverse;
@@ -2813,8 +3050,9 @@ typedef struct {
   PyObject *__pyx_n_s_U_eff_max;
   PyObject *__pyx_n_s_ValueError;
   PyObject *__pyx_n_s_W_n_i;
-  PyObject *__pyx_kp_u__4;
-  PyObject *__pyx_n_s__53;
+  PyObject *__pyx_n_s__24;
+  PyObject *__pyx_kp_u__40;
+  PyObject *__pyx_n_s__65;
   PyObject *__pyx_n_s__81;
   PyObject *__pyx_n_s_adjustment;
   PyObject *__pyx_n_s_as_unit_vector;
@@ -3057,83 +3295,83 @@ typedef struct {
   PyObject *__pyx_float_neg_0_0692;
   PyObject *__pyx_int_0;
   PyObject *__pyx_int_1;
-  PyObject *__pyx_tuple__2;
-  PyObject *__pyx_tuple__3;
-  PyObject *__pyx_tuple__5;
-  PyObject *__pyx_tuple__7;
-  PyObject *__pyx_tuple__9;
-  PyObject *__pyx_tuple__11;
-  PyObject *__pyx_tuple__13;
-  PyObject *__pyx_tuple__15;
-  PyObject *__pyx_tuple__17;
-  PyObject *__pyx_tuple__19;
-  PyObject *__pyx_tuple__21;
-  PyObject *__pyx_tuple__23;
-  PyObject *__pyx_tuple__25;
-  PyObject *__pyx_tuple__27;
-  PyObject *__pyx_tuple__29;
-  PyObject *__pyx_tuple__31;
+  PyObject *__pyx_codeobj_;
   PyObject *__pyx_tuple__33;
   PyObject *__pyx_tuple__35;
-  PyObject *__pyx_tuple__37;
-  PyObject *__pyx_tuple__40;
+  PyObject *__pyx_tuple__41;
   PyObject *__pyx_tuple__42;
+  PyObject *__pyx_tuple__43;
   PyObject *__pyx_tuple__44;
+  PyObject *__pyx_tuple__45;
   PyObject *__pyx_tuple__46;
+  PyObject *__pyx_tuple__47;
   PyObject *__pyx_tuple__48;
+  PyObject *__pyx_tuple__49;
   PyObject *__pyx_tuple__50;
+  PyObject *__pyx_tuple__51;
   PyObject *__pyx_tuple__52;
+  PyObject *__pyx_tuple__53;
   PyObject *__pyx_tuple__54;
+  PyObject *__pyx_tuple__55;
   PyObject *__pyx_tuple__56;
+  PyObject *__pyx_tuple__57;
   PyObject *__pyx_tuple__58;
+  PyObject *__pyx_tuple__59;
   PyObject *__pyx_tuple__60;
   PyObject *__pyx_tuple__61;
+  PyObject *__pyx_tuple__62;
   PyObject *__pyx_tuple__63;
-  PyObject *__pyx_tuple__65;
+  PyObject *__pyx_tuple__64;
+  PyObject *__pyx_tuple__66;
   PyObject *__pyx_tuple__67;
+  PyObject *__pyx_tuple__68;
   PyObject *__pyx_tuple__69;
+  PyObject *__pyx_tuple__70;
   PyObject *__pyx_tuple__71;
   PyObject *__pyx_tuple__72;
+  PyObject *__pyx_tuple__73;
   PyObject *__pyx_tuple__74;
+  PyObject *__pyx_tuple__75;
   PyObject *__pyx_tuple__76;
+  PyObject *__pyx_tuple__77;
   PyObject *__pyx_tuple__78;
   PyObject *__pyx_tuple__79;
+  PyObject *__pyx_tuple__80;
+  PyObject *__pyx_codeobj__2;
+  PyObject *__pyx_codeobj__3;
+  PyObject *__pyx_codeobj__4;
+  PyObject *__pyx_codeobj__5;
   PyObject *__pyx_codeobj__6;
+  PyObject *__pyx_codeobj__7;
   PyObject *__pyx_codeobj__8;
+  PyObject *__pyx_codeobj__9;
   PyObject *__pyx_codeobj__10;
+  PyObject *__pyx_codeobj__11;
   PyObject *__pyx_codeobj__12;
+  PyObject *__pyx_codeobj__13;
   PyObject *__pyx_codeobj__14;
+  PyObject *__pyx_codeobj__15;
   PyObject *__pyx_codeobj__16;
+  PyObject *__pyx_codeobj__17;
   PyObject *__pyx_codeobj__18;
+  PyObject *__pyx_codeobj__19;
   PyObject *__pyx_codeobj__20;
+  PyObject *__pyx_codeobj__21;
   PyObject *__pyx_codeobj__22;
-  PyObject *__pyx_codeobj__24;
+  PyObject *__pyx_codeobj__23;
+  PyObject *__pyx_codeobj__25;
   PyObject *__pyx_codeobj__26;
+  PyObject *__pyx_codeobj__27;
   PyObject *__pyx_codeobj__28;
+  PyObject *__pyx_codeobj__29;
   PyObject *__pyx_codeobj__30;
+  PyObject *__pyx_codeobj__31;
   PyObject *__pyx_codeobj__32;
   PyObject *__pyx_codeobj__34;
   PyObject *__pyx_codeobj__36;
+  PyObject *__pyx_codeobj__37;
   PyObject *__pyx_codeobj__38;
   PyObject *__pyx_codeobj__39;
-  PyObject *__pyx_codeobj__41;
-  PyObject *__pyx_codeobj__43;
-  PyObject *__pyx_codeobj__45;
-  PyObject *__pyx_codeobj__47;
-  PyObject *__pyx_codeobj__49;
-  PyObject *__pyx_codeobj__51;
-  PyObject *__pyx_codeobj__55;
-  PyObject *__pyx_codeobj__57;
-  PyObject *__pyx_codeobj__59;
-  PyObject *__pyx_codeobj__62;
-  PyObject *__pyx_codeobj__64;
-  PyObject *__pyx_codeobj__66;
-  PyObject *__pyx_codeobj__68;
-  PyObject *__pyx_codeobj__70;
-  PyObject *__pyx_codeobj__73;
-  PyObject *__pyx_codeobj__75;
-  PyObject *__pyx_codeobj__77;
-  PyObject *__pyx_codeobj__80;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -3204,7 +3442,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_type_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn);
   Py_CLEAR(clear_module_state->__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn);
   Py_CLEAR(clear_module_state->__pyx_type_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn);
-  Py_CLEAR(clear_module_state->__pyx_n_s_);
   Py_CLEAR(clear_module_state->__pyx_n_s_A);
   Py_CLEAR(clear_module_state->__pyx_n_s_B);
   Py_CLEAR(clear_module_state->__pyx_n_s_B_inverse);
@@ -3234,8 +3471,9 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_U_eff_max);
   Py_CLEAR(clear_module_state->__pyx_n_s_ValueError);
   Py_CLEAR(clear_module_state->__pyx_n_s_W_n_i);
-  Py_CLEAR(clear_module_state->__pyx_kp_u__4);
-  Py_CLEAR(clear_module_state->__pyx_n_s__53);
+  Py_CLEAR(clear_module_state->__pyx_n_s__24);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__40);
+  Py_CLEAR(clear_module_state->__pyx_n_s__65);
   Py_CLEAR(clear_module_state->__pyx_n_s__81);
   Py_CLEAR(clear_module_state->__pyx_n_s_adjustment);
   Py_CLEAR(clear_module_state->__pyx_n_s_as_unit_vector);
@@ -3478,83 +3716,83 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_float_neg_0_0692);
   Py_CLEAR(clear_module_state->__pyx_int_0);
   Py_CLEAR(clear_module_state->__pyx_int_1);
-  Py_CLEAR(clear_module_state->__pyx_tuple__2);
-  Py_CLEAR(clear_module_state->__pyx_tuple__3);
-  Py_CLEAR(clear_module_state->__pyx_tuple__5);
-  Py_CLEAR(clear_module_state->__pyx_tuple__7);
-  Py_CLEAR(clear_module_state->__pyx_tuple__9);
-  Py_CLEAR(clear_module_state->__pyx_tuple__11);
-  Py_CLEAR(clear_module_state->__pyx_tuple__13);
-  Py_CLEAR(clear_module_state->__pyx_tuple__15);
-  Py_CLEAR(clear_module_state->__pyx_tuple__17);
-  Py_CLEAR(clear_module_state->__pyx_tuple__19);
-  Py_CLEAR(clear_module_state->__pyx_tuple__21);
-  Py_CLEAR(clear_module_state->__pyx_tuple__23);
-  Py_CLEAR(clear_module_state->__pyx_tuple__25);
-  Py_CLEAR(clear_module_state->__pyx_tuple__27);
-  Py_CLEAR(clear_module_state->__pyx_tuple__29);
-  Py_CLEAR(clear_module_state->__pyx_tuple__31);
+  Py_CLEAR(clear_module_state->__pyx_codeobj_);
   Py_CLEAR(clear_module_state->__pyx_tuple__33);
   Py_CLEAR(clear_module_state->__pyx_tuple__35);
-  Py_CLEAR(clear_module_state->__pyx_tuple__37);
-  Py_CLEAR(clear_module_state->__pyx_tuple__40);
+  Py_CLEAR(clear_module_state->__pyx_tuple__41);
   Py_CLEAR(clear_module_state->__pyx_tuple__42);
+  Py_CLEAR(clear_module_state->__pyx_tuple__43);
   Py_CLEAR(clear_module_state->__pyx_tuple__44);
+  Py_CLEAR(clear_module_state->__pyx_tuple__45);
   Py_CLEAR(clear_module_state->__pyx_tuple__46);
+  Py_CLEAR(clear_module_state->__pyx_tuple__47);
   Py_CLEAR(clear_module_state->__pyx_tuple__48);
+  Py_CLEAR(clear_module_state->__pyx_tuple__49);
   Py_CLEAR(clear_module_state->__pyx_tuple__50);
+  Py_CLEAR(clear_module_state->__pyx_tuple__51);
   Py_CLEAR(clear_module_state->__pyx_tuple__52);
+  Py_CLEAR(clear_module_state->__pyx_tuple__53);
   Py_CLEAR(clear_module_state->__pyx_tuple__54);
+  Py_CLEAR(clear_module_state->__pyx_tuple__55);
   Py_CLEAR(clear_module_state->__pyx_tuple__56);
+  Py_CLEAR(clear_module_state->__pyx_tuple__57);
   Py_CLEAR(clear_module_state->__pyx_tuple__58);
+  Py_CLEAR(clear_module_state->__pyx_tuple__59);
   Py_CLEAR(clear_module_state->__pyx_tuple__60);
   Py_CLEAR(clear_module_state->__pyx_tuple__61);
+  Py_CLEAR(clear_module_state->__pyx_tuple__62);
   Py_CLEAR(clear_module_state->__pyx_tuple__63);
-  Py_CLEAR(clear_module_state->__pyx_tuple__65);
+  Py_CLEAR(clear_module_state->__pyx_tuple__64);
+  Py_CLEAR(clear_module_state->__pyx_tuple__66);
   Py_CLEAR(clear_module_state->__pyx_tuple__67);
+  Py_CLEAR(clear_module_state->__pyx_tuple__68);
   Py_CLEAR(clear_module_state->__pyx_tuple__69);
+  Py_CLEAR(clear_module_state->__pyx_tuple__70);
   Py_CLEAR(clear_module_state->__pyx_tuple__71);
   Py_CLEAR(clear_module_state->__pyx_tuple__72);
+  Py_CLEAR(clear_module_state->__pyx_tuple__73);
   Py_CLEAR(clear_module_state->__pyx_tuple__74);
+  Py_CLEAR(clear_module_state->__pyx_tuple__75);
   Py_CLEAR(clear_module_state->__pyx_tuple__76);
+  Py_CLEAR(clear_module_state->__pyx_tuple__77);
   Py_CLEAR(clear_module_state->__pyx_tuple__78);
   Py_CLEAR(clear_module_state->__pyx_tuple__79);
+  Py_CLEAR(clear_module_state->__pyx_tuple__80);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__2);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__3);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__4);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__5);
   Py_CLEAR(clear_module_state->__pyx_codeobj__6);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__7);
   Py_CLEAR(clear_module_state->__pyx_codeobj__8);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__9);
   Py_CLEAR(clear_module_state->__pyx_codeobj__10);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__11);
   Py_CLEAR(clear_module_state->__pyx_codeobj__12);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__13);
   Py_CLEAR(clear_module_state->__pyx_codeobj__14);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__15);
   Py_CLEAR(clear_module_state->__pyx_codeobj__16);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__17);
   Py_CLEAR(clear_module_state->__pyx_codeobj__18);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__19);
   Py_CLEAR(clear_module_state->__pyx_codeobj__20);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__21);
   Py_CLEAR(clear_module_state->__pyx_codeobj__22);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__24);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__23);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__25);
   Py_CLEAR(clear_module_state->__pyx_codeobj__26);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__27);
   Py_CLEAR(clear_module_state->__pyx_codeobj__28);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__29);
   Py_CLEAR(clear_module_state->__pyx_codeobj__30);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__31);
   Py_CLEAR(clear_module_state->__pyx_codeobj__32);
   Py_CLEAR(clear_module_state->__pyx_codeobj__34);
   Py_CLEAR(clear_module_state->__pyx_codeobj__36);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__37);
   Py_CLEAR(clear_module_state->__pyx_codeobj__38);
   Py_CLEAR(clear_module_state->__pyx_codeobj__39);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__41);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__43);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__45);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__47);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__49);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__51);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__55);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__57);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__59);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__62);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__64);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__66);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__68);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__70);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__73);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__75);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__77);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__80);
   return 0;
 }
 #endif
@@ -3603,7 +3841,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_type_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn);
   Py_VISIT(traverse_module_state->__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn);
   Py_VISIT(traverse_module_state->__pyx_type_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn);
-  Py_VISIT(traverse_module_state->__pyx_n_s_);
   Py_VISIT(traverse_module_state->__pyx_n_s_A);
   Py_VISIT(traverse_module_state->__pyx_n_s_B);
   Py_VISIT(traverse_module_state->__pyx_n_s_B_inverse);
@@ -3633,8 +3870,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_U_eff_max);
   Py_VISIT(traverse_module_state->__pyx_n_s_ValueError);
   Py_VISIT(traverse_module_state->__pyx_n_s_W_n_i);
-  Py_VISIT(traverse_module_state->__pyx_kp_u__4);
-  Py_VISIT(traverse_module_state->__pyx_n_s__53);
+  Py_VISIT(traverse_module_state->__pyx_n_s__24);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__40);
+  Py_VISIT(traverse_module_state->__pyx_n_s__65);
   Py_VISIT(traverse_module_state->__pyx_n_s__81);
   Py_VISIT(traverse_module_state->__pyx_n_s_adjustment);
   Py_VISIT(traverse_module_state->__pyx_n_s_as_unit_vector);
@@ -3877,83 +4115,83 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_float_neg_0_0692);
   Py_VISIT(traverse_module_state->__pyx_int_0);
   Py_VISIT(traverse_module_state->__pyx_int_1);
-  Py_VISIT(traverse_module_state->__pyx_tuple__2);
-  Py_VISIT(traverse_module_state->__pyx_tuple__3);
-  Py_VISIT(traverse_module_state->__pyx_tuple__5);
-  Py_VISIT(traverse_module_state->__pyx_tuple__7);
-  Py_VISIT(traverse_module_state->__pyx_tuple__9);
-  Py_VISIT(traverse_module_state->__pyx_tuple__11);
-  Py_VISIT(traverse_module_state->__pyx_tuple__13);
-  Py_VISIT(traverse_module_state->__pyx_tuple__15);
-  Py_VISIT(traverse_module_state->__pyx_tuple__17);
-  Py_VISIT(traverse_module_state->__pyx_tuple__19);
-  Py_VISIT(traverse_module_state->__pyx_tuple__21);
-  Py_VISIT(traverse_module_state->__pyx_tuple__23);
-  Py_VISIT(traverse_module_state->__pyx_tuple__25);
-  Py_VISIT(traverse_module_state->__pyx_tuple__27);
-  Py_VISIT(traverse_module_state->__pyx_tuple__29);
-  Py_VISIT(traverse_module_state->__pyx_tuple__31);
+  Py_VISIT(traverse_module_state->__pyx_codeobj_);
   Py_VISIT(traverse_module_state->__pyx_tuple__33);
   Py_VISIT(traverse_module_state->__pyx_tuple__35);
-  Py_VISIT(traverse_module_state->__pyx_tuple__37);
-  Py_VISIT(traverse_module_state->__pyx_tuple__40);
+  Py_VISIT(traverse_module_state->__pyx_tuple__41);
   Py_VISIT(traverse_module_state->__pyx_tuple__42);
+  Py_VISIT(traverse_module_state->__pyx_tuple__43);
   Py_VISIT(traverse_module_state->__pyx_tuple__44);
+  Py_VISIT(traverse_module_state->__pyx_tuple__45);
   Py_VISIT(traverse_module_state->__pyx_tuple__46);
+  Py_VISIT(traverse_module_state->__pyx_tuple__47);
   Py_VISIT(traverse_module_state->__pyx_tuple__48);
+  Py_VISIT(traverse_module_state->__pyx_tuple__49);
   Py_VISIT(traverse_module_state->__pyx_tuple__50);
+  Py_VISIT(traverse_module_state->__pyx_tuple__51);
   Py_VISIT(traverse_module_state->__pyx_tuple__52);
+  Py_VISIT(traverse_module_state->__pyx_tuple__53);
   Py_VISIT(traverse_module_state->__pyx_tuple__54);
+  Py_VISIT(traverse_module_state->__pyx_tuple__55);
   Py_VISIT(traverse_module_state->__pyx_tuple__56);
+  Py_VISIT(traverse_module_state->__pyx_tuple__57);
   Py_VISIT(traverse_module_state->__pyx_tuple__58);
+  Py_VISIT(traverse_module_state->__pyx_tuple__59);
   Py_VISIT(traverse_module_state->__pyx_tuple__60);
   Py_VISIT(traverse_module_state->__pyx_tuple__61);
+  Py_VISIT(traverse_module_state->__pyx_tuple__62);
   Py_VISIT(traverse_module_state->__pyx_tuple__63);
-  Py_VISIT(traverse_module_state->__pyx_tuple__65);
+  Py_VISIT(traverse_module_state->__pyx_tuple__64);
+  Py_VISIT(traverse_module_state->__pyx_tuple__66);
   Py_VISIT(traverse_module_state->__pyx_tuple__67);
+  Py_VISIT(traverse_module_state->__pyx_tuple__68);
   Py_VISIT(traverse_module_state->__pyx_tuple__69);
+  Py_VISIT(traverse_module_state->__pyx_tuple__70);
   Py_VISIT(traverse_module_state->__pyx_tuple__71);
   Py_VISIT(traverse_module_state->__pyx_tuple__72);
+  Py_VISIT(traverse_module_state->__pyx_tuple__73);
   Py_VISIT(traverse_module_state->__pyx_tuple__74);
+  Py_VISIT(traverse_module_state->__pyx_tuple__75);
   Py_VISIT(traverse_module_state->__pyx_tuple__76);
+  Py_VISIT(traverse_module_state->__pyx_tuple__77);
   Py_VISIT(traverse_module_state->__pyx_tuple__78);
   Py_VISIT(traverse_module_state->__pyx_tuple__79);
+  Py_VISIT(traverse_module_state->__pyx_tuple__80);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__2);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__3);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__4);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__5);
   Py_VISIT(traverse_module_state->__pyx_codeobj__6);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__7);
   Py_VISIT(traverse_module_state->__pyx_codeobj__8);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__9);
   Py_VISIT(traverse_module_state->__pyx_codeobj__10);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__11);
   Py_VISIT(traverse_module_state->__pyx_codeobj__12);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__13);
   Py_VISIT(traverse_module_state->__pyx_codeobj__14);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__15);
   Py_VISIT(traverse_module_state->__pyx_codeobj__16);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__17);
   Py_VISIT(traverse_module_state->__pyx_codeobj__18);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__19);
   Py_VISIT(traverse_module_state->__pyx_codeobj__20);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__21);
   Py_VISIT(traverse_module_state->__pyx_codeobj__22);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__24);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__23);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__25);
   Py_VISIT(traverse_module_state->__pyx_codeobj__26);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__27);
   Py_VISIT(traverse_module_state->__pyx_codeobj__28);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__29);
   Py_VISIT(traverse_module_state->__pyx_codeobj__30);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__31);
   Py_VISIT(traverse_module_state->__pyx_codeobj__32);
   Py_VISIT(traverse_module_state->__pyx_codeobj__34);
   Py_VISIT(traverse_module_state->__pyx_codeobj__36);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__37);
   Py_VISIT(traverse_module_state->__pyx_codeobj__38);
   Py_VISIT(traverse_module_state->__pyx_codeobj__39);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__41);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__43);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__45);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__47);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__49);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__51);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__55);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__57);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__59);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__62);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__64);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__66);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__68);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__70);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__73);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__75);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__77);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__80);
   return 0;
 }
 #endif
@@ -4012,7 +4250,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn __pyx_mstate_global->__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn
 #define __pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn __pyx_mstate_global->__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn
 #define __pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn __pyx_mstate_global->__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn
-#define __pyx_n_s_ __pyx_mstate_global->__pyx_n_s_
 #define __pyx_n_s_A __pyx_mstate_global->__pyx_n_s_A
 #define __pyx_n_s_B __pyx_mstate_global->__pyx_n_s_B
 #define __pyx_n_s_B_inverse __pyx_mstate_global->__pyx_n_s_B_inverse
@@ -4042,8 +4279,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_U_eff_max __pyx_mstate_global->__pyx_n_s_U_eff_max
 #define __pyx_n_s_ValueError __pyx_mstate_global->__pyx_n_s_ValueError
 #define __pyx_n_s_W_n_i __pyx_mstate_global->__pyx_n_s_W_n_i
-#define __pyx_kp_u__4 __pyx_mstate_global->__pyx_kp_u__4
-#define __pyx_n_s__53 __pyx_mstate_global->__pyx_n_s__53
+#define __pyx_n_s__24 __pyx_mstate_global->__pyx_n_s__24
+#define __pyx_kp_u__40 __pyx_mstate_global->__pyx_kp_u__40
+#define __pyx_n_s__65 __pyx_mstate_global->__pyx_n_s__65
 #define __pyx_n_s__81 __pyx_mstate_global->__pyx_n_s__81
 #define __pyx_n_s_adjustment __pyx_mstate_global->__pyx_n_s_adjustment
 #define __pyx_n_s_as_unit_vector __pyx_mstate_global->__pyx_n_s_as_unit_vector
@@ -4286,83 +4524,83 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_float_neg_0_0692 __pyx_mstate_global->__pyx_float_neg_0_0692
 #define __pyx_int_0 __pyx_mstate_global->__pyx_int_0
 #define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
-#define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
-#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
-#define __pyx_tuple__5 __pyx_mstate_global->__pyx_tuple__5
-#define __pyx_tuple__7 __pyx_mstate_global->__pyx_tuple__7
-#define __pyx_tuple__9 __pyx_mstate_global->__pyx_tuple__9
-#define __pyx_tuple__11 __pyx_mstate_global->__pyx_tuple__11
-#define __pyx_tuple__13 __pyx_mstate_global->__pyx_tuple__13
-#define __pyx_tuple__15 __pyx_mstate_global->__pyx_tuple__15
-#define __pyx_tuple__17 __pyx_mstate_global->__pyx_tuple__17
-#define __pyx_tuple__19 __pyx_mstate_global->__pyx_tuple__19
-#define __pyx_tuple__21 __pyx_mstate_global->__pyx_tuple__21
-#define __pyx_tuple__23 __pyx_mstate_global->__pyx_tuple__23
-#define __pyx_tuple__25 __pyx_mstate_global->__pyx_tuple__25
-#define __pyx_tuple__27 __pyx_mstate_global->__pyx_tuple__27
-#define __pyx_tuple__29 __pyx_mstate_global->__pyx_tuple__29
-#define __pyx_tuple__31 __pyx_mstate_global->__pyx_tuple__31
+#define __pyx_codeobj_ __pyx_mstate_global->__pyx_codeobj_
 #define __pyx_tuple__33 __pyx_mstate_global->__pyx_tuple__33
 #define __pyx_tuple__35 __pyx_mstate_global->__pyx_tuple__35
-#define __pyx_tuple__37 __pyx_mstate_global->__pyx_tuple__37
-#define __pyx_tuple__40 __pyx_mstate_global->__pyx_tuple__40
+#define __pyx_tuple__41 __pyx_mstate_global->__pyx_tuple__41
 #define __pyx_tuple__42 __pyx_mstate_global->__pyx_tuple__42
+#define __pyx_tuple__43 __pyx_mstate_global->__pyx_tuple__43
 #define __pyx_tuple__44 __pyx_mstate_global->__pyx_tuple__44
+#define __pyx_tuple__45 __pyx_mstate_global->__pyx_tuple__45
 #define __pyx_tuple__46 __pyx_mstate_global->__pyx_tuple__46
+#define __pyx_tuple__47 __pyx_mstate_global->__pyx_tuple__47
 #define __pyx_tuple__48 __pyx_mstate_global->__pyx_tuple__48
+#define __pyx_tuple__49 __pyx_mstate_global->__pyx_tuple__49
 #define __pyx_tuple__50 __pyx_mstate_global->__pyx_tuple__50
+#define __pyx_tuple__51 __pyx_mstate_global->__pyx_tuple__51
 #define __pyx_tuple__52 __pyx_mstate_global->__pyx_tuple__52
+#define __pyx_tuple__53 __pyx_mstate_global->__pyx_tuple__53
 #define __pyx_tuple__54 __pyx_mstate_global->__pyx_tuple__54
+#define __pyx_tuple__55 __pyx_mstate_global->__pyx_tuple__55
 #define __pyx_tuple__56 __pyx_mstate_global->__pyx_tuple__56
+#define __pyx_tuple__57 __pyx_mstate_global->__pyx_tuple__57
 #define __pyx_tuple__58 __pyx_mstate_global->__pyx_tuple__58
+#define __pyx_tuple__59 __pyx_mstate_global->__pyx_tuple__59
 #define __pyx_tuple__60 __pyx_mstate_global->__pyx_tuple__60
 #define __pyx_tuple__61 __pyx_mstate_global->__pyx_tuple__61
+#define __pyx_tuple__62 __pyx_mstate_global->__pyx_tuple__62
 #define __pyx_tuple__63 __pyx_mstate_global->__pyx_tuple__63
-#define __pyx_tuple__65 __pyx_mstate_global->__pyx_tuple__65
+#define __pyx_tuple__64 __pyx_mstate_global->__pyx_tuple__64
+#define __pyx_tuple__66 __pyx_mstate_global->__pyx_tuple__66
 #define __pyx_tuple__67 __pyx_mstate_global->__pyx_tuple__67
+#define __pyx_tuple__68 __pyx_mstate_global->__pyx_tuple__68
 #define __pyx_tuple__69 __pyx_mstate_global->__pyx_tuple__69
+#define __pyx_tuple__70 __pyx_mstate_global->__pyx_tuple__70
 #define __pyx_tuple__71 __pyx_mstate_global->__pyx_tuple__71
 #define __pyx_tuple__72 __pyx_mstate_global->__pyx_tuple__72
+#define __pyx_tuple__73 __pyx_mstate_global->__pyx_tuple__73
 #define __pyx_tuple__74 __pyx_mstate_global->__pyx_tuple__74
+#define __pyx_tuple__75 __pyx_mstate_global->__pyx_tuple__75
 #define __pyx_tuple__76 __pyx_mstate_global->__pyx_tuple__76
+#define __pyx_tuple__77 __pyx_mstate_global->__pyx_tuple__77
 #define __pyx_tuple__78 __pyx_mstate_global->__pyx_tuple__78
 #define __pyx_tuple__79 __pyx_mstate_global->__pyx_tuple__79
+#define __pyx_tuple__80 __pyx_mstate_global->__pyx_tuple__80
+#define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
+#define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
+#define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
+#define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
 #define __pyx_codeobj__6 __pyx_mstate_global->__pyx_codeobj__6
+#define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
 #define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
+#define __pyx_codeobj__9 __pyx_mstate_global->__pyx_codeobj__9
 #define __pyx_codeobj__10 __pyx_mstate_global->__pyx_codeobj__10
+#define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
 #define __pyx_codeobj__12 __pyx_mstate_global->__pyx_codeobj__12
+#define __pyx_codeobj__13 __pyx_mstate_global->__pyx_codeobj__13
 #define __pyx_codeobj__14 __pyx_mstate_global->__pyx_codeobj__14
+#define __pyx_codeobj__15 __pyx_mstate_global->__pyx_codeobj__15
 #define __pyx_codeobj__16 __pyx_mstate_global->__pyx_codeobj__16
+#define __pyx_codeobj__17 __pyx_mstate_global->__pyx_codeobj__17
 #define __pyx_codeobj__18 __pyx_mstate_global->__pyx_codeobj__18
+#define __pyx_codeobj__19 __pyx_mstate_global->__pyx_codeobj__19
 #define __pyx_codeobj__20 __pyx_mstate_global->__pyx_codeobj__20
+#define __pyx_codeobj__21 __pyx_mstate_global->__pyx_codeobj__21
 #define __pyx_codeobj__22 __pyx_mstate_global->__pyx_codeobj__22
-#define __pyx_codeobj__24 __pyx_mstate_global->__pyx_codeobj__24
+#define __pyx_codeobj__23 __pyx_mstate_global->__pyx_codeobj__23
+#define __pyx_codeobj__25 __pyx_mstate_global->__pyx_codeobj__25
 #define __pyx_codeobj__26 __pyx_mstate_global->__pyx_codeobj__26
+#define __pyx_codeobj__27 __pyx_mstate_global->__pyx_codeobj__27
 #define __pyx_codeobj__28 __pyx_mstate_global->__pyx_codeobj__28
+#define __pyx_codeobj__29 __pyx_mstate_global->__pyx_codeobj__29
 #define __pyx_codeobj__30 __pyx_mstate_global->__pyx_codeobj__30
+#define __pyx_codeobj__31 __pyx_mstate_global->__pyx_codeobj__31
 #define __pyx_codeobj__32 __pyx_mstate_global->__pyx_codeobj__32
 #define __pyx_codeobj__34 __pyx_mstate_global->__pyx_codeobj__34
 #define __pyx_codeobj__36 __pyx_mstate_global->__pyx_codeobj__36
+#define __pyx_codeobj__37 __pyx_mstate_global->__pyx_codeobj__37
 #define __pyx_codeobj__38 __pyx_mstate_global->__pyx_codeobj__38
 #define __pyx_codeobj__39 __pyx_mstate_global->__pyx_codeobj__39
-#define __pyx_codeobj__41 __pyx_mstate_global->__pyx_codeobj__41
-#define __pyx_codeobj__43 __pyx_mstate_global->__pyx_codeobj__43
-#define __pyx_codeobj__45 __pyx_mstate_global->__pyx_codeobj__45
-#define __pyx_codeobj__47 __pyx_mstate_global->__pyx_codeobj__47
-#define __pyx_codeobj__49 __pyx_mstate_global->__pyx_codeobj__49
-#define __pyx_codeobj__51 __pyx_mstate_global->__pyx_codeobj__51
-#define __pyx_codeobj__55 __pyx_mstate_global->__pyx_codeobj__55
-#define __pyx_codeobj__57 __pyx_mstate_global->__pyx_codeobj__57
-#define __pyx_codeobj__59 __pyx_mstate_global->__pyx_codeobj__59
-#define __pyx_codeobj__62 __pyx_mstate_global->__pyx_codeobj__62
-#define __pyx_codeobj__64 __pyx_mstate_global->__pyx_codeobj__64
-#define __pyx_codeobj__66 __pyx_mstate_global->__pyx_codeobj__66
-#define __pyx_codeobj__68 __pyx_mstate_global->__pyx_codeobj__68
-#define __pyx_codeobj__70 __pyx_mstate_global->__pyx_codeobj__70
-#define __pyx_codeobj__73 __pyx_mstate_global->__pyx_codeobj__73
-#define __pyx_codeobj__75 __pyx_mstate_global->__pyx_codeobj__75
-#define __pyx_codeobj__77 __pyx_mstate_global->__pyx_codeobj__77
-#define __pyx_codeobj__80 __pyx_mstate_global->__pyx_codeobj__80
 /* #### Code section: module_code ### */
 
 /* "pyretechnics/surface_fire.py":6
@@ -4607,6 +4845,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4617,6 +4856,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __Pyx_RefNannySetupContext("lambda", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda", __pyx_f[0], 7, 0, __PYX_ERR(0, 7, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_ij)) { __Pyx_RaiseClosureNameError("f_ij"); __PYX_ERR(0, 7, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 7, __pyx_L1_error)
@@ -4641,6 +4881,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4753,6 +4994,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4763,6 +5005,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda1", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda1", __pyx_f[0], 8, 0, __PYX_ERR(0, 8, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_i)) { __Pyx_RaiseClosureNameError("f_i"); __PYX_ERR(0, 8, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_i, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
@@ -4787,6 +5030,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4802,6 +5046,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_calc_surface_area_to_volume_ratio(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f_i, PyObject *__pyx_v_f_ij, PyObject *__pyx_v_sigma) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4811,6 +5056,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_calc_surface_area_to_vol
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj_)
   __Pyx_RefNannySetupContext("calc_surface_area_to_volume_ratio", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct__calc_surface_area_to_volume_ratio, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -4820,6 +5066,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_calc_surface_area_to_vol
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_surface_area_to_volume_ratio", __pyx_f[0], 6, 0, __PYX_ERR(0, 6, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_f_i = __pyx_v_f_i;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_f_i);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_f_i);
@@ -4926,6 +5173,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_calc_surface_area_to_vol
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5172,6 +5420,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5182,6 +5431,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda2", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda2", __pyx_f[0], 13, 0, __PYX_ERR(0, 13, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_w_o)) { __Pyx_RaiseClosureNameError("w_o"); __PYX_ERR(0, 13, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_w_o, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
@@ -5206,6 +5456,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5318,6 +5569,7 @@ static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
@@ -5326,6 +5578,7 @@ static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda3", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda3", __pyx_f[0], 14, 0, __PYX_ERR(0, 14, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_beta_i)) { __Pyx_RaiseClosureNameError("beta_i"); __PYX_ERR(0, 14, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_beta_i, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 14, __pyx_L1_error)
@@ -5341,6 +5594,7 @@ static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5356,6 +5610,7 @@ static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_2calc_packing_ratio(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_w_o, PyObject *__pyx_v_rho_p, PyObject *__pyx_v_delta) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -5366,6 +5621,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_2calc_packing_ratio(CYTH
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__2)
   __Pyx_RefNannySetupContext("calc_packing_ratio", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_1_calc_packing_ratio, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -5375,6 +5631,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_2calc_packing_ratio(CYTH
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_packing_ratio", __pyx_f[0], 11, 0, __PYX_ERR(0, 11, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_w_o = __pyx_v_w_o;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_w_o);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_w_o);
@@ -5516,6 +5773,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_2calc_packing_ratio(CYTH
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5626,6 +5884,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_4calc_optimum_packing_ratio(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sigma_prime) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5634,7 +5893,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_4calc_optimum_packing_ra
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__3)
   __Pyx_RefNannySetupContext("calc_optimum_packing_ratio", 1);
+  __Pyx_TraceCall("calc_optimum_packing_ratio", __pyx_f[0], 19, 0, __PYX_ERR(0, 19, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":20
  * 
@@ -5680,6 +5941,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_4calc_optimum_packing_ra
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5911,6 +6173,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5921,6 +6184,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda4", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda4", __pyx_f[0], 24, 0, __PYX_ERR(0, 24, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_ij)) { __Pyx_RaiseClosureNameError("f_ij"); __PYX_ERR(0, 24, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L1_error)
@@ -5945,6 +6209,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6159,6 +6424,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda6(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_S_e_i) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6168,6 +6434,7 @@ static PyObject *__pyx_lambda_funcdef_lambda6(CYTHON_UNUSED PyObject *__pyx_self
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda6", 1);
+  __Pyx_TraceCall("lambda6", __pyx_f[0], 26, 0, __PYX_ERR(0, 26, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":27
  *     return map_category(lambda i:
@@ -6213,6 +6480,7 @@ static PyObject *__pyx_lambda_funcdef_lambda6(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6229,6 +6497,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6241,6 +6510,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda5", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda5", __pyx_f[0], 25, 0, __PYX_ERR(0, 25, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":28
  *                         (lambda S_e_i:
@@ -6316,6 +6586,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6331,6 +6602,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_6calc_mineral_damping_coefficients(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f_ij, PyObject *__pyx_v_S_e) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6340,6 +6612,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_6calc_mineral_damping_co
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__4)
   __Pyx_RefNannySetupContext("calc_mineral_damping_coefficients", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_2_calc_mineral_damping_coefficients, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -6349,6 +6622,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_6calc_mineral_damping_co
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_mineral_damping_coefficients", __pyx_f[0], 23, 0, __PYX_ERR(0, 23, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_f_ij = __pyx_v_f_ij;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_f_ij);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_f_ij);
@@ -6452,6 +6726,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_6calc_mineral_damping_co
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6698,6 +6973,7 @@ static PyObject *__pyx_lambda_funcdef_lambda7(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6708,6 +6984,7 @@ static PyObject *__pyx_lambda_funcdef_lambda7(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda7", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda7", __pyx_f[0], 32, 0, __PYX_ERR(0, 32, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_ij)) { __Pyx_RaiseClosureNameError("f_ij"); __PYX_ERR(0, 32, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
@@ -6732,6 +7009,7 @@ static PyObject *__pyx_lambda_funcdef_lambda7(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6844,6 +7122,7 @@ static PyObject *__pyx_lambda_funcdef_lambda8(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6854,6 +7133,7 @@ static PyObject *__pyx_lambda_funcdef_lambda8(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda8", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda8", __pyx_f[0], 33, 0, __PYX_ERR(0, 33, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_ij)) { __Pyx_RaiseClosureNameError("f_ij"); __PYX_ERR(0, 33, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
@@ -6878,6 +7158,7 @@ static PyObject *__pyx_lambda_funcdef_lambda8(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7211,6 +7492,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda11(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_r_M) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7219,6 +7501,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(CYTHON_UNUSED PyObject *__pyx_sel
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda11", 1);
+  __Pyx_TraceCall("lambda11", __pyx_f[0], 36, 0, __PYX_ERR(0, 36, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":37
  *                         (lambda M_f, M_x:
@@ -7272,6 +7555,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(CYTHON_UNUSED PyObject *__pyx_sel
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7286,6 +7570,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(CYTHON_UNUSED PyObject *__pyx_sel
 
 static PyObject *__pyx_lambda_funcdef_lambda10(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_M_f, PyObject *__pyx_v_M_x) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7302,6 +7587,7 @@ static PyObject *__pyx_lambda_funcdef_lambda10(CYTHON_UNUSED PyObject *__pyx_sel
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda10", 1);
+  __Pyx_TraceCall("lambda10", __pyx_f[0], 35, 0, __PYX_ERR(0, 35, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":38
  *                          (lambda r_M:
@@ -7407,6 +7693,7 @@ static PyObject *__pyx_lambda_funcdef_lambda10(CYTHON_UNUSED PyObject *__pyx_sel
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7423,6 +7710,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7436,6 +7724,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda9", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda9", __pyx_f[0], 34, 0, __PYX_ERR(0, 34, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":39
  *                           1.0 - 2.59 * r_M + 5.11 * r_M ** 2.0 - 3.52 * r_M ** 3.0
@@ -7516,6 +7805,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7531,6 +7821,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_8calc_moisture_damping_coefficients(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f_ij, PyObject *__pyx_v_M_f, PyObject *__pyx_v_M_x) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7540,6 +7831,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_8calc_moisture_damping_c
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__5)
   __Pyx_RefNannySetupContext("calc_moisture_damping_coefficients", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_3_calc_moisture_damping_coefficients, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -7549,6 +7841,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_8calc_moisture_damping_c
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_moisture_damping_coefficients", __pyx_f[0], 31, 0, __PYX_ERR(0, 31, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_f_ij = __pyx_v_f_ij;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_f_ij);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_f_ij);
@@ -7693,6 +7986,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_8calc_moisture_damping_c
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7924,6 +8218,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7934,6 +8229,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda12", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda12", __pyx_f[0], 43, 0, __PYX_ERR(0, 43, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_ij)) { __Pyx_RaiseClosureNameError("f_ij"); __PYX_ERR(0, 43, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
@@ -7958,6 +8254,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7973,6 +8270,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_10calc_low_heat_content(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f_ij, PyObject *__pyx_v_h) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7982,6 +8280,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_10calc_low_heat_content(
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__6)
   __Pyx_RefNannySetupContext("calc_low_heat_content", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_4_calc_low_heat_content, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -7991,6 +8290,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_10calc_low_heat_content(
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_low_heat_content", __pyx_f[0], 42, 0, __PYX_ERR(0, 42, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_f_ij = __pyx_v_f_ij;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_f_ij);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_f_ij);
@@ -8056,6 +8356,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_10calc_low_heat_content(
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8434,6 +8735,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda14(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_g_ij, PyObject *__pyx_v_w_o, PyObject *__pyx_v_S_T) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8442,6 +8744,7 @@ static PyObject *__pyx_lambda_funcdef_lambda14(CYTHON_UNUSED PyObject *__pyx_sel
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda14", 1);
+  __Pyx_TraceCall("lambda14", __pyx_f[0], 48, 0, __PYX_ERR(0, 48, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":49
  *     return size_class_sum(lambda i:
@@ -8480,6 +8783,7 @@ static PyObject *__pyx_lambda_funcdef_lambda14(CYTHON_UNUSED PyObject *__pyx_sel
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8496,6 +8800,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8510,6 +8815,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda13", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda13", __pyx_f[0], 47, 0, __PYX_ERR(0, 47, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":50
  *                           (lambda g_ij, w_o, S_T:
@@ -8595,6 +8901,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8610,6 +8917,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_12calc_net_fuel_loading(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_g_ij, PyObject *__pyx_v_w_o, PyObject *__pyx_v_S_T) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8619,6 +8927,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_12calc_net_fuel_loading(
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__7)
   __Pyx_RefNannySetupContext("calc_net_fuel_loading", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_5_calc_net_fuel_loading, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -8628,6 +8937,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_12calc_net_fuel_loading(
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_net_fuel_loading", __pyx_f[0], 46, 0, __PYX_ERR(0, 46, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_g_ij = __pyx_v_g_ij;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_g_ij);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_g_ij);
@@ -8696,6 +9006,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_12calc_net_fuel_loading(
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8957,6 +9268,7 @@ static PyObject *__pyx_lambda_funcdef_lambda15(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8967,6 +9279,7 @@ static PyObject *__pyx_lambda_funcdef_lambda15(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda15", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda15", __pyx_f[0], 54, 0, __PYX_ERR(0, 54, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_W_n_i)) { __Pyx_RaiseClosureNameError("W_n_i"); __PYX_ERR(0, 54, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_W_n_i, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
@@ -9005,6 +9318,7 @@ static PyObject *__pyx_lambda_funcdef_lambda15(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9020,6 +9334,7 @@ static PyObject *__pyx_lambda_funcdef_lambda15(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_14calc_heat_per_unit_area(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_eta_S_i, PyObject *__pyx_v_eta_M_i, PyObject *__pyx_v_h_i, PyObject *__pyx_v_W_n_i) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9029,6 +9344,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_14calc_heat_per_unit_are
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__8)
   __Pyx_RefNannySetupContext("calc_heat_per_unit_area", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_6_calc_heat_per_unit_area, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -9038,6 +9354,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_14calc_heat_per_unit_are
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_heat_per_unit_area", __pyx_f[0], 53, 0, __PYX_ERR(0, 53, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_eta_S_i = __pyx_v_eta_S_i;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_eta_S_i);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_eta_S_i);
@@ -9109,6 +9426,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_14calc_heat_per_unit_are
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9253,6 +9571,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_16calc_optimum_reaction_
   PyObject *__pyx_v_C = NULL;
   PyObject *__pyx_v_Gamma_prime_max = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9264,7 +9583,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_16calc_optimum_reaction_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__9)
   __Pyx_RefNannySetupContext("calc_optimum_reaction_velocity", 1);
+  __Pyx_TraceCall("calc_optimum_reaction_velocity", __pyx_f[0], 57, 0, __PYX_ERR(0, 57, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":59
  * def calc_optimum_reaction_velocity(sigma_prime, beta, beta_op):
@@ -9407,6 +9728,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_16calc_optimum_reaction_
   __Pyx_XDECREF(__pyx_v_C);
   __Pyx_XDECREF(__pyx_v_Gamma_prime_max);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9576,6 +9898,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_18calc_reaction_intensit
   PyObject *__pyx_v_Btus = NULL;
   PyObject *__pyx_v_Gamma_prime = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9584,7 +9907,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_18calc_reaction_intensit
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__10)
   __Pyx_RefNannySetupContext("calc_reaction_intensity", 1);
+  __Pyx_TraceCall("calc_reaction_intensity", __pyx_f[0], 68, 0, __PYX_ERR(0, 68, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":69
  * 
@@ -9931,6 +10256,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_18calc_reaction_intensit
   __Pyx_XDECREF(__pyx_v_Btus);
   __Pyx_XDECREF(__pyx_v_Gamma_prime);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10056,6 +10382,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_20calc_propagating_flux_ratio(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sigma_prime, PyObject *__pyx_v_beta) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10066,7 +10393,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_20calc_propagating_flux_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__11)
   __Pyx_RefNannySetupContext("calc_propagating_flux_ratio", 1);
+  __Pyx_TraceCall("calc_propagating_flux_ratio", __pyx_f[0], 86, 0, __PYX_ERR(0, 86, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":87
  * # [[file:../../org/pyretechnics.org::surface-fire-propagating-flux-ratio][surface-fire-propagating-flux-ratio]]
@@ -10147,6 +10476,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_20calc_propagating_flux_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10272,12 +10602,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_22calc_heat_source(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_I_R, PyObject *__pyx_v_xi) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__12)
   __Pyx_RefNannySetupContext("calc_heat_source", 1);
+  __Pyx_TraceCall("calc_heat_source", __pyx_f[0], 90, 0, __PYX_ERR(0, 90, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":91
  * # [[file:../../org/pyretechnics.org::surface-fire-heat-source-no-wind-no-slope][surface-fire-heat-source-no-wind-no-slope]]
@@ -10308,6 +10641,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_22calc_heat_source(CYTHO
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10539,6 +10873,7 @@ static PyObject *__pyx_lambda_funcdef_lambda16(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
@@ -10547,6 +10882,7 @@ static PyObject *__pyx_lambda_funcdef_lambda16(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda16", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda16", __pyx_f[0], 96, 0, __PYX_ERR(0, 96, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_w_o)) { __Pyx_RaiseClosureNameError("w_o"); __PYX_ERR(0, 96, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_w_o, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 96, __pyx_L1_error)
@@ -10562,6 +10898,7 @@ static PyObject *__pyx_lambda_funcdef_lambda16(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10674,6 +11011,7 @@ static PyObject *__pyx_lambda_funcdef_lambda17(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
@@ -10682,6 +11020,7 @@ static PyObject *__pyx_lambda_funcdef_lambda17(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda17", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda17", __pyx_f[0], 97, 0, __PYX_ERR(0, 97, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_rho_b_i)) { __Pyx_RaiseClosureNameError("rho_b_i"); __PYX_ERR(0, 97, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_rho_b_i, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
@@ -10697,6 +11036,7 @@ static PyObject *__pyx_lambda_funcdef_lambda17(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10712,6 +11052,7 @@ static PyObject *__pyx_lambda_funcdef_lambda17(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_24calc_ovendry_bulk_density(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_w_o, PyObject *__pyx_v_delta) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -10722,6 +11063,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_24calc_ovendry_bulk_dens
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__13)
   __Pyx_RefNannySetupContext("calc_ovendry_bulk_density", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_7_calc_ovendry_bulk_density, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -10731,6 +11073,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_24calc_ovendry_bulk_dens
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_ovendry_bulk_density", __pyx_f[0], 94, 0, __PYX_ERR(0, 94, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_w_o = __pyx_v_w_o;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_w_o);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_w_o);
@@ -10869,6 +11212,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_24calc_ovendry_bulk_dens
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11187,6 +11531,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda19(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sigma) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11199,6 +11544,7 @@ static PyObject *__pyx_lambda_funcdef_lambda19(CYTHON_UNUSED PyObject *__pyx_sel
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda19", 1);
+  __Pyx_TraceCall("lambda19", __pyx_f[0], 104, 0, __PYX_ERR(0, 104, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":105
  *     return map_size_class(lambda i:
@@ -11268,6 +11614,7 @@ static PyObject *__pyx_lambda_funcdef_lambda19(CYTHON_UNUSED PyObject *__pyx_sel
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11284,6 +11631,7 @@ static PyObject *__pyx_lambda_funcdef_lambda18(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11296,6 +11644,7 @@ static PyObject *__pyx_lambda_funcdef_lambda18(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda18", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda18", __pyx_f[0], 103, 0, __PYX_ERR(0, 103, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":106
  *                           (lambda sigma:
@@ -11371,6 +11720,7 @@ static PyObject *__pyx_lambda_funcdef_lambda18(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11386,6 +11736,7 @@ static PyObject *__pyx_lambda_funcdef_lambda18(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_26calc_effective_heating_number_distribution(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sigma) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11395,6 +11746,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_26calc_effective_heating
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__14)
   __Pyx_RefNannySetupContext("calc_effective_heating_number_distribution", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_8_calc_effective_heating_number_distribution, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -11404,6 +11756,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_26calc_effective_heating
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_effective_heating_number_distribution", __pyx_f[0], 102, 0, __PYX_ERR(0, 102, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_sigma = __pyx_v_sigma;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_sigma);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_sigma);
@@ -11466,6 +11819,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_26calc_effective_heating
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11682,6 +12036,7 @@ static PyObject *__pyx_lambda_funcdef_lambda20(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11691,6 +12046,7 @@ static PyObject *__pyx_lambda_funcdef_lambda20(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda20", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda20", __pyx_f[0], 110, 0, __PYX_ERR(0, 110, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_M_f)) { __Pyx_RaiseClosureNameError("M_f"); __PYX_ERR(0, 110, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_M_f, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
@@ -11713,6 +12069,7 @@ static PyObject *__pyx_lambda_funcdef_lambda20(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11728,6 +12085,7 @@ static PyObject *__pyx_lambda_funcdef_lambda20(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_28calc_heat_of_preignition_distribution(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_M_f) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11737,6 +12095,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_28calc_heat_of_preigniti
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__15)
   __Pyx_RefNannySetupContext("calc_heat_of_preignition_distribution", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_9_calc_heat_of_preignition_distribution, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -11746,6 +12105,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_28calc_heat_of_preigniti
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_heat_of_preignition_distribution", __pyx_f[0], 109, 0, __PYX_ERR(0, 109, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_M_f = __pyx_v_M_f;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_M_f);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_M_f);
@@ -11808,6 +12168,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_28calc_heat_of_preigniti
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12084,6 +12445,7 @@ static PyObject *__pyx_lambda_funcdef_lambda21(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -12094,6 +12456,7 @@ static PyObject *__pyx_lambda_funcdef_lambda21(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda21", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda21", __pyx_f[0], 114, 0, __PYX_ERR(0, 114, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_ij)) { __Pyx_RaiseClosureNameError("f_ij"); __PYX_ERR(0, 114, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
@@ -12125,6 +12488,7 @@ static PyObject *__pyx_lambda_funcdef_lambda21(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12237,6 +12601,7 @@ static PyObject *__pyx_lambda_funcdef_lambda22(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -12247,6 +12612,7 @@ static PyObject *__pyx_lambda_funcdef_lambda22(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda22", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda22", __pyx_f[0], 115, 0, __PYX_ERR(0, 115, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_f_i)) { __Pyx_RaiseClosureNameError("f_i"); __PYX_ERR(0, 115, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_f_i, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
@@ -12271,6 +12637,7 @@ static PyObject *__pyx_lambda_funcdef_lambda22(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12287,6 +12654,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_30calc_heat_sink(CYTHON_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *__pyx_cur_scope;
   PyObject *__pyx_v_effective_heat_of_preignition = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -12296,6 +12664,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_30calc_heat_sink(CYTHON_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__16)
   __Pyx_RefNannySetupContext("calc_heat_sink", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_10_calc_heat_sink, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -12305,6 +12674,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_30calc_heat_sink(CYTHON_
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("calc_heat_sink", __pyx_f[0], 113, 0, __PYX_ERR(0, 113, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_f_i = __pyx_v_f_i;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_f_i);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_f_i);
@@ -12427,6 +12797,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_30calc_heat_sink(CYTHON_
   __Pyx_XDECREF(__pyx_v_effective_heat_of_preignition);
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12552,6 +12923,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_32calc_spread_rate(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_heat_source, PyObject *__pyx_v_heat_sink) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -12559,7 +12931,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_32calc_spread_rate(CYTHO
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__17)
   __Pyx_RefNannySetupContext("calc_spread_rate", 1);
+  __Pyx_TraceCall("calc_spread_rate", __pyx_f[0], 119, 0, __PYX_ERR(0, 119, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":120
  * # [[file:../../org/pyretechnics.org::surface-fire-spread-rate-no-wind-no-slope][surface-fire-spread-rate-no-wind-no-slope]]
@@ -12601,6 +12975,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_32calc_spread_rate(CYTHO
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12712,6 +13087,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_34calc_residence_time(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_sigma_prime) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -12719,7 +13095,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_34calc_residence_time(CY
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__18)
   __Pyx_RefNannySetupContext("calc_residence_time", 1);
+  __Pyx_TraceCall("calc_residence_time", __pyx_f[0], 123, 0, __PYX_ERR(0, 123, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":128
  *     - sigma_prime :: ft^2/ft^3 (surface area to volume ratio)
@@ -12761,6 +13139,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_34calc_residence_time(CY
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -12887,12 +13266,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_36calc_flame_depth(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_spread_rate, PyObject *__pyx_v_residence_time) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__19)
   __Pyx_RefNannySetupContext("calc_flame_depth", 1);
+  __Pyx_TraceCall("calc_flame_depth", __pyx_f[0], 131, 0, __PYX_ERR(0, 131, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":138
  *     - residence_time :: min
@@ -12923,6 +13305,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_36calc_flame_depth(CYTHO
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13049,13 +13432,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_38calc_fireline_intensity(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_reaction_intensity, PyObject *__pyx_v_flame_depth) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__20)
   __Pyx_RefNannySetupContext("calc_fireline_intensity", 1);
+  __Pyx_TraceCall("calc_fireline_intensity", __pyx_f[0], 141, 0, __PYX_ERR(0, 141, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":147
  *     - flame_depth        :: ft
@@ -13090,6 +13476,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_38calc_fireline_intensit
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13201,13 +13588,16 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_40calc_flame_length(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_fireline_intensity) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__21)
   __Pyx_RefNannySetupContext("calc_flame_length", 1);
+  __Pyx_TraceCall("calc_flame_length", __pyx_f[0], 150, 0, __PYX_ERR(0, 150, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":155
  *     - fireline_intensity :: kW/m
@@ -13242,6 +13632,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_40calc_flame_length(CYTH
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13368,6 +13759,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_42calc_areal_heat_output(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_spread_rate, PyObject *__pyx_v_fireline_intensity) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -13376,7 +13768,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_42calc_areal_heat_output
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__22)
   __Pyx_RefNannySetupContext("calc_areal_heat_output", 1);
+  __Pyx_TraceCall("calc_areal_heat_output", __pyx_f[0], 158, 0, __PYX_ERR(0, 158, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":164
  *     - fireline_intensity :: kW/m
@@ -13422,6 +13816,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_42calc_areal_heat_output
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13532,12 +13927,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_44calc_max_effective_wind_speed(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_reaction_intensity) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__23)
   __Pyx_RefNannySetupContext("calc_max_effective_wind_speed", 1);
+  __Pyx_TraceCall("calc_max_effective_wind_speed", __pyx_f[0], 167, 0, __PYX_ERR(0, 167, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":168
  * # [[file:../../org/pyretechnics.org::surface-fire-max-effective-wind-speed][surface-fire-max-effective-wind-speed]]
@@ -13568,6 +13966,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_44calc_max_effective_win
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13784,6 +14183,7 @@ static PyObject *__pyx_lambda_funcdef_lambda23(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -13793,6 +14193,7 @@ static PyObject *__pyx_lambda_funcdef_lambda23(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda23", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda23", __pyx_f[0], 174, 0, __PYX_ERR(0, 174, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_1 = PyNumber_Power(__pyx_v_slope, __pyx_float_2_0, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -13812,6 +14213,7 @@ static PyObject *__pyx_lambda_funcdef_lambda23(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13861,7 +14263,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   #endif
   __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
   {
-    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_,0};
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s__24,0};
     if (__pyx_kwds) {
       Py_ssize_t kw_args;
       switch (__pyx_nargs) {
@@ -13873,7 +14275,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
       switch (__pyx_nargs) {
         case  0:
-        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_)) != 0)) {
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s__24)) != 0)) {
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
@@ -13922,16 +14324,25 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda24(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v__) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda24", 1);
+  __Pyx_TraceCall("lambda24", __pyx_f[0], 176, 0, __PYX_ERR(0, 176, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_float_0_0);
   __pyx_r = __pyx_float_0_0;
   goto __pyx_L0;
 
   /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("pyretechnics.surface_fire.get_phi_S_fn.lambda24", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13947,6 +14358,7 @@ static PyObject *__pyx_lambda_funcdef_lambda24(CYTHON_UNUSED PyObject *__pyx_sel
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_46get_phi_S_fn(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_beta) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -13954,6 +14366,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_46get_phi_S_fn(CYTHON_UN
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__25)
   __Pyx_RefNannySetupContext("get_phi_S_fn", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_11_get_phi_S_fn, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -13963,6 +14376,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_46get_phi_S_fn(CYTHON_UN
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("get_phi_S_fn", __pyx_f[0], 171, 0, __PYX_ERR(0, 171, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":172
  * # [[file:../../org/pyretechnics.org::surface-fire-slope-factor-function][surface-fire-slope-factor-function]]
@@ -14048,6 +14462,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_46get_phi_S_fn(CYTHON_UN
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -14294,6 +14709,7 @@ static PyObject *__pyx_lambda_funcdef_lambda25(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -14305,6 +14721,7 @@ static PyObject *__pyx_lambda_funcdef_lambda25(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda25", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda25", __pyx_f[0], 185, 0, __PYX_ERR(0, 185, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_conv); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -14354,6 +14771,7 @@ static PyObject *__pyx_lambda_funcdef_lambda25(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -14403,7 +14821,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   #endif
   __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
   {
-    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_,0};
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s__24,0};
     if (__pyx_kwds) {
       Py_ssize_t kw_args;
       switch (__pyx_nargs) {
@@ -14415,7 +14833,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
       switch (__pyx_nargs) {
         case  0:
-        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_)) != 0)) {
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s__24)) != 0)) {
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
@@ -14464,16 +14882,25 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda26(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v__) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda26", 1);
+  __Pyx_TraceCall("lambda26", __pyx_f[0], 187, 0, __PYX_ERR(0, 187, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_float_0_0);
   __pyx_r = __pyx_float_0_0;
   goto __pyx_L0;
 
   /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("pyretechnics.surface_fire.get_phi_W_fn.lambda26", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -14489,12 +14916,14 @@ static PyObject *__pyx_lambda_funcdef_lambda26(CYTHON_UNUSED PyObject *__pyx_sel
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_48get_phi_W_fn(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_B, PyObject *__pyx_v_C, PyObject *__pyx_v_F) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__26)
   __Pyx_RefNannySetupContext("get_phi_W_fn", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_12_get_phi_W_fn, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -14504,6 +14933,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_48get_phi_W_fn(CYTHON_UN
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("get_phi_W_fn", __pyx_f[0], 182, 0, __PYX_ERR(0, 182, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_B = __pyx_v_B;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_B);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_B);
@@ -14588,6 +15018,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_48get_phi_W_fn(CYTHON_UN
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -14834,6 +15265,7 @@ static PyObject *__pyx_lambda_funcdef_lambda27(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -14846,6 +15278,7 @@ static PyObject *__pyx_lambda_funcdef_lambda27(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda27", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda27", __pyx_f[0], 197, 0, __PYX_ERR(0, 197, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_conv); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 197, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -14896,6 +15329,7 @@ static PyObject *__pyx_lambda_funcdef_lambda27(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -14945,7 +15379,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   #endif
   __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
   {
-    PyObject **__pyx_pyargnames[] = {&__pyx_n_s_,0};
+    PyObject **__pyx_pyargnames[] = {&__pyx_n_s__24,0};
     if (__pyx_kwds) {
       Py_ssize_t kw_args;
       switch (__pyx_nargs) {
@@ -14957,7 +15391,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       kw_args = __Pyx_NumKwargs_FASTCALL(__pyx_kwds);
       switch (__pyx_nargs) {
         case  0:
-        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_)) != 0)) {
+        if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s__24)) != 0)) {
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
@@ -15006,16 +15440,25 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda28(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v__) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda28", 1);
+  __Pyx_TraceCall("lambda28", __pyx_f[0], 199, 0, __PYX_ERR(0, 199, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(__pyx_float_0_0);
   __pyx_r = __pyx_float_0_0;
   goto __pyx_L0;
 
   /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("pyretechnics.surface_fire.get_wind_speed_fn.lambda28", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -15031,12 +15474,14 @@ static PyObject *__pyx_lambda_funcdef_lambda28(CYTHON_UNUSED PyObject *__pyx_sel
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_50get_wind_speed_fn(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_B, PyObject *__pyx_v_C, PyObject *__pyx_v_F) {
   struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__27)
   __Pyx_RefNannySetupContext("get_wind_speed_fn", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn *)__pyx_tp_new_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn(__pyx_ptype_12pyretechnics_12surface_fire___pyx_scope_struct_13_get_wind_speed_fn, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -15046,6 +15491,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_50get_wind_speed_fn(CYTH
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("get_wind_speed_fn", __pyx_f[0], 193, 0, __PYX_ERR(0, 193, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":194
  * 
@@ -15140,6 +15586,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_50get_wind_speed_fn(CYTH
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -15296,6 +15743,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_52calc_surface_fire_beha
   PyObject *__pyx_v_get_phi_W = NULL;
   PyObject *__pyx_v_get_wind_speed = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -15306,7 +15754,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_52calc_surface_fire_beha
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__28)
   __Pyx_RefNannySetupContext("calc_surface_fire_behavior_no_wind_no_slope", 1);
+  __Pyx_TraceCall("calc_surface_fire_behavior_no_wind_no_slope", __pyx_f[0], 205, 0, __PYX_ERR(0, 205, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":232
  *     """
@@ -16326,6 +16776,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_52calc_surface_fire_beha
   __Pyx_XDECREF(__pyx_v_get_phi_W);
   __Pyx_XDECREF(__pyx_v_get_wind_speed);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -16469,6 +16920,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_54calc_wind_adjustment_f
   PyObject *__pyx_v_A = NULL;
   PyObject *__pyx_v_B = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
@@ -16481,7 +16933,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_54calc_wind_adjustment_f
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__29)
   __Pyx_RefNannySetupContext("calc_wind_adjustment_factor", 1);
+  __Pyx_TraceCall("calc_wind_adjustment_factor", __pyx_f[0], 278, 0, __PYX_ERR(0, 278, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":285
  *     - canopy_cover   :: 0-1
@@ -16733,6 +17187,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_54calc_wind_adjustment_f
   __Pyx_XDECREF(__pyx_v_A);
   __Pyx_XDECREF(__pyx_v_B);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -16890,6 +17345,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_56calc_midflame_wind_speed(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_wind_speed_20ft, PyObject *__pyx_v_fuel_bed_depth, PyObject *__pyx_v_canopy_height, PyObject *__pyx_v_canopy_cover) {
   PyObject *__pyx_v_wind_adj_factor = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -16898,7 +17354,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_56calc_midflame_wind_spe
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__30)
   __Pyx_RefNannySetupContext("calc_midflame_wind_speed", 1);
+  __Pyx_TraceCall("calc_midflame_wind_speed", __pyx_f[0], 299, 0, __PYX_ERR(0, 299, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":307
  *     - canopy_cover    :: 0-1
@@ -16966,6 +17424,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_56calc_midflame_wind_spe
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_wind_adj_factor);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -17126,6 +17585,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_58project_wind_and_slope
   PyObject *__pyx_v_wind_vector_3d = NULL;
   PyObject *__pyx_v_slope_vector_3d = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -17134,7 +17594,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_58project_wind_and_slope
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__31)
   __Pyx_RefNannySetupContext("project_wind_and_slope_vectors_3d", 1);
+  __Pyx_TraceCall("project_wind_and_slope_vectors_3d", __pyx_f[0], 316, 0, __PYX_ERR(0, 316, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":329
  *     """
@@ -17325,6 +17787,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_58project_wind_and_slope
   __Pyx_XDECREF(__pyx_v_wind_vector_3d);
   __Pyx_XDECREF(__pyx_v_slope_vector_3d);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -17486,6 +17949,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_60get_phi_E(CYTHON_UNUSE
   PyObject *__pyx_v_phi_E_3d = NULL;
   PyObject *__pyx_v_phi_E = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -17496,7 +17960,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_60get_phi_E(CYTHON_UNUSE
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__32)
   __Pyx_RefNannySetupContext("get_phi_E", 1);
+  __Pyx_TraceCall("get_phi_E", __pyx_f[0], 340, 0, __PYX_ERR(0, 340, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":342
  * def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
@@ -17813,7 +18279,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_60get_phi_E(CYTHON_UNUSE
     }
     #endif
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_tuple__2};
+      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_tuple__33};
       __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 364, __pyx_L1_error)
@@ -17851,6 +18317,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_60get_phi_E(CYTHON_UNUSE
   __Pyx_XDECREF(__pyx_v_phi_E_3d);
   __Pyx_XDECREF(__pyx_v_phi_E);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -17979,6 +18446,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_62surface_length_to_width_ratio(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_effective_wind_speed, PyObject *__pyx_v_model) {
   PyObject *__pyx_v_effective_wind_speed_mph = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -17991,7 +18459,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_62surface_length_to_widt
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__34)
   __Pyx_RefNannySetupContext("surface_length_to_width_ratio", 1);
+  __Pyx_TraceCall("surface_length_to_width_ratio", __pyx_f[0], 372, 0, __PYX_ERR(0, 372, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":378
  *     - model                :: "rothermel" or "behave" (Optional)
@@ -18243,7 +18713,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_62surface_length_to_widt
  * 
  */
   /*else*/ {
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 392, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__35, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 392, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -18270,6 +18740,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_62surface_length_to_widt
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_effective_wind_speed_mph);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -18381,6 +18852,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_64surface_fire_eccentricity(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_length_to_width_ratio) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -18390,7 +18862,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_64surface_fire_eccentric
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__36)
   __Pyx_RefNannySetupContext("surface_fire_eccentricity", 1);
+  __Pyx_TraceCall("surface_fire_eccentricity", __pyx_f[0], 395, 0, __PYX_ERR(0, 395, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":401
  *     - L/W :: (1: circular spread, > 1: elliptical spread)
@@ -18455,6 +18929,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_64surface_fire_eccentric
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -18627,6 +19102,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_12surface_fire_66maybe_limit_wind_speed(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_use_wind_limit, PyObject *__pyx_v_max_wind_speed, PyObject *__pyx_v_get_phi_W, PyObject *__pyx_v_get_wind_speed, PyObject *__pyx_v_phi_E_magnitude) {
   PyObject *__pyx_v_effective_wind_speed = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -18637,7 +19113,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_66maybe_limit_wind_speed
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__37)
   __Pyx_RefNannySetupContext("maybe_limit_wind_speed", 1);
+  __Pyx_TraceCall("maybe_limit_wind_speed", __pyx_f[0], 408, 0, __PYX_ERR(0, 408, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":421
  *     - limited_phi_E      :: unitless
@@ -18808,6 +19286,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_66maybe_limit_wind_speed
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_effective_wind_speed);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -19046,6 +19525,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_68calc_surface_fire_beha
   PyObject *__pyx_v_max_fireline_intensity = NULL;
   PyObject *__pyx_v_length_to_width_ratio = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -19056,7 +19536,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_68calc_surface_fire_beha
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__38)
   __Pyx_RefNannySetupContext("calc_surface_fire_behavior_max", 1);
+  __Pyx_TraceCall("calc_surface_fire_behavior_max", __pyx_f[0], 435, 0, __PYX_ERR(0, 435, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":462
  *     """
@@ -19724,6 +20206,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_68calc_surface_fire_beha
   __Pyx_XDECREF(__pyx_v_max_fireline_intensity);
   __Pyx_XDECREF(__pyx_v_length_to_width_ratio);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -19857,6 +20340,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_70calc_surface_fire_beha
   PyObject *__pyx_v_adjustment = NULL;
   PyObject *__pyx_v_fireline_intensity = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -19867,7 +20351,9 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_70calc_surface_fire_beha
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__39)
   __Pyx_RefNannySetupContext("calc_surface_fire_behavior_in_direction", 1);
+  __Pyx_TraceCall("calc_surface_fire_behavior_in_direction", __pyx_f[0], 502, 0, __PYX_ERR(0, 502, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":522
  *     """
@@ -20128,6 +20614,7 @@ static PyObject *__pyx_pf_12pyretechnics_12surface_fire_70calc_surface_fire_beha
   __Pyx_XDECREF(__pyx_v_adjustment);
   __Pyx_XDECREF(__pyx_v_fireline_intensity);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -22752,7 +23239,6 @@ static PyMethodDef __pyx_methods[] = {
 
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
-    {&__pyx_n_s_, __pyx_k_, sizeof(__pyx_k_), 0, 0, 1, 1},
     {&__pyx_n_s_A, __pyx_k_A, sizeof(__pyx_k_A), 0, 0, 1, 1},
     {&__pyx_n_s_B, __pyx_k_B, sizeof(__pyx_k_B), 0, 0, 1, 1},
     {&__pyx_n_s_B_inverse, __pyx_k_B_inverse, sizeof(__pyx_k_B_inverse), 0, 0, 1, 1},
@@ -22782,8 +23268,9 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_U_eff_max, __pyx_k_U_eff_max, sizeof(__pyx_k_U_eff_max), 0, 0, 1, 1},
     {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
     {&__pyx_n_s_W_n_i, __pyx_k_W_n_i, sizeof(__pyx_k_W_n_i), 0, 0, 1, 1},
-    {&__pyx_kp_u__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 1, 0, 0},
-    {&__pyx_n_s__53, __pyx_k__53, sizeof(__pyx_k__53), 0, 0, 1, 1},
+    {&__pyx_n_s__24, __pyx_k__24, sizeof(__pyx_k__24), 0, 0, 1, 1},
+    {&__pyx_kp_u__40, __pyx_k__40, sizeof(__pyx_k__40), 0, 1, 0, 0},
+    {&__pyx_n_s__65, __pyx_k__65, sizeof(__pyx_k__65), 0, 0, 1, 1},
     {&__pyx_n_s__81, __pyx_k__81, sizeof(__pyx_k__81), 0, 0, 1, 1},
     {&__pyx_n_s_adjustment, __pyx_k_adjustment, sizeof(__pyx_k_adjustment), 0, 0, 1, 1},
     {&__pyx_n_s_as_unit_vector, __pyx_k_as_unit_vector, sizeof(__pyx_k_as_unit_vector), 0, 0, 1, 1},
@@ -22997,9 +23484,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         }
  * # surface-fire-combine-wind-and-slope-vectors ends here
  */
-  __pyx_tuple__2 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_0); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__2);
-  __Pyx_GIVEREF(__pyx_tuple__2);
+  __pyx_tuple__33 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_0); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 364, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__33);
+  __Pyx_GIVEREF(__pyx_tuple__33);
 
   /* "pyretechnics/surface_fire.py":392
  * 
@@ -23008,9 +23495,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_s_Invalid_input_model_must_be_roth); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 392, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_tuple__35 = PyTuple_Pack(1, __pyx_kp_s_Invalid_input_model_must_be_roth); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 392, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__35);
+  __Pyx_GIVEREF(__pyx_tuple__35);
 
   /* "pyretechnics/surface_fire.py":6
  * # surface-fire-imports ends here
@@ -23019,10 +23506,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     sigma_prime_i = size_class_sum(lambda i: f_ij[i] * sigma[i])
  *     return category_sum(lambda i: f_i[i] * sigma_prime_i[i])
  */
-  __pyx_tuple__5 = PyTuple_Pack(4, __pyx_n_s_f_i, __pyx_n_s_f_ij, __pyx_n_s_sigma, __pyx_n_s_sigma_prime_i); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__5);
-  __Pyx_GIVEREF(__pyx_tuple__5);
-  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__5, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_area_to_volume_rati_2, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_tuple__41 = PyTuple_Pack(4, __pyx_n_s_f_i, __pyx_n_s_f_ij, __pyx_n_s_sigma, __pyx_n_s_sigma_prime_i); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__41);
+  __Pyx_GIVEREF(__pyx_tuple__41);
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_area_to_volume_rati_2, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 6, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":11
  * 
@@ -23031,10 +23518,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     if (delta > 0.0):
  *         beta_i = size_class_sum(lambda i: w_o[i] / rho_p[i])
  */
-  __pyx_tuple__7 = PyTuple_Pack(4, __pyx_n_s_w_o, __pyx_n_s_rho_p, __pyx_n_s_delta, __pyx_n_s_beta_i); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 11, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
-  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_packing_ratio, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(4, __pyx_n_s_w_o, __pyx_n_s_rho_p, __pyx_n_s_delta, __pyx_n_s_beta_i); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__42);
+  __Pyx_GIVEREF(__pyx_tuple__42);
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_packing_ratio, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 11, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":19
  * 
@@ -23043,10 +23530,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return (3.348 / sigma_prime ** 0.8189) if (sigma_prime > 0.0) else 1.0
  * # surface-fire-common-intermediate-calculations ends here
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_n_s_sigma_prime); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 19, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_optimum_packing_ratio, 19, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_tuple__43 = PyTuple_Pack(1, __pyx_n_s_sigma_prime); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__43);
+  __Pyx_GIVEREF(__pyx_tuple__43);
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_optimum_packing_ratio, 19, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 19, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":23
  * # surface-fire-common-intermediate-calculations ends here
@@ -23055,10 +23542,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
  *     return map_category(lambda i:
  */
-  __pyx_tuple__11 = PyTuple_Pack(3, __pyx_n_s_f_ij, __pyx_n_s_S_e, __pyx_n_s_S_e_i); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 23, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_mineral_damping_coefficient_3, 23, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_tuple__44 = PyTuple_Pack(3, __pyx_n_s_f_ij, __pyx_n_s_S_e, __pyx_n_s_S_e_i); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__44);
+  __Pyx_GIVEREF(__pyx_tuple__44);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_mineral_damping_coefficient_3, 23, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 23, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":31
  * 
@@ -23067,10 +23554,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     M_f_i = size_class_sum(lambda i: f_ij[i] * M_f[i])
  *     M_x_i = size_class_sum(lambda i: f_ij[i] * M_x[i])
  */
-  __pyx_tuple__13 = PyTuple_Pack(5, __pyx_n_s_f_ij, __pyx_n_s_M_f, __pyx_n_s_M_x, __pyx_n_s_M_f_i, __pyx_n_s_M_x_i); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 31, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__13);
-  __Pyx_GIVEREF(__pyx_tuple__13);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_moisture_damping_coefficien_4, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_tuple__45 = PyTuple_Pack(5, __pyx_n_s_f_ij, __pyx_n_s_M_f, __pyx_n_s_M_x, __pyx_n_s_M_f_i, __pyx_n_s_M_x_i); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__45);
+  __Pyx_GIVEREF(__pyx_tuple__45);
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_moisture_damping_coefficien_4, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 31, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":42
  * 
@@ -23079,10 +23566,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return size_class_sum(lambda i: f_ij[i] * h[i])
  * 
  */
-  __pyx_tuple__15 = PyTuple_Pack(2, __pyx_n_s_f_ij, __pyx_n_s_h); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 42, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
-  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_low_heat_content, 42, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_tuple__46 = PyTuple_Pack(2, __pyx_n_s_f_ij, __pyx_n_s_h); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__46);
+  __Pyx_GIVEREF(__pyx_tuple__46);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_low_heat_content, 42, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 42, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":46
  * 
@@ -23091,10 +23578,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return size_class_sum(lambda i:
  *                           (lambda g_ij, w_o, S_T:
  */
-  __pyx_tuple__17 = PyTuple_Pack(3, __pyx_n_s_g_ij, __pyx_n_s_w_o, __pyx_n_s_S_T); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 46, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__17);
-  __Pyx_GIVEREF(__pyx_tuple__17);
-  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_net_fuel_loading, 46, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_tuple__47 = PyTuple_Pack(3, __pyx_n_s_g_ij, __pyx_n_s_w_o, __pyx_n_s_S_T); if (unlikely(!__pyx_tuple__47)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__47);
+  __Pyx_GIVEREF(__pyx_tuple__47);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__47, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_net_fuel_loading, 46, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 46, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":53
  * 
@@ -23103,10 +23590,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return category_sum(lambda i: W_n_i[i] * h_i[i] * eta_M_i[i] * eta_S_i[i])
  * 
  */
-  __pyx_tuple__19 = PyTuple_Pack(4, __pyx_n_s_eta_S_i, __pyx_n_s_eta_M_i, __pyx_n_s_h_i, __pyx_n_s_W_n_i); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 53, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_per_unit_area, 53, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_tuple__48 = PyTuple_Pack(4, __pyx_n_s_eta_S_i, __pyx_n_s_eta_M_i, __pyx_n_s_h_i, __pyx_n_s_W_n_i); if (unlikely(!__pyx_tuple__48)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__48);
+  __Pyx_GIVEREF(__pyx_tuple__48);
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__48, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_per_unit_area, 53, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 53, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":57
  * 
@@ -23115,10 +23602,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     # Albini 1976 replaces 1 / (4.774 * (sigma_prime ** 0.1) - 7.27)
  *     A               = (133.0 / sigma_prime ** 0.7913) if (sigma_prime > 0.0) else 0.0
  */
-  __pyx_tuple__21 = PyTuple_Pack(7, __pyx_n_s_sigma_prime, __pyx_n_s_beta, __pyx_n_s_beta_op, __pyx_n_s_A, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_Gamma_prime_max); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_optimum_reaction_velocity, 57, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_tuple__49 = PyTuple_Pack(7, __pyx_n_s_sigma_prime, __pyx_n_s_beta, __pyx_n_s_beta_op, __pyx_n_s_A, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_Gamma_prime_max); if (unlikely(!__pyx_tuple__49)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__49);
+  __Pyx_GIVEREF(__pyx_tuple__49);
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__49, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_optimum_reaction_velocity, 57, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 57, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":68
  * 
@@ -23127,10 +23614,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     w_o         = moisturized_fuel_model["w_o"]
  *     h           = moisturized_fuel_model["h"]
  */
-  __pyx_tuple__23 = PyTuple_Pack(18, __pyx_n_s_moisturized_fuel_model, __pyx_n_s_sigma_prime, __pyx_n_s_beta, __pyx_n_s_beta_op, __pyx_n_s_w_o, __pyx_n_s_h, __pyx_n_s_S_T, __pyx_n_s_S_e, __pyx_n_s_M_x, __pyx_n_s_M_f, __pyx_n_s_f_ij, __pyx_n_s_g_ij, __pyx_n_s_eta_S_i, __pyx_n_s_eta_M_i, __pyx_n_s_h_i, __pyx_n_s_W_n_i, __pyx_n_s_Btus, __pyx_n_s_Gamma_prime); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 68, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__23);
-  __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 18, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_reaction_intensity, 68, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __pyx_tuple__50 = PyTuple_Pack(18, __pyx_n_s_moisturized_fuel_model, __pyx_n_s_sigma_prime, __pyx_n_s_beta, __pyx_n_s_beta_op, __pyx_n_s_w_o, __pyx_n_s_h, __pyx_n_s_S_T, __pyx_n_s_S_e, __pyx_n_s_M_x, __pyx_n_s_M_f, __pyx_n_s_f_ij, __pyx_n_s_g_ij, __pyx_n_s_eta_S_i, __pyx_n_s_eta_M_i, __pyx_n_s_h_i, __pyx_n_s_W_n_i, __pyx_n_s_Btus, __pyx_n_s_Gamma_prime); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__50);
+  __Pyx_GIVEREF(__pyx_tuple__50);
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 18, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__50, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_reaction_intensity, 68, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 68, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":86
  * # surface-fire-reaction-intensity ends here
@@ -23139,10 +23626,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return exp((0.792 + 0.681 * (sigma_prime ** 0.5)) * (beta + 0.1)) / (192.0 + 0.2595 * sigma_prime)
  * # surface-fire-propagating-flux-ratio ends here
  */
-  __pyx_tuple__25 = PyTuple_Pack(2, __pyx_n_s_sigma_prime, __pyx_n_s_beta); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 86, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__25);
-  __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_propagating_flux_ratio, 86, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_tuple__51 = PyTuple_Pack(2, __pyx_n_s_sigma_prime, __pyx_n_s_beta); if (unlikely(!__pyx_tuple__51)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__51);
+  __Pyx_GIVEREF(__pyx_tuple__51);
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__51, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_propagating_flux_ratio, 86, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 86, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":90
  * # surface-fire-propagating-flux-ratio ends here
@@ -23151,10 +23638,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return I_R * xi
  * # surface-fire-heat-source-no-wind-no-slope ends here
  */
-  __pyx_tuple__27 = PyTuple_Pack(2, __pyx_n_s_I_R, __pyx_n_s_xi); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 90, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__27);
-  __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_source, 90, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_tuple__52 = PyTuple_Pack(2, __pyx_n_s_I_R, __pyx_n_s_xi); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__52);
+  __Pyx_GIVEREF(__pyx_tuple__52);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_source, 90, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 90, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":94
  * # surface-fire-heat-source-no-wind-no-slope ends here
@@ -23163,10 +23650,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     if (delta > 0.0):
  *         rho_b_i = size_class_sum(lambda i: w_o[i])
  */
-  __pyx_tuple__29 = PyTuple_Pack(3, __pyx_n_s_w_o, __pyx_n_s_delta, __pyx_n_s_rho_b_i); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 94, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__29);
-  __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_ovendry_bulk_density, 94, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_tuple__53 = PyTuple_Pack(3, __pyx_n_s_w_o, __pyx_n_s_delta, __pyx_n_s_rho_b_i); if (unlikely(!__pyx_tuple__53)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__53);
+  __Pyx_GIVEREF(__pyx_tuple__53);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__53, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_ovendry_bulk_density, 94, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 94, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":102
  * # surface-fire-oven-dry-fuel-bed-bulk-density ends here
@@ -23175,10 +23662,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return map_size_class(lambda i:
  *                           (lambda sigma:
  */
-  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_n_s_sigma); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 102, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__31);
-  __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_effective_heating_number_di_3, 102, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 102, __pyx_L1_error)
+  __pyx_tuple__54 = PyTuple_Pack(1, __pyx_n_s_sigma); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 102, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__54);
+  __Pyx_GIVEREF(__pyx_tuple__54);
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_effective_heating_number_di_3, 102, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 102, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":109
  * # surface-fire-effective-heating-number-distribution ends here
@@ -23187,10 +23674,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return map_size_class(lambda i: 250.0 + 1116.0 * M_f[i])
  * # surface-fire-heat-of-preignition-distribution ends here
  */
-  __pyx_tuple__33 = PyTuple_Pack(1, __pyx_n_s_M_f); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 109, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__33);
-  __Pyx_GIVEREF(__pyx_tuple__33);
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_of_preignition_distrib_2, 109, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_tuple__55 = PyTuple_Pack(1, __pyx_n_s_M_f); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__55);
+  __Pyx_GIVEREF(__pyx_tuple__55);
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_of_preignition_distrib_2, 109, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 109, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":113
  * # surface-fire-heat-of-preignition-distribution ends here
@@ -23199,10 +23686,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     effective_heat_of_preignition_i = size_class_sum(lambda i: f_ij[i] * epsilon_ij[i] * Q_ig_ij[i])
  *     effective_heat_of_preignition   = category_sum(lambda i: f_i[i] * effective_heat_of_preignition_i[i])
  */
-  __pyx_tuple__35 = PyTuple_Pack(7, __pyx_n_s_f_i, __pyx_n_s_f_ij, __pyx_n_s_rho_b, __pyx_n_s_epsilon_ij, __pyx_n_s_Q_ig_ij, __pyx_n_s_effective_heat_of_preignition_i, __pyx_n_s_effective_heat_of_preignition); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 113, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__35);
-  __Pyx_GIVEREF(__pyx_tuple__35);
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_sink, 113, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __pyx_tuple__56 = PyTuple_Pack(7, __pyx_n_s_f_i, __pyx_n_s_f_ij, __pyx_n_s_rho_b, __pyx_n_s_epsilon_ij, __pyx_n_s_Q_ig_ij, __pyx_n_s_effective_heat_of_preignition_i, __pyx_n_s_effective_heat_of_preignition); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__56);
+  __Pyx_GIVEREF(__pyx_tuple__56);
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_heat_sink, 113, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 113, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":119
  * # surface-fire-heat-sink ends here
@@ -23211,10 +23698,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return heat_source / heat_sink if (heat_sink > 0.0) else 0.0
  * # surface-fire-spread-rate-no-wind-no-slope ends here
  */
-  __pyx_tuple__37 = PyTuple_Pack(2, __pyx_n_s_heat_source, __pyx_n_s_heat_sink); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 119, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__37);
-  __Pyx_GIVEREF(__pyx_tuple__37);
-  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_spread_rate, 119, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_tuple__57 = PyTuple_Pack(2, __pyx_n_s_heat_source, __pyx_n_s_heat_sink); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__57);
+  __Pyx_GIVEREF(__pyx_tuple__57);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_spread_rate, 119, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 119, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":123
  * # surface-fire-spread-rate-no-wind-no-slope ends here
@@ -23223,7 +23710,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the residence time (total burning time) of fuel (min) given:
  */
-  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_residence_time, 123, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_residence_time, 123, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 123, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":131
  * 
@@ -23232,10 +23719,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the depth, or front-to-back distance, of the actively flaming zone
  */
-  __pyx_tuple__40 = PyTuple_Pack(2, __pyx_n_s_spread_rate, __pyx_n_s_residence_time); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 131, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__40);
-  __Pyx_GIVEREF(__pyx_tuple__40);
-  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_flame_depth, 131, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_tuple__58 = PyTuple_Pack(2, __pyx_n_s_spread_rate, __pyx_n_s_residence_time); if (unlikely(!__pyx_tuple__58)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__58);
+  __Pyx_GIVEREF(__pyx_tuple__58);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_flame_depth, 131, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 131, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":141
  * 
@@ -23244,10 +23731,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the rate of heat release per unit of fire edge (Btu/ft/s) given:
  */
-  __pyx_tuple__42 = PyTuple_Pack(2, __pyx_n_s_reaction_intensity, __pyx_n_s_flame_depth); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 141, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__42);
-  __Pyx_GIVEREF(__pyx_tuple__42);
-  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_fireline_intensity, 141, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_tuple__59 = PyTuple_Pack(2, __pyx_n_s_reaction_intensity, __pyx_n_s_flame_depth); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__59);
+  __Pyx_GIVEREF(__pyx_tuple__59);
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_fireline_intensity, 141, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 141, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":150
  * 
@@ -23256,10 +23743,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the average flame length (m) given:
  */
-  __pyx_tuple__44 = PyTuple_Pack(1, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 150, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__44);
-  __Pyx_GIVEREF(__pyx_tuple__44);
-  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_flame_length, 150, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_tuple__60 = PyTuple_Pack(1, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__60);
+  __Pyx_GIVEREF(__pyx_tuple__60);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__60, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_flame_length, 150, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 150, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":158
  * 
@@ -23268,10 +23755,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the heat per unit area (kJ/m^2) given:
  */
-  __pyx_tuple__46 = PyTuple_Pack(2, __pyx_n_s_spread_rate, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__46);
-  __Pyx_GIVEREF(__pyx_tuple__46);
-  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_areal_heat_output, 158, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 158, __pyx_L1_error)
+  __pyx_tuple__61 = PyTuple_Pack(2, __pyx_n_s_spread_rate, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 158, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__61);
+  __Pyx_GIVEREF(__pyx_tuple__61);
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_areal_heat_output, 158, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 158, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":167
  * # surface-fire-intensity-functions ends here
@@ -23280,10 +23767,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return 0.9 * reaction_intensity
  * # surface-fire-max-effective-wind-speed ends here
  */
-  __pyx_tuple__48 = PyTuple_Pack(1, __pyx_n_s_reaction_intensity); if (unlikely(!__pyx_tuple__48)) __PYX_ERR(0, 167, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__48);
-  __Pyx_GIVEREF(__pyx_tuple__48);
-  __pyx_codeobj__49 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__48, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_max_effective_wind_speed, 167, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__49)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_tuple__62 = PyTuple_Pack(1, __pyx_n_s_reaction_intensity); if (unlikely(!__pyx_tuple__62)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__62);
+  __Pyx_GIVEREF(__pyx_tuple__62);
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__62, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_max_effective_wind_speed, 167, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 167, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":171
  * # surface-fire-max-effective-wind-speed ends here
@@ -23292,10 +23779,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     if (beta > 0.0):
  *         G = 5.275 * beta ** -0.3
  */
-  __pyx_tuple__50 = PyTuple_Pack(2, __pyx_n_s_beta, __pyx_n_s_G); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 171, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__50);
-  __Pyx_GIVEREF(__pyx_tuple__50);
-  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__50, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_phi_S_fn, 171, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_tuple__63 = PyTuple_Pack(2, __pyx_n_s_beta, __pyx_n_s_G); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__63);
+  __Pyx_GIVEREF(__pyx_tuple__63);
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_phi_S_fn, 171, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 171, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":179
  * # surface-fire-slope-factor-function ends here
@@ -23304,9 +23791,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__52 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_conversion); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 179, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__52);
-  __Pyx_GIVEREF(__pyx_tuple__52);
+  __pyx_tuple__64 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_conversion); if (unlikely(!__pyx_tuple__64)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__64);
+  __Pyx_GIVEREF(__pyx_tuple__64);
 
   /* "pyretechnics/surface_fire.py":182
  * 
@@ -23315,10 +23802,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     if (F > 0.0):
  *         C_over_F = C / F
  */
-  __pyx_tuple__54 = PyTuple_Pack(4, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_F, __pyx_n_s_C_over_F); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 182, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__54);
-  __Pyx_GIVEREF(__pyx_tuple__54);
-  __pyx_codeobj__55 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_phi_W_fn, 182, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__55)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __pyx_tuple__66 = PyTuple_Pack(4, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_F, __pyx_n_s_C_over_F); if (unlikely(!__pyx_tuple__66)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__66);
+  __Pyx_GIVEREF(__pyx_tuple__66);
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__66, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_phi_W_fn, 182, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 182, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":193
  * 
@@ -23327,10 +23814,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     if (B > 0.0):
  *         F_over_C  = F / C
  */
-  __pyx_tuple__56 = PyTuple_Pack(5, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_F, __pyx_n_s_F_over_C, __pyx_n_s_B_inverse); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 193, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__56);
-  __Pyx_GIVEREF(__pyx_tuple__56);
-  __pyx_codeobj__57 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_wind_speed_fn, 193, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__57)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_tuple__67 = PyTuple_Pack(5, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_F, __pyx_n_s_F_over_C, __pyx_n_s_B_inverse); if (unlikely(!__pyx_tuple__67)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__67);
+  __Pyx_GIVEREF(__pyx_tuple__67);
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__67, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_wind_speed_fn, 193, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 193, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":205
  * 
@@ -23339,13 +23826,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Given these inputs:
  */
-  __pyx_tuple__58 = PyTuple_Pack(31, __pyx_n_s_moisturized_fuel_model, __pyx_n_s_spread_rate_adjustment, __pyx_n_s_delta, __pyx_n_s_w_o, __pyx_n_s_rho_p, __pyx_n_s_sigma, __pyx_n_s_M_f, __pyx_n_s_f_ij, __pyx_n_s_f_i, __pyx_n_s_sigma_prime, __pyx_n_s_beta, __pyx_n_s_beta_op, __pyx_n_s_I_R, __pyx_n_s_xi, __pyx_n_s_heat_source, __pyx_n_s_rho_b, __pyx_n_s_epsilon_ij, __pyx_n_s_Q_ig_ij, __pyx_n_s_heat_sink, __pyx_n_s_R0, __pyx_n_s_t_res, __pyx_n_s_D_A, __pyx_n_s_I_s, __pyx_n_s_U_eff_max, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_E, __pyx_n_s_F, __pyx_n_s_get_phi_S, __pyx_n_s_get_phi_W, __pyx_n_s_get_wind_speed); if (unlikely(!__pyx_tuple__58)) __PYX_ERR(0, 205, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__58);
-  __Pyx_GIVEREF(__pyx_tuple__58);
-  __pyx_codeobj__59 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 31, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_fire_behavior_no_wi, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__59)) __PYX_ERR(0, 205, __pyx_L1_error)
-  __pyx_tuple__60 = PyTuple_Pack(1, ((PyObject*)__pyx_float_1_0)); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 205, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__60);
-  __Pyx_GIVEREF(__pyx_tuple__60);
+  __pyx_tuple__68 = PyTuple_Pack(31, __pyx_n_s_moisturized_fuel_model, __pyx_n_s_spread_rate_adjustment, __pyx_n_s_delta, __pyx_n_s_w_o, __pyx_n_s_rho_p, __pyx_n_s_sigma, __pyx_n_s_M_f, __pyx_n_s_f_ij, __pyx_n_s_f_i, __pyx_n_s_sigma_prime, __pyx_n_s_beta, __pyx_n_s_beta_op, __pyx_n_s_I_R, __pyx_n_s_xi, __pyx_n_s_heat_source, __pyx_n_s_rho_b, __pyx_n_s_epsilon_ij, __pyx_n_s_Q_ig_ij, __pyx_n_s_heat_sink, __pyx_n_s_R0, __pyx_n_s_t_res, __pyx_n_s_D_A, __pyx_n_s_I_s, __pyx_n_s_U_eff_max, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_E, __pyx_n_s_F, __pyx_n_s_get_phi_S, __pyx_n_s_get_phi_W, __pyx_n_s_get_wind_speed); if (unlikely(!__pyx_tuple__68)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__68);
+  __Pyx_GIVEREF(__pyx_tuple__68);
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 31, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__68, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_fire_behavior_no_wi, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_tuple__69 = PyTuple_Pack(1, ((PyObject*)__pyx_float_1_0)); if (unlikely(!__pyx_tuple__69)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__69);
+  __Pyx_GIVEREF(__pyx_tuple__69);
 
   /* "pyretechnics/surface_fire.py":278
  * 
@@ -23354,10 +23841,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Return the wind adjustment factor (unitless) given these inputs:
  */
-  __pyx_tuple__61 = PyTuple_Pack(5, __pyx_n_s_fuel_bed_depth, __pyx_n_s_canopy_height, __pyx_n_s_canopy_cover, __pyx_n_s_A, __pyx_n_s_B); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__61);
-  __Pyx_GIVEREF(__pyx_tuple__61);
-  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_wind_adjustment_factor, 278, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_tuple__70 = PyTuple_Pack(5, __pyx_n_s_fuel_bed_depth, __pyx_n_s_canopy_height, __pyx_n_s_canopy_cover, __pyx_n_s_A, __pyx_n_s_B); if (unlikely(!__pyx_tuple__70)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__70);
+  __Pyx_GIVEREF(__pyx_tuple__70);
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__70, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_wind_adjustment_factor, 278, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 278, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":299
  * 
@@ -23366,10 +23853,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Return the midflame wind speed (S) given these inputs:
  */
-  __pyx_tuple__63 = PyTuple_Pack(5, __pyx_n_s_wind_speed_20ft, __pyx_n_s_fuel_bed_depth, __pyx_n_s_canopy_height, __pyx_n_s_canopy_cover, __pyx_n_s_wind_adj_factor); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 299, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__63);
-  __Pyx_GIVEREF(__pyx_tuple__63);
-  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_midflame_wind_speed, 299, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 299, __pyx_L1_error)
+  __pyx_tuple__71 = PyTuple_Pack(5, __pyx_n_s_wind_speed_20ft, __pyx_n_s_fuel_bed_depth, __pyx_n_s_canopy_height, __pyx_n_s_canopy_cover, __pyx_n_s_wind_adj_factor); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 299, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__71);
+  __Pyx_GIVEREF(__pyx_tuple__71);
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__71, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_midflame_wind_speed, 299, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 299, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":316
  * 
@@ -23378,10 +23865,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Given these inputs:
  */
-  __pyx_tuple__65 = PyTuple_Pack(8, __pyx_n_s_wind_speed, __pyx_n_s_downwind_direction, __pyx_n_s_slope, __pyx_n_s_upslope_direction, __pyx_n_s_wind_vector_2d, __pyx_n_s_slope_vector_2d, __pyx_n_s_wind_vector_3d, __pyx_n_s_slope_vector_3d); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 316, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__65);
-  __Pyx_GIVEREF(__pyx_tuple__65);
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_project_wind_and_slope_vectors_3, 316, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 316, __pyx_L1_error)
+  __pyx_tuple__72 = PyTuple_Pack(8, __pyx_n_s_wind_speed, __pyx_n_s_downwind_direction, __pyx_n_s_slope, __pyx_n_s_upslope_direction, __pyx_n_s_wind_vector_2d, __pyx_n_s_slope_vector_2d, __pyx_n_s_wind_vector_3d, __pyx_n_s_slope_vector_3d); if (unlikely(!__pyx_tuple__72)) __PYX_ERR(0, 316, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__72);
+  __Pyx_GIVEREF(__pyx_tuple__72);
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__72, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_project_wind_and_slope_vectors_3, 316, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 316, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":340
  * 
@@ -23390,10 +23877,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     # Convert wind and slope vectors to unit vectors on the slope-tangential plane
  *     w_S = as_unit_vector(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
  */
-  __pyx_tuple__67 = PyTuple_Pack(10, __pyx_n_s_wind_vector_3d, __pyx_n_s_slope_vector_3d, __pyx_n_s_phi_W, __pyx_n_s_phi_S, __pyx_n_s_w_S, __pyx_n_s_u_S, __pyx_n_s_phi_W_3d, __pyx_n_s_phi_S_3d, __pyx_n_s_phi_E_3d, __pyx_n_s_phi_E); if (unlikely(!__pyx_tuple__67)) __PYX_ERR(0, 340, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__67);
-  __Pyx_GIVEREF(__pyx_tuple__67);
-  __pyx_codeobj__68 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__67, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_phi_E, 340, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__68)) __PYX_ERR(0, 340, __pyx_L1_error)
+  __pyx_tuple__73 = PyTuple_Pack(10, __pyx_n_s_wind_vector_3d, __pyx_n_s_slope_vector_3d, __pyx_n_s_phi_W, __pyx_n_s_phi_S, __pyx_n_s_w_S, __pyx_n_s_u_S, __pyx_n_s_phi_W_3d, __pyx_n_s_phi_S_3d, __pyx_n_s_phi_E_3d, __pyx_n_s_phi_E); if (unlikely(!__pyx_tuple__73)) __PYX_ERR(0, 340, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__73);
+  __Pyx_GIVEREF(__pyx_tuple__73);
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__73, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_get_phi_E, 340, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 340, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":372
  * 
@@ -23402,13 +23889,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the length_to_width_ratio of the surface fire front given:
  */
-  __pyx_tuple__69 = PyTuple_Pack(3, __pyx_n_s_effective_wind_speed, __pyx_n_s_model, __pyx_n_s_effective_wind_speed_mph); if (unlikely(!__pyx_tuple__69)) __PYX_ERR(0, 372, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__69);
-  __Pyx_GIVEREF(__pyx_tuple__69);
-  __pyx_codeobj__70 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__69, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_surface_length_to_width_ratio, 372, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__70)) __PYX_ERR(0, 372, __pyx_L1_error)
-  __pyx_tuple__71 = PyTuple_Pack(1, ((PyObject*)__pyx_n_s_rothermel)); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 372, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__71);
-  __Pyx_GIVEREF(__pyx_tuple__71);
+  __pyx_tuple__74 = PyTuple_Pack(3, __pyx_n_s_effective_wind_speed, __pyx_n_s_model, __pyx_n_s_effective_wind_speed_mph); if (unlikely(!__pyx_tuple__74)) __PYX_ERR(0, 372, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__74);
+  __Pyx_GIVEREF(__pyx_tuple__74);
+  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__74, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_surface_length_to_width_ratio, 372, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 372, __pyx_L1_error)
+  __pyx_tuple__75 = PyTuple_Pack(1, ((PyObject*)__pyx_n_s_rothermel)); if (unlikely(!__pyx_tuple__75)) __PYX_ERR(0, 372, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__75);
+  __Pyx_GIVEREF(__pyx_tuple__75);
 
   /* "pyretechnics/surface_fire.py":395
  * 
@@ -23417,10 +23904,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the eccentricity (E) of the surface fire front using eq. 8 from
  */
-  __pyx_tuple__72 = PyTuple_Pack(1, __pyx_n_s_length_to_width_ratio); if (unlikely(!__pyx_tuple__72)) __PYX_ERR(0, 395, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__72);
-  __Pyx_GIVEREF(__pyx_tuple__72);
-  __pyx_codeobj__73 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__72, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_surface_fire_eccentricity, 395, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__73)) __PYX_ERR(0, 395, __pyx_L1_error)
+  __pyx_tuple__76 = PyTuple_Pack(1, __pyx_n_s_length_to_width_ratio); if (unlikely(!__pyx_tuple__76)) __PYX_ERR(0, 395, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__76);
+  __Pyx_GIVEREF(__pyx_tuple__76);
+  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__76, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_surface_fire_eccentricity, 395, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 395, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":408
  * 
@@ -23429,10 +23916,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Given these inputs:
  */
-  __pyx_tuple__74 = PyTuple_Pack(6, __pyx_n_s_use_wind_limit, __pyx_n_s_max_wind_speed, __pyx_n_s_get_phi_W, __pyx_n_s_get_wind_speed, __pyx_n_s_phi_E_magnitude, __pyx_n_s_effective_wind_speed); if (unlikely(!__pyx_tuple__74)) __PYX_ERR(0, 408, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__74);
-  __Pyx_GIVEREF(__pyx_tuple__74);
-  __pyx_codeobj__75 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__74, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_maybe_limit_wind_speed, 408, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__75)) __PYX_ERR(0, 408, __pyx_L1_error)
+  __pyx_tuple__77 = PyTuple_Pack(6, __pyx_n_s_use_wind_limit, __pyx_n_s_max_wind_speed, __pyx_n_s_get_phi_W, __pyx_n_s_get_wind_speed, __pyx_n_s_phi_E_magnitude, __pyx_n_s_effective_wind_speed); if (unlikely(!__pyx_tuple__77)) __PYX_ERR(0, 408, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__77);
+  __Pyx_GIVEREF(__pyx_tuple__77);
+  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__77, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_maybe_limit_wind_speed, 408, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 408, __pyx_L1_error)
 
   /* "pyretechnics/surface_fire.py":435
  * 
@@ -23441,13 +23928,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                                    slope, aspect, use_wind_limit=True, surface_lw_ratio_model="rothermel"):
  *     """
  */
-  __pyx_tuple__76 = PyTuple_Pack(28, __pyx_n_s_surface_fire_min, __pyx_n_s_midflame_wind_speed, __pyx_n_s_upwind_direction, __pyx_n_s_slope, __pyx_n_s_aspect, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_spread_rate, __pyx_n_s_fireline_intensity, __pyx_n_s_max_wind_speed, __pyx_n_s_get_phi_W, __pyx_n_s_get_phi_S, __pyx_n_s_get_wind_speed, __pyx_n_s_downwind_direction, __pyx_n_s_upslope_direction, __pyx_n_s_vectors, __pyx_n_s_wind_vector_3d, __pyx_n_s_slope_vector_3d, __pyx_n_s_phi_W, __pyx_n_s_phi_S, __pyx_n_s_result, __pyx_n_s_phi_E, __pyx_n_s_max_spread_direction, __pyx_n_s_limited_wind_speed, __pyx_n_s_limited_phi_E, __pyx_n_s_max_spread_rate, __pyx_n_s_max_fireline_intensity, __pyx_n_s_length_to_width_ratio); if (unlikely(!__pyx_tuple__76)) __PYX_ERR(0, 435, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__76);
-  __Pyx_GIVEREF(__pyx_tuple__76);
-  __pyx_codeobj__77 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__76, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_fire_behavior_max, 435, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__77)) __PYX_ERR(0, 435, __pyx_L1_error)
-  __pyx_tuple__78 = PyTuple_Pack(2, ((PyObject *)Py_True), ((PyObject*)__pyx_n_s_rothermel)); if (unlikely(!__pyx_tuple__78)) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_tuple__78 = PyTuple_Pack(28, __pyx_n_s_surface_fire_min, __pyx_n_s_midflame_wind_speed, __pyx_n_s_upwind_direction, __pyx_n_s_slope, __pyx_n_s_aspect, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_spread_rate, __pyx_n_s_fireline_intensity, __pyx_n_s_max_wind_speed, __pyx_n_s_get_phi_W, __pyx_n_s_get_phi_S, __pyx_n_s_get_wind_speed, __pyx_n_s_downwind_direction, __pyx_n_s_upslope_direction, __pyx_n_s_vectors, __pyx_n_s_wind_vector_3d, __pyx_n_s_slope_vector_3d, __pyx_n_s_phi_W, __pyx_n_s_phi_S, __pyx_n_s_result, __pyx_n_s_phi_E, __pyx_n_s_max_spread_direction, __pyx_n_s_limited_wind_speed, __pyx_n_s_limited_phi_E, __pyx_n_s_max_spread_rate, __pyx_n_s_max_fireline_intensity, __pyx_n_s_length_to_width_ratio); if (unlikely(!__pyx_tuple__78)) __PYX_ERR(0, 435, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__78);
   __Pyx_GIVEREF(__pyx_tuple__78);
+  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__78, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_fire_behavior_max, 435, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_tuple__79 = PyTuple_Pack(2, ((PyObject *)Py_True), ((PyObject*)__pyx_n_s_rothermel)); if (unlikely(!__pyx_tuple__79)) __PYX_ERR(0, 435, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__79);
+  __Pyx_GIVEREF(__pyx_tuple__79);
 
   /* "pyretechnics/surface_fire.py":502
  * 
@@ -23456,10 +23943,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Given these inputs:
  */
-  __pyx_tuple__79 = PyTuple_Pack(9, __pyx_n_s_surface_fire_max, __pyx_n_s_spread_direction, __pyx_n_s_max_spread_rate, __pyx_n_s_max_spread_direction, __pyx_n_s_max_fireline_intensity, __pyx_n_s_eccentricity, __pyx_n_s_cos_w, __pyx_n_s_adjustment, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_tuple__79)) __PYX_ERR(0, 502, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__79);
-  __Pyx_GIVEREF(__pyx_tuple__79);
-  __pyx_codeobj__80 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__79, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_fire_behavior_in_di, 502, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__80)) __PYX_ERR(0, 502, __pyx_L1_error)
+  __pyx_tuple__80 = PyTuple_Pack(9, __pyx_n_s_surface_fire_max, __pyx_n_s_spread_direction, __pyx_n_s_max_spread_rate, __pyx_n_s_max_spread_direction, __pyx_n_s_max_fireline_intensity, __pyx_n_s_eccentricity, __pyx_n_s_cos_w, __pyx_n_s_adjustment, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_tuple__80)) __PYX_ERR(0, 502, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__80);
+  __Pyx_GIVEREF(__pyx_tuple__80);
+  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__80, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_surface_fire_py, __pyx_n_s_calc_surface_fire_behavior_in_di, 502, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 502, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -24031,6 +24518,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_surface_fire(PyObject *__pyx_pyini
   #if CYTHON_USE_MODULE_STATE
   int pystate_addmodule_run = 0;
   #endif
+  __Pyx_TraceDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
@@ -24148,6 +24636,7 @@ if (!__Pyx_RefNanny) {
   #if defined(__Pyx_Generator_USED) || defined(__Pyx_Coroutine_USED)
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
+  __Pyx_TraceCall("__Pyx_PyMODINIT_FUNC PyInit_surface_fire(void)", __pyx_f[0], 1, 0, __PYX_ERR(0, 1, __pyx_L1_error));
 
   /* "pyretechnics/surface_fire.py":2
  * # [[file:../../org/pyretechnics.org::surface-fire-imports][surface-fire-imports]]
@@ -24218,7 +24707,7 @@ if (!__Pyx_RefNanny) {
  *     sigma_prime_i = size_class_sum(lambda i: f_ij[i] * sigma[i])
  *     return category_sum(lambda i: f_i[i] * sigma_prime_i[i])
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_1calc_surface_area_to_volume_ratio, 0, __pyx_n_s_calc_surface_area_to_volume_rati_2, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_1calc_surface_area_to_volume_ratio, 0, __pyx_n_s_calc_surface_area_to_volume_rati_2, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_surface_area_to_volume_rati_2, __pyx_t_2) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24230,7 +24719,7 @@ if (!__Pyx_RefNanny) {
  *     if (delta > 0.0):
  *         beta_i = size_class_sum(lambda i: w_o[i] / rho_p[i])
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_3calc_packing_ratio, 0, __pyx_n_s_calc_packing_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_3calc_packing_ratio, 0, __pyx_n_s_calc_packing_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_packing_ratio, __pyx_t_2) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24242,7 +24731,7 @@ if (!__Pyx_RefNanny) {
  *     return (3.348 / sigma_prime ** 0.8189) if (sigma_prime > 0.0) else 1.0
  * # surface-fire-common-intermediate-calculations ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_5calc_optimum_packing_ratio, 0, __pyx_n_s_calc_optimum_packing_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_5calc_optimum_packing_ratio, 0, __pyx_n_s_calc_optimum_packing_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_optimum_packing_ratio, __pyx_t_2) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24254,7 +24743,7 @@ if (!__Pyx_RefNanny) {
  *     S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
  *     return map_category(lambda i:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_7calc_mineral_damping_coefficients, 0, __pyx_n_s_calc_mineral_damping_coefficient_3, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_7calc_mineral_damping_coefficients, 0, __pyx_n_s_calc_mineral_damping_coefficient_3, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_mineral_damping_coefficient_3, __pyx_t_2) < 0) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24266,7 +24755,7 @@ if (!__Pyx_RefNanny) {
  *     M_f_i = size_class_sum(lambda i: f_ij[i] * M_f[i])
  *     M_x_i = size_class_sum(lambda i: f_ij[i] * M_x[i])
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_9calc_moisture_damping_coefficients, 0, __pyx_n_s_calc_moisture_damping_coefficien_4, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_9calc_moisture_damping_coefficients, 0, __pyx_n_s_calc_moisture_damping_coefficien_4, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_moisture_damping_coefficien_4, __pyx_t_2) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24278,7 +24767,7 @@ if (!__Pyx_RefNanny) {
  *     return size_class_sum(lambda i: f_ij[i] * h[i])
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_11calc_low_heat_content, 0, __pyx_n_s_calc_low_heat_content, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_11calc_low_heat_content, 0, __pyx_n_s_calc_low_heat_content, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_low_heat_content, __pyx_t_2) < 0) __PYX_ERR(0, 42, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24290,7 +24779,7 @@ if (!__Pyx_RefNanny) {
  *     return size_class_sum(lambda i:
  *                           (lambda g_ij, w_o, S_T:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_13calc_net_fuel_loading, 0, __pyx_n_s_calc_net_fuel_loading, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_13calc_net_fuel_loading, 0, __pyx_n_s_calc_net_fuel_loading, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_net_fuel_loading, __pyx_t_2) < 0) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24302,7 +24791,7 @@ if (!__Pyx_RefNanny) {
  *     return category_sum(lambda i: W_n_i[i] * h_i[i] * eta_M_i[i] * eta_S_i[i])
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_15calc_heat_per_unit_area, 0, __pyx_n_s_calc_heat_per_unit_area, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_15calc_heat_per_unit_area, 0, __pyx_n_s_calc_heat_per_unit_area, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_heat_per_unit_area, __pyx_t_2) < 0) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24314,7 +24803,7 @@ if (!__Pyx_RefNanny) {
  *     # Albini 1976 replaces 1 / (4.774 * (sigma_prime ** 0.1) - 7.27)
  *     A               = (133.0 / sigma_prime ** 0.7913) if (sigma_prime > 0.0) else 0.0
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_17calc_optimum_reaction_velocity, 0, __pyx_n_s_calc_optimum_reaction_velocity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_17calc_optimum_reaction_velocity, 0, __pyx_n_s_calc_optimum_reaction_velocity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_optimum_reaction_velocity, __pyx_t_2) < 0) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24326,7 +24815,7 @@ if (!__Pyx_RefNanny) {
  *     w_o         = moisturized_fuel_model["w_o"]
  *     h           = moisturized_fuel_model["h"]
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_19calc_reaction_intensity, 0, __pyx_n_s_calc_reaction_intensity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_19calc_reaction_intensity, 0, __pyx_n_s_calc_reaction_intensity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_reaction_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 68, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24338,7 +24827,7 @@ if (!__Pyx_RefNanny) {
  *     return exp((0.792 + 0.681 * (sigma_prime ** 0.5)) * (beta + 0.1)) / (192.0 + 0.2595 * sigma_prime)
  * # surface-fire-propagating-flux-ratio ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_21calc_propagating_flux_ratio, 0, __pyx_n_s_calc_propagating_flux_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_21calc_propagating_flux_ratio, 0, __pyx_n_s_calc_propagating_flux_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 86, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_propagating_flux_ratio, __pyx_t_2) < 0) __PYX_ERR(0, 86, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24350,7 +24839,7 @@ if (!__Pyx_RefNanny) {
  *     return I_R * xi
  * # surface-fire-heat-source-no-wind-no-slope ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_23calc_heat_source, 0, __pyx_n_s_calc_heat_source, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_23calc_heat_source, 0, __pyx_n_s_calc_heat_source, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_heat_source, __pyx_t_2) < 0) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24362,7 +24851,7 @@ if (!__Pyx_RefNanny) {
  *     if (delta > 0.0):
  *         rho_b_i = size_class_sum(lambda i: w_o[i])
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_25calc_ovendry_bulk_density, 0, __pyx_n_s_calc_ovendry_bulk_density, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_25calc_ovendry_bulk_density, 0, __pyx_n_s_calc_ovendry_bulk_density, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_ovendry_bulk_density, __pyx_t_2) < 0) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24374,7 +24863,7 @@ if (!__Pyx_RefNanny) {
  *     return map_size_class(lambda i:
  *                           (lambda sigma:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_27calc_effective_heating_number_distribution, 0, __pyx_n_s_calc_effective_heating_number_di_3, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_27calc_effective_heating_number_distribution, 0, __pyx_n_s_calc_effective_heating_number_di_3, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_effective_heating_number_di_3, __pyx_t_2) < 0) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24386,7 +24875,7 @@ if (!__Pyx_RefNanny) {
  *     return map_size_class(lambda i: 250.0 + 1116.0 * M_f[i])
  * # surface-fire-heat-of-preignition-distribution ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_29calc_heat_of_preignition_distribution, 0, __pyx_n_s_calc_heat_of_preignition_distrib_2, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_29calc_heat_of_preignition_distribution, 0, __pyx_n_s_calc_heat_of_preignition_distrib_2, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_heat_of_preignition_distrib_2, __pyx_t_2) < 0) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24398,7 +24887,7 @@ if (!__Pyx_RefNanny) {
  *     effective_heat_of_preignition_i = size_class_sum(lambda i: f_ij[i] * epsilon_ij[i] * Q_ig_ij[i])
  *     effective_heat_of_preignition   = category_sum(lambda i: f_i[i] * effective_heat_of_preignition_i[i])
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_31calc_heat_sink, 0, __pyx_n_s_calc_heat_sink, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_31calc_heat_sink, 0, __pyx_n_s_calc_heat_sink, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_heat_sink, __pyx_t_2) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24410,7 +24899,7 @@ if (!__Pyx_RefNanny) {
  *     return heat_source / heat_sink if (heat_sink > 0.0) else 0.0
  * # surface-fire-spread-rate-no-wind-no-slope ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_33calc_spread_rate, 0, __pyx_n_s_calc_spread_rate, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_33calc_spread_rate, 0, __pyx_n_s_calc_spread_rate, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24422,7 +24911,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the residence time (total burning time) of fuel (min) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_35calc_residence_time, 0, __pyx_n_s_calc_residence_time, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_35calc_residence_time, 0, __pyx_n_s_calc_residence_time, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_residence_time, __pyx_t_2) < 0) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24434,7 +24923,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the depth, or front-to-back distance, of the actively flaming zone
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_37calc_flame_depth, 0, __pyx_n_s_calc_flame_depth, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_37calc_flame_depth, 0, __pyx_n_s_calc_flame_depth, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_flame_depth, __pyx_t_2) < 0) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24446,7 +24935,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the rate of heat release per unit of fire edge (Btu/ft/s) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_39calc_fireline_intensity, 0, __pyx_n_s_calc_fireline_intensity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_39calc_fireline_intensity, 0, __pyx_n_s_calc_fireline_intensity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24458,7 +24947,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the average flame length (m) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_41calc_flame_length, 0, __pyx_n_s_calc_flame_length, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_41calc_flame_length, 0, __pyx_n_s_calc_flame_length, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_flame_length, __pyx_t_2) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24470,7 +24959,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the heat per unit area (kJ/m^2) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_43calc_areal_heat_output, 0, __pyx_n_s_calc_areal_heat_output, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_43calc_areal_heat_output, 0, __pyx_n_s_calc_areal_heat_output, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_areal_heat_output, __pyx_t_2) < 0) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24482,7 +24971,7 @@ if (!__Pyx_RefNanny) {
  *     return 0.9 * reaction_intensity
  * # surface-fire-max-effective-wind-speed ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_45calc_max_effective_wind_speed, 0, __pyx_n_s_calc_max_effective_wind_speed, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__49)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_45calc_max_effective_wind_speed, 0, __pyx_n_s_calc_max_effective_wind_speed, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_max_effective_wind_speed, __pyx_t_2) < 0) __PYX_ERR(0, 167, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24494,7 +24983,7 @@ if (!__Pyx_RefNanny) {
  *     if (beta > 0.0):
  *         G = 5.275 * beta ** -0.3
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_47get_phi_S_fn, 0, __pyx_n_s_get_phi_S_fn, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__51)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_47get_phi_S_fn, 0, __pyx_n_s_get_phi_S_fn, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_phi_S_fn, __pyx_t_2) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24506,7 +24995,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__52); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24518,7 +25007,7 @@ if (!__Pyx_RefNanny) {
  *     if (F > 0.0):
  *         C_over_F = C / F
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_49get_phi_W_fn, 0, __pyx_n_s_get_phi_W_fn, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_49get_phi_W_fn, 0, __pyx_n_s_get_phi_W_fn, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_phi_W_fn, __pyx_t_2) < 0) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24530,7 +25019,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__52); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24542,7 +25031,7 @@ if (!__Pyx_RefNanny) {
  *     if (B > 0.0):
  *         F_over_C  = F / C
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_51get_wind_speed_fn, 0, __pyx_n_s_get_wind_speed_fn, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__57)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_51get_wind_speed_fn, 0, __pyx_n_s_get_wind_speed_fn, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_wind_speed_fn, __pyx_t_2) < 0) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24554,7 +25043,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__52); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 202, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 202, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -24566,9 +25055,9 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Given these inputs:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_53calc_surface_fire_behavior_no_wind_no_slope, 0, __pyx_n_s_calc_surface_fire_behavior_no_wi, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_53calc_surface_fire_behavior_no_wind_no_slope, 0, __pyx_n_s_calc_surface_fire_behavior_no_wi, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__60);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__69);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_surface_fire_behavior_no_wi, __pyx_t_2) < 0) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -24607,7 +25096,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Return the wind adjustment factor (unitless) given these inputs:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_55calc_wind_adjustment_factor, 0, __pyx_n_s_calc_wind_adjustment_factor, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__62)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_55calc_wind_adjustment_factor, 0, __pyx_n_s_calc_wind_adjustment_factor, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_wind_adjustment_factor, __pyx_t_3) < 0) __PYX_ERR(0, 278, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24619,7 +25108,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Return the midflame wind speed (S) given these inputs:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_57calc_midflame_wind_speed, 0, __pyx_n_s_calc_midflame_wind_speed, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 299, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_57calc_midflame_wind_speed, 0, __pyx_n_s_calc_midflame_wind_speed, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_midflame_wind_speed, __pyx_t_3) < 0) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24699,7 +25188,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Given these inputs:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_59project_wind_and_slope_vectors_3d, 0, __pyx_n_s_project_wind_and_slope_vectors_3, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 316, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_59project_wind_and_slope_vectors_3d, 0, __pyx_n_s_project_wind_and_slope_vectors_3, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 316, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_project_wind_and_slope_vectors_3, __pyx_t_3) < 0) __PYX_ERR(0, 316, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24711,7 +25200,7 @@ if (!__Pyx_RefNanny) {
  *     # Convert wind and slope vectors to unit vectors on the slope-tangential plane
  *     w_S = as_unit_vector(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_61get_phi_E, 0, __pyx_n_s_get_phi_E, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__68)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 340, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_61get_phi_E, 0, __pyx_n_s_get_phi_E, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_get_phi_E, __pyx_t_3) < 0) __PYX_ERR(0, 340, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24772,9 +25261,9 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the length_to_width_ratio of the surface fire front given:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_63surface_length_to_width_ratio, 0, __pyx_n_s_surface_length_to_width_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__70)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 372, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_63surface_length_to_width_ratio, 0, __pyx_n_s_surface_length_to_width_ratio, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__71);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__75);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_surface_length_to_width_ratio, __pyx_t_3) < 0) __PYX_ERR(0, 372, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
@@ -24785,7 +25274,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the eccentricity (E) of the surface fire front using eq. 8 from
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_65surface_fire_eccentricity, 0, __pyx_n_s_surface_fire_eccentricity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__73)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 395, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_65surface_fire_eccentricity, 0, __pyx_n_s_surface_fire_eccentricity, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 395, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_surface_fire_eccentricity, __pyx_t_3) < 0) __PYX_ERR(0, 395, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24839,7 +25328,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Given these inputs:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_67maybe_limit_wind_speed, 0, __pyx_n_s_maybe_limit_wind_speed, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__75)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 408, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_67maybe_limit_wind_speed, 0, __pyx_n_s_maybe_limit_wind_speed, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 408, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_maybe_limit_wind_speed, __pyx_t_3) < 0) __PYX_ERR(0, 408, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24851,9 +25340,9 @@ if (!__Pyx_RefNanny) {
  *                                    slope, aspect, use_wind_limit=True, surface_lw_ratio_model="rothermel"):
  *     """
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_69calc_surface_fire_behavior_max, 0, __pyx_n_s_calc_surface_fire_behavior_max, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__77)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 435, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_69calc_surface_fire_behavior_max, 0, __pyx_n_s_calc_surface_fire_behavior_max, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 435, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__78);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_3, __pyx_tuple__79);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_surface_fire_behavior_max, __pyx_t_3) < 0) __PYX_ERR(0, 435, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
@@ -24876,7 +25365,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Given these inputs:
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_71calc_surface_fire_behavior_in_direction, 0, __pyx_n_s_calc_surface_fire_behavior_in_di, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__80)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 502, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_12surface_fire_71calc_surface_fire_behavior_in_direction, 0, __pyx_n_s_calc_surface_fire_behavior_in_di, NULL, __pyx_n_s_pyretechnics_surface_fire, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 502, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_surface_fire_behavior_in_di, __pyx_t_3) < 0) __PYX_ERR(0, 502, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -24890,6 +25379,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_TraceReturn(Py_None, 0);
 
   /*--- Wrapped vars code ---*/
 
@@ -25539,6 +26029,96 @@ bad:
     Py_XDECREF(value);
     return -1;
 }
+
+/* Profile */
+#if CYTHON_PROFILE
+static int __Pyx_TraceSetupAndCall(PyCodeObject** code,
+                                   PyFrameObject** frame,
+                                   PyThreadState* tstate,
+                                   const char *funcname,
+                                   const char *srcfile,
+                                   int firstlineno) {
+    PyObject *type, *value, *traceback;
+    int retval;
+    if (*frame == NULL || !CYTHON_PROFILE_REUSE_FRAME) {
+        if (*code == NULL) {
+            *code = __Pyx_createFrameCodeObject(funcname, srcfile, firstlineno);
+            if (*code == NULL) return 0;
+        }
+        *frame = PyFrame_New(
+            tstate,                          /*PyThreadState *tstate*/
+            *code,                           /*PyCodeObject *code*/
+            __pyx_d,                  /*PyObject *globals*/
+            0                                /*PyObject *locals*/
+        );
+        if (*frame == NULL) return 0;
+        if (CYTHON_TRACE && (*frame)->f_trace == NULL) {
+            Py_INCREF(Py_None);
+            (*frame)->f_trace = Py_None;
+        }
+#if PY_VERSION_HEX < 0x030400B1
+    } else {
+        (*frame)->f_tstate = tstate;
+#endif
+    }
+    __Pyx_PyFrame_SetLineNumber(*frame, firstlineno);
+    retval = 1;
+    __Pyx_EnterTracing(tstate);
+    __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+    #if CYTHON_TRACE
+    if (tstate->c_tracefunc)
+        retval = tstate->c_tracefunc(tstate->c_traceobj, *frame, PyTrace_CALL, NULL) == 0;
+    if (retval && tstate->c_profilefunc)
+    #endif
+        retval = tstate->c_profilefunc(tstate->c_profileobj, *frame, PyTrace_CALL, NULL) == 0;
+    __Pyx_LeaveTracing(tstate);
+    if (retval) {
+        __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+        return __Pyx_IsTracing(tstate, 0, 0) && retval;
+    } else {
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+        return -1;
+    }
+}
+static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno) {
+    PyCodeObject *py_code = 0;
+#if PY_MAJOR_VERSION >= 3
+    py_code = PyCode_NewEmpty(srcfile, funcname, firstlineno);
+    if (likely(py_code)) {
+        py_code->co_flags |= CO_OPTIMIZED | CO_NEWLOCALS;
+    }
+#else
+    PyObject *py_srcfile = 0;
+    PyObject *py_funcname = 0;
+    py_funcname = PyString_FromString(funcname);
+    if (unlikely(!py_funcname)) goto bad;
+    py_srcfile = PyString_FromString(srcfile);
+    if (unlikely(!py_srcfile)) goto bad;
+    py_code = PyCode_New(
+        0,
+        0,
+        0,
+        CO_OPTIMIZED | CO_NEWLOCALS,
+        __pyx_empty_bytes,     /*PyObject *code,*/
+        __pyx_empty_tuple,     /*PyObject *consts,*/
+        __pyx_empty_tuple,     /*PyObject *names,*/
+        __pyx_empty_tuple,     /*PyObject *varnames,*/
+        __pyx_empty_tuple,     /*PyObject *freevars,*/
+        __pyx_empty_tuple,     /*PyObject *cellvars,*/
+        py_srcfile,       /*PyObject *filename,*/
+        py_funcname,      /*PyObject *name,*/
+        firstlineno,
+        __pyx_empty_bytes      /*PyObject *lnotab*/
+    );
+bad:
+    Py_XDECREF(py_srcfile);
+    Py_XDECREF(py_funcname);
+#endif
+    return py_code;
+}
+#endif
 
 /* RaiseClosureNameError */
 static CYTHON_INLINE void __Pyx_RaiseClosureNameError(const char *varname) {
@@ -28396,7 +28976,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
         if (unlikely(!module_name_str)) { goto modbad; }
         module_name = PyUnicode_FromString(module_name_str);
         if (unlikely(!module_name)) { goto modbad; }
-        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__4);
+        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__40);
         if (unlikely(!module_dot)) { goto modbad; }
         full_name = PyUnicode_Concat(module_dot, name);
         if (unlikely(!full_name)) { goto modbad; }
@@ -28504,7 +29084,7 @@ static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *
 #endif
 static PyObject *__Pyx__ImportDottedModule(PyObject *name, PyObject *parts_tuple) {
 #if PY_MAJOR_VERSION < 3
-    PyObject *module, *from_list, *star = __pyx_n_s__53;
+    PyObject *module, *from_list, *star = __pyx_n_s__65;
     CYTHON_UNUSED_VAR(parts_tuple);
     from_list = PyList_New(1);
     if (unlikely(!from_list))

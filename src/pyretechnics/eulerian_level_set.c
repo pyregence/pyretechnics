@@ -1725,6 +1725,244 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,
     const char* function_name);
 
+/* Profile.proto */
+#ifndef CYTHON_PROFILE
+#if CYTHON_COMPILING_IN_LIMITED_API || CYTHON_COMPILING_IN_PYPY
+  #define CYTHON_PROFILE 0
+#else
+  #define CYTHON_PROFILE 1
+#endif
+#endif
+#ifndef CYTHON_TRACE_NOGIL
+  #define CYTHON_TRACE_NOGIL 0
+#else
+  #if CYTHON_TRACE_NOGIL && !defined(CYTHON_TRACE)
+    #define CYTHON_TRACE 1
+  #endif
+#endif
+#ifndef CYTHON_TRACE
+  #define CYTHON_TRACE 0
+#endif
+#if CYTHON_TRACE
+  #undef CYTHON_PROFILE_REUSE_FRAME
+#endif
+#ifndef CYTHON_PROFILE_REUSE_FRAME
+  #define CYTHON_PROFILE_REUSE_FRAME 0
+#endif
+#if CYTHON_PROFILE || CYTHON_TRACE
+  #include "compile.h"
+  #include "frameobject.h"
+  #include "traceback.h"
+#if PY_VERSION_HEX >= 0x030b00a6
+  #ifndef Py_BUILD_CORE
+    #define Py_BUILD_CORE 1
+  #endif
+  #include "internal/pycore_frame.h"
+#endif
+  #if CYTHON_PROFILE_REUSE_FRAME
+    #define CYTHON_FRAME_MODIFIER static
+    #define CYTHON_FRAME_DEL(frame)
+  #else
+    #define CYTHON_FRAME_MODIFIER
+    #define CYTHON_FRAME_DEL(frame) Py_CLEAR(frame)
+  #endif
+  #define __Pyx_TraceDeclarations\
+      static PyCodeObject *__pyx_frame_code = NULL;\
+      CYTHON_FRAME_MODIFIER PyFrameObject *__pyx_frame = NULL;\
+      int __Pyx_use_tracing = 0;
+  #define __Pyx_TraceFrameInit(codeobj)\
+      if (codeobj) __pyx_frame_code = (PyCodeObject*) codeobj;
+#if PY_VERSION_HEX >= 0x030b00a2
+  #if PY_VERSION_HEX >= 0x030C00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     ((!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #endif
+  #define __Pyx_EnterTracing(tstate)  PyThreadState_EnterTracing(tstate)
+  #define __Pyx_LeaveTracing(tstate)  PyThreadState_LeaveTracing(tstate)
+#elif PY_VERSION_HEX >= 0x030a00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->cframe->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->cframe->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                 || tstate->c_profilefunc != NULL);\
+      } while (0)
+#else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                         || tstate->c_profilefunc != NULL);\
+      } while (0)
+#endif
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  if (nogil) {\
+      if (CYTHON_TRACE_NOGIL) {\
+          PyThreadState *tstate;\
+          PyGILState_STATE state = PyGILState_Ensure();\
+          tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 1, 1)) {\
+              __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          }\
+          PyGILState_Release(state);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  } else {\
+      PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #else
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  {   PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #endif
+  #define __Pyx_TraceException()\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 1)) {\
+          __Pyx_EnterTracing(tstate);\
+          PyObject *exc_info = __Pyx_GetExceptionTuple(tstate);\
+          if (exc_info) {\
+              if (CYTHON_TRACE && tstate->c_tracefunc)\
+                  tstate->c_tracefunc(\
+                      tstate->c_traceobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              tstate->c_profilefunc(\
+                  tstate->c_profileobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              Py_DECREF(exc_info);\
+          }\
+          __Pyx_LeaveTracing(tstate);\
+      }\
+  }
+  static void __Pyx_call_return_trace_func(PyThreadState *tstate, PyFrameObject *frame, PyObject *result) {
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_EnterTracing(tstate);
+      if (CYTHON_TRACE && tstate->c_tracefunc)
+          tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_RETURN, result);
+      if (tstate->c_profilefunc)
+          tstate->c_profilefunc(tstate->c_profileobj, frame, PyTrace_RETURN, result);
+      CYTHON_FRAME_DEL(frame);
+      __Pyx_LeaveTracing(tstate);
+      __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0)) {\
+                  __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+              }\
+              PyGILState_Release(state);\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0)) {\
+              __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0)) {\
+          __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+      }\
+  }
+  #endif
+  static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno);
+  static int __Pyx_TraceSetupAndCall(PyCodeObject** code, PyFrameObject** frame, PyThreadState* tstate, const char *funcname, const char *srcfile, int firstlineno);
+#else
+  #define __Pyx_TraceDeclarations
+  #define __Pyx_TraceFrameInit(codeobj)
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)   if ((1)); else goto_error;
+  #define __Pyx_TraceException()
+  #define __Pyx_TraceReturn(result, nogil)
+#endif
+#if CYTHON_TRACE
+  static int __Pyx_call_line_trace_func(PyThreadState *tstate, PyFrameObject *frame, int lineno) {
+      int ret;
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_PyFrame_SetLineNumber(frame, lineno);
+      __Pyx_EnterTracing(tstate);
+      ret = tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_LINE, NULL);
+      __Pyx_LeaveTracing(tstate);
+      if (likely(!ret)) {
+          __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+      } else {
+          Py_XDECREF(type);
+          Py_XDECREF(value);
+          Py_XDECREF(traceback);
+      }
+      return ret;
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              int ret = 0;\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = __Pyx_PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+                  ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              }\
+              __Pyx_PyGILState_Release(state);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+              int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+          int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+          if (unlikely(ret)) goto_error;\
+      }\
+  }
+  #endif
+#else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)   if ((1)); else goto_error;
+#endif
+
 /* PyIntBinop.proto */
 #if !CYTHON_COMPILING_IN_PYPY
 static PyObject* __Pyx_PyInt_AddObjC(PyObject *op1, PyObject *op2, long intval, int inplace, int zerodivision_check);
@@ -2328,7 +2566,6 @@ static const char __pyx_k_r[] = "r";
 static const char __pyx_k_t[] = "t";
 static const char __pyx_k_x[] = "x";
 static const char __pyx_k_y[] = "y";
-static const char __pyx_k__8[] = "*";
 static const char __pyx_k_cf[] = "cf";
 static const char __pyx_k_dt[] = "dt";
 static const char __pyx_k_dx[] = "dx";
@@ -2344,7 +2581,8 @@ static const char __pyx_k_x1[] = "x1";
 static const char __pyx_k_x2[] = "x2";
 static const char __pyx_k_y1[] = "y1";
 static const char __pyx_k_y2[] = "y2";
-static const char __pyx_k__18[] = ".";
+static const char __pyx_k__33[] = "*";
+static const char __pyx_k__39[] = ".";
 static const char __pyx_k__67[] = "?";
 static const char __pyx_k_dot[] = "dot";
 static const char __pyx_k_get[] = "get";
@@ -2700,9 +2938,9 @@ typedef struct {
   PyObject *__pyx_kp_s_The_start_time_exceeds_the_tempo;
   PyObject *__pyx_kp_s_The_start_time_max_duration_exce;
   PyObject *__pyx_n_s_ValueError;
-  PyObject *__pyx_kp_u__18;
+  PyObject *__pyx_n_s__33;
+  PyObject *__pyx_kp_u__39;
   PyObject *__pyx_n_s__67;
-  PyObject *__pyx_n_s__8;
   PyObject *__pyx_n_s_active_crown;
   PyObject *__pyx_n_s_angle;
   PyObject *__pyx_n_s_as_unit_vector;
@@ -3012,70 +3250,70 @@ typedef struct {
   PyObject *__pyx_int_1;
   PyObject *__pyx_int_2;
   PyObject *__pyx_int_3;
-  PyObject *__pyx_tuple_;
-  PyObject *__pyx_tuple__2;
-  PyObject *__pyx_tuple__3;
-  PyObject *__pyx_tuple__4;
-  PyObject *__pyx_tuple__5;
-  PyObject *__pyx_tuple__6;
-  PyObject *__pyx_tuple__7;
-  PyObject *__pyx_tuple__9;
-  PyObject *__pyx_tuple__11;
-  PyObject *__pyx_tuple__13;
-  PyObject *__pyx_tuple__15;
-  PyObject *__pyx_tuple__16;
-  PyObject *__pyx_tuple__19;
-  PyObject *__pyx_tuple__21;
-  PyObject *__pyx_tuple__23;
-  PyObject *__pyx_tuple__25;
-  PyObject *__pyx_tuple__27;
+  PyObject *__pyx_codeobj_;
+  PyObject *__pyx_tuple__17;
+  PyObject *__pyx_tuple__18;
+  PyObject *__pyx_tuple__20;
   PyObject *__pyx_tuple__29;
+  PyObject *__pyx_tuple__30;
   PyObject *__pyx_tuple__31;
-  PyObject *__pyx_tuple__33;
+  PyObject *__pyx_tuple__32;
+  PyObject *__pyx_tuple__34;
   PyObject *__pyx_tuple__35;
+  PyObject *__pyx_tuple__36;
   PyObject *__pyx_tuple__37;
   PyObject *__pyx_tuple__38;
-  PyObject *__pyx_tuple__39;
+  PyObject *__pyx_tuple__40;
   PyObject *__pyx_tuple__41;
+  PyObject *__pyx_tuple__42;
   PyObject *__pyx_tuple__43;
+  PyObject *__pyx_tuple__44;
   PyObject *__pyx_tuple__45;
   PyObject *__pyx_tuple__46;
   PyObject *__pyx_tuple__47;
+  PyObject *__pyx_tuple__48;
   PyObject *__pyx_tuple__49;
   PyObject *__pyx_tuple__50;
+  PyObject *__pyx_tuple__51;
   PyObject *__pyx_tuple__52;
+  PyObject *__pyx_tuple__53;
   PyObject *__pyx_tuple__54;
   PyObject *__pyx_tuple__55;
+  PyObject *__pyx_tuple__56;
   PyObject *__pyx_tuple__57;
+  PyObject *__pyx_tuple__58;
   PyObject *__pyx_tuple__59;
+  PyObject *__pyx_tuple__60;
   PyObject *__pyx_tuple__61;
+  PyObject *__pyx_tuple__62;
   PyObject *__pyx_tuple__63;
+  PyObject *__pyx_tuple__64;
   PyObject *__pyx_tuple__65;
+  PyObject *__pyx_tuple__66;
+  PyObject *__pyx_codeobj__2;
+  PyObject *__pyx_codeobj__3;
+  PyObject *__pyx_codeobj__4;
+  PyObject *__pyx_codeobj__5;
+  PyObject *__pyx_codeobj__6;
+  PyObject *__pyx_codeobj__7;
+  PyObject *__pyx_codeobj__8;
+  PyObject *__pyx_codeobj__9;
   PyObject *__pyx_codeobj__10;
+  PyObject *__pyx_codeobj__11;
   PyObject *__pyx_codeobj__12;
+  PyObject *__pyx_codeobj__13;
   PyObject *__pyx_codeobj__14;
-  PyObject *__pyx_codeobj__17;
-  PyObject *__pyx_codeobj__20;
+  PyObject *__pyx_codeobj__15;
+  PyObject *__pyx_codeobj__16;
+  PyObject *__pyx_codeobj__19;
+  PyObject *__pyx_codeobj__21;
   PyObject *__pyx_codeobj__22;
+  PyObject *__pyx_codeobj__23;
   PyObject *__pyx_codeobj__24;
+  PyObject *__pyx_codeobj__25;
   PyObject *__pyx_codeobj__26;
+  PyObject *__pyx_codeobj__27;
   PyObject *__pyx_codeobj__28;
-  PyObject *__pyx_codeobj__30;
-  PyObject *__pyx_codeobj__32;
-  PyObject *__pyx_codeobj__34;
-  PyObject *__pyx_codeobj__36;
-  PyObject *__pyx_codeobj__40;
-  PyObject *__pyx_codeobj__42;
-  PyObject *__pyx_codeobj__44;
-  PyObject *__pyx_codeobj__48;
-  PyObject *__pyx_codeobj__51;
-  PyObject *__pyx_codeobj__53;
-  PyObject *__pyx_codeobj__56;
-  PyObject *__pyx_codeobj__58;
-  PyObject *__pyx_codeobj__60;
-  PyObject *__pyx_codeobj__62;
-  PyObject *__pyx_codeobj__64;
-  PyObject *__pyx_codeobj__66;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -3129,9 +3367,9 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_kp_s_The_start_time_exceeds_the_tempo);
   Py_CLEAR(clear_module_state->__pyx_kp_s_The_start_time_max_duration_exce);
   Py_CLEAR(clear_module_state->__pyx_n_s_ValueError);
-  Py_CLEAR(clear_module_state->__pyx_kp_u__18);
+  Py_CLEAR(clear_module_state->__pyx_n_s__33);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__39);
   Py_CLEAR(clear_module_state->__pyx_n_s__67);
-  Py_CLEAR(clear_module_state->__pyx_n_s__8);
   Py_CLEAR(clear_module_state->__pyx_n_s_active_crown);
   Py_CLEAR(clear_module_state->__pyx_n_s_angle);
   Py_CLEAR(clear_module_state->__pyx_n_s_as_unit_vector);
@@ -3441,70 +3679,70 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_int_1);
   Py_CLEAR(clear_module_state->__pyx_int_2);
   Py_CLEAR(clear_module_state->__pyx_int_3);
-  Py_CLEAR(clear_module_state->__pyx_tuple_);
-  Py_CLEAR(clear_module_state->__pyx_tuple__2);
-  Py_CLEAR(clear_module_state->__pyx_tuple__3);
-  Py_CLEAR(clear_module_state->__pyx_tuple__4);
-  Py_CLEAR(clear_module_state->__pyx_tuple__5);
-  Py_CLEAR(clear_module_state->__pyx_tuple__6);
-  Py_CLEAR(clear_module_state->__pyx_tuple__7);
-  Py_CLEAR(clear_module_state->__pyx_tuple__9);
-  Py_CLEAR(clear_module_state->__pyx_tuple__11);
-  Py_CLEAR(clear_module_state->__pyx_tuple__13);
-  Py_CLEAR(clear_module_state->__pyx_tuple__15);
-  Py_CLEAR(clear_module_state->__pyx_tuple__16);
-  Py_CLEAR(clear_module_state->__pyx_tuple__19);
-  Py_CLEAR(clear_module_state->__pyx_tuple__21);
-  Py_CLEAR(clear_module_state->__pyx_tuple__23);
-  Py_CLEAR(clear_module_state->__pyx_tuple__25);
-  Py_CLEAR(clear_module_state->__pyx_tuple__27);
+  Py_CLEAR(clear_module_state->__pyx_codeobj_);
+  Py_CLEAR(clear_module_state->__pyx_tuple__17);
+  Py_CLEAR(clear_module_state->__pyx_tuple__18);
+  Py_CLEAR(clear_module_state->__pyx_tuple__20);
   Py_CLEAR(clear_module_state->__pyx_tuple__29);
+  Py_CLEAR(clear_module_state->__pyx_tuple__30);
   Py_CLEAR(clear_module_state->__pyx_tuple__31);
-  Py_CLEAR(clear_module_state->__pyx_tuple__33);
+  Py_CLEAR(clear_module_state->__pyx_tuple__32);
+  Py_CLEAR(clear_module_state->__pyx_tuple__34);
   Py_CLEAR(clear_module_state->__pyx_tuple__35);
+  Py_CLEAR(clear_module_state->__pyx_tuple__36);
   Py_CLEAR(clear_module_state->__pyx_tuple__37);
   Py_CLEAR(clear_module_state->__pyx_tuple__38);
-  Py_CLEAR(clear_module_state->__pyx_tuple__39);
+  Py_CLEAR(clear_module_state->__pyx_tuple__40);
   Py_CLEAR(clear_module_state->__pyx_tuple__41);
+  Py_CLEAR(clear_module_state->__pyx_tuple__42);
   Py_CLEAR(clear_module_state->__pyx_tuple__43);
+  Py_CLEAR(clear_module_state->__pyx_tuple__44);
   Py_CLEAR(clear_module_state->__pyx_tuple__45);
   Py_CLEAR(clear_module_state->__pyx_tuple__46);
   Py_CLEAR(clear_module_state->__pyx_tuple__47);
+  Py_CLEAR(clear_module_state->__pyx_tuple__48);
   Py_CLEAR(clear_module_state->__pyx_tuple__49);
   Py_CLEAR(clear_module_state->__pyx_tuple__50);
+  Py_CLEAR(clear_module_state->__pyx_tuple__51);
   Py_CLEAR(clear_module_state->__pyx_tuple__52);
+  Py_CLEAR(clear_module_state->__pyx_tuple__53);
   Py_CLEAR(clear_module_state->__pyx_tuple__54);
   Py_CLEAR(clear_module_state->__pyx_tuple__55);
+  Py_CLEAR(clear_module_state->__pyx_tuple__56);
   Py_CLEAR(clear_module_state->__pyx_tuple__57);
+  Py_CLEAR(clear_module_state->__pyx_tuple__58);
   Py_CLEAR(clear_module_state->__pyx_tuple__59);
+  Py_CLEAR(clear_module_state->__pyx_tuple__60);
   Py_CLEAR(clear_module_state->__pyx_tuple__61);
+  Py_CLEAR(clear_module_state->__pyx_tuple__62);
   Py_CLEAR(clear_module_state->__pyx_tuple__63);
+  Py_CLEAR(clear_module_state->__pyx_tuple__64);
   Py_CLEAR(clear_module_state->__pyx_tuple__65);
+  Py_CLEAR(clear_module_state->__pyx_tuple__66);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__2);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__3);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__4);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__5);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__6);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__7);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__8);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__9);
   Py_CLEAR(clear_module_state->__pyx_codeobj__10);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__11);
   Py_CLEAR(clear_module_state->__pyx_codeobj__12);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__13);
   Py_CLEAR(clear_module_state->__pyx_codeobj__14);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__17);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__20);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__15);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__16);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__19);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__21);
   Py_CLEAR(clear_module_state->__pyx_codeobj__22);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__23);
   Py_CLEAR(clear_module_state->__pyx_codeobj__24);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__25);
   Py_CLEAR(clear_module_state->__pyx_codeobj__26);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__27);
   Py_CLEAR(clear_module_state->__pyx_codeobj__28);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__30);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__32);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__34);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__36);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__40);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__42);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__44);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__48);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__51);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__53);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__56);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__58);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__60);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__62);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__64);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__66);
   return 0;
 }
 #endif
@@ -3536,9 +3774,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_kp_s_The_start_time_exceeds_the_tempo);
   Py_VISIT(traverse_module_state->__pyx_kp_s_The_start_time_max_duration_exce);
   Py_VISIT(traverse_module_state->__pyx_n_s_ValueError);
-  Py_VISIT(traverse_module_state->__pyx_kp_u__18);
+  Py_VISIT(traverse_module_state->__pyx_n_s__33);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__39);
   Py_VISIT(traverse_module_state->__pyx_n_s__67);
-  Py_VISIT(traverse_module_state->__pyx_n_s__8);
   Py_VISIT(traverse_module_state->__pyx_n_s_active_crown);
   Py_VISIT(traverse_module_state->__pyx_n_s_angle);
   Py_VISIT(traverse_module_state->__pyx_n_s_as_unit_vector);
@@ -3848,70 +4086,70 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_int_1);
   Py_VISIT(traverse_module_state->__pyx_int_2);
   Py_VISIT(traverse_module_state->__pyx_int_3);
-  Py_VISIT(traverse_module_state->__pyx_tuple_);
-  Py_VISIT(traverse_module_state->__pyx_tuple__2);
-  Py_VISIT(traverse_module_state->__pyx_tuple__3);
-  Py_VISIT(traverse_module_state->__pyx_tuple__4);
-  Py_VISIT(traverse_module_state->__pyx_tuple__5);
-  Py_VISIT(traverse_module_state->__pyx_tuple__6);
-  Py_VISIT(traverse_module_state->__pyx_tuple__7);
-  Py_VISIT(traverse_module_state->__pyx_tuple__9);
-  Py_VISIT(traverse_module_state->__pyx_tuple__11);
-  Py_VISIT(traverse_module_state->__pyx_tuple__13);
-  Py_VISIT(traverse_module_state->__pyx_tuple__15);
-  Py_VISIT(traverse_module_state->__pyx_tuple__16);
-  Py_VISIT(traverse_module_state->__pyx_tuple__19);
-  Py_VISIT(traverse_module_state->__pyx_tuple__21);
-  Py_VISIT(traverse_module_state->__pyx_tuple__23);
-  Py_VISIT(traverse_module_state->__pyx_tuple__25);
-  Py_VISIT(traverse_module_state->__pyx_tuple__27);
+  Py_VISIT(traverse_module_state->__pyx_codeobj_);
+  Py_VISIT(traverse_module_state->__pyx_tuple__17);
+  Py_VISIT(traverse_module_state->__pyx_tuple__18);
+  Py_VISIT(traverse_module_state->__pyx_tuple__20);
   Py_VISIT(traverse_module_state->__pyx_tuple__29);
+  Py_VISIT(traverse_module_state->__pyx_tuple__30);
   Py_VISIT(traverse_module_state->__pyx_tuple__31);
-  Py_VISIT(traverse_module_state->__pyx_tuple__33);
+  Py_VISIT(traverse_module_state->__pyx_tuple__32);
+  Py_VISIT(traverse_module_state->__pyx_tuple__34);
   Py_VISIT(traverse_module_state->__pyx_tuple__35);
+  Py_VISIT(traverse_module_state->__pyx_tuple__36);
   Py_VISIT(traverse_module_state->__pyx_tuple__37);
   Py_VISIT(traverse_module_state->__pyx_tuple__38);
-  Py_VISIT(traverse_module_state->__pyx_tuple__39);
+  Py_VISIT(traverse_module_state->__pyx_tuple__40);
   Py_VISIT(traverse_module_state->__pyx_tuple__41);
+  Py_VISIT(traverse_module_state->__pyx_tuple__42);
   Py_VISIT(traverse_module_state->__pyx_tuple__43);
+  Py_VISIT(traverse_module_state->__pyx_tuple__44);
   Py_VISIT(traverse_module_state->__pyx_tuple__45);
   Py_VISIT(traverse_module_state->__pyx_tuple__46);
   Py_VISIT(traverse_module_state->__pyx_tuple__47);
+  Py_VISIT(traverse_module_state->__pyx_tuple__48);
   Py_VISIT(traverse_module_state->__pyx_tuple__49);
   Py_VISIT(traverse_module_state->__pyx_tuple__50);
+  Py_VISIT(traverse_module_state->__pyx_tuple__51);
   Py_VISIT(traverse_module_state->__pyx_tuple__52);
+  Py_VISIT(traverse_module_state->__pyx_tuple__53);
   Py_VISIT(traverse_module_state->__pyx_tuple__54);
   Py_VISIT(traverse_module_state->__pyx_tuple__55);
+  Py_VISIT(traverse_module_state->__pyx_tuple__56);
   Py_VISIT(traverse_module_state->__pyx_tuple__57);
+  Py_VISIT(traverse_module_state->__pyx_tuple__58);
   Py_VISIT(traverse_module_state->__pyx_tuple__59);
+  Py_VISIT(traverse_module_state->__pyx_tuple__60);
   Py_VISIT(traverse_module_state->__pyx_tuple__61);
+  Py_VISIT(traverse_module_state->__pyx_tuple__62);
   Py_VISIT(traverse_module_state->__pyx_tuple__63);
+  Py_VISIT(traverse_module_state->__pyx_tuple__64);
   Py_VISIT(traverse_module_state->__pyx_tuple__65);
+  Py_VISIT(traverse_module_state->__pyx_tuple__66);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__2);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__3);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__4);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__5);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__6);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__7);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__8);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__9);
   Py_VISIT(traverse_module_state->__pyx_codeobj__10);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__11);
   Py_VISIT(traverse_module_state->__pyx_codeobj__12);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__13);
   Py_VISIT(traverse_module_state->__pyx_codeobj__14);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__17);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__20);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__15);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__16);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__19);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__21);
   Py_VISIT(traverse_module_state->__pyx_codeobj__22);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__23);
   Py_VISIT(traverse_module_state->__pyx_codeobj__24);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__25);
   Py_VISIT(traverse_module_state->__pyx_codeobj__26);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__27);
   Py_VISIT(traverse_module_state->__pyx_codeobj__28);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__30);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__32);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__34);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__36);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__40);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__42);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__44);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__48);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__51);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__53);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__56);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__58);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__60);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__62);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__64);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__66);
   return 0;
 }
 #endif
@@ -3953,9 +4191,9 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_kp_s_The_start_time_exceeds_the_tempo __pyx_mstate_global->__pyx_kp_s_The_start_time_exceeds_the_tempo
 #define __pyx_kp_s_The_start_time_max_duration_exce __pyx_mstate_global->__pyx_kp_s_The_start_time_max_duration_exce
 #define __pyx_n_s_ValueError __pyx_mstate_global->__pyx_n_s_ValueError
-#define __pyx_kp_u__18 __pyx_mstate_global->__pyx_kp_u__18
+#define __pyx_n_s__33 __pyx_mstate_global->__pyx_n_s__33
+#define __pyx_kp_u__39 __pyx_mstate_global->__pyx_kp_u__39
 #define __pyx_n_s__67 __pyx_mstate_global->__pyx_n_s__67
-#define __pyx_n_s__8 __pyx_mstate_global->__pyx_n_s__8
 #define __pyx_n_s_active_crown __pyx_mstate_global->__pyx_n_s_active_crown
 #define __pyx_n_s_angle __pyx_mstate_global->__pyx_n_s_angle
 #define __pyx_n_s_as_unit_vector __pyx_mstate_global->__pyx_n_s_as_unit_vector
@@ -4265,70 +4503,70 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_int_1 __pyx_mstate_global->__pyx_int_1
 #define __pyx_int_2 __pyx_mstate_global->__pyx_int_2
 #define __pyx_int_3 __pyx_mstate_global->__pyx_int_3
-#define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
-#define __pyx_tuple__2 __pyx_mstate_global->__pyx_tuple__2
-#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
-#define __pyx_tuple__4 __pyx_mstate_global->__pyx_tuple__4
-#define __pyx_tuple__5 __pyx_mstate_global->__pyx_tuple__5
-#define __pyx_tuple__6 __pyx_mstate_global->__pyx_tuple__6
-#define __pyx_tuple__7 __pyx_mstate_global->__pyx_tuple__7
-#define __pyx_tuple__9 __pyx_mstate_global->__pyx_tuple__9
-#define __pyx_tuple__11 __pyx_mstate_global->__pyx_tuple__11
-#define __pyx_tuple__13 __pyx_mstate_global->__pyx_tuple__13
-#define __pyx_tuple__15 __pyx_mstate_global->__pyx_tuple__15
-#define __pyx_tuple__16 __pyx_mstate_global->__pyx_tuple__16
-#define __pyx_tuple__19 __pyx_mstate_global->__pyx_tuple__19
-#define __pyx_tuple__21 __pyx_mstate_global->__pyx_tuple__21
-#define __pyx_tuple__23 __pyx_mstate_global->__pyx_tuple__23
-#define __pyx_tuple__25 __pyx_mstate_global->__pyx_tuple__25
-#define __pyx_tuple__27 __pyx_mstate_global->__pyx_tuple__27
+#define __pyx_codeobj_ __pyx_mstate_global->__pyx_codeobj_
+#define __pyx_tuple__17 __pyx_mstate_global->__pyx_tuple__17
+#define __pyx_tuple__18 __pyx_mstate_global->__pyx_tuple__18
+#define __pyx_tuple__20 __pyx_mstate_global->__pyx_tuple__20
 #define __pyx_tuple__29 __pyx_mstate_global->__pyx_tuple__29
+#define __pyx_tuple__30 __pyx_mstate_global->__pyx_tuple__30
 #define __pyx_tuple__31 __pyx_mstate_global->__pyx_tuple__31
-#define __pyx_tuple__33 __pyx_mstate_global->__pyx_tuple__33
+#define __pyx_tuple__32 __pyx_mstate_global->__pyx_tuple__32
+#define __pyx_tuple__34 __pyx_mstate_global->__pyx_tuple__34
 #define __pyx_tuple__35 __pyx_mstate_global->__pyx_tuple__35
+#define __pyx_tuple__36 __pyx_mstate_global->__pyx_tuple__36
 #define __pyx_tuple__37 __pyx_mstate_global->__pyx_tuple__37
 #define __pyx_tuple__38 __pyx_mstate_global->__pyx_tuple__38
-#define __pyx_tuple__39 __pyx_mstate_global->__pyx_tuple__39
+#define __pyx_tuple__40 __pyx_mstate_global->__pyx_tuple__40
 #define __pyx_tuple__41 __pyx_mstate_global->__pyx_tuple__41
+#define __pyx_tuple__42 __pyx_mstate_global->__pyx_tuple__42
 #define __pyx_tuple__43 __pyx_mstate_global->__pyx_tuple__43
+#define __pyx_tuple__44 __pyx_mstate_global->__pyx_tuple__44
 #define __pyx_tuple__45 __pyx_mstate_global->__pyx_tuple__45
 #define __pyx_tuple__46 __pyx_mstate_global->__pyx_tuple__46
 #define __pyx_tuple__47 __pyx_mstate_global->__pyx_tuple__47
+#define __pyx_tuple__48 __pyx_mstate_global->__pyx_tuple__48
 #define __pyx_tuple__49 __pyx_mstate_global->__pyx_tuple__49
 #define __pyx_tuple__50 __pyx_mstate_global->__pyx_tuple__50
+#define __pyx_tuple__51 __pyx_mstate_global->__pyx_tuple__51
 #define __pyx_tuple__52 __pyx_mstate_global->__pyx_tuple__52
+#define __pyx_tuple__53 __pyx_mstate_global->__pyx_tuple__53
 #define __pyx_tuple__54 __pyx_mstate_global->__pyx_tuple__54
 #define __pyx_tuple__55 __pyx_mstate_global->__pyx_tuple__55
+#define __pyx_tuple__56 __pyx_mstate_global->__pyx_tuple__56
 #define __pyx_tuple__57 __pyx_mstate_global->__pyx_tuple__57
+#define __pyx_tuple__58 __pyx_mstate_global->__pyx_tuple__58
 #define __pyx_tuple__59 __pyx_mstate_global->__pyx_tuple__59
+#define __pyx_tuple__60 __pyx_mstate_global->__pyx_tuple__60
 #define __pyx_tuple__61 __pyx_mstate_global->__pyx_tuple__61
+#define __pyx_tuple__62 __pyx_mstate_global->__pyx_tuple__62
 #define __pyx_tuple__63 __pyx_mstate_global->__pyx_tuple__63
+#define __pyx_tuple__64 __pyx_mstate_global->__pyx_tuple__64
 #define __pyx_tuple__65 __pyx_mstate_global->__pyx_tuple__65
+#define __pyx_tuple__66 __pyx_mstate_global->__pyx_tuple__66
+#define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
+#define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
+#define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
+#define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
+#define __pyx_codeobj__6 __pyx_mstate_global->__pyx_codeobj__6
+#define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
+#define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
+#define __pyx_codeobj__9 __pyx_mstate_global->__pyx_codeobj__9
 #define __pyx_codeobj__10 __pyx_mstate_global->__pyx_codeobj__10
+#define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
 #define __pyx_codeobj__12 __pyx_mstate_global->__pyx_codeobj__12
+#define __pyx_codeobj__13 __pyx_mstate_global->__pyx_codeobj__13
 #define __pyx_codeobj__14 __pyx_mstate_global->__pyx_codeobj__14
-#define __pyx_codeobj__17 __pyx_mstate_global->__pyx_codeobj__17
-#define __pyx_codeobj__20 __pyx_mstate_global->__pyx_codeobj__20
+#define __pyx_codeobj__15 __pyx_mstate_global->__pyx_codeobj__15
+#define __pyx_codeobj__16 __pyx_mstate_global->__pyx_codeobj__16
+#define __pyx_codeobj__19 __pyx_mstate_global->__pyx_codeobj__19
+#define __pyx_codeobj__21 __pyx_mstate_global->__pyx_codeobj__21
 #define __pyx_codeobj__22 __pyx_mstate_global->__pyx_codeobj__22
+#define __pyx_codeobj__23 __pyx_mstate_global->__pyx_codeobj__23
 #define __pyx_codeobj__24 __pyx_mstate_global->__pyx_codeobj__24
+#define __pyx_codeobj__25 __pyx_mstate_global->__pyx_codeobj__25
 #define __pyx_codeobj__26 __pyx_mstate_global->__pyx_codeobj__26
+#define __pyx_codeobj__27 __pyx_mstate_global->__pyx_codeobj__27
 #define __pyx_codeobj__28 __pyx_mstate_global->__pyx_codeobj__28
-#define __pyx_codeobj__30 __pyx_mstate_global->__pyx_codeobj__30
-#define __pyx_codeobj__32 __pyx_mstate_global->__pyx_codeobj__32
-#define __pyx_codeobj__34 __pyx_mstate_global->__pyx_codeobj__34
-#define __pyx_codeobj__36 __pyx_mstate_global->__pyx_codeobj__36
-#define __pyx_codeobj__40 __pyx_mstate_global->__pyx_codeobj__40
-#define __pyx_codeobj__42 __pyx_mstate_global->__pyx_codeobj__42
-#define __pyx_codeobj__44 __pyx_mstate_global->__pyx_codeobj__44
-#define __pyx_codeobj__48 __pyx_mstate_global->__pyx_codeobj__48
-#define __pyx_codeobj__51 __pyx_mstate_global->__pyx_codeobj__51
-#define __pyx_codeobj__53 __pyx_mstate_global->__pyx_codeobj__53
-#define __pyx_codeobj__56 __pyx_mstate_global->__pyx_codeobj__56
-#define __pyx_codeobj__58 __pyx_mstate_global->__pyx_codeobj__58
-#define __pyx_codeobj__60 __pyx_mstate_global->__pyx_codeobj__60
-#define __pyx_codeobj__62 __pyx_mstate_global->__pyx_codeobj__62
-#define __pyx_codeobj__64 __pyx_mstate_global->__pyx_codeobj__64
-#define __pyx_codeobj__66 __pyx_mstate_global->__pyx_codeobj__66
 /* #### Code section: module_code ### */
 
 /* "pyretechnics/eulerian_level_set.py":5
@@ -4500,6 +4738,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_calc_dphi_dx_appro
   PyObject *__pyx_v_east_x = NULL;
   PyObject *__pyx_v_west_x = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -4508,7 +4747,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_calc_dphi_dx_appro
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj_)
   __Pyx_RefNannySetupContext("calc_dphi_dx_approx", 1);
+  __Pyx_TraceCall("calc_dphi_dx_approx", __pyx_f[0], 5, 0, __PYX_ERR(0, 5, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":10
  *     direction at grid cell (x,y) given the cell width dx.
@@ -4724,6 +4965,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_calc_dphi_dx_appro
   __Pyx_XDECREF(__pyx_v_east_x);
   __Pyx_XDECREF(__pyx_v_west_x);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4897,6 +5139,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_2calc_dphi_dy_appr
   PyObject *__pyx_v_north_y = NULL;
   PyObject *__pyx_v_south_y = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -4905,7 +5148,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_2calc_dphi_dy_appr
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__2)
   __Pyx_RefNannySetupContext("calc_dphi_dy_approx", 1);
+  __Pyx_TraceCall("calc_dphi_dy_approx", __pyx_f[0], 24, 0, __PYX_ERR(0, 24, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":29
  *     direction at grid cell (x,y) given the cell height dy.
@@ -5121,6 +5366,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_2calc_dphi_dy_appr
   __Pyx_XDECREF(__pyx_v_north_y);
   __Pyx_XDECREF(__pyx_v_south_y);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5296,6 +5542,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_4calc_phi_gradient
   PyObject *__pyx_v_dphi_dx = NULL;
   PyObject *__pyx_v_dphi_dy = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5306,7 +5553,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_4calc_phi_gradient
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__3)
   __Pyx_RefNannySetupContext("calc_phi_gradient_approx", 1);
+  __Pyx_TraceCall("calc_phi_gradient_approx", __pyx_f[0], 43, 0, __PYX_ERR(0, 43, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":48
  *     given the cell width dx and the cell height dy.
@@ -5506,6 +5755,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_4calc_phi_gradient
   __Pyx_XDECREF(__pyx_v_dphi_dx);
   __Pyx_XDECREF(__pyx_v_dphi_dy);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5678,6 +5928,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_6calc_phi_normal_vector(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_phi, PyObject *__pyx_v_dx, PyObject *__pyx_v_dy, PyObject *__pyx_v_x, PyObject *__pyx_v_y) {
   PyObject *__pyx_v_phi_gradient = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5688,7 +5939,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_6calc_phi_normal_v
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__4)
   __Pyx_RefNannySetupContext("calc_phi_normal_vector", 1);
+  __Pyx_TraceCall("calc_phi_normal_vector", __pyx_f[0], 57, 0, __PYX_ERR(0, 57, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":64
  *     - n_y: northward component of the unit normal vector
@@ -5828,6 +6081,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_6calc_phi_normal_v
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_phi_gradient);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5942,6 +6196,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_8calc_phi_normal_a
   PyObject *__pyx_v_n_y = NULL;
   PyObject *__pyx_v_angle = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5954,7 +6209,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_8calc_phi_normal_a
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__5)
   __Pyx_RefNannySetupContext("calc_phi_normal_azimuth", 1);
+  __Pyx_TraceCall("calc_phi_normal_azimuth", __pyx_f[0], 74, 0, __PYX_ERR(0, 74, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":79
  *     to which the phi field's normal vector points.
@@ -6474,6 +6731,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_8calc_phi_normal_a
   __Pyx_XDECREF(__pyx_v_n_y);
   __Pyx_XDECREF(__pyx_v_angle);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6601,6 +6859,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_10calc_superbee_flux_limiter(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_dphi_up, PyObject *__pyx_v_dphi_loc) {
   PyObject *__pyx_v_r = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
@@ -6612,7 +6871,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_10calc_superbee_fl
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__6)
   __Pyx_RefNannySetupContext("calc_superbee_flux_limiter", 1);
+  __Pyx_TraceCall("calc_superbee_flux_limiter", __pyx_f[0], 98, 0, __PYX_ERR(0, 98, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":102
  *     TODO: Add docstring
@@ -6816,6 +7077,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_10calc_superbee_fl
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_r);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7004,6 +7266,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_12calc_dphi_dx(CYT
   PyObject *__pyx_v_phi_east = NULL;
   PyObject *__pyx_v_phi_west = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7012,7 +7275,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_12calc_dphi_dx(CYT
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__7)
   __Pyx_RefNannySetupContext("calc_dphi_dx", 1);
+  __Pyx_TraceCall("calc_dphi_dx", __pyx_f[0], 114, 0, __PYX_ERR(0, 114, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":124
  *     - cols :: integer number of columns in the phi matrix
@@ -7118,6 +7383,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_12calc_dphi_dx(CYT
   __Pyx_XDECREF(__pyx_v_phi_east);
   __Pyx_XDECREF(__pyx_v_phi_west);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7306,6 +7572,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_14calc_dphi_dy(CYT
   PyObject *__pyx_v_phi_north = NULL;
   PyObject *__pyx_v_phi_south = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7314,7 +7581,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_14calc_dphi_dy(CYT
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__8)
   __Pyx_RefNannySetupContext("calc_dphi_dy", 1);
+  __Pyx_TraceCall("calc_dphi_dy", __pyx_f[0], 129, 0, __PYX_ERR(0, 129, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":139
  *     - rows :: integer number of rows in the phi matrix
@@ -7420,6 +7689,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_14calc_dphi_dy(CYT
   __Pyx_XDECREF(__pyx_v_phi_north);
   __Pyx_XDECREF(__pyx_v_phi_south);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7625,6 +7895,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_16calc_phi_gradien
   PyObject *__pyx_v_dphi_dx = NULL;
   PyObject *__pyx_v_dphi_dy = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7635,7 +7906,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_16calc_phi_gradien
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__9)
   __Pyx_RefNannySetupContext("calc_phi_gradient", 1);
+  __Pyx_TraceCall("calc_phi_gradient", __pyx_f[0], 144, 0, __PYX_ERR(0, 144, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":155
  *     - y   :: integer row index in phi
@@ -7835,6 +8108,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_16calc_phi_gradien
   __Pyx_XDECREF(__pyx_v_dphi_dx);
   __Pyx_XDECREF(__pyx_v_dphi_dy);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8012,6 +8286,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_18calc_phi_east(CY
   PyObject *__pyx_v_dphi_up = NULL;
   PyObject *__pyx_v_B = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8023,7 +8298,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_18calc_phi_east(CY
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__10)
   __Pyx_RefNannySetupContext("calc_phi_east", 1);
+  __Pyx_TraceCall("calc_phi_east", __pyx_f[0], 161, 0, __PYX_ERR(0, 161, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":170
  *     - cols :: integer number of columns in the phi matrix
@@ -8354,6 +8631,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_18calc_phi_east(CY
   __Pyx_XDECREF(__pyx_v_dphi_up);
   __Pyx_XDECREF(__pyx_v_B);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8531,6 +8809,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_20calc_phi_west(CY
   PyObject *__pyx_v_dphi_up = NULL;
   PyObject *__pyx_v_B = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8542,7 +8821,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_20calc_phi_west(CY
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__11)
   __Pyx_RefNannySetupContext("calc_phi_west", 1);
+  __Pyx_TraceCall("calc_phi_west", __pyx_f[0], 185, 0, __PYX_ERR(0, 185, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":194
  *     - cols :: integer number of columns in the phi matrix
@@ -8876,6 +9157,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_20calc_phi_west(CY
   __Pyx_XDECREF(__pyx_v_dphi_up);
   __Pyx_XDECREF(__pyx_v_B);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9053,6 +9335,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_22calc_phi_north(C
   PyObject *__pyx_v_dphi_up = NULL;
   PyObject *__pyx_v_B = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9064,7 +9347,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_22calc_phi_north(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__12)
   __Pyx_RefNannySetupContext("calc_phi_north", 1);
+  __Pyx_TraceCall("calc_phi_north", __pyx_f[0], 209, 0, __PYX_ERR(0, 209, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":218
  *     - rows :: integer number of rows in the phi matrix
@@ -9395,6 +9680,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_22calc_phi_north(C
   __Pyx_XDECREF(__pyx_v_dphi_up);
   __Pyx_XDECREF(__pyx_v_B);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9572,6 +9858,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_24calc_phi_south(C
   PyObject *__pyx_v_dphi_up = NULL;
   PyObject *__pyx_v_B = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9583,7 +9870,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_24calc_phi_south(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__13)
   __Pyx_RefNannySetupContext("calc_phi_south", 1);
+  __Pyx_TraceCall("calc_phi_south", __pyx_f[0], 233, 0, __PYX_ERR(0, 233, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":242
  *     - rows :: integer number of rows in the phi matrix
@@ -9917,6 +10206,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_24calc_phi_south(C
   __Pyx_XDECREF(__pyx_v_dphi_up);
   __Pyx_XDECREF(__pyx_v_B);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10043,6 +10333,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_26calc_elevation_gradient(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_slope, PyObject *__pyx_v_aspect) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10053,7 +10344,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_26calc_elevation_g
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__14)
   __Pyx_RefNannySetupContext("calc_elevation_gradient", 1);
+  __Pyx_TraceCall("calc_elevation_gradient", __pyx_f[0], 265, 0, __PYX_ERR(0, 265, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":271
  *     - aspect :: degrees clockwise from North
@@ -10141,6 +10434,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_26calc_elevation_g
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10271,6 +10565,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_28calc_phi_gradien
   PyObject *__pyx_v_phi_gradient_xyz = NULL;
   PyObject *__pyx_v_slope_normal_vector = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10282,7 +10577,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_28calc_phi_gradien
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__15)
   __Pyx_RefNannySetupContext("calc_phi_gradient_on_slope", 1);
+  __Pyx_TraceCall("calc_phi_gradient_on_slope", __pyx_f[0], 274, 0, __PYX_ERR(0, 274, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":280
  *     - elevation_gradient :: (dz_dx: rise/run, dz_dy: rise/run)
@@ -10554,6 +10851,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_28calc_phi_gradien
   __Pyx_XDECREF(__pyx_v_phi_gradient_xyz);
   __Pyx_XDECREF(__pyx_v_slope_normal_vector);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10705,6 +11003,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_30calc_fireline_no
   PyObject *__pyx_v_normal_flame_length = NULL;
   PyObject *__pyx_v_normal_fire_type = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10717,7 +11016,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_30calc_fireline_no
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__16)
   __Pyx_RefNannySetupContext("calc_fireline_normal_behavior", 1);
+  __Pyx_TraceCall("calc_fireline_normal_behavior", __pyx_f[0], 291, 0, __PYX_ERR(0, 291, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":319
  *     #================================================================================================
@@ -10892,7 +11193,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_30calc_fireline_no
   /*else*/ {
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fire_behavior_max, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 355, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 355, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 355, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_v_heading_fire_type = __pyx_t_7;
@@ -10979,7 +11280,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_30calc_fireline_no
  */
     __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_fire_behavior_max, __pyx_n_s_get); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 362, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 362, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__18, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 362, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __pyx_v_critical_spread_rate = __pyx_t_1;
@@ -11450,6 +11751,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_30calc_fireline_no
   __Pyx_XDECREF(__pyx_v_normal_flame_length);
   __Pyx_XDECREF(__pyx_v_normal_fire_type);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11695,6 +11997,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_32burn_cell_toward
   PyObject *__pyx_v_crown_dphi_dt = NULL;
   PyObject *__pyx_v_combined_dphi_dt = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -11708,7 +12011,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_32burn_cell_toward
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__19)
   __Pyx_RefNannySetupContext("burn_cell_toward_phi_gradient", 1);
+  __Pyx_TraceCall("burn_cell_toward_phi_gradient", __pyx_f[0], 419, 0, __PYX_ERR(0, 419, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":459
  *     #================================================================================================
@@ -12809,7 +13114,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_32burn_cell_toward
       }
       #endif
       {
-        PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_tuple__3};
+        PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_tuple__20};
         __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 530, __pyx_L1_error)
@@ -13617,6 +13922,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_32burn_cell_toward
   __Pyx_XDECREF(__pyx_v_crown_dphi_dt);
   __Pyx_XDECREF(__pyx_v_combined_dphi_dt);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13788,6 +14094,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_34opposite_phi_signs(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_phi_matrix, PyObject *__pyx_v_y1, PyObject *__pyx_v_x1, PyObject *__pyx_v_y2, PyObject *__pyx_v_x2) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -13795,7 +14102,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_34opposite_phi_sig
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__21)
   __Pyx_RefNannySetupContext("opposite_phi_signs", 1);
+  __Pyx_TraceCall("opposite_phi_signs", __pyx_f[0], 655, 0, __PYX_ERR(0, 655, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":659
  *     TODO: Add docstring
@@ -13854,6 +14163,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_34opposite_phi_sig
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -13990,6 +14300,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_36identify_frontie
   PyObject *__pyx_v_east_x = NULL;
   PyObject *__pyx_v_west_x = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -14010,7 +14321,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_36identify_frontie
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__22)
   __Pyx_RefNannySetupContext("identify_frontier_cells", 1);
+  __Pyx_TraceCall("identify_frontier_cells", __pyx_f[0], 662, 0, __PYX_ERR(0, 662, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":666
  *     TODO: Add docstring
@@ -15040,6 +15353,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_36identify_frontie
   __Pyx_XDECREF(__pyx_v_east_x);
   __Pyx_XDECREF(__pyx_v_west_x);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -15202,6 +15516,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_38project_buffer(C
   PyObject *__pyx_7genexpr__pyx_v_y_ = NULL;
   PyObject *__pyx_7genexpr__pyx_v_x_ = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -15218,7 +15533,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_38project_buffer(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__23)
   __Pyx_RefNannySetupContext("project_buffer", 1);
+  __Pyx_TraceCall("project_buffer", __pyx_f[0], 696, 0, __PYX_ERR(0, 696, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":700
  *     TODO: Add docstring
@@ -15609,6 +15926,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_38project_buffer(C
   __Pyx_XDECREF(__pyx_7genexpr__pyx_v_y_);
   __Pyx_XDECREF(__pyx_7genexpr__pyx_v_x_);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -15755,6 +16073,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_40identify_tracked
   PyObject *__pyx_v_cell = NULL;
   PyObject *__pyx_v_buffer_cell = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -15769,7 +16088,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_40identify_tracked
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__24)
   __Pyx_RefNannySetupContext("identify_tracked_cells", 1);
+  __Pyx_TraceCall("identify_tracked_cells", __pyx_f[0], 708, 0, __PYX_ERR(0, 708, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":712
  *     TODO: Add docstring
@@ -16058,6 +16379,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_40identify_tracked
   __Pyx_XDECREF(__pyx_v_cell);
   __Pyx_XDECREF(__pyx_v_buffer_cell);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -16235,6 +16557,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_42update_tracked_c
   PyObject *__pyx_v_cell = NULL;
   PyObject *__pyx_v_buffer_cell = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -16251,7 +16574,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_42update_tracked_c
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__25)
   __Pyx_RefNannySetupContext("update_tracked_cells", 1);
+  __Pyx_TraceCall("update_tracked_cells", __pyx_f[0], 720, 0, __PYX_ERR(0, 720, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":725
  *     """
@@ -16862,6 +17187,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_42update_tracked_c
   __Pyx_XDECREF(__pyx_v_cell);
   __Pyx_XDECREF(__pyx_v_buffer_cell);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -16977,6 +17303,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_44spread_direction
   CYTHON_UNUSED PyObject *__pyx_v_r = NULL;
   PyObject *__pyx_v_azimuth = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -16987,7 +17314,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_44spread_direction
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__26)
   __Pyx_RefNannySetupContext("spread_direction_vector_to_angle", 1);
+  __Pyx_TraceCall("spread_direction_vector_to_angle", __pyx_f[0], 758, 0, __PYX_ERR(0, 758, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":762
  *     TODO: Add docstring
@@ -17193,6 +17522,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_44spread_direction
   __Pyx_XDECREF(__pyx_v_r);
   __Pyx_XDECREF(__pyx_v_azimuth);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -17207,6 +17537,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_44spread_direction
 
 static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_50__defaults__(CYTHON_UNUSED PyObject *__pyx_self) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -17214,6 +17545,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_50__defaults__(CYT
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__defaults__", 1);
+  __Pyx_TraceCall("__defaults__", __pyx_f[0], 767, 0, __PYX_ERR(0, 767, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
 
   /* "pyretechnics/eulerian_level_set.py":770
@@ -17277,6 +17609,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_50__defaults__(CYT
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -17664,6 +17997,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_46spread_fire_one_
   PyObject *__pyx_v_frontier_cells_new = NULL;
   PyObject *__pyx_v_tracked_cells_new = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -17682,7 +18016,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_46spread_fire_one_
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__27)
   __Pyx_RefNannySetupContext("spread_fire_one_timestep", 1);
+  __Pyx_TraceCall("spread_fire_one_timestep", __pyx_f[0], 767, 0, __PYX_ERR(0, 767, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":782
  *     """
@@ -20765,6 +21101,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_46spread_fire_one_
   __Pyx_XDECREF(__pyx_v_frontier_cells_new);
   __Pyx_XDECREF(__pyx_v_tracked_cells_new);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -20779,6 +21116,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_46spread_fire_one_
 
 static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_52__defaults__(CYTHON_UNUSED PyObject *__pyx_self) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -20786,6 +21124,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_52__defaults__(CYT
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__defaults__", 1);
+  __Pyx_TraceCall("__defaults__", __pyx_f[0], 965, 0, __PYX_ERR(0, 965, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
 
   /* "pyretechnics/eulerian_level_set.py":968
@@ -20849,6 +21188,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_52__defaults__(CYT
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -21161,6 +21501,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
   PyObject *__pyx_v_max_timestep = NULL;
   PyObject *__pyx_v_results = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -21178,7 +21519,9 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__28)
   __Pyx_RefNannySetupContext("spread_fire_with_phi_field", 0);
+  __Pyx_TraceCall("spread_fire_with_phi_field", __pyx_f[0], 965, 0, __PYX_ERR(0, 965, __pyx_L1_error));
   __Pyx_INCREF(__pyx_v_output_matrices);
   __Pyx_INCREF(__pyx_v_spot_ignitions);
 
@@ -21337,7 +21680,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
  * 
  *     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
  */
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1043, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__29, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1043, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -21410,7 +21753,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
  * 
  *     # Calculate the max stop time
  */
-      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1048, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__30, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1048, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -21466,7 +21809,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
  * 
  *     # Ensure that the max_stop_time does not exceed the cube_duration
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1055, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__31, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1055, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -21500,7 +21843,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
  * 
  *     # Identify the sets of frontier cells and tracked cells based on the phi matrix
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1059, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__32, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1059, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -22065,6 +22408,7 @@ static PyObject *__pyx_pf_12pyretechnics_18eulerian_level_set_48spread_fire_with
   __Pyx_XDECREF(__pyx_v_output_matrices);
   __Pyx_XDECREF(__pyx_v_spot_ignitions);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -22096,9 +22440,9 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_kp_s_The_start_time_exceeds_the_tempo, __pyx_k_The_start_time_exceeds_the_tempo, sizeof(__pyx_k_The_start_time_exceeds_the_tempo), 0, 0, 1, 0},
     {&__pyx_kp_s_The_start_time_max_duration_exce, __pyx_k_The_start_time_max_duration_exce, sizeof(__pyx_k_The_start_time_max_duration_exce), 0, 0, 1, 0},
     {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
-    {&__pyx_kp_u__18, __pyx_k__18, sizeof(__pyx_k__18), 0, 1, 0, 0},
+    {&__pyx_n_s__33, __pyx_k__33, sizeof(__pyx_k__33), 0, 0, 1, 1},
+    {&__pyx_kp_u__39, __pyx_k__39, sizeof(__pyx_k__39), 0, 1, 0, 0},
     {&__pyx_n_s__67, __pyx_k__67, sizeof(__pyx_k__67), 0, 0, 1, 1},
-    {&__pyx_n_s__8, __pyx_k__8, sizeof(__pyx_k__8), 0, 0, 1, 1},
     {&__pyx_n_s_active_crown, __pyx_k_active_crown, sizeof(__pyx_k_active_crown), 0, 0, 1, 1},
     {&__pyx_n_s_angle, __pyx_k_angle, sizeof(__pyx_k_angle), 0, 0, 1, 1},
     {&__pyx_n_s_as_unit_vector, __pyx_k_as_unit_vector, sizeof(__pyx_k_as_unit_vector), 0, 0, 1, 1},
@@ -22423,9 +22767,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         heading_spread_rate        = fire_behavior_max["max_spread_rate"]               # m/min
  *         heading_spread_direction   = fire_behavior_max["max_spread_direction"]          # (x,y,z) unit vector
  */
-  __pyx_tuple_ = PyTuple_Pack(2, __pyx_n_s_max_fire_type, __pyx_n_s_surface); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 355, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple_);
-  __Pyx_GIVEREF(__pyx_tuple_);
+  __pyx_tuple__17 = PyTuple_Pack(2, __pyx_n_s_max_fire_type, __pyx_n_s_surface); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 355, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__17);
+  __Pyx_GIVEREF(__pyx_tuple__17);
 
   /* "pyretechnics/eulerian_level_set.py":362
  *         length_to_width_ratio      = fire_behavior_max["length_to_width_ratio"]         # unitless
@@ -22434,9 +22778,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         #============================================================================================
  */
-  __pyx_tuple__2 = PyTuple_Pack(2, __pyx_n_s_critical_spread_rate, __pyx_float_0_0); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__2);
-  __Pyx_GIVEREF(__pyx_tuple__2);
+  __pyx_tuple__18 = PyTuple_Pack(2, __pyx_n_s_critical_spread_rate, __pyx_float_0_0); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 362, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__18);
+  __Pyx_GIVEREF(__pyx_tuple__18);
 
   /* "pyretechnics/eulerian_level_set.py":530
  *             spread_direction = vu.as_unit_vector(slope_vector_3d)
@@ -22445,9 +22789,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         #============================================================================================
  */
-  __pyx_tuple__3 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_0); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 530, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_tuple__20 = PyTuple_Pack(3, __pyx_int_0, __pyx_int_1, __pyx_int_0); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
 
   /* "pyretechnics/eulerian_level_set.py":1043
  *     for cube in space_time_cubes.values():
@@ -22456,9 +22800,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_s_The_space_time_cubes_must_all_sh); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 1043, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
+  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_kp_s_The_space_time_cubes_must_all_sh); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 1043, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__29);
+  __Pyx_GIVEREF(__pyx_tuple__29);
 
   /* "pyretechnics/eulerian_level_set.py":1048
  *     for layer in output_matrices.values():
@@ -22467,9 +22811,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *     # Calculate the max stop time
  */
-  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_s_The_space_time_cubes_and_output); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 1048, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__5);
-  __Pyx_GIVEREF(__pyx_tuple__5);
+  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_kp_s_The_space_time_cubes_and_output); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 1048, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
 
   /* "pyretechnics/eulerian_level_set.py":1055
  *     # Ensure that start_time does not exceed the cube_duration
@@ -22478,9 +22822,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *     # Ensure that the max_stop_time does not exceed the cube_duration
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_The_start_time_exceeds_the_tempo); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 1055, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__6);
-  __Pyx_GIVEREF(__pyx_tuple__6);
+  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_kp_s_The_start_time_exceeds_the_tempo); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 1055, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__31);
+  __Pyx_GIVEREF(__pyx_tuple__31);
 
   /* "pyretechnics/eulerian_level_set.py":1059
  *     # Ensure that the max_stop_time does not exceed the cube_duration
@@ -22489,9 +22833,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *     # Identify the sets of frontier cells and tracked cells based on the phi matrix
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_s_The_start_time_max_duration_exce); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 1059, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__32 = PyTuple_Pack(1, __pyx_kp_s_The_start_time_max_duration_exce); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 1059, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__32);
+  __Pyx_GIVEREF(__pyx_tuple__32);
 
   /* "pyretechnics/eulerian_level_set.py":5
  * 
@@ -22500,10 +22844,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the spatial gradient of the phi raster in the x (west->east)
  */
-  __pyx_tuple__9 = PyTuple_Pack(7, __pyx_n_s_phi, __pyx_n_s_dx, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_east_x, __pyx_n_s_west_x); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 5, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dx_approx, 5, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_tuple__34 = PyTuple_Pack(7, __pyx_n_s_phi, __pyx_n_s_dx, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_east_x, __pyx_n_s_west_x); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__34);
+  __Pyx_GIVEREF(__pyx_tuple__34);
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dx_approx, 5, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 5, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":24
  * 
@@ -22512,10 +22856,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the spatial gradient of the phi raster in the y (south->north)
  */
-  __pyx_tuple__11 = PyTuple_Pack(7, __pyx_n_s_phi, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_north_y, __pyx_n_s_south_y); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 24, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dy_approx, 24, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __pyx_tuple__35 = PyTuple_Pack(7, __pyx_n_s_phi, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_north_y, __pyx_n_s_south_y); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__35);
+  __Pyx_GIVEREF(__pyx_tuple__35);
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dy_approx, 24, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 24, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":43
  * 
@@ -22524,10 +22868,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the spatial gradient of the phi raster at grid cell (x,y)
  */
-  __pyx_tuple__13 = PyTuple_Pack(9, __pyx_n_s_phi, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 43, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__13);
-  __Pyx_GIVEREF(__pyx_tuple__13);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_gradient_approx, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_tuple__36 = PyTuple_Pack(9, __pyx_n_s_phi, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__36);
+  __Pyx_GIVEREF(__pyx_tuple__36);
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_gradient_approx, 43, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 43, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":54
  * # phi-field-spatial-gradients-approx ends here
@@ -22536,9 +22880,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__15 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_vector_utils); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
+  __pyx_tuple__37 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_vector_utils); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__37);
+  __Pyx_GIVEREF(__pyx_tuple__37);
 
   /* "pyretechnics/eulerian_level_set.py":57
  * 
@@ -22547,10 +22891,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the phi field normal vector in the x and y dimensions.
  */
-  __pyx_tuple__16 = PyTuple_Pack(6, __pyx_n_s_phi, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_phi_gradient); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_normal_vector, 57, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_tuple__38 = PyTuple_Pack(6, __pyx_n_s_phi, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_phi_gradient); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__38);
+  __Pyx_GIVEREF(__pyx_tuple__38);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_normal_vector, 57, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 57, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":74
  * 
@@ -22559,10 +22903,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Calculate the angle (measured in degrees clockwise from North)
  */
-  __pyx_tuple__19 = PyTuple_Pack(4, __pyx_n_s_phi_normal_vector, __pyx_n_s_n_x, __pyx_n_s_n_y, __pyx_n_s_angle); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 74, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_normal_azimuth, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_tuple__40 = PyTuple_Pack(4, __pyx_n_s_phi_normal_vector, __pyx_n_s_n_x, __pyx_n_s_n_y, __pyx_n_s_angle); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__40);
+  __Pyx_GIVEREF(__pyx_tuple__40);
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_normal_azimuth, 74, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 74, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":98
  * # phi-field-normal-vector-angle ends here
@@ -22571,10 +22915,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__21 = PyTuple_Pack(3, __pyx_n_s_dphi_up, __pyx_n_s_dphi_loc, __pyx_n_s_r); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 98, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_superbee_flux_limiter, 98, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_tuple__41 = PyTuple_Pack(3, __pyx_n_s_dphi_up, __pyx_n_s_dphi_loc, __pyx_n_s_r); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__41);
+  __Pyx_GIVEREF(__pyx_tuple__41);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_superbee_flux_limiter, 98, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 98, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":114
  * 
@@ -22583,10 +22927,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__23 = PyTuple_Pack(8, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_dx, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_phi_east, __pyx_n_s_phi_west); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 114, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__23);
-  __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dx, 114, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(8, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_dx, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_phi_east, __pyx_n_s_phi_west); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__42);
+  __Pyx_GIVEREF(__pyx_tuple__42);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dx, 114, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 114, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":129
  * 
@@ -22595,10 +22939,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__25 = PyTuple_Pack(8, __pyx_n_s_phi, __pyx_n_s_u_y, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_phi_north, __pyx_n_s_phi_south); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 129, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__25);
-  __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dy, 129, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __pyx_tuple__43 = PyTuple_Pack(8, __pyx_n_s_phi, __pyx_n_s_u_y, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_phi_north, __pyx_n_s_phi_south); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__43);
+  __Pyx_GIVEREF(__pyx_tuple__43);
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_dphi_dy, 129, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 129, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":144
  * 
@@ -22607,10 +22951,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__27 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_u_y, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 144, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__27);
-  __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_gradient, 144, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_tuple__44 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_u_y, __pyx_n_s_dx, __pyx_n_s_dy, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__44);
+  __Pyx_GIVEREF(__pyx_tuple__44);
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(7, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_gradient, 144, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 144, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":161
  * # phi-field-spatial-gradients ends here
@@ -22619,10 +22963,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__29 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_very_east_x, __pyx_n_s_east_x, __pyx_n_s_west_x, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 161, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__29);
-  __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_east, 161, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_tuple__45 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_very_east_x, __pyx_n_s_east_x, __pyx_n_s_west_x, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__45);
+  __Pyx_GIVEREF(__pyx_tuple__45);
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_east, 161, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 161, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":185
  * # phi-east ends here
@@ -22631,10 +22975,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__31 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_east_x, __pyx_n_s_west_x, __pyx_n_s_very_west_x, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 185, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__31);
-  __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_west, 185, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __pyx_tuple__46 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_x, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_cols, __pyx_n_s_east_x, __pyx_n_s_west_x, __pyx_n_s_very_west_x, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__46);
+  __Pyx_GIVEREF(__pyx_tuple__46);
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_west, 185, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 185, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":209
  * # phi-west ends here
@@ -22643,10 +22987,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__33 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_y, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_very_north_y, __pyx_n_s_north_y, __pyx_n_s_south_y, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 209, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__33);
-  __Pyx_GIVEREF(__pyx_tuple__33);
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_north, 209, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __pyx_tuple__47 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_y, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_very_north_y, __pyx_n_s_north_y, __pyx_n_s_south_y, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__47)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__47);
+  __Pyx_GIVEREF(__pyx_tuple__47);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__47, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_north, 209, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 209, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":233
  * # phi-north ends here
@@ -22655,10 +22999,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__35 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_y, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_north_y, __pyx_n_s_south_y, __pyx_n_s_very_south_y, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 233, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__35);
-  __Pyx_GIVEREF(__pyx_tuple__35);
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_south, 233, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_tuple__48 = PyTuple_Pack(11, __pyx_n_s_phi, __pyx_n_s_u_y, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_rows, __pyx_n_s_north_y, __pyx_n_s_south_y, __pyx_n_s_very_south_y, __pyx_n_s_dphi_loc, __pyx_n_s_dphi_up, __pyx_n_s_B); if (unlikely(!__pyx_tuple__48)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__48);
+  __Pyx_GIVEREF(__pyx_tuple__48);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__48, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_south, 233, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 233, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":259
  * from math import sqrt
@@ -22667,9 +23011,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * import pyretechnics.surface_fire as sf
  * import pyretechnics.vector_utils as vu
  */
-  __pyx_tuple__37 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_conversion); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 259, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__37);
-  __Pyx_GIVEREF(__pyx_tuple__37);
+  __pyx_tuple__49 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_conversion); if (unlikely(!__pyx_tuple__49)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__49);
+  __Pyx_GIVEREF(__pyx_tuple__49);
 
   /* "pyretechnics/eulerian_level_set.py":260
  * import numpy as np
@@ -22678,9 +23022,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * import pyretechnics.vector_utils as vu
  * 
  */
-  __pyx_tuple__38 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_surface_fire); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 260, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__38);
-  __Pyx_GIVEREF(__pyx_tuple__38);
+  __pyx_tuple__50 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_surface_fire); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 260, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__50);
+  __Pyx_GIVEREF(__pyx_tuple__50);
 
   /* "pyretechnics/eulerian_level_set.py":265
  * 
@@ -22689,10 +23033,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:
  */
-  __pyx_tuple__39 = PyTuple_Pack(2, __pyx_n_s_slope, __pyx_n_s_aspect); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 265, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__39);
-  __Pyx_GIVEREF(__pyx_tuple__39);
-  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_elevation_gradient, 265, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_tuple__51 = PyTuple_Pack(2, __pyx_n_s_slope, __pyx_n_s_aspect); if (unlikely(!__pyx_tuple__51)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__51);
+  __Pyx_GIVEREF(__pyx_tuple__51);
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__51, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_elevation_gradient, 265, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 265, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":274
  * 
@@ -22701,10 +23045,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:
  */
-  __pyx_tuple__41 = PyTuple_Pack(6, __pyx_n_s_phi_gradient_xy, __pyx_n_s_elevation_gradient, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy, __pyx_n_s_phi_gradient_xyz, __pyx_n_s_slope_normal_vector); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 274, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__41);
-  __Pyx_GIVEREF(__pyx_tuple__41);
-  __pyx_codeobj__42 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_gradient_on_slope, 274, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__42)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_tuple__52 = PyTuple_Pack(6, __pyx_n_s_phi_gradient_xy, __pyx_n_s_elevation_gradient, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy, __pyx_n_s_phi_gradient_xyz, __pyx_n_s_slope_normal_vector); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__52);
+  __Pyx_GIVEREF(__pyx_tuple__52);
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_phi_gradient_on_slope, 274, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 274, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":291
  * # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
@@ -22713,10 +23057,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Given these inputs:
  */
-  __pyx_tuple__43 = PyTuple_Pack(27, __pyx_n_s_fire_behavior_max, __pyx_n_s_phi_gradient, __pyx_n_s_phi_magnitude, __pyx_n_s_spread_direction, __pyx_n_s_heading_fire_type, __pyx_n_s_heading_spread_rate, __pyx_n_s_heading_spread_direction, __pyx_n_s_heading_spread_vector, __pyx_n_s_heading_fireline_intensity, __pyx_n_s_length_to_width_ratio, __pyx_n_s_eccentricity, __pyx_n_s_critical_spread_rate, __pyx_n_s_backing_adjustment, __pyx_n_s_backing_spread_rate, __pyx_n_s_flanking_spread_rate, __pyx_n_s_A, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_D, __pyx_n_s_E, __pyx_n_s_dphi_dt, __pyx_n_s_normal_spread_rate, __pyx_n_s_normal_direction, __pyx_n_s_normal_adjustment, __pyx_n_s_normal_fireline_intensity, __pyx_n_s_normal_flame_length, __pyx_n_s_normal_fire_type); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 291, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__43);
-  __Pyx_GIVEREF(__pyx_tuple__43);
-  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 27, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_fireline_normal_behavior, 291, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 291, __pyx_L1_error)
+  __pyx_tuple__53 = PyTuple_Pack(27, __pyx_n_s_fire_behavior_max, __pyx_n_s_phi_gradient, __pyx_n_s_phi_magnitude, __pyx_n_s_spread_direction, __pyx_n_s_heading_fire_type, __pyx_n_s_heading_spread_rate, __pyx_n_s_heading_spread_direction, __pyx_n_s_heading_spread_vector, __pyx_n_s_heading_fireline_intensity, __pyx_n_s_length_to_width_ratio, __pyx_n_s_eccentricity, __pyx_n_s_critical_spread_rate, __pyx_n_s_backing_adjustment, __pyx_n_s_backing_spread_rate, __pyx_n_s_flanking_spread_rate, __pyx_n_s_A, __pyx_n_s_B, __pyx_n_s_C, __pyx_n_s_D, __pyx_n_s_E, __pyx_n_s_dphi_dt, __pyx_n_s_normal_spread_rate, __pyx_n_s_normal_direction, __pyx_n_s_normal_adjustment, __pyx_n_s_normal_fireline_intensity, __pyx_n_s_normal_flame_length, __pyx_n_s_normal_fire_type); if (unlikely(!__pyx_tuple__53)) __PYX_ERR(0, 291, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__53);
+  __Pyx_GIVEREF(__pyx_tuple__53);
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 27, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__53, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_calc_fireline_normal_behavior, 291, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 291, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":412
  * import numpy as np
@@ -22725,9 +23069,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * import pyretechnics.fuel_models as fm
  * import pyretechnics.surface_fire as sf
  */
-  __pyx_tuple__45 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_crown_fire); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 412, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__45);
-  __Pyx_GIVEREF(__pyx_tuple__45);
+  __pyx_tuple__54 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_crown_fire); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 412, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__54);
+  __Pyx_GIVEREF(__pyx_tuple__54);
 
   /* "pyretechnics/eulerian_level_set.py":413
  * import pyretechnics.conversion as conv
@@ -22736,9 +23080,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * import pyretechnics.surface_fire as sf
  * import pyretechnics.vector_utils as vu
  */
-  __pyx_tuple__46 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_fuel_models); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 413, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__46);
-  __Pyx_GIVEREF(__pyx_tuple__46);
+  __pyx_tuple__55 = PyTuple_Pack(2, __pyx_n_s_pyretechnics, __pyx_n_s_fuel_models); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 413, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__55);
+  __Pyx_GIVEREF(__pyx_tuple__55);
 
   /* "pyretechnics/eulerian_level_set.py":419
  * 
@@ -22747,13 +23091,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                                   surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
  *     """
  */
-  __pyx_tuple__47 = PyTuple_Pack(50, __pyx_n_s_space_time_cubes, __pyx_n_s_space_time_coordinate, __pyx_n_s_phi_gradient_xy, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_crown_max_lw_ratio, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_slope, __pyx_n_s_aspect, __pyx_n_s_fuel_model_number, __pyx_n_s_canopy_cover, __pyx_n_s_canopy_height, __pyx_n_s_canopy_base_height, __pyx_n_s_canopy_bulk_density, __pyx_n_s_wind_speed_10m, __pyx_n_s_upwind_direction, __pyx_n_s_fuel_moisture_dead_1hr, __pyx_n_s_fuel_moisture_dead_10hr, __pyx_n_s_fuel_moisture_dead_100hr, __pyx_n_s_fuel_moisture_live_herbaceous, __pyx_n_s_fuel_moisture_live_woody, __pyx_n_s_foliar_moisture, __pyx_n_s_fuel_spread_adjustment, __pyx_n_s_weather_spread_adjustment, __pyx_n_s_spread_rate_adjustment, __pyx_n_s_elevation_gradient, __pyx_n_s_phi_gradient, __pyx_n_s_phi_magnitude, __pyx_n_s_fuel_model, __pyx_n_s_spread_direction, __pyx_n_s_slope_vector_3d, __pyx_n_s_fuel_moisture, __pyx_n_s_fuel_bed_depth, __pyx_n_s_heat_of_combustion, __pyx_n_s_estimated_fine_fuel_moisture, __pyx_n_s_wind_speed_20ft, __pyx_n_s_wind_speed_20ft_m_min, __pyx_n_s_midflame_wind_speed, __pyx_n_s_moisturized_fuel_model, __pyx_n_s_surface_fire_min, __pyx_n_s_surface_fire_max, __pyx_n_s_surface_fire_normal, __pyx_n_s_crown_fire_max, __pyx_n_s_crown_fire_normal, __pyx_n_s_combined_fire_normal, __pyx_n_s_surface_dphi_dt, __pyx_n_s_crown_dphi_dt, __pyx_n_s_combined_dphi_dt); if (unlikely(!__pyx_tuple__47)) __PYX_ERR(0, 419, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__47);
-  __Pyx_GIVEREF(__pyx_tuple__47);
-  __pyx_codeobj__48 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 50, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__47, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_burn_cell_toward_phi_gradient, 419, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__48)) __PYX_ERR(0, 419, __pyx_L1_error)
-  __pyx_tuple__49 = PyTuple_Pack(3, ((PyObject *)Py_True), ((PyObject*)__pyx_n_s_rothermel), Py_None); if (unlikely(!__pyx_tuple__49)) __PYX_ERR(0, 419, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__49);
-  __Pyx_GIVEREF(__pyx_tuple__49);
+  __pyx_tuple__56 = PyTuple_Pack(50, __pyx_n_s_space_time_cubes, __pyx_n_s_space_time_coordinate, __pyx_n_s_phi_gradient_xy, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_crown_max_lw_ratio, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_slope, __pyx_n_s_aspect, __pyx_n_s_fuel_model_number, __pyx_n_s_canopy_cover, __pyx_n_s_canopy_height, __pyx_n_s_canopy_base_height, __pyx_n_s_canopy_bulk_density, __pyx_n_s_wind_speed_10m, __pyx_n_s_upwind_direction, __pyx_n_s_fuel_moisture_dead_1hr, __pyx_n_s_fuel_moisture_dead_10hr, __pyx_n_s_fuel_moisture_dead_100hr, __pyx_n_s_fuel_moisture_live_herbaceous, __pyx_n_s_fuel_moisture_live_woody, __pyx_n_s_foliar_moisture, __pyx_n_s_fuel_spread_adjustment, __pyx_n_s_weather_spread_adjustment, __pyx_n_s_spread_rate_adjustment, __pyx_n_s_elevation_gradient, __pyx_n_s_phi_gradient, __pyx_n_s_phi_magnitude, __pyx_n_s_fuel_model, __pyx_n_s_spread_direction, __pyx_n_s_slope_vector_3d, __pyx_n_s_fuel_moisture, __pyx_n_s_fuel_bed_depth, __pyx_n_s_heat_of_combustion, __pyx_n_s_estimated_fine_fuel_moisture, __pyx_n_s_wind_speed_20ft, __pyx_n_s_wind_speed_20ft_m_min, __pyx_n_s_midflame_wind_speed, __pyx_n_s_moisturized_fuel_model, __pyx_n_s_surface_fire_min, __pyx_n_s_surface_fire_max, __pyx_n_s_surface_fire_normal, __pyx_n_s_crown_fire_max, __pyx_n_s_crown_fire_normal, __pyx_n_s_combined_fire_normal, __pyx_n_s_surface_dphi_dt, __pyx_n_s_crown_dphi_dt, __pyx_n_s_combined_dphi_dt); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 419, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__56);
+  __Pyx_GIVEREF(__pyx_tuple__56);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(6, 0, 0, 50, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_burn_cell_toward_phi_gradient, 419, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 419, __pyx_L1_error)
+  __pyx_tuple__57 = PyTuple_Pack(3, ((PyObject *)Py_True), ((PyObject*)__pyx_n_s_rothermel), Py_None); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 419, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__57);
+  __Pyx_GIVEREF(__pyx_tuple__57);
 
   /* "pyretechnics/eulerian_level_set.py":655
  * # burn-cell-toward-phi-gradient ends here
@@ -22762,10 +23106,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__50 = PyTuple_Pack(5, __pyx_n_s_phi_matrix, __pyx_n_s_y1, __pyx_n_s_x1, __pyx_n_s_y2, __pyx_n_s_x2); if (unlikely(!__pyx_tuple__50)) __PYX_ERR(0, 655, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__50);
-  __Pyx_GIVEREF(__pyx_tuple__50);
-  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__50, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_opposite_phi_signs, 655, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 655, __pyx_L1_error)
+  __pyx_tuple__58 = PyTuple_Pack(5, __pyx_n_s_phi_matrix, __pyx_n_s_y1, __pyx_n_s_x1, __pyx_n_s_y2, __pyx_n_s_x2); if (unlikely(!__pyx_tuple__58)) __PYX_ERR(0, 655, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__58);
+  __Pyx_GIVEREF(__pyx_tuple__58);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_opposite_phi_signs, 655, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 655, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":662
  * 
@@ -22774,13 +23118,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__52 = PyTuple_Pack(11, __pyx_n_s_phi_matrix, __pyx_n_s_tracked_cells, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_frontier_cells, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_north_y, __pyx_n_s_south_y, __pyx_n_s_east_x, __pyx_n_s_west_x); if (unlikely(!__pyx_tuple__52)) __PYX_ERR(0, 662, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__52);
-  __Pyx_GIVEREF(__pyx_tuple__52);
-  __pyx_codeobj__53 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__52, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_identify_frontier_cells, 662, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__53)) __PYX_ERR(0, 662, __pyx_L1_error)
-  __pyx_tuple__54 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__54)) __PYX_ERR(0, 662, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__54);
-  __Pyx_GIVEREF(__pyx_tuple__54);
+  __pyx_tuple__59 = PyTuple_Pack(11, __pyx_n_s_phi_matrix, __pyx_n_s_tracked_cells, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_frontier_cells, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_north_y, __pyx_n_s_south_y, __pyx_n_s_east_x, __pyx_n_s_west_x); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 662, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__59);
+  __Pyx_GIVEREF(__pyx_tuple__59);
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_identify_frontier_cells, 662, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 662, __pyx_L1_error)
+  __pyx_tuple__60 = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 662, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__60);
+  __Pyx_GIVEREF(__pyx_tuple__60);
 
   /* "pyretechnics/eulerian_level_set.py":696
  * 
@@ -22789,10 +23133,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__55 = PyTuple_Pack(10, __pyx_n_s_cell, __pyx_n_s_buffer_width, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_buffer_range_y, __pyx_n_s_buffer_range_x, __pyx_n_s_y_2, __pyx_n_s_x_2); if (unlikely(!__pyx_tuple__55)) __PYX_ERR(0, 696, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__55);
-  __Pyx_GIVEREF(__pyx_tuple__55);
-  __pyx_codeobj__56 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__55, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_project_buffer, 696, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__56)) __PYX_ERR(0, 696, __pyx_L1_error)
+  __pyx_tuple__61 = PyTuple_Pack(10, __pyx_n_s_cell, __pyx_n_s_buffer_width, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_buffer_range_y, __pyx_n_s_buffer_range_x, __pyx_n_s_y_2, __pyx_n_s_x_2); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 696, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__61);
+  __Pyx_GIVEREF(__pyx_tuple__61);
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_project_buffer, 696, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 696, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":708
  * 
@@ -22801,10 +23145,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__57 = PyTuple_Pack(8, __pyx_n_s_frontier_cells, __pyx_n_s_buffer_width, __pyx_n_s_matrix_shape, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_tracked_cells, __pyx_n_s_cell, __pyx_n_s_buffer_cell); if (unlikely(!__pyx_tuple__57)) __PYX_ERR(0, 708, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__57);
-  __Pyx_GIVEREF(__pyx_tuple__57);
-  __pyx_codeobj__58 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__57, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_identify_tracked_cells, 708, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__58)) __PYX_ERR(0, 708, __pyx_L1_error)
+  __pyx_tuple__62 = PyTuple_Pack(8, __pyx_n_s_frontier_cells, __pyx_n_s_buffer_width, __pyx_n_s_matrix_shape, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_tracked_cells, __pyx_n_s_cell, __pyx_n_s_buffer_cell); if (unlikely(!__pyx_tuple__62)) __PYX_ERR(0, 708, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__62);
+  __Pyx_GIVEREF(__pyx_tuple__62);
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__62, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_identify_tracked_cells, 708, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 708, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":720
  * 
@@ -22813,10 +23157,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__59 = PyTuple_Pack(11, __pyx_n_s_tracked_cells, __pyx_n_s_frontier_cells_old, __pyx_n_s_frontier_cells_new, __pyx_n_s_buffer_width, __pyx_n_s_matrix_shape, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_frontier_cells_added, __pyx_n_s_frontier_cells_dropped, __pyx_n_s_cell, __pyx_n_s_buffer_cell); if (unlikely(!__pyx_tuple__59)) __PYX_ERR(0, 720, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__59);
-  __Pyx_GIVEREF(__pyx_tuple__59);
-  __pyx_codeobj__60 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__59, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_update_tracked_cells, 720, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__60)) __PYX_ERR(0, 720, __pyx_L1_error)
+  __pyx_tuple__63 = PyTuple_Pack(11, __pyx_n_s_tracked_cells, __pyx_n_s_frontier_cells_old, __pyx_n_s_frontier_cells_new, __pyx_n_s_buffer_width, __pyx_n_s_matrix_shape, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_frontier_cells_added, __pyx_n_s_frontier_cells_dropped, __pyx_n_s_cell, __pyx_n_s_buffer_cell); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 720, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__63);
+  __Pyx_GIVEREF(__pyx_tuple__63);
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 11, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_update_tracked_cells, 720, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 720, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":758
  * 
@@ -22825,10 +23169,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_tuple__61 = PyTuple_Pack(5, __pyx_n_s_vector_3d, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_r, __pyx_n_s_azimuth); if (unlikely(!__pyx_tuple__61)) __PYX_ERR(0, 758, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__61);
-  __Pyx_GIVEREF(__pyx_tuple__61);
-  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__61, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_spread_direction_vector_to_angle, 758, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 758, __pyx_L1_error)
+  __pyx_tuple__64 = PyTuple_Pack(5, __pyx_n_s_vector_3d, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_r, __pyx_n_s_azimuth); if (unlikely(!__pyx_tuple__64)) __PYX_ERR(0, 758, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__64);
+  __Pyx_GIVEREF(__pyx_tuple__64);
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__64, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_spread_direction_vector_to_angle, 758, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 758, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":767
  * 
@@ -22837,10 +23181,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                              start_time, max_timestep, use_wind_limit=True, surface_lw_ratio_model="rothermel",
  *                              crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
  */
-  __pyx_tuple__63 = PyTuple_Pack(70, __pyx_n_s_space_time_cubes, __pyx_n_s_output_matrices, __pyx_n_s_frontier_cells, __pyx_n_s_tracked_cells, __pyx_n_s_cube_resolution, __pyx_n_s_start_time, __pyx_n_s_max_timestep, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_crown_max_lw_ratio, __pyx_n_s_max_cells_per_timestep, __pyx_n_s_buffer_width, __pyx_n_s_spot_ignitions, __pyx_n_s_spot_config, __pyx_n_s_random_generator, __pyx_n_s_band_duration, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_slope_cube, __pyx_n_s_aspect_cube, __pyx_n_s_phi_matrix, __pyx_n_s_phi_star_matrix, __pyx_n_s_fire_type_matrix, __pyx_n_s_spread_rate_matrix, __pyx_n_s_spread_direction_matrix, __pyx_n_s_fireline_intensity_matrix, __pyx_n_s_flame_length_matrix, __pyx_n_s_time_of_arrival_matrix, __pyx_n_s_firebrands_per_unit_heat, __pyx_n_s_max_spread_rate_x, __pyx_n_s_max_spread_rate_y, __pyx_n_s_fire_behavior_dict, __pyx_n_s_t0, __pyx_n_s_cell_index, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_phi_gradient_xy, __pyx_n_s_phi_magnitude_xy, __pyx_n_s_fire_behavior, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy, __pyx_n_s_phi_magnitude_xy_2, __pyx_n_s_dphi_dt, __pyx_n_s_spread_rate_x, __pyx_n_s_spread_rate_y, __pyx_n_s_phi_gradient_xy_limited, __pyx_n_s_dt, __pyx_n_s_stop_time, __pyx_n_s_t1, __pyx_n_s_phi_gradient_xy_star, __pyx_n_s_phi_magnitude_xy_star, __pyx_n_s_fire_behavior_star, __pyx_n_s_phi_gradient_xy_star_limited, __pyx_n_s_dphi_dt_estimate1, __pyx_n_s_dphi_dt_estimate2, __pyx_n_s_dphi_dt_average, __pyx_n_s_phi, __pyx_n_s_phi_next, __pyx_n_s_t_cast, __pyx_n_s_space_time_coordinate, __pyx_n_s_slope, __pyx_n_s_aspect, __pyx_n_s_elevation_gradient, __pyx_n_s_expected_firebrand_count, __pyx_n_s_new_ignitions, __pyx_n_s_ignition_time, __pyx_n_s_ignited_cells, __pyx_n_s_concurrent_ignited_cells, __pyx_n_s_frontier_cells_new, __pyx_n_s_tracked_cells_new); if (unlikely(!__pyx_tuple__63)) __PYX_ERR(0, 767, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__63);
-  __Pyx_GIVEREF(__pyx_tuple__63);
-  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(15, 0, 0, 70, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__63, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_spread_fire_one_timestep, 767, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 767, __pyx_L1_error)
+  __pyx_tuple__65 = PyTuple_Pack(70, __pyx_n_s_space_time_cubes, __pyx_n_s_output_matrices, __pyx_n_s_frontier_cells, __pyx_n_s_tracked_cells, __pyx_n_s_cube_resolution, __pyx_n_s_start_time, __pyx_n_s_max_timestep, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_crown_max_lw_ratio, __pyx_n_s_max_cells_per_timestep, __pyx_n_s_buffer_width, __pyx_n_s_spot_ignitions, __pyx_n_s_spot_config, __pyx_n_s_random_generator, __pyx_n_s_band_duration, __pyx_n_s_cell_height, __pyx_n_s_cell_width, __pyx_n_s_slope_cube, __pyx_n_s_aspect_cube, __pyx_n_s_phi_matrix, __pyx_n_s_phi_star_matrix, __pyx_n_s_fire_type_matrix, __pyx_n_s_spread_rate_matrix, __pyx_n_s_spread_direction_matrix, __pyx_n_s_fireline_intensity_matrix, __pyx_n_s_flame_length_matrix, __pyx_n_s_time_of_arrival_matrix, __pyx_n_s_firebrands_per_unit_heat, __pyx_n_s_max_spread_rate_x, __pyx_n_s_max_spread_rate_y, __pyx_n_s_fire_behavior_dict, __pyx_n_s_t0, __pyx_n_s_cell_index, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_phi_gradient_xy, __pyx_n_s_phi_magnitude_xy, __pyx_n_s_fire_behavior, __pyx_n_s_dphi_dx, __pyx_n_s_dphi_dy, __pyx_n_s_phi_magnitude_xy_2, __pyx_n_s_dphi_dt, __pyx_n_s_spread_rate_x, __pyx_n_s_spread_rate_y, __pyx_n_s_phi_gradient_xy_limited, __pyx_n_s_dt, __pyx_n_s_stop_time, __pyx_n_s_t1, __pyx_n_s_phi_gradient_xy_star, __pyx_n_s_phi_magnitude_xy_star, __pyx_n_s_fire_behavior_star, __pyx_n_s_phi_gradient_xy_star_limited, __pyx_n_s_dphi_dt_estimate1, __pyx_n_s_dphi_dt_estimate2, __pyx_n_s_dphi_dt_average, __pyx_n_s_phi, __pyx_n_s_phi_next, __pyx_n_s_t_cast, __pyx_n_s_space_time_coordinate, __pyx_n_s_slope, __pyx_n_s_aspect, __pyx_n_s_elevation_gradient, __pyx_n_s_expected_firebrand_count, __pyx_n_s_new_ignitions, __pyx_n_s_ignition_time, __pyx_n_s_ignited_cells, __pyx_n_s_concurrent_ignited_cells, __pyx_n_s_frontier_cells_new, __pyx_n_s_tracked_cells_new); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 767, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__65);
+  __Pyx_GIVEREF(__pyx_tuple__65);
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(15, 0, 0, 70, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_spread_fire_one_timestep, 767, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 767, __pyx_L1_error)
 
   /* "pyretechnics/eulerian_level_set.py":965
  * 
@@ -22849,10 +23193,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *                                max_duration=None, use_wind_limit=True, surface_lw_ratio_model="rothermel",
  *                                crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
  */
-  __pyx_tuple__65 = PyTuple_Pack(29, __pyx_n_s_space_time_cubes, __pyx_n_s_output_matrices, __pyx_n_s_cube_resolution, __pyx_n_s_start_time, __pyx_n_s_max_duration, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_crown_max_lw_ratio, __pyx_n_s_max_cells_per_timestep, __pyx_n_s_buffer_width, __pyx_n_s_spot_ignitions, __pyx_n_s_spot_config, __pyx_n_s_bands, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_band_duration, __pyx_n_s_cube_duration, __pyx_n_s_cube, __pyx_n_s_layer, __pyx_n_s_max_stop_time, __pyx_n_s_phi_matrix, __pyx_n_s_frontier_cells, __pyx_n_s_tracked_cells, __pyx_n_s_random_generator, __pyx_n_s_simulation_time, __pyx_n_s_remaining_time_in_band, __pyx_n_s_remaining_time_in_simulation, __pyx_n_s_max_timestep, __pyx_n_s_results); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 965, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__65);
-  __Pyx_GIVEREF(__pyx_tuple__65);
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(12, 0, 0, 29, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__65, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_spread_fire_with_phi_field, 965, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 965, __pyx_L1_error)
+  __pyx_tuple__66 = PyTuple_Pack(29, __pyx_n_s_space_time_cubes, __pyx_n_s_output_matrices, __pyx_n_s_cube_resolution, __pyx_n_s_start_time, __pyx_n_s_max_duration, __pyx_n_s_use_wind_limit, __pyx_n_s_surface_lw_ratio_model, __pyx_n_s_crown_max_lw_ratio, __pyx_n_s_max_cells_per_timestep, __pyx_n_s_buffer_width, __pyx_n_s_spot_ignitions, __pyx_n_s_spot_config, __pyx_n_s_bands, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_band_duration, __pyx_n_s_cube_duration, __pyx_n_s_cube, __pyx_n_s_layer, __pyx_n_s_max_stop_time, __pyx_n_s_phi_matrix, __pyx_n_s_frontier_cells, __pyx_n_s_tracked_cells, __pyx_n_s_random_generator, __pyx_n_s_simulation_time, __pyx_n_s_remaining_time_in_band, __pyx_n_s_remaining_time_in_simulation, __pyx_n_s_max_timestep, __pyx_n_s_results); if (unlikely(!__pyx_tuple__66)) __PYX_ERR(0, 965, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__66);
+  __Pyx_GIVEREF(__pyx_tuple__66);
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(12, 0, 0, 29, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__66, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_eulerian_level, __pyx_n_s_spread_fire_with_phi_field, 965, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 965, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -23111,6 +23455,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_eulerian_level_set(PyObject *__pyx
   #if CYTHON_USE_MODULE_STATE
   int pystate_addmodule_run = 0;
   #endif
+  __Pyx_TraceDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
@@ -23228,6 +23573,7 @@ if (!__Pyx_RefNanny) {
   #if defined(__Pyx_Generator_USED) || defined(__Pyx_Coroutine_USED)
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
+  __Pyx_TraceCall("__Pyx_PyMODINIT_FUNC PyInit_eulerian_level_set(void)", __pyx_f[0], 1, 0, __PYX_ERR(0, 1, __pyx_L1_error));
 
   /* "pyretechnics/eulerian_level_set.py":2
  * # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
@@ -23247,7 +23593,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the spatial gradient of the phi raster in the x (west->east)
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_1calc_dphi_dx_approx, 0, __pyx_n_s_calc_dphi_dx_approx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_1calc_dphi_dx_approx, 0, __pyx_n_s_calc_dphi_dx_approx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_dphi_dx_approx, __pyx_t_2) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23259,7 +23605,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the spatial gradient of the phi raster in the y (south->north)
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_3calc_dphi_dy_approx, 0, __pyx_n_s_calc_dphi_dy_approx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_3calc_dphi_dy_approx, 0, __pyx_n_s_calc_dphi_dy_approx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_dphi_dy_approx, __pyx_t_2) < 0) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23271,7 +23617,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the spatial gradient of the phi raster at grid cell (x,y)
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_5calc_phi_gradient_approx, 0, __pyx_n_s_calc_phi_gradient_approx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_5calc_phi_gradient_approx, 0, __pyx_n_s_calc_phi_gradient_approx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_gradient_approx, __pyx_t_2) < 0) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23283,7 +23629,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__15); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__37); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_vu, __pyx_t_2) < 0) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23295,7 +23641,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the phi field normal vector in the x and y dimensions.
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_7calc_phi_normal_vector, 0, __pyx_n_s_calc_phi_normal_vector, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_7calc_phi_normal_vector, 0, __pyx_n_s_calc_phi_normal_vector, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_normal_vector, __pyx_t_2) < 0) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23342,7 +23688,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Calculate the angle (measured in degrees clockwise from North)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_9calc_phi_normal_azimuth, 0, __pyx_n_s_calc_phi_normal_azimuth, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_9calc_phi_normal_azimuth, 0, __pyx_n_s_calc_phi_normal_azimuth, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_normal_azimuth, __pyx_t_3) < 0) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23354,7 +23700,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_11calc_superbee_flux_limiter, 0, __pyx_n_s_calc_superbee_flux_limiter, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_11calc_superbee_flux_limiter, 0, __pyx_n_s_calc_superbee_flux_limiter, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_superbee_flux_limiter, __pyx_t_3) < 0) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23378,7 +23724,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_13calc_dphi_dx, 0, __pyx_n_s_calc_dphi_dx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_13calc_dphi_dx, 0, __pyx_n_s_calc_dphi_dx, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_dphi_dx, __pyx_t_3) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23390,7 +23736,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_15calc_dphi_dy, 0, __pyx_n_s_calc_dphi_dy, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_15calc_dphi_dy, 0, __pyx_n_s_calc_dphi_dy, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_dphi_dy, __pyx_t_3) < 0) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23402,7 +23748,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_17calc_phi_gradient, 0, __pyx_n_s_calc_phi_gradient, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_17calc_phi_gradient, 0, __pyx_n_s_calc_phi_gradient, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_gradient, __pyx_t_3) < 0) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23414,7 +23760,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_19calc_phi_east, 0, __pyx_n_s_calc_phi_east, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_19calc_phi_east, 0, __pyx_n_s_calc_phi_east, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_east, __pyx_t_3) < 0) __PYX_ERR(0, 161, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23426,7 +23772,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_21calc_phi_west, 0, __pyx_n_s_calc_phi_west, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_21calc_phi_west, 0, __pyx_n_s_calc_phi_west, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_west, __pyx_t_3) < 0) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23438,7 +23784,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_23calc_phi_north, 0, __pyx_n_s_calc_phi_north, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_23calc_phi_north, 0, __pyx_n_s_calc_phi_north, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_north, __pyx_t_3) < 0) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23450,7 +23796,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_25calc_phi_south, 0, __pyx_n_s_calc_phi_south, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_25calc_phi_south, 0, __pyx_n_s_calc_phi_south, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_south, __pyx_t_3) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23495,7 +23841,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.surface_fire as sf
  * import pyretechnics.vector_utils as vu
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__37); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__49); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 259, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 259, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23507,7 +23853,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.vector_utils as vu
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_surface_fire, __pyx_tuple__38); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 260, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_surface_fire, __pyx_tuple__50); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 260, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sf, __pyx_t_2) < 0) __PYX_ERR(0, 260, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23519,7 +23865,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__15); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__37); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_vu, __pyx_t_2) < 0) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23531,7 +23877,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_27calc_elevation_gradient, 0, __pyx_n_s_calc_elevation_gradient, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_27calc_elevation_gradient, 0, __pyx_n_s_calc_elevation_gradient, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_elevation_gradient, __pyx_t_2) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23543,7 +23889,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_29calc_phi_gradient_on_slope, 0, __pyx_n_s_calc_phi_gradient_on_slope, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__42)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_29calc_phi_gradient_on_slope, 0, __pyx_n_s_calc_phi_gradient_on_slope, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_phi_gradient_on_slope, __pyx_t_2) < 0) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23555,7 +23901,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Given these inputs:
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_31calc_fireline_normal_behavior, 0, __pyx_n_s_calc_fireline_normal_behavior, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 291, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_31calc_fireline_normal_behavior, 0, __pyx_n_s_calc_fireline_normal_behavior, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 291, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_calc_fireline_normal_behavior, __pyx_t_2) < 0) __PYX_ERR(0, 291, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23579,7 +23925,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.crown_fire as cf
  * import pyretechnics.fuel_models as fm
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__37); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 411, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__49); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 411, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 411, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23591,7 +23937,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.fuel_models as fm
  * import pyretechnics.surface_fire as sf
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_crown_fire, __pyx_tuple__45); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_crown_fire, __pyx_tuple__54); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 412, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_cf, __pyx_t_2) < 0) __PYX_ERR(0, 412, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23603,7 +23949,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.surface_fire as sf
  * import pyretechnics.vector_utils as vu
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_fuel_models, __pyx_tuple__46); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 413, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_fuel_models, __pyx_tuple__55); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 413, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fm, __pyx_t_2) < 0) __PYX_ERR(0, 413, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23615,7 +23961,7 @@ if (!__Pyx_RefNanny) {
  * import pyretechnics.vector_utils as vu
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_surface_fire, __pyx_tuple__38); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_surface_fire, __pyx_tuple__50); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 414, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sf, __pyx_t_2) < 0) __PYX_ERR(0, 414, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23627,7 +23973,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__15); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 415, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__37); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 415, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_vu, __pyx_t_2) < 0) __PYX_ERR(0, 415, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23639,9 +23985,9 @@ if (!__Pyx_RefNanny) {
  *                                   surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
  *     """
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_33burn_cell_toward_phi_gradient, 0, __pyx_n_s_burn_cell_toward_phi_gradient, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__48)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 419, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_33burn_cell_toward_phi_gradient, 0, __pyx_n_s_burn_cell_toward_phi_gradient, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 419, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__49);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__57);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_burn_cell_toward_phi_gradient, __pyx_t_2) < 0) __PYX_ERR(0, 419, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -23652,7 +23998,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_35opposite_phi_signs, 0, __pyx_n_s_opposite_phi_signs, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__51)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 655, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_35opposite_phi_signs, 0, __pyx_n_s_opposite_phi_signs, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 655, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_opposite_phi_signs, __pyx_t_2) < 0) __PYX_ERR(0, 655, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23664,9 +24010,9 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_37identify_frontier_cells, 0, __pyx_n_s_identify_frontier_cells, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__53)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 662, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_37identify_frontier_cells, 0, __pyx_n_s_identify_frontier_cells, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__22)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 662, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__54);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__60);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_identify_frontier_cells, __pyx_t_2) < 0) __PYX_ERR(0, 662, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -23677,7 +24023,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_39project_buffer, 0, __pyx_n_s_project_buffer, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__56)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 696, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_39project_buffer, 0, __pyx_n_s_project_buffer, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 696, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_project_buffer, __pyx_t_2) < 0) __PYX_ERR(0, 696, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23689,7 +24035,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_41identify_tracked_cells, 0, __pyx_n_s_identify_tracked_cells, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__58)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 708, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_41identify_tracked_cells, 0, __pyx_n_s_identify_tracked_cells, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 708, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_identify_tracked_cells, __pyx_t_2) < 0) __PYX_ERR(0, 708, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23701,7 +24047,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_43update_tracked_cells, 0, __pyx_n_s_update_tracked_cells, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__60)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 720, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_43update_tracked_cells, 0, __pyx_n_s_update_tracked_cells, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 720, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_update_tracked_cells, __pyx_t_2) < 0) __PYX_ERR(0, 720, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23725,7 +24071,7 @@ if (!__Pyx_RefNanny) {
  * from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
  * import pyretechnics.vector_utils as vu
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__37); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 743, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_conversion, __pyx_tuple__49); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 743, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_conv, __pyx_t_2) < 0) __PYX_ERR(0, 743, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23765,7 +24111,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__15); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 745, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_ImportDottedModule(__pyx_n_s_pyretechnics_vector_utils, __pyx_tuple__37); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 745, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_vu, __pyx_t_3) < 0) __PYX_ERR(0, 745, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23793,7 +24139,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     TODO: Add docstring
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_45spread_direction_vector_to_angle, 0, __pyx_n_s_spread_direction_vector_to_angle, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__62)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 758, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_45spread_direction_vector_to_angle, 0, __pyx_n_s_spread_direction_vector_to_angle, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 758, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_spread_direction_vector_to_angle, __pyx_t_3) < 0) __PYX_ERR(0, 758, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -23805,7 +24151,7 @@ if (!__Pyx_RefNanny) {
  *                              start_time, max_timestep, use_wind_limit=True, surface_lw_ratio_model="rothermel",
  *                              crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_47spread_fire_one_timestep, 0, __pyx_n_s_spread_fire_one_timestep, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 767, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_47spread_fire_one_timestep, 0, __pyx_n_s_spread_fire_one_timestep, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 767, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (!__Pyx_CyFunction_InitDefaults(__pyx_t_3, sizeof(__pyx_defaults), 1)) __PYX_ERR(0, 767, __pyx_L1_error)
 
@@ -23832,7 +24178,7 @@ if (!__Pyx_RefNanny) {
  *                                max_duration=None, use_wind_limit=True, surface_lw_ratio_model="rothermel",
  *                                crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_49spread_fire_with_phi_field, 0, __pyx_n_s_spread_fire_with_phi_field, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 965, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_18eulerian_level_set_49spread_fire_with_phi_field, 0, __pyx_n_s_spread_fire_with_phi_field, NULL, __pyx_n_s_pyretechnics_eulerian_level_set, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 965, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (!__Pyx_CyFunction_InitDefaults(__pyx_t_3, sizeof(__pyx_defaults1), 1)) __PYX_ERR(0, 965, __pyx_L1_error)
 
@@ -23861,6 +24207,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_TraceReturn(Py_None, 0);
 
   /*--- Wrapped vars code ---*/
 
@@ -24510,6 +24857,96 @@ bad:
     Py_XDECREF(value);
     return -1;
 }
+
+/* Profile */
+#if CYTHON_PROFILE
+static int __Pyx_TraceSetupAndCall(PyCodeObject** code,
+                                   PyFrameObject** frame,
+                                   PyThreadState* tstate,
+                                   const char *funcname,
+                                   const char *srcfile,
+                                   int firstlineno) {
+    PyObject *type, *value, *traceback;
+    int retval;
+    if (*frame == NULL || !CYTHON_PROFILE_REUSE_FRAME) {
+        if (*code == NULL) {
+            *code = __Pyx_createFrameCodeObject(funcname, srcfile, firstlineno);
+            if (*code == NULL) return 0;
+        }
+        *frame = PyFrame_New(
+            tstate,                          /*PyThreadState *tstate*/
+            *code,                           /*PyCodeObject *code*/
+            __pyx_d,                  /*PyObject *globals*/
+            0                                /*PyObject *locals*/
+        );
+        if (*frame == NULL) return 0;
+        if (CYTHON_TRACE && (*frame)->f_trace == NULL) {
+            Py_INCREF(Py_None);
+            (*frame)->f_trace = Py_None;
+        }
+#if PY_VERSION_HEX < 0x030400B1
+    } else {
+        (*frame)->f_tstate = tstate;
+#endif
+    }
+    __Pyx_PyFrame_SetLineNumber(*frame, firstlineno);
+    retval = 1;
+    __Pyx_EnterTracing(tstate);
+    __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+    #if CYTHON_TRACE
+    if (tstate->c_tracefunc)
+        retval = tstate->c_tracefunc(tstate->c_traceobj, *frame, PyTrace_CALL, NULL) == 0;
+    if (retval && tstate->c_profilefunc)
+    #endif
+        retval = tstate->c_profilefunc(tstate->c_profileobj, *frame, PyTrace_CALL, NULL) == 0;
+    __Pyx_LeaveTracing(tstate);
+    if (retval) {
+        __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+        return __Pyx_IsTracing(tstate, 0, 0) && retval;
+    } else {
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+        return -1;
+    }
+}
+static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno) {
+    PyCodeObject *py_code = 0;
+#if PY_MAJOR_VERSION >= 3
+    py_code = PyCode_NewEmpty(srcfile, funcname, firstlineno);
+    if (likely(py_code)) {
+        py_code->co_flags |= CO_OPTIMIZED | CO_NEWLOCALS;
+    }
+#else
+    PyObject *py_srcfile = 0;
+    PyObject *py_funcname = 0;
+    py_funcname = PyString_FromString(funcname);
+    if (unlikely(!py_funcname)) goto bad;
+    py_srcfile = PyString_FromString(srcfile);
+    if (unlikely(!py_srcfile)) goto bad;
+    py_code = PyCode_New(
+        0,
+        0,
+        0,
+        CO_OPTIMIZED | CO_NEWLOCALS,
+        __pyx_empty_bytes,     /*PyObject *code,*/
+        __pyx_empty_tuple,     /*PyObject *consts,*/
+        __pyx_empty_tuple,     /*PyObject *names,*/
+        __pyx_empty_tuple,     /*PyObject *varnames,*/
+        __pyx_empty_tuple,     /*PyObject *freevars,*/
+        __pyx_empty_tuple,     /*PyObject *cellvars,*/
+        py_srcfile,       /*PyObject *filename,*/
+        py_funcname,      /*PyObject *name,*/
+        firstlineno,
+        __pyx_empty_bytes      /*PyObject *lnotab*/
+    );
+bad:
+    Py_XDECREF(py_srcfile);
+    Py_XDECREF(py_funcname);
+#endif
+    return py_code;
+}
+#endif
 
 /* PyIntBinop */
 #if !CYTHON_COMPILING_IN_PYPY
@@ -26876,7 +27313,7 @@ static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *
 #endif
 static PyObject *__Pyx__ImportDottedModule(PyObject *name, PyObject *parts_tuple) {
 #if PY_MAJOR_VERSION < 3
-    PyObject *module, *from_list, *star = __pyx_n_s__8;
+    PyObject *module, *from_list, *star = __pyx_n_s__33;
     CYTHON_UNUSED_VAR(parts_tuple);
     from_list = PyList_New(1);
     if (unlikely(!from_list))
@@ -28192,7 +28629,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
         if (unlikely(!module_name_str)) { goto modbad; }
         module_name = PyUnicode_FromString(module_name_str);
         if (unlikely(!module_name)) { goto modbad; }
-        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__18);
+        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__39);
         if (unlikely(!module_dot)) { goto modbad; }
         full_name = PyUnicode_Concat(module_dot, name);
         if (unlikely(!full_name)) { goto modbad; }

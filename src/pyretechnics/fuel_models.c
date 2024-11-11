@@ -1734,14 +1734,6 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
-/* PyErrExceptionMatches.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
-#else
-#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
-#endif
-
 /* PyThreadStateGet.proto */
 #if CYTHON_FAST_THREAD_STATE
 #define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
@@ -1783,6 +1775,252 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
 #define __Pyx_ErrFetchInState(tstate, type, value, tb)  PyErr_Fetch(type, value, tb)
 #define __Pyx_ErrRestore(type, value, tb)  PyErr_Restore(type, value, tb)
 #define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
+#endif
+
+/* Profile.proto */
+#ifndef CYTHON_PROFILE
+#if CYTHON_COMPILING_IN_LIMITED_API || CYTHON_COMPILING_IN_PYPY
+  #define CYTHON_PROFILE 0
+#else
+  #define CYTHON_PROFILE 1
+#endif
+#endif
+#ifndef CYTHON_TRACE_NOGIL
+  #define CYTHON_TRACE_NOGIL 0
+#else
+  #if CYTHON_TRACE_NOGIL && !defined(CYTHON_TRACE)
+    #define CYTHON_TRACE 1
+  #endif
+#endif
+#ifndef CYTHON_TRACE
+  #define CYTHON_TRACE 0
+#endif
+#if CYTHON_TRACE
+  #undef CYTHON_PROFILE_REUSE_FRAME
+#endif
+#ifndef CYTHON_PROFILE_REUSE_FRAME
+  #define CYTHON_PROFILE_REUSE_FRAME 0
+#endif
+#if CYTHON_PROFILE || CYTHON_TRACE
+  #include "compile.h"
+  #include "frameobject.h"
+  #include "traceback.h"
+#if PY_VERSION_HEX >= 0x030b00a6
+  #ifndef Py_BUILD_CORE
+    #define Py_BUILD_CORE 1
+  #endif
+  #include "internal/pycore_frame.h"
+#endif
+  #if CYTHON_PROFILE_REUSE_FRAME
+    #define CYTHON_FRAME_MODIFIER static
+    #define CYTHON_FRAME_DEL(frame)
+  #else
+    #define CYTHON_FRAME_MODIFIER
+    #define CYTHON_FRAME_DEL(frame) Py_CLEAR(frame)
+  #endif
+  #define __Pyx_TraceDeclarations\
+      static PyCodeObject *__pyx_frame_code = NULL;\
+      CYTHON_FRAME_MODIFIER PyFrameObject *__pyx_frame = NULL;\
+      int __Pyx_use_tracing = 0;
+  #define __Pyx_TraceFrameInit(codeobj)\
+      if (codeobj) __pyx_frame_code = (PyCodeObject*) codeobj;
+#if PY_VERSION_HEX >= 0x030b00a2
+  #if PY_VERSION_HEX >= 0x030C00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     ((!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #endif
+  #define __Pyx_EnterTracing(tstate)  PyThreadState_EnterTracing(tstate)
+  #define __Pyx_LeaveTracing(tstate)  PyThreadState_LeaveTracing(tstate)
+#elif PY_VERSION_HEX >= 0x030a00b1
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->cframe->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->cframe->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->cframe->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                 || tstate->c_profilefunc != NULL);\
+      } while (0)
+#else
+  #define __Pyx_IsTracing(tstate, check_tracing, check_funcs)\
+     (unlikely((tstate)->use_tracing) &&\
+         (!(check_tracing) || !(tstate)->tracing) &&\
+         (!(check_funcs) || (tstate)->c_profilefunc || (CYTHON_TRACE && (tstate)->c_tracefunc)))
+  #define __Pyx_EnterTracing(tstate)\
+      do { tstate->tracing++; tstate->use_tracing = 0; } while (0)
+  #define __Pyx_LeaveTracing(tstate)\
+      do {\
+          tstate->tracing--;\
+          tstate->use_tracing = ((CYTHON_TRACE && tstate->c_tracefunc != NULL)\
+                                         || tstate->c_profilefunc != NULL);\
+      } while (0)
+#endif
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  if (nogil) {\
+      if (CYTHON_TRACE_NOGIL) {\
+          PyThreadState *tstate;\
+          PyGILState_STATE state = PyGILState_Ensure();\
+          tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 1, 1)) {\
+              __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          }\
+          PyGILState_Release(state);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  } else {\
+      PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #else
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)\
+  {   PyThreadState* tstate = PyThreadState_GET();\
+      if (__Pyx_IsTracing(tstate, 1, 1)) {\
+          __Pyx_use_tracing = __Pyx_TraceSetupAndCall(&__pyx_frame_code, &__pyx_frame, tstate, funcname, srcfile, firstlineno);\
+          if (unlikely(__Pyx_use_tracing < 0)) goto_error;\
+      }\
+  }
+  #endif
+  #define __Pyx_TraceException()\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 1)) {\
+          __Pyx_EnterTracing(tstate);\
+          PyObject *exc_info = __Pyx_GetExceptionTuple(tstate);\
+          if (exc_info) {\
+              if (CYTHON_TRACE && tstate->c_tracefunc)\
+                  tstate->c_tracefunc(\
+                      tstate->c_traceobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              tstate->c_profilefunc(\
+                  tstate->c_profileobj, __pyx_frame, PyTrace_EXCEPTION, exc_info);\
+              Py_DECREF(exc_info);\
+          }\
+          __Pyx_LeaveTracing(tstate);\
+      }\
+  }
+  static void __Pyx_call_return_trace_func(PyThreadState *tstate, PyFrameObject *frame, PyObject *result) {
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_EnterTracing(tstate);
+      if (CYTHON_TRACE && tstate->c_tracefunc)
+          tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_RETURN, result);
+      if (tstate->c_profilefunc)
+          tstate->c_profilefunc(tstate->c_profileobj, frame, PyTrace_RETURN, result);
+      CYTHON_FRAME_DEL(frame);
+      __Pyx_LeaveTracing(tstate);
+      __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0)) {\
+                  __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+              }\
+              PyGILState_Release(state);\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0)) {\
+              __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceReturn(result, nogil)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0)) {\
+          __Pyx_call_return_trace_func(tstate, __pyx_frame, (PyObject*)result);\
+      }\
+  }
+  #endif
+  static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno);
+  static int __Pyx_TraceSetupAndCall(PyCodeObject** code, PyFrameObject** frame, PyThreadState* tstate, const char *funcname, const char *srcfile, int firstlineno);
+#else
+  #define __Pyx_TraceDeclarations
+  #define __Pyx_TraceFrameInit(codeobj)
+  #define __Pyx_TraceCall(funcname, srcfile, firstlineno, nogil, goto_error)   if ((1)); else goto_error;
+  #define __Pyx_TraceException()
+  #define __Pyx_TraceReturn(result, nogil)
+#endif
+#if CYTHON_TRACE
+  static int __Pyx_call_line_trace_func(PyThreadState *tstate, PyFrameObject *frame, int lineno) {
+      int ret;
+      PyObject *type, *value, *traceback;
+      __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+      __Pyx_PyFrame_SetLineNumber(frame, lineno);
+      __Pyx_EnterTracing(tstate);
+      ret = tstate->c_tracefunc(tstate->c_traceobj, frame, PyTrace_LINE, NULL);
+      __Pyx_LeaveTracing(tstate);
+      if (likely(!ret)) {
+          __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+      } else {
+          Py_XDECREF(type);
+          Py_XDECREF(value);
+          Py_XDECREF(traceback);
+      }
+      return ret;
+  }
+  #ifdef WITH_THREAD
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      if (nogil) {\
+          if (CYTHON_TRACE_NOGIL) {\
+              int ret = 0;\
+              PyThreadState *tstate;\
+              PyGILState_STATE state = __Pyx_PyGILState_Ensure();\
+              tstate = __Pyx_PyThreadState_Current;\
+              if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+                  ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              }\
+              __Pyx_PyGILState_Release(state);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      } else {\
+          PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+          if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+              int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+              if (unlikely(ret)) goto_error;\
+          }\
+      }\
+  }
+  #else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)\
+  if (likely(!__Pyx_use_tracing)); else {\
+      PyThreadState* tstate = __Pyx_PyThreadState_Current;\
+      if (__Pyx_IsTracing(tstate, 0, 0) && tstate->c_tracefunc && __pyx_frame->f_trace) {\
+          int ret = __Pyx_call_line_trace_func(tstate, __pyx_frame, lineno);\
+          if (unlikely(ret)) goto_error;\
+      }\
+  }
+  #endif
+#else
+  #define __Pyx_TraceLine(lineno, nogil, goto_error)   if ((1)); else goto_error;
+#endif
+
+/* PyErrExceptionMatches.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
+#else
+#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
 #endif
 
 /* PyObjectGetAttrStr.proto */
@@ -2351,8 +2589,8 @@ static const char __pyx_k_TU2[] = "TU2";
 static const char __pyx_k_TU3[] = "TU3";
 static const char __pyx_k_TU4[] = "TU4";
 static const char __pyx_k_TU5[] = "TU5";
-static const char __pyx_k__12[] = ".";
-static const char __pyx_k__13[] = "_";
+static const char __pyx_k__14[] = ".";
+static const char __pyx_k__15[] = "_";
 static const char __pyx_k__18[] = "?";
 static const char __pyx_k_exp[] = "exp";
 static const char __pyx_k_f_i[] = "f_i";
@@ -2568,8 +2806,8 @@ typedef struct {
   PyObject *__pyx_n_s_TU3;
   PyObject *__pyx_n_s_TU4;
   PyObject *__pyx_n_s_TU5;
-  PyObject *__pyx_kp_u__12;
-  PyObject *__pyx_n_s__13;
+  PyObject *__pyx_kp_u__14;
+  PyObject *__pyx_n_s__15;
   PyObject *__pyx_n_s__18;
   PyObject *__pyx_n_s_add_dynamic_fuel_loading;
   PyObject *__pyx_n_s_add_live_moisture_of_extinction;
@@ -2856,21 +3094,21 @@ typedef struct {
   PyObject *__pyx_int_202;
   PyObject *__pyx_int_203;
   PyObject *__pyx_int_204;
-  PyObject *__pyx_tuple_;
-  PyObject *__pyx_tuple__3;
-  PyObject *__pyx_tuple__8;
+  PyObject *__pyx_codeobj_;
   PyObject *__pyx_tuple__10;
-  PyObject *__pyx_tuple__14;
+  PyObject *__pyx_tuple__11;
+  PyObject *__pyx_tuple__12;
+  PyObject *__pyx_tuple__13;
   PyObject *__pyx_tuple__16;
+  PyObject *__pyx_tuple__17;
   PyObject *__pyx_codeobj__2;
+  PyObject *__pyx_codeobj__3;
   PyObject *__pyx_codeobj__4;
   PyObject *__pyx_codeobj__5;
   PyObject *__pyx_codeobj__6;
   PyObject *__pyx_codeobj__7;
+  PyObject *__pyx_codeobj__8;
   PyObject *__pyx_codeobj__9;
-  PyObject *__pyx_codeobj__11;
-  PyObject *__pyx_codeobj__15;
-  PyObject *__pyx_codeobj__17;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2992,8 +3230,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_TU3);
   Py_CLEAR(clear_module_state->__pyx_n_s_TU4);
   Py_CLEAR(clear_module_state->__pyx_n_s_TU5);
-  Py_CLEAR(clear_module_state->__pyx_kp_u__12);
-  Py_CLEAR(clear_module_state->__pyx_n_s__13);
+  Py_CLEAR(clear_module_state->__pyx_kp_u__14);
+  Py_CLEAR(clear_module_state->__pyx_n_s__15);
   Py_CLEAR(clear_module_state->__pyx_n_s__18);
   Py_CLEAR(clear_module_state->__pyx_n_s_add_dynamic_fuel_loading);
   Py_CLEAR(clear_module_state->__pyx_n_s_add_live_moisture_of_extinction);
@@ -3280,21 +3518,21 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_int_202);
   Py_CLEAR(clear_module_state->__pyx_int_203);
   Py_CLEAR(clear_module_state->__pyx_int_204);
-  Py_CLEAR(clear_module_state->__pyx_tuple_);
-  Py_CLEAR(clear_module_state->__pyx_tuple__3);
-  Py_CLEAR(clear_module_state->__pyx_tuple__8);
+  Py_CLEAR(clear_module_state->__pyx_codeobj_);
   Py_CLEAR(clear_module_state->__pyx_tuple__10);
-  Py_CLEAR(clear_module_state->__pyx_tuple__14);
+  Py_CLEAR(clear_module_state->__pyx_tuple__11);
+  Py_CLEAR(clear_module_state->__pyx_tuple__12);
+  Py_CLEAR(clear_module_state->__pyx_tuple__13);
   Py_CLEAR(clear_module_state->__pyx_tuple__16);
+  Py_CLEAR(clear_module_state->__pyx_tuple__17);
   Py_CLEAR(clear_module_state->__pyx_codeobj__2);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__3);
   Py_CLEAR(clear_module_state->__pyx_codeobj__4);
   Py_CLEAR(clear_module_state->__pyx_codeobj__5);
   Py_CLEAR(clear_module_state->__pyx_codeobj__6);
   Py_CLEAR(clear_module_state->__pyx_codeobj__7);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__8);
   Py_CLEAR(clear_module_state->__pyx_codeobj__9);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__11);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__15);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__17);
   return 0;
 }
 #endif
@@ -3394,8 +3632,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_TU3);
   Py_VISIT(traverse_module_state->__pyx_n_s_TU4);
   Py_VISIT(traverse_module_state->__pyx_n_s_TU5);
-  Py_VISIT(traverse_module_state->__pyx_kp_u__12);
-  Py_VISIT(traverse_module_state->__pyx_n_s__13);
+  Py_VISIT(traverse_module_state->__pyx_kp_u__14);
+  Py_VISIT(traverse_module_state->__pyx_n_s__15);
   Py_VISIT(traverse_module_state->__pyx_n_s__18);
   Py_VISIT(traverse_module_state->__pyx_n_s_add_dynamic_fuel_loading);
   Py_VISIT(traverse_module_state->__pyx_n_s_add_live_moisture_of_extinction);
@@ -3682,21 +3920,21 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_int_202);
   Py_VISIT(traverse_module_state->__pyx_int_203);
   Py_VISIT(traverse_module_state->__pyx_int_204);
-  Py_VISIT(traverse_module_state->__pyx_tuple_);
-  Py_VISIT(traverse_module_state->__pyx_tuple__3);
-  Py_VISIT(traverse_module_state->__pyx_tuple__8);
+  Py_VISIT(traverse_module_state->__pyx_codeobj_);
   Py_VISIT(traverse_module_state->__pyx_tuple__10);
-  Py_VISIT(traverse_module_state->__pyx_tuple__14);
+  Py_VISIT(traverse_module_state->__pyx_tuple__11);
+  Py_VISIT(traverse_module_state->__pyx_tuple__12);
+  Py_VISIT(traverse_module_state->__pyx_tuple__13);
   Py_VISIT(traverse_module_state->__pyx_tuple__16);
+  Py_VISIT(traverse_module_state->__pyx_tuple__17);
   Py_VISIT(traverse_module_state->__pyx_codeobj__2);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__3);
   Py_VISIT(traverse_module_state->__pyx_codeobj__4);
   Py_VISIT(traverse_module_state->__pyx_codeobj__5);
   Py_VISIT(traverse_module_state->__pyx_codeobj__6);
   Py_VISIT(traverse_module_state->__pyx_codeobj__7);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__8);
   Py_VISIT(traverse_module_state->__pyx_codeobj__9);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__11);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__15);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__17);
   return 0;
 }
 #endif
@@ -3806,8 +4044,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_TU3 __pyx_mstate_global->__pyx_n_s_TU3
 #define __pyx_n_s_TU4 __pyx_mstate_global->__pyx_n_s_TU4
 #define __pyx_n_s_TU5 __pyx_mstate_global->__pyx_n_s_TU5
-#define __pyx_kp_u__12 __pyx_mstate_global->__pyx_kp_u__12
-#define __pyx_n_s__13 __pyx_mstate_global->__pyx_n_s__13
+#define __pyx_kp_u__14 __pyx_mstate_global->__pyx_kp_u__14
+#define __pyx_n_s__15 __pyx_mstate_global->__pyx_n_s__15
 #define __pyx_n_s__18 __pyx_mstate_global->__pyx_n_s__18
 #define __pyx_n_s_add_dynamic_fuel_loading __pyx_mstate_global->__pyx_n_s_add_dynamic_fuel_loading
 #define __pyx_n_s_add_live_moisture_of_extinction __pyx_mstate_global->__pyx_n_s_add_live_moisture_of_extinction
@@ -4094,21 +4332,21 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_int_202 __pyx_mstate_global->__pyx_int_202
 #define __pyx_int_203 __pyx_mstate_global->__pyx_int_203
 #define __pyx_int_204 __pyx_mstate_global->__pyx_int_204
-#define __pyx_tuple_ __pyx_mstate_global->__pyx_tuple_
-#define __pyx_tuple__3 __pyx_mstate_global->__pyx_tuple__3
-#define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
+#define __pyx_codeobj_ __pyx_mstate_global->__pyx_codeobj_
 #define __pyx_tuple__10 __pyx_mstate_global->__pyx_tuple__10
-#define __pyx_tuple__14 __pyx_mstate_global->__pyx_tuple__14
+#define __pyx_tuple__11 __pyx_mstate_global->__pyx_tuple__11
+#define __pyx_tuple__12 __pyx_mstate_global->__pyx_tuple__12
+#define __pyx_tuple__13 __pyx_mstate_global->__pyx_tuple__13
 #define __pyx_tuple__16 __pyx_mstate_global->__pyx_tuple__16
+#define __pyx_tuple__17 __pyx_mstate_global->__pyx_tuple__17
 #define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
+#define __pyx_codeobj__3 __pyx_mstate_global->__pyx_codeobj__3
 #define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
 #define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
 #define __pyx_codeobj__6 __pyx_mstate_global->__pyx_codeobj__6
 #define __pyx_codeobj__7 __pyx_mstate_global->__pyx_codeobj__7
+#define __pyx_codeobj__8 __pyx_mstate_global->__pyx_codeobj__8
 #define __pyx_codeobj__9 __pyx_mstate_global->__pyx_codeobj__9
-#define __pyx_codeobj__11 __pyx_mstate_global->__pyx_codeobj__11
-#define __pyx_codeobj__15 __pyx_mstate_global->__pyx_codeobj__15
-#define __pyx_codeobj__17 __pyx_mstate_global->__pyx_codeobj__17
 /* #### Code section: module_code ### */
 
 /* "pyretechnics/fuel_models.py":85
@@ -4236,6 +4474,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   PyObject *__pyx_v_M_x_dead_herbaceous = NULL;
   PyObject *__pyx_v_sigma_dead_herbaceous = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4250,7 +4489,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj_)
   __Pyx_RefNannySetupContext("expand_compact_fuel_model", 1);
+  __Pyx_TraceCall("expand_compact_fuel_model", __pyx_f[0], 85, 0, __PYX_ERR(0, 85, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":86
  * # [[file:../../org/pyretechnics.org::expand-compact-fuel-model-table][expand-compact-fuel-model-table]]
@@ -4859,6 +5100,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   __Pyx_XDECREF(__pyx_v_M_x_dead_herbaceous);
   __Pyx_XDECREF(__pyx_v_sigma_dead_herbaceous);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -4969,6 +5211,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_11fuel_models_2map_category(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -4978,7 +5221,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_2map_category(CYTHON_UNUS
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__2)
   __Pyx_RefNannySetupContext("map_category", 1);
+  __Pyx_TraceCall("map_category", __pyx_f[0], 114, 0, __PYX_ERR(0, 114, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":115
  * # [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
@@ -5064,6 +5309,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_2map_category(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5174,6 +5420,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_11fuel_models_4map_size_class(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5187,7 +5434,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_4map_size_class(CYTHON_UN
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__3)
   __Pyx_RefNannySetupContext("map_size_class", 1);
+  __Pyx_TraceCall("map_size_class", __pyx_f[0], 118, 0, __PYX_ERR(0, 118, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":119
  * 
@@ -5381,6 +5630,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_4map_size_class(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5491,6 +5741,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_11fuel_models_6category_sum(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5500,7 +5751,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_6category_sum(CYTHON_UNUS
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__4)
   __Pyx_RefNannySetupContext("category_sum", 1);
+  __Pyx_TraceCall("category_sum", __pyx_f[0], 122, 0, __PYX_ERR(0, 122, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":123
  * 
@@ -5582,6 +5835,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_6category_sum(CYTHON_UNUS
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5692,6 +5946,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_12pyretechnics_11fuel_models_8size_class_sum(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_f) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -5702,7 +5957,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_8size_class_sum(CYTHON_UN
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__5)
   __Pyx_RefNannySetupContext("size_class_sum", 1);
+  __Pyx_TraceCall("size_class_sum", __pyx_f[0], 126, 0, __PYX_ERR(0, 126, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":127
  * 
@@ -5897,6 +6154,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_8size_class_sum(CYTHON_UN
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6029,6 +6287,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
   PyObject *__pyx_v_dynamic_fuel_model = NULL;
   PyObject *__pyx_v_static_fuel_model = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
@@ -6043,7 +6302,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__6)
   __Pyx_RefNannySetupContext("add_dynamic_fuel_loading", 1);
+  __Pyx_TraceCall("add_dynamic_fuel_loading", __pyx_f[0], 130, 0, __PYX_ERR(0, 130, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":131
  * # [[file:../../org/pyretechnics.org::add-dynamic-fuel-loading][add-dynamic-fuel-loading]]
@@ -6481,6 +6742,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
   __Pyx_XDECREF(__pyx_v_dynamic_fuel_model);
   __Pyx_XDECREF(__pyx_v_static_fuel_model);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6697,6 +6959,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -6707,6 +6970,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __Pyx_RefNannySetupContext("lambda", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda", __pyx_f[0], 167, 0, __PYX_ERR(0, 167, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_sigma)) { __Pyx_RaiseClosureNameError("sigma"); __PYX_ERR(0, 167, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_sigma, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
@@ -6738,6 +7002,7 @@ static PyObject *__pyx_lambda_funcdef_lambda(PyObject *__pyx_self, PyObject *__p
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6850,6 +7115,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
@@ -6858,6 +7124,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda1", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda1", __pyx_f[0], 168, 0, __PYX_ERR(0, 168, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_A_ij)) { __Pyx_RaiseClosureNameError("A_ij"); __PYX_ERR(0, 168, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_A_ij, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
@@ -6873,6 +7140,7 @@ static PyObject *__pyx_lambda_funcdef_lambda1(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -6985,6 +7253,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
@@ -6993,6 +7262,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda2", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda2", __pyx_f[0], 169, 0, __PYX_ERR(0, 169, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_A_i)) { __Pyx_RaiseClosureNameError("A_i"); __PYX_ERR(0, 169, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_A_i, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
@@ -7008,6 +7278,7 @@ static PyObject *__pyx_lambda_funcdef_lambda2(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7216,6 +7487,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_1___pyx_lambda_funcdef_lambda3 *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_1___pyx_lambda_funcdef_lambda3 *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7227,6 +7499,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda4", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_1___pyx_lambda_funcdef_lambda3 *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda4", __pyx_f[0], 170, 0, __PYX_ERR(0, 170, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2 = PyObject_RichCompare(__pyx_v_A, __pyx_float_0_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
   __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 170, __pyx_L1_error)
@@ -7258,6 +7531,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7265,6 +7539,7 @@ static PyObject *__pyx_lambda_funcdef_lambda4(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__pyx_v_i) {
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_1___pyx_lambda_funcdef_lambda3 *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7286,6 +7561,7 @@ static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__
   __pyx_cur_scope->__pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __Pyx_INCREF((PyObject *)__pyx_cur_scope->__pyx_outer_scope);
   __Pyx_GIVEREF((PyObject *)__pyx_cur_scope->__pyx_outer_scope);
+  __Pyx_TraceCall("lambda3", __pyx_f[0], 170, 0, __PYX_ERR(0, 170, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_i = __pyx_v_i;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_i);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_i);
@@ -7336,6 +7612,7 @@ static PyObject *__pyx_lambda_funcdef_lambda3(PyObject *__pyx_self, PyObject *__
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7448,6 +7725,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7459,6 +7737,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda5", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda5", __pyx_f[0], 171, 0, __PYX_ERR(0, 171, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_A_T)) { __Pyx_RaiseClosureNameError("A_T"); __PYX_ERR(0, 171, __pyx_L1_error) }
   __pyx_t_2 = PyObject_RichCompare(__pyx_cur_scope->__pyx_v_A_T, __pyx_float_0_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
@@ -7491,6 +7770,7 @@ static PyObject *__pyx_lambda_funcdef_lambda5(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7697,6 +7977,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_lambda_funcdef_lambda7(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_s) {
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7713,6 +7994,7 @@ static PyObject *__pyx_lambda_funcdef_lambda7(CYTHON_UNUSED PyObject *__pyx_self
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("lambda7", 1);
+  __Pyx_TraceCall("lambda7", __pyx_f[0], 172, 0, __PYX_ERR(0, 172, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":173
  *     f_i                         = map_category(lambda i: (A_i[i] / A_T) if A_T > 0.0 else 0.0)
@@ -7828,6 +8110,7 @@ static PyObject *__pyx_lambda_funcdef_lambda7(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -7836,6 +8119,7 @@ static PyObject *__pyx_lambda_funcdef_lambda6(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -7848,6 +8132,7 @@ static PyObject *__pyx_lambda_funcdef_lambda6(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda6", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda6", __pyx_f[0], 172, 0, __PYX_ERR(0, 172, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":179
  *                                                             else 5 if (s >= 16.0)
@@ -7923,6 +8208,7 @@ static PyObject *__pyx_lambda_funcdef_lambda6(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8131,6 +8417,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_2___pyx_lambda_funcdef_lambda8 *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_2___pyx_lambda_funcdef_lambda8 *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8145,6 +8432,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
   __Pyx_RefNannySetupContext("lambda9", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_2___pyx_lambda_funcdef_lambda8 *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda9", __pyx_f[0], 180, 0, __PYX_ERR(0, 180, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":181
  *                                                             )(sigma[i]))
@@ -8362,6 +8650,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8369,6 +8658,7 @@ static PyObject *__pyx_lambda_funcdef_lambda9(PyObject *__pyx_self, PyObject *__
 static PyObject *__pyx_lambda_funcdef_lambda8(PyObject *__pyx_self, PyObject *__pyx_v_i) {
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_2___pyx_lambda_funcdef_lambda8 *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8390,6 +8680,7 @@ static PyObject *__pyx_lambda_funcdef_lambda8(PyObject *__pyx_self, PyObject *__
   __pyx_cur_scope->__pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __Pyx_INCREF((PyObject *)__pyx_cur_scope->__pyx_outer_scope);
   __Pyx_GIVEREF((PyObject *)__pyx_cur_scope->__pyx_outer_scope);
+  __Pyx_TraceCall("lambda8", __pyx_f[0], 180, 0, __PYX_ERR(0, 180, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_i = __pyx_v_i;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_i);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_i);
@@ -8469,6 +8760,7 @@ static PyObject *__pyx_lambda_funcdef_lambda8(PyObject *__pyx_self, PyObject *__
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -8487,6 +8779,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
   PyObject *__pyx_v_g_ij = NULL;
   PyObject *__pyx_v_weighted_fuel_model = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -8496,6 +8789,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__7)
   __Pyx_RefNannySetupContext("add_weighting_factors", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors *)__pyx_tp_new_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors(__pyx_ptype_12pyretechnics_11fuel_models___pyx_scope_struct__add_weighting_factors, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -8505,6 +8799,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("add_weighting_factors", __pyx_f[0], 163, 0, __PYX_ERR(0, 163, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":164
  * # [[file:../../org/pyretechnics.org::add-weighting-factors][add-weighting-factors]]
@@ -8904,6 +9199,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
   __Pyx_XDECREF(__pyx_v_weighted_fuel_model);
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9240,6 +9536,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_4___pyx_lambda_funcdef_lambda10 *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_4___pyx_lambda_funcdef_lambda10 *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9255,6 +9552,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda11", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_4___pyx_lambda_funcdef_lambda10 *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda11", __pyx_f[0], 207, 0, __PYX_ERR(0, 207, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":208
  *     loading_factors           = map_size_class(lambda i:
@@ -9333,6 +9631,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9348,6 +9647,7 @@ static PyObject *__pyx_lambda_funcdef_lambda11(PyObject *__pyx_self, PyObject *_
 static PyObject *__pyx_lambda_funcdef_lambda10(PyObject *__pyx_self, PyObject *__pyx_v_i) {
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_4___pyx_lambda_funcdef_lambda10 *__pyx_cur_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9371,6 +9671,7 @@ static PyObject *__pyx_lambda_funcdef_lambda10(PyObject *__pyx_self, PyObject *_
   __pyx_cur_scope->__pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __Pyx_INCREF((PyObject *)__pyx_cur_scope->__pyx_outer_scope);
   __Pyx_GIVEREF((PyObject *)__pyx_cur_scope->__pyx_outer_scope);
+  __Pyx_TraceCall("lambda10", __pyx_f[0], 206, 0, __PYX_ERR(0, 206, __pyx_L1_error));
   __pyx_cur_scope->__pyx_v_i = __pyx_v_i;
   __Pyx_INCREF(__pyx_cur_scope->__pyx_v_i);
   __Pyx_GIVEREF(__pyx_cur_scope->__pyx_v_i);
@@ -9462,6 +9763,7 @@ static PyObject *__pyx_lambda_funcdef_lambda10(PyObject *__pyx_self, PyObject *_
   __pyx_L0:;
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9574,6 +9876,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_lineno = 0;
@@ -9582,6 +9885,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda12", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda12", __pyx_f[0], 211, 0, __PYX_ERR(0, 211, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_loading_factors)) { __Pyx_RaiseClosureNameError("loading_factors"); __PYX_ERR(0, 211, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_loading_factors, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
@@ -9597,6 +9901,7 @@ static PyObject *__pyx_lambda_funcdef_lambda12(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9709,6 +10014,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *__pyx_cur_scope;
   struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *__pyx_outer_scope;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9719,6 +10025,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
   __Pyx_RefNannySetupContext("lambda13", 1);
   __pyx_outer_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *) __Pyx_CyFunction_GetClosure(__pyx_self);
   __pyx_cur_scope = __pyx_outer_scope;
+  __Pyx_TraceCall("lambda13", __pyx_f[0], 212, 0, __PYX_ERR(0, 212, __pyx_L1_error));
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_cur_scope->__pyx_v_M_f)) { __Pyx_RaiseClosureNameError("M_f"); __PYX_ERR(0, 212, __pyx_L1_error) }
   __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_cur_scope->__pyx_v_M_f, __pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
@@ -9743,6 +10050,7 @@ static PyObject *__pyx_lambda_funcdef_lambda13(PyObject *__pyx_self, PyObject *_
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -9768,6 +10076,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
   PyObject *__pyx_v_M_x_live = NULL;
   PyObject *__pyx_v_moisturized_fuel_model = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -9781,6 +10090,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__8)
   __Pyx_RefNannySetupContext("add_live_moisture_of_extinction", 0);
   __pyx_cur_scope = (struct __pyx_obj_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction *)__pyx_tp_new_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction(__pyx_ptype_12pyretechnics_11fuel_models___pyx_scope_struct_3_add_live_moisture_of_extinction, __pyx_empty_tuple, NULL);
   if (unlikely(!__pyx_cur_scope)) {
@@ -9790,6 +10100,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
   } else {
     __Pyx_GOTREF((PyObject *)__pyx_cur_scope);
   }
+  __Pyx_TraceCall("add_live_moisture_of_extinction", __pyx_f[0], 198, 0, __PYX_ERR(0, 198, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":202
  *     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
@@ -10341,6 +10652,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
   __Pyx_XDECREF(__pyx_v_moisturized_fuel_model);
   __Pyx_DECREF((PyObject *)__pyx_cur_scope);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -10469,6 +10781,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_16moisturize(CYTHON_UNUSE
   PyObject *__pyx_v_weighted_fuel_model = NULL;
   PyObject *__pyx_v_moisturized_fuel_model = NULL;
   PyObject *__pyx_r = NULL;
+  __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -10477,7 +10790,9 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_16moisturize(CYTHON_UNUSE
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
+  __Pyx_TraceFrameInit(__pyx_codeobj__9)
   __Pyx_RefNannySetupContext("moisturize", 1);
+  __Pyx_TraceCall("moisturize", __pyx_f[0], 233, 0, __PYX_ERR(0, 233, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":234
  * #       of the fuel model here and mutate it in the called functions.
@@ -10612,6 +10927,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_16moisturize(CYTHON_UNUSE
   __Pyx_XDECREF(__pyx_v_weighted_fuel_model);
   __Pyx_XDECREF(__pyx_v_moisturized_fuel_model);
   __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_TraceReturn(__pyx_r, 0);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -11662,8 +11978,8 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_TU3, __pyx_k_TU3, sizeof(__pyx_k_TU3), 0, 0, 1, 1},
     {&__pyx_n_s_TU4, __pyx_k_TU4, sizeof(__pyx_k_TU4), 0, 0, 1, 1},
     {&__pyx_n_s_TU5, __pyx_k_TU5, sizeof(__pyx_k_TU5), 0, 0, 1, 1},
-    {&__pyx_kp_u__12, __pyx_k__12, sizeof(__pyx_k__12), 0, 1, 0, 0},
-    {&__pyx_n_s__13, __pyx_k__13, sizeof(__pyx_k__13), 0, 0, 1, 1},
+    {&__pyx_kp_u__14, __pyx_k__14, sizeof(__pyx_k__14), 0, 1, 0, 0},
+    {&__pyx_n_s__15, __pyx_k__15, sizeof(__pyx_k__15), 0, 0, 1, 1},
     {&__pyx_n_s__18, __pyx_k__18, sizeof(__pyx_k__18), 0, 0, 1, 1},
     {&__pyx_n_s_add_dynamic_fuel_loading, __pyx_k_add_dynamic_fuel_loading, sizeof(__pyx_k_add_dynamic_fuel_loading), 0, 0, 1, 1},
     {&__pyx_n_s_add_live_moisture_of_extinction, __pyx_k_add_live_moisture_of_extinction, sizeof(__pyx_k_add_live_moisture_of_extinction), 0, 0, 1, 1},
@@ -11765,10 +12081,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     [name, delta, M_x_dead, h, w_o, sigma] = fuel_model_compact_table[fuel_model_number]
  *     [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, w_o_live_herbaceous, w_o_live_woody] = w_o
  */
-  __pyx_tuple_ = PyTuple_Pack(20, __pyx_n_s_fuel_model_number, __pyx_n_s_name, __pyx_n_s_delta, __pyx_n_s_M_x_dead, __pyx_n_s_h, __pyx_n_s_w_o, __pyx_n_s_sigma, __pyx_n_s_w_o_dead_1hr, __pyx_n_s_w_o_dead_10hr, __pyx_n_s_w_o_dead_100hr, __pyx_n_s_w_o_live_herbaceous, __pyx_n_s_w_o_live_woody, __pyx_n_s_sigma_dead_1hr, __pyx_n_s_sigma_dead_10hr, __pyx_n_s_sigma_dead_100hr, __pyx_n_s_sigma_live_herbaceous, __pyx_n_s_sigma_live_woody, __pyx_n_s_dynamic, __pyx_n_s_M_x_dead_herbaceous, __pyx_n_s_sigma_dead_herbaceous); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 85, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple_);
-  __Pyx_GIVEREF(__pyx_tuple_);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 20, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple_, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_expand_compact_fuel_model, 85, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(20, __pyx_n_s_fuel_model_number, __pyx_n_s_name, __pyx_n_s_delta, __pyx_n_s_M_x_dead, __pyx_n_s_h, __pyx_n_s_w_o, __pyx_n_s_sigma, __pyx_n_s_w_o_dead_1hr, __pyx_n_s_w_o_dead_10hr, __pyx_n_s_w_o_dead_100hr, __pyx_n_s_w_o_live_herbaceous, __pyx_n_s_w_o_live_woody, __pyx_n_s_sigma_dead_1hr, __pyx_n_s_sigma_dead_10hr, __pyx_n_s_sigma_dead_100hr, __pyx_n_s_sigma_live_herbaceous, __pyx_n_s_sigma_live_woody, __pyx_n_s_dynamic, __pyx_n_s_M_x_dead_herbaceous, __pyx_n_s_sigma_dead_herbaceous); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 20, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_expand_compact_fuel_model, 85, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 85, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":114
  * # expand-compact-fuel-model-table ends here
@@ -11777,10 +12093,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return [f(0), f(1)]
  * 
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_n_s_f); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 114, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_map_category, 114, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_n_s_f); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_map_category, 114, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 114, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":118
  * 
@@ -11789,7 +12105,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return [f(0), f(1), f(2), f(3), f(4), f(5)]
  * 
  */
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_map_size_class, 118, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_map_size_class, 118, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 118, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":122
  * 
@@ -11798,7 +12114,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return f(0) + f(1)
  * 
  */
-  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_category_sum, 122, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 122, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_category_sum, 122, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 122, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":126
  * 
@@ -11807,7 +12123,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
  * # fuel-category-and-size-class-functions ends here
  */
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_size_class_sum, 126, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_size_class_sum, 126, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 126, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":130
  * # fuel-category-and-size-class-functions ends here
@@ -11816,10 +12132,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     if fuel_model["dynamic"]:
  *         # dynamic fuel model
  */
-  __pyx_tuple__8 = PyTuple_Pack(9, __pyx_n_s_fuel_model, __pyx_n_s_M_f, __pyx_n_s_w_o, __pyx_n_s_live_herbaceous_load, __pyx_n_s_live_herbaceous_moisture, __pyx_n_s_fraction_green, __pyx_n_s_fraction_cured, __pyx_n_s_dynamic_fuel_model, __pyx_n_s_static_fuel_model); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 130, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_add_dynamic_fuel_loading, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(9, __pyx_n_s_fuel_model, __pyx_n_s_M_f, __pyx_n_s_w_o, __pyx_n_s_live_herbaceous_load, __pyx_n_s_live_herbaceous_moisture, __pyx_n_s_fraction_green, __pyx_n_s_fraction_cured, __pyx_n_s_dynamic_fuel_model, __pyx_n_s_static_fuel_model); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_add_dynamic_fuel_loading, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 130, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":163
  * # add-dynamic-fuel-loading ends here
@@ -11828,10 +12144,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     w_o                         = fuel_model["w_o"]
  *     sigma                       = fuel_model["sigma"]
  */
-  __pyx_tuple__10 = PyTuple_Pack(12, __pyx_n_s_fuel_model, __pyx_n_s_w_o, __pyx_n_s_sigma, __pyx_n_s_rho_p, __pyx_n_s_A_ij, __pyx_n_s_A_i, __pyx_n_s_A_T, __pyx_n_s_f_ij, __pyx_n_s_f_i, __pyx_n_s_firemod_size_classes, __pyx_n_s_g_ij, __pyx_n_s_weighted_fuel_model); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 163, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_add_weighting_factors, 163, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_tuple__13 = PyTuple_Pack(12, __pyx_n_s_fuel_model, __pyx_n_s_w_o, __pyx_n_s_sigma, __pyx_n_s_rho_p, __pyx_n_s_A_ij, __pyx_n_s_A_i, __pyx_n_s_A_T, __pyx_n_s_f_ij, __pyx_n_s_f_i, __pyx_n_s_firemod_size_classes, __pyx_n_s_g_ij, __pyx_n_s_weighted_fuel_model); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_add_weighting_factors, 163, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 163, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":198
  * from math import exp
@@ -11840,10 +12156,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
  */
-  __pyx_tuple__14 = PyTuple_Pack(15, __pyx_n_s_fuel_model, __pyx_n_s_w_o, __pyx_n_s_sigma, __pyx_n_s_M_f, __pyx_n_s_M_x, __pyx_n_s_loading_factors, __pyx_n_s_dead_loading_factor, __pyx_n_s_live_loading_factor, __pyx_n_s_dead_moisture_factor, __pyx_n_s__13, __pyx_n_s_dead_to_live_ratio, __pyx_n_s_dead_fuel_moisture, __pyx_n_s_M_x_dead, __pyx_n_s_M_x_live, __pyx_n_s_moisturized_fuel_model); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 198, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
-  __Pyx_GIVEREF(__pyx_tuple__14);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 15, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_add_live_moisture_of_extinction_3, 198, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_tuple__16 = PyTuple_Pack(15, __pyx_n_s_fuel_model, __pyx_n_s_w_o, __pyx_n_s_sigma, __pyx_n_s_M_f, __pyx_n_s_M_x, __pyx_n_s_loading_factors, __pyx_n_s_dead_loading_factor, __pyx_n_s_live_loading_factor, __pyx_n_s_dead_moisture_factor, __pyx_n_s__15, __pyx_n_s_dead_to_live_ratio, __pyx_n_s_dead_fuel_moisture, __pyx_n_s_M_x_dead, __pyx_n_s_M_x_live, __pyx_n_s_moisturized_fuel_model); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 15, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_add_live_moisture_of_extinction_3, 198, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 198, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":233
  * # TODO: If these functions aren't called anywhere else, create a copy
@@ -11852,10 +12168,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     dynamic_fuel_model     = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
  *     weighted_fuel_model    = add_weighting_factors(dynamic_fuel_model)
  */
-  __pyx_tuple__16 = PyTuple_Pack(5, __pyx_n_s_fuel_model, __pyx_n_s_fuel_moisture, __pyx_n_s_dynamic_fuel_model, __pyx_n_s_weighted_fuel_model, __pyx_n_s_moisturized_fuel_model); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 233, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_moisturize, 233, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_tuple__17 = PyTuple_Pack(5, __pyx_n_s_fuel_model, __pyx_n_s_fuel_moisture, __pyx_n_s_dynamic_fuel_model, __pyx_n_s_weighted_fuel_model, __pyx_n_s_moisturized_fuel_model); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__17);
+  __Pyx_GIVEREF(__pyx_tuple__17);
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_fuel_models_py, __pyx_n_s_moisturize, 233, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -12410,6 +12726,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_fuel_models(PyObject *__pyx_pyinit
   #if CYTHON_USE_MODULE_STATE
   int pystate_addmodule_run = 0;
   #endif
+  __Pyx_TraceDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
   PyObject *__pyx_t_3 = NULL;
@@ -12535,6 +12852,7 @@ if (!__Pyx_RefNanny) {
   #if defined(__Pyx_Generator_USED) || defined(__Pyx_Coroutine_USED)
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
+  __Pyx_TraceCall("__Pyx_PyMODINIT_FUNC PyInit_fuel_models(void)", __pyx_f[0], 1, 0, __PYX_ERR(0, 1, __pyx_L1_error));
 
   /* "pyretechnics/fuel_models.py":13
  *     # Anderson 13:
@@ -16259,7 +16577,7 @@ if (!__Pyx_RefNanny) {
  *     [name, delta, M_x_dead, h, w_o, sigma] = fuel_model_compact_table[fuel_model_number]
  *     [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, w_o_live_herbaceous, w_o_live_woody] = w_o
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_1expand_compact_fuel_model, 0, __pyx_n_s_expand_compact_fuel_model, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_1expand_compact_fuel_model, 0, __pyx_n_s_expand_compact_fuel_model, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj_)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_expand_compact_fuel_model, __pyx_t_2) < 0) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16343,7 +16661,7 @@ if (!__Pyx_RefNanny) {
  *     return [f(0), f(1)]
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_3map_category, 0, __pyx_n_s_map_category, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_3map_category, 0, __pyx_n_s_map_category, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__2)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_map_category, __pyx_t_2) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16355,7 +16673,7 @@ if (!__Pyx_RefNanny) {
  *     return [f(0), f(1), f(2), f(3), f(4), f(5)]
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_5map_size_class, 0, __pyx_n_s_map_size_class, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_5map_size_class, 0, __pyx_n_s_map_size_class, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_map_size_class, __pyx_t_2) < 0) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16367,7 +16685,7 @@ if (!__Pyx_RefNanny) {
  *     return f(0) + f(1)
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_7category_sum, 0, __pyx_n_s_category_sum, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 122, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_7category_sum, 0, __pyx_n_s_category_sum, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_category_sum, __pyx_t_2) < 0) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16379,7 +16697,7 @@ if (!__Pyx_RefNanny) {
  *     return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
  * # fuel-category-and-size-class-functions ends here
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_9size_class_sum, 0, __pyx_n_s_size_class_sum, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_9size_class_sum, 0, __pyx_n_s_size_class_sum, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__5)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_size_class_sum, __pyx_t_2) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16391,7 +16709,7 @@ if (!__Pyx_RefNanny) {
  *     if fuel_model["dynamic"]:
  *         # dynamic fuel model
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_11add_dynamic_fuel_loading, 0, __pyx_n_s_add_dynamic_fuel_loading, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_11add_dynamic_fuel_loading, 0, __pyx_n_s_add_dynamic_fuel_loading, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_add_dynamic_fuel_loading, __pyx_t_2) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16403,7 +16721,7 @@ if (!__Pyx_RefNanny) {
  *     w_o                         = fuel_model["w_o"]
  *     sigma                       = fuel_model["sigma"]
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_13add_weighting_factors, 0, __pyx_n_s_add_weighting_factors, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_13add_weighting_factors, 0, __pyx_n_s_add_weighting_factors, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_add_weighting_factors, __pyx_t_2) < 0) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16436,7 +16754,7 @@ if (!__Pyx_RefNanny) {
  *     """
  *     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_15add_live_moisture_of_extinction, 0, __pyx_n_s_add_live_moisture_of_extinction_3, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_15add_live_moisture_of_extinction, 0, __pyx_n_s_add_live_moisture_of_extinction_3, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_add_live_moisture_of_extinction_3, __pyx_t_3) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -16448,7 +16766,7 @@ if (!__Pyx_RefNanny) {
  *     dynamic_fuel_model     = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
  *     weighted_fuel_model    = add_weighting_factors(dynamic_fuel_model)
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_17moisturize, 0, __pyx_n_s_moisturize, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_11fuel_models_17moisturize, 0, __pyx_n_s_moisturize, NULL, __pyx_n_s_pyretechnics_fuel_models, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_moisturize, __pyx_t_3) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -16462,6 +16780,7 @@ if (!__Pyx_RefNanny) {
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_TraceReturn(Py_None, 0);
 
   /*--- Wrapped vars code ---*/
 
@@ -16956,49 +17275,6 @@ static void __Pyx_RaiseArgtupleInvalid(
                  (num_expected == 1) ? "" : "s", num_found);
 }
 
-/* PyErrExceptionMatches */
-#if CYTHON_FAST_THREAD_STATE
-static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
-    Py_ssize_t i, n;
-    n = PyTuple_GET_SIZE(tuple);
-#if PY_MAJOR_VERSION >= 3
-    for (i=0; i<n; i++) {
-        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
-    }
-#endif
-    for (i=0; i<n; i++) {
-        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
-    }
-    return 0;
-}
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
-    int result;
-    PyObject *exc_type;
-#if PY_VERSION_HEX >= 0x030C00A6
-    PyObject *current_exception = tstate->current_exception;
-    if (unlikely(!current_exception)) return 0;
-    exc_type = (PyObject*) Py_TYPE(current_exception);
-    if (exc_type == err) return 1;
-#else
-    exc_type = tstate->curexc_type;
-    if (exc_type == err) return 1;
-    if (unlikely(!exc_type)) return 0;
-#endif
-    #if CYTHON_AVOID_BORROWED_REFS
-    Py_INCREF(exc_type);
-    #endif
-    if (unlikely(PyTuple_Check(err))) {
-        result = __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
-    } else {
-        result = __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
-    }
-    #if CYTHON_AVOID_BORROWED_REFS
-    Py_DECREF(exc_type);
-    #endif
-    return result;
-}
-#endif
-
 /* PyErrFetchRestore */
 #if CYTHON_FAST_THREAD_STATE
 static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
@@ -17055,6 +17331,139 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
     tstate->curexc_value = 0;
     tstate->curexc_traceback = 0;
 #endif
+}
+#endif
+
+/* Profile */
+#if CYTHON_PROFILE
+static int __Pyx_TraceSetupAndCall(PyCodeObject** code,
+                                   PyFrameObject** frame,
+                                   PyThreadState* tstate,
+                                   const char *funcname,
+                                   const char *srcfile,
+                                   int firstlineno) {
+    PyObject *type, *value, *traceback;
+    int retval;
+    if (*frame == NULL || !CYTHON_PROFILE_REUSE_FRAME) {
+        if (*code == NULL) {
+            *code = __Pyx_createFrameCodeObject(funcname, srcfile, firstlineno);
+            if (*code == NULL) return 0;
+        }
+        *frame = PyFrame_New(
+            tstate,                          /*PyThreadState *tstate*/
+            *code,                           /*PyCodeObject *code*/
+            __pyx_d,                  /*PyObject *globals*/
+            0                                /*PyObject *locals*/
+        );
+        if (*frame == NULL) return 0;
+        if (CYTHON_TRACE && (*frame)->f_trace == NULL) {
+            Py_INCREF(Py_None);
+            (*frame)->f_trace = Py_None;
+        }
+#if PY_VERSION_HEX < 0x030400B1
+    } else {
+        (*frame)->f_tstate = tstate;
+#endif
+    }
+    __Pyx_PyFrame_SetLineNumber(*frame, firstlineno);
+    retval = 1;
+    __Pyx_EnterTracing(tstate);
+    __Pyx_ErrFetchInState(tstate, &type, &value, &traceback);
+    #if CYTHON_TRACE
+    if (tstate->c_tracefunc)
+        retval = tstate->c_tracefunc(tstate->c_traceobj, *frame, PyTrace_CALL, NULL) == 0;
+    if (retval && tstate->c_profilefunc)
+    #endif
+        retval = tstate->c_profilefunc(tstate->c_profileobj, *frame, PyTrace_CALL, NULL) == 0;
+    __Pyx_LeaveTracing(tstate);
+    if (retval) {
+        __Pyx_ErrRestoreInState(tstate, type, value, traceback);
+        return __Pyx_IsTracing(tstate, 0, 0) && retval;
+    } else {
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+        return -1;
+    }
+}
+static PyCodeObject *__Pyx_createFrameCodeObject(const char *funcname, const char *srcfile, int firstlineno) {
+    PyCodeObject *py_code = 0;
+#if PY_MAJOR_VERSION >= 3
+    py_code = PyCode_NewEmpty(srcfile, funcname, firstlineno);
+    if (likely(py_code)) {
+        py_code->co_flags |= CO_OPTIMIZED | CO_NEWLOCALS;
+    }
+#else
+    PyObject *py_srcfile = 0;
+    PyObject *py_funcname = 0;
+    py_funcname = PyString_FromString(funcname);
+    if (unlikely(!py_funcname)) goto bad;
+    py_srcfile = PyString_FromString(srcfile);
+    if (unlikely(!py_srcfile)) goto bad;
+    py_code = PyCode_New(
+        0,
+        0,
+        0,
+        CO_OPTIMIZED | CO_NEWLOCALS,
+        __pyx_empty_bytes,     /*PyObject *code,*/
+        __pyx_empty_tuple,     /*PyObject *consts,*/
+        __pyx_empty_tuple,     /*PyObject *names,*/
+        __pyx_empty_tuple,     /*PyObject *varnames,*/
+        __pyx_empty_tuple,     /*PyObject *freevars,*/
+        __pyx_empty_tuple,     /*PyObject *cellvars,*/
+        py_srcfile,       /*PyObject *filename,*/
+        py_funcname,      /*PyObject *name,*/
+        firstlineno,
+        __pyx_empty_bytes      /*PyObject *lnotab*/
+    );
+bad:
+    Py_XDECREF(py_srcfile);
+    Py_XDECREF(py_funcname);
+#endif
+    return py_code;
+}
+#endif
+
+/* PyErrExceptionMatches */
+#if CYTHON_FAST_THREAD_STATE
+static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
+    Py_ssize_t i, n;
+    n = PyTuple_GET_SIZE(tuple);
+#if PY_MAJOR_VERSION >= 3
+    for (i=0; i<n; i++) {
+        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
+    }
+#endif
+    for (i=0; i<n; i++) {
+        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
+    }
+    return 0;
+}
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
+    int result;
+    PyObject *exc_type;
+#if PY_VERSION_HEX >= 0x030C00A6
+    PyObject *current_exception = tstate->current_exception;
+    if (unlikely(!current_exception)) return 0;
+    exc_type = (PyObject*) Py_TYPE(current_exception);
+    if (exc_type == err) return 1;
+#else
+    exc_type = tstate->curexc_type;
+    if (exc_type == err) return 1;
+    if (unlikely(!exc_type)) return 0;
+#endif
+    #if CYTHON_AVOID_BORROWED_REFS
+    Py_INCREF(exc_type);
+    #endif
+    if (unlikely(PyTuple_Check(err))) {
+        result = __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
+    } else {
+        result = __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
+    }
+    #if CYTHON_AVOID_BORROWED_REFS
+    Py_DECREF(exc_type);
+    #endif
+    return result;
 }
 #endif
 
@@ -19879,7 +20288,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
         if (unlikely(!module_name_str)) { goto modbad; }
         module_name = PyUnicode_FromString(module_name_str);
         if (unlikely(!module_name)) { goto modbad; }
-        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__12);
+        module_dot = PyUnicode_Concat(module_name, __pyx_kp_u__14);
         if (unlikely(!module_dot)) { goto modbad; }
         full_name = PyUnicode_Concat(module_dot, name);
         if (unlikely(!full_name)) { goto modbad; }
