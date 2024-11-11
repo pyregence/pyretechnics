@@ -17,7 +17,7 @@
   #:use-module ((guix licenses)                #:select (epl2.0))
   #:use-module ((guix packages)                #:select (package))
   #:use-module ((guix utils)                   #:select (current-source-directory))
-  #:use-module ((lambdatronic python-packages) #:select (python-snakeviz python-cython)))
+  #:use-module ((lambdatronic python-packages) #:select (python-snakeviz python-cython-3)))
 
 (define vcs-file?
   ;; Return true if the given file is under version control.
@@ -62,7 +62,7 @@
                        python-numpy
                        python-rasterio
                        python-matplotlib
-                       python-cython))
+                       python-cython-3))
    (synopsis "A Python library for simulating fire behavior in a variety of ways.")
    (description "A Python library for simulating fire behavior in a variety of ways.")
    (home-page "https://github.com/pyregence/pyretechnics/")
