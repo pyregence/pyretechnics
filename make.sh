@@ -8,6 +8,7 @@ Usage: $0 <command>
   - shell
   - container-shell
   - test
+  - profile
   - build-cython
   - build-guix
   - build-dist
@@ -51,6 +52,10 @@ case $CMD in
 
     "test")
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv $ARGS
+        ;;
+
+    "profile")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m cProfile -o prof/spread_fire.prof prof/spread_fire.py
         ;;
 
     "build-cython")
