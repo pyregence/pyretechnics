@@ -54,7 +54,7 @@ case $CMD in
         ;;
 
     "build-cython")
-        guix time-machine -c channels.scm -- shell -D -f guix.scm -- cythonize -X profile=True -i -a src/pyretechnics/*.py
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- cythonize -X profile=True -i -a src/pyretechnics/*.py
         ;;
 
     "build-guix")
