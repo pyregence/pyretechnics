@@ -58,6 +58,10 @@ case $CMD in
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m cProfile -o prof/spread_fire.prof prof/spread_fire.py
         ;;
 
+    "snakeviz")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- snakeviz prof/spread_fire.prof
+        ;;
+
     "build-cython")
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- cythonize -X profile=True -i -a src/pyretechnics/*.py
         ;;
