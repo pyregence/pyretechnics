@@ -376,20 +376,20 @@ def surface_length_to_width_ratio(effective_wind_speed, model="rothermel"):
     - model                :: "rothermel" or "behave" (Optional)
     """
     effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
-    match model:
-        case "rothermel":
-            return 1.0 + 0.25 * effective_wind_speed_mph
+    # Select formula by model
+    if model == "rothermel":
+        return 1.0 + 0.25 * effective_wind_speed_mph
 
-        case "behave":
-            return min(8.0,
-                       0.936 * exp(0.1147 * effective_wind_speed_mph)
-                       +
-                       0.461 * exp(-0.0692 * effective_wind_speed_mph)
-                       -
-                       0.397)
+    elif model == "behave":
+        return min(8.0,
+                   0.936 * exp(0.1147 * effective_wind_speed_mph)
+                   +
+                   0.461 * exp(-0.0692 * effective_wind_speed_mph)
+                   -
+                   0.397)
 
-        case _:
-            raise ValueError("Invalid input: model must be 'rothermel' or 'behave'.")
+    else:
+        raise ValueError("Invalid input: model must be 'rothermel' or 'behave'.")
 
 
 def surface_fire_eccentricity(length_to_width_ratio):

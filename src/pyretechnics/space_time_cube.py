@@ -74,43 +74,45 @@ class SpaceTimeCube:
         self.shape = cube_shape
         self.base  = base
 
-        match np.ndim(base):
+        # Store the base data as a 3D array along with its axis repetitions
+        base_dimensions = np.ndim(base)
+
+        if base_dimensions == 0:
             # 0D: Constant Input
-            case 0:
-                self.t_repetitions = cube_bands
-                self.y_repetitions = cube_rows
-                self.x_repetitions = cube_cols
-                self.data = np.asarray([[[base]]])
+            self.t_repetitions = cube_bands
+            self.y_repetitions = cube_rows
+            self.x_repetitions = cube_cols
+            self.data = np.asarray([[[base]]])
 
+        elif base_dimensions == 1:
             # 1D: Time-Series Input
-            case 1:
-                base_bands = len(base)
-                self.t_repetitions = divide_evenly(cube_bands, base_bands)
-                self.y_repetitions = cube_rows
-                self.x_repetitions = cube_cols
-                # Expand (base_bands) -> (base_bands,1,1)
-                self.data = np.expand_dims(base, axis=(1,2))
+            base_bands = len(base)
+            self.t_repetitions = divide_evenly(cube_bands, base_bands)
+            self.y_repetitions = cube_rows
+            self.x_repetitions = cube_cols
+            # Expand (base_bands) -> (base_bands,1,1)
+            self.data = np.expand_dims(base, axis=(1,2))
 
+        elif base_dimensions == 2:
             # 2D: Spatial Input
-            case 2:
-                (base_rows, base_cols) = np.shape(base)
-                self.t_repetitions = cube_bands
-                self.y_repetitions = divide_evenly(cube_rows, base_rows)
-                self.x_repetitions = divide_evenly(cube_cols, base_cols)
-                # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
-                self.data = np.expand_dims(base, axis=0)
+            (base_rows, base_cols) = np.shape(base)
+            self.t_repetitions = cube_bands
+            self.y_repetitions = divide_evenly(cube_rows, base_rows)
+            self.x_repetitions = divide_evenly(cube_cols, base_cols)
+            # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
+            self.data = np.expand_dims(base, axis=0)
 
+        elif base_dimensions == 3:
             # 3D: Spatio-Temporal Input
-            case 3:
-                (base_bands, base_rows, base_cols) = np.shape(base)
-                self.t_repetitions = divide_evenly(cube_bands, base_bands)
-                self.y_repetitions = divide_evenly(cube_rows, base_rows)
-                self.x_repetitions = divide_evenly(cube_cols, base_cols)
-                self.data = np.asarray(base)
+            (base_bands, base_rows, base_cols) = np.shape(base)
+            self.t_repetitions = divide_evenly(cube_bands, base_bands)
+            self.y_repetitions = divide_evenly(cube_rows, base_rows)
+            self.x_repetitions = divide_evenly(cube_cols, base_cols)
+            self.data = np.asarray(base)
 
+        else:
             # 4D+: Invalid Input
-            case _:
-                raise ValueError("Invalid input: base must have 0-3 dimensions.")
+            raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
 
     def get(self, t, y, x):
@@ -256,37 +258,38 @@ class SpaceTimeCube:
         Wherever possible, Numpy broadcasting is used to avoid memory allocation along
         constant array dimensions.
         """
-        match np.ndim(self.base):
+        base_dimensions = np.ndim(self.base)
+
+        if base_dimensions == 0:
             # 0D: Constant Input
-            case 0:
-                # Broadcast (0,0,0) -> (t,y,x)
-                return np.broadcast_to(self.data, self.shape)
+            # Broadcast (0,0,0) -> (t,y,x)
+            return np.broadcast_to(self.data, self.shape)
 
+        elif base_dimensions == 1:
             # 1D: Time-Series Input
-            case 1:
-                # Repeat (t0,1,1) -> (t,1,1)
-                repeated_array = maybe_repeat_array(self.data, (0, self.t_repetitions))
-                # Broadcast (t,1,1) -> (t,y,x)
-                return np.broadcast_to(repeated_array, self.shape)
+            # Repeat (t0,1,1) -> (t,1,1)
+            repeated_array = maybe_repeat_array(self.data, (0, self.t_repetitions))
+            # Broadcast (t,1,1) -> (t,y,x)
+            return np.broadcast_to(repeated_array, self.shape)
 
+        elif base_dimensions == 2:
             # 2D: Spatial Input
-            case 2:
-                # Repeat (1,y0,x0) -> (1,y,x)
-                repeated_array = reduce(maybe_repeat_array,
-                                        ((1, self.y_repetitions),
-                                         (2, self.x_repetitions)),
-                                        self.data)
-                # Broadcast (1,y,x) -> (t,y,x)
-                return np.broadcast_to(repeated_array, self.shape)
+            # Repeat (1,y0,x0) -> (1,y,x)
+            repeated_array = reduce(maybe_repeat_array,
+                                    ((1, self.y_repetitions),
+                                     (2, self.x_repetitions)),
+                                    self.data)
+            # Broadcast (1,y,x) -> (t,y,x)
+            return np.broadcast_to(repeated_array, self.shape)
 
+        else:
             # 3D: Spatio-Temporal Input
-            case 3:
-                # Repeat (t0,y0,x0) -> (t,y,x)
-                return reduce(maybe_repeat_array,
-                              ((0, self.t_repetitions),
-                               (1, self.y_repetitions),
-                               (2, self.x_repetitions)),
-                              self.data)
+            # Repeat (t0,y0,x0) -> (t,y,x)
+            return reduce(maybe_repeat_array,
+                          ((0, self.t_repetitions),
+                           (1, self.y_repetitions),
+                           (2, self.x_repetitions)),
+                          self.data)
 
 
     def getFullyRealizedCube(self, cache=False):

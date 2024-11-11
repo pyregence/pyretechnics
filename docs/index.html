@@ -734,43 +734,45 @@ constant input dimensions.
         <span class="org-keyword">self</span>.<span class="org-variable-name">shape</span> <span class="org-operator">=</span> cube_shape
         <span class="org-keyword">self</span>.<span class="org-variable-name">base</span>  <span class="org-operator">=</span> base
 
-        <span class="org-keyword">match</span> np.ndim(base):
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Store the base data as a 3D array along with its axis repetitions</span>
+        <span class="org-variable-name">base_dimensions</span> <span class="org-operator">=</span> np.ndim(base)
+
+        <span class="org-keyword">if</span> base_dimensions <span class="org-operator">==</span> 0:
             <span class="org-comment-delimiter"># </span><span class="org-comment">0D: Constant Input</span>
-            <span class="org-keyword">case</span> 0:
-                <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands
-                <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows
-                <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols
-                <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.asarray([[[base]]])
+            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands
+            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows
+            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols
+            <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.asarray([[[base]]])
 
+        <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 1:
             <span class="org-comment-delimiter"># </span><span class="org-comment">1D: Time-Series Input</span>
-            <span class="org-keyword">case</span> 1:
-                <span class="org-variable-name">base_bands</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(base)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_bands, base_bands)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows
-                <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Expand (base_bands) -&gt; (base_bands,1,1)</span>
-                <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.expand_dims(base, axis<span class="org-operator">=</span>(1,2))
+            <span class="org-variable-name">base_bands</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(base)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_bands, base_bands)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows
+            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Expand (base_bands) -&gt; (base_bands,1,1)</span>
+            <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.expand_dims(base, axis<span class="org-operator">=</span>(1,2))
 
+        <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 2:
             <span class="org-comment-delimiter"># </span><span class="org-comment">2D: Spatial Input</span>
-            <span class="org-keyword">case</span> 2:
-                (<span class="org-variable-name">base_rows</span>, <span class="org-variable-name">base_cols</span>) <span class="org-operator">=</span> np.shape(base)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands
-                <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_rows, base_rows)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_cols, base_cols)
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Expand (base_rows,base_cols) -&gt; (1,base_rows,base_cols)</span>
-                <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.expand_dims(base, axis<span class="org-operator">=</span>0)
+            (<span class="org-variable-name">base_rows</span>, <span class="org-variable-name">base_cols</span>) <span class="org-operator">=</span> np.shape(base)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands
+            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_rows, base_rows)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_cols, base_cols)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Expand (base_rows,base_cols) -&gt; (1,base_rows,base_cols)</span>
+            <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.expand_dims(base, axis<span class="org-operator">=</span>0)
 
+        <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 3:
             <span class="org-comment-delimiter"># </span><span class="org-comment">3D: Spatio-Temporal Input</span>
-            <span class="org-keyword">case</span> 3:
-                (<span class="org-variable-name">base_bands</span>, <span class="org-variable-name">base_rows</span>, <span class="org-variable-name">base_cols</span>) <span class="org-operator">=</span> np.shape(base)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_bands, base_bands)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_rows, base_rows)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_cols, base_cols)
-                <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.asarray(base)
+            (<span class="org-variable-name">base_bands</span>, <span class="org-variable-name">base_rows</span>, <span class="org-variable-name">base_cols</span>) <span class="org-operator">=</span> np.shape(base)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_bands, base_bands)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_rows, base_rows)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_cols, base_cols)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.asarray(base)
 
+        <span class="org-keyword">else</span>:
             <span class="org-comment-delimiter"># </span><span class="org-comment">4D+: Invalid Input</span>
-            <span class="org-keyword">case</span> _:
-                <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"Invalid input: base must have 0-3 dimensions."</span>)
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"Invalid input: base must have 0-3 dimensions."</span>)
 
 
     <span class="org-keyword">def</span> <span class="org-function-name">get</span>(<span class="org-keyword">self</span>, t, y, x):
@@ -916,37 +918,38 @@ constant input dimensions.
 <span class="org-doc">        Wherever possible, Numpy broadcasting is used to avoid memory allocation along</span>
 <span class="org-doc">        constant array dimensions.</span>
 <span class="org-doc">        """</span>
-        <span class="org-keyword">match</span> np.ndim(<span class="org-keyword">self</span>.base):
+        <span class="org-variable-name">base_dimensions</span> <span class="org-operator">=</span> np.ndim(<span class="org-keyword">self</span>.base)
+
+        <span class="org-keyword">if</span> base_dimensions <span class="org-operator">==</span> 0:
             <span class="org-comment-delimiter"># </span><span class="org-comment">0D: Constant Input</span>
-            <span class="org-keyword">case</span> 0:
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (0,0,0) -&gt; (t,y,x)</span>
-                <span class="org-keyword">return</span> np.broadcast_to(<span class="org-keyword">self</span>.data, <span class="org-keyword">self</span>.shape)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (0,0,0) -&gt; (t,y,x)</span>
+            <span class="org-keyword">return</span> np.broadcast_to(<span class="org-keyword">self</span>.data, <span class="org-keyword">self</span>.shape)
 
+        <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 1:
             <span class="org-comment-delimiter"># </span><span class="org-comment">1D: Time-Series Input</span>
-            <span class="org-keyword">case</span> 1:
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (t0,1,1) -&gt; (t,1,1)</span>
-                <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> maybe_repeat_array(<span class="org-keyword">self</span>.data, (0, <span class="org-keyword">self</span>.t_repetitions))
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (t,1,1) -&gt; (t,y,x)</span>
-                <span class="org-keyword">return</span> np.broadcast_to(repeated_array, <span class="org-keyword">self</span>.shape)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (t0,1,1) -&gt; (t,1,1)</span>
+            <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> maybe_repeat_array(<span class="org-keyword">self</span>.data, (0, <span class="org-keyword">self</span>.t_repetitions))
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (t,1,1) -&gt; (t,y,x)</span>
+            <span class="org-keyword">return</span> np.broadcast_to(repeated_array, <span class="org-keyword">self</span>.shape)
 
+        <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 2:
             <span class="org-comment-delimiter"># </span><span class="org-comment">2D: Spatial Input</span>
-            <span class="org-keyword">case</span> 2:
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (1,y0,x0) -&gt; (1,y,x)</span>
-                <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
-                                        ((1, <span class="org-keyword">self</span>.y_repetitions),
-                                         (2, <span class="org-keyword">self</span>.x_repetitions)),
-                                        <span class="org-keyword">self</span>.data)
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (1,y,x) -&gt; (t,y,x)</span>
-                <span class="org-keyword">return</span> np.broadcast_to(repeated_array, <span class="org-keyword">self</span>.shape)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (1,y0,x0) -&gt; (1,y,x)</span>
+            <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
+                                    ((1, <span class="org-keyword">self</span>.y_repetitions),
+                                     (2, <span class="org-keyword">self</span>.x_repetitions)),
+                                    <span class="org-keyword">self</span>.data)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (1,y,x) -&gt; (t,y,x)</span>
+            <span class="org-keyword">return</span> np.broadcast_to(repeated_array, <span class="org-keyword">self</span>.shape)
 
+        <span class="org-keyword">else</span>:
             <span class="org-comment-delimiter"># </span><span class="org-comment">3D: Spatio-Temporal Input</span>
-            <span class="org-keyword">case</span> 3:
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (t0,y0,x0) -&gt; (t,y,x)</span>
-                <span class="org-keyword">return</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
-                              ((0, <span class="org-keyword">self</span>.t_repetitions),
-                               (1, <span class="org-keyword">self</span>.y_repetitions),
-                               (2, <span class="org-keyword">self</span>.x_repetitions)),
-                              <span class="org-keyword">self</span>.data)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (t0,y0,x0) -&gt; (t,y,x)</span>
+            <span class="org-keyword">return</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
+                          ((0, <span class="org-keyword">self</span>.t_repetitions),
+                           (1, <span class="org-keyword">self</span>.y_repetitions),
+                           (2, <span class="org-keyword">self</span>.x_repetitions)),
+                          <span class="org-keyword">self</span>.data)
 
 
     <span class="org-keyword">def</span> <span class="org-function-name">getFullyRealizedCube</span>(<span class="org-keyword">self</span>, cache<span class="org-operator">=</span><span class="org-constant">False</span>):
@@ -3433,20 +3436,20 @@ where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
 <span class="org-doc">    - model                :: "rothermel" or "behave" (Optional)</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">effective_wind_speed_mph</span> <span class="org-operator">=</span> m_min_to_mph(effective_wind_speed)
-    <span class="org-keyword">match</span> model:
-        <span class="org-keyword">case</span> <span class="org-string">"rothermel"</span>:
-            <span class="org-keyword">return</span> 1.0 <span class="org-operator">+</span> 0.25 <span class="org-operator">*</span> effective_wind_speed_mph
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Select formula by model</span>
+    <span class="org-keyword">if</span> model <span class="org-operator">==</span> <span class="org-string">"rothermel"</span>:
+        <span class="org-keyword">return</span> 1.0 <span class="org-operator">+</span> 0.25 <span class="org-operator">*</span> effective_wind_speed_mph
 
-        <span class="org-keyword">case</span> <span class="org-string">"behave"</span>:
-            <span class="org-keyword">return</span> <span class="org-builtin">min</span>(8.0,
-                       0.936 <span class="org-operator">*</span> exp(0.1147 <span class="org-operator">*</span> effective_wind_speed_mph)
-                       <span class="org-operator">+</span>
-                       0.461 <span class="org-operator">*</span> exp(<span class="org-operator">-</span>0.0692 <span class="org-operator">*</span> effective_wind_speed_mph)
-                       <span class="org-operator">-</span>
-                       0.397)
+    <span class="org-keyword">elif</span> model <span class="org-operator">==</span> <span class="org-string">"behave"</span>:
+        <span class="org-keyword">return</span> <span class="org-builtin">min</span>(8.0,
+                   0.936 <span class="org-operator">*</span> exp(0.1147 <span class="org-operator">*</span> effective_wind_speed_mph)
+                   <span class="org-operator">+</span>
+                   0.461 <span class="org-operator">*</span> exp(<span class="org-operator">-</span>0.0692 <span class="org-operator">*</span> effective_wind_speed_mph)
+                   <span class="org-operator">-</span>
+                   0.397)
 
-        <span class="org-keyword">case</span> _:
-            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"Invalid input: model must be 'rothermel' or 'behave'."</span>)
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"Invalid input: model must be 'rothermel' or 'behave'."</span>)
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">surface_fire_eccentricity</span>(length_to_width_ratio):
