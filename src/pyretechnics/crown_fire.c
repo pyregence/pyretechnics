@@ -2102,13 +2102,6 @@ static PyObject* __Pyx_PyFloat_SubtractCObj(PyObject *op1, PyObject *op2, double
     (inplace ? PyNumber_InPlaceSubtract(op1, op2) : PyNumber_Subtract(op1, op2))
 #endif
 
-/* StrEquals.proto */
-#if PY_MAJOR_VERSION >= 3
-#define __Pyx_PyString_Equals __Pyx_PyUnicode_Equals
-#else
-#define __Pyx_PyString_Equals __Pyx_PyBytes_Equals
-#endif
-
 /* PyFloatBinop.proto */
 #if !CYTHON_COMPILING_IN_PYPY
 static int __Pyx_PyFloat_BoolEqObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
@@ -2515,7 +2508,7 @@ typedef struct {
   PyObject *__pyx_kp_u__16;
   PyObject *__pyx_n_s__23;
   PyObject *__pyx_n_s__32;
-  PyObject *__pyx_n_s_active_crown;
+  PyObject *__pyx_n_u_active_crown;
   PyObject *__pyx_n_s_active_spread_rate;
   PyObject *__pyx_n_s_adjustment;
   PyObject *__pyx_n_s_as_unit_vector;
@@ -2538,6 +2531,7 @@ typedef struct {
   PyObject *__pyx_n_s_conversion;
   PyObject *__pyx_n_s_cos_w;
   PyObject *__pyx_n_s_critical_spread_rate;
+  PyObject *__pyx_n_u_critical_spread_rate;
   PyObject *__pyx_n_s_crown_fire_behavior;
   PyObject *__pyx_n_s_crown_fire_eccentricity;
   PyObject *__pyx_n_s_crown_fire_max;
@@ -2553,11 +2547,13 @@ typedef struct {
   PyObject *__pyx_n_s_dot;
   PyObject *__pyx_n_s_downwind_direction;
   PyObject *__pyx_n_s_eccentricity;
+  PyObject *__pyx_n_u_eccentricity;
   PyObject *__pyx_n_s_estimated_fine_fuel_moisture;
   PyObject *__pyx_n_s_exp;
-  PyObject *__pyx_n_s_fire_type;
+  PyObject *__pyx_n_u_fire_type;
   PyObject *__pyx_n_s_fireline_intensity;
-  PyObject *__pyx_n_s_flame_length;
+  PyObject *__pyx_n_u_fireline_intensity;
+  PyObject *__pyx_n_u_flame_length;
   PyObject *__pyx_n_s_foliar_moisture;
   PyObject *__pyx_n_s_heat_of_combustion;
   PyObject *__pyx_n_s_import;
@@ -2565,18 +2561,23 @@ typedef struct {
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_n_s_km_hr_to_mph;
   PyObject *__pyx_n_s_length_to_width_ratio;
+  PyObject *__pyx_n_u_length_to_width_ratio;
   PyObject *__pyx_n_s_main;
   PyObject *__pyx_n_s_math;
   PyObject *__pyx_n_s_max_fire_type;
+  PyObject *__pyx_n_u_max_fire_type;
   PyObject *__pyx_n_s_max_fireline_intensity;
+  PyObject *__pyx_n_u_max_fireline_intensity;
   PyObject *__pyx_n_s_max_length_to_width_ratio;
   PyObject *__pyx_n_s_max_spread_direction;
+  PyObject *__pyx_n_u_max_spread_direction;
   PyObject *__pyx_n_s_max_spread_rate;
+  PyObject *__pyx_n_u_max_spread_rate;
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_np;
   PyObject *__pyx_n_s_numpy;
   PyObject *__pyx_n_s_opposite_direction;
-  PyObject *__pyx_n_s_passive_crown;
+  PyObject *__pyx_n_u_passive_crown;
   PyObject *__pyx_n_s_project_wind_and_slope_vectors_3;
   PyObject *__pyx_n_s_pyretechnics;
   PyObject *__pyx_n_s_pyretechnics_conversion;
@@ -2586,10 +2587,13 @@ typedef struct {
   PyObject *__pyx_n_s_sf;
   PyObject *__pyx_n_s_slope;
   PyObject *__pyx_n_s_slope_vector_3d;
+  PyObject *__pyx_n_u_slope_vector_3d;
   PyObject *__pyx_n_s_spec;
   PyObject *__pyx_n_s_spread_direction;
+  PyObject *__pyx_n_u_spread_direction;
   PyObject *__pyx_n_s_spread_info;
   PyObject *__pyx_n_s_spread_rate;
+  PyObject *__pyx_n_u_spread_rate;
   PyObject *__pyx_n_s_sqrt;
   PyObject *__pyx_kp_s_src_pyretechnics_crown_fire_py;
   PyObject *__pyx_n_s_surface_fire;
@@ -2612,6 +2616,7 @@ typedef struct {
   PyObject *__pyx_n_s_wind_speed_10m_to_wind_speed_20f;
   PyObject *__pyx_n_s_wind_speed_20ft_mph;
   PyObject *__pyx_n_s_wind_vector_3d;
+  PyObject *__pyx_n_u_wind_vector_3d;
   PyObject *__pyx_float_0_0;
   PyObject *__pyx_float_0_4;
   PyObject *__pyx_float_1_0;
@@ -2704,7 +2709,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_kp_u__16);
   Py_CLEAR(clear_module_state->__pyx_n_s__23);
   Py_CLEAR(clear_module_state->__pyx_n_s__32);
-  Py_CLEAR(clear_module_state->__pyx_n_s_active_crown);
+  Py_CLEAR(clear_module_state->__pyx_n_u_active_crown);
   Py_CLEAR(clear_module_state->__pyx_n_s_active_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_adjustment);
   Py_CLEAR(clear_module_state->__pyx_n_s_as_unit_vector);
@@ -2727,6 +2732,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_conversion);
   Py_CLEAR(clear_module_state->__pyx_n_s_cos_w);
   Py_CLEAR(clear_module_state->__pyx_n_s_critical_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_critical_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_crown_fire_behavior);
   Py_CLEAR(clear_module_state->__pyx_n_s_crown_fire_eccentricity);
   Py_CLEAR(clear_module_state->__pyx_n_s_crown_fire_max);
@@ -2742,11 +2748,13 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_dot);
   Py_CLEAR(clear_module_state->__pyx_n_s_downwind_direction);
   Py_CLEAR(clear_module_state->__pyx_n_s_eccentricity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_eccentricity);
   Py_CLEAR(clear_module_state->__pyx_n_s_estimated_fine_fuel_moisture);
   Py_CLEAR(clear_module_state->__pyx_n_s_exp);
-  Py_CLEAR(clear_module_state->__pyx_n_s_fire_type);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fire_type);
   Py_CLEAR(clear_module_state->__pyx_n_s_fireline_intensity);
-  Py_CLEAR(clear_module_state->__pyx_n_s_flame_length);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fireline_intensity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_flame_length);
   Py_CLEAR(clear_module_state->__pyx_n_s_foliar_moisture);
   Py_CLEAR(clear_module_state->__pyx_n_s_heat_of_combustion);
   Py_CLEAR(clear_module_state->__pyx_n_s_import);
@@ -2754,18 +2762,23 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_n_s_km_hr_to_mph);
   Py_CLEAR(clear_module_state->__pyx_n_s_length_to_width_ratio);
+  Py_CLEAR(clear_module_state->__pyx_n_u_length_to_width_ratio);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
   Py_CLEAR(clear_module_state->__pyx_n_s_math);
   Py_CLEAR(clear_module_state->__pyx_n_s_max_fire_type);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_fire_type);
   Py_CLEAR(clear_module_state->__pyx_n_s_max_fireline_intensity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_fireline_intensity);
   Py_CLEAR(clear_module_state->__pyx_n_s_max_length_to_width_ratio);
   Py_CLEAR(clear_module_state->__pyx_n_s_max_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_spread_direction);
   Py_CLEAR(clear_module_state->__pyx_n_s_max_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_np);
   Py_CLEAR(clear_module_state->__pyx_n_s_numpy);
   Py_CLEAR(clear_module_state->__pyx_n_s_opposite_direction);
-  Py_CLEAR(clear_module_state->__pyx_n_s_passive_crown);
+  Py_CLEAR(clear_module_state->__pyx_n_u_passive_crown);
   Py_CLEAR(clear_module_state->__pyx_n_s_project_wind_and_slope_vectors_3);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_conversion);
@@ -2775,10 +2788,13 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_sf);
   Py_CLEAR(clear_module_state->__pyx_n_s_slope);
   Py_CLEAR(clear_module_state->__pyx_n_s_slope_vector_3d);
+  Py_CLEAR(clear_module_state->__pyx_n_u_slope_vector_3d);
   Py_CLEAR(clear_module_state->__pyx_n_s_spec);
   Py_CLEAR(clear_module_state->__pyx_n_s_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_spread_direction);
   Py_CLEAR(clear_module_state->__pyx_n_s_spread_info);
   Py_CLEAR(clear_module_state->__pyx_n_s_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_sqrt);
   Py_CLEAR(clear_module_state->__pyx_kp_s_src_pyretechnics_crown_fire_py);
   Py_CLEAR(clear_module_state->__pyx_n_s_surface_fire);
@@ -2801,6 +2817,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_speed_10m_to_wind_speed_20f);
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_speed_20ft_mph);
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_vector_3d);
+  Py_CLEAR(clear_module_state->__pyx_n_u_wind_vector_3d);
   Py_CLEAR(clear_module_state->__pyx_float_0_0);
   Py_CLEAR(clear_module_state->__pyx_float_0_4);
   Py_CLEAR(clear_module_state->__pyx_float_1_0);
@@ -2871,7 +2888,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_kp_u__16);
   Py_VISIT(traverse_module_state->__pyx_n_s__23);
   Py_VISIT(traverse_module_state->__pyx_n_s__32);
-  Py_VISIT(traverse_module_state->__pyx_n_s_active_crown);
+  Py_VISIT(traverse_module_state->__pyx_n_u_active_crown);
   Py_VISIT(traverse_module_state->__pyx_n_s_active_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_adjustment);
   Py_VISIT(traverse_module_state->__pyx_n_s_as_unit_vector);
@@ -2894,6 +2911,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_conversion);
   Py_VISIT(traverse_module_state->__pyx_n_s_cos_w);
   Py_VISIT(traverse_module_state->__pyx_n_s_critical_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_critical_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_crown_fire_behavior);
   Py_VISIT(traverse_module_state->__pyx_n_s_crown_fire_eccentricity);
   Py_VISIT(traverse_module_state->__pyx_n_s_crown_fire_max);
@@ -2909,11 +2927,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_dot);
   Py_VISIT(traverse_module_state->__pyx_n_s_downwind_direction);
   Py_VISIT(traverse_module_state->__pyx_n_s_eccentricity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_eccentricity);
   Py_VISIT(traverse_module_state->__pyx_n_s_estimated_fine_fuel_moisture);
   Py_VISIT(traverse_module_state->__pyx_n_s_exp);
-  Py_VISIT(traverse_module_state->__pyx_n_s_fire_type);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fire_type);
   Py_VISIT(traverse_module_state->__pyx_n_s_fireline_intensity);
-  Py_VISIT(traverse_module_state->__pyx_n_s_flame_length);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fireline_intensity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_flame_length);
   Py_VISIT(traverse_module_state->__pyx_n_s_foliar_moisture);
   Py_VISIT(traverse_module_state->__pyx_n_s_heat_of_combustion);
   Py_VISIT(traverse_module_state->__pyx_n_s_import);
@@ -2921,18 +2941,23 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_n_s_km_hr_to_mph);
   Py_VISIT(traverse_module_state->__pyx_n_s_length_to_width_ratio);
+  Py_VISIT(traverse_module_state->__pyx_n_u_length_to_width_ratio);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
   Py_VISIT(traverse_module_state->__pyx_n_s_math);
   Py_VISIT(traverse_module_state->__pyx_n_s_max_fire_type);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_fire_type);
   Py_VISIT(traverse_module_state->__pyx_n_s_max_fireline_intensity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_fireline_intensity);
   Py_VISIT(traverse_module_state->__pyx_n_s_max_length_to_width_ratio);
   Py_VISIT(traverse_module_state->__pyx_n_s_max_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_spread_direction);
   Py_VISIT(traverse_module_state->__pyx_n_s_max_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_np);
   Py_VISIT(traverse_module_state->__pyx_n_s_numpy);
   Py_VISIT(traverse_module_state->__pyx_n_s_opposite_direction);
-  Py_VISIT(traverse_module_state->__pyx_n_s_passive_crown);
+  Py_VISIT(traverse_module_state->__pyx_n_u_passive_crown);
   Py_VISIT(traverse_module_state->__pyx_n_s_project_wind_and_slope_vectors_3);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_conversion);
@@ -2942,10 +2967,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_sf);
   Py_VISIT(traverse_module_state->__pyx_n_s_slope);
   Py_VISIT(traverse_module_state->__pyx_n_s_slope_vector_3d);
+  Py_VISIT(traverse_module_state->__pyx_n_u_slope_vector_3d);
   Py_VISIT(traverse_module_state->__pyx_n_s_spec);
   Py_VISIT(traverse_module_state->__pyx_n_s_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_spread_direction);
   Py_VISIT(traverse_module_state->__pyx_n_s_spread_info);
   Py_VISIT(traverse_module_state->__pyx_n_s_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_sqrt);
   Py_VISIT(traverse_module_state->__pyx_kp_s_src_pyretechnics_crown_fire_py);
   Py_VISIT(traverse_module_state->__pyx_n_s_surface_fire);
@@ -2968,6 +2996,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_speed_10m_to_wind_speed_20f);
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_speed_20ft_mph);
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_vector_3d);
+  Py_VISIT(traverse_module_state->__pyx_n_u_wind_vector_3d);
   Py_VISIT(traverse_module_state->__pyx_float_0_0);
   Py_VISIT(traverse_module_state->__pyx_float_0_4);
   Py_VISIT(traverse_module_state->__pyx_float_1_0);
@@ -3048,7 +3077,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_kp_u__16 __pyx_mstate_global->__pyx_kp_u__16
 #define __pyx_n_s__23 __pyx_mstate_global->__pyx_n_s__23
 #define __pyx_n_s__32 __pyx_mstate_global->__pyx_n_s__32
-#define __pyx_n_s_active_crown __pyx_mstate_global->__pyx_n_s_active_crown
+#define __pyx_n_u_active_crown __pyx_mstate_global->__pyx_n_u_active_crown
 #define __pyx_n_s_active_spread_rate __pyx_mstate_global->__pyx_n_s_active_spread_rate
 #define __pyx_n_s_adjustment __pyx_mstate_global->__pyx_n_s_adjustment
 #define __pyx_n_s_as_unit_vector __pyx_mstate_global->__pyx_n_s_as_unit_vector
@@ -3071,6 +3100,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_conversion __pyx_mstate_global->__pyx_n_s_conversion
 #define __pyx_n_s_cos_w __pyx_mstate_global->__pyx_n_s_cos_w
 #define __pyx_n_s_critical_spread_rate __pyx_mstate_global->__pyx_n_s_critical_spread_rate
+#define __pyx_n_u_critical_spread_rate __pyx_mstate_global->__pyx_n_u_critical_spread_rate
 #define __pyx_n_s_crown_fire_behavior __pyx_mstate_global->__pyx_n_s_crown_fire_behavior
 #define __pyx_n_s_crown_fire_eccentricity __pyx_mstate_global->__pyx_n_s_crown_fire_eccentricity
 #define __pyx_n_s_crown_fire_max __pyx_mstate_global->__pyx_n_s_crown_fire_max
@@ -3086,11 +3116,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_dot __pyx_mstate_global->__pyx_n_s_dot
 #define __pyx_n_s_downwind_direction __pyx_mstate_global->__pyx_n_s_downwind_direction
 #define __pyx_n_s_eccentricity __pyx_mstate_global->__pyx_n_s_eccentricity
+#define __pyx_n_u_eccentricity __pyx_mstate_global->__pyx_n_u_eccentricity
 #define __pyx_n_s_estimated_fine_fuel_moisture __pyx_mstate_global->__pyx_n_s_estimated_fine_fuel_moisture
 #define __pyx_n_s_exp __pyx_mstate_global->__pyx_n_s_exp
-#define __pyx_n_s_fire_type __pyx_mstate_global->__pyx_n_s_fire_type
+#define __pyx_n_u_fire_type __pyx_mstate_global->__pyx_n_u_fire_type
 #define __pyx_n_s_fireline_intensity __pyx_mstate_global->__pyx_n_s_fireline_intensity
-#define __pyx_n_s_flame_length __pyx_mstate_global->__pyx_n_s_flame_length
+#define __pyx_n_u_fireline_intensity __pyx_mstate_global->__pyx_n_u_fireline_intensity
+#define __pyx_n_u_flame_length __pyx_mstate_global->__pyx_n_u_flame_length
 #define __pyx_n_s_foliar_moisture __pyx_mstate_global->__pyx_n_s_foliar_moisture
 #define __pyx_n_s_heat_of_combustion __pyx_mstate_global->__pyx_n_s_heat_of_combustion
 #define __pyx_n_s_import __pyx_mstate_global->__pyx_n_s_import
@@ -3098,18 +3130,23 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_n_s_km_hr_to_mph __pyx_mstate_global->__pyx_n_s_km_hr_to_mph
 #define __pyx_n_s_length_to_width_ratio __pyx_mstate_global->__pyx_n_s_length_to_width_ratio
+#define __pyx_n_u_length_to_width_ratio __pyx_mstate_global->__pyx_n_u_length_to_width_ratio
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
 #define __pyx_n_s_math __pyx_mstate_global->__pyx_n_s_math
 #define __pyx_n_s_max_fire_type __pyx_mstate_global->__pyx_n_s_max_fire_type
+#define __pyx_n_u_max_fire_type __pyx_mstate_global->__pyx_n_u_max_fire_type
 #define __pyx_n_s_max_fireline_intensity __pyx_mstate_global->__pyx_n_s_max_fireline_intensity
+#define __pyx_n_u_max_fireline_intensity __pyx_mstate_global->__pyx_n_u_max_fireline_intensity
 #define __pyx_n_s_max_length_to_width_ratio __pyx_mstate_global->__pyx_n_s_max_length_to_width_ratio
 #define __pyx_n_s_max_spread_direction __pyx_mstate_global->__pyx_n_s_max_spread_direction
+#define __pyx_n_u_max_spread_direction __pyx_mstate_global->__pyx_n_u_max_spread_direction
 #define __pyx_n_s_max_spread_rate __pyx_mstate_global->__pyx_n_s_max_spread_rate
+#define __pyx_n_u_max_spread_rate __pyx_mstate_global->__pyx_n_u_max_spread_rate
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_np __pyx_mstate_global->__pyx_n_s_np
 #define __pyx_n_s_numpy __pyx_mstate_global->__pyx_n_s_numpy
 #define __pyx_n_s_opposite_direction __pyx_mstate_global->__pyx_n_s_opposite_direction
-#define __pyx_n_s_passive_crown __pyx_mstate_global->__pyx_n_s_passive_crown
+#define __pyx_n_u_passive_crown __pyx_mstate_global->__pyx_n_u_passive_crown
 #define __pyx_n_s_project_wind_and_slope_vectors_3 __pyx_mstate_global->__pyx_n_s_project_wind_and_slope_vectors_3
 #define __pyx_n_s_pyretechnics __pyx_mstate_global->__pyx_n_s_pyretechnics
 #define __pyx_n_s_pyretechnics_conversion __pyx_mstate_global->__pyx_n_s_pyretechnics_conversion
@@ -3119,10 +3156,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_sf __pyx_mstate_global->__pyx_n_s_sf
 #define __pyx_n_s_slope __pyx_mstate_global->__pyx_n_s_slope
 #define __pyx_n_s_slope_vector_3d __pyx_mstate_global->__pyx_n_s_slope_vector_3d
+#define __pyx_n_u_slope_vector_3d __pyx_mstate_global->__pyx_n_u_slope_vector_3d
 #define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
 #define __pyx_n_s_spread_direction __pyx_mstate_global->__pyx_n_s_spread_direction
+#define __pyx_n_u_spread_direction __pyx_mstate_global->__pyx_n_u_spread_direction
 #define __pyx_n_s_spread_info __pyx_mstate_global->__pyx_n_s_spread_info
 #define __pyx_n_s_spread_rate __pyx_mstate_global->__pyx_n_s_spread_rate
+#define __pyx_n_u_spread_rate __pyx_mstate_global->__pyx_n_u_spread_rate
 #define __pyx_n_s_sqrt __pyx_mstate_global->__pyx_n_s_sqrt
 #define __pyx_kp_s_src_pyretechnics_crown_fire_py __pyx_mstate_global->__pyx_kp_s_src_pyretechnics_crown_fire_py
 #define __pyx_n_s_surface_fire __pyx_mstate_global->__pyx_n_s_surface_fire
@@ -3145,6 +3185,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_wind_speed_10m_to_wind_speed_20f __pyx_mstate_global->__pyx_n_s_wind_speed_10m_to_wind_speed_20f
 #define __pyx_n_s_wind_speed_20ft_mph __pyx_mstate_global->__pyx_n_s_wind_speed_20ft_mph
 #define __pyx_n_s_wind_vector_3d __pyx_mstate_global->__pyx_n_s_wind_vector_3d
+#define __pyx_n_u_wind_vector_3d __pyx_mstate_global->__pyx_n_u_wind_vector_3d
 #define __pyx_float_0_0 __pyx_mstate_global->__pyx_float_0_0
 #define __pyx_float_0_4 __pyx_mstate_global->__pyx_float_0_4
 #define __pyx_float_1_0 __pyx_mstate_global->__pyx_float_1_0
@@ -4527,7 +4568,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_10cruz_crown_fire_spread_i
  */
     __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 87, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fire_type, __pyx_n_s_active_crown) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fire_type, __pyx_n_u_active_crown) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":88
  *         return {
@@ -4536,7 +4577,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_10cruz_crown_fire_spread_i
  *             "critical_spread_rate": critical_spread_rate,
  *         }
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_spread_rate, __pyx_v_active_spread_rate) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_spread_rate, __pyx_v_active_spread_rate) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":89
  *             "fire_type"           : "active_crown",
@@ -4545,7 +4586,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_10cruz_crown_fire_spread_i
  *         }
  *     else:
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_critical_spread_rate, __pyx_v_critical_spread_rate) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_critical_spread_rate, __pyx_v_critical_spread_rate) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
     __pyx_r = __pyx_t_1;
     __pyx_t_1 = 0;
     goto __pyx_L0;
@@ -4578,7 +4619,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_10cruz_crown_fire_spread_i
  */
     __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fire_type, __pyx_n_s_passive_crown) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fire_type, __pyx_n_u_passive_crown) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":94
  *         return {
@@ -4611,7 +4652,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_10cruz_crown_fire_spread_i
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
     /* "pyretechnics/crown_fire.py":95
@@ -4621,7 +4662,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_10cruz_crown_fire_spread_i
  *         }
  * # cruz-crown-fire-spread-info ends here
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_critical_spread_rate, __pyx_v_critical_spread_rate) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_critical_spread_rate, __pyx_v_critical_spread_rate) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
     __pyx_r = __pyx_t_1;
     __pyx_t_1 = 0;
     goto __pyx_L0;
@@ -5792,7 +5833,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *     slope_vector_3d = vectors["slope_vector_3d"] # rise/run
  *     # Determine the max spread direction
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vectors, __pyx_n_s_wind_vector_3d); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vectors, __pyx_n_u_wind_vector_3d); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_wind_vector_3d = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5804,7 +5845,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *     # Determine the max spread direction
  *     wind_speed_10m_3d    = vu.vector_magnitude(wind_vector_3d)      # km/hr
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vectors, __pyx_n_s_slope_vector_3d); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_vectors, __pyx_n_u_slope_vector_3d); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_slope_vector_3d = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6013,7 +6054,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *     fireline_intensity    = calc_crown_fireline_intensity(spread_rate, canopy_bulk_density, canopy_height,
  *                                                           canopy_base_height, heat_of_combustion) # kW/m
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_spread_info, __pyx_n_s_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_spread_info, __pyx_n_u_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_spread_rate = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6146,9 +6187,9 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  */
   __pyx_t_1 = __Pyx_PyDict_NewPresized(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_spread_info, __pyx_n_s_fire_type); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_spread_info, __pyx_n_u_fire_type); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_fire_type, __pyx_t_2) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_fire_type, __pyx_t_2) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/crown_fire.py":202
@@ -6158,7 +6199,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *         "max_spread_direction"  : max_spread_direction, # unit vector
  *         "max_fireline_intensity": fireline_intensity,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_spread_rate, __pyx_v_spread_rate) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_spread_rate, __pyx_v_spread_rate) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
 
   /* "pyretechnics/crown_fire.py":203
  *         "max_fire_type"         : spread_info["fire_type"],
@@ -6167,7 +6208,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *         "max_fireline_intensity": fireline_intensity,
  *         "length_to_width_ratio" : length_to_width_ratio,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_spread_direction, __pyx_v_max_spread_direction) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_spread_direction, __pyx_v_max_spread_direction) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
 
   /* "pyretechnics/crown_fire.py":204
  *         "max_spread_rate"       : spread_rate,
@@ -6176,7 +6217,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *         "length_to_width_ratio" : length_to_width_ratio,
  *         "eccentricity"          : eccentricity,
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_fireline_intensity, __pyx_v_fireline_intensity) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_fireline_intensity, __pyx_v_fireline_intensity) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
 
   /* "pyretechnics/crown_fire.py":205
  *         "max_spread_direction"  : max_spread_direction, # unit vector
@@ -6185,7 +6226,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *         "eccentricity"          : eccentricity,
  *         "critical_spread_rate"  : spread_info["critical_spread_rate"],
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_length_to_width_ratio, __pyx_v_length_to_width_ratio) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_length_to_width_ratio, __pyx_v_length_to_width_ratio) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
 
   /* "pyretechnics/crown_fire.py":206
  *         "max_fireline_intensity": fireline_intensity,
@@ -6194,7 +6235,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *         "critical_spread_rate"  : spread_info["critical_spread_rate"],
  *     }
  */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_eccentricity, __pyx_v_eccentricity) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_eccentricity, __pyx_v_eccentricity) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
 
   /* "pyretechnics/crown_fire.py":207
  *         "length_to_width_ratio" : length_to_width_ratio,
@@ -6203,9 +6244,9 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_18calc_crown_fire_behavior
  *     }
  * # crown-fire-behavior-max ends here
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_spread_info, __pyx_n_s_critical_spread_rate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_spread_info, __pyx_n_u_critical_spread_rate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_critical_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_critical_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6401,7 +6442,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *     max_spread_rate        = crown_fire_max["max_spread_rate"]
  *     max_spread_direction   = crown_fire_max["max_spread_direction"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_max_fire_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_max_fire_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_max_fire_type = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6413,7 +6454,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *     max_spread_direction   = crown_fire_max["max_spread_direction"]
  *     max_fireline_intensity = crown_fire_max["max_fireline_intensity"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_max_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_max_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 235, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_max_spread_rate = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6425,7 +6466,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *     max_fireline_intensity = crown_fire_max["max_fireline_intensity"]
  *     eccentricity           = crown_fire_max["eccentricity"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_max_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_max_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 236, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_max_spread_direction = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6437,7 +6478,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *     eccentricity           = crown_fire_max["eccentricity"]
  *     critical_spread_rate   = crown_fire_max["critical_spread_rate"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_max_fireline_intensity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_max_fireline_intensity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_max_fireline_intensity = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6449,7 +6490,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *     critical_spread_rate   = crown_fire_max["critical_spread_rate"]
  *     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_eccentricity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_eccentricity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_eccentricity = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6461,7 +6502,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
  *     cos_w = np.dot(max_spread_direction, np.asarray(spread_direction))
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_critical_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_critical_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_critical_spread_rate = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6594,7 +6635,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  */
     __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fire_type, __pyx_n_s_active_crown) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fire_type, __pyx_n_u_active_crown) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":250
  *         return {
@@ -6603,7 +6644,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *             "spread_direction"  : spread_direction,
  *             "fireline_intensity": max_fireline_intensity * adjustment,
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_rate, __pyx_v_spread_rate) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_rate, __pyx_v_spread_rate) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":251
  *             "fire_type"         : "active_crown",
@@ -6612,7 +6653,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *             "fireline_intensity": max_fireline_intensity * adjustment,
  *         }
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":252
  *             "spread_rate"       : spread_rate,
@@ -6623,7 +6664,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  */
     __pyx_t_2 = PyNumber_Multiply(__pyx_v_max_fireline_intensity, __pyx_v_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -6645,7 +6686,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *         # Max spread rate was passive and directional spread rate remains passive
  *         return {
  */
-  __pyx_t_7 = (__Pyx_PyString_Equals(__pyx_v_max_fire_type, __pyx_n_s_passive_crown, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PyUnicode_Equals(__pyx_v_max_fire_type, __pyx_n_u_passive_crown, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 254, __pyx_L1_error)
   if (__pyx_t_7) {
 
     /* "pyretechnics/crown_fire.py":256
@@ -6666,7 +6707,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  */
     __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fire_type, __pyx_n_s_passive_crown) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fire_type, __pyx_n_u_passive_crown) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":258
  *         return {
@@ -6675,7 +6716,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *             "spread_direction"  : spread_direction,
  *             "fireline_intensity": max_fireline_intensity * adjustment,
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_rate, __pyx_v_spread_rate) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_rate, __pyx_v_spread_rate) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":259
  *             "fire_type"         : "passive_crown",
@@ -6684,7 +6725,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *             "fireline_intensity": max_fireline_intensity * adjustment,
  *         }
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":260
  *             "spread_rate"       : spread_rate,
@@ -6695,7 +6736,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  */
     __pyx_t_2 = PyNumber_Multiply(__pyx_v_max_fireline_intensity, __pyx_v_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 260, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -6729,7 +6770,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  */
     __pyx_t_3 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 265, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fire_type, __pyx_n_s_passive_crown) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fire_type, __pyx_n_u_passive_crown) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":266
  *         return {
@@ -6762,7 +6803,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     }
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_rate, __pyx_t_2) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
     /* "pyretechnics/crown_fire.py":267
@@ -6772,7 +6813,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  *             "fireline_intensity": max_fireline_intensity * adjustment,
  *         }
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":268
  *             "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
@@ -6783,7 +6824,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_20calc_crown_fire_behavior
  */
     __pyx_t_2 = PyNumber_Multiply(__pyx_v_max_fireline_intensity, __pyx_v_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 268, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fireline_intensity, __pyx_t_2) < 0) __PYX_ERR(0, 265, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -6975,7 +7016,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     surface_spread_direction   = surface_fire_behavior["spread_direction"]   # (x, y, z) unit vector
  *     surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_behavior, __pyx_n_s_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 298, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_behavior, __pyx_n_u_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_surface_spread_rate = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6987,7 +7028,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
  *     # Unpack the crown fire behavior values
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_behavior, __pyx_n_s_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_behavior, __pyx_n_u_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_surface_spread_direction = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6999,7 +7040,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     # Unpack the crown fire behavior values
  *     crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive_crown" or "active_crown"
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_behavior, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 300, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_behavior, __pyx_n_u_fireline_intensity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 300, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_surface_fireline_intensity = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7011,7 +7052,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
  *     crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_s_fire_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 302, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_u_fire_type); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 302, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_crown_fire_type = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7023,7 +7064,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
  *     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_s_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 303, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_u_spread_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 303, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_crown_spread_rate = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7035,7 +7076,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
  *     # Determine whether the surface or crown fire has the fastest spread rate
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_s_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 304, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_u_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 304, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_crown_spread_direction = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7047,7 +7088,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *     # Determine whether the surface or crown fire has the fastest spread rate
  *     if surface_spread_rate == 0.0:
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 305, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_behavior, __pyx_n_u_fireline_intensity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 305, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_crown_fireline_intensity = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7162,7 +7203,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  */
     __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 318, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fire_type, __pyx_v_crown_fire_type) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fire_type, __pyx_v_crown_fire_type) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":319
  *         return {
@@ -7171,7 +7212,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *             "spread_direction"  : surface_spread_direction,
  *             "fireline_intensity": combined_fireline_intensity,
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_spread_rate, __pyx_v_surface_spread_rate) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_spread_rate, __pyx_v_surface_spread_rate) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":320
  *             "fire_type"         : crown_fire_type,
@@ -7180,7 +7221,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *             "fireline_intensity": combined_fireline_intensity,
  *             "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_spread_direction, __pyx_v_surface_spread_direction) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_spread_direction, __pyx_v_surface_spread_direction) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":321
  *             "spread_rate"       : surface_spread_rate,
@@ -7189,7 +7230,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *             "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
  *         }
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fireline_intensity, __pyx_v_combined_fireline_intensity) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fireline_intensity, __pyx_v_combined_fireline_intensity) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":322
  *             "spread_direction"  : surface_spread_direction,
@@ -7225,7 +7266,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_flame_length, __pyx_t_3) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_flame_length, __pyx_t_3) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_r = __pyx_t_1;
     __pyx_t_1 = 0;
@@ -7301,7 +7342,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  */
     __pyx_t_1 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 329, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fire_type, __pyx_v_crown_fire_type) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fire_type, __pyx_v_crown_fire_type) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":330
  *         return {
@@ -7310,7 +7351,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *             "spread_direction"  : crown_spread_direction,
  *             "fireline_intensity": combined_fireline_intensity,
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_spread_rate, __pyx_v_crown_spread_rate) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_spread_rate, __pyx_v_crown_spread_rate) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":331
  *             "fire_type"         : crown_fire_type,
@@ -7319,7 +7360,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *             "fireline_intensity": combined_fireline_intensity,
  *             "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_spread_direction, __pyx_v_crown_spread_direction) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_spread_direction, __pyx_v_crown_spread_direction) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":332
  *             "spread_rate"       : crown_spread_rate,
@@ -7328,7 +7369,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
  *             "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
  *         }
  */
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fireline_intensity, __pyx_v_combined_fireline_intensity) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fireline_intensity, __pyx_v_combined_fireline_intensity) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
 
     /* "pyretechnics/crown_fire.py":333
  *             "spread_direction"  : crown_spread_direction,
@@ -7364,7 +7405,7 @@ static PyObject *__pyx_pf_12pyretechnics_10crown_fire_22calc_combined_fire_behav
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
-    if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_flame_length, __pyx_t_3) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_flame_length, __pyx_t_3) < 0) __PYX_ERR(0, 329, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_r = __pyx_t_1;
     __pyx_t_1 = 0;
@@ -7422,7 +7463,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_kp_u__16, __pyx_k__16, sizeof(__pyx_k__16), 0, 1, 0, 0},
     {&__pyx_n_s__23, __pyx_k__23, sizeof(__pyx_k__23), 0, 0, 1, 1},
     {&__pyx_n_s__32, __pyx_k__32, sizeof(__pyx_k__32), 0, 0, 1, 1},
-    {&__pyx_n_s_active_crown, __pyx_k_active_crown, sizeof(__pyx_k_active_crown), 0, 0, 1, 1},
+    {&__pyx_n_u_active_crown, __pyx_k_active_crown, sizeof(__pyx_k_active_crown), 0, 1, 0, 1},
     {&__pyx_n_s_active_spread_rate, __pyx_k_active_spread_rate, sizeof(__pyx_k_active_spread_rate), 0, 0, 1, 1},
     {&__pyx_n_s_adjustment, __pyx_k_adjustment, sizeof(__pyx_k_adjustment), 0, 0, 1, 1},
     {&__pyx_n_s_as_unit_vector, __pyx_k_as_unit_vector, sizeof(__pyx_k_as_unit_vector), 0, 0, 1, 1},
@@ -7445,6 +7486,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_conversion, __pyx_k_conversion, sizeof(__pyx_k_conversion), 0, 0, 1, 1},
     {&__pyx_n_s_cos_w, __pyx_k_cos_w, sizeof(__pyx_k_cos_w), 0, 0, 1, 1},
     {&__pyx_n_s_critical_spread_rate, __pyx_k_critical_spread_rate, sizeof(__pyx_k_critical_spread_rate), 0, 0, 1, 1},
+    {&__pyx_n_u_critical_spread_rate, __pyx_k_critical_spread_rate, sizeof(__pyx_k_critical_spread_rate), 0, 1, 0, 1},
     {&__pyx_n_s_crown_fire_behavior, __pyx_k_crown_fire_behavior, sizeof(__pyx_k_crown_fire_behavior), 0, 0, 1, 1},
     {&__pyx_n_s_crown_fire_eccentricity, __pyx_k_crown_fire_eccentricity, sizeof(__pyx_k_crown_fire_eccentricity), 0, 0, 1, 1},
     {&__pyx_n_s_crown_fire_max, __pyx_k_crown_fire_max, sizeof(__pyx_k_crown_fire_max), 0, 0, 1, 1},
@@ -7460,11 +7502,13 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_dot, __pyx_k_dot, sizeof(__pyx_k_dot), 0, 0, 1, 1},
     {&__pyx_n_s_downwind_direction, __pyx_k_downwind_direction, sizeof(__pyx_k_downwind_direction), 0, 0, 1, 1},
     {&__pyx_n_s_eccentricity, __pyx_k_eccentricity, sizeof(__pyx_k_eccentricity), 0, 0, 1, 1},
+    {&__pyx_n_u_eccentricity, __pyx_k_eccentricity, sizeof(__pyx_k_eccentricity), 0, 1, 0, 1},
     {&__pyx_n_s_estimated_fine_fuel_moisture, __pyx_k_estimated_fine_fuel_moisture, sizeof(__pyx_k_estimated_fine_fuel_moisture), 0, 0, 1, 1},
     {&__pyx_n_s_exp, __pyx_k_exp, sizeof(__pyx_k_exp), 0, 0, 1, 1},
-    {&__pyx_n_s_fire_type, __pyx_k_fire_type, sizeof(__pyx_k_fire_type), 0, 0, 1, 1},
+    {&__pyx_n_u_fire_type, __pyx_k_fire_type, sizeof(__pyx_k_fire_type), 0, 1, 0, 1},
     {&__pyx_n_s_fireline_intensity, __pyx_k_fireline_intensity, sizeof(__pyx_k_fireline_intensity), 0, 0, 1, 1},
-    {&__pyx_n_s_flame_length, __pyx_k_flame_length, sizeof(__pyx_k_flame_length), 0, 0, 1, 1},
+    {&__pyx_n_u_fireline_intensity, __pyx_k_fireline_intensity, sizeof(__pyx_k_fireline_intensity), 0, 1, 0, 1},
+    {&__pyx_n_u_flame_length, __pyx_k_flame_length, sizeof(__pyx_k_flame_length), 0, 1, 0, 1},
     {&__pyx_n_s_foliar_moisture, __pyx_k_foliar_moisture, sizeof(__pyx_k_foliar_moisture), 0, 0, 1, 1},
     {&__pyx_n_s_heat_of_combustion, __pyx_k_heat_of_combustion, sizeof(__pyx_k_heat_of_combustion), 0, 0, 1, 1},
     {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
@@ -7472,18 +7516,23 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_n_s_km_hr_to_mph, __pyx_k_km_hr_to_mph, sizeof(__pyx_k_km_hr_to_mph), 0, 0, 1, 1},
     {&__pyx_n_s_length_to_width_ratio, __pyx_k_length_to_width_ratio, sizeof(__pyx_k_length_to_width_ratio), 0, 0, 1, 1},
+    {&__pyx_n_u_length_to_width_ratio, __pyx_k_length_to_width_ratio, sizeof(__pyx_k_length_to_width_ratio), 0, 1, 0, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
     {&__pyx_n_s_math, __pyx_k_math, sizeof(__pyx_k_math), 0, 0, 1, 1},
     {&__pyx_n_s_max_fire_type, __pyx_k_max_fire_type, sizeof(__pyx_k_max_fire_type), 0, 0, 1, 1},
+    {&__pyx_n_u_max_fire_type, __pyx_k_max_fire_type, sizeof(__pyx_k_max_fire_type), 0, 1, 0, 1},
     {&__pyx_n_s_max_fireline_intensity, __pyx_k_max_fireline_intensity, sizeof(__pyx_k_max_fireline_intensity), 0, 0, 1, 1},
+    {&__pyx_n_u_max_fireline_intensity, __pyx_k_max_fireline_intensity, sizeof(__pyx_k_max_fireline_intensity), 0, 1, 0, 1},
     {&__pyx_n_s_max_length_to_width_ratio, __pyx_k_max_length_to_width_ratio, sizeof(__pyx_k_max_length_to_width_ratio), 0, 0, 1, 1},
     {&__pyx_n_s_max_spread_direction, __pyx_k_max_spread_direction, sizeof(__pyx_k_max_spread_direction), 0, 0, 1, 1},
+    {&__pyx_n_u_max_spread_direction, __pyx_k_max_spread_direction, sizeof(__pyx_k_max_spread_direction), 0, 1, 0, 1},
     {&__pyx_n_s_max_spread_rate, __pyx_k_max_spread_rate, sizeof(__pyx_k_max_spread_rate), 0, 0, 1, 1},
+    {&__pyx_n_u_max_spread_rate, __pyx_k_max_spread_rate, sizeof(__pyx_k_max_spread_rate), 0, 1, 0, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
     {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
     {&__pyx_n_s_opposite_direction, __pyx_k_opposite_direction, sizeof(__pyx_k_opposite_direction), 0, 0, 1, 1},
-    {&__pyx_n_s_passive_crown, __pyx_k_passive_crown, sizeof(__pyx_k_passive_crown), 0, 0, 1, 1},
+    {&__pyx_n_u_passive_crown, __pyx_k_passive_crown, sizeof(__pyx_k_passive_crown), 0, 1, 0, 1},
     {&__pyx_n_s_project_wind_and_slope_vectors_3, __pyx_k_project_wind_and_slope_vectors_3, sizeof(__pyx_k_project_wind_and_slope_vectors_3), 0, 0, 1, 1},
     {&__pyx_n_s_pyretechnics, __pyx_k_pyretechnics, sizeof(__pyx_k_pyretechnics), 0, 0, 1, 1},
     {&__pyx_n_s_pyretechnics_conversion, __pyx_k_pyretechnics_conversion, sizeof(__pyx_k_pyretechnics_conversion), 0, 0, 1, 1},
@@ -7493,10 +7542,13 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_sf, __pyx_k_sf, sizeof(__pyx_k_sf), 0, 0, 1, 1},
     {&__pyx_n_s_slope, __pyx_k_slope, sizeof(__pyx_k_slope), 0, 0, 1, 1},
     {&__pyx_n_s_slope_vector_3d, __pyx_k_slope_vector_3d, sizeof(__pyx_k_slope_vector_3d), 0, 0, 1, 1},
+    {&__pyx_n_u_slope_vector_3d, __pyx_k_slope_vector_3d, sizeof(__pyx_k_slope_vector_3d), 0, 1, 0, 1},
     {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
     {&__pyx_n_s_spread_direction, __pyx_k_spread_direction, sizeof(__pyx_k_spread_direction), 0, 0, 1, 1},
+    {&__pyx_n_u_spread_direction, __pyx_k_spread_direction, sizeof(__pyx_k_spread_direction), 0, 1, 0, 1},
     {&__pyx_n_s_spread_info, __pyx_k_spread_info, sizeof(__pyx_k_spread_info), 0, 0, 1, 1},
     {&__pyx_n_s_spread_rate, __pyx_k_spread_rate, sizeof(__pyx_k_spread_rate), 0, 0, 1, 1},
+    {&__pyx_n_u_spread_rate, __pyx_k_spread_rate, sizeof(__pyx_k_spread_rate), 0, 1, 0, 1},
     {&__pyx_n_s_sqrt, __pyx_k_sqrt, sizeof(__pyx_k_sqrt), 0, 0, 1, 1},
     {&__pyx_kp_s_src_pyretechnics_crown_fire_py, __pyx_k_src_pyretechnics_crown_fire_py, sizeof(__pyx_k_src_pyretechnics_crown_fire_py), 0, 0, 1, 0},
     {&__pyx_n_s_surface_fire, __pyx_k_surface_fire, sizeof(__pyx_k_surface_fire), 0, 0, 1, 1},
@@ -7519,6 +7571,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_wind_speed_10m_to_wind_speed_20f, __pyx_k_wind_speed_10m_to_wind_speed_20f, sizeof(__pyx_k_wind_speed_10m_to_wind_speed_20f), 0, 0, 1, 1},
     {&__pyx_n_s_wind_speed_20ft_mph, __pyx_k_wind_speed_20ft_mph, sizeof(__pyx_k_wind_speed_20ft_mph), 0, 0, 1, 1},
     {&__pyx_n_s_wind_vector_3d, __pyx_k_wind_vector_3d, sizeof(__pyx_k_wind_vector_3d), 0, 0, 1, 1},
+    {&__pyx_n_u_wind_vector_3d, __pyx_k_wind_vector_3d, sizeof(__pyx_k_wind_vector_3d), 0, 1, 0, 1},
     {0, 0, 0, 0, 0, 0, 0}
   };
   return __Pyx_InitStrings(__pyx_string_tab);

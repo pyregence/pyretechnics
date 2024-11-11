@@ -2426,27 +2426,30 @@ typedef struct {
   PyObject *__pyx_n_s__4;
   PyObject *__pyx_n_s__8;
   PyObject *__pyx_n_s_asyncio_coroutines;
-  PyObject *__pyx_n_s_bool8;
+  PyObject *__pyx_n_u_bool8;
   PyObject *__pyx_n_s_burn_cells;
   PyObject *__pyx_n_s_cline_in_traceback;
   PyObject *__pyx_n_s_config_dict;
+  PyObject *__pyx_n_u_config_dict;
   PyObject *__pyx_n_s_copy;
-  PyObject *__pyx_n_s_crown_eccentricity;
+  PyObject *__pyx_n_u_crown_eccentricity;
   PyObject *__pyx_n_s_dtype;
-  PyObject *__pyx_n_s_eulerian_level_set_phi_field;
-  PyObject *__pyx_n_s_fire_type;
-  PyObject *__pyx_n_s_firebrand_count;
-  PyObject *__pyx_n_s_firebrand_ignition;
-  PyObject *__pyx_n_s_float16;
-  PyObject *__pyx_n_s_float32;
+  PyObject *__pyx_n_u_eulerian_level_set_phi_field;
+  PyObject *__pyx_n_u_fire_type;
+  PyObject *__pyx_n_u_firebrand_count;
+  PyObject *__pyx_n_u_firebrand_ignition;
+  PyObject *__pyx_n_u_float16;
+  PyObject *__pyx_n_u_float32;
   PyObject *__pyx_n_s_full;
   PyObject *__pyx_n_s_get;
   PyObject *__pyx_n_s_grow_fire;
   PyObject *__pyx_n_s_ignited_cells_set;
+  PyObject *__pyx_n_u_ignited_cells_set;
   PyObject *__pyx_n_s_import;
   PyObject *__pyx_n_s_initial_value;
   PyObject *__pyx_n_s_initializing;
   PyObject *__pyx_n_s_input_layer_dict;
+  PyObject *__pyx_n_u_input_layer_dict;
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_n_s_layer;
   PyObject *__pyx_n_s_layer_dict;
@@ -2454,14 +2457,14 @@ typedef struct {
   PyObject *__pyx_n_s_layer_shape;
   PyObject *__pyx_n_s_layer_type;
   PyObject *__pyx_n_s_main;
-  PyObject *__pyx_n_s_max_crown_fireline_intensity;
-  PyObject *__pyx_n_s_max_crown_flame_length;
-  PyObject *__pyx_n_s_max_crown_spread_direction;
-  PyObject *__pyx_n_s_max_crown_spread_rate;
-  PyObject *__pyx_n_s_max_surface_fireline_intensity;
-  PyObject *__pyx_n_s_max_surface_flame_length;
-  PyObject *__pyx_n_s_max_surface_spread_direction;
-  PyObject *__pyx_n_s_max_surface_spread_rate;
+  PyObject *__pyx_n_u_max_crown_fireline_intensity;
+  PyObject *__pyx_n_u_max_crown_flame_length;
+  PyObject *__pyx_n_u_max_crown_spread_direction;
+  PyObject *__pyx_n_u_max_crown_spread_rate;
+  PyObject *__pyx_n_u_max_surface_fireline_intensity;
+  PyObject *__pyx_n_u_max_surface_flame_length;
+  PyObject *__pyx_n_u_max_surface_spread_direction;
+  PyObject *__pyx_n_u_max_surface_spread_rate;
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_nan;
   PyObject *__pyx_n_s_np;
@@ -2470,26 +2473,29 @@ typedef struct {
   PyObject *__pyx_n_s_num_timesteps;
   PyObject *__pyx_n_s_numpy;
   PyObject *__pyx_n_s_output_layer_dict;
+  PyObject *__pyx_n_u_output_layer_dict;
   PyObject *__pyx_n_s_overwrite_layers;
   PyObject *__pyx_n_s_overwrite_outputs;
-  PyObject *__pyx_n_s_perimeter_fireline_intensity;
-  PyObject *__pyx_n_s_perimeter_flame_length;
-  PyObject *__pyx_n_s_perimeter_spread_direction;
-  PyObject *__pyx_n_s_perimeter_spread_rate;
+  PyObject *__pyx_n_u_overwrite_outputs;
+  PyObject *__pyx_n_u_perimeter_fireline_intensity;
+  PyObject *__pyx_n_u_perimeter_flame_length;
+  PyObject *__pyx_n_u_perimeter_spread_direction;
+  PyObject *__pyx_n_u_perimeter_spread_rate;
   PyObject *__pyx_n_s_pyretechnics_fire_spread;
   PyObject *__pyx_n_s_random;
-  PyObject *__pyx_n_s_random_seed;
+  PyObject *__pyx_n_u_random_seed;
   PyObject *__pyx_n_s_seed;
   PyObject *__pyx_n_s_simulation_clock;
-  PyObject *__pyx_n_s_simulation_shape;
+  PyObject *__pyx_n_u_simulation_clock;
+  PyObject *__pyx_n_u_simulation_shape;
   PyObject *__pyx_n_s_spec;
   PyObject *__pyx_kp_s_src_pyretechnics_fire_spread_py;
   PyObject *__pyx_n_s_supply_layer;
-  PyObject *__pyx_n_s_surface_eccentricity;
+  PyObject *__pyx_n_u_surface_eccentricity;
   PyObject *__pyx_n_s_test;
-  PyObject *__pyx_n_s_time_of_arrival;
-  PyObject *__pyx_n_s_uint32;
-  PyObject *__pyx_n_s_uint8;
+  PyObject *__pyx_n_u_time_of_arrival;
+  PyObject *__pyx_n_u_uint32;
+  PyObject *__pyx_n_u_uint8;
   PyObject *__pyx_n_s_world_state;
   PyObject *__pyx_int_0;
   PyObject *__pyx_codeobj_;
@@ -2543,27 +2549,30 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s__4);
   Py_CLEAR(clear_module_state->__pyx_n_s__8);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
-  Py_CLEAR(clear_module_state->__pyx_n_s_bool8);
+  Py_CLEAR(clear_module_state->__pyx_n_u_bool8);
   Py_CLEAR(clear_module_state->__pyx_n_s_burn_cells);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
   Py_CLEAR(clear_module_state->__pyx_n_s_config_dict);
+  Py_CLEAR(clear_module_state->__pyx_n_u_config_dict);
   Py_CLEAR(clear_module_state->__pyx_n_s_copy);
-  Py_CLEAR(clear_module_state->__pyx_n_s_crown_eccentricity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_crown_eccentricity);
   Py_CLEAR(clear_module_state->__pyx_n_s_dtype);
-  Py_CLEAR(clear_module_state->__pyx_n_s_eulerian_level_set_phi_field);
-  Py_CLEAR(clear_module_state->__pyx_n_s_fire_type);
-  Py_CLEAR(clear_module_state->__pyx_n_s_firebrand_count);
-  Py_CLEAR(clear_module_state->__pyx_n_s_firebrand_ignition);
-  Py_CLEAR(clear_module_state->__pyx_n_s_float16);
-  Py_CLEAR(clear_module_state->__pyx_n_s_float32);
+  Py_CLEAR(clear_module_state->__pyx_n_u_eulerian_level_set_phi_field);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fire_type);
+  Py_CLEAR(clear_module_state->__pyx_n_u_firebrand_count);
+  Py_CLEAR(clear_module_state->__pyx_n_u_firebrand_ignition);
+  Py_CLEAR(clear_module_state->__pyx_n_u_float16);
+  Py_CLEAR(clear_module_state->__pyx_n_u_float32);
   Py_CLEAR(clear_module_state->__pyx_n_s_full);
   Py_CLEAR(clear_module_state->__pyx_n_s_get);
   Py_CLEAR(clear_module_state->__pyx_n_s_grow_fire);
   Py_CLEAR(clear_module_state->__pyx_n_s_ignited_cells_set);
+  Py_CLEAR(clear_module_state->__pyx_n_u_ignited_cells_set);
   Py_CLEAR(clear_module_state->__pyx_n_s_import);
   Py_CLEAR(clear_module_state->__pyx_n_s_initial_value);
   Py_CLEAR(clear_module_state->__pyx_n_s_initializing);
   Py_CLEAR(clear_module_state->__pyx_n_s_input_layer_dict);
+  Py_CLEAR(clear_module_state->__pyx_n_u_input_layer_dict);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_n_s_layer);
   Py_CLEAR(clear_module_state->__pyx_n_s_layer_dict);
@@ -2571,14 +2580,14 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_layer_shape);
   Py_CLEAR(clear_module_state->__pyx_n_s_layer_type);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_crown_fireline_intensity);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_crown_flame_length);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_crown_spread_direction);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_crown_spread_rate);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_surface_fireline_intensity);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_surface_flame_length);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_surface_spread_direction);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_surface_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_crown_fireline_intensity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_crown_flame_length);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_crown_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_crown_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_surface_fireline_intensity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_surface_flame_length);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_surface_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_surface_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_nan);
   Py_CLEAR(clear_module_state->__pyx_n_s_np);
@@ -2587,26 +2596,29 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_num_timesteps);
   Py_CLEAR(clear_module_state->__pyx_n_s_numpy);
   Py_CLEAR(clear_module_state->__pyx_n_s_output_layer_dict);
+  Py_CLEAR(clear_module_state->__pyx_n_u_output_layer_dict);
   Py_CLEAR(clear_module_state->__pyx_n_s_overwrite_layers);
   Py_CLEAR(clear_module_state->__pyx_n_s_overwrite_outputs);
-  Py_CLEAR(clear_module_state->__pyx_n_s_perimeter_fireline_intensity);
-  Py_CLEAR(clear_module_state->__pyx_n_s_perimeter_flame_length);
-  Py_CLEAR(clear_module_state->__pyx_n_s_perimeter_spread_direction);
-  Py_CLEAR(clear_module_state->__pyx_n_s_perimeter_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_overwrite_outputs);
+  Py_CLEAR(clear_module_state->__pyx_n_u_perimeter_fireline_intensity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_perimeter_flame_length);
+  Py_CLEAR(clear_module_state->__pyx_n_u_perimeter_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_perimeter_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_fire_spread);
   Py_CLEAR(clear_module_state->__pyx_n_s_random);
-  Py_CLEAR(clear_module_state->__pyx_n_s_random_seed);
+  Py_CLEAR(clear_module_state->__pyx_n_u_random_seed);
   Py_CLEAR(clear_module_state->__pyx_n_s_seed);
   Py_CLEAR(clear_module_state->__pyx_n_s_simulation_clock);
-  Py_CLEAR(clear_module_state->__pyx_n_s_simulation_shape);
+  Py_CLEAR(clear_module_state->__pyx_n_u_simulation_clock);
+  Py_CLEAR(clear_module_state->__pyx_n_u_simulation_shape);
   Py_CLEAR(clear_module_state->__pyx_n_s_spec);
   Py_CLEAR(clear_module_state->__pyx_kp_s_src_pyretechnics_fire_spread_py);
   Py_CLEAR(clear_module_state->__pyx_n_s_supply_layer);
-  Py_CLEAR(clear_module_state->__pyx_n_s_surface_eccentricity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_surface_eccentricity);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
-  Py_CLEAR(clear_module_state->__pyx_n_s_time_of_arrival);
-  Py_CLEAR(clear_module_state->__pyx_n_s_uint32);
-  Py_CLEAR(clear_module_state->__pyx_n_s_uint8);
+  Py_CLEAR(clear_module_state->__pyx_n_u_time_of_arrival);
+  Py_CLEAR(clear_module_state->__pyx_n_u_uint32);
+  Py_CLEAR(clear_module_state->__pyx_n_u_uint8);
   Py_CLEAR(clear_module_state->__pyx_n_s_world_state);
   Py_CLEAR(clear_module_state->__pyx_int_0);
   Py_CLEAR(clear_module_state->__pyx_codeobj_);
@@ -2638,27 +2650,30 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s__4);
   Py_VISIT(traverse_module_state->__pyx_n_s__8);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
-  Py_VISIT(traverse_module_state->__pyx_n_s_bool8);
+  Py_VISIT(traverse_module_state->__pyx_n_u_bool8);
   Py_VISIT(traverse_module_state->__pyx_n_s_burn_cells);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
   Py_VISIT(traverse_module_state->__pyx_n_s_config_dict);
+  Py_VISIT(traverse_module_state->__pyx_n_u_config_dict);
   Py_VISIT(traverse_module_state->__pyx_n_s_copy);
-  Py_VISIT(traverse_module_state->__pyx_n_s_crown_eccentricity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_crown_eccentricity);
   Py_VISIT(traverse_module_state->__pyx_n_s_dtype);
-  Py_VISIT(traverse_module_state->__pyx_n_s_eulerian_level_set_phi_field);
-  Py_VISIT(traverse_module_state->__pyx_n_s_fire_type);
-  Py_VISIT(traverse_module_state->__pyx_n_s_firebrand_count);
-  Py_VISIT(traverse_module_state->__pyx_n_s_firebrand_ignition);
-  Py_VISIT(traverse_module_state->__pyx_n_s_float16);
-  Py_VISIT(traverse_module_state->__pyx_n_s_float32);
+  Py_VISIT(traverse_module_state->__pyx_n_u_eulerian_level_set_phi_field);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fire_type);
+  Py_VISIT(traverse_module_state->__pyx_n_u_firebrand_count);
+  Py_VISIT(traverse_module_state->__pyx_n_u_firebrand_ignition);
+  Py_VISIT(traverse_module_state->__pyx_n_u_float16);
+  Py_VISIT(traverse_module_state->__pyx_n_u_float32);
   Py_VISIT(traverse_module_state->__pyx_n_s_full);
   Py_VISIT(traverse_module_state->__pyx_n_s_get);
   Py_VISIT(traverse_module_state->__pyx_n_s_grow_fire);
   Py_VISIT(traverse_module_state->__pyx_n_s_ignited_cells_set);
+  Py_VISIT(traverse_module_state->__pyx_n_u_ignited_cells_set);
   Py_VISIT(traverse_module_state->__pyx_n_s_import);
   Py_VISIT(traverse_module_state->__pyx_n_s_initial_value);
   Py_VISIT(traverse_module_state->__pyx_n_s_initializing);
   Py_VISIT(traverse_module_state->__pyx_n_s_input_layer_dict);
+  Py_VISIT(traverse_module_state->__pyx_n_u_input_layer_dict);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_n_s_layer);
   Py_VISIT(traverse_module_state->__pyx_n_s_layer_dict);
@@ -2666,14 +2681,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_layer_shape);
   Py_VISIT(traverse_module_state->__pyx_n_s_layer_type);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_crown_fireline_intensity);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_crown_flame_length);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_crown_spread_direction);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_crown_spread_rate);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_surface_fireline_intensity);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_surface_flame_length);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_surface_spread_direction);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_surface_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_crown_fireline_intensity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_crown_flame_length);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_crown_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_crown_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_surface_fireline_intensity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_surface_flame_length);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_surface_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_surface_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_nan);
   Py_VISIT(traverse_module_state->__pyx_n_s_np);
@@ -2682,26 +2697,29 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_num_timesteps);
   Py_VISIT(traverse_module_state->__pyx_n_s_numpy);
   Py_VISIT(traverse_module_state->__pyx_n_s_output_layer_dict);
+  Py_VISIT(traverse_module_state->__pyx_n_u_output_layer_dict);
   Py_VISIT(traverse_module_state->__pyx_n_s_overwrite_layers);
   Py_VISIT(traverse_module_state->__pyx_n_s_overwrite_outputs);
-  Py_VISIT(traverse_module_state->__pyx_n_s_perimeter_fireline_intensity);
-  Py_VISIT(traverse_module_state->__pyx_n_s_perimeter_flame_length);
-  Py_VISIT(traverse_module_state->__pyx_n_s_perimeter_spread_direction);
-  Py_VISIT(traverse_module_state->__pyx_n_s_perimeter_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_overwrite_outputs);
+  Py_VISIT(traverse_module_state->__pyx_n_u_perimeter_fireline_intensity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_perimeter_flame_length);
+  Py_VISIT(traverse_module_state->__pyx_n_u_perimeter_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_perimeter_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_fire_spread);
   Py_VISIT(traverse_module_state->__pyx_n_s_random);
-  Py_VISIT(traverse_module_state->__pyx_n_s_random_seed);
+  Py_VISIT(traverse_module_state->__pyx_n_u_random_seed);
   Py_VISIT(traverse_module_state->__pyx_n_s_seed);
   Py_VISIT(traverse_module_state->__pyx_n_s_simulation_clock);
-  Py_VISIT(traverse_module_state->__pyx_n_s_simulation_shape);
+  Py_VISIT(traverse_module_state->__pyx_n_u_simulation_clock);
+  Py_VISIT(traverse_module_state->__pyx_n_u_simulation_shape);
   Py_VISIT(traverse_module_state->__pyx_n_s_spec);
   Py_VISIT(traverse_module_state->__pyx_kp_s_src_pyretechnics_fire_spread_py);
   Py_VISIT(traverse_module_state->__pyx_n_s_supply_layer);
-  Py_VISIT(traverse_module_state->__pyx_n_s_surface_eccentricity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_surface_eccentricity);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
-  Py_VISIT(traverse_module_state->__pyx_n_s_time_of_arrival);
-  Py_VISIT(traverse_module_state->__pyx_n_s_uint32);
-  Py_VISIT(traverse_module_state->__pyx_n_s_uint8);
+  Py_VISIT(traverse_module_state->__pyx_n_u_time_of_arrival);
+  Py_VISIT(traverse_module_state->__pyx_n_u_uint32);
+  Py_VISIT(traverse_module_state->__pyx_n_u_uint8);
   Py_VISIT(traverse_module_state->__pyx_n_s_world_state);
   Py_VISIT(traverse_module_state->__pyx_int_0);
   Py_VISIT(traverse_module_state->__pyx_codeobj_);
@@ -2743,27 +2761,30 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s__4 __pyx_mstate_global->__pyx_n_s__4
 #define __pyx_n_s__8 __pyx_mstate_global->__pyx_n_s__8
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
-#define __pyx_n_s_bool8 __pyx_mstate_global->__pyx_n_s_bool8
+#define __pyx_n_u_bool8 __pyx_mstate_global->__pyx_n_u_bool8
 #define __pyx_n_s_burn_cells __pyx_mstate_global->__pyx_n_s_burn_cells
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
 #define __pyx_n_s_config_dict __pyx_mstate_global->__pyx_n_s_config_dict
+#define __pyx_n_u_config_dict __pyx_mstate_global->__pyx_n_u_config_dict
 #define __pyx_n_s_copy __pyx_mstate_global->__pyx_n_s_copy
-#define __pyx_n_s_crown_eccentricity __pyx_mstate_global->__pyx_n_s_crown_eccentricity
+#define __pyx_n_u_crown_eccentricity __pyx_mstate_global->__pyx_n_u_crown_eccentricity
 #define __pyx_n_s_dtype __pyx_mstate_global->__pyx_n_s_dtype
-#define __pyx_n_s_eulerian_level_set_phi_field __pyx_mstate_global->__pyx_n_s_eulerian_level_set_phi_field
-#define __pyx_n_s_fire_type __pyx_mstate_global->__pyx_n_s_fire_type
-#define __pyx_n_s_firebrand_count __pyx_mstate_global->__pyx_n_s_firebrand_count
-#define __pyx_n_s_firebrand_ignition __pyx_mstate_global->__pyx_n_s_firebrand_ignition
-#define __pyx_n_s_float16 __pyx_mstate_global->__pyx_n_s_float16
-#define __pyx_n_s_float32 __pyx_mstate_global->__pyx_n_s_float32
+#define __pyx_n_u_eulerian_level_set_phi_field __pyx_mstate_global->__pyx_n_u_eulerian_level_set_phi_field
+#define __pyx_n_u_fire_type __pyx_mstate_global->__pyx_n_u_fire_type
+#define __pyx_n_u_firebrand_count __pyx_mstate_global->__pyx_n_u_firebrand_count
+#define __pyx_n_u_firebrand_ignition __pyx_mstate_global->__pyx_n_u_firebrand_ignition
+#define __pyx_n_u_float16 __pyx_mstate_global->__pyx_n_u_float16
+#define __pyx_n_u_float32 __pyx_mstate_global->__pyx_n_u_float32
 #define __pyx_n_s_full __pyx_mstate_global->__pyx_n_s_full
 #define __pyx_n_s_get __pyx_mstate_global->__pyx_n_s_get
 #define __pyx_n_s_grow_fire __pyx_mstate_global->__pyx_n_s_grow_fire
 #define __pyx_n_s_ignited_cells_set __pyx_mstate_global->__pyx_n_s_ignited_cells_set
+#define __pyx_n_u_ignited_cells_set __pyx_mstate_global->__pyx_n_u_ignited_cells_set
 #define __pyx_n_s_import __pyx_mstate_global->__pyx_n_s_import
 #define __pyx_n_s_initial_value __pyx_mstate_global->__pyx_n_s_initial_value
 #define __pyx_n_s_initializing __pyx_mstate_global->__pyx_n_s_initializing
 #define __pyx_n_s_input_layer_dict __pyx_mstate_global->__pyx_n_s_input_layer_dict
+#define __pyx_n_u_input_layer_dict __pyx_mstate_global->__pyx_n_u_input_layer_dict
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_n_s_layer __pyx_mstate_global->__pyx_n_s_layer
 #define __pyx_n_s_layer_dict __pyx_mstate_global->__pyx_n_s_layer_dict
@@ -2771,14 +2792,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_layer_shape __pyx_mstate_global->__pyx_n_s_layer_shape
 #define __pyx_n_s_layer_type __pyx_mstate_global->__pyx_n_s_layer_type
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
-#define __pyx_n_s_max_crown_fireline_intensity __pyx_mstate_global->__pyx_n_s_max_crown_fireline_intensity
-#define __pyx_n_s_max_crown_flame_length __pyx_mstate_global->__pyx_n_s_max_crown_flame_length
-#define __pyx_n_s_max_crown_spread_direction __pyx_mstate_global->__pyx_n_s_max_crown_spread_direction
-#define __pyx_n_s_max_crown_spread_rate __pyx_mstate_global->__pyx_n_s_max_crown_spread_rate
-#define __pyx_n_s_max_surface_fireline_intensity __pyx_mstate_global->__pyx_n_s_max_surface_fireline_intensity
-#define __pyx_n_s_max_surface_flame_length __pyx_mstate_global->__pyx_n_s_max_surface_flame_length
-#define __pyx_n_s_max_surface_spread_direction __pyx_mstate_global->__pyx_n_s_max_surface_spread_direction
-#define __pyx_n_s_max_surface_spread_rate __pyx_mstate_global->__pyx_n_s_max_surface_spread_rate
+#define __pyx_n_u_max_crown_fireline_intensity __pyx_mstate_global->__pyx_n_u_max_crown_fireline_intensity
+#define __pyx_n_u_max_crown_flame_length __pyx_mstate_global->__pyx_n_u_max_crown_flame_length
+#define __pyx_n_u_max_crown_spread_direction __pyx_mstate_global->__pyx_n_u_max_crown_spread_direction
+#define __pyx_n_u_max_crown_spread_rate __pyx_mstate_global->__pyx_n_u_max_crown_spread_rate
+#define __pyx_n_u_max_surface_fireline_intensity __pyx_mstate_global->__pyx_n_u_max_surface_fireline_intensity
+#define __pyx_n_u_max_surface_flame_length __pyx_mstate_global->__pyx_n_u_max_surface_flame_length
+#define __pyx_n_u_max_surface_spread_direction __pyx_mstate_global->__pyx_n_u_max_surface_spread_direction
+#define __pyx_n_u_max_surface_spread_rate __pyx_mstate_global->__pyx_n_u_max_surface_spread_rate
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_nan __pyx_mstate_global->__pyx_n_s_nan
 #define __pyx_n_s_np __pyx_mstate_global->__pyx_n_s_np
@@ -2787,26 +2808,29 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_num_timesteps __pyx_mstate_global->__pyx_n_s_num_timesteps
 #define __pyx_n_s_numpy __pyx_mstate_global->__pyx_n_s_numpy
 #define __pyx_n_s_output_layer_dict __pyx_mstate_global->__pyx_n_s_output_layer_dict
+#define __pyx_n_u_output_layer_dict __pyx_mstate_global->__pyx_n_u_output_layer_dict
 #define __pyx_n_s_overwrite_layers __pyx_mstate_global->__pyx_n_s_overwrite_layers
 #define __pyx_n_s_overwrite_outputs __pyx_mstate_global->__pyx_n_s_overwrite_outputs
-#define __pyx_n_s_perimeter_fireline_intensity __pyx_mstate_global->__pyx_n_s_perimeter_fireline_intensity
-#define __pyx_n_s_perimeter_flame_length __pyx_mstate_global->__pyx_n_s_perimeter_flame_length
-#define __pyx_n_s_perimeter_spread_direction __pyx_mstate_global->__pyx_n_s_perimeter_spread_direction
-#define __pyx_n_s_perimeter_spread_rate __pyx_mstate_global->__pyx_n_s_perimeter_spread_rate
+#define __pyx_n_u_overwrite_outputs __pyx_mstate_global->__pyx_n_u_overwrite_outputs
+#define __pyx_n_u_perimeter_fireline_intensity __pyx_mstate_global->__pyx_n_u_perimeter_fireline_intensity
+#define __pyx_n_u_perimeter_flame_length __pyx_mstate_global->__pyx_n_u_perimeter_flame_length
+#define __pyx_n_u_perimeter_spread_direction __pyx_mstate_global->__pyx_n_u_perimeter_spread_direction
+#define __pyx_n_u_perimeter_spread_rate __pyx_mstate_global->__pyx_n_u_perimeter_spread_rate
 #define __pyx_n_s_pyretechnics_fire_spread __pyx_mstate_global->__pyx_n_s_pyretechnics_fire_spread
 #define __pyx_n_s_random __pyx_mstate_global->__pyx_n_s_random
-#define __pyx_n_s_random_seed __pyx_mstate_global->__pyx_n_s_random_seed
+#define __pyx_n_u_random_seed __pyx_mstate_global->__pyx_n_u_random_seed
 #define __pyx_n_s_seed __pyx_mstate_global->__pyx_n_s_seed
 #define __pyx_n_s_simulation_clock __pyx_mstate_global->__pyx_n_s_simulation_clock
-#define __pyx_n_s_simulation_shape __pyx_mstate_global->__pyx_n_s_simulation_shape
+#define __pyx_n_u_simulation_clock __pyx_mstate_global->__pyx_n_u_simulation_clock
+#define __pyx_n_u_simulation_shape __pyx_mstate_global->__pyx_n_u_simulation_shape
 #define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
 #define __pyx_kp_s_src_pyretechnics_fire_spread_py __pyx_mstate_global->__pyx_kp_s_src_pyretechnics_fire_spread_py
 #define __pyx_n_s_supply_layer __pyx_mstate_global->__pyx_n_s_supply_layer
-#define __pyx_n_s_surface_eccentricity __pyx_mstate_global->__pyx_n_s_surface_eccentricity
+#define __pyx_n_u_surface_eccentricity __pyx_mstate_global->__pyx_n_u_surface_eccentricity
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
-#define __pyx_n_s_time_of_arrival __pyx_mstate_global->__pyx_n_s_time_of_arrival
-#define __pyx_n_s_uint32 __pyx_mstate_global->__pyx_n_s_uint32
-#define __pyx_n_s_uint8 __pyx_mstate_global->__pyx_n_s_uint8
+#define __pyx_n_u_time_of_arrival __pyx_mstate_global->__pyx_n_u_time_of_arrival
+#define __pyx_n_u_uint32 __pyx_mstate_global->__pyx_n_u_uint32
+#define __pyx_n_u_uint8 __pyx_mstate_global->__pyx_n_u_uint8
 #define __pyx_n_s_world_state __pyx_mstate_global->__pyx_n_s_world_state
 #define __pyx_int_0 __pyx_mstate_global->__pyx_int_0
 #define __pyx_codeobj_ __pyx_mstate_global->__pyx_codeobj_
@@ -3330,7 +3354,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
  *     config_dict       = world_state["config_dict"]
  *     input_layer_dict  = world_state["input_layer_dict"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_simulation_clock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_simulation_clock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_simulation_clock = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3342,7 +3366,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
  *     input_layer_dict  = world_state["input_layer_dict"]
  *     output_layer_dict = world_state.get("output_layer_dict", {})
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_config_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_config_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_config_dict = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3354,7 +3378,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
  *     output_layer_dict = world_state.get("output_layer_dict", {})
  *     ignited_cells_set = world_state["ignited_cells_set"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_input_layer_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_input_layer_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_input_layer_dict = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3385,7 +3409,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
   }
   #endif
   {
-    PyObject *__pyx_callargs[3] = {__pyx_t_4, __pyx_n_s_output_layer_dict, __pyx_t_3};
+    PyObject *__pyx_callargs[3] = {__pyx_t_4, __pyx_n_u_output_layer_dict, __pyx_t_3};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 2+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -3403,7 +3427,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
  * 
  *     # The random seed affects input layer perturbations.
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_ignited_cells_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_ignited_cells_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_ignited_cells_set = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3432,7 +3456,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_n_s_random_seed};
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_n_u_random_seed};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
@@ -3472,7 +3496,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_2burn_cells(CYTHON_UNUSED
     }
     #endif
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_n_s_random_seed};
+      PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_n_u_random_seed};
       __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
@@ -3694,7 +3718,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
  *     config_dict       = world_state["config_dict"]
  *     input_layer_dict  = world_state["input_layer_dict"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_simulation_clock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_simulation_clock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_simulation_clock = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3706,7 +3730,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
  *     input_layer_dict  = world_state["input_layer_dict"]
  *     output_layer_dict = world_state.get("output_layer_dict", {})
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_config_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_config_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_config_dict = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3718,7 +3742,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
  *     output_layer_dict = world_state.get("output_layer_dict", {})
  *     ignited_cells_set = world_state["ignited_cells_set"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_input_layer_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_input_layer_dict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_input_layer_dict = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3749,7 +3773,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[3] = {__pyx_t_4, __pyx_n_s_output_layer_dict, __pyx_t_3};
+    PyObject *__pyx_callargs[3] = {__pyx_t_4, __pyx_n_u_output_layer_dict, __pyx_t_3};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 2+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -3767,7 +3791,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
  * 
  *     # The random seed affects input layer perturbations and spotting calculations.
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_s_ignited_cells_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_world_state, __pyx_n_u_ignited_cells_set); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_ignited_cells_set = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3796,7 +3820,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_n_s_random_seed};
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_n_u_random_seed};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
@@ -3836,7 +3860,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     }
     #endif
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_n_s_random_seed};
+      PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_n_u_random_seed};
       __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
@@ -3884,7 +3908,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
  *     layer_shape = (num_rows, num_cols)
  *     overwrite_outputs = config_dict["overwrite_outputs"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_config_dict, __pyx_n_s_simulation_shape); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_config_dict, __pyx_n_u_simulation_shape); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if ((likely(PyTuple_CheckExact(__pyx_t_1))) || (PyList_CheckExact(__pyx_t_1))) {
     PyObject* sequence = __pyx_t_1;
@@ -3971,7 +3995,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
  * 
  *     output_layer_dict = {
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_config_dict, __pyx_n_s_overwrite_outputs); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_config_dict, __pyx_n_u_overwrite_outputs); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_overwrite_outputs = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4007,7 +4031,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_eulerian_level_set_phi_field, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_eulerian_level_set_phi_field, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4015,7 +4039,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_eulerian_level_set_phi_field, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_eulerian_level_set_phi_field, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":135
@@ -4047,7 +4071,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_time_of_arrival, __pyx_v_layer_shape, __pyx_n_s_float32, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_time_of_arrival, __pyx_v_layer_shape, __pyx_n_u_float32, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4055,7 +4079,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_time_of_arrival, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_time_of_arrival, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":136
@@ -4087,7 +4111,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_max_surface_spread_direction, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_max_surface_spread_direction, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4095,7 +4119,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_surface_spread_direction, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_surface_spread_direction, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":137
@@ -4127,7 +4151,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_max_crown_spread_direction, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_max_crown_spread_direction, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4135,7 +4159,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_crown_spread_direction, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_crown_spread_direction, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":138
@@ -4167,7 +4191,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_perimeter_spread_direction, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_perimeter_spread_direction, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4175,7 +4199,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_perimeter_spread_direction, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_perimeter_spread_direction, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":139
@@ -4207,7 +4231,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_max_surface_spread_rate, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_max_surface_spread_rate, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4215,7 +4239,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_surface_spread_rate, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_surface_spread_rate, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":140
@@ -4247,7 +4271,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_max_crown_spread_rate, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_max_crown_spread_rate, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4255,7 +4279,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_crown_spread_rate, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_crown_spread_rate, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":141
@@ -4287,7 +4311,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_perimeter_spread_rate, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_perimeter_spread_rate, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4295,7 +4319,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_perimeter_spread_rate, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_perimeter_spread_rate, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":142
@@ -4327,7 +4351,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_surface_eccentricity, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_surface_eccentricity, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4335,7 +4359,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_surface_eccentricity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_surface_eccentricity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":143
@@ -4367,7 +4391,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_crown_eccentricity, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_crown_eccentricity, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4375,7 +4399,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_crown_eccentricity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_crown_eccentricity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":144
@@ -4407,7 +4431,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_max_surface_fireline_intensity, __pyx_v_layer_shape, __pyx_n_s_float32, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_max_surface_fireline_intensity, __pyx_v_layer_shape, __pyx_n_u_float32, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4415,7 +4439,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_surface_fireline_intensity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_surface_fireline_intensity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":145
@@ -4447,7 +4471,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_max_crown_fireline_intensity, __pyx_v_layer_shape, __pyx_n_s_float32, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_max_crown_fireline_intensity, __pyx_v_layer_shape, __pyx_n_u_float32, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4455,7 +4479,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_crown_fireline_intensity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_crown_fireline_intensity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":146
@@ -4487,7 +4511,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_perimeter_fireline_intensity, __pyx_v_layer_shape, __pyx_n_s_float32, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_perimeter_fireline_intensity, __pyx_v_layer_shape, __pyx_n_u_float32, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4495,7 +4519,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_perimeter_fireline_intensity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_perimeter_fireline_intensity, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":147
@@ -4527,7 +4551,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_max_surface_flame_length, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_max_surface_flame_length, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4535,7 +4559,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_surface_flame_length, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_surface_flame_length, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":148
@@ -4567,7 +4591,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_max_crown_flame_length, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_max_crown_flame_length, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_7, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4575,7 +4599,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_max_crown_flame_length, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_max_crown_flame_length, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":149
@@ -4607,7 +4631,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_s_perimeter_flame_length, __pyx_v_layer_shape, __pyx_n_s_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_7, __pyx_v_output_layer_dict, __pyx_n_u_perimeter_flame_length, __pyx_v_layer_shape, __pyx_n_u_float16, __pyx_t_3, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4615,7 +4639,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_perimeter_flame_length, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_perimeter_flame_length, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":150
@@ -4642,14 +4666,14 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_fire_type, __pyx_v_layer_shape, __pyx_n_s_uint8, __pyx_int_0, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_fire_type, __pyx_v_layer_shape, __pyx_n_u_uint8, __pyx_int_0, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_fire_type, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_fire_type, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":151
@@ -4676,14 +4700,14 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_firebrand_count, __pyx_v_layer_shape, __pyx_n_s_uint32, __pyx_int_0, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_firebrand_count, __pyx_v_layer_shape, __pyx_n_u_uint32, __pyx_int_0, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_firebrand_count, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_firebrand_count, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "pyretechnics/fire_spread.py":152
@@ -4710,14 +4734,14 @@ static PyObject *__pyx_pf_12pyretechnics_11fire_spread_4grow_fire(CYTHON_UNUSED 
   }
   #endif
   {
-    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_s_firebrand_ignition, __pyx_v_layer_shape, __pyx_n_s_bool8, Py_False, __pyx_v_overwrite_outputs};
+    PyObject *__pyx_callargs[7] = {__pyx_t_3, __pyx_v_output_layer_dict, __pyx_n_u_firebrand_ignition, __pyx_v_layer_shape, __pyx_n_u_bool8, Py_False, __pyx_v_overwrite_outputs};
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 6+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 152, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_firebrand_ignition, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_firebrand_ignition, __pyx_t_4) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF_SET(__pyx_v_output_layer_dict, __pyx_t_1);
   __pyx_t_1 = 0;
@@ -4785,27 +4809,30 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s__4, __pyx_k__4, sizeof(__pyx_k__4), 0, 0, 1, 1},
     {&__pyx_n_s__8, __pyx_k__8, sizeof(__pyx_k__8), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
-    {&__pyx_n_s_bool8, __pyx_k_bool8, sizeof(__pyx_k_bool8), 0, 0, 1, 1},
+    {&__pyx_n_u_bool8, __pyx_k_bool8, sizeof(__pyx_k_bool8), 0, 1, 0, 1},
     {&__pyx_n_s_burn_cells, __pyx_k_burn_cells, sizeof(__pyx_k_burn_cells), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
     {&__pyx_n_s_config_dict, __pyx_k_config_dict, sizeof(__pyx_k_config_dict), 0, 0, 1, 1},
+    {&__pyx_n_u_config_dict, __pyx_k_config_dict, sizeof(__pyx_k_config_dict), 0, 1, 0, 1},
     {&__pyx_n_s_copy, __pyx_k_copy, sizeof(__pyx_k_copy), 0, 0, 1, 1},
-    {&__pyx_n_s_crown_eccentricity, __pyx_k_crown_eccentricity, sizeof(__pyx_k_crown_eccentricity), 0, 0, 1, 1},
+    {&__pyx_n_u_crown_eccentricity, __pyx_k_crown_eccentricity, sizeof(__pyx_k_crown_eccentricity), 0, 1, 0, 1},
     {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
-    {&__pyx_n_s_eulerian_level_set_phi_field, __pyx_k_eulerian_level_set_phi_field, sizeof(__pyx_k_eulerian_level_set_phi_field), 0, 0, 1, 1},
-    {&__pyx_n_s_fire_type, __pyx_k_fire_type, sizeof(__pyx_k_fire_type), 0, 0, 1, 1},
-    {&__pyx_n_s_firebrand_count, __pyx_k_firebrand_count, sizeof(__pyx_k_firebrand_count), 0, 0, 1, 1},
-    {&__pyx_n_s_firebrand_ignition, __pyx_k_firebrand_ignition, sizeof(__pyx_k_firebrand_ignition), 0, 0, 1, 1},
-    {&__pyx_n_s_float16, __pyx_k_float16, sizeof(__pyx_k_float16), 0, 0, 1, 1},
-    {&__pyx_n_s_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 0, 1, 1},
+    {&__pyx_n_u_eulerian_level_set_phi_field, __pyx_k_eulerian_level_set_phi_field, sizeof(__pyx_k_eulerian_level_set_phi_field), 0, 1, 0, 1},
+    {&__pyx_n_u_fire_type, __pyx_k_fire_type, sizeof(__pyx_k_fire_type), 0, 1, 0, 1},
+    {&__pyx_n_u_firebrand_count, __pyx_k_firebrand_count, sizeof(__pyx_k_firebrand_count), 0, 1, 0, 1},
+    {&__pyx_n_u_firebrand_ignition, __pyx_k_firebrand_ignition, sizeof(__pyx_k_firebrand_ignition), 0, 1, 0, 1},
+    {&__pyx_n_u_float16, __pyx_k_float16, sizeof(__pyx_k_float16), 0, 1, 0, 1},
+    {&__pyx_n_u_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 1, 0, 1},
     {&__pyx_n_s_full, __pyx_k_full, sizeof(__pyx_k_full), 0, 0, 1, 1},
     {&__pyx_n_s_get, __pyx_k_get, sizeof(__pyx_k_get), 0, 0, 1, 1},
     {&__pyx_n_s_grow_fire, __pyx_k_grow_fire, sizeof(__pyx_k_grow_fire), 0, 0, 1, 1},
     {&__pyx_n_s_ignited_cells_set, __pyx_k_ignited_cells_set, sizeof(__pyx_k_ignited_cells_set), 0, 0, 1, 1},
+    {&__pyx_n_u_ignited_cells_set, __pyx_k_ignited_cells_set, sizeof(__pyx_k_ignited_cells_set), 0, 1, 0, 1},
     {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
     {&__pyx_n_s_initial_value, __pyx_k_initial_value, sizeof(__pyx_k_initial_value), 0, 0, 1, 1},
     {&__pyx_n_s_initializing, __pyx_k_initializing, sizeof(__pyx_k_initializing), 0, 0, 1, 1},
     {&__pyx_n_s_input_layer_dict, __pyx_k_input_layer_dict, sizeof(__pyx_k_input_layer_dict), 0, 0, 1, 1},
+    {&__pyx_n_u_input_layer_dict, __pyx_k_input_layer_dict, sizeof(__pyx_k_input_layer_dict), 0, 1, 0, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_n_s_layer, __pyx_k_layer, sizeof(__pyx_k_layer), 0, 0, 1, 1},
     {&__pyx_n_s_layer_dict, __pyx_k_layer_dict, sizeof(__pyx_k_layer_dict), 0, 0, 1, 1},
@@ -4813,14 +4840,14 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_layer_shape, __pyx_k_layer_shape, sizeof(__pyx_k_layer_shape), 0, 0, 1, 1},
     {&__pyx_n_s_layer_type, __pyx_k_layer_type, sizeof(__pyx_k_layer_type), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
-    {&__pyx_n_s_max_crown_fireline_intensity, __pyx_k_max_crown_fireline_intensity, sizeof(__pyx_k_max_crown_fireline_intensity), 0, 0, 1, 1},
-    {&__pyx_n_s_max_crown_flame_length, __pyx_k_max_crown_flame_length, sizeof(__pyx_k_max_crown_flame_length), 0, 0, 1, 1},
-    {&__pyx_n_s_max_crown_spread_direction, __pyx_k_max_crown_spread_direction, sizeof(__pyx_k_max_crown_spread_direction), 0, 0, 1, 1},
-    {&__pyx_n_s_max_crown_spread_rate, __pyx_k_max_crown_spread_rate, sizeof(__pyx_k_max_crown_spread_rate), 0, 0, 1, 1},
-    {&__pyx_n_s_max_surface_fireline_intensity, __pyx_k_max_surface_fireline_intensity, sizeof(__pyx_k_max_surface_fireline_intensity), 0, 0, 1, 1},
-    {&__pyx_n_s_max_surface_flame_length, __pyx_k_max_surface_flame_length, sizeof(__pyx_k_max_surface_flame_length), 0, 0, 1, 1},
-    {&__pyx_n_s_max_surface_spread_direction, __pyx_k_max_surface_spread_direction, sizeof(__pyx_k_max_surface_spread_direction), 0, 0, 1, 1},
-    {&__pyx_n_s_max_surface_spread_rate, __pyx_k_max_surface_spread_rate, sizeof(__pyx_k_max_surface_spread_rate), 0, 0, 1, 1},
+    {&__pyx_n_u_max_crown_fireline_intensity, __pyx_k_max_crown_fireline_intensity, sizeof(__pyx_k_max_crown_fireline_intensity), 0, 1, 0, 1},
+    {&__pyx_n_u_max_crown_flame_length, __pyx_k_max_crown_flame_length, sizeof(__pyx_k_max_crown_flame_length), 0, 1, 0, 1},
+    {&__pyx_n_u_max_crown_spread_direction, __pyx_k_max_crown_spread_direction, sizeof(__pyx_k_max_crown_spread_direction), 0, 1, 0, 1},
+    {&__pyx_n_u_max_crown_spread_rate, __pyx_k_max_crown_spread_rate, sizeof(__pyx_k_max_crown_spread_rate), 0, 1, 0, 1},
+    {&__pyx_n_u_max_surface_fireline_intensity, __pyx_k_max_surface_fireline_intensity, sizeof(__pyx_k_max_surface_fireline_intensity), 0, 1, 0, 1},
+    {&__pyx_n_u_max_surface_flame_length, __pyx_k_max_surface_flame_length, sizeof(__pyx_k_max_surface_flame_length), 0, 1, 0, 1},
+    {&__pyx_n_u_max_surface_spread_direction, __pyx_k_max_surface_spread_direction, sizeof(__pyx_k_max_surface_spread_direction), 0, 1, 0, 1},
+    {&__pyx_n_u_max_surface_spread_rate, __pyx_k_max_surface_spread_rate, sizeof(__pyx_k_max_surface_spread_rate), 0, 1, 0, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_n_s_nan, __pyx_k_nan, sizeof(__pyx_k_nan), 0, 0, 1, 1},
     {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
@@ -4829,26 +4856,29 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_num_timesteps, __pyx_k_num_timesteps, sizeof(__pyx_k_num_timesteps), 0, 0, 1, 1},
     {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
     {&__pyx_n_s_output_layer_dict, __pyx_k_output_layer_dict, sizeof(__pyx_k_output_layer_dict), 0, 0, 1, 1},
+    {&__pyx_n_u_output_layer_dict, __pyx_k_output_layer_dict, sizeof(__pyx_k_output_layer_dict), 0, 1, 0, 1},
     {&__pyx_n_s_overwrite_layers, __pyx_k_overwrite_layers, sizeof(__pyx_k_overwrite_layers), 0, 0, 1, 1},
     {&__pyx_n_s_overwrite_outputs, __pyx_k_overwrite_outputs, sizeof(__pyx_k_overwrite_outputs), 0, 0, 1, 1},
-    {&__pyx_n_s_perimeter_fireline_intensity, __pyx_k_perimeter_fireline_intensity, sizeof(__pyx_k_perimeter_fireline_intensity), 0, 0, 1, 1},
-    {&__pyx_n_s_perimeter_flame_length, __pyx_k_perimeter_flame_length, sizeof(__pyx_k_perimeter_flame_length), 0, 0, 1, 1},
-    {&__pyx_n_s_perimeter_spread_direction, __pyx_k_perimeter_spread_direction, sizeof(__pyx_k_perimeter_spread_direction), 0, 0, 1, 1},
-    {&__pyx_n_s_perimeter_spread_rate, __pyx_k_perimeter_spread_rate, sizeof(__pyx_k_perimeter_spread_rate), 0, 0, 1, 1},
+    {&__pyx_n_u_overwrite_outputs, __pyx_k_overwrite_outputs, sizeof(__pyx_k_overwrite_outputs), 0, 1, 0, 1},
+    {&__pyx_n_u_perimeter_fireline_intensity, __pyx_k_perimeter_fireline_intensity, sizeof(__pyx_k_perimeter_fireline_intensity), 0, 1, 0, 1},
+    {&__pyx_n_u_perimeter_flame_length, __pyx_k_perimeter_flame_length, sizeof(__pyx_k_perimeter_flame_length), 0, 1, 0, 1},
+    {&__pyx_n_u_perimeter_spread_direction, __pyx_k_perimeter_spread_direction, sizeof(__pyx_k_perimeter_spread_direction), 0, 1, 0, 1},
+    {&__pyx_n_u_perimeter_spread_rate, __pyx_k_perimeter_spread_rate, sizeof(__pyx_k_perimeter_spread_rate), 0, 1, 0, 1},
     {&__pyx_n_s_pyretechnics_fire_spread, __pyx_k_pyretechnics_fire_spread, sizeof(__pyx_k_pyretechnics_fire_spread), 0, 0, 1, 1},
     {&__pyx_n_s_random, __pyx_k_random, sizeof(__pyx_k_random), 0, 0, 1, 1},
-    {&__pyx_n_s_random_seed, __pyx_k_random_seed, sizeof(__pyx_k_random_seed), 0, 0, 1, 1},
+    {&__pyx_n_u_random_seed, __pyx_k_random_seed, sizeof(__pyx_k_random_seed), 0, 1, 0, 1},
     {&__pyx_n_s_seed, __pyx_k_seed, sizeof(__pyx_k_seed), 0, 0, 1, 1},
     {&__pyx_n_s_simulation_clock, __pyx_k_simulation_clock, sizeof(__pyx_k_simulation_clock), 0, 0, 1, 1},
-    {&__pyx_n_s_simulation_shape, __pyx_k_simulation_shape, sizeof(__pyx_k_simulation_shape), 0, 0, 1, 1},
+    {&__pyx_n_u_simulation_clock, __pyx_k_simulation_clock, sizeof(__pyx_k_simulation_clock), 0, 1, 0, 1},
+    {&__pyx_n_u_simulation_shape, __pyx_k_simulation_shape, sizeof(__pyx_k_simulation_shape), 0, 1, 0, 1},
     {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
     {&__pyx_kp_s_src_pyretechnics_fire_spread_py, __pyx_k_src_pyretechnics_fire_spread_py, sizeof(__pyx_k_src_pyretechnics_fire_spread_py), 0, 0, 1, 0},
     {&__pyx_n_s_supply_layer, __pyx_k_supply_layer, sizeof(__pyx_k_supply_layer), 0, 0, 1, 1},
-    {&__pyx_n_s_surface_eccentricity, __pyx_k_surface_eccentricity, sizeof(__pyx_k_surface_eccentricity), 0, 0, 1, 1},
+    {&__pyx_n_u_surface_eccentricity, __pyx_k_surface_eccentricity, sizeof(__pyx_k_surface_eccentricity), 0, 1, 0, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
-    {&__pyx_n_s_time_of_arrival, __pyx_k_time_of_arrival, sizeof(__pyx_k_time_of_arrival), 0, 0, 1, 1},
-    {&__pyx_n_s_uint32, __pyx_k_uint32, sizeof(__pyx_k_uint32), 0, 0, 1, 1},
-    {&__pyx_n_s_uint8, __pyx_k_uint8, sizeof(__pyx_k_uint8), 0, 0, 1, 1},
+    {&__pyx_n_u_time_of_arrival, __pyx_k_time_of_arrival, sizeof(__pyx_k_time_of_arrival), 0, 1, 0, 1},
+    {&__pyx_n_u_uint32, __pyx_k_uint32, sizeof(__pyx_k_uint32), 0, 1, 0, 1},
+    {&__pyx_n_u_uint8, __pyx_k_uint8, sizeof(__pyx_k_uint8), 0, 1, 0, 1},
     {&__pyx_n_s_world_state, __pyx_k_world_state, sizeof(__pyx_k_world_state), 0, 0, 1, 1},
     {0, 0, 0, 0, 0, 0, 0}
   };

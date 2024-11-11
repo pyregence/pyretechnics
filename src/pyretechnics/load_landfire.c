@@ -2585,8 +2585,8 @@ typedef struct {
   #endif
   #if CYTHON_USE_MODULE_STATE
   #endif
-  PyObject *__pyx_kp_s_All_rasters_do_not_share_the_sam;
-  PyObject *__pyx_kp_s_Some_rasters_do_not_evenly_divid;
+  PyObject *__pyx_kp_u_All_rasters_do_not_share_the_sam;
+  PyObject *__pyx_kp_u_Some_rasters_do_not_evenly_divid;
   PyObject *__pyx_n_s_SpaceTimeCube;
   PyObject *__pyx_n_s_ValueError;
   PyObject *__pyx_n_s__12;
@@ -2594,33 +2594,36 @@ typedef struct {
   PyObject *__pyx_n_s__27;
   PyObject *__pyx_n_s_any;
   PyObject *__pyx_n_s_array;
+  PyObject *__pyx_n_u_array;
   PyObject *__pyx_n_s_asarray;
-  PyObject *__pyx_n_s_aspect;
+  PyObject *__pyx_n_u_aspect;
   PyObject *__pyx_n_s_asyncio_coroutines;
-  PyObject *__pyx_n_s_band_types;
-  PyObject *__pyx_n_s_bands;
+  PyObject *__pyx_n_u_band_types;
+  PyObject *__pyx_n_u_bands;
   PyObject *__pyx_n_s_bounds;
-  PyObject *__pyx_n_s_canopy_base_height;
-  PyObject *__pyx_n_s_canopy_bulk_density;
-  PyObject *__pyx_n_s_canopy_cover;
-  PyObject *__pyx_n_s_canopy_height;
+  PyObject *__pyx_n_u_bounds;
+  PyObject *__pyx_n_u_canopy_base_height;
+  PyObject *__pyx_n_u_canopy_bulk_density;
+  PyObject *__pyx_n_u_canopy_cover;
+  PyObject *__pyx_n_u_canopy_height;
   PyObject *__pyx_n_s_class_getitem;
   PyObject *__pyx_n_s_cline_in_traceback;
-  PyObject *__pyx_n_s_cols;
+  PyObject *__pyx_n_u_cols;
   PyObject *__pyx_n_s_convert_rasters_to_space_time_cu;
   PyObject *__pyx_n_s_count;
   PyObject *__pyx_n_s_crs;
+  PyObject *__pyx_n_u_crs;
   PyObject *__pyx_n_s_cube_shape;
   PyObject *__pyx_n_s_cube_shape_2;
   PyObject *__pyx_n_s_dtype;
   PyObject *__pyx_n_s_dtypes;
-  PyObject *__pyx_n_s_elevation;
+  PyObject *__pyx_n_u_elevation;
   PyObject *__pyx_n_s_enter;
   PyObject *__pyx_n_s_exit;
   PyObject *__pyx_n_s_file_path;
-  PyObject *__pyx_n_s_float32;
+  PyObject *__pyx_n_u_float32;
   PyObject *__pyx_n_s_fn_dict;
-  PyObject *__pyx_n_s_fuel_model;
+  PyObject *__pyx_n_u_fuel_model;
   PyObject *__pyx_n_s_georeferences;
   PyObject *__pyx_n_s_height;
   PyObject *__pyx_n_s_i;
@@ -2628,7 +2631,7 @@ typedef struct {
   PyObject *__pyx_n_s_indexes;
   PyObject *__pyx_n_s_initializing;
   PyObject *__pyx_n_s_input_raster;
-  PyObject *__pyx_n_s_int16;
+  PyObject *__pyx_n_u_int16;
   PyObject *__pyx_n_s_is_coroutine;
   PyObject *__pyx_n_s_items;
   PyObject *__pyx_n_s_landfire_array_conversions;
@@ -2638,11 +2641,13 @@ typedef struct {
   PyObject *__pyx_n_s_load_raster;
   PyObject *__pyx_n_s_main;
   PyObject *__pyx_n_s_map;
-  PyObject *__pyx_n_s_metadata;
+  PyObject *__pyx_n_u_metadata;
   PyObject *__pyx_n_s_multiplier;
   PyObject *__pyx_n_s_name;
+  PyObject *__pyx_n_u_name;
   PyObject *__pyx_n_s_name_2;
   PyObject *__pyx_n_s_nodata;
+  PyObject *__pyx_n_u_nodata;
   PyObject *__pyx_n_s_np;
   PyObject *__pyx_n_s_numpy;
   PyObject *__pyx_n_s_open;
@@ -2651,6 +2656,7 @@ typedef struct {
   PyObject *__pyx_n_s_pyretechnics_load_landfire;
   PyObject *__pyx_n_s_pyretechnics_space_time_cube;
   PyObject *__pyx_n_s_r;
+  PyObject *__pyx_n_u_r;
   PyObject *__pyx_n_s_raster;
   PyObject *__pyx_n_s_raster_dict;
   PyObject *__pyx_n_s_raster_metadata;
@@ -2659,12 +2665,13 @@ typedef struct {
   PyObject *__pyx_n_s_rasters;
   PyObject *__pyx_n_s_read;
   PyObject *__pyx_n_s_read_landfire_rasters_as_space_t;
-  PyObject *__pyx_n_s_rows;
-  PyObject *__pyx_n_s_slope;
+  PyObject *__pyx_n_u_rows;
+  PyObject *__pyx_n_u_slope;
   PyObject *__pyx_n_s_spec;
   PyObject *__pyx_kp_s_src_pyretechnics_load_landfire_p;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_n_s_transform;
+  PyObject *__pyx_n_u_transform;
   PyObject *__pyx_n_s_values;
   PyObject *__pyx_n_s_verify_cube_compatible_dimension;
   PyObject *__pyx_n_s_verify_cube_compatible_dimension_2;
@@ -2744,8 +2751,8 @@ static int __pyx_m_clear(PyObject *m) {
   #ifdef __Pyx_FusedFunction_USED
   Py_CLEAR(clear_module_state->__pyx_FusedFunctionType);
   #endif
-  Py_CLEAR(clear_module_state->__pyx_kp_s_All_rasters_do_not_share_the_sam);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_Some_rasters_do_not_evenly_divid);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_All_rasters_do_not_share_the_sam);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Some_rasters_do_not_evenly_divid);
   Py_CLEAR(clear_module_state->__pyx_n_s_SpaceTimeCube);
   Py_CLEAR(clear_module_state->__pyx_n_s_ValueError);
   Py_CLEAR(clear_module_state->__pyx_n_s__12);
@@ -2753,33 +2760,36 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s__27);
   Py_CLEAR(clear_module_state->__pyx_n_s_any);
   Py_CLEAR(clear_module_state->__pyx_n_s_array);
+  Py_CLEAR(clear_module_state->__pyx_n_u_array);
   Py_CLEAR(clear_module_state->__pyx_n_s_asarray);
-  Py_CLEAR(clear_module_state->__pyx_n_s_aspect);
+  Py_CLEAR(clear_module_state->__pyx_n_u_aspect);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
-  Py_CLEAR(clear_module_state->__pyx_n_s_band_types);
-  Py_CLEAR(clear_module_state->__pyx_n_s_bands);
+  Py_CLEAR(clear_module_state->__pyx_n_u_band_types);
+  Py_CLEAR(clear_module_state->__pyx_n_u_bands);
   Py_CLEAR(clear_module_state->__pyx_n_s_bounds);
-  Py_CLEAR(clear_module_state->__pyx_n_s_canopy_base_height);
-  Py_CLEAR(clear_module_state->__pyx_n_s_canopy_bulk_density);
-  Py_CLEAR(clear_module_state->__pyx_n_s_canopy_cover);
-  Py_CLEAR(clear_module_state->__pyx_n_s_canopy_height);
+  Py_CLEAR(clear_module_state->__pyx_n_u_bounds);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_base_height);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_bulk_density);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_cover);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_height);
   Py_CLEAR(clear_module_state->__pyx_n_s_class_getitem);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
-  Py_CLEAR(clear_module_state->__pyx_n_s_cols);
+  Py_CLEAR(clear_module_state->__pyx_n_u_cols);
   Py_CLEAR(clear_module_state->__pyx_n_s_convert_rasters_to_space_time_cu);
   Py_CLEAR(clear_module_state->__pyx_n_s_count);
   Py_CLEAR(clear_module_state->__pyx_n_s_crs);
+  Py_CLEAR(clear_module_state->__pyx_n_u_crs);
   Py_CLEAR(clear_module_state->__pyx_n_s_cube_shape);
   Py_CLEAR(clear_module_state->__pyx_n_s_cube_shape_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_dtype);
   Py_CLEAR(clear_module_state->__pyx_n_s_dtypes);
-  Py_CLEAR(clear_module_state->__pyx_n_s_elevation);
+  Py_CLEAR(clear_module_state->__pyx_n_u_elevation);
   Py_CLEAR(clear_module_state->__pyx_n_s_enter);
   Py_CLEAR(clear_module_state->__pyx_n_s_exit);
   Py_CLEAR(clear_module_state->__pyx_n_s_file_path);
-  Py_CLEAR(clear_module_state->__pyx_n_s_float32);
+  Py_CLEAR(clear_module_state->__pyx_n_u_float32);
   Py_CLEAR(clear_module_state->__pyx_n_s_fn_dict);
-  Py_CLEAR(clear_module_state->__pyx_n_s_fuel_model);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_model);
   Py_CLEAR(clear_module_state->__pyx_n_s_georeferences);
   Py_CLEAR(clear_module_state->__pyx_n_s_height);
   Py_CLEAR(clear_module_state->__pyx_n_s_i);
@@ -2787,7 +2797,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_indexes);
   Py_CLEAR(clear_module_state->__pyx_n_s_initializing);
   Py_CLEAR(clear_module_state->__pyx_n_s_input_raster);
-  Py_CLEAR(clear_module_state->__pyx_n_s_int16);
+  Py_CLEAR(clear_module_state->__pyx_n_u_int16);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
   Py_CLEAR(clear_module_state->__pyx_n_s_items);
   Py_CLEAR(clear_module_state->__pyx_n_s_landfire_array_conversions);
@@ -2797,11 +2807,13 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_load_raster);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
   Py_CLEAR(clear_module_state->__pyx_n_s_map);
-  Py_CLEAR(clear_module_state->__pyx_n_s_metadata);
+  Py_CLEAR(clear_module_state->__pyx_n_u_metadata);
   Py_CLEAR(clear_module_state->__pyx_n_s_multiplier);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
+  Py_CLEAR(clear_module_state->__pyx_n_u_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_name_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_nodata);
+  Py_CLEAR(clear_module_state->__pyx_n_u_nodata);
   Py_CLEAR(clear_module_state->__pyx_n_s_np);
   Py_CLEAR(clear_module_state->__pyx_n_s_numpy);
   Py_CLEAR(clear_module_state->__pyx_n_s_open);
@@ -2810,6 +2822,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_load_landfire);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_space_time_cube);
   Py_CLEAR(clear_module_state->__pyx_n_s_r);
+  Py_CLEAR(clear_module_state->__pyx_n_u_r);
   Py_CLEAR(clear_module_state->__pyx_n_s_raster);
   Py_CLEAR(clear_module_state->__pyx_n_s_raster_dict);
   Py_CLEAR(clear_module_state->__pyx_n_s_raster_metadata);
@@ -2818,12 +2831,13 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_rasters);
   Py_CLEAR(clear_module_state->__pyx_n_s_read);
   Py_CLEAR(clear_module_state->__pyx_n_s_read_landfire_rasters_as_space_t);
-  Py_CLEAR(clear_module_state->__pyx_n_s_rows);
-  Py_CLEAR(clear_module_state->__pyx_n_s_slope);
+  Py_CLEAR(clear_module_state->__pyx_n_u_rows);
+  Py_CLEAR(clear_module_state->__pyx_n_u_slope);
   Py_CLEAR(clear_module_state->__pyx_n_s_spec);
   Py_CLEAR(clear_module_state->__pyx_kp_s_src_pyretechnics_load_landfire_p);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_n_s_transform);
+  Py_CLEAR(clear_module_state->__pyx_n_u_transform);
   Py_CLEAR(clear_module_state->__pyx_n_s_values);
   Py_CLEAR(clear_module_state->__pyx_n_s_verify_cube_compatible_dimension);
   Py_CLEAR(clear_module_state->__pyx_n_s_verify_cube_compatible_dimension_2);
@@ -2881,8 +2895,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   #ifdef __Pyx_FusedFunction_USED
   Py_VISIT(traverse_module_state->__pyx_FusedFunctionType);
   #endif
-  Py_VISIT(traverse_module_state->__pyx_kp_s_All_rasters_do_not_share_the_sam);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_Some_rasters_do_not_evenly_divid);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_All_rasters_do_not_share_the_sam);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Some_rasters_do_not_evenly_divid);
   Py_VISIT(traverse_module_state->__pyx_n_s_SpaceTimeCube);
   Py_VISIT(traverse_module_state->__pyx_n_s_ValueError);
   Py_VISIT(traverse_module_state->__pyx_n_s__12);
@@ -2890,33 +2904,36 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s__27);
   Py_VISIT(traverse_module_state->__pyx_n_s_any);
   Py_VISIT(traverse_module_state->__pyx_n_s_array);
+  Py_VISIT(traverse_module_state->__pyx_n_u_array);
   Py_VISIT(traverse_module_state->__pyx_n_s_asarray);
-  Py_VISIT(traverse_module_state->__pyx_n_s_aspect);
+  Py_VISIT(traverse_module_state->__pyx_n_u_aspect);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
-  Py_VISIT(traverse_module_state->__pyx_n_s_band_types);
-  Py_VISIT(traverse_module_state->__pyx_n_s_bands);
+  Py_VISIT(traverse_module_state->__pyx_n_u_band_types);
+  Py_VISIT(traverse_module_state->__pyx_n_u_bands);
   Py_VISIT(traverse_module_state->__pyx_n_s_bounds);
-  Py_VISIT(traverse_module_state->__pyx_n_s_canopy_base_height);
-  Py_VISIT(traverse_module_state->__pyx_n_s_canopy_bulk_density);
-  Py_VISIT(traverse_module_state->__pyx_n_s_canopy_cover);
-  Py_VISIT(traverse_module_state->__pyx_n_s_canopy_height);
+  Py_VISIT(traverse_module_state->__pyx_n_u_bounds);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_base_height);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_bulk_density);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_cover);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_height);
   Py_VISIT(traverse_module_state->__pyx_n_s_class_getitem);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
-  Py_VISIT(traverse_module_state->__pyx_n_s_cols);
+  Py_VISIT(traverse_module_state->__pyx_n_u_cols);
   Py_VISIT(traverse_module_state->__pyx_n_s_convert_rasters_to_space_time_cu);
   Py_VISIT(traverse_module_state->__pyx_n_s_count);
   Py_VISIT(traverse_module_state->__pyx_n_s_crs);
+  Py_VISIT(traverse_module_state->__pyx_n_u_crs);
   Py_VISIT(traverse_module_state->__pyx_n_s_cube_shape);
   Py_VISIT(traverse_module_state->__pyx_n_s_cube_shape_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_dtype);
   Py_VISIT(traverse_module_state->__pyx_n_s_dtypes);
-  Py_VISIT(traverse_module_state->__pyx_n_s_elevation);
+  Py_VISIT(traverse_module_state->__pyx_n_u_elevation);
   Py_VISIT(traverse_module_state->__pyx_n_s_enter);
   Py_VISIT(traverse_module_state->__pyx_n_s_exit);
   Py_VISIT(traverse_module_state->__pyx_n_s_file_path);
-  Py_VISIT(traverse_module_state->__pyx_n_s_float32);
+  Py_VISIT(traverse_module_state->__pyx_n_u_float32);
   Py_VISIT(traverse_module_state->__pyx_n_s_fn_dict);
-  Py_VISIT(traverse_module_state->__pyx_n_s_fuel_model);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_model);
   Py_VISIT(traverse_module_state->__pyx_n_s_georeferences);
   Py_VISIT(traverse_module_state->__pyx_n_s_height);
   Py_VISIT(traverse_module_state->__pyx_n_s_i);
@@ -2924,7 +2941,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_indexes);
   Py_VISIT(traverse_module_state->__pyx_n_s_initializing);
   Py_VISIT(traverse_module_state->__pyx_n_s_input_raster);
-  Py_VISIT(traverse_module_state->__pyx_n_s_int16);
+  Py_VISIT(traverse_module_state->__pyx_n_u_int16);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
   Py_VISIT(traverse_module_state->__pyx_n_s_items);
   Py_VISIT(traverse_module_state->__pyx_n_s_landfire_array_conversions);
@@ -2934,11 +2951,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_load_raster);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
   Py_VISIT(traverse_module_state->__pyx_n_s_map);
-  Py_VISIT(traverse_module_state->__pyx_n_s_metadata);
+  Py_VISIT(traverse_module_state->__pyx_n_u_metadata);
   Py_VISIT(traverse_module_state->__pyx_n_s_multiplier);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
+  Py_VISIT(traverse_module_state->__pyx_n_u_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_name_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_nodata);
+  Py_VISIT(traverse_module_state->__pyx_n_u_nodata);
   Py_VISIT(traverse_module_state->__pyx_n_s_np);
   Py_VISIT(traverse_module_state->__pyx_n_s_numpy);
   Py_VISIT(traverse_module_state->__pyx_n_s_open);
@@ -2947,6 +2966,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_load_landfire);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_space_time_cube);
   Py_VISIT(traverse_module_state->__pyx_n_s_r);
+  Py_VISIT(traverse_module_state->__pyx_n_u_r);
   Py_VISIT(traverse_module_state->__pyx_n_s_raster);
   Py_VISIT(traverse_module_state->__pyx_n_s_raster_dict);
   Py_VISIT(traverse_module_state->__pyx_n_s_raster_metadata);
@@ -2955,12 +2975,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_rasters);
   Py_VISIT(traverse_module_state->__pyx_n_s_read);
   Py_VISIT(traverse_module_state->__pyx_n_s_read_landfire_rasters_as_space_t);
-  Py_VISIT(traverse_module_state->__pyx_n_s_rows);
-  Py_VISIT(traverse_module_state->__pyx_n_s_slope);
+  Py_VISIT(traverse_module_state->__pyx_n_u_rows);
+  Py_VISIT(traverse_module_state->__pyx_n_u_slope);
   Py_VISIT(traverse_module_state->__pyx_n_s_spec);
   Py_VISIT(traverse_module_state->__pyx_kp_s_src_pyretechnics_load_landfire_p);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_n_s_transform);
+  Py_VISIT(traverse_module_state->__pyx_n_u_transform);
   Py_VISIT(traverse_module_state->__pyx_n_s_values);
   Py_VISIT(traverse_module_state->__pyx_n_s_verify_cube_compatible_dimension);
   Py_VISIT(traverse_module_state->__pyx_n_s_verify_cube_compatible_dimension_2);
@@ -3028,8 +3049,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #if CYTHON_USE_MODULE_STATE
 #endif
-#define __pyx_kp_s_All_rasters_do_not_share_the_sam __pyx_mstate_global->__pyx_kp_s_All_rasters_do_not_share_the_sam
-#define __pyx_kp_s_Some_rasters_do_not_evenly_divid __pyx_mstate_global->__pyx_kp_s_Some_rasters_do_not_evenly_divid
+#define __pyx_kp_u_All_rasters_do_not_share_the_sam __pyx_mstate_global->__pyx_kp_u_All_rasters_do_not_share_the_sam
+#define __pyx_kp_u_Some_rasters_do_not_evenly_divid __pyx_mstate_global->__pyx_kp_u_Some_rasters_do_not_evenly_divid
 #define __pyx_n_s_SpaceTimeCube __pyx_mstate_global->__pyx_n_s_SpaceTimeCube
 #define __pyx_n_s_ValueError __pyx_mstate_global->__pyx_n_s_ValueError
 #define __pyx_n_s__12 __pyx_mstate_global->__pyx_n_s__12
@@ -3037,33 +3058,36 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s__27 __pyx_mstate_global->__pyx_n_s__27
 #define __pyx_n_s_any __pyx_mstate_global->__pyx_n_s_any
 #define __pyx_n_s_array __pyx_mstate_global->__pyx_n_s_array
+#define __pyx_n_u_array __pyx_mstate_global->__pyx_n_u_array
 #define __pyx_n_s_asarray __pyx_mstate_global->__pyx_n_s_asarray
-#define __pyx_n_s_aspect __pyx_mstate_global->__pyx_n_s_aspect
+#define __pyx_n_u_aspect __pyx_mstate_global->__pyx_n_u_aspect
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
-#define __pyx_n_s_band_types __pyx_mstate_global->__pyx_n_s_band_types
-#define __pyx_n_s_bands __pyx_mstate_global->__pyx_n_s_bands
+#define __pyx_n_u_band_types __pyx_mstate_global->__pyx_n_u_band_types
+#define __pyx_n_u_bands __pyx_mstate_global->__pyx_n_u_bands
 #define __pyx_n_s_bounds __pyx_mstate_global->__pyx_n_s_bounds
-#define __pyx_n_s_canopy_base_height __pyx_mstate_global->__pyx_n_s_canopy_base_height
-#define __pyx_n_s_canopy_bulk_density __pyx_mstate_global->__pyx_n_s_canopy_bulk_density
-#define __pyx_n_s_canopy_cover __pyx_mstate_global->__pyx_n_s_canopy_cover
-#define __pyx_n_s_canopy_height __pyx_mstate_global->__pyx_n_s_canopy_height
+#define __pyx_n_u_bounds __pyx_mstate_global->__pyx_n_u_bounds
+#define __pyx_n_u_canopy_base_height __pyx_mstate_global->__pyx_n_u_canopy_base_height
+#define __pyx_n_u_canopy_bulk_density __pyx_mstate_global->__pyx_n_u_canopy_bulk_density
+#define __pyx_n_u_canopy_cover __pyx_mstate_global->__pyx_n_u_canopy_cover
+#define __pyx_n_u_canopy_height __pyx_mstate_global->__pyx_n_u_canopy_height
 #define __pyx_n_s_class_getitem __pyx_mstate_global->__pyx_n_s_class_getitem
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
-#define __pyx_n_s_cols __pyx_mstate_global->__pyx_n_s_cols
+#define __pyx_n_u_cols __pyx_mstate_global->__pyx_n_u_cols
 #define __pyx_n_s_convert_rasters_to_space_time_cu __pyx_mstate_global->__pyx_n_s_convert_rasters_to_space_time_cu
 #define __pyx_n_s_count __pyx_mstate_global->__pyx_n_s_count
 #define __pyx_n_s_crs __pyx_mstate_global->__pyx_n_s_crs
+#define __pyx_n_u_crs __pyx_mstate_global->__pyx_n_u_crs
 #define __pyx_n_s_cube_shape __pyx_mstate_global->__pyx_n_s_cube_shape
 #define __pyx_n_s_cube_shape_2 __pyx_mstate_global->__pyx_n_s_cube_shape_2
 #define __pyx_n_s_dtype __pyx_mstate_global->__pyx_n_s_dtype
 #define __pyx_n_s_dtypes __pyx_mstate_global->__pyx_n_s_dtypes
-#define __pyx_n_s_elevation __pyx_mstate_global->__pyx_n_s_elevation
+#define __pyx_n_u_elevation __pyx_mstate_global->__pyx_n_u_elevation
 #define __pyx_n_s_enter __pyx_mstate_global->__pyx_n_s_enter
 #define __pyx_n_s_exit __pyx_mstate_global->__pyx_n_s_exit
 #define __pyx_n_s_file_path __pyx_mstate_global->__pyx_n_s_file_path
-#define __pyx_n_s_float32 __pyx_mstate_global->__pyx_n_s_float32
+#define __pyx_n_u_float32 __pyx_mstate_global->__pyx_n_u_float32
 #define __pyx_n_s_fn_dict __pyx_mstate_global->__pyx_n_s_fn_dict
-#define __pyx_n_s_fuel_model __pyx_mstate_global->__pyx_n_s_fuel_model
+#define __pyx_n_u_fuel_model __pyx_mstate_global->__pyx_n_u_fuel_model
 #define __pyx_n_s_georeferences __pyx_mstate_global->__pyx_n_s_georeferences
 #define __pyx_n_s_height __pyx_mstate_global->__pyx_n_s_height
 #define __pyx_n_s_i __pyx_mstate_global->__pyx_n_s_i
@@ -3071,7 +3095,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_indexes __pyx_mstate_global->__pyx_n_s_indexes
 #define __pyx_n_s_initializing __pyx_mstate_global->__pyx_n_s_initializing
 #define __pyx_n_s_input_raster __pyx_mstate_global->__pyx_n_s_input_raster
-#define __pyx_n_s_int16 __pyx_mstate_global->__pyx_n_s_int16
+#define __pyx_n_u_int16 __pyx_mstate_global->__pyx_n_u_int16
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
 #define __pyx_n_s_items __pyx_mstate_global->__pyx_n_s_items
 #define __pyx_n_s_landfire_array_conversions __pyx_mstate_global->__pyx_n_s_landfire_array_conversions
@@ -3081,11 +3105,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_load_raster __pyx_mstate_global->__pyx_n_s_load_raster
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
 #define __pyx_n_s_map __pyx_mstate_global->__pyx_n_s_map
-#define __pyx_n_s_metadata __pyx_mstate_global->__pyx_n_s_metadata
+#define __pyx_n_u_metadata __pyx_mstate_global->__pyx_n_u_metadata
 #define __pyx_n_s_multiplier __pyx_mstate_global->__pyx_n_s_multiplier
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
+#define __pyx_n_u_name __pyx_mstate_global->__pyx_n_u_name
 #define __pyx_n_s_name_2 __pyx_mstate_global->__pyx_n_s_name_2
 #define __pyx_n_s_nodata __pyx_mstate_global->__pyx_n_s_nodata
+#define __pyx_n_u_nodata __pyx_mstate_global->__pyx_n_u_nodata
 #define __pyx_n_s_np __pyx_mstate_global->__pyx_n_s_np
 #define __pyx_n_s_numpy __pyx_mstate_global->__pyx_n_s_numpy
 #define __pyx_n_s_open __pyx_mstate_global->__pyx_n_s_open
@@ -3094,6 +3120,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_pyretechnics_load_landfire __pyx_mstate_global->__pyx_n_s_pyretechnics_load_landfire
 #define __pyx_n_s_pyretechnics_space_time_cube __pyx_mstate_global->__pyx_n_s_pyretechnics_space_time_cube
 #define __pyx_n_s_r __pyx_mstate_global->__pyx_n_s_r
+#define __pyx_n_u_r __pyx_mstate_global->__pyx_n_u_r
 #define __pyx_n_s_raster __pyx_mstate_global->__pyx_n_s_raster
 #define __pyx_n_s_raster_dict __pyx_mstate_global->__pyx_n_s_raster_dict
 #define __pyx_n_s_raster_metadata __pyx_mstate_global->__pyx_n_s_raster_metadata
@@ -3102,12 +3129,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_rasters __pyx_mstate_global->__pyx_n_s_rasters
 #define __pyx_n_s_read __pyx_mstate_global->__pyx_n_s_read
 #define __pyx_n_s_read_landfire_rasters_as_space_t __pyx_mstate_global->__pyx_n_s_read_landfire_rasters_as_space_t
-#define __pyx_n_s_rows __pyx_mstate_global->__pyx_n_s_rows
-#define __pyx_n_s_slope __pyx_mstate_global->__pyx_n_s_slope
+#define __pyx_n_u_rows __pyx_mstate_global->__pyx_n_u_rows
+#define __pyx_n_u_slope __pyx_mstate_global->__pyx_n_u_slope
 #define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
 #define __pyx_kp_s_src_pyretechnics_load_landfire_p __pyx_mstate_global->__pyx_kp_s_src_pyretechnics_load_landfire_p
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_n_s_transform __pyx_mstate_global->__pyx_n_s_transform
+#define __pyx_n_u_transform __pyx_mstate_global->__pyx_n_u_transform
 #define __pyx_n_s_values __pyx_mstate_global->__pyx_n_s_values
 #define __pyx_n_s_verify_cube_compatible_dimension __pyx_mstate_global->__pyx_n_s_verify_cube_compatible_dimension
 #define __pyx_n_s_verify_cube_compatible_dimension_2 __pyx_mstate_global->__pyx_n_s_verify_cube_compatible_dimension_2
@@ -3294,7 +3322,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_name); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_name, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_name, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":8
@@ -3306,7 +3334,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_count); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_bands, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_bands, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":9
@@ -3318,7 +3346,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_height); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_rows, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_rows, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":10
@@ -3330,7 +3358,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_width); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_cols, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_cols, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   { /* enter inner scope */
 
@@ -3473,7 +3501,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
     goto __pyx_L1_error;
     __pyx_L11_exit_scope:;
   } /* exit inner scope */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_band_types, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_band_types, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":12
@@ -3485,7 +3513,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_nodata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_nodata, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_nodata, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":13
@@ -3497,7 +3525,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_crs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_crs, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_crs, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":14
@@ -3509,7 +3537,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_bounds); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_bounds, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_bounds, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "pyretechnics/load_landfire.py":15
@@ -3521,7 +3549,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_raster_metadata(CYTHON_
  */
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_raster, __pyx_n_s_transform); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_transform, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_u_transform, __pyx_t_2) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3727,7 +3755,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_2load_raster(CYTHON_UNU
     }
     #endif
     {
-      PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_v_file_path, __pyx_n_s_r};
+      PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_v_file_path, __pyx_n_u_r};
       __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
@@ -3802,7 +3830,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_2load_raster(CYTHON_UNU
           __Pyx_GOTREF(__pyx_t_6);
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_array, __pyx_t_6) < 0) __PYX_ERR(0, 23, __pyx_L7_error)
+          if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_array, __pyx_t_6) < 0) __PYX_ERR(0, 23, __pyx_L7_error)
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
           /* "pyretechnics/load_landfire.py":24
@@ -3836,7 +3864,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_2load_raster(CYTHON_UNU
             __Pyx_GOTREF(__pyx_t_6);
             __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           }
-          if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_metadata, __pyx_t_6) < 0) __PYX_ERR(0, 23, __pyx_L7_error)
+          if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_metadata, __pyx_t_6) < 0) __PYX_ERR(0, 23, __pyx_L7_error)
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
           __pyx_r = __pyx_t_2;
           __pyx_t_2 = 0;
@@ -4254,7 +4282,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_4load_and_convert_landf
  */
       __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_landfire_rasters, __pyx_v_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 50, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_array); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 50, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_u_array); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 50, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XDECREF_SET(__pyx_v_array, __pyx_t_8);
@@ -4269,10 +4297,10 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_4load_and_convert_landf
  */
       __pyx_t_8 = __Pyx_PyDict_GetItem(__pyx_v_landfire_rasters, __pyx_v_name); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 51, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_t_8, __pyx_n_s_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_t_8, __pyx_n_u_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_nodata); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 51, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_u_nodata); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 51, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XDECREF_SET(__pyx_v_nodata, __pyx_t_8);
@@ -4745,9 +4773,9 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_6verify_cube_compatible
     __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_asarray); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 63, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_r, __pyx_n_s_metadata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_r, __pyx_n_u_metadata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_n_s_bands); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_n_u_bands); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 63, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -4758,9 +4786,9 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_6verify_cube_compatible
  *                                    r["metadata"]["cols"]))
  *         if any(map(lambda x: x != 0, cube_shape_ % raster_shape)):
  */
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_r, __pyx_n_s_metadata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_r, __pyx_n_u_metadata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_9 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_n_s_rows); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 64, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_n_u_rows); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 64, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -4771,9 +4799,9 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_6verify_cube_compatible
  *         if any(map(lambda x: x != 0, cube_shape_ % raster_shape)):
  *             raise ValueError("Some rasters do not evenly divide the space-time cube dimensions.")
  */
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_r, __pyx_n_s_metadata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_r, __pyx_n_u_metadata); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_10 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_n_s_cols); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_Dict_GetItem(__pyx_t_2, __pyx_n_u_cols); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 65, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -5129,9 +5157,9 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_8verify_same_georeferen
  *          r["metadata"]["bounds"],
  *          r["metadata"]["transform"])
  */
-      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr1__pyx_v_r, __pyx_n_s_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 74, __pyx_L5_error)
+      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr1__pyx_v_r, __pyx_n_u_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 74, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_crs); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 74, __pyx_L5_error)
+      __pyx_t_6 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_u_crs); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 74, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
@@ -5142,9 +5170,9 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_8verify_same_georeferen
  *          r["metadata"]["transform"])
  *         for r in rasters
  */
-      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr1__pyx_v_r, __pyx_n_s_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 75, __pyx_L5_error)
+      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr1__pyx_v_r, __pyx_n_u_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 75, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_bounds); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 75, __pyx_L5_error)
+      __pyx_t_7 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_u_bounds); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 75, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
@@ -5155,9 +5183,9 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_8verify_same_georeferen
  *         for r in rasters
  *     ]
  */
-      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr1__pyx_v_r, __pyx_n_s_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 76, __pyx_L5_error)
+      __pyx_t_5 = __Pyx_PyObject_Dict_GetItem(__pyx_8genexpr1__pyx_v_r, __pyx_n_u_metadata); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 76, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_s_transform); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 76, __pyx_L5_error)
+      __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_t_5, __pyx_n_u_transform); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 76, __pyx_L5_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
@@ -5702,7 +5730,7 @@ static PyObject *__pyx_pf_12pyretechnics_13load_landfire_12convert_rasters_to_sp
  */
     __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_SpaceTimeCube); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 96, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_v_raster, __pyx_n_s_array); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 96, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_v_raster, __pyx_n_u_array); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 96, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __pyx_t_9 = NULL;
     __pyx_t_10 = 0;
@@ -6090,8 +6118,8 @@ static PyMethodDef __pyx_methods[] = {
 
 static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
-    {&__pyx_kp_s_All_rasters_do_not_share_the_sam, __pyx_k_All_rasters_do_not_share_the_sam, sizeof(__pyx_k_All_rasters_do_not_share_the_sam), 0, 0, 1, 0},
-    {&__pyx_kp_s_Some_rasters_do_not_evenly_divid, __pyx_k_Some_rasters_do_not_evenly_divid, sizeof(__pyx_k_Some_rasters_do_not_evenly_divid), 0, 0, 1, 0},
+    {&__pyx_kp_u_All_rasters_do_not_share_the_sam, __pyx_k_All_rasters_do_not_share_the_sam, sizeof(__pyx_k_All_rasters_do_not_share_the_sam), 0, 1, 0, 0},
+    {&__pyx_kp_u_Some_rasters_do_not_evenly_divid, __pyx_k_Some_rasters_do_not_evenly_divid, sizeof(__pyx_k_Some_rasters_do_not_evenly_divid), 0, 1, 0, 0},
     {&__pyx_n_s_SpaceTimeCube, __pyx_k_SpaceTimeCube, sizeof(__pyx_k_SpaceTimeCube), 0, 0, 1, 1},
     {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
     {&__pyx_n_s__12, __pyx_k__12, sizeof(__pyx_k__12), 0, 0, 1, 1},
@@ -6099,33 +6127,36 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s__27, __pyx_k__27, sizeof(__pyx_k__27), 0, 0, 1, 1},
     {&__pyx_n_s_any, __pyx_k_any, sizeof(__pyx_k_any), 0, 0, 1, 1},
     {&__pyx_n_s_array, __pyx_k_array, sizeof(__pyx_k_array), 0, 0, 1, 1},
+    {&__pyx_n_u_array, __pyx_k_array, sizeof(__pyx_k_array), 0, 1, 0, 1},
     {&__pyx_n_s_asarray, __pyx_k_asarray, sizeof(__pyx_k_asarray), 0, 0, 1, 1},
-    {&__pyx_n_s_aspect, __pyx_k_aspect, sizeof(__pyx_k_aspect), 0, 0, 1, 1},
+    {&__pyx_n_u_aspect, __pyx_k_aspect, sizeof(__pyx_k_aspect), 0, 1, 0, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
-    {&__pyx_n_s_band_types, __pyx_k_band_types, sizeof(__pyx_k_band_types), 0, 0, 1, 1},
-    {&__pyx_n_s_bands, __pyx_k_bands, sizeof(__pyx_k_bands), 0, 0, 1, 1},
+    {&__pyx_n_u_band_types, __pyx_k_band_types, sizeof(__pyx_k_band_types), 0, 1, 0, 1},
+    {&__pyx_n_u_bands, __pyx_k_bands, sizeof(__pyx_k_bands), 0, 1, 0, 1},
     {&__pyx_n_s_bounds, __pyx_k_bounds, sizeof(__pyx_k_bounds), 0, 0, 1, 1},
-    {&__pyx_n_s_canopy_base_height, __pyx_k_canopy_base_height, sizeof(__pyx_k_canopy_base_height), 0, 0, 1, 1},
-    {&__pyx_n_s_canopy_bulk_density, __pyx_k_canopy_bulk_density, sizeof(__pyx_k_canopy_bulk_density), 0, 0, 1, 1},
-    {&__pyx_n_s_canopy_cover, __pyx_k_canopy_cover, sizeof(__pyx_k_canopy_cover), 0, 0, 1, 1},
-    {&__pyx_n_s_canopy_height, __pyx_k_canopy_height, sizeof(__pyx_k_canopy_height), 0, 0, 1, 1},
+    {&__pyx_n_u_bounds, __pyx_k_bounds, sizeof(__pyx_k_bounds), 0, 1, 0, 1},
+    {&__pyx_n_u_canopy_base_height, __pyx_k_canopy_base_height, sizeof(__pyx_k_canopy_base_height), 0, 1, 0, 1},
+    {&__pyx_n_u_canopy_bulk_density, __pyx_k_canopy_bulk_density, sizeof(__pyx_k_canopy_bulk_density), 0, 1, 0, 1},
+    {&__pyx_n_u_canopy_cover, __pyx_k_canopy_cover, sizeof(__pyx_k_canopy_cover), 0, 1, 0, 1},
+    {&__pyx_n_u_canopy_height, __pyx_k_canopy_height, sizeof(__pyx_k_canopy_height), 0, 1, 0, 1},
     {&__pyx_n_s_class_getitem, __pyx_k_class_getitem, sizeof(__pyx_k_class_getitem), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
-    {&__pyx_n_s_cols, __pyx_k_cols, sizeof(__pyx_k_cols), 0, 0, 1, 1},
+    {&__pyx_n_u_cols, __pyx_k_cols, sizeof(__pyx_k_cols), 0, 1, 0, 1},
     {&__pyx_n_s_convert_rasters_to_space_time_cu, __pyx_k_convert_rasters_to_space_time_cu, sizeof(__pyx_k_convert_rasters_to_space_time_cu), 0, 0, 1, 1},
     {&__pyx_n_s_count, __pyx_k_count, sizeof(__pyx_k_count), 0, 0, 1, 1},
     {&__pyx_n_s_crs, __pyx_k_crs, sizeof(__pyx_k_crs), 0, 0, 1, 1},
+    {&__pyx_n_u_crs, __pyx_k_crs, sizeof(__pyx_k_crs), 0, 1, 0, 1},
     {&__pyx_n_s_cube_shape, __pyx_k_cube_shape, sizeof(__pyx_k_cube_shape), 0, 0, 1, 1},
     {&__pyx_n_s_cube_shape_2, __pyx_k_cube_shape_2, sizeof(__pyx_k_cube_shape_2), 0, 0, 1, 1},
     {&__pyx_n_s_dtype, __pyx_k_dtype, sizeof(__pyx_k_dtype), 0, 0, 1, 1},
     {&__pyx_n_s_dtypes, __pyx_k_dtypes, sizeof(__pyx_k_dtypes), 0, 0, 1, 1},
-    {&__pyx_n_s_elevation, __pyx_k_elevation, sizeof(__pyx_k_elevation), 0, 0, 1, 1},
+    {&__pyx_n_u_elevation, __pyx_k_elevation, sizeof(__pyx_k_elevation), 0, 1, 0, 1},
     {&__pyx_n_s_enter, __pyx_k_enter, sizeof(__pyx_k_enter), 0, 0, 1, 1},
     {&__pyx_n_s_exit, __pyx_k_exit, sizeof(__pyx_k_exit), 0, 0, 1, 1},
     {&__pyx_n_s_file_path, __pyx_k_file_path, sizeof(__pyx_k_file_path), 0, 0, 1, 1},
-    {&__pyx_n_s_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 0, 1, 1},
+    {&__pyx_n_u_float32, __pyx_k_float32, sizeof(__pyx_k_float32), 0, 1, 0, 1},
     {&__pyx_n_s_fn_dict, __pyx_k_fn_dict, sizeof(__pyx_k_fn_dict), 0, 0, 1, 1},
-    {&__pyx_n_s_fuel_model, __pyx_k_fuel_model, sizeof(__pyx_k_fuel_model), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_model, __pyx_k_fuel_model, sizeof(__pyx_k_fuel_model), 0, 1, 0, 1},
     {&__pyx_n_s_georeferences, __pyx_k_georeferences, sizeof(__pyx_k_georeferences), 0, 0, 1, 1},
     {&__pyx_n_s_height, __pyx_k_height, sizeof(__pyx_k_height), 0, 0, 1, 1},
     {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
@@ -6133,7 +6164,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_indexes, __pyx_k_indexes, sizeof(__pyx_k_indexes), 0, 0, 1, 1},
     {&__pyx_n_s_initializing, __pyx_k_initializing, sizeof(__pyx_k_initializing), 0, 0, 1, 1},
     {&__pyx_n_s_input_raster, __pyx_k_input_raster, sizeof(__pyx_k_input_raster), 0, 0, 1, 1},
-    {&__pyx_n_s_int16, __pyx_k_int16, sizeof(__pyx_k_int16), 0, 0, 1, 1},
+    {&__pyx_n_u_int16, __pyx_k_int16, sizeof(__pyx_k_int16), 0, 1, 0, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
     {&__pyx_n_s_items, __pyx_k_items, sizeof(__pyx_k_items), 0, 0, 1, 1},
     {&__pyx_n_s_landfire_array_conversions, __pyx_k_landfire_array_conversions, sizeof(__pyx_k_landfire_array_conversions), 0, 0, 1, 1},
@@ -6143,11 +6174,13 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_load_raster, __pyx_k_load_raster, sizeof(__pyx_k_load_raster), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
     {&__pyx_n_s_map, __pyx_k_map, sizeof(__pyx_k_map), 0, 0, 1, 1},
-    {&__pyx_n_s_metadata, __pyx_k_metadata, sizeof(__pyx_k_metadata), 0, 0, 1, 1},
+    {&__pyx_n_u_metadata, __pyx_k_metadata, sizeof(__pyx_k_metadata), 0, 1, 0, 1},
     {&__pyx_n_s_multiplier, __pyx_k_multiplier, sizeof(__pyx_k_multiplier), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+    {&__pyx_n_u_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 1, 0, 1},
     {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
     {&__pyx_n_s_nodata, __pyx_k_nodata, sizeof(__pyx_k_nodata), 0, 0, 1, 1},
+    {&__pyx_n_u_nodata, __pyx_k_nodata, sizeof(__pyx_k_nodata), 0, 1, 0, 1},
     {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
     {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
     {&__pyx_n_s_open, __pyx_k_open, sizeof(__pyx_k_open), 0, 0, 1, 1},
@@ -6156,6 +6189,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_pyretechnics_load_landfire, __pyx_k_pyretechnics_load_landfire, sizeof(__pyx_k_pyretechnics_load_landfire), 0, 0, 1, 1},
     {&__pyx_n_s_pyretechnics_space_time_cube, __pyx_k_pyretechnics_space_time_cube, sizeof(__pyx_k_pyretechnics_space_time_cube), 0, 0, 1, 1},
     {&__pyx_n_s_r, __pyx_k_r, sizeof(__pyx_k_r), 0, 0, 1, 1},
+    {&__pyx_n_u_r, __pyx_k_r, sizeof(__pyx_k_r), 0, 1, 0, 1},
     {&__pyx_n_s_raster, __pyx_k_raster, sizeof(__pyx_k_raster), 0, 0, 1, 1},
     {&__pyx_n_s_raster_dict, __pyx_k_raster_dict, sizeof(__pyx_k_raster_dict), 0, 0, 1, 1},
     {&__pyx_n_s_raster_metadata, __pyx_k_raster_metadata, sizeof(__pyx_k_raster_metadata), 0, 0, 1, 1},
@@ -6164,12 +6198,13 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_rasters, __pyx_k_rasters, sizeof(__pyx_k_rasters), 0, 0, 1, 1},
     {&__pyx_n_s_read, __pyx_k_read, sizeof(__pyx_k_read), 0, 0, 1, 1},
     {&__pyx_n_s_read_landfire_rasters_as_space_t, __pyx_k_read_landfire_rasters_as_space_t, sizeof(__pyx_k_read_landfire_rasters_as_space_t), 0, 0, 1, 1},
-    {&__pyx_n_s_rows, __pyx_k_rows, sizeof(__pyx_k_rows), 0, 0, 1, 1},
-    {&__pyx_n_s_slope, __pyx_k_slope, sizeof(__pyx_k_slope), 0, 0, 1, 1},
+    {&__pyx_n_u_rows, __pyx_k_rows, sizeof(__pyx_k_rows), 0, 1, 0, 1},
+    {&__pyx_n_u_slope, __pyx_k_slope, sizeof(__pyx_k_slope), 0, 1, 0, 1},
     {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
     {&__pyx_kp_s_src_pyretechnics_load_landfire_p, __pyx_k_src_pyretechnics_load_landfire_p, sizeof(__pyx_k_src_pyretechnics_load_landfire_p), 0, 0, 1, 0},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
     {&__pyx_n_s_transform, __pyx_k_transform, sizeof(__pyx_k_transform), 0, 0, 1, 1},
+    {&__pyx_n_u_transform, __pyx_k_transform, sizeof(__pyx_k_transform), 0, 1, 0, 1},
     {&__pyx_n_s_values, __pyx_k_values, sizeof(__pyx_k_values), 0, 0, 1, 1},
     {&__pyx_n_s_verify_cube_compatible_dimension, __pyx_k_verify_cube_compatible_dimension, sizeof(__pyx_k_verify_cube_compatible_dimension), 0, 0, 1, 1},
     {&__pyx_n_s_verify_cube_compatible_dimension_2, __pyx_k_verify_cube_compatible_dimension_2, sizeof(__pyx_k_verify_cube_compatible_dimension_2), 0, 0, 1, 1},
@@ -6216,7 +6251,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *     return True
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_Some_rasters_do_not_evenly_divid); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_Some_rasters_do_not_evenly_divid); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 67, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
@@ -6227,7 +6262,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_s_All_rasters_do_not_share_the_sam); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_All_rasters_do_not_share_the_sam); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 82, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
 
@@ -6265,7 +6300,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
  *     "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
  */
-  __pyx_tuple__16 = PyTuple_Pack(2, __pyx_n_s_float32, __pyx_float_1_00); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_tuple__16 = PyTuple_Pack(2, __pyx_n_u_float32, __pyx_float_1_00); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__16);
   __Pyx_GIVEREF(__pyx_tuple__16);
 
@@ -6276,7 +6311,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
  *     "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
  */
-  __pyx_tuple__17 = PyTuple_Pack(2, __pyx_n_s_float32, __pyx_float_0_01); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 33, __pyx_L1_error)
+  __pyx_tuple__17 = PyTuple_Pack(2, __pyx_n_u_float32, __pyx_float_0_01); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 33, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__17);
   __Pyx_GIVEREF(__pyx_tuple__17);
 
@@ -6287,7 +6322,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
  *     "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
  */
-  __pyx_tuple__18 = PyTuple_Pack(2, __pyx_n_s_int16, __pyx_int_1); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __pyx_tuple__18 = PyTuple_Pack(2, __pyx_n_u_int16, __pyx_int_1); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 34, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__18);
   __Pyx_GIVEREF(__pyx_tuple__18);
 
@@ -6298,7 +6333,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
  *     "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
  */
-  __pyx_tuple__19 = PyTuple_Pack(2, __pyx_n_s_float32, __pyx_float_0_10); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_tuple__19 = PyTuple_Pack(2, __pyx_n_u_float32, __pyx_float_0_10); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__19);
   __Pyx_GIVEREF(__pyx_tuple__19);
 
@@ -6789,7 +6824,7 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __Pyx_PyDict_NewPresized(8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_elevation, __pyx_tuple__16) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_elevation, __pyx_tuple__16) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":33
  *     #==============================================================================
@@ -6798,7 +6833,7 @@ if (!__Pyx_RefNanny) {
  *     "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
  *     "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_slope, __pyx_tuple__17) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_slope, __pyx_tuple__17) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":34
  *     "elevation"          : ("float32", 1.00), # meters above sea level   [0-8850]
@@ -6807,7 +6842,7 @@ if (!__Pyx_RefNanny) {
  *     "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
  *     "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_aspect, __pyx_tuple__18) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_aspect, __pyx_tuple__18) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":35
  *     "slope"              : ("float32", 0.01), # meters rise / meters run [0-4]
@@ -6816,7 +6851,7 @@ if (!__Pyx_RefNanny) {
  *     "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
  *     "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_fuel_model, __pyx_tuple__18) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_fuel_model, __pyx_tuple__18) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":36
  *     "aspect"             : ("int16"  , 1   ), # degrees CW from North    [0-359]
@@ -6825,7 +6860,7 @@ if (!__Pyx_RefNanny) {
  *     "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
  *     "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_canopy_cover, __pyx_tuple__17) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_canopy_cover, __pyx_tuple__17) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":37
  *     "fuel_model"         : ("int16"  , 1   ), # integer classes          [1-204]
@@ -6834,7 +6869,7 @@ if (!__Pyx_RefNanny) {
  *     "canopy_base_height" : ("float32", 0.10), # meters                   [0-10]
  *     "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_canopy_height, __pyx_tuple__19) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_canopy_height, __pyx_tuple__19) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":38
  *     "canopy_cover"       : ("float32", 0.01), # canopy area / total area [0-0.95]
@@ -6843,7 +6878,7 @@ if (!__Pyx_RefNanny) {
  *     "canopy_bulk_density": ("float32", 0.01), # kilograms/meters^3       [0-0.45]
  * }
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_canopy_base_height, __pyx_tuple__19) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_canopy_base_height, __pyx_tuple__19) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/load_landfire.py":39
  *     "canopy_height"      : ("float32", 0.10), # meters                   [0-51]
@@ -6852,7 +6887,7 @@ if (!__Pyx_RefNanny) {
  * }
  * 
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_canopy_bulk_density, __pyx_tuple__17) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_canopy_bulk_density, __pyx_tuple__17) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_landfire_array_conversions, __pyx_t_2) < 0) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 

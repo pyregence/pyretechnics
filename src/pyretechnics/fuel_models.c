@@ -2741,71 +2741,73 @@ typedef struct {
   PyObject *__pyx_n_s_A_T;
   PyObject *__pyx_n_s_A_i;
   PyObject *__pyx_n_s_A_ij;
-  PyObject *__pyx_n_s_GR1;
-  PyObject *__pyx_n_s_GR2;
-  PyObject *__pyx_n_s_GR3;
-  PyObject *__pyx_n_s_GR4;
-  PyObject *__pyx_n_s_GR5;
-  PyObject *__pyx_n_s_GR6;
-  PyObject *__pyx_n_s_GR7;
-  PyObject *__pyx_n_s_GR8;
-  PyObject *__pyx_n_s_GR9;
-  PyObject *__pyx_n_s_GS1;
-  PyObject *__pyx_n_s_GS2;
-  PyObject *__pyx_n_s_GS3;
-  PyObject *__pyx_n_s_GS4;
+  PyObject *__pyx_n_u_GR1;
+  PyObject *__pyx_n_u_GR2;
+  PyObject *__pyx_n_u_GR3;
+  PyObject *__pyx_n_u_GR4;
+  PyObject *__pyx_n_u_GR5;
+  PyObject *__pyx_n_u_GR6;
+  PyObject *__pyx_n_u_GR7;
+  PyObject *__pyx_n_u_GR8;
+  PyObject *__pyx_n_u_GR9;
+  PyObject *__pyx_n_u_GS1;
+  PyObject *__pyx_n_u_GS2;
+  PyObject *__pyx_n_u_GS3;
+  PyObject *__pyx_n_u_GS4;
   PyObject *__pyx_n_s_M_f;
+  PyObject *__pyx_n_u_M_f;
   PyObject *__pyx_n_s_M_x;
+  PyObject *__pyx_n_u_M_x;
   PyObject *__pyx_n_s_M_x_dead;
   PyObject *__pyx_n_s_M_x_dead_herbaceous;
   PyObject *__pyx_n_s_M_x_live;
-  PyObject *__pyx_n_s_NB1;
-  PyObject *__pyx_n_s_NB2;
-  PyObject *__pyx_n_s_NB3;
-  PyObject *__pyx_n_s_NB4;
-  PyObject *__pyx_n_s_NB5;
-  PyObject *__pyx_n_s_R01;
-  PyObject *__pyx_n_s_R02;
-  PyObject *__pyx_n_s_R03;
-  PyObject *__pyx_n_s_R04;
-  PyObject *__pyx_n_s_R05;
-  PyObject *__pyx_n_s_R06;
-  PyObject *__pyx_n_s_R07;
-  PyObject *__pyx_n_s_R08;
-  PyObject *__pyx_n_s_R09;
-  PyObject *__pyx_n_s_R10;
-  PyObject *__pyx_n_s_R11;
-  PyObject *__pyx_n_s_R12;
-  PyObject *__pyx_n_s_R13;
-  PyObject *__pyx_n_s_SB1;
-  PyObject *__pyx_n_s_SB2;
-  PyObject *__pyx_n_s_SB3;
-  PyObject *__pyx_n_s_SB4;
-  PyObject *__pyx_n_s_SH1;
-  PyObject *__pyx_n_s_SH2;
-  PyObject *__pyx_n_s_SH3;
-  PyObject *__pyx_n_s_SH4;
-  PyObject *__pyx_n_s_SH5;
-  PyObject *__pyx_n_s_SH6;
-  PyObject *__pyx_n_s_SH7;
-  PyObject *__pyx_n_s_SH8;
-  PyObject *__pyx_n_s_SH9;
-  PyObject *__pyx_n_s_S_T;
-  PyObject *__pyx_n_s_S_e;
-  PyObject *__pyx_n_s_TL1;
-  PyObject *__pyx_n_s_TL2;
-  PyObject *__pyx_n_s_TL3;
-  PyObject *__pyx_n_s_TL4;
-  PyObject *__pyx_n_s_TL5;
-  PyObject *__pyx_n_s_TL6;
-  PyObject *__pyx_n_s_TL7;
-  PyObject *__pyx_n_s_TL8;
-  PyObject *__pyx_n_s_TL9;
-  PyObject *__pyx_n_s_TU1;
-  PyObject *__pyx_n_s_TU2;
-  PyObject *__pyx_n_s_TU3;
-  PyObject *__pyx_n_s_TU4;
-  PyObject *__pyx_n_s_TU5;
+  PyObject *__pyx_n_u_NB1;
+  PyObject *__pyx_n_u_NB2;
+  PyObject *__pyx_n_u_NB3;
+  PyObject *__pyx_n_u_NB4;
+  PyObject *__pyx_n_u_NB5;
+  PyObject *__pyx_n_u_R01;
+  PyObject *__pyx_n_u_R02;
+  PyObject *__pyx_n_u_R03;
+  PyObject *__pyx_n_u_R04;
+  PyObject *__pyx_n_u_R05;
+  PyObject *__pyx_n_u_R06;
+  PyObject *__pyx_n_u_R07;
+  PyObject *__pyx_n_u_R08;
+  PyObject *__pyx_n_u_R09;
+  PyObject *__pyx_n_u_R10;
+  PyObject *__pyx_n_u_R11;
+  PyObject *__pyx_n_u_R12;
+  PyObject *__pyx_n_u_R13;
+  PyObject *__pyx_n_u_SB1;
+  PyObject *__pyx_n_u_SB2;
+  PyObject *__pyx_n_u_SB3;
+  PyObject *__pyx_n_u_SB4;
+  PyObject *__pyx_n_u_SH1;
+  PyObject *__pyx_n_u_SH2;
+  PyObject *__pyx_n_u_SH3;
+  PyObject *__pyx_n_u_SH4;
+  PyObject *__pyx_n_u_SH5;
+  PyObject *__pyx_n_u_SH6;
+  PyObject *__pyx_n_u_SH7;
+  PyObject *__pyx_n_u_SH8;
+  PyObject *__pyx_n_u_SH9;
+  PyObject *__pyx_n_u_S_T;
+  PyObject *__pyx_n_u_S_e;
+  PyObject *__pyx_n_u_TL1;
+  PyObject *__pyx_n_u_TL2;
+  PyObject *__pyx_n_u_TL3;
+  PyObject *__pyx_n_u_TL4;
+  PyObject *__pyx_n_u_TL5;
+  PyObject *__pyx_n_u_TL6;
+  PyObject *__pyx_n_u_TL7;
+  PyObject *__pyx_n_u_TL8;
+  PyObject *__pyx_n_u_TL9;
+  PyObject *__pyx_n_u_TU1;
+  PyObject *__pyx_n_u_TU2;
+  PyObject *__pyx_n_u_TU3;
+  PyObject *__pyx_n_u_TU4;
+  PyObject *__pyx_n_u_TU5;
   PyObject *__pyx_kp_u__14;
   PyObject *__pyx_n_s__15;
   PyObject *__pyx_n_s__18;
@@ -2817,7 +2819,7 @@ typedef struct {
   PyObject *__pyx_n_s_add_weighting_factors_locals_lam;
   PyObject *__pyx_n_s_add_weighting_factors_locals_lam_2;
   PyObject *__pyx_n_s_asyncio_coroutines;
-  PyObject *__pyx_n_s_burnable;
+  PyObject *__pyx_n_u_burnable;
   PyObject *__pyx_n_s_c;
   PyObject *__pyx_n_s_category_sum;
   PyObject *__pyx_n_s_class_getitem;
@@ -2828,15 +2830,19 @@ typedef struct {
   PyObject *__pyx_n_s_dead_moisture_factor;
   PyObject *__pyx_n_s_dead_to_live_ratio;
   PyObject *__pyx_n_s_delta;
+  PyObject *__pyx_n_u_delta;
   PyObject *__pyx_kp_u_disable;
   PyObject *__pyx_n_s_dynamic;
+  PyObject *__pyx_n_u_dynamic;
   PyObject *__pyx_n_s_dynamic_fuel_model;
   PyObject *__pyx_kp_u_enable;
   PyObject *__pyx_n_s_exp;
   PyObject *__pyx_n_s_expand_compact_fuel_model;
   PyObject *__pyx_n_s_f;
   PyObject *__pyx_n_s_f_i;
+  PyObject *__pyx_n_u_f_i;
   PyObject *__pyx_n_s_f_ij;
+  PyObject *__pyx_n_u_f_ij;
   PyObject *__pyx_n_s_firemod_size_classes;
   PyObject *__pyx_n_s_fraction_cured;
   PyObject *__pyx_n_s_fraction_green;
@@ -2846,8 +2852,10 @@ typedef struct {
   PyObject *__pyx_n_s_fuel_model_table;
   PyObject *__pyx_n_s_fuel_moisture;
   PyObject *__pyx_n_s_g_ij;
+  PyObject *__pyx_n_u_g_ij;
   PyObject *__pyx_kp_u_gc;
   PyObject *__pyx_n_s_h;
+  PyObject *__pyx_n_u_h;
   PyObject *__pyx_n_s_i;
   PyObject *__pyx_n_s_import;
   PyObject *__pyx_n_s_is_coroutine;
@@ -2864,12 +2872,15 @@ typedef struct {
   PyObject *__pyx_n_s_moisturize;
   PyObject *__pyx_n_s_moisturized_fuel_model;
   PyObject *__pyx_n_s_name;
+  PyObject *__pyx_n_u_name;
   PyObject *__pyx_n_s_name_2;
-  PyObject *__pyx_n_s_number;
+  PyObject *__pyx_n_u_number;
   PyObject *__pyx_n_s_pyretechnics_fuel_models;
   PyObject *__pyx_n_s_rho_p;
+  PyObject *__pyx_n_u_rho_p;
   PyObject *__pyx_n_s_s;
   PyObject *__pyx_n_s_sigma;
+  PyObject *__pyx_n_u_sigma;
   PyObject *__pyx_n_s_sigma_dead_100hr;
   PyObject *__pyx_n_s_sigma_dead_10hr;
   PyObject *__pyx_n_s_sigma_dead_1hr;
@@ -2882,6 +2893,7 @@ typedef struct {
   PyObject *__pyx_n_s_static_fuel_model;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_n_s_w_o;
+  PyObject *__pyx_n_u_w_o;
   PyObject *__pyx_n_s_w_o_dead_100hr;
   PyObject *__pyx_n_s_w_o_dead_10hr;
   PyObject *__pyx_n_s_w_o_dead_1hr;
@@ -3165,71 +3177,73 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_A_T);
   Py_CLEAR(clear_module_state->__pyx_n_s_A_i);
   Py_CLEAR(clear_module_state->__pyx_n_s_A_ij);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR4);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR5);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR6);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR7);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR8);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GR9);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GS1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GS2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GS3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_GS4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR5);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR6);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR7);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR8);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GR9);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GS1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GS2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GS3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_GS4);
   Py_CLEAR(clear_module_state->__pyx_n_s_M_f);
+  Py_CLEAR(clear_module_state->__pyx_n_u_M_f);
   Py_CLEAR(clear_module_state->__pyx_n_s_M_x);
+  Py_CLEAR(clear_module_state->__pyx_n_u_M_x);
   Py_CLEAR(clear_module_state->__pyx_n_s_M_x_dead);
   Py_CLEAR(clear_module_state->__pyx_n_s_M_x_dead_herbaceous);
   Py_CLEAR(clear_module_state->__pyx_n_s_M_x_live);
-  Py_CLEAR(clear_module_state->__pyx_n_s_NB1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_NB2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_NB3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_NB4);
-  Py_CLEAR(clear_module_state->__pyx_n_s_NB5);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R01);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R02);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R03);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R04);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R05);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R06);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R07);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R08);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R09);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R10);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R11);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R12);
-  Py_CLEAR(clear_module_state->__pyx_n_s_R13);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SB1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SB2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SB3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SB4);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH4);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH5);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH6);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH7);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH8);
-  Py_CLEAR(clear_module_state->__pyx_n_s_SH9);
-  Py_CLEAR(clear_module_state->__pyx_n_s_S_T);
-  Py_CLEAR(clear_module_state->__pyx_n_s_S_e);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL4);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL5);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL6);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL7);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL8);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TL9);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TU1);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TU2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TU3);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TU4);
-  Py_CLEAR(clear_module_state->__pyx_n_s_TU5);
+  Py_CLEAR(clear_module_state->__pyx_n_u_NB1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_NB2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_NB3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_NB4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_NB5);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R01);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R02);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R03);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R04);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R05);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R06);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R07);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R08);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R09);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R10);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R11);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R12);
+  Py_CLEAR(clear_module_state->__pyx_n_u_R13);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SB1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SB2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SB3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SB4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH5);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH6);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH7);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH8);
+  Py_CLEAR(clear_module_state->__pyx_n_u_SH9);
+  Py_CLEAR(clear_module_state->__pyx_n_u_S_T);
+  Py_CLEAR(clear_module_state->__pyx_n_u_S_e);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL5);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL6);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL7);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL8);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TL9);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TU1);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TU2);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TU3);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TU4);
+  Py_CLEAR(clear_module_state->__pyx_n_u_TU5);
   Py_CLEAR(clear_module_state->__pyx_kp_u__14);
   Py_CLEAR(clear_module_state->__pyx_n_s__15);
   Py_CLEAR(clear_module_state->__pyx_n_s__18);
@@ -3241,7 +3255,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_add_weighting_factors_locals_lam);
   Py_CLEAR(clear_module_state->__pyx_n_s_add_weighting_factors_locals_lam_2);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
-  Py_CLEAR(clear_module_state->__pyx_n_s_burnable);
+  Py_CLEAR(clear_module_state->__pyx_n_u_burnable);
   Py_CLEAR(clear_module_state->__pyx_n_s_c);
   Py_CLEAR(clear_module_state->__pyx_n_s_category_sum);
   Py_CLEAR(clear_module_state->__pyx_n_s_class_getitem);
@@ -3252,15 +3266,19 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_dead_moisture_factor);
   Py_CLEAR(clear_module_state->__pyx_n_s_dead_to_live_ratio);
   Py_CLEAR(clear_module_state->__pyx_n_s_delta);
+  Py_CLEAR(clear_module_state->__pyx_n_u_delta);
   Py_CLEAR(clear_module_state->__pyx_kp_u_disable);
   Py_CLEAR(clear_module_state->__pyx_n_s_dynamic);
+  Py_CLEAR(clear_module_state->__pyx_n_u_dynamic);
   Py_CLEAR(clear_module_state->__pyx_n_s_dynamic_fuel_model);
   Py_CLEAR(clear_module_state->__pyx_kp_u_enable);
   Py_CLEAR(clear_module_state->__pyx_n_s_exp);
   Py_CLEAR(clear_module_state->__pyx_n_s_expand_compact_fuel_model);
   Py_CLEAR(clear_module_state->__pyx_n_s_f);
   Py_CLEAR(clear_module_state->__pyx_n_s_f_i);
+  Py_CLEAR(clear_module_state->__pyx_n_u_f_i);
   Py_CLEAR(clear_module_state->__pyx_n_s_f_ij);
+  Py_CLEAR(clear_module_state->__pyx_n_u_f_ij);
   Py_CLEAR(clear_module_state->__pyx_n_s_firemod_size_classes);
   Py_CLEAR(clear_module_state->__pyx_n_s_fraction_cured);
   Py_CLEAR(clear_module_state->__pyx_n_s_fraction_green);
@@ -3270,8 +3288,10 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_model_table);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture);
   Py_CLEAR(clear_module_state->__pyx_n_s_g_ij);
+  Py_CLEAR(clear_module_state->__pyx_n_u_g_ij);
   Py_CLEAR(clear_module_state->__pyx_kp_u_gc);
   Py_CLEAR(clear_module_state->__pyx_n_s_h);
+  Py_CLEAR(clear_module_state->__pyx_n_u_h);
   Py_CLEAR(clear_module_state->__pyx_n_s_i);
   Py_CLEAR(clear_module_state->__pyx_n_s_import);
   Py_CLEAR(clear_module_state->__pyx_n_s_is_coroutine);
@@ -3288,12 +3308,15 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_moisturize);
   Py_CLEAR(clear_module_state->__pyx_n_s_moisturized_fuel_model);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
+  Py_CLEAR(clear_module_state->__pyx_n_u_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_name_2);
-  Py_CLEAR(clear_module_state->__pyx_n_s_number);
+  Py_CLEAR(clear_module_state->__pyx_n_u_number);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_fuel_models);
   Py_CLEAR(clear_module_state->__pyx_n_s_rho_p);
+  Py_CLEAR(clear_module_state->__pyx_n_u_rho_p);
   Py_CLEAR(clear_module_state->__pyx_n_s_s);
   Py_CLEAR(clear_module_state->__pyx_n_s_sigma);
+  Py_CLEAR(clear_module_state->__pyx_n_u_sigma);
   Py_CLEAR(clear_module_state->__pyx_n_s_sigma_dead_100hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_sigma_dead_10hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_sigma_dead_1hr);
@@ -3306,6 +3329,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_static_fuel_model);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_n_s_w_o);
+  Py_CLEAR(clear_module_state->__pyx_n_u_w_o);
   Py_CLEAR(clear_module_state->__pyx_n_s_w_o_dead_100hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_w_o_dead_10hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_w_o_dead_1hr);
@@ -3567,71 +3591,73 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_A_T);
   Py_VISIT(traverse_module_state->__pyx_n_s_A_i);
   Py_VISIT(traverse_module_state->__pyx_n_s_A_ij);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR4);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR5);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR6);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR7);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR8);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GR9);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GS1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GS2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GS3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_GS4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR5);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR6);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR7);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR8);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GR9);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GS1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GS2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GS3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_GS4);
   Py_VISIT(traverse_module_state->__pyx_n_s_M_f);
+  Py_VISIT(traverse_module_state->__pyx_n_u_M_f);
   Py_VISIT(traverse_module_state->__pyx_n_s_M_x);
+  Py_VISIT(traverse_module_state->__pyx_n_u_M_x);
   Py_VISIT(traverse_module_state->__pyx_n_s_M_x_dead);
   Py_VISIT(traverse_module_state->__pyx_n_s_M_x_dead_herbaceous);
   Py_VISIT(traverse_module_state->__pyx_n_s_M_x_live);
-  Py_VISIT(traverse_module_state->__pyx_n_s_NB1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_NB2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_NB3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_NB4);
-  Py_VISIT(traverse_module_state->__pyx_n_s_NB5);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R01);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R02);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R03);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R04);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R05);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R06);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R07);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R08);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R09);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R10);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R11);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R12);
-  Py_VISIT(traverse_module_state->__pyx_n_s_R13);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SB1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SB2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SB3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SB4);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH4);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH5);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH6);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH7);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH8);
-  Py_VISIT(traverse_module_state->__pyx_n_s_SH9);
-  Py_VISIT(traverse_module_state->__pyx_n_s_S_T);
-  Py_VISIT(traverse_module_state->__pyx_n_s_S_e);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL4);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL5);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL6);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL7);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL8);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TL9);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TU1);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TU2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TU3);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TU4);
-  Py_VISIT(traverse_module_state->__pyx_n_s_TU5);
+  Py_VISIT(traverse_module_state->__pyx_n_u_NB1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_NB2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_NB3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_NB4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_NB5);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R01);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R02);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R03);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R04);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R05);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R06);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R07);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R08);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R09);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R10);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R11);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R12);
+  Py_VISIT(traverse_module_state->__pyx_n_u_R13);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SB1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SB2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SB3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SB4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH5);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH6);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH7);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH8);
+  Py_VISIT(traverse_module_state->__pyx_n_u_SH9);
+  Py_VISIT(traverse_module_state->__pyx_n_u_S_T);
+  Py_VISIT(traverse_module_state->__pyx_n_u_S_e);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL5);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL6);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL7);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL8);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TL9);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TU1);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TU2);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TU3);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TU4);
+  Py_VISIT(traverse_module_state->__pyx_n_u_TU5);
   Py_VISIT(traverse_module_state->__pyx_kp_u__14);
   Py_VISIT(traverse_module_state->__pyx_n_s__15);
   Py_VISIT(traverse_module_state->__pyx_n_s__18);
@@ -3643,7 +3669,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_add_weighting_factors_locals_lam);
   Py_VISIT(traverse_module_state->__pyx_n_s_add_weighting_factors_locals_lam_2);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
-  Py_VISIT(traverse_module_state->__pyx_n_s_burnable);
+  Py_VISIT(traverse_module_state->__pyx_n_u_burnable);
   Py_VISIT(traverse_module_state->__pyx_n_s_c);
   Py_VISIT(traverse_module_state->__pyx_n_s_category_sum);
   Py_VISIT(traverse_module_state->__pyx_n_s_class_getitem);
@@ -3654,15 +3680,19 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_dead_moisture_factor);
   Py_VISIT(traverse_module_state->__pyx_n_s_dead_to_live_ratio);
   Py_VISIT(traverse_module_state->__pyx_n_s_delta);
+  Py_VISIT(traverse_module_state->__pyx_n_u_delta);
   Py_VISIT(traverse_module_state->__pyx_kp_u_disable);
   Py_VISIT(traverse_module_state->__pyx_n_s_dynamic);
+  Py_VISIT(traverse_module_state->__pyx_n_u_dynamic);
   Py_VISIT(traverse_module_state->__pyx_n_s_dynamic_fuel_model);
   Py_VISIT(traverse_module_state->__pyx_kp_u_enable);
   Py_VISIT(traverse_module_state->__pyx_n_s_exp);
   Py_VISIT(traverse_module_state->__pyx_n_s_expand_compact_fuel_model);
   Py_VISIT(traverse_module_state->__pyx_n_s_f);
   Py_VISIT(traverse_module_state->__pyx_n_s_f_i);
+  Py_VISIT(traverse_module_state->__pyx_n_u_f_i);
   Py_VISIT(traverse_module_state->__pyx_n_s_f_ij);
+  Py_VISIT(traverse_module_state->__pyx_n_u_f_ij);
   Py_VISIT(traverse_module_state->__pyx_n_s_firemod_size_classes);
   Py_VISIT(traverse_module_state->__pyx_n_s_fraction_cured);
   Py_VISIT(traverse_module_state->__pyx_n_s_fraction_green);
@@ -3672,8 +3702,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_model_table);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture);
   Py_VISIT(traverse_module_state->__pyx_n_s_g_ij);
+  Py_VISIT(traverse_module_state->__pyx_n_u_g_ij);
   Py_VISIT(traverse_module_state->__pyx_kp_u_gc);
   Py_VISIT(traverse_module_state->__pyx_n_s_h);
+  Py_VISIT(traverse_module_state->__pyx_n_u_h);
   Py_VISIT(traverse_module_state->__pyx_n_s_i);
   Py_VISIT(traverse_module_state->__pyx_n_s_import);
   Py_VISIT(traverse_module_state->__pyx_n_s_is_coroutine);
@@ -3690,12 +3722,15 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_moisturize);
   Py_VISIT(traverse_module_state->__pyx_n_s_moisturized_fuel_model);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
+  Py_VISIT(traverse_module_state->__pyx_n_u_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_name_2);
-  Py_VISIT(traverse_module_state->__pyx_n_s_number);
+  Py_VISIT(traverse_module_state->__pyx_n_u_number);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_fuel_models);
   Py_VISIT(traverse_module_state->__pyx_n_s_rho_p);
+  Py_VISIT(traverse_module_state->__pyx_n_u_rho_p);
   Py_VISIT(traverse_module_state->__pyx_n_s_s);
   Py_VISIT(traverse_module_state->__pyx_n_s_sigma);
+  Py_VISIT(traverse_module_state->__pyx_n_u_sigma);
   Py_VISIT(traverse_module_state->__pyx_n_s_sigma_dead_100hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_sigma_dead_10hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_sigma_dead_1hr);
@@ -3708,6 +3743,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_static_fuel_model);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_n_s_w_o);
+  Py_VISIT(traverse_module_state->__pyx_n_u_w_o);
   Py_VISIT(traverse_module_state->__pyx_n_s_w_o_dead_100hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_w_o_dead_10hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_w_o_dead_1hr);
@@ -3979,71 +4015,73 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_A_T __pyx_mstate_global->__pyx_n_s_A_T
 #define __pyx_n_s_A_i __pyx_mstate_global->__pyx_n_s_A_i
 #define __pyx_n_s_A_ij __pyx_mstate_global->__pyx_n_s_A_ij
-#define __pyx_n_s_GR1 __pyx_mstate_global->__pyx_n_s_GR1
-#define __pyx_n_s_GR2 __pyx_mstate_global->__pyx_n_s_GR2
-#define __pyx_n_s_GR3 __pyx_mstate_global->__pyx_n_s_GR3
-#define __pyx_n_s_GR4 __pyx_mstate_global->__pyx_n_s_GR4
-#define __pyx_n_s_GR5 __pyx_mstate_global->__pyx_n_s_GR5
-#define __pyx_n_s_GR6 __pyx_mstate_global->__pyx_n_s_GR6
-#define __pyx_n_s_GR7 __pyx_mstate_global->__pyx_n_s_GR7
-#define __pyx_n_s_GR8 __pyx_mstate_global->__pyx_n_s_GR8
-#define __pyx_n_s_GR9 __pyx_mstate_global->__pyx_n_s_GR9
-#define __pyx_n_s_GS1 __pyx_mstate_global->__pyx_n_s_GS1
-#define __pyx_n_s_GS2 __pyx_mstate_global->__pyx_n_s_GS2
-#define __pyx_n_s_GS3 __pyx_mstate_global->__pyx_n_s_GS3
-#define __pyx_n_s_GS4 __pyx_mstate_global->__pyx_n_s_GS4
+#define __pyx_n_u_GR1 __pyx_mstate_global->__pyx_n_u_GR1
+#define __pyx_n_u_GR2 __pyx_mstate_global->__pyx_n_u_GR2
+#define __pyx_n_u_GR3 __pyx_mstate_global->__pyx_n_u_GR3
+#define __pyx_n_u_GR4 __pyx_mstate_global->__pyx_n_u_GR4
+#define __pyx_n_u_GR5 __pyx_mstate_global->__pyx_n_u_GR5
+#define __pyx_n_u_GR6 __pyx_mstate_global->__pyx_n_u_GR6
+#define __pyx_n_u_GR7 __pyx_mstate_global->__pyx_n_u_GR7
+#define __pyx_n_u_GR8 __pyx_mstate_global->__pyx_n_u_GR8
+#define __pyx_n_u_GR9 __pyx_mstate_global->__pyx_n_u_GR9
+#define __pyx_n_u_GS1 __pyx_mstate_global->__pyx_n_u_GS1
+#define __pyx_n_u_GS2 __pyx_mstate_global->__pyx_n_u_GS2
+#define __pyx_n_u_GS3 __pyx_mstate_global->__pyx_n_u_GS3
+#define __pyx_n_u_GS4 __pyx_mstate_global->__pyx_n_u_GS4
 #define __pyx_n_s_M_f __pyx_mstate_global->__pyx_n_s_M_f
+#define __pyx_n_u_M_f __pyx_mstate_global->__pyx_n_u_M_f
 #define __pyx_n_s_M_x __pyx_mstate_global->__pyx_n_s_M_x
+#define __pyx_n_u_M_x __pyx_mstate_global->__pyx_n_u_M_x
 #define __pyx_n_s_M_x_dead __pyx_mstate_global->__pyx_n_s_M_x_dead
 #define __pyx_n_s_M_x_dead_herbaceous __pyx_mstate_global->__pyx_n_s_M_x_dead_herbaceous
 #define __pyx_n_s_M_x_live __pyx_mstate_global->__pyx_n_s_M_x_live
-#define __pyx_n_s_NB1 __pyx_mstate_global->__pyx_n_s_NB1
-#define __pyx_n_s_NB2 __pyx_mstate_global->__pyx_n_s_NB2
-#define __pyx_n_s_NB3 __pyx_mstate_global->__pyx_n_s_NB3
-#define __pyx_n_s_NB4 __pyx_mstate_global->__pyx_n_s_NB4
-#define __pyx_n_s_NB5 __pyx_mstate_global->__pyx_n_s_NB5
-#define __pyx_n_s_R01 __pyx_mstate_global->__pyx_n_s_R01
-#define __pyx_n_s_R02 __pyx_mstate_global->__pyx_n_s_R02
-#define __pyx_n_s_R03 __pyx_mstate_global->__pyx_n_s_R03
-#define __pyx_n_s_R04 __pyx_mstate_global->__pyx_n_s_R04
-#define __pyx_n_s_R05 __pyx_mstate_global->__pyx_n_s_R05
-#define __pyx_n_s_R06 __pyx_mstate_global->__pyx_n_s_R06
-#define __pyx_n_s_R07 __pyx_mstate_global->__pyx_n_s_R07
-#define __pyx_n_s_R08 __pyx_mstate_global->__pyx_n_s_R08
-#define __pyx_n_s_R09 __pyx_mstate_global->__pyx_n_s_R09
-#define __pyx_n_s_R10 __pyx_mstate_global->__pyx_n_s_R10
-#define __pyx_n_s_R11 __pyx_mstate_global->__pyx_n_s_R11
-#define __pyx_n_s_R12 __pyx_mstate_global->__pyx_n_s_R12
-#define __pyx_n_s_R13 __pyx_mstate_global->__pyx_n_s_R13
-#define __pyx_n_s_SB1 __pyx_mstate_global->__pyx_n_s_SB1
-#define __pyx_n_s_SB2 __pyx_mstate_global->__pyx_n_s_SB2
-#define __pyx_n_s_SB3 __pyx_mstate_global->__pyx_n_s_SB3
-#define __pyx_n_s_SB4 __pyx_mstate_global->__pyx_n_s_SB4
-#define __pyx_n_s_SH1 __pyx_mstate_global->__pyx_n_s_SH1
-#define __pyx_n_s_SH2 __pyx_mstate_global->__pyx_n_s_SH2
-#define __pyx_n_s_SH3 __pyx_mstate_global->__pyx_n_s_SH3
-#define __pyx_n_s_SH4 __pyx_mstate_global->__pyx_n_s_SH4
-#define __pyx_n_s_SH5 __pyx_mstate_global->__pyx_n_s_SH5
-#define __pyx_n_s_SH6 __pyx_mstate_global->__pyx_n_s_SH6
-#define __pyx_n_s_SH7 __pyx_mstate_global->__pyx_n_s_SH7
-#define __pyx_n_s_SH8 __pyx_mstate_global->__pyx_n_s_SH8
-#define __pyx_n_s_SH9 __pyx_mstate_global->__pyx_n_s_SH9
-#define __pyx_n_s_S_T __pyx_mstate_global->__pyx_n_s_S_T
-#define __pyx_n_s_S_e __pyx_mstate_global->__pyx_n_s_S_e
-#define __pyx_n_s_TL1 __pyx_mstate_global->__pyx_n_s_TL1
-#define __pyx_n_s_TL2 __pyx_mstate_global->__pyx_n_s_TL2
-#define __pyx_n_s_TL3 __pyx_mstate_global->__pyx_n_s_TL3
-#define __pyx_n_s_TL4 __pyx_mstate_global->__pyx_n_s_TL4
-#define __pyx_n_s_TL5 __pyx_mstate_global->__pyx_n_s_TL5
-#define __pyx_n_s_TL6 __pyx_mstate_global->__pyx_n_s_TL6
-#define __pyx_n_s_TL7 __pyx_mstate_global->__pyx_n_s_TL7
-#define __pyx_n_s_TL8 __pyx_mstate_global->__pyx_n_s_TL8
-#define __pyx_n_s_TL9 __pyx_mstate_global->__pyx_n_s_TL9
-#define __pyx_n_s_TU1 __pyx_mstate_global->__pyx_n_s_TU1
-#define __pyx_n_s_TU2 __pyx_mstate_global->__pyx_n_s_TU2
-#define __pyx_n_s_TU3 __pyx_mstate_global->__pyx_n_s_TU3
-#define __pyx_n_s_TU4 __pyx_mstate_global->__pyx_n_s_TU4
-#define __pyx_n_s_TU5 __pyx_mstate_global->__pyx_n_s_TU5
+#define __pyx_n_u_NB1 __pyx_mstate_global->__pyx_n_u_NB1
+#define __pyx_n_u_NB2 __pyx_mstate_global->__pyx_n_u_NB2
+#define __pyx_n_u_NB3 __pyx_mstate_global->__pyx_n_u_NB3
+#define __pyx_n_u_NB4 __pyx_mstate_global->__pyx_n_u_NB4
+#define __pyx_n_u_NB5 __pyx_mstate_global->__pyx_n_u_NB5
+#define __pyx_n_u_R01 __pyx_mstate_global->__pyx_n_u_R01
+#define __pyx_n_u_R02 __pyx_mstate_global->__pyx_n_u_R02
+#define __pyx_n_u_R03 __pyx_mstate_global->__pyx_n_u_R03
+#define __pyx_n_u_R04 __pyx_mstate_global->__pyx_n_u_R04
+#define __pyx_n_u_R05 __pyx_mstate_global->__pyx_n_u_R05
+#define __pyx_n_u_R06 __pyx_mstate_global->__pyx_n_u_R06
+#define __pyx_n_u_R07 __pyx_mstate_global->__pyx_n_u_R07
+#define __pyx_n_u_R08 __pyx_mstate_global->__pyx_n_u_R08
+#define __pyx_n_u_R09 __pyx_mstate_global->__pyx_n_u_R09
+#define __pyx_n_u_R10 __pyx_mstate_global->__pyx_n_u_R10
+#define __pyx_n_u_R11 __pyx_mstate_global->__pyx_n_u_R11
+#define __pyx_n_u_R12 __pyx_mstate_global->__pyx_n_u_R12
+#define __pyx_n_u_R13 __pyx_mstate_global->__pyx_n_u_R13
+#define __pyx_n_u_SB1 __pyx_mstate_global->__pyx_n_u_SB1
+#define __pyx_n_u_SB2 __pyx_mstate_global->__pyx_n_u_SB2
+#define __pyx_n_u_SB3 __pyx_mstate_global->__pyx_n_u_SB3
+#define __pyx_n_u_SB4 __pyx_mstate_global->__pyx_n_u_SB4
+#define __pyx_n_u_SH1 __pyx_mstate_global->__pyx_n_u_SH1
+#define __pyx_n_u_SH2 __pyx_mstate_global->__pyx_n_u_SH2
+#define __pyx_n_u_SH3 __pyx_mstate_global->__pyx_n_u_SH3
+#define __pyx_n_u_SH4 __pyx_mstate_global->__pyx_n_u_SH4
+#define __pyx_n_u_SH5 __pyx_mstate_global->__pyx_n_u_SH5
+#define __pyx_n_u_SH6 __pyx_mstate_global->__pyx_n_u_SH6
+#define __pyx_n_u_SH7 __pyx_mstate_global->__pyx_n_u_SH7
+#define __pyx_n_u_SH8 __pyx_mstate_global->__pyx_n_u_SH8
+#define __pyx_n_u_SH9 __pyx_mstate_global->__pyx_n_u_SH9
+#define __pyx_n_u_S_T __pyx_mstate_global->__pyx_n_u_S_T
+#define __pyx_n_u_S_e __pyx_mstate_global->__pyx_n_u_S_e
+#define __pyx_n_u_TL1 __pyx_mstate_global->__pyx_n_u_TL1
+#define __pyx_n_u_TL2 __pyx_mstate_global->__pyx_n_u_TL2
+#define __pyx_n_u_TL3 __pyx_mstate_global->__pyx_n_u_TL3
+#define __pyx_n_u_TL4 __pyx_mstate_global->__pyx_n_u_TL4
+#define __pyx_n_u_TL5 __pyx_mstate_global->__pyx_n_u_TL5
+#define __pyx_n_u_TL6 __pyx_mstate_global->__pyx_n_u_TL6
+#define __pyx_n_u_TL7 __pyx_mstate_global->__pyx_n_u_TL7
+#define __pyx_n_u_TL8 __pyx_mstate_global->__pyx_n_u_TL8
+#define __pyx_n_u_TL9 __pyx_mstate_global->__pyx_n_u_TL9
+#define __pyx_n_u_TU1 __pyx_mstate_global->__pyx_n_u_TU1
+#define __pyx_n_u_TU2 __pyx_mstate_global->__pyx_n_u_TU2
+#define __pyx_n_u_TU3 __pyx_mstate_global->__pyx_n_u_TU3
+#define __pyx_n_u_TU4 __pyx_mstate_global->__pyx_n_u_TU4
+#define __pyx_n_u_TU5 __pyx_mstate_global->__pyx_n_u_TU5
 #define __pyx_kp_u__14 __pyx_mstate_global->__pyx_kp_u__14
 #define __pyx_n_s__15 __pyx_mstate_global->__pyx_n_s__15
 #define __pyx_n_s__18 __pyx_mstate_global->__pyx_n_s__18
@@ -4055,7 +4093,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_add_weighting_factors_locals_lam __pyx_mstate_global->__pyx_n_s_add_weighting_factors_locals_lam
 #define __pyx_n_s_add_weighting_factors_locals_lam_2 __pyx_mstate_global->__pyx_n_s_add_weighting_factors_locals_lam_2
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
-#define __pyx_n_s_burnable __pyx_mstate_global->__pyx_n_s_burnable
+#define __pyx_n_u_burnable __pyx_mstate_global->__pyx_n_u_burnable
 #define __pyx_n_s_c __pyx_mstate_global->__pyx_n_s_c
 #define __pyx_n_s_category_sum __pyx_mstate_global->__pyx_n_s_category_sum
 #define __pyx_n_s_class_getitem __pyx_mstate_global->__pyx_n_s_class_getitem
@@ -4066,15 +4104,19 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_dead_moisture_factor __pyx_mstate_global->__pyx_n_s_dead_moisture_factor
 #define __pyx_n_s_dead_to_live_ratio __pyx_mstate_global->__pyx_n_s_dead_to_live_ratio
 #define __pyx_n_s_delta __pyx_mstate_global->__pyx_n_s_delta
+#define __pyx_n_u_delta __pyx_mstate_global->__pyx_n_u_delta
 #define __pyx_kp_u_disable __pyx_mstate_global->__pyx_kp_u_disable
 #define __pyx_n_s_dynamic __pyx_mstate_global->__pyx_n_s_dynamic
+#define __pyx_n_u_dynamic __pyx_mstate_global->__pyx_n_u_dynamic
 #define __pyx_n_s_dynamic_fuel_model __pyx_mstate_global->__pyx_n_s_dynamic_fuel_model
 #define __pyx_kp_u_enable __pyx_mstate_global->__pyx_kp_u_enable
 #define __pyx_n_s_exp __pyx_mstate_global->__pyx_n_s_exp
 #define __pyx_n_s_expand_compact_fuel_model __pyx_mstate_global->__pyx_n_s_expand_compact_fuel_model
 #define __pyx_n_s_f __pyx_mstate_global->__pyx_n_s_f
 #define __pyx_n_s_f_i __pyx_mstate_global->__pyx_n_s_f_i
+#define __pyx_n_u_f_i __pyx_mstate_global->__pyx_n_u_f_i
 #define __pyx_n_s_f_ij __pyx_mstate_global->__pyx_n_s_f_ij
+#define __pyx_n_u_f_ij __pyx_mstate_global->__pyx_n_u_f_ij
 #define __pyx_n_s_firemod_size_classes __pyx_mstate_global->__pyx_n_s_firemod_size_classes
 #define __pyx_n_s_fraction_cured __pyx_mstate_global->__pyx_n_s_fraction_cured
 #define __pyx_n_s_fraction_green __pyx_mstate_global->__pyx_n_s_fraction_green
@@ -4084,8 +4126,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_fuel_model_table __pyx_mstate_global->__pyx_n_s_fuel_model_table
 #define __pyx_n_s_fuel_moisture __pyx_mstate_global->__pyx_n_s_fuel_moisture
 #define __pyx_n_s_g_ij __pyx_mstate_global->__pyx_n_s_g_ij
+#define __pyx_n_u_g_ij __pyx_mstate_global->__pyx_n_u_g_ij
 #define __pyx_kp_u_gc __pyx_mstate_global->__pyx_kp_u_gc
 #define __pyx_n_s_h __pyx_mstate_global->__pyx_n_s_h
+#define __pyx_n_u_h __pyx_mstate_global->__pyx_n_u_h
 #define __pyx_n_s_i __pyx_mstate_global->__pyx_n_s_i
 #define __pyx_n_s_import __pyx_mstate_global->__pyx_n_s_import
 #define __pyx_n_s_is_coroutine __pyx_mstate_global->__pyx_n_s_is_coroutine
@@ -4102,12 +4146,15 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_moisturize __pyx_mstate_global->__pyx_n_s_moisturize
 #define __pyx_n_s_moisturized_fuel_model __pyx_mstate_global->__pyx_n_s_moisturized_fuel_model
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
+#define __pyx_n_u_name __pyx_mstate_global->__pyx_n_u_name
 #define __pyx_n_s_name_2 __pyx_mstate_global->__pyx_n_s_name_2
-#define __pyx_n_s_number __pyx_mstate_global->__pyx_n_s_number
+#define __pyx_n_u_number __pyx_mstate_global->__pyx_n_u_number
 #define __pyx_n_s_pyretechnics_fuel_models __pyx_mstate_global->__pyx_n_s_pyretechnics_fuel_models
 #define __pyx_n_s_rho_p __pyx_mstate_global->__pyx_n_s_rho_p
+#define __pyx_n_u_rho_p __pyx_mstate_global->__pyx_n_u_rho_p
 #define __pyx_n_s_s __pyx_mstate_global->__pyx_n_s_s
 #define __pyx_n_s_sigma __pyx_mstate_global->__pyx_n_s_sigma
+#define __pyx_n_u_sigma __pyx_mstate_global->__pyx_n_u_sigma
 #define __pyx_n_s_sigma_dead_100hr __pyx_mstate_global->__pyx_n_s_sigma_dead_100hr
 #define __pyx_n_s_sigma_dead_10hr __pyx_mstate_global->__pyx_n_s_sigma_dead_10hr
 #define __pyx_n_s_sigma_dead_1hr __pyx_mstate_global->__pyx_n_s_sigma_dead_1hr
@@ -4120,6 +4167,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_static_fuel_model __pyx_mstate_global->__pyx_n_s_static_fuel_model
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_n_s_w_o __pyx_mstate_global->__pyx_n_s_w_o
+#define __pyx_n_u_w_o __pyx_mstate_global->__pyx_n_u_w_o
 #define __pyx_n_s_w_o_dead_100hr __pyx_mstate_global->__pyx_n_s_w_o_dead_100hr
 #define __pyx_n_s_w_o_dead_10hr __pyx_mstate_global->__pyx_n_s_w_o_dead_10hr
 #define __pyx_n_s_w_o_dead_1hr __pyx_mstate_global->__pyx_n_s_w_o_dead_1hr
@@ -4842,7 +4890,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
  */
   __pyx_t_2 = __Pyx_PyDict_NewPresized(12); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_name, __pyx_v_name) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_name, __pyx_v_name) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":97
  *     return {
@@ -4851,7 +4899,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
  *         "delta"   : delta,
  *         "M_x"     : [M_x_dead, M_x_dead, M_x_dead, M_x_dead_herbaceous, 0.0, 0.0],
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_number, __pyx_v_fuel_model_number) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_number, __pyx_v_fuel_model_number) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":98
  *         "name"    : name,
@@ -4860,7 +4908,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
  *         "M_x"     : [M_x_dead, M_x_dead, M_x_dead, M_x_dead_herbaceous, 0.0, 0.0],
  *         "w_o"     : [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, 0.0, w_o_live_herbaceous, w_o_live_woody],
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_delta, __pyx_v_delta) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_delta, __pyx_v_delta) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":99
  *         "number"  : fuel_model_number,
@@ -4889,7 +4937,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   __Pyx_INCREF(__pyx_float_0_0);
   __Pyx_GIVEREF(__pyx_float_0_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 5, __pyx_float_0_0)) __PYX_ERR(0, 99, __pyx_L1_error);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_M_x, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_M_x, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":100
@@ -4919,7 +4967,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   __Pyx_INCREF(__pyx_v_w_o_live_woody);
   __Pyx_GIVEREF(__pyx_v_w_o_live_woody);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 5, __pyx_v_w_o_live_woody)) __PYX_ERR(0, 100, __pyx_L1_error);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_w_o, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_w_o, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":101
@@ -4949,7 +4997,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   __Pyx_INCREF(__pyx_v_sigma_live_woody);
   __Pyx_GIVEREF(__pyx_v_sigma_live_woody);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_7, 5, __pyx_v_sigma_live_woody)) __PYX_ERR(0, 101, __pyx_L1_error);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_sigma, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_sigma, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":102
@@ -4968,7 +5016,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
       if (__Pyx_PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_v_h)) __PYX_ERR(0, 102, __pyx_L1_error);
     }
   }
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_h, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_h, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":103
@@ -4987,7 +5035,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
       if (__Pyx_PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_float_32_0)) __PYX_ERR(0, 103, __pyx_L1_error);
     }
   }
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_rho_p, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_rho_p, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":104
@@ -5006,7 +5054,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
       if (__Pyx_PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_float_0_0555)) __PYX_ERR(0, 104, __pyx_L1_error);
     }
   }
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_S_T, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_S_T, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":105
@@ -5025,7 +5073,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
       if (__Pyx_PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_float_0_01)) __PYX_ERR(0, 105, __pyx_L1_error);
     }
   }
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_S_e, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_S_e, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
   /* "pyretechnics/fuel_models.py":106
@@ -5035,7 +5083,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
  *         "burnable": not (91 <= fuel_model_number <= 99),
  *     }
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dynamic, __pyx_v_dynamic) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_dynamic, __pyx_v_dynamic) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":107
  *         "S_e"     : 6 * [0.01],
@@ -5053,7 +5101,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_expand_compact_fuel_model
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_7 = __Pyx_PyBool_FromLong((!__pyx_t_10)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_burnable, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_burnable, __pyx_t_7) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
@@ -6313,7 +6361,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
  *         # dynamic fuel model
  *         w_o                       = fuel_model["w_o"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_dynamic); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_dynamic); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6326,7 +6374,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
  *         live_herbaceous_load      = w_o[4]
  *         live_herbaceous_moisture  = M_f[4]
  */
-    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_w_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_w_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_v_w_o = __pyx_t_1;
     __pyx_t_1 = 0;
@@ -6543,7 +6591,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
     __pyx_t_6 = 0;
     __pyx_t_8 = 0;
     __pyx_t_9 = 0;
-    if (unlikely((PyObject_SetItem(__pyx_v_dynamic_fuel_model, __pyx_n_s_M_f, __pyx_t_10) < 0))) __PYX_ERR(0, 139, __pyx_L1_error)
+    if (unlikely((PyObject_SetItem(__pyx_v_dynamic_fuel_model, __pyx_n_u_M_f, __pyx_t_10) < 0))) __PYX_ERR(0, 139, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
 
     /* "pyretechnics/fuel_models.py":148
@@ -6633,7 +6681,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
     __pyx_t_6 = 0;
     __pyx_t_5 = 0;
     __pyx_t_1 = 0;
-    if (unlikely((PyObject_SetItem(__pyx_v_dynamic_fuel_model, __pyx_n_s_w_o, __pyx_t_3) < 0))) __PYX_ERR(0, 147, __pyx_L1_error)
+    if (unlikely((PyObject_SetItem(__pyx_v_dynamic_fuel_model, __pyx_n_u_w_o, __pyx_t_3) < 0))) __PYX_ERR(0, 147, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
     /* "pyretechnics/fuel_models.py":155
@@ -6699,7 +6747,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_10add_dynamic_fuel_loadin
  *         return static_fuel_model
  * # add-dynamic-fuel-loading ends here
  */
-    if (unlikely((PyObject_SetItem(__pyx_v_static_fuel_model, __pyx_n_s_M_f, __pyx_v_M_f) < 0))) __PYX_ERR(0, 159, __pyx_L1_error)
+    if (unlikely((PyObject_SetItem(__pyx_v_static_fuel_model, __pyx_n_u_M_f, __pyx_v_M_f) < 0))) __PYX_ERR(0, 159, __pyx_L1_error)
 
     /* "pyretechnics/fuel_models.py":160
  *         static_fuel_model = fuel_model.copy() # shallow copy
@@ -8808,7 +8856,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
  *     sigma                       = fuel_model["sigma"]
  *     rho_p                       = fuel_model["rho_p"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_w_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_w_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_w_o = __pyx_t_1;
@@ -8821,7 +8869,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
  *     rho_p                       = fuel_model["rho_p"]
  *     A_ij                        = map_size_class(lambda i: (sigma[i] * w_o[i]) / rho_p[i])
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_sigma); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_sigma); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_sigma = __pyx_t_1;
@@ -8834,7 +8882,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
  *     A_ij                        = map_size_class(lambda i: (sigma[i] * w_o[i]) / rho_p[i])
  *     A_i                         = size_class_sum(lambda i: A_ij[i])
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_rho_p); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_rho_p); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_rho_p = __pyx_t_1;
@@ -9145,7 +9193,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
  *     weighted_fuel_model["f_i"]  = f_i
  *     weighted_fuel_model["g_ij"] = g_ij
  */
-  if (unlikely((PyObject_SetItem(__pyx_v_weighted_fuel_model, __pyx_n_s_f_ij, __pyx_cur_scope->__pyx_v_f_ij) < 0))) __PYX_ERR(0, 190, __pyx_L1_error)
+  if (unlikely((PyObject_SetItem(__pyx_v_weighted_fuel_model, __pyx_n_u_f_ij, __pyx_cur_scope->__pyx_v_f_ij) < 0))) __PYX_ERR(0, 190, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":191
  *     weighted_fuel_model         = fuel_model.copy() # shallow copy
@@ -9154,7 +9202,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
  *     weighted_fuel_model["g_ij"] = g_ij
  *     return weighted_fuel_model
  */
-  if (unlikely((PyObject_SetItem(__pyx_v_weighted_fuel_model, __pyx_n_s_f_i, __pyx_v_f_i) < 0))) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (unlikely((PyObject_SetItem(__pyx_v_weighted_fuel_model, __pyx_n_u_f_i, __pyx_v_f_i) < 0))) __PYX_ERR(0, 191, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":192
  *     weighted_fuel_model["f_ij"] = f_ij
@@ -9163,7 +9211,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_12add_weighting_factors(C
  *     return weighted_fuel_model
  * # add-weighting-factors ends here
  */
-  if (unlikely((PyObject_SetItem(__pyx_v_weighted_fuel_model, __pyx_n_s_g_ij, __pyx_v_g_ij) < 0))) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (unlikely((PyObject_SetItem(__pyx_v_weighted_fuel_model, __pyx_n_u_g_ij, __pyx_v_g_ij) < 0))) __PYX_ERR(0, 192, __pyx_L1_error)
 
   /* "pyretechnics/fuel_models.py":193
  *     weighted_fuel_model["f_i"]  = f_i
@@ -10109,7 +10157,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
  *     sigma                     = fuel_model["sigma"]
  *     M_f                       = fuel_model["M_f"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_w_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_w_o); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_w_o = __pyx_t_1;
@@ -10122,7 +10170,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
  *     M_f                       = fuel_model["M_f"]
  *     M_x                       = fuel_model["M_x"]
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_sigma); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_sigma); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 203, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_sigma = __pyx_t_1;
@@ -10135,7 +10183,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
  *     M_x                       = fuel_model["M_x"]
  *     loading_factors           = map_size_class(lambda i:
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_M_f); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_M_f); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_cur_scope->__pyx_v_M_f = __pyx_t_1;
@@ -10148,7 +10196,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
  *     loading_factors           = map_size_class(lambda i:
  *                                                (lambda sigma_ij, A:
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_M_x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_M_x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_M_x = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10607,7 +10655,7 @@ static PyObject *__pyx_pf_12pyretechnics_11fuel_models_14add_live_moisture_of_ex
   __pyx_t_2 = 0;
   __pyx_t_4 = 0;
   __pyx_t_3 = 0;
-  if (unlikely((PyObject_SetItem(__pyx_v_moisturized_fuel_model, __pyx_n_s_M_x, __pyx_t_8) < 0))) __PYX_ERR(0, 220, __pyx_L1_error)
+  if (unlikely((PyObject_SetItem(__pyx_v_moisturized_fuel_model, __pyx_n_u_M_x, __pyx_t_8) < 0))) __PYX_ERR(0, 220, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
   /* "pyretechnics/fuel_models.py":228
@@ -11913,71 +11961,73 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_A_T, __pyx_k_A_T, sizeof(__pyx_k_A_T), 0, 0, 1, 1},
     {&__pyx_n_s_A_i, __pyx_k_A_i, sizeof(__pyx_k_A_i), 0, 0, 1, 1},
     {&__pyx_n_s_A_ij, __pyx_k_A_ij, sizeof(__pyx_k_A_ij), 0, 0, 1, 1},
-    {&__pyx_n_s_GR1, __pyx_k_GR1, sizeof(__pyx_k_GR1), 0, 0, 1, 1},
-    {&__pyx_n_s_GR2, __pyx_k_GR2, sizeof(__pyx_k_GR2), 0, 0, 1, 1},
-    {&__pyx_n_s_GR3, __pyx_k_GR3, sizeof(__pyx_k_GR3), 0, 0, 1, 1},
-    {&__pyx_n_s_GR4, __pyx_k_GR4, sizeof(__pyx_k_GR4), 0, 0, 1, 1},
-    {&__pyx_n_s_GR5, __pyx_k_GR5, sizeof(__pyx_k_GR5), 0, 0, 1, 1},
-    {&__pyx_n_s_GR6, __pyx_k_GR6, sizeof(__pyx_k_GR6), 0, 0, 1, 1},
-    {&__pyx_n_s_GR7, __pyx_k_GR7, sizeof(__pyx_k_GR7), 0, 0, 1, 1},
-    {&__pyx_n_s_GR8, __pyx_k_GR8, sizeof(__pyx_k_GR8), 0, 0, 1, 1},
-    {&__pyx_n_s_GR9, __pyx_k_GR9, sizeof(__pyx_k_GR9), 0, 0, 1, 1},
-    {&__pyx_n_s_GS1, __pyx_k_GS1, sizeof(__pyx_k_GS1), 0, 0, 1, 1},
-    {&__pyx_n_s_GS2, __pyx_k_GS2, sizeof(__pyx_k_GS2), 0, 0, 1, 1},
-    {&__pyx_n_s_GS3, __pyx_k_GS3, sizeof(__pyx_k_GS3), 0, 0, 1, 1},
-    {&__pyx_n_s_GS4, __pyx_k_GS4, sizeof(__pyx_k_GS4), 0, 0, 1, 1},
+    {&__pyx_n_u_GR1, __pyx_k_GR1, sizeof(__pyx_k_GR1), 0, 1, 0, 1},
+    {&__pyx_n_u_GR2, __pyx_k_GR2, sizeof(__pyx_k_GR2), 0, 1, 0, 1},
+    {&__pyx_n_u_GR3, __pyx_k_GR3, sizeof(__pyx_k_GR3), 0, 1, 0, 1},
+    {&__pyx_n_u_GR4, __pyx_k_GR4, sizeof(__pyx_k_GR4), 0, 1, 0, 1},
+    {&__pyx_n_u_GR5, __pyx_k_GR5, sizeof(__pyx_k_GR5), 0, 1, 0, 1},
+    {&__pyx_n_u_GR6, __pyx_k_GR6, sizeof(__pyx_k_GR6), 0, 1, 0, 1},
+    {&__pyx_n_u_GR7, __pyx_k_GR7, sizeof(__pyx_k_GR7), 0, 1, 0, 1},
+    {&__pyx_n_u_GR8, __pyx_k_GR8, sizeof(__pyx_k_GR8), 0, 1, 0, 1},
+    {&__pyx_n_u_GR9, __pyx_k_GR9, sizeof(__pyx_k_GR9), 0, 1, 0, 1},
+    {&__pyx_n_u_GS1, __pyx_k_GS1, sizeof(__pyx_k_GS1), 0, 1, 0, 1},
+    {&__pyx_n_u_GS2, __pyx_k_GS2, sizeof(__pyx_k_GS2), 0, 1, 0, 1},
+    {&__pyx_n_u_GS3, __pyx_k_GS3, sizeof(__pyx_k_GS3), 0, 1, 0, 1},
+    {&__pyx_n_u_GS4, __pyx_k_GS4, sizeof(__pyx_k_GS4), 0, 1, 0, 1},
     {&__pyx_n_s_M_f, __pyx_k_M_f, sizeof(__pyx_k_M_f), 0, 0, 1, 1},
+    {&__pyx_n_u_M_f, __pyx_k_M_f, sizeof(__pyx_k_M_f), 0, 1, 0, 1},
     {&__pyx_n_s_M_x, __pyx_k_M_x, sizeof(__pyx_k_M_x), 0, 0, 1, 1},
+    {&__pyx_n_u_M_x, __pyx_k_M_x, sizeof(__pyx_k_M_x), 0, 1, 0, 1},
     {&__pyx_n_s_M_x_dead, __pyx_k_M_x_dead, sizeof(__pyx_k_M_x_dead), 0, 0, 1, 1},
     {&__pyx_n_s_M_x_dead_herbaceous, __pyx_k_M_x_dead_herbaceous, sizeof(__pyx_k_M_x_dead_herbaceous), 0, 0, 1, 1},
     {&__pyx_n_s_M_x_live, __pyx_k_M_x_live, sizeof(__pyx_k_M_x_live), 0, 0, 1, 1},
-    {&__pyx_n_s_NB1, __pyx_k_NB1, sizeof(__pyx_k_NB1), 0, 0, 1, 1},
-    {&__pyx_n_s_NB2, __pyx_k_NB2, sizeof(__pyx_k_NB2), 0, 0, 1, 1},
-    {&__pyx_n_s_NB3, __pyx_k_NB3, sizeof(__pyx_k_NB3), 0, 0, 1, 1},
-    {&__pyx_n_s_NB4, __pyx_k_NB4, sizeof(__pyx_k_NB4), 0, 0, 1, 1},
-    {&__pyx_n_s_NB5, __pyx_k_NB5, sizeof(__pyx_k_NB5), 0, 0, 1, 1},
-    {&__pyx_n_s_R01, __pyx_k_R01, sizeof(__pyx_k_R01), 0, 0, 1, 1},
-    {&__pyx_n_s_R02, __pyx_k_R02, sizeof(__pyx_k_R02), 0, 0, 1, 1},
-    {&__pyx_n_s_R03, __pyx_k_R03, sizeof(__pyx_k_R03), 0, 0, 1, 1},
-    {&__pyx_n_s_R04, __pyx_k_R04, sizeof(__pyx_k_R04), 0, 0, 1, 1},
-    {&__pyx_n_s_R05, __pyx_k_R05, sizeof(__pyx_k_R05), 0, 0, 1, 1},
-    {&__pyx_n_s_R06, __pyx_k_R06, sizeof(__pyx_k_R06), 0, 0, 1, 1},
-    {&__pyx_n_s_R07, __pyx_k_R07, sizeof(__pyx_k_R07), 0, 0, 1, 1},
-    {&__pyx_n_s_R08, __pyx_k_R08, sizeof(__pyx_k_R08), 0, 0, 1, 1},
-    {&__pyx_n_s_R09, __pyx_k_R09, sizeof(__pyx_k_R09), 0, 0, 1, 1},
-    {&__pyx_n_s_R10, __pyx_k_R10, sizeof(__pyx_k_R10), 0, 0, 1, 1},
-    {&__pyx_n_s_R11, __pyx_k_R11, sizeof(__pyx_k_R11), 0, 0, 1, 1},
-    {&__pyx_n_s_R12, __pyx_k_R12, sizeof(__pyx_k_R12), 0, 0, 1, 1},
-    {&__pyx_n_s_R13, __pyx_k_R13, sizeof(__pyx_k_R13), 0, 0, 1, 1},
-    {&__pyx_n_s_SB1, __pyx_k_SB1, sizeof(__pyx_k_SB1), 0, 0, 1, 1},
-    {&__pyx_n_s_SB2, __pyx_k_SB2, sizeof(__pyx_k_SB2), 0, 0, 1, 1},
-    {&__pyx_n_s_SB3, __pyx_k_SB3, sizeof(__pyx_k_SB3), 0, 0, 1, 1},
-    {&__pyx_n_s_SB4, __pyx_k_SB4, sizeof(__pyx_k_SB4), 0, 0, 1, 1},
-    {&__pyx_n_s_SH1, __pyx_k_SH1, sizeof(__pyx_k_SH1), 0, 0, 1, 1},
-    {&__pyx_n_s_SH2, __pyx_k_SH2, sizeof(__pyx_k_SH2), 0, 0, 1, 1},
-    {&__pyx_n_s_SH3, __pyx_k_SH3, sizeof(__pyx_k_SH3), 0, 0, 1, 1},
-    {&__pyx_n_s_SH4, __pyx_k_SH4, sizeof(__pyx_k_SH4), 0, 0, 1, 1},
-    {&__pyx_n_s_SH5, __pyx_k_SH5, sizeof(__pyx_k_SH5), 0, 0, 1, 1},
-    {&__pyx_n_s_SH6, __pyx_k_SH6, sizeof(__pyx_k_SH6), 0, 0, 1, 1},
-    {&__pyx_n_s_SH7, __pyx_k_SH7, sizeof(__pyx_k_SH7), 0, 0, 1, 1},
-    {&__pyx_n_s_SH8, __pyx_k_SH8, sizeof(__pyx_k_SH8), 0, 0, 1, 1},
-    {&__pyx_n_s_SH9, __pyx_k_SH9, sizeof(__pyx_k_SH9), 0, 0, 1, 1},
-    {&__pyx_n_s_S_T, __pyx_k_S_T, sizeof(__pyx_k_S_T), 0, 0, 1, 1},
-    {&__pyx_n_s_S_e, __pyx_k_S_e, sizeof(__pyx_k_S_e), 0, 0, 1, 1},
-    {&__pyx_n_s_TL1, __pyx_k_TL1, sizeof(__pyx_k_TL1), 0, 0, 1, 1},
-    {&__pyx_n_s_TL2, __pyx_k_TL2, sizeof(__pyx_k_TL2), 0, 0, 1, 1},
-    {&__pyx_n_s_TL3, __pyx_k_TL3, sizeof(__pyx_k_TL3), 0, 0, 1, 1},
-    {&__pyx_n_s_TL4, __pyx_k_TL4, sizeof(__pyx_k_TL4), 0, 0, 1, 1},
-    {&__pyx_n_s_TL5, __pyx_k_TL5, sizeof(__pyx_k_TL5), 0, 0, 1, 1},
-    {&__pyx_n_s_TL6, __pyx_k_TL6, sizeof(__pyx_k_TL6), 0, 0, 1, 1},
-    {&__pyx_n_s_TL7, __pyx_k_TL7, sizeof(__pyx_k_TL7), 0, 0, 1, 1},
-    {&__pyx_n_s_TL8, __pyx_k_TL8, sizeof(__pyx_k_TL8), 0, 0, 1, 1},
-    {&__pyx_n_s_TL9, __pyx_k_TL9, sizeof(__pyx_k_TL9), 0, 0, 1, 1},
-    {&__pyx_n_s_TU1, __pyx_k_TU1, sizeof(__pyx_k_TU1), 0, 0, 1, 1},
-    {&__pyx_n_s_TU2, __pyx_k_TU2, sizeof(__pyx_k_TU2), 0, 0, 1, 1},
-    {&__pyx_n_s_TU3, __pyx_k_TU3, sizeof(__pyx_k_TU3), 0, 0, 1, 1},
-    {&__pyx_n_s_TU4, __pyx_k_TU4, sizeof(__pyx_k_TU4), 0, 0, 1, 1},
-    {&__pyx_n_s_TU5, __pyx_k_TU5, sizeof(__pyx_k_TU5), 0, 0, 1, 1},
+    {&__pyx_n_u_NB1, __pyx_k_NB1, sizeof(__pyx_k_NB1), 0, 1, 0, 1},
+    {&__pyx_n_u_NB2, __pyx_k_NB2, sizeof(__pyx_k_NB2), 0, 1, 0, 1},
+    {&__pyx_n_u_NB3, __pyx_k_NB3, sizeof(__pyx_k_NB3), 0, 1, 0, 1},
+    {&__pyx_n_u_NB4, __pyx_k_NB4, sizeof(__pyx_k_NB4), 0, 1, 0, 1},
+    {&__pyx_n_u_NB5, __pyx_k_NB5, sizeof(__pyx_k_NB5), 0, 1, 0, 1},
+    {&__pyx_n_u_R01, __pyx_k_R01, sizeof(__pyx_k_R01), 0, 1, 0, 1},
+    {&__pyx_n_u_R02, __pyx_k_R02, sizeof(__pyx_k_R02), 0, 1, 0, 1},
+    {&__pyx_n_u_R03, __pyx_k_R03, sizeof(__pyx_k_R03), 0, 1, 0, 1},
+    {&__pyx_n_u_R04, __pyx_k_R04, sizeof(__pyx_k_R04), 0, 1, 0, 1},
+    {&__pyx_n_u_R05, __pyx_k_R05, sizeof(__pyx_k_R05), 0, 1, 0, 1},
+    {&__pyx_n_u_R06, __pyx_k_R06, sizeof(__pyx_k_R06), 0, 1, 0, 1},
+    {&__pyx_n_u_R07, __pyx_k_R07, sizeof(__pyx_k_R07), 0, 1, 0, 1},
+    {&__pyx_n_u_R08, __pyx_k_R08, sizeof(__pyx_k_R08), 0, 1, 0, 1},
+    {&__pyx_n_u_R09, __pyx_k_R09, sizeof(__pyx_k_R09), 0, 1, 0, 1},
+    {&__pyx_n_u_R10, __pyx_k_R10, sizeof(__pyx_k_R10), 0, 1, 0, 1},
+    {&__pyx_n_u_R11, __pyx_k_R11, sizeof(__pyx_k_R11), 0, 1, 0, 1},
+    {&__pyx_n_u_R12, __pyx_k_R12, sizeof(__pyx_k_R12), 0, 1, 0, 1},
+    {&__pyx_n_u_R13, __pyx_k_R13, sizeof(__pyx_k_R13), 0, 1, 0, 1},
+    {&__pyx_n_u_SB1, __pyx_k_SB1, sizeof(__pyx_k_SB1), 0, 1, 0, 1},
+    {&__pyx_n_u_SB2, __pyx_k_SB2, sizeof(__pyx_k_SB2), 0, 1, 0, 1},
+    {&__pyx_n_u_SB3, __pyx_k_SB3, sizeof(__pyx_k_SB3), 0, 1, 0, 1},
+    {&__pyx_n_u_SB4, __pyx_k_SB4, sizeof(__pyx_k_SB4), 0, 1, 0, 1},
+    {&__pyx_n_u_SH1, __pyx_k_SH1, sizeof(__pyx_k_SH1), 0, 1, 0, 1},
+    {&__pyx_n_u_SH2, __pyx_k_SH2, sizeof(__pyx_k_SH2), 0, 1, 0, 1},
+    {&__pyx_n_u_SH3, __pyx_k_SH3, sizeof(__pyx_k_SH3), 0, 1, 0, 1},
+    {&__pyx_n_u_SH4, __pyx_k_SH4, sizeof(__pyx_k_SH4), 0, 1, 0, 1},
+    {&__pyx_n_u_SH5, __pyx_k_SH5, sizeof(__pyx_k_SH5), 0, 1, 0, 1},
+    {&__pyx_n_u_SH6, __pyx_k_SH6, sizeof(__pyx_k_SH6), 0, 1, 0, 1},
+    {&__pyx_n_u_SH7, __pyx_k_SH7, sizeof(__pyx_k_SH7), 0, 1, 0, 1},
+    {&__pyx_n_u_SH8, __pyx_k_SH8, sizeof(__pyx_k_SH8), 0, 1, 0, 1},
+    {&__pyx_n_u_SH9, __pyx_k_SH9, sizeof(__pyx_k_SH9), 0, 1, 0, 1},
+    {&__pyx_n_u_S_T, __pyx_k_S_T, sizeof(__pyx_k_S_T), 0, 1, 0, 1},
+    {&__pyx_n_u_S_e, __pyx_k_S_e, sizeof(__pyx_k_S_e), 0, 1, 0, 1},
+    {&__pyx_n_u_TL1, __pyx_k_TL1, sizeof(__pyx_k_TL1), 0, 1, 0, 1},
+    {&__pyx_n_u_TL2, __pyx_k_TL2, sizeof(__pyx_k_TL2), 0, 1, 0, 1},
+    {&__pyx_n_u_TL3, __pyx_k_TL3, sizeof(__pyx_k_TL3), 0, 1, 0, 1},
+    {&__pyx_n_u_TL4, __pyx_k_TL4, sizeof(__pyx_k_TL4), 0, 1, 0, 1},
+    {&__pyx_n_u_TL5, __pyx_k_TL5, sizeof(__pyx_k_TL5), 0, 1, 0, 1},
+    {&__pyx_n_u_TL6, __pyx_k_TL6, sizeof(__pyx_k_TL6), 0, 1, 0, 1},
+    {&__pyx_n_u_TL7, __pyx_k_TL7, sizeof(__pyx_k_TL7), 0, 1, 0, 1},
+    {&__pyx_n_u_TL8, __pyx_k_TL8, sizeof(__pyx_k_TL8), 0, 1, 0, 1},
+    {&__pyx_n_u_TL9, __pyx_k_TL9, sizeof(__pyx_k_TL9), 0, 1, 0, 1},
+    {&__pyx_n_u_TU1, __pyx_k_TU1, sizeof(__pyx_k_TU1), 0, 1, 0, 1},
+    {&__pyx_n_u_TU2, __pyx_k_TU2, sizeof(__pyx_k_TU2), 0, 1, 0, 1},
+    {&__pyx_n_u_TU3, __pyx_k_TU3, sizeof(__pyx_k_TU3), 0, 1, 0, 1},
+    {&__pyx_n_u_TU4, __pyx_k_TU4, sizeof(__pyx_k_TU4), 0, 1, 0, 1},
+    {&__pyx_n_u_TU5, __pyx_k_TU5, sizeof(__pyx_k_TU5), 0, 1, 0, 1},
     {&__pyx_kp_u__14, __pyx_k__14, sizeof(__pyx_k__14), 0, 1, 0, 0},
     {&__pyx_n_s__15, __pyx_k__15, sizeof(__pyx_k__15), 0, 0, 1, 1},
     {&__pyx_n_s__18, __pyx_k__18, sizeof(__pyx_k__18), 0, 0, 1, 1},
@@ -11989,7 +12039,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_add_weighting_factors_locals_lam, __pyx_k_add_weighting_factors_locals_lam, sizeof(__pyx_k_add_weighting_factors_locals_lam), 0, 0, 1, 1},
     {&__pyx_n_s_add_weighting_factors_locals_lam_2, __pyx_k_add_weighting_factors_locals_lam_2, sizeof(__pyx_k_add_weighting_factors_locals_lam_2), 0, 0, 1, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
-    {&__pyx_n_s_burnable, __pyx_k_burnable, sizeof(__pyx_k_burnable), 0, 0, 1, 1},
+    {&__pyx_n_u_burnable, __pyx_k_burnable, sizeof(__pyx_k_burnable), 0, 1, 0, 1},
     {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
     {&__pyx_n_s_category_sum, __pyx_k_category_sum, sizeof(__pyx_k_category_sum), 0, 0, 1, 1},
     {&__pyx_n_s_class_getitem, __pyx_k_class_getitem, sizeof(__pyx_k_class_getitem), 0, 0, 1, 1},
@@ -12000,15 +12050,19 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_dead_moisture_factor, __pyx_k_dead_moisture_factor, sizeof(__pyx_k_dead_moisture_factor), 0, 0, 1, 1},
     {&__pyx_n_s_dead_to_live_ratio, __pyx_k_dead_to_live_ratio, sizeof(__pyx_k_dead_to_live_ratio), 0, 0, 1, 1},
     {&__pyx_n_s_delta, __pyx_k_delta, sizeof(__pyx_k_delta), 0, 0, 1, 1},
+    {&__pyx_n_u_delta, __pyx_k_delta, sizeof(__pyx_k_delta), 0, 1, 0, 1},
     {&__pyx_kp_u_disable, __pyx_k_disable, sizeof(__pyx_k_disable), 0, 1, 0, 0},
     {&__pyx_n_s_dynamic, __pyx_k_dynamic, sizeof(__pyx_k_dynamic), 0, 0, 1, 1},
+    {&__pyx_n_u_dynamic, __pyx_k_dynamic, sizeof(__pyx_k_dynamic), 0, 1, 0, 1},
     {&__pyx_n_s_dynamic_fuel_model, __pyx_k_dynamic_fuel_model, sizeof(__pyx_k_dynamic_fuel_model), 0, 0, 1, 1},
     {&__pyx_kp_u_enable, __pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0, 0},
     {&__pyx_n_s_exp, __pyx_k_exp, sizeof(__pyx_k_exp), 0, 0, 1, 1},
     {&__pyx_n_s_expand_compact_fuel_model, __pyx_k_expand_compact_fuel_model, sizeof(__pyx_k_expand_compact_fuel_model), 0, 0, 1, 1},
     {&__pyx_n_s_f, __pyx_k_f, sizeof(__pyx_k_f), 0, 0, 1, 1},
     {&__pyx_n_s_f_i, __pyx_k_f_i, sizeof(__pyx_k_f_i), 0, 0, 1, 1},
+    {&__pyx_n_u_f_i, __pyx_k_f_i, sizeof(__pyx_k_f_i), 0, 1, 0, 1},
     {&__pyx_n_s_f_ij, __pyx_k_f_ij, sizeof(__pyx_k_f_ij), 0, 0, 1, 1},
+    {&__pyx_n_u_f_ij, __pyx_k_f_ij, sizeof(__pyx_k_f_ij), 0, 1, 0, 1},
     {&__pyx_n_s_firemod_size_classes, __pyx_k_firemod_size_classes, sizeof(__pyx_k_firemod_size_classes), 0, 0, 1, 1},
     {&__pyx_n_s_fraction_cured, __pyx_k_fraction_cured, sizeof(__pyx_k_fraction_cured), 0, 0, 1, 1},
     {&__pyx_n_s_fraction_green, __pyx_k_fraction_green, sizeof(__pyx_k_fraction_green), 0, 0, 1, 1},
@@ -12018,8 +12072,10 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_fuel_model_table, __pyx_k_fuel_model_table, sizeof(__pyx_k_fuel_model_table), 0, 0, 1, 1},
     {&__pyx_n_s_fuel_moisture, __pyx_k_fuel_moisture, sizeof(__pyx_k_fuel_moisture), 0, 0, 1, 1},
     {&__pyx_n_s_g_ij, __pyx_k_g_ij, sizeof(__pyx_k_g_ij), 0, 0, 1, 1},
+    {&__pyx_n_u_g_ij, __pyx_k_g_ij, sizeof(__pyx_k_g_ij), 0, 1, 0, 1},
     {&__pyx_kp_u_gc, __pyx_k_gc, sizeof(__pyx_k_gc), 0, 1, 0, 0},
     {&__pyx_n_s_h, __pyx_k_h, sizeof(__pyx_k_h), 0, 0, 1, 1},
+    {&__pyx_n_u_h, __pyx_k_h, sizeof(__pyx_k_h), 0, 1, 0, 1},
     {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
     {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
     {&__pyx_n_s_is_coroutine, __pyx_k_is_coroutine, sizeof(__pyx_k_is_coroutine), 0, 0, 1, 1},
@@ -12036,12 +12092,15 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_moisturize, __pyx_k_moisturize, sizeof(__pyx_k_moisturize), 0, 0, 1, 1},
     {&__pyx_n_s_moisturized_fuel_model, __pyx_k_moisturized_fuel_model, sizeof(__pyx_k_moisturized_fuel_model), 0, 0, 1, 1},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+    {&__pyx_n_u_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 1, 0, 1},
     {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
-    {&__pyx_n_s_number, __pyx_k_number, sizeof(__pyx_k_number), 0, 0, 1, 1},
+    {&__pyx_n_u_number, __pyx_k_number, sizeof(__pyx_k_number), 0, 1, 0, 1},
     {&__pyx_n_s_pyretechnics_fuel_models, __pyx_k_pyretechnics_fuel_models, sizeof(__pyx_k_pyretechnics_fuel_models), 0, 0, 1, 1},
     {&__pyx_n_s_rho_p, __pyx_k_rho_p, sizeof(__pyx_k_rho_p), 0, 0, 1, 1},
+    {&__pyx_n_u_rho_p, __pyx_k_rho_p, sizeof(__pyx_k_rho_p), 0, 1, 0, 1},
     {&__pyx_n_s_s, __pyx_k_s, sizeof(__pyx_k_s), 0, 0, 1, 1},
     {&__pyx_n_s_sigma, __pyx_k_sigma, sizeof(__pyx_k_sigma), 0, 0, 1, 1},
+    {&__pyx_n_u_sigma, __pyx_k_sigma, sizeof(__pyx_k_sigma), 0, 1, 0, 1},
     {&__pyx_n_s_sigma_dead_100hr, __pyx_k_sigma_dead_100hr, sizeof(__pyx_k_sigma_dead_100hr), 0, 0, 1, 1},
     {&__pyx_n_s_sigma_dead_10hr, __pyx_k_sigma_dead_10hr, sizeof(__pyx_k_sigma_dead_10hr), 0, 0, 1, 1},
     {&__pyx_n_s_sigma_dead_1hr, __pyx_k_sigma_dead_1hr, sizeof(__pyx_k_sigma_dead_1hr), 0, 0, 1, 1},
@@ -12054,6 +12113,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_static_fuel_model, __pyx_k_static_fuel_model, sizeof(__pyx_k_static_fuel_model), 0, 0, 1, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
     {&__pyx_n_s_w_o, __pyx_k_w_o, sizeof(__pyx_k_w_o), 0, 0, 1, 1},
+    {&__pyx_n_u_w_o, __pyx_k_w_o, sizeof(__pyx_k_w_o), 0, 1, 0, 1},
     {&__pyx_n_s_w_o_dead_100hr, __pyx_k_w_o_dead_100hr, sizeof(__pyx_k_w_o_dead_100hr), 0, 0, 1, 1},
     {&__pyx_n_s_w_o_dead_10hr, __pyx_k_w_o_dead_10hr, sizeof(__pyx_k_w_o_dead_10hr), 0, 0, 1, 1},
     {&__pyx_n_s_w_o_dead_1hr, __pyx_k_w_o_dead_1hr, sizeof(__pyx_k_w_o_dead_1hr), 0, 0, 1, 1},
@@ -12899,9 +12959,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 13, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R01);
-  __Pyx_GIVEREF(__pyx_n_s_R01);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R01)) __PYX_ERR(0, 13, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R01);
+  __Pyx_GIVEREF(__pyx_n_u_R01);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R01)) __PYX_ERR(0, 13, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_0)) __PYX_ERR(0, 13, __pyx_L1_error);
@@ -12963,9 +13023,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 14, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 14, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_R02);
-  __Pyx_GIVEREF(__pyx_n_s_R02);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_R02)) __PYX_ERR(0, 14, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R02);
+  __Pyx_GIVEREF(__pyx_n_u_R02);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_R02)) __PYX_ERR(0, 14, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_0)) __PYX_ERR(0, 14, __pyx_L1_error);
@@ -13027,9 +13087,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 15, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 15, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R03);
-  __Pyx_GIVEREF(__pyx_n_s_R03);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R03)) __PYX_ERR(0, 15, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R03);
+  __Pyx_GIVEREF(__pyx_n_u_R03);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R03)) __PYX_ERR(0, 15, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_5);
   __Pyx_GIVEREF(__pyx_float_2_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_2_5)) __PYX_ERR(0, 15, __pyx_L1_error);
@@ -13091,9 +13151,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 17, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_R04);
-  __Pyx_GIVEREF(__pyx_n_s_R04);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_R04)) __PYX_ERR(0, 17, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R04);
+  __Pyx_GIVEREF(__pyx_n_u_R04);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_R04)) __PYX_ERR(0, 17, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_6_0);
   __Pyx_GIVEREF(__pyx_float_6_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_6_0)) __PYX_ERR(0, 17, __pyx_L1_error);
@@ -13155,9 +13215,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 18, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R05);
-  __Pyx_GIVEREF(__pyx_n_s_R05);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R05)) __PYX_ERR(0, 18, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R05);
+  __Pyx_GIVEREF(__pyx_n_u_R05);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R05)) __PYX_ERR(0, 18, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_0);
   __Pyx_GIVEREF(__pyx_float_2_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_2_0)) __PYX_ERR(0, 18, __pyx_L1_error);
@@ -13219,9 +13279,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 19, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_R06);
-  __Pyx_GIVEREF(__pyx_n_s_R06);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_R06)) __PYX_ERR(0, 19, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R06);
+  __Pyx_GIVEREF(__pyx_n_u_R06);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_R06)) __PYX_ERR(0, 19, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_5);
   __Pyx_GIVEREF(__pyx_float_2_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_2_5)) __PYX_ERR(0, 19, __pyx_L1_error);
@@ -13283,9 +13343,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 20, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R07);
-  __Pyx_GIVEREF(__pyx_n_s_R07);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R07)) __PYX_ERR(0, 20, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R07);
+  __Pyx_GIVEREF(__pyx_n_u_R07);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R07)) __PYX_ERR(0, 20, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_5);
   __Pyx_GIVEREF(__pyx_float_2_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_2_5)) __PYX_ERR(0, 20, __pyx_L1_error);
@@ -13347,9 +13407,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 22, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_R08);
-  __Pyx_GIVEREF(__pyx_n_s_R08);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_R08)) __PYX_ERR(0, 22, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R08);
+  __Pyx_GIVEREF(__pyx_n_u_R08);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_R08)) __PYX_ERR(0, 22, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_2);
   __Pyx_GIVEREF(__pyx_float_0_2);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_2)) __PYX_ERR(0, 22, __pyx_L1_error);
@@ -13411,9 +13471,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 23, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R09);
-  __Pyx_GIVEREF(__pyx_n_s_R09);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R09)) __PYX_ERR(0, 23, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R09);
+  __Pyx_GIVEREF(__pyx_n_u_R09);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R09)) __PYX_ERR(0, 23, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_2);
   __Pyx_GIVEREF(__pyx_float_0_2);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_2)) __PYX_ERR(0, 23, __pyx_L1_error);
@@ -13475,9 +13535,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 24, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_R10);
-  __Pyx_GIVEREF(__pyx_n_s_R10);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_R10)) __PYX_ERR(0, 24, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R10);
+  __Pyx_GIVEREF(__pyx_n_u_R10);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_R10)) __PYX_ERR(0, 24, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_0)) __PYX_ERR(0, 24, __pyx_L1_error);
@@ -13539,9 +13599,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 26, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R11);
-  __Pyx_GIVEREF(__pyx_n_s_R11);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R11)) __PYX_ERR(0, 26, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R11);
+  __Pyx_GIVEREF(__pyx_n_u_R11);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R11)) __PYX_ERR(0, 26, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_0)) __PYX_ERR(0, 26, __pyx_L1_error);
@@ -13603,9 +13663,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 27, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_R12);
-  __Pyx_GIVEREF(__pyx_n_s_R12);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_R12)) __PYX_ERR(0, 27, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R12);
+  __Pyx_GIVEREF(__pyx_n_u_R12);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_R12)) __PYX_ERR(0, 27, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_3);
   __Pyx_GIVEREF(__pyx_float_2_3);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_2_3)) __PYX_ERR(0, 27, __pyx_L1_error);
@@ -13667,9 +13727,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 28, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_R13);
-  __Pyx_GIVEREF(__pyx_n_s_R13);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_R13)) __PYX_ERR(0, 28, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_R13);
+  __Pyx_GIVEREF(__pyx_n_u_R13);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_R13)) __PYX_ERR(0, 28, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_3_0);
   __Pyx_GIVEREF(__pyx_float_3_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_3_0)) __PYX_ERR(0, 28, __pyx_L1_error);
@@ -13731,9 +13791,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 30, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_NB1);
-  __Pyx_GIVEREF(__pyx_n_s_NB1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_NB1)) __PYX_ERR(0, 30, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_NB1);
+  __Pyx_GIVEREF(__pyx_n_u_NB1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_NB1)) __PYX_ERR(0, 30, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_0);
   __Pyx_GIVEREF(__pyx_float_0_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_0)) __PYX_ERR(0, 30, __pyx_L1_error);
@@ -13795,9 +13855,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 31, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_NB2);
-  __Pyx_GIVEREF(__pyx_n_s_NB2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_NB2)) __PYX_ERR(0, 31, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_NB2);
+  __Pyx_GIVEREF(__pyx_n_u_NB2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_NB2)) __PYX_ERR(0, 31, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_0);
   __Pyx_GIVEREF(__pyx_float_0_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_0)) __PYX_ERR(0, 31, __pyx_L1_error);
@@ -13859,9 +13919,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 32, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_NB3);
-  __Pyx_GIVEREF(__pyx_n_s_NB3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_NB3)) __PYX_ERR(0, 32, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_NB3);
+  __Pyx_GIVEREF(__pyx_n_u_NB3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_NB3)) __PYX_ERR(0, 32, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_0);
   __Pyx_GIVEREF(__pyx_float_0_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_0)) __PYX_ERR(0, 32, __pyx_L1_error);
@@ -13923,9 +13983,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 33, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_NB4);
-  __Pyx_GIVEREF(__pyx_n_s_NB4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_NB4)) __PYX_ERR(0, 33, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_NB4);
+  __Pyx_GIVEREF(__pyx_n_u_NB4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_NB4)) __PYX_ERR(0, 33, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_0);
   __Pyx_GIVEREF(__pyx_float_0_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_0)) __PYX_ERR(0, 33, __pyx_L1_error);
@@ -13987,9 +14047,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 34, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_NB5);
-  __Pyx_GIVEREF(__pyx_n_s_NB5);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_NB5)) __PYX_ERR(0, 34, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_NB5);
+  __Pyx_GIVEREF(__pyx_n_u_NB5);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_NB5)) __PYX_ERR(0, 34, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_0);
   __Pyx_GIVEREF(__pyx_float_0_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_0)) __PYX_ERR(0, 34, __pyx_L1_error);
@@ -14051,9 +14111,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 37, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GR1);
-  __Pyx_GIVEREF(__pyx_n_s_GR1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GR1)) __PYX_ERR(0, 37, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR1);
+  __Pyx_GIVEREF(__pyx_n_u_GR1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GR1)) __PYX_ERR(0, 37, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_4);
   __Pyx_GIVEREF(__pyx_float_0_4);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_4)) __PYX_ERR(0, 37, __pyx_L1_error);
@@ -14115,9 +14175,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 38, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_GR2);
-  __Pyx_GIVEREF(__pyx_n_s_GR2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_GR2)) __PYX_ERR(0, 38, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR2);
+  __Pyx_GIVEREF(__pyx_n_u_GR2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_GR2)) __PYX_ERR(0, 38, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_0)) __PYX_ERR(0, 38, __pyx_L1_error);
@@ -14179,9 +14239,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 39, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 39, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GR3);
-  __Pyx_GIVEREF(__pyx_n_s_GR3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GR3)) __PYX_ERR(0, 39, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR3);
+  __Pyx_GIVEREF(__pyx_n_u_GR3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GR3)) __PYX_ERR(0, 39, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_0);
   __Pyx_GIVEREF(__pyx_float_2_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_2_0)) __PYX_ERR(0, 39, __pyx_L1_error);
@@ -14243,9 +14303,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 40, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_GR4);
-  __Pyx_GIVEREF(__pyx_n_s_GR4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_GR4)) __PYX_ERR(0, 40, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR4);
+  __Pyx_GIVEREF(__pyx_n_u_GR4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_GR4)) __PYX_ERR(0, 40, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_0);
   __Pyx_GIVEREF(__pyx_float_2_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_2_0)) __PYX_ERR(0, 40, __pyx_L1_error);
@@ -14307,9 +14367,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 41, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GR5);
-  __Pyx_GIVEREF(__pyx_n_s_GR5);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GR5)) __PYX_ERR(0, 41, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR5);
+  __Pyx_GIVEREF(__pyx_n_u_GR5);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GR5)) __PYX_ERR(0, 41, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_5);
   __Pyx_GIVEREF(__pyx_float_1_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_5)) __PYX_ERR(0, 41, __pyx_L1_error);
@@ -14371,9 +14431,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 42, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 42, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_GR6);
-  __Pyx_GIVEREF(__pyx_n_s_GR6);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_GR6)) __PYX_ERR(0, 42, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR6);
+  __Pyx_GIVEREF(__pyx_n_u_GR6);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_GR6)) __PYX_ERR(0, 42, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_5);
   __Pyx_GIVEREF(__pyx_float_1_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_5)) __PYX_ERR(0, 42, __pyx_L1_error);
@@ -14435,9 +14495,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 43, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GR7);
-  __Pyx_GIVEREF(__pyx_n_s_GR7);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GR7)) __PYX_ERR(0, 43, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR7);
+  __Pyx_GIVEREF(__pyx_n_u_GR7);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GR7)) __PYX_ERR(0, 43, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_3_0);
   __Pyx_GIVEREF(__pyx_float_3_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_3_0)) __PYX_ERR(0, 43, __pyx_L1_error);
@@ -14499,9 +14559,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 44, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_GR8);
-  __Pyx_GIVEREF(__pyx_n_s_GR8);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_GR8)) __PYX_ERR(0, 44, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR8);
+  __Pyx_GIVEREF(__pyx_n_u_GR8);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_GR8)) __PYX_ERR(0, 44, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_4_0);
   __Pyx_GIVEREF(__pyx_float_4_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_4_0)) __PYX_ERR(0, 44, __pyx_L1_error);
@@ -14563,9 +14623,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 45, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GR9);
-  __Pyx_GIVEREF(__pyx_n_s_GR9);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GR9)) __PYX_ERR(0, 45, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GR9);
+  __Pyx_GIVEREF(__pyx_n_u_GR9);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GR9)) __PYX_ERR(0, 45, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_5_0);
   __Pyx_GIVEREF(__pyx_float_5_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_5_0)) __PYX_ERR(0, 45, __pyx_L1_error);
@@ -14627,9 +14687,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1800_0)) __PYX_ERR(0, 47, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 47, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_GS1);
-  __Pyx_GIVEREF(__pyx_n_s_GS1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_GS1)) __PYX_ERR(0, 47, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GS1);
+  __Pyx_GIVEREF(__pyx_n_u_GS1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_GS1)) __PYX_ERR(0, 47, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_9);
   __Pyx_GIVEREF(__pyx_float_0_9);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_9)) __PYX_ERR(0, 47, __pyx_L1_error);
@@ -14691,9 +14751,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1800_0)) __PYX_ERR(0, 48, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GS2);
-  __Pyx_GIVEREF(__pyx_n_s_GS2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GS2)) __PYX_ERR(0, 48, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GS2);
+  __Pyx_GIVEREF(__pyx_n_u_GS2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GS2)) __PYX_ERR(0, 48, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_5);
   __Pyx_GIVEREF(__pyx_float_1_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_5)) __PYX_ERR(0, 48, __pyx_L1_error);
@@ -14755,9 +14815,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 49, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_GS3);
-  __Pyx_GIVEREF(__pyx_n_s_GS3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_GS3)) __PYX_ERR(0, 49, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GS3);
+  __Pyx_GIVEREF(__pyx_n_u_GS3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_GS3)) __PYX_ERR(0, 49, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_8);
   __Pyx_GIVEREF(__pyx_float_1_8);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_8)) __PYX_ERR(0, 49, __pyx_L1_error);
@@ -14819,9 +14879,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 50, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_GS4);
-  __Pyx_GIVEREF(__pyx_n_s_GS4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_GS4)) __PYX_ERR(0, 50, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_GS4);
+  __Pyx_GIVEREF(__pyx_n_u_GS4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_GS4)) __PYX_ERR(0, 50, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_1);
   __Pyx_GIVEREF(__pyx_float_2_1);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_2_1)) __PYX_ERR(0, 50, __pyx_L1_error);
@@ -14883,9 +14943,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 52, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 52, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SH1);
-  __Pyx_GIVEREF(__pyx_n_s_SH1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SH1)) __PYX_ERR(0, 52, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH1);
+  __Pyx_GIVEREF(__pyx_n_u_SH1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SH1)) __PYX_ERR(0, 52, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_0)) __PYX_ERR(0, 52, __pyx_L1_error);
@@ -14947,9 +15007,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 53, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_SH2);
-  __Pyx_GIVEREF(__pyx_n_s_SH2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_SH2)) __PYX_ERR(0, 53, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH2);
+  __Pyx_GIVEREF(__pyx_n_u_SH2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_SH2)) __PYX_ERR(0, 53, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_0)) __PYX_ERR(0, 53, __pyx_L1_error);
@@ -15011,9 +15071,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1400_0)) __PYX_ERR(0, 54, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SH3);
-  __Pyx_GIVEREF(__pyx_n_s_SH3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SH3)) __PYX_ERR(0, 54, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH3);
+  __Pyx_GIVEREF(__pyx_n_u_SH3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SH3)) __PYX_ERR(0, 54, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_4);
   __Pyx_GIVEREF(__pyx_float_2_4);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_2_4)) __PYX_ERR(0, 54, __pyx_L1_error);
@@ -15075,9 +15135,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 55, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_SH4);
-  __Pyx_GIVEREF(__pyx_n_s_SH4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_SH4)) __PYX_ERR(0, 55, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH4);
+  __Pyx_GIVEREF(__pyx_n_u_SH4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_SH4)) __PYX_ERR(0, 55, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_3_0);
   __Pyx_GIVEREF(__pyx_float_3_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_3_0)) __PYX_ERR(0, 55, __pyx_L1_error);
@@ -15139,9 +15199,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 56, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SH5);
-  __Pyx_GIVEREF(__pyx_n_s_SH5);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SH5)) __PYX_ERR(0, 56, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH5);
+  __Pyx_GIVEREF(__pyx_n_u_SH5);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SH5)) __PYX_ERR(0, 56, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_6_0);
   __Pyx_GIVEREF(__pyx_float_6_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_6_0)) __PYX_ERR(0, 56, __pyx_L1_error);
@@ -15203,9 +15263,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 57, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_SH6);
-  __Pyx_GIVEREF(__pyx_n_s_SH6);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_SH6)) __PYX_ERR(0, 57, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH6);
+  __Pyx_GIVEREF(__pyx_n_u_SH6);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_SH6)) __PYX_ERR(0, 57, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_0);
   __Pyx_GIVEREF(__pyx_float_2_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_2_0)) __PYX_ERR(0, 57, __pyx_L1_error);
@@ -15267,9 +15327,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 58, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SH7);
-  __Pyx_GIVEREF(__pyx_n_s_SH7);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SH7)) __PYX_ERR(0, 58, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH7);
+  __Pyx_GIVEREF(__pyx_n_u_SH7);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SH7)) __PYX_ERR(0, 58, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_6_0);
   __Pyx_GIVEREF(__pyx_float_6_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_6_0)) __PYX_ERR(0, 58, __pyx_L1_error);
@@ -15331,9 +15391,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 59, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_SH8);
-  __Pyx_GIVEREF(__pyx_n_s_SH8);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_SH8)) __PYX_ERR(0, 59, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH8);
+  __Pyx_GIVEREF(__pyx_n_u_SH8);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_SH8)) __PYX_ERR(0, 59, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_3_0);
   __Pyx_GIVEREF(__pyx_float_3_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_3_0)) __PYX_ERR(0, 59, __pyx_L1_error);
@@ -15395,9 +15455,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1500_0)) __PYX_ERR(0, 60, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SH9);
-  __Pyx_GIVEREF(__pyx_n_s_SH9);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SH9)) __PYX_ERR(0, 60, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SH9);
+  __Pyx_GIVEREF(__pyx_n_u_SH9);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SH9)) __PYX_ERR(0, 60, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_4_4);
   __Pyx_GIVEREF(__pyx_float_4_4);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_4_4)) __PYX_ERR(0, 60, __pyx_L1_error);
@@ -15459,9 +15519,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 62, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TU1);
-  __Pyx_GIVEREF(__pyx_n_s_TU1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TU1)) __PYX_ERR(0, 62, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TU1);
+  __Pyx_GIVEREF(__pyx_n_u_TU1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TU1)) __PYX_ERR(0, 62, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_6);
   __Pyx_GIVEREF(__pyx_float_0_6);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_6)) __PYX_ERR(0, 62, __pyx_L1_error);
@@ -15523,9 +15583,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 63, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TU2);
-  __Pyx_GIVEREF(__pyx_n_s_TU2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TU2)) __PYX_ERR(0, 63, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TU2);
+  __Pyx_GIVEREF(__pyx_n_u_TU2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TU2)) __PYX_ERR(0, 63, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_0)) __PYX_ERR(0, 63, __pyx_L1_error);
@@ -15587,9 +15647,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1400_0)) __PYX_ERR(0, 64, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TU3);
-  __Pyx_GIVEREF(__pyx_n_s_TU3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TU3)) __PYX_ERR(0, 64, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TU3);
+  __Pyx_GIVEREF(__pyx_n_u_TU3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TU3)) __PYX_ERR(0, 64, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_3);
   __Pyx_GIVEREF(__pyx_float_1_3);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_3)) __PYX_ERR(0, 64, __pyx_L1_error);
@@ -15651,9 +15711,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_2000_0)) __PYX_ERR(0, 65, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TU4);
-  __Pyx_GIVEREF(__pyx_n_s_TU4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TU4)) __PYX_ERR(0, 65, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TU4);
+  __Pyx_GIVEREF(__pyx_n_u_TU4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TU4)) __PYX_ERR(0, 65, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_5);
   __Pyx_GIVEREF(__pyx_float_0_5);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_5)) __PYX_ERR(0, 65, __pyx_L1_error);
@@ -15715,9 +15775,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_750_0)) __PYX_ERR(0, 66, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TU5);
-  __Pyx_GIVEREF(__pyx_n_s_TU5);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TU5)) __PYX_ERR(0, 66, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TU5);
+  __Pyx_GIVEREF(__pyx_n_u_TU5);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TU5)) __PYX_ERR(0, 66, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_0)) __PYX_ERR(0, 66, __pyx_L1_error);
@@ -15779,9 +15839,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 68, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 68, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TL1);
-  __Pyx_GIVEREF(__pyx_n_s_TL1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TL1)) __PYX_ERR(0, 68, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL1);
+  __Pyx_GIVEREF(__pyx_n_u_TL1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TL1)) __PYX_ERR(0, 68, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_2);
   __Pyx_GIVEREF(__pyx_float_0_2);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_2)) __PYX_ERR(0, 68, __pyx_L1_error);
@@ -15843,9 +15903,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 69, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TL2);
-  __Pyx_GIVEREF(__pyx_n_s_TL2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TL2)) __PYX_ERR(0, 69, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL2);
+  __Pyx_GIVEREF(__pyx_n_u_TL2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TL2)) __PYX_ERR(0, 69, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_2);
   __Pyx_GIVEREF(__pyx_float_0_2);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_2)) __PYX_ERR(0, 69, __pyx_L1_error);
@@ -15907,9 +15967,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 70, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TL3);
-  __Pyx_GIVEREF(__pyx_n_s_TL3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TL3)) __PYX_ERR(0, 70, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL3);
+  __Pyx_GIVEREF(__pyx_n_u_TL3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TL3)) __PYX_ERR(0, 70, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_3);
   __Pyx_GIVEREF(__pyx_float_0_3);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_3)) __PYX_ERR(0, 70, __pyx_L1_error);
@@ -15971,9 +16031,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 71, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TL4);
-  __Pyx_GIVEREF(__pyx_n_s_TL4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TL4)) __PYX_ERR(0, 71, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL4);
+  __Pyx_GIVEREF(__pyx_n_u_TL4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TL4)) __PYX_ERR(0, 71, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_4);
   __Pyx_GIVEREF(__pyx_float_0_4);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_4)) __PYX_ERR(0, 71, __pyx_L1_error);
@@ -16035,9 +16095,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 72, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TL5);
-  __Pyx_GIVEREF(__pyx_n_s_TL5);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TL5)) __PYX_ERR(0, 72, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL5);
+  __Pyx_GIVEREF(__pyx_n_u_TL5);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TL5)) __PYX_ERR(0, 72, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_6);
   __Pyx_GIVEREF(__pyx_float_0_6);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_6)) __PYX_ERR(0, 72, __pyx_L1_error);
@@ -16099,9 +16159,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 73, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TL6);
-  __Pyx_GIVEREF(__pyx_n_s_TL6);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TL6)) __PYX_ERR(0, 73, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL6);
+  __Pyx_GIVEREF(__pyx_n_u_TL6);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TL6)) __PYX_ERR(0, 73, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_3);
   __Pyx_GIVEREF(__pyx_float_0_3);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_3)) __PYX_ERR(0, 73, __pyx_L1_error);
@@ -16163,9 +16223,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 74, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TL7);
-  __Pyx_GIVEREF(__pyx_n_s_TL7);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TL7)) __PYX_ERR(0, 74, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL7);
+  __Pyx_GIVEREF(__pyx_n_u_TL7);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TL7)) __PYX_ERR(0, 74, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_4);
   __Pyx_GIVEREF(__pyx_float_0_4);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_4)) __PYX_ERR(0, 74, __pyx_L1_error);
@@ -16227,9 +16287,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 75, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 75, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_TL8);
-  __Pyx_GIVEREF(__pyx_n_s_TL8);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_TL8)) __PYX_ERR(0, 75, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL8);
+  __Pyx_GIVEREF(__pyx_n_u_TL8);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_TL8)) __PYX_ERR(0, 75, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_3);
   __Pyx_GIVEREF(__pyx_float_0_3);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_0_3)) __PYX_ERR(0, 75, __pyx_L1_error);
@@ -16291,9 +16351,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_1600_0)) __PYX_ERR(0, 76, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_TL9);
-  __Pyx_GIVEREF(__pyx_n_s_TL9);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_TL9)) __PYX_ERR(0, 76, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_TL9);
+  __Pyx_GIVEREF(__pyx_n_u_TL9);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_TL9)) __PYX_ERR(0, 76, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_0_6);
   __Pyx_GIVEREF(__pyx_float_0_6);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_0_6)) __PYX_ERR(0, 76, __pyx_L1_error);
@@ -16355,9 +16415,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 78, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 78, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_SB1);
-  __Pyx_GIVEREF(__pyx_n_s_SB1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_SB1)) __PYX_ERR(0, 78, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SB1);
+  __Pyx_GIVEREF(__pyx_n_u_SB1);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_SB1)) __PYX_ERR(0, 78, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_0)) __PYX_ERR(0, 78, __pyx_L1_error);
@@ -16419,9 +16479,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 79, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SB2);
-  __Pyx_GIVEREF(__pyx_n_s_SB2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SB2)) __PYX_ERR(0, 79, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SB2);
+  __Pyx_GIVEREF(__pyx_n_u_SB2);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SB2)) __PYX_ERR(0, 79, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_0);
   __Pyx_GIVEREF(__pyx_float_1_0);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_1_0)) __PYX_ERR(0, 79, __pyx_L1_error);
@@ -16483,9 +16543,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 80, __pyx_L1_error);
   __pyx_t_5 = PyList_New(6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 80, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_INCREF(__pyx_n_s_SB3);
-  __Pyx_GIVEREF(__pyx_n_s_SB3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_s_SB3)) __PYX_ERR(0, 80, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SB3);
+  __Pyx_GIVEREF(__pyx_n_u_SB3);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 0, __pyx_n_u_SB3)) __PYX_ERR(0, 80, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_1_2);
   __Pyx_GIVEREF(__pyx_float_1_2);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_5, 1, __pyx_float_1_2)) __PYX_ERR(0, 80, __pyx_L1_error);
@@ -16547,9 +16607,9 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 4, __pyx_float_0_0)) __PYX_ERR(0, 81, __pyx_L1_error);
   __pyx_t_3 = PyList_New(6); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 81, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_INCREF(__pyx_n_s_SB4);
-  __Pyx_GIVEREF(__pyx_n_s_SB4);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s_SB4)) __PYX_ERR(0, 81, __pyx_L1_error);
+  __Pyx_INCREF(__pyx_n_u_SB4);
+  __Pyx_GIVEREF(__pyx_n_u_SB4);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_u_SB4)) __PYX_ERR(0, 81, __pyx_L1_error);
   __Pyx_INCREF(__pyx_float_2_7);
   __Pyx_GIVEREF(__pyx_float_2_7);
   if (__Pyx_PyList_SET_ITEM(__pyx_t_3, 1, __pyx_float_2_7)) __PYX_ERR(0, 81, __pyx_L1_error);

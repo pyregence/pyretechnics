@@ -1968,9 +1968,32 @@ static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
 /* PyIntCompare.proto */
 static CYTHON_INLINE int __Pyx_PyInt_BoolEqObjC(PyObject *op1, PyObject *op2, long intval, long inplace);
 
-/* PyObject_Str.proto */
-#define __Pyx_PyObject_Str(obj)\
-    (likely(PyString_CheckExact(obj)) ? __Pyx_NewRef(obj) : PyObject_Str(obj))
+/* PyObject_Unicode.proto */
+#if PY_MAJOR_VERSION >= 3
+#define __Pyx_PyObject_Unicode(obj)\
+    (likely(PyUnicode_CheckExact(obj)) ? __Pyx_NewRef(obj) : PyObject_Str(obj))
+#else
+#define __Pyx_PyObject_Unicode(obj)\
+    (likely(PyUnicode_CheckExact(obj)) ? __Pyx_NewRef(obj) : PyObject_Unicode(obj))
+#endif
+
+/* UnicodeConcatInPlace.proto */
+# if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+    #if CYTHON_REFNANNY
+        #define __Pyx_PyUnicode_ConcatInPlace(left, right) __Pyx_PyUnicode_ConcatInPlaceImpl(&left, right, __pyx_refnanny)
+    #else
+        #define __Pyx_PyUnicode_ConcatInPlace(left, right) __Pyx_PyUnicode_ConcatInPlaceImpl(&left, right)
+    #endif
+    static CYTHON_INLINE PyObject *__Pyx_PyUnicode_ConcatInPlaceImpl(PyObject **p_left, PyObject *right
+        #if CYTHON_REFNANNY
+        , void* __pyx_refnanny
+        #endif
+    );
+#else
+#define __Pyx_PyUnicode_ConcatInPlace __Pyx_PyUnicode_Concat
+#endif
+#define __Pyx_PyUnicode_ConcatInPlaceSafe(left, right) ((unlikely((left) == Py_None) || unlikely((right) == Py_None)) ?\
+    PyNumber_InPlaceAdd(left, right) : __Pyx_PyUnicode_ConcatInPlace(left, right))
 
 /* PyFunctionFastCall.proto */
 #if CYTHON_FAST_PYCALL
@@ -2162,37 +2185,6 @@ static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
 #else
 #define __Pyx_ListComp_Append(L,x) PyList_Append(L,x)
 #endif
-
-/* UnicodeConcatInPlace.proto */
-# if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
-    #if CYTHON_REFNANNY
-        #define __Pyx_PyUnicode_ConcatInPlace(left, right) __Pyx_PyUnicode_ConcatInPlaceImpl(&left, right, __pyx_refnanny)
-    #else
-        #define __Pyx_PyUnicode_ConcatInPlace(left, right) __Pyx_PyUnicode_ConcatInPlaceImpl(&left, right)
-    #endif
-    static CYTHON_INLINE PyObject *__Pyx_PyUnicode_ConcatInPlaceImpl(PyObject **p_left, PyObject *right
-        #if CYTHON_REFNANNY
-        , void* __pyx_refnanny
-        #endif
-    );
-#else
-#define __Pyx_PyUnicode_ConcatInPlace __Pyx_PyUnicode_Concat
-#endif
-#define __Pyx_PyUnicode_ConcatInPlaceSafe(left, right) ((unlikely((left) == Py_None) || unlikely((right) == Py_None)) ?\
-    PyNumber_InPlaceAdd(left, right) : __Pyx_PyUnicode_ConcatInPlace(left, right))
-
-/* StrConcatInPlace.proto */
-#if PY_MAJOR_VERSION >= 3
-    #define __Pyx_PyStr_Concat __Pyx_PyUnicode_Concat
-    #define __Pyx_PyStr_ConcatInPlace __Pyx_PyUnicode_ConcatInPlace
-#else
-    #define __Pyx_PyStr_Concat PyNumber_Add
-    #define __Pyx_PyStr_ConcatInPlace PyNumber_InPlaceAdd
-#endif
-#define __Pyx_PyStr_ConcatSafe(a, b) ((unlikely((a) == Py_None) || unlikely((b) == Py_None)) ?\
-    PyNumber_Add(a, b) : __Pyx_PyStr_Concat(a, b))
-#define __Pyx_PyStr_ConcatInPlaceSafe(a, b) ((unlikely((a) == Py_None) || unlikely((b) == Py_None)) ?\
-    PyNumber_InPlaceAdd(a, b) : __Pyx_PyStr_ConcatInPlace(a, b))
 
 /* Import.proto */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
@@ -2488,8 +2480,8 @@ static const char __pyx_k_x[] = "x";
 static const char __pyx_k_y[] = "y";
 static const char __pyx_k__3[] = ".";
 static const char __pyx_k_np[] = "np";
-static const char __pyx_k__26[] = "*";
-static const char __pyx_k__47[] = "?";
+static const char __pyx_k__28[] = "*";
+static const char __pyx_k__49[] = "?";
 static const char __pyx_k_all[] = "all";
 static const char __pyx_k_doc[] = "__doc__";
 static const char __pyx_k_get[] = "get";
@@ -2651,7 +2643,7 @@ static const char __pyx_k_Create_an_object_that_represent[] = "\n    Create an o
 static const char __pyx_k_LazySpaceTimeCube__getOrLoadSub[] = "_LazySpaceTimeCube__getOrLoadSubcube";
 static const char __pyx_k_LazySpaceTimeCube_getTimeSeries[] = "LazySpaceTimeCube.getTimeSeries";
 static const char __pyx_k_SpaceTimeCube__getFullyRealized[] = "_SpaceTimeCube__getFullyRealizedCube";
-static const char __pyx_k_releaseFullyRealizedCube_is_not[] = "releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\n";
+static const char __pyx_k_releaseFullyRealizedCube_is_not[] = "releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\nYou probably don't want to do this anyway.";
 static const char __pyx_k_Invalid_input_base_must_have_0_3[] = "Invalid input: base must have 0-3 dimensions.";
 static const char __pyx_k_LazySpaceTimeCube___getOrLoadSub[] = "LazySpaceTimeCube.__getOrLoadSubcube";
 static const char __pyx_k_LazySpaceTimeCube_getFullyRealiz[] = "LazySpaceTimeCube.getFullyRealizedCube";
@@ -2662,8 +2654,7 @@ static const char __pyx_k_SpaceTimeCube_getFullyRealizedCu[] = "SpaceTimeCube.ge
 static const char __pyx_k_SpaceTimeCube_releaseFullyRealiz[] = "SpaceTimeCube.releaseFullyRealizedCube";
 static const char __pyx_k_The_cube_shape_and_subcube_shape[] = "The cube_shape and subcube_shape must only contain positive integers.";
 static const char __pyx_k_The_cube_shape_must_only_contain[] = "The cube_shape must only contain positive integers.";
-static const char __pyx_k_You_probably_don_t_want_to_do_th[] = "You probably don't want to do this anyway.";
-static const char __pyx_k_getFullyRealizedCube_is_not_impl[] = "getFullyRealizedCube is not implemented for LazySpaceTimeCube.\n";
+static const char __pyx_k_getFullyRealizedCube_is_not_impl[] = "getFullyRealizedCube is not implemented for LazySpaceTimeCube.\nYou probably don't want to do this anyway.";
 static const char __pyx_k_src_pyretechnics_space_time_cube[] = "src/pyretechnics/space_time_cube.py";
 static const char __pyx_k_Create_an_object_that_represent_2[] = "\n    Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.\n    Internally, data is stored as an initially empty 3D array of SpaceTimeCube objects.\n    Whenever a point value or contiguous space-time region of values is requested, identify\n    which SpaceTimeCubes contain the requested coordinates, load them into the cache array\n    by calling load_subcube for any that are not already present, request the values from\n    these SpaceTimeCubes, combine them together if necessary, and return the resulting scalar\n    value or array to the caller.\n    ";
 /* #### Code section: decls ### */
@@ -2718,7 +2709,7 @@ typedef struct {
   #endif
   PyObject *__pyx_kp_s_Create_an_object_that_represent;
   PyObject *__pyx_kp_s_Create_an_object_that_represent_2;
-  PyObject *__pyx_kp_s_Invalid_input_base_must_have_0_3;
+  PyObject *__pyx_kp_u_Invalid_input_base_must_have_0_3;
   PyObject *__pyx_n_s_LazySpaceTimeCube;
   PyObject *__pyx_n_s_LazySpaceTimeCube___getOrLoadSub;
   PyObject *__pyx_n_s_LazySpaceTimeCube___init;
@@ -2739,14 +2730,12 @@ typedef struct {
   PyObject *__pyx_n_s_SpaceTimeCube_getSubcube;
   PyObject *__pyx_n_s_SpaceTimeCube_getTimeSeries;
   PyObject *__pyx_n_s_SpaceTimeCube_releaseFullyRealiz;
-  PyObject *__pyx_kp_s_The_cube_shape_and_subcube_shape;
-  PyObject *__pyx_kp_s_The_cube_shape_must_only_contain;
+  PyObject *__pyx_kp_u_The_cube_shape_and_subcube_shape;
+  PyObject *__pyx_kp_u_The_cube_shape_must_only_contain;
   PyObject *__pyx_n_s_ValueError;
-  PyObject *__pyx_kp_s_You_probably_don_t_want_to_do_th;
-  PyObject *__pyx_n_s__26;
-  PyObject *__pyx_kp_s__3;
+  PyObject *__pyx_n_s__28;
   PyObject *__pyx_kp_u__3;
-  PyObject *__pyx_n_s__47;
+  PyObject *__pyx_n_s__49;
   PyObject *__pyx_n_s_all;
   PyObject *__pyx_n_s_array;
   PyObject *__pyx_n_s_array_shape;
@@ -2780,6 +2769,7 @@ typedef struct {
   PyObject *__pyx_n_s_cline_in_traceback;
   PyObject *__pyx_n_s_concatenate;
   PyObject *__pyx_n_s_cube;
+  PyObject *__pyx_n_u_cube;
   PyObject *__pyx_n_s_cube_bands;
   PyObject *__pyx_n_s_cube_cols;
   PyObject *__pyx_n_s_cube_rows;
@@ -2797,7 +2787,7 @@ typedef struct {
   PyObject *__pyx_n_s_get;
   PyObject *__pyx_n_s_getFullyRealizedCube;
   PyObject *__pyx_n_s_getFullyRealizedCube_2;
-  PyObject *__pyx_kp_s_getFullyRealizedCube_is_not_impl;
+  PyObject *__pyx_kp_u_getFullyRealizedCube_is_not_impl;
   PyObject *__pyx_n_s_getOrLoadSubcube;
   PyObject *__pyx_n_s_getSpatialPlane;
   PyObject *__pyx_n_s_getSubcube;
@@ -2821,7 +2811,7 @@ typedef struct {
   PyObject *__pyx_n_s_maybe_repeat_array;
   PyObject *__pyx_n_s_metaclass;
   PyObject *__pyx_n_s_module;
-  PyObject *__pyx_kp_s_must_be_an_exact_multiple_of;
+  PyObject *__pyx_kp_u_must_be_an_exact_multiple_of;
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_ndim;
   PyObject *__pyx_n_s_np;
@@ -2834,7 +2824,7 @@ typedef struct {
   PyObject *__pyx_n_s_range;
   PyObject *__pyx_n_s_reduce;
   PyObject *__pyx_n_s_releaseFullyRealizedCube;
-  PyObject *__pyx_kp_s_releaseFullyRealizedCube_is_not;
+  PyObject *__pyx_kp_u_releaseFullyRealizedCube_is_not;
   PyObject *__pyx_n_s_remainder;
   PyObject *__pyx_n_s_repeat;
   PyObject *__pyx_n_s_repeated_array;
@@ -2909,8 +2899,8 @@ typedef struct {
   PyObject *__pyx_tuple__8;
   PyObject *__pyx_tuple__9;
   PyObject *__pyx_tuple__18;
+  PyObject *__pyx_tuple__25;
   PyObject *__pyx_tuple__27;
-  PyObject *__pyx_tuple__28;
   PyObject *__pyx_tuple__29;
   PyObject *__pyx_tuple__30;
   PyObject *__pyx_tuple__31;
@@ -2929,6 +2919,8 @@ typedef struct {
   PyObject *__pyx_tuple__44;
   PyObject *__pyx_tuple__45;
   PyObject *__pyx_tuple__46;
+  PyObject *__pyx_tuple__47;
+  PyObject *__pyx_tuple__48;
   PyObject *__pyx_codeobj__2;
   PyObject *__pyx_codeobj__4;
   PyObject *__pyx_codeobj__5;
@@ -2947,7 +2939,7 @@ typedef struct {
   PyObject *__pyx_codeobj__22;
   PyObject *__pyx_codeobj__23;
   PyObject *__pyx_codeobj__24;
-  PyObject *__pyx_codeobj__25;
+  PyObject *__pyx_codeobj__26;
 } __pyx_mstate;
 
 #if CYTHON_USE_MODULE_STATE
@@ -2992,7 +2984,7 @@ static int __pyx_m_clear(PyObject *m) {
   #endif
   Py_CLEAR(clear_module_state->__pyx_kp_s_Create_an_object_that_represent);
   Py_CLEAR(clear_module_state->__pyx_kp_s_Create_an_object_that_represent_2);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_Invalid_input_base_must_have_0_3);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_Invalid_input_base_must_have_0_3);
   Py_CLEAR(clear_module_state->__pyx_n_s_LazySpaceTimeCube);
   Py_CLEAR(clear_module_state->__pyx_n_s_LazySpaceTimeCube___getOrLoadSub);
   Py_CLEAR(clear_module_state->__pyx_n_s_LazySpaceTimeCube___init);
@@ -3013,14 +3005,12 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_SpaceTimeCube_getSubcube);
   Py_CLEAR(clear_module_state->__pyx_n_s_SpaceTimeCube_getTimeSeries);
   Py_CLEAR(clear_module_state->__pyx_n_s_SpaceTimeCube_releaseFullyRealiz);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_The_cube_shape_and_subcube_shape);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_The_cube_shape_must_only_contain);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_The_cube_shape_and_subcube_shape);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_The_cube_shape_must_only_contain);
   Py_CLEAR(clear_module_state->__pyx_n_s_ValueError);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_You_probably_don_t_want_to_do_th);
-  Py_CLEAR(clear_module_state->__pyx_n_s__26);
-  Py_CLEAR(clear_module_state->__pyx_kp_s__3);
+  Py_CLEAR(clear_module_state->__pyx_n_s__28);
   Py_CLEAR(clear_module_state->__pyx_kp_u__3);
-  Py_CLEAR(clear_module_state->__pyx_n_s__47);
+  Py_CLEAR(clear_module_state->__pyx_n_s__49);
   Py_CLEAR(clear_module_state->__pyx_n_s_all);
   Py_CLEAR(clear_module_state->__pyx_n_s_array);
   Py_CLEAR(clear_module_state->__pyx_n_s_array_shape);
@@ -3054,6 +3044,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
   Py_CLEAR(clear_module_state->__pyx_n_s_concatenate);
   Py_CLEAR(clear_module_state->__pyx_n_s_cube);
+  Py_CLEAR(clear_module_state->__pyx_n_u_cube);
   Py_CLEAR(clear_module_state->__pyx_n_s_cube_bands);
   Py_CLEAR(clear_module_state->__pyx_n_s_cube_cols);
   Py_CLEAR(clear_module_state->__pyx_n_s_cube_rows);
@@ -3071,7 +3062,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_get);
   Py_CLEAR(clear_module_state->__pyx_n_s_getFullyRealizedCube);
   Py_CLEAR(clear_module_state->__pyx_n_s_getFullyRealizedCube_2);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_getFullyRealizedCube_is_not_impl);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_getFullyRealizedCube_is_not_impl);
   Py_CLEAR(clear_module_state->__pyx_n_s_getOrLoadSubcube);
   Py_CLEAR(clear_module_state->__pyx_n_s_getSpatialPlane);
   Py_CLEAR(clear_module_state->__pyx_n_s_getSubcube);
@@ -3095,7 +3086,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_maybe_repeat_array);
   Py_CLEAR(clear_module_state->__pyx_n_s_metaclass);
   Py_CLEAR(clear_module_state->__pyx_n_s_module);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_must_be_an_exact_multiple_of);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_must_be_an_exact_multiple_of);
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_ndim);
   Py_CLEAR(clear_module_state->__pyx_n_s_np);
@@ -3108,7 +3099,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_range);
   Py_CLEAR(clear_module_state->__pyx_n_s_reduce);
   Py_CLEAR(clear_module_state->__pyx_n_s_releaseFullyRealizedCube);
-  Py_CLEAR(clear_module_state->__pyx_kp_s_releaseFullyRealizedCube_is_not);
+  Py_CLEAR(clear_module_state->__pyx_kp_u_releaseFullyRealizedCube_is_not);
   Py_CLEAR(clear_module_state->__pyx_n_s_remainder);
   Py_CLEAR(clear_module_state->__pyx_n_s_repeat);
   Py_CLEAR(clear_module_state->__pyx_n_s_repeated_array);
@@ -3183,8 +3174,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_tuple__8);
   Py_CLEAR(clear_module_state->__pyx_tuple__9);
   Py_CLEAR(clear_module_state->__pyx_tuple__18);
+  Py_CLEAR(clear_module_state->__pyx_tuple__25);
   Py_CLEAR(clear_module_state->__pyx_tuple__27);
-  Py_CLEAR(clear_module_state->__pyx_tuple__28);
   Py_CLEAR(clear_module_state->__pyx_tuple__29);
   Py_CLEAR(clear_module_state->__pyx_tuple__30);
   Py_CLEAR(clear_module_state->__pyx_tuple__31);
@@ -3203,6 +3194,8 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_tuple__44);
   Py_CLEAR(clear_module_state->__pyx_tuple__45);
   Py_CLEAR(clear_module_state->__pyx_tuple__46);
+  Py_CLEAR(clear_module_state->__pyx_tuple__47);
+  Py_CLEAR(clear_module_state->__pyx_tuple__48);
   Py_CLEAR(clear_module_state->__pyx_codeobj__2);
   Py_CLEAR(clear_module_state->__pyx_codeobj__4);
   Py_CLEAR(clear_module_state->__pyx_codeobj__5);
@@ -3221,7 +3214,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_codeobj__22);
   Py_CLEAR(clear_module_state->__pyx_codeobj__23);
   Py_CLEAR(clear_module_state->__pyx_codeobj__24);
-  Py_CLEAR(clear_module_state->__pyx_codeobj__25);
+  Py_CLEAR(clear_module_state->__pyx_codeobj__26);
   return 0;
 }
 #endif
@@ -3244,7 +3237,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   #endif
   Py_VISIT(traverse_module_state->__pyx_kp_s_Create_an_object_that_represent);
   Py_VISIT(traverse_module_state->__pyx_kp_s_Create_an_object_that_represent_2);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_Invalid_input_base_must_have_0_3);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_Invalid_input_base_must_have_0_3);
   Py_VISIT(traverse_module_state->__pyx_n_s_LazySpaceTimeCube);
   Py_VISIT(traverse_module_state->__pyx_n_s_LazySpaceTimeCube___getOrLoadSub);
   Py_VISIT(traverse_module_state->__pyx_n_s_LazySpaceTimeCube___init);
@@ -3265,14 +3258,12 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_SpaceTimeCube_getSubcube);
   Py_VISIT(traverse_module_state->__pyx_n_s_SpaceTimeCube_getTimeSeries);
   Py_VISIT(traverse_module_state->__pyx_n_s_SpaceTimeCube_releaseFullyRealiz);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_The_cube_shape_and_subcube_shape);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_The_cube_shape_must_only_contain);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_The_cube_shape_and_subcube_shape);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_The_cube_shape_must_only_contain);
   Py_VISIT(traverse_module_state->__pyx_n_s_ValueError);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_You_probably_don_t_want_to_do_th);
-  Py_VISIT(traverse_module_state->__pyx_n_s__26);
-  Py_VISIT(traverse_module_state->__pyx_kp_s__3);
+  Py_VISIT(traverse_module_state->__pyx_n_s__28);
   Py_VISIT(traverse_module_state->__pyx_kp_u__3);
-  Py_VISIT(traverse_module_state->__pyx_n_s__47);
+  Py_VISIT(traverse_module_state->__pyx_n_s__49);
   Py_VISIT(traverse_module_state->__pyx_n_s_all);
   Py_VISIT(traverse_module_state->__pyx_n_s_array);
   Py_VISIT(traverse_module_state->__pyx_n_s_array_shape);
@@ -3306,6 +3297,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
   Py_VISIT(traverse_module_state->__pyx_n_s_concatenate);
   Py_VISIT(traverse_module_state->__pyx_n_s_cube);
+  Py_VISIT(traverse_module_state->__pyx_n_u_cube);
   Py_VISIT(traverse_module_state->__pyx_n_s_cube_bands);
   Py_VISIT(traverse_module_state->__pyx_n_s_cube_cols);
   Py_VISIT(traverse_module_state->__pyx_n_s_cube_rows);
@@ -3323,7 +3315,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_get);
   Py_VISIT(traverse_module_state->__pyx_n_s_getFullyRealizedCube);
   Py_VISIT(traverse_module_state->__pyx_n_s_getFullyRealizedCube_2);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_getFullyRealizedCube_is_not_impl);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_getFullyRealizedCube_is_not_impl);
   Py_VISIT(traverse_module_state->__pyx_n_s_getOrLoadSubcube);
   Py_VISIT(traverse_module_state->__pyx_n_s_getSpatialPlane);
   Py_VISIT(traverse_module_state->__pyx_n_s_getSubcube);
@@ -3347,7 +3339,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_maybe_repeat_array);
   Py_VISIT(traverse_module_state->__pyx_n_s_metaclass);
   Py_VISIT(traverse_module_state->__pyx_n_s_module);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_must_be_an_exact_multiple_of);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_must_be_an_exact_multiple_of);
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_ndim);
   Py_VISIT(traverse_module_state->__pyx_n_s_np);
@@ -3360,7 +3352,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_range);
   Py_VISIT(traverse_module_state->__pyx_n_s_reduce);
   Py_VISIT(traverse_module_state->__pyx_n_s_releaseFullyRealizedCube);
-  Py_VISIT(traverse_module_state->__pyx_kp_s_releaseFullyRealizedCube_is_not);
+  Py_VISIT(traverse_module_state->__pyx_kp_u_releaseFullyRealizedCube_is_not);
   Py_VISIT(traverse_module_state->__pyx_n_s_remainder);
   Py_VISIT(traverse_module_state->__pyx_n_s_repeat);
   Py_VISIT(traverse_module_state->__pyx_n_s_repeated_array);
@@ -3435,8 +3427,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_tuple__8);
   Py_VISIT(traverse_module_state->__pyx_tuple__9);
   Py_VISIT(traverse_module_state->__pyx_tuple__18);
+  Py_VISIT(traverse_module_state->__pyx_tuple__25);
   Py_VISIT(traverse_module_state->__pyx_tuple__27);
-  Py_VISIT(traverse_module_state->__pyx_tuple__28);
   Py_VISIT(traverse_module_state->__pyx_tuple__29);
   Py_VISIT(traverse_module_state->__pyx_tuple__30);
   Py_VISIT(traverse_module_state->__pyx_tuple__31);
@@ -3455,6 +3447,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_tuple__44);
   Py_VISIT(traverse_module_state->__pyx_tuple__45);
   Py_VISIT(traverse_module_state->__pyx_tuple__46);
+  Py_VISIT(traverse_module_state->__pyx_tuple__47);
+  Py_VISIT(traverse_module_state->__pyx_tuple__48);
   Py_VISIT(traverse_module_state->__pyx_codeobj__2);
   Py_VISIT(traverse_module_state->__pyx_codeobj__4);
   Py_VISIT(traverse_module_state->__pyx_codeobj__5);
@@ -3473,7 +3467,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_codeobj__22);
   Py_VISIT(traverse_module_state->__pyx_codeobj__23);
   Py_VISIT(traverse_module_state->__pyx_codeobj__24);
-  Py_VISIT(traverse_module_state->__pyx_codeobj__25);
+  Py_VISIT(traverse_module_state->__pyx_codeobj__26);
   return 0;
 }
 #endif
@@ -3506,7 +3500,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #define __pyx_kp_s_Create_an_object_that_represent __pyx_mstate_global->__pyx_kp_s_Create_an_object_that_represent
 #define __pyx_kp_s_Create_an_object_that_represent_2 __pyx_mstate_global->__pyx_kp_s_Create_an_object_that_represent_2
-#define __pyx_kp_s_Invalid_input_base_must_have_0_3 __pyx_mstate_global->__pyx_kp_s_Invalid_input_base_must_have_0_3
+#define __pyx_kp_u_Invalid_input_base_must_have_0_3 __pyx_mstate_global->__pyx_kp_u_Invalid_input_base_must_have_0_3
 #define __pyx_n_s_LazySpaceTimeCube __pyx_mstate_global->__pyx_n_s_LazySpaceTimeCube
 #define __pyx_n_s_LazySpaceTimeCube___getOrLoadSub __pyx_mstate_global->__pyx_n_s_LazySpaceTimeCube___getOrLoadSub
 #define __pyx_n_s_LazySpaceTimeCube___init __pyx_mstate_global->__pyx_n_s_LazySpaceTimeCube___init
@@ -3527,14 +3521,12 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_SpaceTimeCube_getSubcube __pyx_mstate_global->__pyx_n_s_SpaceTimeCube_getSubcube
 #define __pyx_n_s_SpaceTimeCube_getTimeSeries __pyx_mstate_global->__pyx_n_s_SpaceTimeCube_getTimeSeries
 #define __pyx_n_s_SpaceTimeCube_releaseFullyRealiz __pyx_mstate_global->__pyx_n_s_SpaceTimeCube_releaseFullyRealiz
-#define __pyx_kp_s_The_cube_shape_and_subcube_shape __pyx_mstate_global->__pyx_kp_s_The_cube_shape_and_subcube_shape
-#define __pyx_kp_s_The_cube_shape_must_only_contain __pyx_mstate_global->__pyx_kp_s_The_cube_shape_must_only_contain
+#define __pyx_kp_u_The_cube_shape_and_subcube_shape __pyx_mstate_global->__pyx_kp_u_The_cube_shape_and_subcube_shape
+#define __pyx_kp_u_The_cube_shape_must_only_contain __pyx_mstate_global->__pyx_kp_u_The_cube_shape_must_only_contain
 #define __pyx_n_s_ValueError __pyx_mstate_global->__pyx_n_s_ValueError
-#define __pyx_kp_s_You_probably_don_t_want_to_do_th __pyx_mstate_global->__pyx_kp_s_You_probably_don_t_want_to_do_th
-#define __pyx_n_s__26 __pyx_mstate_global->__pyx_n_s__26
-#define __pyx_kp_s__3 __pyx_mstate_global->__pyx_kp_s__3
+#define __pyx_n_s__28 __pyx_mstate_global->__pyx_n_s__28
 #define __pyx_kp_u__3 __pyx_mstate_global->__pyx_kp_u__3
-#define __pyx_n_s__47 __pyx_mstate_global->__pyx_n_s__47
+#define __pyx_n_s__49 __pyx_mstate_global->__pyx_n_s__49
 #define __pyx_n_s_all __pyx_mstate_global->__pyx_n_s_all
 #define __pyx_n_s_array __pyx_mstate_global->__pyx_n_s_array
 #define __pyx_n_s_array_shape __pyx_mstate_global->__pyx_n_s_array_shape
@@ -3568,6 +3560,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
 #define __pyx_n_s_concatenate __pyx_mstate_global->__pyx_n_s_concatenate
 #define __pyx_n_s_cube __pyx_mstate_global->__pyx_n_s_cube
+#define __pyx_n_u_cube __pyx_mstate_global->__pyx_n_u_cube
 #define __pyx_n_s_cube_bands __pyx_mstate_global->__pyx_n_s_cube_bands
 #define __pyx_n_s_cube_cols __pyx_mstate_global->__pyx_n_s_cube_cols
 #define __pyx_n_s_cube_rows __pyx_mstate_global->__pyx_n_s_cube_rows
@@ -3585,7 +3578,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_get __pyx_mstate_global->__pyx_n_s_get
 #define __pyx_n_s_getFullyRealizedCube __pyx_mstate_global->__pyx_n_s_getFullyRealizedCube
 #define __pyx_n_s_getFullyRealizedCube_2 __pyx_mstate_global->__pyx_n_s_getFullyRealizedCube_2
-#define __pyx_kp_s_getFullyRealizedCube_is_not_impl __pyx_mstate_global->__pyx_kp_s_getFullyRealizedCube_is_not_impl
+#define __pyx_kp_u_getFullyRealizedCube_is_not_impl __pyx_mstate_global->__pyx_kp_u_getFullyRealizedCube_is_not_impl
 #define __pyx_n_s_getOrLoadSubcube __pyx_mstate_global->__pyx_n_s_getOrLoadSubcube
 #define __pyx_n_s_getSpatialPlane __pyx_mstate_global->__pyx_n_s_getSpatialPlane
 #define __pyx_n_s_getSubcube __pyx_mstate_global->__pyx_n_s_getSubcube
@@ -3609,7 +3602,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_maybe_repeat_array __pyx_mstate_global->__pyx_n_s_maybe_repeat_array
 #define __pyx_n_s_metaclass __pyx_mstate_global->__pyx_n_s_metaclass
 #define __pyx_n_s_module __pyx_mstate_global->__pyx_n_s_module
-#define __pyx_kp_s_must_be_an_exact_multiple_of __pyx_mstate_global->__pyx_kp_s_must_be_an_exact_multiple_of
+#define __pyx_kp_u_must_be_an_exact_multiple_of __pyx_mstate_global->__pyx_kp_u_must_be_an_exact_multiple_of
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_ndim __pyx_mstate_global->__pyx_n_s_ndim
 #define __pyx_n_s_np __pyx_mstate_global->__pyx_n_s_np
@@ -3622,7 +3615,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_range __pyx_mstate_global->__pyx_n_s_range
 #define __pyx_n_s_reduce __pyx_mstate_global->__pyx_n_s_reduce
 #define __pyx_n_s_releaseFullyRealizedCube __pyx_mstate_global->__pyx_n_s_releaseFullyRealizedCube
-#define __pyx_kp_s_releaseFullyRealizedCube_is_not __pyx_mstate_global->__pyx_kp_s_releaseFullyRealizedCube_is_not
+#define __pyx_kp_u_releaseFullyRealizedCube_is_not __pyx_mstate_global->__pyx_kp_u_releaseFullyRealizedCube_is_not
 #define __pyx_n_s_remainder __pyx_mstate_global->__pyx_n_s_remainder
 #define __pyx_n_s_repeat __pyx_mstate_global->__pyx_n_s_repeat
 #define __pyx_n_s_repeated_array __pyx_mstate_global->__pyx_n_s_repeated_array
@@ -3697,8 +3690,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_tuple__8 __pyx_mstate_global->__pyx_tuple__8
 #define __pyx_tuple__9 __pyx_mstate_global->__pyx_tuple__9
 #define __pyx_tuple__18 __pyx_mstate_global->__pyx_tuple__18
+#define __pyx_tuple__25 __pyx_mstate_global->__pyx_tuple__25
 #define __pyx_tuple__27 __pyx_mstate_global->__pyx_tuple__27
-#define __pyx_tuple__28 __pyx_mstate_global->__pyx_tuple__28
 #define __pyx_tuple__29 __pyx_mstate_global->__pyx_tuple__29
 #define __pyx_tuple__30 __pyx_mstate_global->__pyx_tuple__30
 #define __pyx_tuple__31 __pyx_mstate_global->__pyx_tuple__31
@@ -3717,6 +3710,8 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_tuple__44 __pyx_mstate_global->__pyx_tuple__44
 #define __pyx_tuple__45 __pyx_mstate_global->__pyx_tuple__45
 #define __pyx_tuple__46 __pyx_mstate_global->__pyx_tuple__46
+#define __pyx_tuple__47 __pyx_mstate_global->__pyx_tuple__47
+#define __pyx_tuple__48 __pyx_mstate_global->__pyx_tuple__48
 #define __pyx_codeobj__2 __pyx_mstate_global->__pyx_codeobj__2
 #define __pyx_codeobj__4 __pyx_mstate_global->__pyx_codeobj__4
 #define __pyx_codeobj__5 __pyx_mstate_global->__pyx_codeobj__5
@@ -3735,7 +3730,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_codeobj__22 __pyx_mstate_global->__pyx_codeobj__22
 #define __pyx_codeobj__23 __pyx_mstate_global->__pyx_codeobj__23
 #define __pyx_codeobj__24 __pyx_mstate_global->__pyx_codeobj__24
-#define __pyx_codeobj__25 __pyx_mstate_global->__pyx_codeobj__25
+#define __pyx_codeobj__26 __pyx_mstate_global->__pyx_codeobj__26
 /* #### Code section: module_code ### */
 
 /* "pyretechnics/space_time_cube.py":6
@@ -4140,18 +4135,18 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_2divide_evenly(CYTHON
  * 
  */
   /*else*/ {
-    __pyx_t_1 = __Pyx_PyObject_Str(__pyx_v_dividend); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Unicode(__pyx_v_dividend); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_must_be_an_exact_multiple_of); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyUnicode_ConcatInPlace(__pyx_t_1, __pyx_kp_u_must_be_an_exact_multiple_of); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Str(__pyx_v_divisor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Unicode(__pyx_v_divisor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_2 = PyNumber_Add(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyUnicode_ConcatInPlace(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = PyNumber_Add(__pyx_t_2, __pyx_kp_s__3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyUnicode_ConcatInPlace(__pyx_t_2, __pyx_kp_u__3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
@@ -9430,7 +9425,7 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_13SpaceTimeCube_12get
  *             return self.cube
  *         else:
  */
-  __pyx_t_1 = __Pyx_HasAttr(__pyx_v_self, __pyx_n_s_cube); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 302, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_HasAttr(__pyx_v_self, __pyx_n_u_cube); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 302, __pyx_L1_error)
   if (__pyx_t_1) {
 
     /* "pyretechnics/space_time_cube.py":303
@@ -9680,7 +9675,7 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_13SpaceTimeCube_14rel
  *             delattr(self, "cube")
  * # space-time-cube-class ends here
  */
-  __pyx_t_1 = __Pyx_HasAttr(__pyx_v_self, __pyx_n_s_cube); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 315, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_HasAttr(__pyx_v_self, __pyx_n_u_cube); if (unlikely(__pyx_t_1 == ((int)-1))) __PYX_ERR(0, 315, __pyx_L1_error)
   if (__pyx_t_1) {
 
     /* "pyretechnics/space_time_cube.py":316
@@ -9690,7 +9685,7 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_13SpaceTimeCube_14rel
  * # space-time-cube-class ends here
  * # [[file:../../org/pyretechnics.org::lazy-space-time-cube-class][lazy-space-time-cube-class]]
  */
-    __pyx_t_2 = PyObject_DelAttr(__pyx_v_self, __pyx_n_s_cube); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 316, __pyx_L1_error)
+    __pyx_t_2 = PyObject_DelAttr(__pyx_v_self, __pyx_n_u_cube); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 316, __pyx_L1_error)
 
     /* "pyretechnics/space_time_cube.py":315
  *         Deletes the cached fully realized cube if it exists.
@@ -15094,23 +15089,12 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_1
   __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_TraceFrameInit(__pyx_codeobj__24)
   __Pyx_RefNannySetupContext("getFullyRealizedCube", 1);
   __Pyx_TraceCall("getFullyRealizedCube", __pyx_f[0], 511, 0, __PYX_ERR(0, 511, __pyx_L1_error));
-
-  /* "pyretechnics/space_time_cube.py":513
- *     def getFullyRealizedCube(self, cache=False):
- *         raise ValueError("getFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
- *                          + "You probably don't want to do this anyway.")             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_1 = __Pyx_PyStr_Concat(__pyx_kp_s_getFullyRealizedCube_is_not_impl, __pyx_kp_s_You_probably_don_t_want_to_do_th); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 513, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
 
   /* "pyretechnics/space_time_cube.py":512
  * 
@@ -15119,11 +15103,10 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_1
  *                          + "You probably don't want to do this anyway.")
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 512, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__25, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 512, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_Raise(__pyx_t_2, 0, 0, 0);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __PYX_ERR(0, 512, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":511
@@ -15137,7 +15120,6 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_1
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("pyretechnics.space_time_cube.LazySpaceTimeCube.getFullyRealizedCube", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __Pyx_XGIVEREF(__pyx_r);
@@ -15255,22 +15237,12 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_1
   __Pyx_TraceDeclarations
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_TraceFrameInit(__pyx_codeobj__25)
+  __Pyx_TraceFrameInit(__pyx_codeobj__26)
   __Pyx_RefNannySetupContext("releaseFullyRealizedCube", 1);
   __Pyx_TraceCall("releaseFullyRealizedCube", __pyx_f[0], 516, 0, __PYX_ERR(0, 516, __pyx_L1_error));
-
-  /* "pyretechnics/space_time_cube.py":518
- *     def releaseFullyRealizedCube(self):
- *         raise ValueError("releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
- *                          + "You probably don't want to do this anyway.")             # <<<<<<<<<<<<<<
- * # lazy-space-time-cube-class ends here
- */
-  __pyx_t_1 = __Pyx_PyStr_Concat(__pyx_kp_s_releaseFullyRealizedCube_is_not, __pyx_kp_s_You_probably_don_t_want_to_do_th); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 518, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
 
   /* "pyretechnics/space_time_cube.py":517
  * 
@@ -15279,11 +15251,10 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_1
  *                          + "You probably don't want to do this anyway.")
  * # lazy-space-time-cube-class ends here
  */
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 517, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__27, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 517, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_Raise(__pyx_t_2, 0, 0, 0);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __PYX_ERR(0, 517, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":516
@@ -15297,7 +15268,6 @@ static PyObject *__pyx_pf_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_1
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("pyretechnics.space_time_cube.LazySpaceTimeCube.releaseFullyRealizedCube", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __Pyx_XGIVEREF(__pyx_r);
@@ -15324,7 +15294,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
   __Pyx_StringTabEntry __pyx_string_tab[] = {
     {&__pyx_kp_s_Create_an_object_that_represent, __pyx_k_Create_an_object_that_represent, sizeof(__pyx_k_Create_an_object_that_represent), 0, 0, 1, 0},
     {&__pyx_kp_s_Create_an_object_that_represent_2, __pyx_k_Create_an_object_that_represent_2, sizeof(__pyx_k_Create_an_object_that_represent_2), 0, 0, 1, 0},
-    {&__pyx_kp_s_Invalid_input_base_must_have_0_3, __pyx_k_Invalid_input_base_must_have_0_3, sizeof(__pyx_k_Invalid_input_base_must_have_0_3), 0, 0, 1, 0},
+    {&__pyx_kp_u_Invalid_input_base_must_have_0_3, __pyx_k_Invalid_input_base_must_have_0_3, sizeof(__pyx_k_Invalid_input_base_must_have_0_3), 0, 1, 0, 0},
     {&__pyx_n_s_LazySpaceTimeCube, __pyx_k_LazySpaceTimeCube, sizeof(__pyx_k_LazySpaceTimeCube), 0, 0, 1, 1},
     {&__pyx_n_s_LazySpaceTimeCube___getOrLoadSub, __pyx_k_LazySpaceTimeCube___getOrLoadSub, sizeof(__pyx_k_LazySpaceTimeCube___getOrLoadSub), 0, 0, 1, 1},
     {&__pyx_n_s_LazySpaceTimeCube___init, __pyx_k_LazySpaceTimeCube___init, sizeof(__pyx_k_LazySpaceTimeCube___init), 0, 0, 1, 1},
@@ -15345,14 +15315,12 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_SpaceTimeCube_getSubcube, __pyx_k_SpaceTimeCube_getSubcube, sizeof(__pyx_k_SpaceTimeCube_getSubcube), 0, 0, 1, 1},
     {&__pyx_n_s_SpaceTimeCube_getTimeSeries, __pyx_k_SpaceTimeCube_getTimeSeries, sizeof(__pyx_k_SpaceTimeCube_getTimeSeries), 0, 0, 1, 1},
     {&__pyx_n_s_SpaceTimeCube_releaseFullyRealiz, __pyx_k_SpaceTimeCube_releaseFullyRealiz, sizeof(__pyx_k_SpaceTimeCube_releaseFullyRealiz), 0, 0, 1, 1},
-    {&__pyx_kp_s_The_cube_shape_and_subcube_shape, __pyx_k_The_cube_shape_and_subcube_shape, sizeof(__pyx_k_The_cube_shape_and_subcube_shape), 0, 0, 1, 0},
-    {&__pyx_kp_s_The_cube_shape_must_only_contain, __pyx_k_The_cube_shape_must_only_contain, sizeof(__pyx_k_The_cube_shape_must_only_contain), 0, 0, 1, 0},
+    {&__pyx_kp_u_The_cube_shape_and_subcube_shape, __pyx_k_The_cube_shape_and_subcube_shape, sizeof(__pyx_k_The_cube_shape_and_subcube_shape), 0, 1, 0, 0},
+    {&__pyx_kp_u_The_cube_shape_must_only_contain, __pyx_k_The_cube_shape_must_only_contain, sizeof(__pyx_k_The_cube_shape_must_only_contain), 0, 1, 0, 0},
     {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
-    {&__pyx_kp_s_You_probably_don_t_want_to_do_th, __pyx_k_You_probably_don_t_want_to_do_th, sizeof(__pyx_k_You_probably_don_t_want_to_do_th), 0, 0, 1, 0},
-    {&__pyx_n_s__26, __pyx_k__26, sizeof(__pyx_k__26), 0, 0, 1, 1},
-    {&__pyx_kp_s__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 0, 1, 0},
+    {&__pyx_n_s__28, __pyx_k__28, sizeof(__pyx_k__28), 0, 0, 1, 1},
     {&__pyx_kp_u__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 1, 0, 0},
-    {&__pyx_n_s__47, __pyx_k__47, sizeof(__pyx_k__47), 0, 0, 1, 1},
+    {&__pyx_n_s__49, __pyx_k__49, sizeof(__pyx_k__49), 0, 0, 1, 1},
     {&__pyx_n_s_all, __pyx_k_all, sizeof(__pyx_k_all), 0, 0, 1, 1},
     {&__pyx_n_s_array, __pyx_k_array, sizeof(__pyx_k_array), 0, 0, 1, 1},
     {&__pyx_n_s_array_shape, __pyx_k_array_shape, sizeof(__pyx_k_array_shape), 0, 0, 1, 1},
@@ -15386,6 +15354,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
     {&__pyx_n_s_concatenate, __pyx_k_concatenate, sizeof(__pyx_k_concatenate), 0, 0, 1, 1},
     {&__pyx_n_s_cube, __pyx_k_cube, sizeof(__pyx_k_cube), 0, 0, 1, 1},
+    {&__pyx_n_u_cube, __pyx_k_cube, sizeof(__pyx_k_cube), 0, 1, 0, 1},
     {&__pyx_n_s_cube_bands, __pyx_k_cube_bands, sizeof(__pyx_k_cube_bands), 0, 0, 1, 1},
     {&__pyx_n_s_cube_cols, __pyx_k_cube_cols, sizeof(__pyx_k_cube_cols), 0, 0, 1, 1},
     {&__pyx_n_s_cube_rows, __pyx_k_cube_rows, sizeof(__pyx_k_cube_rows), 0, 0, 1, 1},
@@ -15403,7 +15372,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_get, __pyx_k_get, sizeof(__pyx_k_get), 0, 0, 1, 1},
     {&__pyx_n_s_getFullyRealizedCube, __pyx_k_getFullyRealizedCube, sizeof(__pyx_k_getFullyRealizedCube), 0, 0, 1, 1},
     {&__pyx_n_s_getFullyRealizedCube_2, __pyx_k_getFullyRealizedCube_2, sizeof(__pyx_k_getFullyRealizedCube_2), 0, 0, 1, 1},
-    {&__pyx_kp_s_getFullyRealizedCube_is_not_impl, __pyx_k_getFullyRealizedCube_is_not_impl, sizeof(__pyx_k_getFullyRealizedCube_is_not_impl), 0, 0, 1, 0},
+    {&__pyx_kp_u_getFullyRealizedCube_is_not_impl, __pyx_k_getFullyRealizedCube_is_not_impl, sizeof(__pyx_k_getFullyRealizedCube_is_not_impl), 0, 1, 0, 0},
     {&__pyx_n_s_getOrLoadSubcube, __pyx_k_getOrLoadSubcube, sizeof(__pyx_k_getOrLoadSubcube), 0, 0, 1, 1},
     {&__pyx_n_s_getSpatialPlane, __pyx_k_getSpatialPlane, sizeof(__pyx_k_getSpatialPlane), 0, 0, 1, 1},
     {&__pyx_n_s_getSubcube, __pyx_k_getSubcube, sizeof(__pyx_k_getSubcube), 0, 0, 1, 1},
@@ -15427,7 +15396,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_maybe_repeat_array, __pyx_k_maybe_repeat_array, sizeof(__pyx_k_maybe_repeat_array), 0, 0, 1, 1},
     {&__pyx_n_s_metaclass, __pyx_k_metaclass, sizeof(__pyx_k_metaclass), 0, 0, 1, 1},
     {&__pyx_n_s_module, __pyx_k_module, sizeof(__pyx_k_module), 0, 0, 1, 1},
-    {&__pyx_kp_s_must_be_an_exact_multiple_of, __pyx_k_must_be_an_exact_multiple_of, sizeof(__pyx_k_must_be_an_exact_multiple_of), 0, 0, 1, 0},
+    {&__pyx_kp_u_must_be_an_exact_multiple_of, __pyx_k_must_be_an_exact_multiple_of, sizeof(__pyx_k_must_be_an_exact_multiple_of), 0, 1, 0, 0},
     {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
     {&__pyx_n_s_ndim, __pyx_k_ndim, sizeof(__pyx_k_ndim), 0, 0, 1, 1},
     {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
@@ -15440,7 +15409,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
     {&__pyx_n_s_reduce, __pyx_k_reduce, sizeof(__pyx_k_reduce), 0, 0, 1, 1},
     {&__pyx_n_s_releaseFullyRealizedCube, __pyx_k_releaseFullyRealizedCube, sizeof(__pyx_k_releaseFullyRealizedCube), 0, 0, 1, 1},
-    {&__pyx_kp_s_releaseFullyRealizedCube_is_not, __pyx_k_releaseFullyRealizedCube_is_not, sizeof(__pyx_k_releaseFullyRealizedCube_is_not), 0, 0, 1, 0},
+    {&__pyx_kp_u_releaseFullyRealizedCube_is_not, __pyx_k_releaseFullyRealizedCube_is_not, sizeof(__pyx_k_releaseFullyRealizedCube_is_not), 0, 1, 0, 0},
     {&__pyx_n_s_remainder, __pyx_k_remainder, sizeof(__pyx_k_remainder), 0, 0, 1, 1},
     {&__pyx_n_s_repeat, __pyx_k_repeat, sizeof(__pyx_k_repeat), 0, 0, 1, 1},
     {&__pyx_n_s_repeated_array, __pyx_k_repeated_array, sizeof(__pyx_k_repeated_array), 0, 0, 1, 1},
@@ -15534,7 +15503,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         # Store the cube metadata for later
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_s_The_cube_shape_must_only_contain); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_The_cube_shape_must_only_contain); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
 
@@ -15556,7 +15525,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_s_Invalid_input_base_must_have_0_3); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_Invalid_input_base_must_have_0_3); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
 
@@ -15567,9 +15536,31 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         # Ensure that cube_shape is divided evenly by subcube_shape or throw an error
  */
-  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_s_The_cube_shape_and_subcube_shape); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 339, __pyx_L1_error)
+  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_u_The_cube_shape_and_subcube_shape); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 339, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__18);
   __Pyx_GIVEREF(__pyx_tuple__18);
+
+  /* "pyretechnics/space_time_cube.py":512
+ * 
+ *     def getFullyRealizedCube(self, cache=False):
+ *         raise ValueError("getFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"             # <<<<<<<<<<<<<<
+ *                          + "You probably don't want to do this anyway.")
+ * 
+ */
+  __pyx_tuple__25 = PyTuple_Pack(1, __pyx_kp_u_getFullyRealizedCube_is_not_impl); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 512, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__25);
+  __Pyx_GIVEREF(__pyx_tuple__25);
+
+  /* "pyretechnics/space_time_cube.py":517
+ * 
+ *     def releaseFullyRealizedCube(self):
+ *         raise ValueError("releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"             # <<<<<<<<<<<<<<
+ *                          + "You probably don't want to do this anyway.")
+ * # lazy-space-time-cube-class ends here
+ */
+  __pyx_tuple__27 = PyTuple_Pack(1, __pyx_kp_u_releaseFullyRealizedCube_is_not); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 517, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__27);
+  __Pyx_GIVEREF(__pyx_tuple__27);
 
   /* "pyretechnics/space_time_cube.py":6
  * # space-time-cube-imports ends here
@@ -15578,10 +15569,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     return isinstance(x, int) and x > 0
  * 
  */
-  __pyx_tuple__27 = PyTuple_Pack(1, __pyx_n_s_x); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 6, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__27);
-  __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_is_pos_int, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_n_s_x); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 6, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__29);
+  __Pyx_GIVEREF(__pyx_tuple__29);
+  __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_is_pos_int, 6, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 6, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":10
  * 
@@ -15590,10 +15581,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     (quotient, remainder) = divmod(dividend, divisor)
  *     if remainder == 0:
  */
-  __pyx_tuple__28 = PyTuple_Pack(4, __pyx_n_s_dividend, __pyx_n_s_divisor, __pyx_n_s_quotient, __pyx_n_s_remainder); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__28);
-  __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_divide_evenly, 10, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __pyx_tuple__30 = PyTuple_Pack(4, __pyx_n_s_dividend, __pyx_n_s_divisor, __pyx_n_s_quotient, __pyx_n_s_remainder); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
+  __pyx_codeobj__2 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_divide_evenly, 10, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__2)) __PYX_ERR(0, 10, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":18
  * 
@@ -15602,10 +15593,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Translate None and negative indices to positive indices.
  */
-  __pyx_tuple__29 = PyTuple_Pack(4, __pyx_n_s_index_range, __pyx_n_s_axis_length, __pyx_n_s_start, __pyx_n_s_stop); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 18, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__29);
-  __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_to_positive_index_range, 18, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 18, __pyx_L1_error)
+  __pyx_tuple__31 = PyTuple_Pack(4, __pyx_n_s_index_range, __pyx_n_s_axis_length, __pyx_n_s_start, __pyx_n_s_stop); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 18, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__31);
+  __Pyx_GIVEREF(__pyx_tuple__31);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_to_positive_index_range, 18, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 18, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":32
  * 
@@ -15614,10 +15605,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     """
  *     Return a new array that is created by repeating the elements from the input
  */
-  __pyx_tuple__30 = PyTuple_Pack(5, __pyx_n_s_array, __pyx_n_s_axis_repetitions, __pyx_n_s_axis, __pyx_n_s_repetitions, __pyx_n_s_array_shape); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 32, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__30);
-  __Pyx_GIVEREF(__pyx_tuple__30);
-  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_maybe_repeat_array, 32, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(5, __pyx_n_s_array, __pyx_n_s_axis_repetitions, __pyx_n_s_axis, __pyx_n_s_repetitions, __pyx_n_s_array_shape); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__32);
+  __Pyx_GIVEREF(__pyx_tuple__32);
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_maybe_repeat_array, 32, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 32, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":59
  *     value or array to the caller.
@@ -15626,10 +15617,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         NOTE: The resolutions in cube_shape must be exact multiples of any existing dimensions
  */
-  __pyx_tuple__31 = PyTuple_Pack(10, __pyx_n_s_self, __pyx_n_s_cube_shape, __pyx_n_s_base, __pyx_n_s_cube_bands, __pyx_n_s_cube_rows, __pyx_n_s_cube_cols, __pyx_n_s_base_dimensions, __pyx_n_s_base_bands, __pyx_n_s_base_rows, __pyx_n_s_base_cols); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 59, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__31);
-  __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_init, 59, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_tuple__33 = PyTuple_Pack(10, __pyx_n_s_self, __pyx_n_s_cube_shape, __pyx_n_s_base, __pyx_n_s_cube_bands, __pyx_n_s_cube_rows, __pyx_n_s_cube_cols, __pyx_n_s_base_dimensions, __pyx_n_s_base_bands, __pyx_n_s_base_rows, __pyx_n_s_base_cols); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__33);
+  __Pyx_GIVEREF(__pyx_tuple__33);
+  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_init, 59, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 59, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":118
  * 
@@ -15638,10 +15629,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the scalar value at index (t,y,x) by translating these cube coordinates
  */
-  __pyx_tuple__32 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 118, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__32);
-  __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_get, 118, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_tuple__34 = PyTuple_Pack(4, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__34);
+  __Pyx_GIVEREF(__pyx_tuple__34);
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_get, 118, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 118, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":131
  * 
@@ -15650,10 +15641,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 1D array given by the slice (t_range,y,x) by translating these cube
  */
-  __pyx_tuple__33 = PyTuple_Pack(16, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_t_start_chunk, __pyx_n_s_t_stop_chunk, __pyx_n_s_y_chunk, __pyx_n_s_x_chunk, __pyx_n_s_low_res_time, __pyx_n_s_high_res_time, __pyx_n_s_t_chunk_origin, __pyx_n_s_t_start_idx, __pyx_n_s_t_stop_idx); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 131, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__33);
-  __Pyx_GIVEREF(__pyx_tuple__33);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 16, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getTimeSeries, 131, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_tuple__35 = PyTuple_Pack(16, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_t_start_chunk, __pyx_n_s_t_stop_chunk, __pyx_n_s_y_chunk, __pyx_n_s_x_chunk, __pyx_n_s_low_res_time, __pyx_n_s_high_res_time, __pyx_n_s_t_chunk_origin, __pyx_n_s_t_start_idx, __pyx_n_s_t_stop_idx); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__35);
+  __Pyx_GIVEREF(__pyx_tuple__35);
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 16, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getTimeSeries, 131, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 131, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":163
  * 
@@ -15662,10 +15653,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 2D array given by the slice (t,y_range,x_range) by translating these
  */
-  __pyx_tuple__34 = PyTuple_Pack(23, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_t_chunk, __pyx_n_s_y_start_chunk, __pyx_n_s_y_stop_chunk, __pyx_n_s_x_start_chunk, __pyx_n_s_x_stop_chunk, __pyx_n_s_low_res_space, __pyx_n_s_high_res_space, __pyx_n_s_y_chunk_origin, __pyx_n_s_x_chunk_origin, __pyx_n_s_y_start_idx, __pyx_n_s_y_stop_idx, __pyx_n_s_x_start_idx, __pyx_n_s_x_stop_idx); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 163, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__34);
-  __Pyx_GIVEREF(__pyx_tuple__34);
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 23, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSpatialPlane, 163, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_tuple__36 = PyTuple_Pack(23, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_t_chunk, __pyx_n_s_y_start_chunk, __pyx_n_s_y_stop_chunk, __pyx_n_s_x_start_chunk, __pyx_n_s_x_stop_chunk, __pyx_n_s_low_res_space, __pyx_n_s_high_res_space, __pyx_n_s_y_chunk_origin, __pyx_n_s_x_chunk_origin, __pyx_n_s_y_start_idx, __pyx_n_s_y_stop_idx, __pyx_n_s_x_start_idx, __pyx_n_s_x_stop_idx); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__36);
+  __Pyx_GIVEREF(__pyx_tuple__36);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 23, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSpatialPlane, 163, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 163, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":205
  * 
@@ -15674,10 +15665,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
  */
-  __pyx_tuple__35 = PyTuple_Pack(30, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_t_start_chunk, __pyx_n_s_t_stop_chunk, __pyx_n_s_y_start_chunk, __pyx_n_s_y_stop_chunk, __pyx_n_s_x_start_chunk, __pyx_n_s_x_stop_chunk, __pyx_n_s_low_res_cube, __pyx_n_s_high_res_cube, __pyx_n_s_t_chunk_origin, __pyx_n_s_y_chunk_origin, __pyx_n_s_x_chunk_origin, __pyx_n_s_t_start_idx, __pyx_n_s_t_stop_idx, __pyx_n_s_y_start_idx, __pyx_n_s_y_stop_idx, __pyx_n_s_x_start_idx, __pyx_n_s_x_stop_idx); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 205, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__35);
-  __Pyx_GIVEREF(__pyx_tuple__35);
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSubcube, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_tuple__37 = PyTuple_Pack(30, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_t_start_chunk, __pyx_n_s_t_stop_chunk, __pyx_n_s_y_start_chunk, __pyx_n_s_y_stop_chunk, __pyx_n_s_x_start_chunk, __pyx_n_s_x_stop_chunk, __pyx_n_s_low_res_cube, __pyx_n_s_high_res_cube, __pyx_n_s_t_chunk_origin, __pyx_n_s_y_chunk_origin, __pyx_n_s_x_chunk_origin, __pyx_n_s_t_start_idx, __pyx_n_s_t_stop_idx, __pyx_n_s_y_start_idx, __pyx_n_s_y_stop_idx, __pyx_n_s_x_start_idx, __pyx_n_s_x_stop_idx); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__37);
+  __Pyx_GIVEREF(__pyx_tuple__37);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSubcube, 205, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 205, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":255
  * 
@@ -15686,10 +15677,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 3D array created by expanding the base data to the cube_shape resolution.
  */
-  __pyx_tuple__36 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_base_dimensions, __pyx_n_s_repeated_array); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 255, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__36);
-  __Pyx_GIVEREF(__pyx_tuple__36);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getFullyRealizedCube, 255, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_tuple__38 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_base_dimensions, __pyx_n_s_repeated_array); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__38);
+  __Pyx_GIVEREF(__pyx_tuple__38);
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getFullyRealizedCube, 255, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 255, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":295
  * 
@@ -15698,13 +15689,13 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 3D array created by expanding the base data to the cube_shape resolution.
  */
-  __pyx_tuple__37 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_cache, __pyx_n_s_cube); if (unlikely(!__pyx_tuple__37)) __PYX_ERR(0, 295, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__37);
-  __Pyx_GIVEREF(__pyx_tuple__37);
-  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__37, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getFullyRealizedCube_2, 295, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 295, __pyx_L1_error)
-  __pyx_tuple__38 = PyTuple_Pack(1, ((PyObject *)Py_False)); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 295, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__38);
-  __Pyx_GIVEREF(__pyx_tuple__38);
+  __pyx_tuple__39 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_cache, __pyx_n_s_cube); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 295, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__39);
+  __Pyx_GIVEREF(__pyx_tuple__39);
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getFullyRealizedCube_2, 295, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 295, __pyx_L1_error)
+  __pyx_tuple__40 = PyTuple_Pack(1, ((PyObject *)Py_False)); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 295, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__40);
+  __Pyx_GIVEREF(__pyx_tuple__40);
 
   /* "pyretechnics/space_time_cube.py":311
  * 
@@ -15713,10 +15704,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Deletes the cached fully realized cube if it exists.
  */
-  __pyx_tuple__39 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__39)) __PYX_ERR(0, 311, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__39);
-  __Pyx_GIVEREF(__pyx_tuple__39);
-  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_releaseFullyRealizedCube, 311, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 311, __pyx_L1_error)
+  __pyx_tuple__41 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 311, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__41);
+  __Pyx_GIVEREF(__pyx_tuple__41);
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_releaseFullyRealizedCube, 311, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 311, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":329
  *     value or array to the caller.
@@ -15725,10 +15716,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         NOTE: The resolutions in cube_shape must be exact multiples of those in subcube_shape.
  */
-  __pyx_tuple__40 = PyTuple_Pack(13, __pyx_n_s_self, __pyx_n_s_cube_shape, __pyx_n_s_subcube_shape, __pyx_n_s_load_subcube, __pyx_n_s_cube_bands, __pyx_n_s_cube_rows, __pyx_n_s_cube_cols, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_bands, __pyx_n_s_cache_rows, __pyx_n_s_cache_cols); if (unlikely(!__pyx_tuple__40)) __PYX_ERR(0, 329, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__40);
-  __Pyx_GIVEREF(__pyx_tuple__40);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 13, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__40, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_init, 329, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __pyx_tuple__42 = PyTuple_Pack(13, __pyx_n_s_self, __pyx_n_s_cube_shape, __pyx_n_s_subcube_shape, __pyx_n_s_load_subcube, __pyx_n_s_cube_bands, __pyx_n_s_cube_rows, __pyx_n_s_cube_cols, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_bands, __pyx_n_s_cache_rows, __pyx_n_s_cache_cols); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 329, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__42);
+  __Pyx_GIVEREF(__pyx_tuple__42);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 13, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_init, 329, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 329, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":356
  * 
@@ -15737,10 +15728,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the SpaceTimeCube stored at self.cache[cache_t, cache_y, cache_x] if it
  */
-  __pyx_tuple__41 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_cache_t, __pyx_n_s_cache_y, __pyx_n_s_cache_x, __pyx_n_s_subcube); if (unlikely(!__pyx_tuple__41)) __PYX_ERR(0, 356, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__41);
-  __Pyx_GIVEREF(__pyx_tuple__41);
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getOrLoadSubcube, 356, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 356, __pyx_L1_error)
+  __pyx_tuple__43 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_cache_t, __pyx_n_s_cache_y, __pyx_n_s_cache_x, __pyx_n_s_subcube); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 356, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__43);
+  __Pyx_GIVEREF(__pyx_tuple__43);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getOrLoadSubcube, 356, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 356, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":371
  * 
@@ -15749,10 +15740,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the scalar value at index (t,y,x) by translating these cube coordinates
  */
-  __pyx_tuple__42 = PyTuple_Pack(14, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t, __pyx_n_s_subcube_t, __pyx_n_s_cache_y, __pyx_n_s_subcube_y, __pyx_n_s_cache_x, __pyx_n_s_subcube_x, __pyx_n_s_subcube); if (unlikely(!__pyx_tuple__42)) __PYX_ERR(0, 371, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__42);
-  __Pyx_GIVEREF(__pyx_tuple__42);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 14, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__42, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_get, 371, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 371, __pyx_L1_error)
+  __pyx_tuple__44 = PyTuple_Pack(14, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t, __pyx_n_s_subcube_t, __pyx_n_s_cache_y, __pyx_n_s_subcube_y, __pyx_n_s_cache_x, __pyx_n_s_subcube_x, __pyx_n_s_subcube); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 371, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__44);
+  __Pyx_GIVEREF(__pyx_tuple__44);
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 14, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_get, 371, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 371, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":388
  * 
@@ -15761,10 +15752,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 1D array given by the slice (t_range,y,x) by translating these cube
  */
-  __pyx_tuple__43 = PyTuple_Pack(19, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t_start, __pyx_n_s_subcube_t_start, __pyx_n_s_cache_t_stop, __pyx_n_s_subcube_t_stop, __pyx_n_s_cache_y, __pyx_n_s_subcube_y, __pyx_n_s_cache_x, __pyx_n_s_subcube_x, __pyx_n_s_cache_t); if (unlikely(!__pyx_tuple__43)) __PYX_ERR(0, 388, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__43);
-  __Pyx_GIVEREF(__pyx_tuple__43);
-  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 19, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__43, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getTimeSeries, 388, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 388, __pyx_L1_error)
+  __pyx_tuple__45 = PyTuple_Pack(19, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y, __pyx_n_s_x, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t_start, __pyx_n_s_subcube_t_start, __pyx_n_s_cache_t_stop, __pyx_n_s_subcube_t_stop, __pyx_n_s_cache_y, __pyx_n_s_subcube_y, __pyx_n_s_cache_x, __pyx_n_s_subcube_x, __pyx_n_s_cache_t); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 388, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__45);
+  __Pyx_GIVEREF(__pyx_tuple__45);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 19, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getTimeSeries, 388, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 388, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":424
  * 
@@ -15773,10 +15764,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 2D array given by the slice (t,y_range,x_range) by translating these
  */
-  __pyx_tuple__44 = PyTuple_Pack(25, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t, __pyx_n_s_subcube_t, __pyx_n_s_cache_y_start, __pyx_n_s_subcube_y_start, __pyx_n_s_cache_y_stop, __pyx_n_s_subcube_y_stop, __pyx_n_s_cache_x_start, __pyx_n_s_subcube_x_start, __pyx_n_s_cache_x_stop, __pyx_n_s_subcube_x_stop, __pyx_n_s_cache_y, __pyx_n_s_cache_x); if (unlikely(!__pyx_tuple__44)) __PYX_ERR(0, 424, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__44);
-  __Pyx_GIVEREF(__pyx_tuple__44);
-  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 25, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__44, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSpatialPlane, 424, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 424, __pyx_L1_error)
+  __pyx_tuple__46 = PyTuple_Pack(25, __pyx_n_s_self, __pyx_n_s_t, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t, __pyx_n_s_subcube_t, __pyx_n_s_cache_y_start, __pyx_n_s_subcube_y_start, __pyx_n_s_cache_y_stop, __pyx_n_s_subcube_y_stop, __pyx_n_s_cache_x_start, __pyx_n_s_subcube_x_start, __pyx_n_s_cache_x_stop, __pyx_n_s_subcube_x_stop, __pyx_n_s_cache_y, __pyx_n_s_cache_x); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 424, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__46);
+  __Pyx_GIVEREF(__pyx_tuple__46);
+  __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 25, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSpatialPlane, 424, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 424, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":465
  * 
@@ -15785,10 +15776,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         """
  *         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
  */
-  __pyx_tuple__45 = PyTuple_Pack(31, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t_start, __pyx_n_s_subcube_t_start, __pyx_n_s_cache_t_stop, __pyx_n_s_subcube_t_stop, __pyx_n_s_cache_y_start, __pyx_n_s_subcube_y_start, __pyx_n_s_cache_y_stop, __pyx_n_s_subcube_y_stop, __pyx_n_s_cache_x_start, __pyx_n_s_subcube_x_start, __pyx_n_s_cache_x_stop, __pyx_n_s_subcube_x_stop, __pyx_n_s_cache_t, __pyx_n_s_cache_y, __pyx_n_s_cache_x); if (unlikely(!__pyx_tuple__45)) __PYX_ERR(0, 465, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__45);
-  __Pyx_GIVEREF(__pyx_tuple__45);
-  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 31, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__45, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSubcube, 465, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 465, __pyx_L1_error)
+  __pyx_tuple__47 = PyTuple_Pack(31, __pyx_n_s_self, __pyx_n_s_t_range, __pyx_n_s_y_range, __pyx_n_s_x_range, __pyx_n_s_t_start, __pyx_n_s_t_stop_exclusive, __pyx_n_s_y_start, __pyx_n_s_y_stop_exclusive, __pyx_n_s_x_start, __pyx_n_s_x_stop_exclusive, __pyx_n_s_t_stop, __pyx_n_s_y_stop, __pyx_n_s_x_stop, __pyx_n_s_subcube_bands, __pyx_n_s_subcube_rows, __pyx_n_s_subcube_cols, __pyx_n_s_cache_t_start, __pyx_n_s_subcube_t_start, __pyx_n_s_cache_t_stop, __pyx_n_s_subcube_t_stop, __pyx_n_s_cache_y_start, __pyx_n_s_subcube_y_start, __pyx_n_s_cache_y_stop, __pyx_n_s_subcube_y_stop, __pyx_n_s_cache_x_start, __pyx_n_s_subcube_x_start, __pyx_n_s_cache_x_stop, __pyx_n_s_subcube_x_stop, __pyx_n_s_cache_t, __pyx_n_s_cache_y, __pyx_n_s_cache_x); if (unlikely(!__pyx_tuple__47)) __PYX_ERR(0, 465, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__47);
+  __Pyx_GIVEREF(__pyx_tuple__47);
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(4, 0, 0, 31, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__47, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getSubcube, 465, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 465, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":511
  * 
@@ -15797,10 +15788,10 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         raise ValueError("getFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
  *                          + "You probably don't want to do this anyway.")
  */
-  __pyx_tuple__46 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_cache); if (unlikely(!__pyx_tuple__46)) __PYX_ERR(0, 511, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__46);
-  __Pyx_GIVEREF(__pyx_tuple__46);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__46, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getFullyRealizedCube_2, 511, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_tuple__48 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_cache); if (unlikely(!__pyx_tuple__48)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__48);
+  __Pyx_GIVEREF(__pyx_tuple__48);
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__48, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_getFullyRealizedCube_2, 511, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 511, __pyx_L1_error)
 
   /* "pyretechnics/space_time_cube.py":516
  * 
@@ -15809,7 +15800,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         raise ValueError("releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
  *                          + "You probably don't want to do this anyway.")
  */
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__39, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_releaseFullyRealizedCube, 516, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 516, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__41, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_space_time_cube, __pyx_n_s_releaseFullyRealizedCube, 516, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 516, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -16351,7 +16342,7 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_15space_time_cube_13SpaceTimeCube_13getFullyRealizedCube, 0, __pyx_n_s_SpaceTimeCube_getFullyRealizedCu, NULL, __pyx_n_s_pyretechnics_space_time_cube, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 295, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__38);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__40);
   if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_getFullyRealizedCube_2, __pyx_t_2) < 0) __PYX_ERR(0, 295, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -16471,7 +16462,7 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_13getFullyRealizedCube, 0, __pyx_n_s_LazySpaceTimeCube_getFullyRealiz, NULL, __pyx_n_s_pyretechnics_space_time_cube, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 511, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__38);
+  __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_tuple__40);
   if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_getFullyRealizedCube_2, __pyx_t_2) < 0) __PYX_ERR(0, 511, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
@@ -16482,7 +16473,7 @@ if (!__Pyx_RefNanny) {
  *         raise ValueError("releaseFullyRealizedCube is not implemented for LazySpaceTimeCube.\n"
  *                          + "You probably don't want to do this anyway.")
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_15releaseFullyRealizedCube, 0, __pyx_n_s_LazySpaceTimeCube_releaseFullyRe, NULL, __pyx_n_s_pyretechnics_space_time_cube, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 516, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_12pyretechnics_15space_time_cube_17LazySpaceTimeCube_15releaseFullyRealizedCube, 0, __pyx_n_s_LazySpaceTimeCube_releaseFullyRe, NULL, __pyx_n_s_pyretechnics_space_time_cube, __pyx_d, ((PyObject *)__pyx_codeobj__26)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 516, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_releaseFullyRealizedCube, __pyx_t_2) < 0) __PYX_ERR(0, 516, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -17359,6 +17350,70 @@ static CYTHON_INLINE int __Pyx_PyInt_BoolEqObjC(PyObject *op1, PyObject *op2, lo
     return __Pyx_PyObject_IsTrueAndDecref(
         PyObject_RichCompare(op1, op2, Py_EQ));
 }
+
+/* UnicodeConcatInPlace */
+# if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+static int
+__Pyx_unicode_modifiable(PyObject *unicode)
+{
+    if (Py_REFCNT(unicode) != 1)
+        return 0;
+    if (!PyUnicode_CheckExact(unicode))
+        return 0;
+    if (PyUnicode_CHECK_INTERNED(unicode))
+        return 0;
+    return 1;
+}
+static CYTHON_INLINE PyObject *__Pyx_PyUnicode_ConcatInPlaceImpl(PyObject **p_left, PyObject *right
+        #if CYTHON_REFNANNY
+        , void* __pyx_refnanny
+        #endif
+    ) {
+    PyObject *left = *p_left;
+    Py_ssize_t left_len, right_len, new_len;
+    if (unlikely(__Pyx_PyUnicode_READY(left) == -1))
+        return NULL;
+    if (unlikely(__Pyx_PyUnicode_READY(right) == -1))
+        return NULL;
+    left_len = PyUnicode_GET_LENGTH(left);
+    if (left_len == 0) {
+        Py_INCREF(right);
+        return right;
+    }
+    right_len = PyUnicode_GET_LENGTH(right);
+    if (right_len == 0) {
+        Py_INCREF(left);
+        return left;
+    }
+    if (unlikely(left_len > PY_SSIZE_T_MAX - right_len)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "strings are too large to concat");
+        return NULL;
+    }
+    new_len = left_len + right_len;
+    if (__Pyx_unicode_modifiable(left)
+            && PyUnicode_CheckExact(right)
+            && PyUnicode_KIND(right) <= PyUnicode_KIND(left)
+            && !(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right))) {
+        int ret;
+        __Pyx_GIVEREF(*p_left);
+        ret = PyUnicode_Resize(p_left, new_len);
+        __Pyx_GOTREF(*p_left);
+        if (unlikely(ret != 0))
+            return NULL;
+        #if PY_VERSION_HEX >= 0x030d0000
+        if (unlikely(PyUnicode_CopyCharacters(*p_left, left_len, right, 0, right_len) < 0)) return NULL;
+        #else
+        _PyUnicode_FastCopyCharacters(*p_left, left_len, right, 0, right_len);
+        #endif
+        __Pyx_INCREF(*p_left);
+        __Pyx_GIVEREF(*p_left);
+        return *p_left;
+    } else {
+        return __Pyx_PyUnicode_Concat(left, right);
+    }
+  }
+#endif
 
 /* PyFunctionFastCall */
 #if CYTHON_FAST_PYCALL && !CYTHON_VECTORCALL
@@ -18407,70 +18462,6 @@ static CYTHON_INLINE int __Pyx_HasAttr(PyObject *o, PyObject *n) {
     }
 }
 
-/* UnicodeConcatInPlace */
-# if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
-static int
-__Pyx_unicode_modifiable(PyObject *unicode)
-{
-    if (Py_REFCNT(unicode) != 1)
-        return 0;
-    if (!PyUnicode_CheckExact(unicode))
-        return 0;
-    if (PyUnicode_CHECK_INTERNED(unicode))
-        return 0;
-    return 1;
-}
-static CYTHON_INLINE PyObject *__Pyx_PyUnicode_ConcatInPlaceImpl(PyObject **p_left, PyObject *right
-        #if CYTHON_REFNANNY
-        , void* __pyx_refnanny
-        #endif
-    ) {
-    PyObject *left = *p_left;
-    Py_ssize_t left_len, right_len, new_len;
-    if (unlikely(__Pyx_PyUnicode_READY(left) == -1))
-        return NULL;
-    if (unlikely(__Pyx_PyUnicode_READY(right) == -1))
-        return NULL;
-    left_len = PyUnicode_GET_LENGTH(left);
-    if (left_len == 0) {
-        Py_INCREF(right);
-        return right;
-    }
-    right_len = PyUnicode_GET_LENGTH(right);
-    if (right_len == 0) {
-        Py_INCREF(left);
-        return left;
-    }
-    if (unlikely(left_len > PY_SSIZE_T_MAX - right_len)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "strings are too large to concat");
-        return NULL;
-    }
-    new_len = left_len + right_len;
-    if (__Pyx_unicode_modifiable(left)
-            && PyUnicode_CheckExact(right)
-            && PyUnicode_KIND(right) <= PyUnicode_KIND(left)
-            && !(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right))) {
-        int ret;
-        __Pyx_GIVEREF(*p_left);
-        ret = PyUnicode_Resize(p_left, new_len);
-        __Pyx_GOTREF(*p_left);
-        if (unlikely(ret != 0))
-            return NULL;
-        #if PY_VERSION_HEX >= 0x030d0000
-        if (unlikely(PyUnicode_CopyCharacters(*p_left, left_len, right, 0, right_len) < 0)) return NULL;
-        #else
-        _PyUnicode_FastCopyCharacters(*p_left, left_len, right, 0, right_len);
-        #endif
-        __Pyx_INCREF(*p_left);
-        __Pyx_GIVEREF(*p_left);
-        return *p_left;
-    } else {
-        return __Pyx_PyUnicode_Concat(left, right);
-    }
-  }
-#endif
-
 /* Import */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level) {
     PyObject *module = 0;
@@ -18650,7 +18641,7 @@ static PyObject *__Pyx_ImportDottedModule_WalkParts(PyObject *module, PyObject *
 #endif
 static PyObject *__Pyx__ImportDottedModule(PyObject *name, PyObject *parts_tuple) {
 #if PY_MAJOR_VERSION < 3
-    PyObject *module, *from_list, *star = __pyx_n_s__26;
+    PyObject *module, *from_list, *star = __pyx_n_s__28;
     CYTHON_UNUSED_VAR(parts_tuple);
     from_list = PyList_New(1);
     if (unlikely(!from_list))
@@ -20638,7 +20629,7 @@ __Pyx_PyType_GetName(PyTypeObject* tp)
     if (unlikely(name == NULL) || unlikely(!PyUnicode_Check(name))) {
         PyErr_Clear();
         Py_XDECREF(name);
-        name = __Pyx_NewRef(__pyx_n_s__47);
+        name = __Pyx_NewRef(__pyx_n_s__49);
     }
     return name;
 }

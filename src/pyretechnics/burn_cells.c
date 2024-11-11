@@ -2501,13 +2501,14 @@ typedef struct {
   PyObject *__pyx_n_s_as_unit_vector;
   PyObject *__pyx_n_s_asarray;
   PyObject *__pyx_n_s_aspect;
+  PyObject *__pyx_n_u_aspect;
   PyObject *__pyx_n_s_asyncio_coroutines;
   PyObject *__pyx_n_s_azimuth;
   PyObject *__pyx_n_s_azimuth_vector_2d;
   PyObject *__pyx_n_s_azimuthal_to_cartesian;
   PyObject *__pyx_n_s_burn_cell_as_head_fire;
   PyObject *__pyx_n_s_burn_cell_toward_azimuth;
-  PyObject *__pyx_n_s_burnable;
+  PyObject *__pyx_n_u_burnable;
   PyObject *__pyx_n_s_calc_combined_fire_behavior;
   PyObject *__pyx_n_s_calc_crown_fire_behavior_in_dire;
   PyObject *__pyx_n_s_calc_crown_fire_behavior_max;
@@ -2516,9 +2517,13 @@ typedef struct {
   PyObject *__pyx_n_s_calc_surface_fire_behavior_max;
   PyObject *__pyx_n_s_calc_surface_fire_behavior_no_wi;
   PyObject *__pyx_n_s_canopy_base_height;
+  PyObject *__pyx_n_u_canopy_base_height;
   PyObject *__pyx_n_s_canopy_bulk_density;
+  PyObject *__pyx_n_u_canopy_bulk_density;
   PyObject *__pyx_n_s_canopy_cover;
+  PyObject *__pyx_n_u_canopy_cover;
   PyObject *__pyx_n_s_canopy_height;
+  PyObject *__pyx_n_u_canopy_height;
   PyObject *__pyx_n_s_cf;
   PyObject *__pyx_n_s_cline_in_traceback;
   PyObject *__pyx_n_s_combined_fire_azimuth;
@@ -2530,27 +2535,35 @@ typedef struct {
   PyObject *__pyx_n_s_crown_fire_max;
   PyObject *__pyx_n_s_crown_fire_max_simple;
   PyObject *__pyx_n_s_crown_max_lw_ratio;
-  PyObject *__pyx_n_s_delta;
+  PyObject *__pyx_n_u_delta;
   PyObject *__pyx_n_s_estimated_fine_fuel_moisture;
-  PyObject *__pyx_n_s_fire_type;
-  PyObject *__pyx_n_s_fireline_intensity;
-  PyObject *__pyx_n_s_flame_length;
+  PyObject *__pyx_n_u_fire_type;
+  PyObject *__pyx_n_u_fireline_intensity;
+  PyObject *__pyx_n_u_flame_length;
   PyObject *__pyx_n_s_fm;
   PyObject *__pyx_n_s_foliar_moisture;
+  PyObject *__pyx_n_u_foliar_moisture;
   PyObject *__pyx_n_s_fuel_bed_depth;
   PyObject *__pyx_n_s_fuel_model;
+  PyObject *__pyx_n_u_fuel_model;
   PyObject *__pyx_n_s_fuel_model_number;
   PyObject *__pyx_n_s_fuel_model_table;
   PyObject *__pyx_n_s_fuel_models;
   PyObject *__pyx_n_s_fuel_moisture;
   PyObject *__pyx_n_s_fuel_moisture_dead_100hr;
+  PyObject *__pyx_n_u_fuel_moisture_dead_100hr;
   PyObject *__pyx_n_s_fuel_moisture_dead_10hr;
+  PyObject *__pyx_n_u_fuel_moisture_dead_10hr;
   PyObject *__pyx_n_s_fuel_moisture_dead_1hr;
+  PyObject *__pyx_n_u_fuel_moisture_dead_1hr;
   PyObject *__pyx_n_s_fuel_moisture_live_herbaceous;
+  PyObject *__pyx_n_u_fuel_moisture_live_herbaceous;
   PyObject *__pyx_n_s_fuel_moisture_live_woody;
+  PyObject *__pyx_n_u_fuel_moisture_live_woody;
   PyObject *__pyx_n_s_fuel_spread_adjustment;
+  PyObject *__pyx_n_u_fuel_spread_adjustment;
   PyObject *__pyx_n_s_get;
-  PyObject *__pyx_n_s_h;
+  PyObject *__pyx_n_u_h;
   PyObject *__pyx_n_s_heat_of_combustion;
   PyObject *__pyx_n_s_import;
   PyObject *__pyx_n_s_initializing;
@@ -2558,7 +2571,7 @@ typedef struct {
   PyObject *__pyx_n_s_km_hr_to_m_min;
   PyObject *__pyx_n_s_m_to_ft;
   PyObject *__pyx_n_s_main;
-  PyObject *__pyx_n_s_max_spread_direction;
+  PyObject *__pyx_n_u_max_spread_direction;
   PyObject *__pyx_n_s_midflame_wind_speed;
   PyObject *__pyx_n_s_moisturize;
   PyObject *__pyx_n_s_moisturized_fuel_model;
@@ -2573,16 +2586,18 @@ typedef struct {
   PyObject *__pyx_n_s_pyretechnics_fuel_models;
   PyObject *__pyx_n_s_pyretechnics_surface_fire;
   PyObject *__pyx_n_s_pyretechnics_vector_utils;
-  PyObject *__pyx_n_s_rothermel;
+  PyObject *__pyx_n_u_rothermel;
   PyObject *__pyx_n_s_sf;
   PyObject *__pyx_n_s_slope;
+  PyObject *__pyx_n_u_slope;
   PyObject *__pyx_n_s_slope_vector_2d;
   PyObject *__pyx_n_s_slope_vector_3d;
   PyObject *__pyx_n_s_space_time_coordinate;
   PyObject *__pyx_n_s_space_time_cubes;
   PyObject *__pyx_n_s_spec;
   PyObject *__pyx_n_s_spread_direction;
-  PyObject *__pyx_n_s_spread_rate;
+  PyObject *__pyx_n_u_spread_direction;
+  PyObject *__pyx_n_u_spread_rate;
   PyObject *__pyx_n_s_spread_rate_adjustment;
   PyObject *__pyx_kp_s_src_pyretechnics_burn_cells_py;
   PyObject *__pyx_n_s_surface_fire;
@@ -2594,15 +2609,18 @@ typedef struct {
   PyObject *__pyx_n_s_t;
   PyObject *__pyx_n_s_test;
   PyObject *__pyx_n_s_to_slope_plane;
-  PyObject *__pyx_n_s_unburned;
+  PyObject *__pyx_n_u_unburned;
   PyObject *__pyx_n_s_upslope_direction;
   PyObject *__pyx_n_s_upwind_direction;
+  PyObject *__pyx_n_u_upwind_direction;
   PyObject *__pyx_n_s_use_wind_limit;
   PyObject *__pyx_n_s_van_wagner_crown_fire_initiation;
   PyObject *__pyx_n_s_vector_utils;
   PyObject *__pyx_n_s_vu;
   PyObject *__pyx_n_s_weather_spread_adjustment;
+  PyObject *__pyx_n_u_weather_spread_adjustment;
   PyObject *__pyx_n_s_wind_speed_10m;
+  PyObject *__pyx_n_u_wind_speed_10m;
   PyObject *__pyx_n_s_wind_speed_10m_to_wind_speed_20f;
   PyObject *__pyx_n_s_wind_speed_20ft;
   PyObject *__pyx_n_s_wind_speed_20ft_m_min;
@@ -2671,13 +2689,14 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_as_unit_vector);
   Py_CLEAR(clear_module_state->__pyx_n_s_asarray);
   Py_CLEAR(clear_module_state->__pyx_n_s_aspect);
+  Py_CLEAR(clear_module_state->__pyx_n_u_aspect);
   Py_CLEAR(clear_module_state->__pyx_n_s_asyncio_coroutines);
   Py_CLEAR(clear_module_state->__pyx_n_s_azimuth);
   Py_CLEAR(clear_module_state->__pyx_n_s_azimuth_vector_2d);
   Py_CLEAR(clear_module_state->__pyx_n_s_azimuthal_to_cartesian);
   Py_CLEAR(clear_module_state->__pyx_n_s_burn_cell_as_head_fire);
   Py_CLEAR(clear_module_state->__pyx_n_s_burn_cell_toward_azimuth);
-  Py_CLEAR(clear_module_state->__pyx_n_s_burnable);
+  Py_CLEAR(clear_module_state->__pyx_n_u_burnable);
   Py_CLEAR(clear_module_state->__pyx_n_s_calc_combined_fire_behavior);
   Py_CLEAR(clear_module_state->__pyx_n_s_calc_crown_fire_behavior_in_dire);
   Py_CLEAR(clear_module_state->__pyx_n_s_calc_crown_fire_behavior_max);
@@ -2686,9 +2705,13 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_calc_surface_fire_behavior_max);
   Py_CLEAR(clear_module_state->__pyx_n_s_calc_surface_fire_behavior_no_wi);
   Py_CLEAR(clear_module_state->__pyx_n_s_canopy_base_height);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_base_height);
   Py_CLEAR(clear_module_state->__pyx_n_s_canopy_bulk_density);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_bulk_density);
   Py_CLEAR(clear_module_state->__pyx_n_s_canopy_cover);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_cover);
   Py_CLEAR(clear_module_state->__pyx_n_s_canopy_height);
+  Py_CLEAR(clear_module_state->__pyx_n_u_canopy_height);
   Py_CLEAR(clear_module_state->__pyx_n_s_cf);
   Py_CLEAR(clear_module_state->__pyx_n_s_cline_in_traceback);
   Py_CLEAR(clear_module_state->__pyx_n_s_combined_fire_azimuth);
@@ -2700,27 +2723,35 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_crown_fire_max);
   Py_CLEAR(clear_module_state->__pyx_n_s_crown_fire_max_simple);
   Py_CLEAR(clear_module_state->__pyx_n_s_crown_max_lw_ratio);
-  Py_CLEAR(clear_module_state->__pyx_n_s_delta);
+  Py_CLEAR(clear_module_state->__pyx_n_u_delta);
   Py_CLEAR(clear_module_state->__pyx_n_s_estimated_fine_fuel_moisture);
-  Py_CLEAR(clear_module_state->__pyx_n_s_fire_type);
-  Py_CLEAR(clear_module_state->__pyx_n_s_fireline_intensity);
-  Py_CLEAR(clear_module_state->__pyx_n_s_flame_length);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fire_type);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fireline_intensity);
+  Py_CLEAR(clear_module_state->__pyx_n_u_flame_length);
   Py_CLEAR(clear_module_state->__pyx_n_s_fm);
   Py_CLEAR(clear_module_state->__pyx_n_s_foliar_moisture);
+  Py_CLEAR(clear_module_state->__pyx_n_u_foliar_moisture);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_bed_depth);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_model);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_model);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_model_number);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_model_table);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_models);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture_dead_100hr);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_moisture_dead_100hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture_dead_10hr);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_moisture_dead_10hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture_dead_1hr);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_moisture_dead_1hr);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture_live_herbaceous);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_moisture_live_herbaceous);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_moisture_live_woody);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_moisture_live_woody);
   Py_CLEAR(clear_module_state->__pyx_n_s_fuel_spread_adjustment);
+  Py_CLEAR(clear_module_state->__pyx_n_u_fuel_spread_adjustment);
   Py_CLEAR(clear_module_state->__pyx_n_s_get);
-  Py_CLEAR(clear_module_state->__pyx_n_s_h);
+  Py_CLEAR(clear_module_state->__pyx_n_u_h);
   Py_CLEAR(clear_module_state->__pyx_n_s_heat_of_combustion);
   Py_CLEAR(clear_module_state->__pyx_n_s_import);
   Py_CLEAR(clear_module_state->__pyx_n_s_initializing);
@@ -2728,7 +2759,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_km_hr_to_m_min);
   Py_CLEAR(clear_module_state->__pyx_n_s_m_to_ft);
   Py_CLEAR(clear_module_state->__pyx_n_s_main);
-  Py_CLEAR(clear_module_state->__pyx_n_s_max_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_max_spread_direction);
   Py_CLEAR(clear_module_state->__pyx_n_s_midflame_wind_speed);
   Py_CLEAR(clear_module_state->__pyx_n_s_moisturize);
   Py_CLEAR(clear_module_state->__pyx_n_s_moisturized_fuel_model);
@@ -2743,16 +2774,18 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_fuel_models);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_surface_fire);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyretechnics_vector_utils);
-  Py_CLEAR(clear_module_state->__pyx_n_s_rothermel);
+  Py_CLEAR(clear_module_state->__pyx_n_u_rothermel);
   Py_CLEAR(clear_module_state->__pyx_n_s_sf);
   Py_CLEAR(clear_module_state->__pyx_n_s_slope);
+  Py_CLEAR(clear_module_state->__pyx_n_u_slope);
   Py_CLEAR(clear_module_state->__pyx_n_s_slope_vector_2d);
   Py_CLEAR(clear_module_state->__pyx_n_s_slope_vector_3d);
   Py_CLEAR(clear_module_state->__pyx_n_s_space_time_coordinate);
   Py_CLEAR(clear_module_state->__pyx_n_s_space_time_cubes);
   Py_CLEAR(clear_module_state->__pyx_n_s_spec);
   Py_CLEAR(clear_module_state->__pyx_n_s_spread_direction);
-  Py_CLEAR(clear_module_state->__pyx_n_s_spread_rate);
+  Py_CLEAR(clear_module_state->__pyx_n_u_spread_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_spread_rate);
   Py_CLEAR(clear_module_state->__pyx_n_s_spread_rate_adjustment);
   Py_CLEAR(clear_module_state->__pyx_kp_s_src_pyretechnics_burn_cells_py);
   Py_CLEAR(clear_module_state->__pyx_n_s_surface_fire);
@@ -2764,15 +2797,18 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_t);
   Py_CLEAR(clear_module_state->__pyx_n_s_test);
   Py_CLEAR(clear_module_state->__pyx_n_s_to_slope_plane);
-  Py_CLEAR(clear_module_state->__pyx_n_s_unburned);
+  Py_CLEAR(clear_module_state->__pyx_n_u_unburned);
   Py_CLEAR(clear_module_state->__pyx_n_s_upslope_direction);
   Py_CLEAR(clear_module_state->__pyx_n_s_upwind_direction);
+  Py_CLEAR(clear_module_state->__pyx_n_u_upwind_direction);
   Py_CLEAR(clear_module_state->__pyx_n_s_use_wind_limit);
   Py_CLEAR(clear_module_state->__pyx_n_s_van_wagner_crown_fire_initiation);
   Py_CLEAR(clear_module_state->__pyx_n_s_vector_utils);
   Py_CLEAR(clear_module_state->__pyx_n_s_vu);
   Py_CLEAR(clear_module_state->__pyx_n_s_weather_spread_adjustment);
+  Py_CLEAR(clear_module_state->__pyx_n_u_weather_spread_adjustment);
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_speed_10m);
+  Py_CLEAR(clear_module_state->__pyx_n_u_wind_speed_10m);
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_speed_10m_to_wind_speed_20f);
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_speed_20ft);
   Py_CLEAR(clear_module_state->__pyx_n_s_wind_speed_20ft_m_min);
@@ -2819,13 +2855,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_as_unit_vector);
   Py_VISIT(traverse_module_state->__pyx_n_s_asarray);
   Py_VISIT(traverse_module_state->__pyx_n_s_aspect);
+  Py_VISIT(traverse_module_state->__pyx_n_u_aspect);
   Py_VISIT(traverse_module_state->__pyx_n_s_asyncio_coroutines);
   Py_VISIT(traverse_module_state->__pyx_n_s_azimuth);
   Py_VISIT(traverse_module_state->__pyx_n_s_azimuth_vector_2d);
   Py_VISIT(traverse_module_state->__pyx_n_s_azimuthal_to_cartesian);
   Py_VISIT(traverse_module_state->__pyx_n_s_burn_cell_as_head_fire);
   Py_VISIT(traverse_module_state->__pyx_n_s_burn_cell_toward_azimuth);
-  Py_VISIT(traverse_module_state->__pyx_n_s_burnable);
+  Py_VISIT(traverse_module_state->__pyx_n_u_burnable);
   Py_VISIT(traverse_module_state->__pyx_n_s_calc_combined_fire_behavior);
   Py_VISIT(traverse_module_state->__pyx_n_s_calc_crown_fire_behavior_in_dire);
   Py_VISIT(traverse_module_state->__pyx_n_s_calc_crown_fire_behavior_max);
@@ -2834,9 +2871,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_calc_surface_fire_behavior_max);
   Py_VISIT(traverse_module_state->__pyx_n_s_calc_surface_fire_behavior_no_wi);
   Py_VISIT(traverse_module_state->__pyx_n_s_canopy_base_height);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_base_height);
   Py_VISIT(traverse_module_state->__pyx_n_s_canopy_bulk_density);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_bulk_density);
   Py_VISIT(traverse_module_state->__pyx_n_s_canopy_cover);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_cover);
   Py_VISIT(traverse_module_state->__pyx_n_s_canopy_height);
+  Py_VISIT(traverse_module_state->__pyx_n_u_canopy_height);
   Py_VISIT(traverse_module_state->__pyx_n_s_cf);
   Py_VISIT(traverse_module_state->__pyx_n_s_cline_in_traceback);
   Py_VISIT(traverse_module_state->__pyx_n_s_combined_fire_azimuth);
@@ -2848,27 +2889,35 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_crown_fire_max);
   Py_VISIT(traverse_module_state->__pyx_n_s_crown_fire_max_simple);
   Py_VISIT(traverse_module_state->__pyx_n_s_crown_max_lw_ratio);
-  Py_VISIT(traverse_module_state->__pyx_n_s_delta);
+  Py_VISIT(traverse_module_state->__pyx_n_u_delta);
   Py_VISIT(traverse_module_state->__pyx_n_s_estimated_fine_fuel_moisture);
-  Py_VISIT(traverse_module_state->__pyx_n_s_fire_type);
-  Py_VISIT(traverse_module_state->__pyx_n_s_fireline_intensity);
-  Py_VISIT(traverse_module_state->__pyx_n_s_flame_length);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fire_type);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fireline_intensity);
+  Py_VISIT(traverse_module_state->__pyx_n_u_flame_length);
   Py_VISIT(traverse_module_state->__pyx_n_s_fm);
   Py_VISIT(traverse_module_state->__pyx_n_s_foliar_moisture);
+  Py_VISIT(traverse_module_state->__pyx_n_u_foliar_moisture);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_bed_depth);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_model);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_model);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_model_number);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_model_table);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_models);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture_dead_100hr);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_moisture_dead_100hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture_dead_10hr);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_moisture_dead_10hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture_dead_1hr);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_moisture_dead_1hr);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture_live_herbaceous);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_moisture_live_herbaceous);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_moisture_live_woody);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_moisture_live_woody);
   Py_VISIT(traverse_module_state->__pyx_n_s_fuel_spread_adjustment);
+  Py_VISIT(traverse_module_state->__pyx_n_u_fuel_spread_adjustment);
   Py_VISIT(traverse_module_state->__pyx_n_s_get);
-  Py_VISIT(traverse_module_state->__pyx_n_s_h);
+  Py_VISIT(traverse_module_state->__pyx_n_u_h);
   Py_VISIT(traverse_module_state->__pyx_n_s_heat_of_combustion);
   Py_VISIT(traverse_module_state->__pyx_n_s_import);
   Py_VISIT(traverse_module_state->__pyx_n_s_initializing);
@@ -2876,7 +2925,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_km_hr_to_m_min);
   Py_VISIT(traverse_module_state->__pyx_n_s_m_to_ft);
   Py_VISIT(traverse_module_state->__pyx_n_s_main);
-  Py_VISIT(traverse_module_state->__pyx_n_s_max_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_max_spread_direction);
   Py_VISIT(traverse_module_state->__pyx_n_s_midflame_wind_speed);
   Py_VISIT(traverse_module_state->__pyx_n_s_moisturize);
   Py_VISIT(traverse_module_state->__pyx_n_s_moisturized_fuel_model);
@@ -2891,16 +2940,18 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_fuel_models);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_surface_fire);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyretechnics_vector_utils);
-  Py_VISIT(traverse_module_state->__pyx_n_s_rothermel);
+  Py_VISIT(traverse_module_state->__pyx_n_u_rothermel);
   Py_VISIT(traverse_module_state->__pyx_n_s_sf);
   Py_VISIT(traverse_module_state->__pyx_n_s_slope);
+  Py_VISIT(traverse_module_state->__pyx_n_u_slope);
   Py_VISIT(traverse_module_state->__pyx_n_s_slope_vector_2d);
   Py_VISIT(traverse_module_state->__pyx_n_s_slope_vector_3d);
   Py_VISIT(traverse_module_state->__pyx_n_s_space_time_coordinate);
   Py_VISIT(traverse_module_state->__pyx_n_s_space_time_cubes);
   Py_VISIT(traverse_module_state->__pyx_n_s_spec);
   Py_VISIT(traverse_module_state->__pyx_n_s_spread_direction);
-  Py_VISIT(traverse_module_state->__pyx_n_s_spread_rate);
+  Py_VISIT(traverse_module_state->__pyx_n_u_spread_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_spread_rate);
   Py_VISIT(traverse_module_state->__pyx_n_s_spread_rate_adjustment);
   Py_VISIT(traverse_module_state->__pyx_kp_s_src_pyretechnics_burn_cells_py);
   Py_VISIT(traverse_module_state->__pyx_n_s_surface_fire);
@@ -2912,15 +2963,18 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_t);
   Py_VISIT(traverse_module_state->__pyx_n_s_test);
   Py_VISIT(traverse_module_state->__pyx_n_s_to_slope_plane);
-  Py_VISIT(traverse_module_state->__pyx_n_s_unburned);
+  Py_VISIT(traverse_module_state->__pyx_n_u_unburned);
   Py_VISIT(traverse_module_state->__pyx_n_s_upslope_direction);
   Py_VISIT(traverse_module_state->__pyx_n_s_upwind_direction);
+  Py_VISIT(traverse_module_state->__pyx_n_u_upwind_direction);
   Py_VISIT(traverse_module_state->__pyx_n_s_use_wind_limit);
   Py_VISIT(traverse_module_state->__pyx_n_s_van_wagner_crown_fire_initiation);
   Py_VISIT(traverse_module_state->__pyx_n_s_vector_utils);
   Py_VISIT(traverse_module_state->__pyx_n_s_vu);
   Py_VISIT(traverse_module_state->__pyx_n_s_weather_spread_adjustment);
+  Py_VISIT(traverse_module_state->__pyx_n_u_weather_spread_adjustment);
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_speed_10m);
+  Py_VISIT(traverse_module_state->__pyx_n_u_wind_speed_10m);
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_speed_10m_to_wind_speed_20f);
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_speed_20ft);
   Py_VISIT(traverse_module_state->__pyx_n_s_wind_speed_20ft_m_min);
@@ -2977,13 +3031,14 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_as_unit_vector __pyx_mstate_global->__pyx_n_s_as_unit_vector
 #define __pyx_n_s_asarray __pyx_mstate_global->__pyx_n_s_asarray
 #define __pyx_n_s_aspect __pyx_mstate_global->__pyx_n_s_aspect
+#define __pyx_n_u_aspect __pyx_mstate_global->__pyx_n_u_aspect
 #define __pyx_n_s_asyncio_coroutines __pyx_mstate_global->__pyx_n_s_asyncio_coroutines
 #define __pyx_n_s_azimuth __pyx_mstate_global->__pyx_n_s_azimuth
 #define __pyx_n_s_azimuth_vector_2d __pyx_mstate_global->__pyx_n_s_azimuth_vector_2d
 #define __pyx_n_s_azimuthal_to_cartesian __pyx_mstate_global->__pyx_n_s_azimuthal_to_cartesian
 #define __pyx_n_s_burn_cell_as_head_fire __pyx_mstate_global->__pyx_n_s_burn_cell_as_head_fire
 #define __pyx_n_s_burn_cell_toward_azimuth __pyx_mstate_global->__pyx_n_s_burn_cell_toward_azimuth
-#define __pyx_n_s_burnable __pyx_mstate_global->__pyx_n_s_burnable
+#define __pyx_n_u_burnable __pyx_mstate_global->__pyx_n_u_burnable
 #define __pyx_n_s_calc_combined_fire_behavior __pyx_mstate_global->__pyx_n_s_calc_combined_fire_behavior
 #define __pyx_n_s_calc_crown_fire_behavior_in_dire __pyx_mstate_global->__pyx_n_s_calc_crown_fire_behavior_in_dire
 #define __pyx_n_s_calc_crown_fire_behavior_max __pyx_mstate_global->__pyx_n_s_calc_crown_fire_behavior_max
@@ -2992,9 +3047,13 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_calc_surface_fire_behavior_max __pyx_mstate_global->__pyx_n_s_calc_surface_fire_behavior_max
 #define __pyx_n_s_calc_surface_fire_behavior_no_wi __pyx_mstate_global->__pyx_n_s_calc_surface_fire_behavior_no_wi
 #define __pyx_n_s_canopy_base_height __pyx_mstate_global->__pyx_n_s_canopy_base_height
+#define __pyx_n_u_canopy_base_height __pyx_mstate_global->__pyx_n_u_canopy_base_height
 #define __pyx_n_s_canopy_bulk_density __pyx_mstate_global->__pyx_n_s_canopy_bulk_density
+#define __pyx_n_u_canopy_bulk_density __pyx_mstate_global->__pyx_n_u_canopy_bulk_density
 #define __pyx_n_s_canopy_cover __pyx_mstate_global->__pyx_n_s_canopy_cover
+#define __pyx_n_u_canopy_cover __pyx_mstate_global->__pyx_n_u_canopy_cover
 #define __pyx_n_s_canopy_height __pyx_mstate_global->__pyx_n_s_canopy_height
+#define __pyx_n_u_canopy_height __pyx_mstate_global->__pyx_n_u_canopy_height
 #define __pyx_n_s_cf __pyx_mstate_global->__pyx_n_s_cf
 #define __pyx_n_s_cline_in_traceback __pyx_mstate_global->__pyx_n_s_cline_in_traceback
 #define __pyx_n_s_combined_fire_azimuth __pyx_mstate_global->__pyx_n_s_combined_fire_azimuth
@@ -3006,27 +3065,35 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_crown_fire_max __pyx_mstate_global->__pyx_n_s_crown_fire_max
 #define __pyx_n_s_crown_fire_max_simple __pyx_mstate_global->__pyx_n_s_crown_fire_max_simple
 #define __pyx_n_s_crown_max_lw_ratio __pyx_mstate_global->__pyx_n_s_crown_max_lw_ratio
-#define __pyx_n_s_delta __pyx_mstate_global->__pyx_n_s_delta
+#define __pyx_n_u_delta __pyx_mstate_global->__pyx_n_u_delta
 #define __pyx_n_s_estimated_fine_fuel_moisture __pyx_mstate_global->__pyx_n_s_estimated_fine_fuel_moisture
-#define __pyx_n_s_fire_type __pyx_mstate_global->__pyx_n_s_fire_type
-#define __pyx_n_s_fireline_intensity __pyx_mstate_global->__pyx_n_s_fireline_intensity
-#define __pyx_n_s_flame_length __pyx_mstate_global->__pyx_n_s_flame_length
+#define __pyx_n_u_fire_type __pyx_mstate_global->__pyx_n_u_fire_type
+#define __pyx_n_u_fireline_intensity __pyx_mstate_global->__pyx_n_u_fireline_intensity
+#define __pyx_n_u_flame_length __pyx_mstate_global->__pyx_n_u_flame_length
 #define __pyx_n_s_fm __pyx_mstate_global->__pyx_n_s_fm
 #define __pyx_n_s_foliar_moisture __pyx_mstate_global->__pyx_n_s_foliar_moisture
+#define __pyx_n_u_foliar_moisture __pyx_mstate_global->__pyx_n_u_foliar_moisture
 #define __pyx_n_s_fuel_bed_depth __pyx_mstate_global->__pyx_n_s_fuel_bed_depth
 #define __pyx_n_s_fuel_model __pyx_mstate_global->__pyx_n_s_fuel_model
+#define __pyx_n_u_fuel_model __pyx_mstate_global->__pyx_n_u_fuel_model
 #define __pyx_n_s_fuel_model_number __pyx_mstate_global->__pyx_n_s_fuel_model_number
 #define __pyx_n_s_fuel_model_table __pyx_mstate_global->__pyx_n_s_fuel_model_table
 #define __pyx_n_s_fuel_models __pyx_mstate_global->__pyx_n_s_fuel_models
 #define __pyx_n_s_fuel_moisture __pyx_mstate_global->__pyx_n_s_fuel_moisture
 #define __pyx_n_s_fuel_moisture_dead_100hr __pyx_mstate_global->__pyx_n_s_fuel_moisture_dead_100hr
+#define __pyx_n_u_fuel_moisture_dead_100hr __pyx_mstate_global->__pyx_n_u_fuel_moisture_dead_100hr
 #define __pyx_n_s_fuel_moisture_dead_10hr __pyx_mstate_global->__pyx_n_s_fuel_moisture_dead_10hr
+#define __pyx_n_u_fuel_moisture_dead_10hr __pyx_mstate_global->__pyx_n_u_fuel_moisture_dead_10hr
 #define __pyx_n_s_fuel_moisture_dead_1hr __pyx_mstate_global->__pyx_n_s_fuel_moisture_dead_1hr
+#define __pyx_n_u_fuel_moisture_dead_1hr __pyx_mstate_global->__pyx_n_u_fuel_moisture_dead_1hr
 #define __pyx_n_s_fuel_moisture_live_herbaceous __pyx_mstate_global->__pyx_n_s_fuel_moisture_live_herbaceous
+#define __pyx_n_u_fuel_moisture_live_herbaceous __pyx_mstate_global->__pyx_n_u_fuel_moisture_live_herbaceous
 #define __pyx_n_s_fuel_moisture_live_woody __pyx_mstate_global->__pyx_n_s_fuel_moisture_live_woody
+#define __pyx_n_u_fuel_moisture_live_woody __pyx_mstate_global->__pyx_n_u_fuel_moisture_live_woody
 #define __pyx_n_s_fuel_spread_adjustment __pyx_mstate_global->__pyx_n_s_fuel_spread_adjustment
+#define __pyx_n_u_fuel_spread_adjustment __pyx_mstate_global->__pyx_n_u_fuel_spread_adjustment
 #define __pyx_n_s_get __pyx_mstate_global->__pyx_n_s_get
-#define __pyx_n_s_h __pyx_mstate_global->__pyx_n_s_h
+#define __pyx_n_u_h __pyx_mstate_global->__pyx_n_u_h
 #define __pyx_n_s_heat_of_combustion __pyx_mstate_global->__pyx_n_s_heat_of_combustion
 #define __pyx_n_s_import __pyx_mstate_global->__pyx_n_s_import
 #define __pyx_n_s_initializing __pyx_mstate_global->__pyx_n_s_initializing
@@ -3034,7 +3101,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_km_hr_to_m_min __pyx_mstate_global->__pyx_n_s_km_hr_to_m_min
 #define __pyx_n_s_m_to_ft __pyx_mstate_global->__pyx_n_s_m_to_ft
 #define __pyx_n_s_main __pyx_mstate_global->__pyx_n_s_main
-#define __pyx_n_s_max_spread_direction __pyx_mstate_global->__pyx_n_s_max_spread_direction
+#define __pyx_n_u_max_spread_direction __pyx_mstate_global->__pyx_n_u_max_spread_direction
 #define __pyx_n_s_midflame_wind_speed __pyx_mstate_global->__pyx_n_s_midflame_wind_speed
 #define __pyx_n_s_moisturize __pyx_mstate_global->__pyx_n_s_moisturize
 #define __pyx_n_s_moisturized_fuel_model __pyx_mstate_global->__pyx_n_s_moisturized_fuel_model
@@ -3049,16 +3116,18 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_pyretechnics_fuel_models __pyx_mstate_global->__pyx_n_s_pyretechnics_fuel_models
 #define __pyx_n_s_pyretechnics_surface_fire __pyx_mstate_global->__pyx_n_s_pyretechnics_surface_fire
 #define __pyx_n_s_pyretechnics_vector_utils __pyx_mstate_global->__pyx_n_s_pyretechnics_vector_utils
-#define __pyx_n_s_rothermel __pyx_mstate_global->__pyx_n_s_rothermel
+#define __pyx_n_u_rothermel __pyx_mstate_global->__pyx_n_u_rothermel
 #define __pyx_n_s_sf __pyx_mstate_global->__pyx_n_s_sf
 #define __pyx_n_s_slope __pyx_mstate_global->__pyx_n_s_slope
+#define __pyx_n_u_slope __pyx_mstate_global->__pyx_n_u_slope
 #define __pyx_n_s_slope_vector_2d __pyx_mstate_global->__pyx_n_s_slope_vector_2d
 #define __pyx_n_s_slope_vector_3d __pyx_mstate_global->__pyx_n_s_slope_vector_3d
 #define __pyx_n_s_space_time_coordinate __pyx_mstate_global->__pyx_n_s_space_time_coordinate
 #define __pyx_n_s_space_time_cubes __pyx_mstate_global->__pyx_n_s_space_time_cubes
 #define __pyx_n_s_spec __pyx_mstate_global->__pyx_n_s_spec
 #define __pyx_n_s_spread_direction __pyx_mstate_global->__pyx_n_s_spread_direction
-#define __pyx_n_s_spread_rate __pyx_mstate_global->__pyx_n_s_spread_rate
+#define __pyx_n_u_spread_direction __pyx_mstate_global->__pyx_n_u_spread_direction
+#define __pyx_n_u_spread_rate __pyx_mstate_global->__pyx_n_u_spread_rate
 #define __pyx_n_s_spread_rate_adjustment __pyx_mstate_global->__pyx_n_s_spread_rate_adjustment
 #define __pyx_kp_s_src_pyretechnics_burn_cells_py __pyx_mstate_global->__pyx_kp_s_src_pyretechnics_burn_cells_py
 #define __pyx_n_s_surface_fire __pyx_mstate_global->__pyx_n_s_surface_fire
@@ -3070,15 +3139,18 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_t __pyx_mstate_global->__pyx_n_s_t
 #define __pyx_n_s_test __pyx_mstate_global->__pyx_n_s_test
 #define __pyx_n_s_to_slope_plane __pyx_mstate_global->__pyx_n_s_to_slope_plane
-#define __pyx_n_s_unburned __pyx_mstate_global->__pyx_n_s_unburned
+#define __pyx_n_u_unburned __pyx_mstate_global->__pyx_n_u_unburned
 #define __pyx_n_s_upslope_direction __pyx_mstate_global->__pyx_n_s_upslope_direction
 #define __pyx_n_s_upwind_direction __pyx_mstate_global->__pyx_n_s_upwind_direction
+#define __pyx_n_u_upwind_direction __pyx_mstate_global->__pyx_n_u_upwind_direction
 #define __pyx_n_s_use_wind_limit __pyx_mstate_global->__pyx_n_s_use_wind_limit
 #define __pyx_n_s_van_wagner_crown_fire_initiation __pyx_mstate_global->__pyx_n_s_van_wagner_crown_fire_initiation
 #define __pyx_n_s_vector_utils __pyx_mstate_global->__pyx_n_s_vector_utils
 #define __pyx_n_s_vu __pyx_mstate_global->__pyx_n_s_vu
 #define __pyx_n_s_weather_spread_adjustment __pyx_mstate_global->__pyx_n_s_weather_spread_adjustment
+#define __pyx_n_u_weather_spread_adjustment __pyx_mstate_global->__pyx_n_u_weather_spread_adjustment
 #define __pyx_n_s_wind_speed_10m __pyx_mstate_global->__pyx_n_s_wind_speed_10m
+#define __pyx_n_u_wind_speed_10m __pyx_mstate_global->__pyx_n_u_wind_speed_10m
 #define __pyx_n_s_wind_speed_10m_to_wind_speed_20f __pyx_mstate_global->__pyx_n_s_wind_speed_10m_to_wind_speed_20f
 #define __pyx_n_s_wind_speed_20ft __pyx_mstate_global->__pyx_n_s_wind_speed_20ft
 #define __pyx_n_s_wind_speed_20ft_m_min __pyx_mstate_global->__pyx_n_s_wind_speed_20ft_m_min
@@ -3153,7 +3225,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject **__pyx_pyargnames[] = {&__pyx_n_s_space_time_cubes,&__pyx_n_s_space_time_coordinate,&__pyx_n_s_use_wind_limit,&__pyx_n_s_surface_lw_ratio_model,&__pyx_n_s_crown_max_lw_ratio,0};
     values[2] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)Py_True)));
-    values[3] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject*)__pyx_n_s_rothermel)));
+    values[3] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject*)__pyx_n_u_rothermel)));
 
     /* "pyretechnics/burn_cells.py":12
  * # TODO: Create a version of this function that runs efficiently over a space_time_region
@@ -3413,7 +3485,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     aspect              = space_time_cubes["aspect"].get(t,y,x)              # degrees clockwise from North
  *     fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_slope); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_slope); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3450,7 +3522,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
  *     canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_aspect); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_aspect); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3487,7 +3559,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
  *     canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3524,7 +3596,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
  *     canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_cover); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_cover); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3561,7 +3633,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
  *     canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_height); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_height); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3598,7 +3670,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_base_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_base_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3635,7 +3707,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  * 
  *     # Wind, Surface Moisture, and Foliar Moisture
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_bulk_density); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_bulk_density); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3672,7 +3744,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
  *     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_wind_speed_10m); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_wind_speed_10m); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3709,7 +3781,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
  *     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_upwind_direction); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_upwind_direction); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3746,7 +3818,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
  *     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_dead_1hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_dead_1hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3783,7 +3855,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
  *     fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_dead_10hr); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_dead_10hr); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 68, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 68, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3820,7 +3892,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
  *     fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_dead_100hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_dead_100hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 69, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3857,7 +3929,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
  *     foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_live_herbaceous); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_live_herbaceous); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3894,7 +3966,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *     foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_live_woody); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_live_woody); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -3931,7 +4003,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  * 
  *     # Spread Rate Adjustments (Optional)
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_foliar_moisture); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 72, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_foliar_moisture); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -3968,7 +4040,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *                                  else 1.0)                                         # float >= 0.0
  *     weather_spread_adjustment = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
  */
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_fuel_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_u_fuel_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 76, __pyx_L1_error)
   if (__pyx_t_7) {
 
     /* "pyretechnics/burn_cells.py":75
@@ -3978,7 +4050,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *                                  if "fuel_spread_adjustment" in space_time_cubes
  *                                  else 1.0)                                         # float >= 0.0
  */
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_spread_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 75, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_spread_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 75, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 75, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
@@ -4021,7 +4093,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *                                  else 1.0)                                         # float >= 0.0
  *     spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
  */
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_weather_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_u_weather_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 79, __pyx_L1_error)
   if (__pyx_t_7) {
 
     /* "pyretechnics/burn_cells.py":78
@@ -4031,7 +4103,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *                                  if "weather_spread_adjustment" in space_time_cubes
  *                                  else 1.0)                                         # float >= 0.0
  */
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_weather_spread_adjustment); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 78, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_weather_spread_adjustment); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 78, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 78, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -4132,7 +4204,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
     __pyx_t_7 = __pyx_t_8;
     goto __pyx_L6_bool_binop_done;
   }
-  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_burnable); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_burnable); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_8 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_8 < 0))) __PYX_ERR(0, 89, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -4344,8 +4416,8 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  */
     __pyx_t_3 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 106, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fire_type, __pyx_n_s_unburned) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_rate, __pyx_float_0_0) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fire_type, __pyx_n_u_unburned) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_rate, __pyx_float_0_0) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
 
     /* "pyretechnics/burn_cells.py":108
  *             "fire_type"         : "unburned",
@@ -4354,9 +4426,9 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *             "fireline_intensity": 0.0,
  *             "flame_length"      : 0.0,
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fireline_intensity, __pyx_float_0_0) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_flame_length, __pyx_float_0_0) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fireline_intensity, __pyx_float_0_0) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_flame_length, __pyx_float_0_0) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
@@ -4416,7 +4488,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  *         heat_of_combustion           = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
  *         estimated_fine_fuel_moisture = fuel_moisture_dead_1hr                   # kg moisture/kg ovendry weight
  */
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_delta); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_delta); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_v_fuel_bed_depth = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -4433,7 +4505,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_Btu_lb_to_kJ_kg); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_h); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_h); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_4 = __Pyx_GetItemInt(__pyx_t_2, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
@@ -4776,7 +4848,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  * 
  *         #============================================================================================
  */
-    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_max, __pyx_n_s_max_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_max, __pyx_n_u_max_spread_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_9 = NULL;
     __pyx_t_6 = 0;
@@ -4816,7 +4888,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
     __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_van_wagner_crown_fire_initiation); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_max_simple, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_max_simple, __pyx_n_u_fireline_intensity); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
 
     /* "pyretechnics/burn_cells.py":178
@@ -4926,7 +4998,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_burn_cell_as_head_fire(CYT
  * 
  *             #========================================================================================
  */
-      __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_s_max_spread_direction); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_crown_fire_max, __pyx_n_u_max_spread_direction); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_9 = NULL;
       __pyx_t_6 = 0;
@@ -5144,7 +5216,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject **__pyx_pyargnames[] = {&__pyx_n_s_space_time_cubes,&__pyx_n_s_space_time_coordinate,&__pyx_n_s_azimuth,&__pyx_n_s_use_wind_limit,&__pyx_n_s_surface_lw_ratio_model,&__pyx_n_s_crown_max_lw_ratio,0};
     values[3] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject *)Py_True)));
-    values[4] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject*)__pyx_n_s_rothermel)));
+    values[4] = __Pyx_Arg_NewRef_FASTCALL(((PyObject *)((PyObject*)__pyx_n_u_rothermel)));
 
     /* "pyretechnics/burn_cells.py":225
  * # TODO: Create a version of this function that runs efficiently over a space_time_region
@@ -5418,7 +5490,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     aspect              = space_time_cubes["aspect"].get(t,y,x)              # degrees clockwise from North
  *     fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_slope); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_slope); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5455,7 +5527,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
  *     canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_aspect); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_aspect); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5492,7 +5564,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
  *     canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5529,7 +5601,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
  *     canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_cover); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_cover); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5566,7 +5638,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
  *     canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_height); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_height); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5603,7 +5675,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_base_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_base_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 275, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5640,7 +5712,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  * 
  *     # Wind, Surface Moisture, and Foliar Moisture
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_canopy_bulk_density); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_canopy_bulk_density); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5677,7 +5749,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
  *     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_wind_speed_10m); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_wind_speed_10m); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5714,7 +5786,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
  *     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_upwind_direction); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_upwind_direction); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 280, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5751,7 +5823,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
  *     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_dead_1hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_dead_1hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5788,7 +5860,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
  *     fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_dead_10hr); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_dead_10hr); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5825,7 +5897,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
  *     fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_dead_100hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 283, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_dead_100hr); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 283, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 283, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5862,7 +5934,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
  *     foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_live_herbaceous); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_live_herbaceous); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 284, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5899,7 +5971,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *     foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_moisture_live_woody); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_moisture_live_woody); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 285, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5936,7 +6008,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  * 
  *     # Spread Rate Adjustments (Optional)
  */
-  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_foliar_moisture); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 286, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_foliar_moisture); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 286, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 286, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -5973,7 +6045,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *                                  else 1.0)                                         # float >= 0.0
  *     weather_spread_adjustment = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
  */
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_fuel_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 290, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_u_fuel_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 290, __pyx_L1_error)
   if (__pyx_t_7) {
 
     /* "pyretechnics/burn_cells.py":289
@@ -5983,7 +6055,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *                                  if "fuel_spread_adjustment" in space_time_cubes
  *                                  else 1.0)                                         # float >= 0.0
  */
-    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_fuel_spread_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_fuel_spread_adjustment); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 289, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_get); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 289, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
@@ -6026,7 +6098,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *                                  else 1.0)                                         # float >= 0.0
  *     spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
  */
-  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_weather_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 293, __pyx_L1_error)
+  __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_n_u_weather_spread_adjustment, __pyx_v_space_time_cubes, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 293, __pyx_L1_error)
   if (__pyx_t_7) {
 
     /* "pyretechnics/burn_cells.py":292
@@ -6036,7 +6108,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *                                  if "weather_spread_adjustment" in space_time_cubes
  *                                  else 1.0)                                         # float >= 0.0
  */
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_s_weather_spread_adjustment); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_space_time_cubes, __pyx_n_u_weather_spread_adjustment); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_get); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 292, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -6313,7 +6385,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
     __pyx_t_7 = __pyx_t_9;
     goto __pyx_L6_bool_binop_done;
   }
-  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_burnable); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 312, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_burnable); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 312, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 312, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -6340,8 +6412,8 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  */
     __pyx_t_3 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 320, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fire_type, __pyx_n_s_unburned) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_rate, __pyx_float_0_0) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fire_type, __pyx_n_u_unburned) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_rate, __pyx_float_0_0) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
 
     /* "pyretechnics/burn_cells.py":322
  *             "fire_type"         : "unburned",
@@ -6350,9 +6422,9 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *             "fireline_intensity": 0.0,
  *             "flame_length"      : 0.0,
  */
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_fireline_intensity, __pyx_float_0_0) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_flame_length, __pyx_float_0_0) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_spread_direction, __pyx_v_spread_direction) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_fireline_intensity, __pyx_float_0_0) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_u_flame_length, __pyx_float_0_0) < 0) __PYX_ERR(0, 320, __pyx_L1_error)
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
@@ -6412,7 +6484,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
  *         heat_of_combustion           = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
  *         estimated_fine_fuel_moisture = fuel_moisture_dead_1hr                   # kg moisture/kg ovendry weight
  */
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_delta); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 340, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_delta); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 340, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_v_fuel_bed_depth = __pyx_t_3;
     __pyx_t_3 = 0;
@@ -6429,7 +6501,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
     __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_Btu_lb_to_kJ_kg); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 341, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_s_h); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_fuel_model, __pyx_n_u_h); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 341, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_8 = __Pyx_GetItemInt(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 341, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
@@ -6801,7 +6873,7 @@ static PyObject *__pyx_pf_12pyretechnics_10burn_cells_2burn_cell_toward_azimuth(
     __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_van_wagner_crown_fire_initiation); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 391, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_azimuth, __pyx_n_s_fireline_intensity); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 391, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_Dict_GetItem(__pyx_v_surface_fire_azimuth, __pyx_n_u_fireline_intensity); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 391, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
 
     /* "pyretechnics/burn_cells.py":394
@@ -7086,13 +7158,14 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_as_unit_vector, __pyx_k_as_unit_vector, sizeof(__pyx_k_as_unit_vector), 0, 0, 1, 1},
     {&__pyx_n_s_asarray, __pyx_k_asarray, sizeof(__pyx_k_asarray), 0, 0, 1, 1},
     {&__pyx_n_s_aspect, __pyx_k_aspect, sizeof(__pyx_k_aspect), 0, 0, 1, 1},
+    {&__pyx_n_u_aspect, __pyx_k_aspect, sizeof(__pyx_k_aspect), 0, 1, 0, 1},
     {&__pyx_n_s_asyncio_coroutines, __pyx_k_asyncio_coroutines, sizeof(__pyx_k_asyncio_coroutines), 0, 0, 1, 1},
     {&__pyx_n_s_azimuth, __pyx_k_azimuth, sizeof(__pyx_k_azimuth), 0, 0, 1, 1},
     {&__pyx_n_s_azimuth_vector_2d, __pyx_k_azimuth_vector_2d, sizeof(__pyx_k_azimuth_vector_2d), 0, 0, 1, 1},
     {&__pyx_n_s_azimuthal_to_cartesian, __pyx_k_azimuthal_to_cartesian, sizeof(__pyx_k_azimuthal_to_cartesian), 0, 0, 1, 1},
     {&__pyx_n_s_burn_cell_as_head_fire, __pyx_k_burn_cell_as_head_fire, sizeof(__pyx_k_burn_cell_as_head_fire), 0, 0, 1, 1},
     {&__pyx_n_s_burn_cell_toward_azimuth, __pyx_k_burn_cell_toward_azimuth, sizeof(__pyx_k_burn_cell_toward_azimuth), 0, 0, 1, 1},
-    {&__pyx_n_s_burnable, __pyx_k_burnable, sizeof(__pyx_k_burnable), 0, 0, 1, 1},
+    {&__pyx_n_u_burnable, __pyx_k_burnable, sizeof(__pyx_k_burnable), 0, 1, 0, 1},
     {&__pyx_n_s_calc_combined_fire_behavior, __pyx_k_calc_combined_fire_behavior, sizeof(__pyx_k_calc_combined_fire_behavior), 0, 0, 1, 1},
     {&__pyx_n_s_calc_crown_fire_behavior_in_dire, __pyx_k_calc_crown_fire_behavior_in_dire, sizeof(__pyx_k_calc_crown_fire_behavior_in_dire), 0, 0, 1, 1},
     {&__pyx_n_s_calc_crown_fire_behavior_max, __pyx_k_calc_crown_fire_behavior_max, sizeof(__pyx_k_calc_crown_fire_behavior_max), 0, 0, 1, 1},
@@ -7101,9 +7174,13 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_calc_surface_fire_behavior_max, __pyx_k_calc_surface_fire_behavior_max, sizeof(__pyx_k_calc_surface_fire_behavior_max), 0, 0, 1, 1},
     {&__pyx_n_s_calc_surface_fire_behavior_no_wi, __pyx_k_calc_surface_fire_behavior_no_wi, sizeof(__pyx_k_calc_surface_fire_behavior_no_wi), 0, 0, 1, 1},
     {&__pyx_n_s_canopy_base_height, __pyx_k_canopy_base_height, sizeof(__pyx_k_canopy_base_height), 0, 0, 1, 1},
+    {&__pyx_n_u_canopy_base_height, __pyx_k_canopy_base_height, sizeof(__pyx_k_canopy_base_height), 0, 1, 0, 1},
     {&__pyx_n_s_canopy_bulk_density, __pyx_k_canopy_bulk_density, sizeof(__pyx_k_canopy_bulk_density), 0, 0, 1, 1},
+    {&__pyx_n_u_canopy_bulk_density, __pyx_k_canopy_bulk_density, sizeof(__pyx_k_canopy_bulk_density), 0, 1, 0, 1},
     {&__pyx_n_s_canopy_cover, __pyx_k_canopy_cover, sizeof(__pyx_k_canopy_cover), 0, 0, 1, 1},
+    {&__pyx_n_u_canopy_cover, __pyx_k_canopy_cover, sizeof(__pyx_k_canopy_cover), 0, 1, 0, 1},
     {&__pyx_n_s_canopy_height, __pyx_k_canopy_height, sizeof(__pyx_k_canopy_height), 0, 0, 1, 1},
+    {&__pyx_n_u_canopy_height, __pyx_k_canopy_height, sizeof(__pyx_k_canopy_height), 0, 1, 0, 1},
     {&__pyx_n_s_cf, __pyx_k_cf, sizeof(__pyx_k_cf), 0, 0, 1, 1},
     {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
     {&__pyx_n_s_combined_fire_azimuth, __pyx_k_combined_fire_azimuth, sizeof(__pyx_k_combined_fire_azimuth), 0, 0, 1, 1},
@@ -7115,27 +7192,35 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_crown_fire_max, __pyx_k_crown_fire_max, sizeof(__pyx_k_crown_fire_max), 0, 0, 1, 1},
     {&__pyx_n_s_crown_fire_max_simple, __pyx_k_crown_fire_max_simple, sizeof(__pyx_k_crown_fire_max_simple), 0, 0, 1, 1},
     {&__pyx_n_s_crown_max_lw_ratio, __pyx_k_crown_max_lw_ratio, sizeof(__pyx_k_crown_max_lw_ratio), 0, 0, 1, 1},
-    {&__pyx_n_s_delta, __pyx_k_delta, sizeof(__pyx_k_delta), 0, 0, 1, 1},
+    {&__pyx_n_u_delta, __pyx_k_delta, sizeof(__pyx_k_delta), 0, 1, 0, 1},
     {&__pyx_n_s_estimated_fine_fuel_moisture, __pyx_k_estimated_fine_fuel_moisture, sizeof(__pyx_k_estimated_fine_fuel_moisture), 0, 0, 1, 1},
-    {&__pyx_n_s_fire_type, __pyx_k_fire_type, sizeof(__pyx_k_fire_type), 0, 0, 1, 1},
-    {&__pyx_n_s_fireline_intensity, __pyx_k_fireline_intensity, sizeof(__pyx_k_fireline_intensity), 0, 0, 1, 1},
-    {&__pyx_n_s_flame_length, __pyx_k_flame_length, sizeof(__pyx_k_flame_length), 0, 0, 1, 1},
+    {&__pyx_n_u_fire_type, __pyx_k_fire_type, sizeof(__pyx_k_fire_type), 0, 1, 0, 1},
+    {&__pyx_n_u_fireline_intensity, __pyx_k_fireline_intensity, sizeof(__pyx_k_fireline_intensity), 0, 1, 0, 1},
+    {&__pyx_n_u_flame_length, __pyx_k_flame_length, sizeof(__pyx_k_flame_length), 0, 1, 0, 1},
     {&__pyx_n_s_fm, __pyx_k_fm, sizeof(__pyx_k_fm), 0, 0, 1, 1},
     {&__pyx_n_s_foliar_moisture, __pyx_k_foliar_moisture, sizeof(__pyx_k_foliar_moisture), 0, 0, 1, 1},
+    {&__pyx_n_u_foliar_moisture, __pyx_k_foliar_moisture, sizeof(__pyx_k_foliar_moisture), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_bed_depth, __pyx_k_fuel_bed_depth, sizeof(__pyx_k_fuel_bed_depth), 0, 0, 1, 1},
     {&__pyx_n_s_fuel_model, __pyx_k_fuel_model, sizeof(__pyx_k_fuel_model), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_model, __pyx_k_fuel_model, sizeof(__pyx_k_fuel_model), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_model_number, __pyx_k_fuel_model_number, sizeof(__pyx_k_fuel_model_number), 0, 0, 1, 1},
     {&__pyx_n_s_fuel_model_table, __pyx_k_fuel_model_table, sizeof(__pyx_k_fuel_model_table), 0, 0, 1, 1},
     {&__pyx_n_s_fuel_models, __pyx_k_fuel_models, sizeof(__pyx_k_fuel_models), 0, 0, 1, 1},
     {&__pyx_n_s_fuel_moisture, __pyx_k_fuel_moisture, sizeof(__pyx_k_fuel_moisture), 0, 0, 1, 1},
     {&__pyx_n_s_fuel_moisture_dead_100hr, __pyx_k_fuel_moisture_dead_100hr, sizeof(__pyx_k_fuel_moisture_dead_100hr), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_moisture_dead_100hr, __pyx_k_fuel_moisture_dead_100hr, sizeof(__pyx_k_fuel_moisture_dead_100hr), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_moisture_dead_10hr, __pyx_k_fuel_moisture_dead_10hr, sizeof(__pyx_k_fuel_moisture_dead_10hr), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_moisture_dead_10hr, __pyx_k_fuel_moisture_dead_10hr, sizeof(__pyx_k_fuel_moisture_dead_10hr), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_moisture_dead_1hr, __pyx_k_fuel_moisture_dead_1hr, sizeof(__pyx_k_fuel_moisture_dead_1hr), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_moisture_dead_1hr, __pyx_k_fuel_moisture_dead_1hr, sizeof(__pyx_k_fuel_moisture_dead_1hr), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_moisture_live_herbaceous, __pyx_k_fuel_moisture_live_herbaceous, sizeof(__pyx_k_fuel_moisture_live_herbaceous), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_moisture_live_herbaceous, __pyx_k_fuel_moisture_live_herbaceous, sizeof(__pyx_k_fuel_moisture_live_herbaceous), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_moisture_live_woody, __pyx_k_fuel_moisture_live_woody, sizeof(__pyx_k_fuel_moisture_live_woody), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_moisture_live_woody, __pyx_k_fuel_moisture_live_woody, sizeof(__pyx_k_fuel_moisture_live_woody), 0, 1, 0, 1},
     {&__pyx_n_s_fuel_spread_adjustment, __pyx_k_fuel_spread_adjustment, sizeof(__pyx_k_fuel_spread_adjustment), 0, 0, 1, 1},
+    {&__pyx_n_u_fuel_spread_adjustment, __pyx_k_fuel_spread_adjustment, sizeof(__pyx_k_fuel_spread_adjustment), 0, 1, 0, 1},
     {&__pyx_n_s_get, __pyx_k_get, sizeof(__pyx_k_get), 0, 0, 1, 1},
-    {&__pyx_n_s_h, __pyx_k_h, sizeof(__pyx_k_h), 0, 0, 1, 1},
+    {&__pyx_n_u_h, __pyx_k_h, sizeof(__pyx_k_h), 0, 1, 0, 1},
     {&__pyx_n_s_heat_of_combustion, __pyx_k_heat_of_combustion, sizeof(__pyx_k_heat_of_combustion), 0, 0, 1, 1},
     {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
     {&__pyx_n_s_initializing, __pyx_k_initializing, sizeof(__pyx_k_initializing), 0, 0, 1, 1},
@@ -7143,7 +7228,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_km_hr_to_m_min, __pyx_k_km_hr_to_m_min, sizeof(__pyx_k_km_hr_to_m_min), 0, 0, 1, 1},
     {&__pyx_n_s_m_to_ft, __pyx_k_m_to_ft, sizeof(__pyx_k_m_to_ft), 0, 0, 1, 1},
     {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
-    {&__pyx_n_s_max_spread_direction, __pyx_k_max_spread_direction, sizeof(__pyx_k_max_spread_direction), 0, 0, 1, 1},
+    {&__pyx_n_u_max_spread_direction, __pyx_k_max_spread_direction, sizeof(__pyx_k_max_spread_direction), 0, 1, 0, 1},
     {&__pyx_n_s_midflame_wind_speed, __pyx_k_midflame_wind_speed, sizeof(__pyx_k_midflame_wind_speed), 0, 0, 1, 1},
     {&__pyx_n_s_moisturize, __pyx_k_moisturize, sizeof(__pyx_k_moisturize), 0, 0, 1, 1},
     {&__pyx_n_s_moisturized_fuel_model, __pyx_k_moisturized_fuel_model, sizeof(__pyx_k_moisturized_fuel_model), 0, 0, 1, 1},
@@ -7158,16 +7243,18 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_pyretechnics_fuel_models, __pyx_k_pyretechnics_fuel_models, sizeof(__pyx_k_pyretechnics_fuel_models), 0, 0, 1, 1},
     {&__pyx_n_s_pyretechnics_surface_fire, __pyx_k_pyretechnics_surface_fire, sizeof(__pyx_k_pyretechnics_surface_fire), 0, 0, 1, 1},
     {&__pyx_n_s_pyretechnics_vector_utils, __pyx_k_pyretechnics_vector_utils, sizeof(__pyx_k_pyretechnics_vector_utils), 0, 0, 1, 1},
-    {&__pyx_n_s_rothermel, __pyx_k_rothermel, sizeof(__pyx_k_rothermel), 0, 0, 1, 1},
+    {&__pyx_n_u_rothermel, __pyx_k_rothermel, sizeof(__pyx_k_rothermel), 0, 1, 0, 1},
     {&__pyx_n_s_sf, __pyx_k_sf, sizeof(__pyx_k_sf), 0, 0, 1, 1},
     {&__pyx_n_s_slope, __pyx_k_slope, sizeof(__pyx_k_slope), 0, 0, 1, 1},
+    {&__pyx_n_u_slope, __pyx_k_slope, sizeof(__pyx_k_slope), 0, 1, 0, 1},
     {&__pyx_n_s_slope_vector_2d, __pyx_k_slope_vector_2d, sizeof(__pyx_k_slope_vector_2d), 0, 0, 1, 1},
     {&__pyx_n_s_slope_vector_3d, __pyx_k_slope_vector_3d, sizeof(__pyx_k_slope_vector_3d), 0, 0, 1, 1},
     {&__pyx_n_s_space_time_coordinate, __pyx_k_space_time_coordinate, sizeof(__pyx_k_space_time_coordinate), 0, 0, 1, 1},
     {&__pyx_n_s_space_time_cubes, __pyx_k_space_time_cubes, sizeof(__pyx_k_space_time_cubes), 0, 0, 1, 1},
     {&__pyx_n_s_spec, __pyx_k_spec, sizeof(__pyx_k_spec), 0, 0, 1, 1},
     {&__pyx_n_s_spread_direction, __pyx_k_spread_direction, sizeof(__pyx_k_spread_direction), 0, 0, 1, 1},
-    {&__pyx_n_s_spread_rate, __pyx_k_spread_rate, sizeof(__pyx_k_spread_rate), 0, 0, 1, 1},
+    {&__pyx_n_u_spread_direction, __pyx_k_spread_direction, sizeof(__pyx_k_spread_direction), 0, 1, 0, 1},
+    {&__pyx_n_u_spread_rate, __pyx_k_spread_rate, sizeof(__pyx_k_spread_rate), 0, 1, 0, 1},
     {&__pyx_n_s_spread_rate_adjustment, __pyx_k_spread_rate_adjustment, sizeof(__pyx_k_spread_rate_adjustment), 0, 0, 1, 1},
     {&__pyx_kp_s_src_pyretechnics_burn_cells_py, __pyx_k_src_pyretechnics_burn_cells_py, sizeof(__pyx_k_src_pyretechnics_burn_cells_py), 0, 0, 1, 0},
     {&__pyx_n_s_surface_fire, __pyx_k_surface_fire, sizeof(__pyx_k_surface_fire), 0, 0, 1, 1},
@@ -7179,15 +7266,18 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
     {&__pyx_n_s_t, __pyx_k_t, sizeof(__pyx_k_t), 0, 0, 1, 1},
     {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
     {&__pyx_n_s_to_slope_plane, __pyx_k_to_slope_plane, sizeof(__pyx_k_to_slope_plane), 0, 0, 1, 1},
-    {&__pyx_n_s_unburned, __pyx_k_unburned, sizeof(__pyx_k_unburned), 0, 0, 1, 1},
+    {&__pyx_n_u_unburned, __pyx_k_unburned, sizeof(__pyx_k_unburned), 0, 1, 0, 1},
     {&__pyx_n_s_upslope_direction, __pyx_k_upslope_direction, sizeof(__pyx_k_upslope_direction), 0, 0, 1, 1},
     {&__pyx_n_s_upwind_direction, __pyx_k_upwind_direction, sizeof(__pyx_k_upwind_direction), 0, 0, 1, 1},
+    {&__pyx_n_u_upwind_direction, __pyx_k_upwind_direction, sizeof(__pyx_k_upwind_direction), 0, 1, 0, 1},
     {&__pyx_n_s_use_wind_limit, __pyx_k_use_wind_limit, sizeof(__pyx_k_use_wind_limit), 0, 0, 1, 1},
     {&__pyx_n_s_van_wagner_crown_fire_initiation, __pyx_k_van_wagner_crown_fire_initiation, sizeof(__pyx_k_van_wagner_crown_fire_initiation), 0, 0, 1, 1},
     {&__pyx_n_s_vector_utils, __pyx_k_vector_utils, sizeof(__pyx_k_vector_utils), 0, 0, 1, 1},
     {&__pyx_n_s_vu, __pyx_k_vu, sizeof(__pyx_k_vu), 0, 0, 1, 1},
     {&__pyx_n_s_weather_spread_adjustment, __pyx_k_weather_spread_adjustment, sizeof(__pyx_k_weather_spread_adjustment), 0, 0, 1, 1},
+    {&__pyx_n_u_weather_spread_adjustment, __pyx_k_weather_spread_adjustment, sizeof(__pyx_k_weather_spread_adjustment), 0, 1, 0, 1},
     {&__pyx_n_s_wind_speed_10m, __pyx_k_wind_speed_10m, sizeof(__pyx_k_wind_speed_10m), 0, 0, 1, 1},
+    {&__pyx_n_u_wind_speed_10m, __pyx_k_wind_speed_10m, sizeof(__pyx_k_wind_speed_10m), 0, 1, 0, 1},
     {&__pyx_n_s_wind_speed_10m_to_wind_speed_20f, __pyx_k_wind_speed_10m_to_wind_speed_20f, sizeof(__pyx_k_wind_speed_10m_to_wind_speed_20f), 0, 0, 1, 1},
     {&__pyx_n_s_wind_speed_20ft, __pyx_k_wind_speed_20ft, sizeof(__pyx_k_wind_speed_20ft), 0, 0, 1, 1},
     {&__pyx_n_s_wind_speed_20ft_m_min, __pyx_k_wind_speed_20ft_m_min, sizeof(__pyx_k_wind_speed_20ft_m_min), 0, 0, 1, 1},
@@ -7284,7 +7374,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
   __pyx_codeobj_ = (PyObject*)__Pyx_PyCode_New(5, 0, 0, 45, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_src_pyretechnics_burn_cells_py, __pyx_n_s_burn_cell_as_head_fire, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj_)) __PYX_ERR(0, 11, __pyx_L1_error)
-  __pyx_tuple__11 = PyTuple_Pack(3, ((PyObject *)Py_True), ((PyObject*)__pyx_n_s_rothermel), Py_None); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_tuple__11 = PyTuple_Pack(3, ((PyObject *)Py_True), ((PyObject*)__pyx_n_u_rothermel), Py_None); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__11);
   __Pyx_GIVEREF(__pyx_tuple__11);
 
