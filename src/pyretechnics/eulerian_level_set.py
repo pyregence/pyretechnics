@@ -1,14 +1,21 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
+import cython as cy
 import numpy as np
 
 
-def calc_dphi_dx_approx(phi, dx, x, y, cols):
+@cy.profile(False)
+@cy.cfunc
+@cy.inline
+@cy.exceptval(-1.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t, cols: cy.Py_ssize_t) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given the cell width dx.
     """
-    east_x = x + 1
-    west_x = x - 1
+    east_x: cy.Py_ssize_t = x + 1
+    west_x: cy.Py_ssize_t = x - 1
     if east_x < cols:
         if west_x >= 0:
             return (phi[y][east_x] - phi[y][west_x]) / (2.0 * dx)
@@ -21,13 +28,19 @@ def calc_dphi_dx_approx(phi, dx, x, y, cols):
             return 0.0
 
 
-def calc_dphi_dy_approx(phi, dy, x, y, rows):
+@cy.profile(False)
+@cy.cfunc
+@cy.inline
+@cy.exceptval(-1.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t, rows: cy.Py_ssize_t) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given the cell height dy.
     """
-    north_y = y + 1
-    south_y = y - 1
+    north_y: cy.Py_ssize_t = y + 1
+    south_y: cy.Py_ssize_t = y - 1
     if north_y < rows:
         if south_y >= 0:
             return (phi[north_y][x] - phi[south_y][x]) / (2.0 * dy)
@@ -40,14 +53,18 @@ def calc_dphi_dy_approx(phi, dy, x, y, rows):
             return 0.0
 
 
-def calc_phi_gradient_approx(phi, dx, dy, x, y):
+@cy.wraparound(False)
+@cy.boundscheck(False)
+# TODO: Pass rows and cols and create returned array without np.asarray?
+def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t):
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
     """
-    (rows, cols) = phi.shape
-    dphi_dx      = calc_dphi_dx_approx(phi, dx, x, y, cols)
-    dphi_dy      = calc_dphi_dy_approx(phi, dy, x, y, rows)
+    rows   : cy.Py_ssize_t = phi.shape[0]
+    cols   : cy.Py_ssize_t = phi.shape[1]
+    dphi_dx: cy.float      = calc_dphi_dx_approx(phi, dx, x, y, cols)
+    dphi_dy: cy.float      = calc_dphi_dy_approx(phi, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
