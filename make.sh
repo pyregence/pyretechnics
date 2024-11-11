@@ -8,6 +8,7 @@ Usage: $0 <command>
   - shell
   - container-shell
   - test
+  - build-cython
   - build-guix
   - build-dist
   - upload-testpypi
@@ -50,6 +51,10 @@ case $CMD in
 
     "test")
         guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv $ARGS
+        ;;
+
+    "build-cython")
+        guix time-machine -c channels.scm -- shell -D -f guix.scm -- cythonize -X profile=True -i -a src/pyretechnics/*.py
         ;;
 
     "build-guix")
