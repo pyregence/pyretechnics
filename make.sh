@@ -40,6 +40,8 @@ fi
 CMD=$1
 ARGS=${@:2:$#}
 
+export PYTHONPATH="src:test"
+
 case $CMD in
 
     "shell")
@@ -47,7 +49,7 @@ case $CMD in
         ;;
 
     "container-shell")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm --container --network --link-profile -S /usr/bin/env=bin/env --share=$HOME/.ssh $ARGS
+        guix time-machine -C channels.scm -- shell -D -f guix.scm --container --network --link-profile -S /usr/bin/env=bin/env --preserve=PYTHONPATH --share=$HOME/.ssh $ARGS
         ;;
 
     "test")
