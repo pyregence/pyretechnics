@@ -6727,19 +6727,22 @@ import cython as cy
 import numpy as np
 
 
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
 @cy.profile(False)
 @cy.cfunc
-@cy.inline
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t, cols: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given the cell width dx.
     """
-    east_x: cy.Py_ssize_t = x + 1
-    west_x: cy.Py_ssize_t = x - 1
+    east_x: pyidx = x + 1
+    west_x: pyidx = x - 1
     if east_x < cols:
         if west_x >= 0:
             return (phi[y][east_x] - phi[y][west_x]) / (2.0 * dx)
@@ -6754,17 +6757,16 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: c
 
 @cy.profile(False)
 @cy.cfunc
-@cy.inline
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t, rows: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given the cell height dy.
     """
-    north_y: cy.Py_ssize_t = y + 1
-    south_y: cy.Py_ssize_t = y - 1
+    north_y: pyidx = y + 1
+    south_y: pyidx = y - 1
     if north_y < rows:
         if south_y >= 0:
             return (phi[north_y][x] - phi[south_y][x]) / (2.0 * dy)
@@ -6777,18 +6779,18 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: c
             return 0.0
 
 
-@cy.wraparound(False)
-@cy.boundscheck(False)
-# TODO: Pass rows and cols and create returned array without np.asarray?
-def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t):
+# TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])
+# TODO: @cy.profile(False)
+# TODO: @cy.ccall
+def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> cy.float[:,:]:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
     """
-    rows   : cy.Py_ssize_t = phi.shape[0]
-    cols   : cy.Py_ssize_t = phi.shape[1]
-    dphi_dx: cy.float      = calc_dphi_dx_approx(phi, dx, x, y, cols)
-    dphi_dy: cy.float      = calc_dphi_dy_approx(phi, dy, x, y, rows)
+    rows   : pyidx    = phi.shape[0]
+    cols   : pyidx    = phi.shape[1]
+    dphi_dx: cy.float = calc_dphi_dx_approx(phi, dx, x, y, cols)
+    dphi_dy: cy.float = calc_dphi_dy_approx(phi, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 #+end_src
 
@@ -6898,17 +6900,23 @@ $B(r)$ as follows:
 
 #+NAME: superbee-flux-limiter
 #+begin_src python
-def calc_superbee_flux_limiter(dphi_up, dphi_loc):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
     """
     TODO: Add docstring
     """
     if dphi_loc == 0.0:
         return 0.0
     else:
-        r = dphi_up / dphi_loc
-        return max(0,
-                   min(2 * r, 1),
-                   min(r, 2))
+        r: cy.float = dphi_up / dphi_loc
+        return max(0.0,
+                   min(2.0 * r, 1.0),
+                   min(r, 2.0))
 #+end_src
 
 To compute the inputs to this function, we build up the partial
@@ -6923,12 +6931,17 @@ and "south" values as follows:
 
 #+NAME: phi-field-spatial-gradients
 #+begin_src python
+import cython as cy
 import numpy as np
 
 
-def calc_dphi_dx(phi, u_x, dx, x, y, cols):
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the x (west->east)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_x  :: m/min
     - dx   :: meters
@@ -6936,14 +6949,18 @@ def calc_dphi_dx(phi, u_x, dx, x, y, cols):
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    phi_east = calc_phi_east(phi, u_x, x, y, cols)
-    phi_west = calc_phi_west(phi, u_x, x, y, cols)
+    phi_east: cy.float = calc_phi_east(phi, u_x, x, y, cols)
+    phi_west: cy.float = calc_phi_west(phi, u_x, x, y, cols)
     return (phi_east - phi_west) / dx
 
 
-def calc_dphi_dy(phi, u_y, dy, x, y, rows):
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the y (south->north)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_y  :: m/min
     - dy   :: meters
@@ -6951,14 +6968,18 @@ def calc_dphi_dy(phi, u_y, dy, x, y, rows):
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    phi_north = calc_phi_north(phi, u_y, x, y, rows)
-    phi_south = calc_phi_south(phi, u_y, x, y, rows)
+    phi_north: cy.float = calc_phi_north(phi, u_y, x, y, rows)
+    phi_south: cy.float = calc_phi_south(phi, u_y, x, y, rows)
     return (phi_north - phi_south) / dy
 
 
-def calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y):
+# TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])
+# TODO: @cy.profile(False)
+# TODO: @cy.ccall
+def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
+                      x: pyidx, y: pyidx) -> cy.float[:,:]:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster at grid cell (x,y) given:
     - phi :: 2D float array of values in [-1,1]
     - u_x :: m/min
     - u_y :: m/min
@@ -6967,9 +6988,10 @@ def calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y):
     - x   :: integer column index in phi
     - y   :: integer row index in phi
     """
-    (rows, cols) = phi.shape
-    dphi_dx      = calc_dphi_dx(phi, u_x, dx, x, y, cols)
-    dphi_dy      = calc_dphi_dy(phi, u_y, dy, x, y, rows)
+    rows   : pyidx    = phi.shape[0]
+    cols   : pyidx    = phi.shape[1]
+    dphi_dx: cy.float = calc_dphi_dx(phi, u_x, dx, x, y, cols)
+    dphi_dy: cy.float = calc_dphi_dy(phi, u_y, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 #+end_src
 
@@ -6991,27 +7013,36 @@ For the east face:
 
 #+NAME: phi-east
 #+begin_src python
-def calc_phi_east(phi, u_x, x, y, cols):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the x (west->east)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_x  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    very_east_x = min(x+2, cols-1)
-    east_x      = min(x+1, cols-1)
-    west_x      = max(x-1, 0)
+    very_east_x: pyidx = min(x+2, cols-1)
+    east_x     : pyidx = min(x+1, cols-1)
+    west_x     : pyidx = max(x-1, 0)
 
-    dphi_loc = phi[y][east_x] - phi[y][x]
-    if u_x >= 0:
-        dphi_up = phi[y][x] - phi[y][west_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[y][east_x] - phi[y][x]
+    if u_x >= 0.0:
+        dphi_up: cy.float = phi[y][x] - phi[y][west_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][very_east_x] - phi[y][east_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[y][very_east_x] - phi[y][east_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][east_x] - 0.5 * B * dphi_loc
 #+end_src
 
@@ -7033,27 +7064,36 @@ For the west face:
 
 #+NAME: phi-west
 #+begin_src python
-def calc_phi_west(phi, u_x, x, y, cols):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the -x (east->west)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_x  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    east_x      = min(x+1, cols-1)
-    west_x      = max(x-1, 0)
-    very_west_x = max(x-2, 0)
+    east_x     : pyidx = min(x+1, cols-1)
+    west_x     : pyidx = max(x-1, 0)
+    very_west_x: pyidx = max(x-2, 0)
 
-    dphi_loc = phi[y][west_x] - phi[y][x]
-    if u_x >= 0:
-        dphi_up = phi[y][very_west_x] - phi[y][west_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[y][west_x] - phi[y][x]
+    if u_x >= 0.0:
+        dphi_up: cy.float = phi[y][very_west_x] - phi[y][west_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][west_x] - 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x] - phi[y][east_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[y][x] - phi[y][east_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
 #+end_src
 
@@ -7075,27 +7115,36 @@ For the north face:
 
 #+NAME: phi-north
 #+begin_src python
-def calc_phi_north(phi, u_y, x, y, rows):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the y (south->north)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_y  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    very_north_y = min(y+2, rows-1)
-    north_y      = min(y+1, rows-1)
-    south_y      = max(y-1, 0)
+    very_north_y: pyidx = min(y+2, rows-1)
+    north_y     : pyidx = min(y+1, rows-1)
+    south_y     : pyidx = max(y-1, 0)
 
-    dphi_loc = phi[north_y][x] - phi[y][x]
-    if u_y >= 0:
-        dphi_up = phi[y][x] - phi[south_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[north_y][x] - phi[y][x]
+    if u_y >= 0.0:
+        dphi_up: cy.float = phi[y][x] - phi[south_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[very_north_y][x] - phi[north_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[very_north_y][x] - phi[north_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[north_y][x] - 0.5 * B * dphi_loc
 #+end_src
 
@@ -7117,27 +7166,36 @@ For the south face:
 
 #+NAME: phi-south
 #+begin_src python
-def calc_phi_south(phi, u_y, x, y, rows):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(65504.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the -y (north->south)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_y  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    north_y      = min(y+1, rows-1)
-    south_y      = max(y-1, 0)
-    very_south_y = max(y-2, 0)
+    north_y     : pyidx = min(y+1, rows-1)
+    south_y     : pyidx = max(y-1, 0)
+    very_south_y: pyidx = max(y-2, 0)
 
-    dphi_loc = phi[south_y][x] - phi[y][x]
-    if u_y >= 0:
-        dphi_up = phi[very_south_y][x] - phi[south_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[south_y][x] - phi[y][x]
+    if u_y >= 0.0:
+        dphi_up: cy.float = phi[very_south_y][x] - phi[south_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[south_y][x] - 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x] - phi[north_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[y][x] - phi[north_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
 #+end_src
 
@@ -7669,26 +7727,39 @@ At a given time step:
 
 #+NAME: phi-field-perimeter-tracking
 #+begin_src python
-def opposite_phi_signs(phi_matrix, y1, x1, y2, x2):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyidx, x2: pyidx) -> cy.bint:
     """
-    TODO: Add docstring
+    Return True if the phi values at cells (x1,y1) and (x2,y2) have opposite signs.
     """
     return phi_matrix[y1, x1] * phi_matrix[y2, x2] < 0.0
 
 
-def identify_frontier_cells(phi_matrix, tracked_cells=None):
+# TODO: Is it faster to build up a list or a set?
+# TODO: @cy.profile(False)
+# TODO: @cy.ccall
+def identify_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict|None = None) -> set:
     """
     TODO: Add docstring
     """
-    (rows, cols)   = phi_matrix.shape
-    frontier_cells = set()
+    rows          : pyidx = phi_matrix.shape[0]
+    cols          : pyidx = phi_matrix.shape[1]
+    y             : pyidx
+    x             : pyidx
+    frontier_cells: set = set()
     if tracked_cells:
-        for (y, x) in tracked_cells:
+        for (y, x) in tracked_cells: # TODO: Might be SLOW!
             # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-            north_y = min(y+1, rows-1)
-            south_y = max(y-1, 0)
-            east_x  = min(x+1, cols-1)
-            west_x  = max(x-1, 0)
+            north_y: pyidx = min(y+1, rows-1)
+            south_y: pyidx = max(y-1, 0)
+            east_x : pyidx = min(x+1, cols-1)
+            west_x : pyidx = max(x-1, 0)
             if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, south_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, y, east_x) or
@@ -7698,10 +7769,10 @@ def identify_frontier_cells(phi_matrix, tracked_cells=None):
         for y in range(rows):
             for x in range(cols):
                 # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-                north_y = min(y+1, rows-1)
-                south_y = max(y-1, 0)
-                east_x  = min(x+1, cols-1)
-                west_x  = max(x-1, 0)
+                north_y: pyidx = min(y+1, rows-1)
+                south_y: pyidx = max(y-1, 0)
+                east_x : pyidx = min(x+1, cols-1)
+                west_x : pyidx = max(x-1, 0)
                 if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
                     opposite_phi_signs(phi_matrix, y, x, south_y, x) or
                     opposite_phi_signs(phi_matrix, y, x, y, east_x) or
@@ -8331,22 +8402,22 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.92568916, 'Max': 1.0, 'Mean': 0.9060592, 'Stdev': 0.38920075}
+{'Min': -0.9256892, 'Max': 1.0, 'Mean': 0.9060592, 'Stdev': 0.38920075}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.63416356}
+{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.6341635}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.6586216, 'Max': 359.69888, 'Mean': 191.40175, 'Stdev': 117.93311}
+{'Min': 0.658632, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.93311}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.982591}
+{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.98259}
 
 Flame Length (meters)
-{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523628, 'Stdev': 0.07356832}
+{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523625, 'Stdev': 0.073568314}
 
 Time of Arrival (minutes)
 {'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83744}
@@ -8674,10 +8745,10 @@ Spread Rate (m/min)
 {'Min': 0.16055721, 'Max': 2.2964664, 'Mean': 1.383971, 'Stdev': 0.68492335}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.015651416, 'Max': 359.8231, 'Mean': 179.89366, 'Stdev': 127.714645}
+{'Min': 0.01565407, 'Max': 359.8231, 'Mean': 179.89366, 'Stdev': 127.71465}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2742078, 'Max': 32.52823, 'Mean': 19.603214, 'Stdev': 9.701576}
+{'Min': 2.2742076, 'Max': 32.52823, 'Mean': 19.603214, 'Stdev': 9.701576}
 
 Flame Length (meters)
 {'Min': 0.11305188, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.07902973}
@@ -8691,7 +8762,7 @@ Firebrand Count (number of firebrands)
 Total Firebrands on Grid: 743
 
 Future Spot Ignitions:
-{2551.198349531833: {(78, 75)},
+{2551.1983517455665: {(78, 75)},
  2551.4128378868545: {(79, 54), (80, 60)},
  2551.8570495625095: {(82, 36)},
  2553.243730269104: {(73, 50)},
@@ -8703,28 +8774,28 @@ Future Spot Ignitions:
  2556.957528510658: {(79, 80), (78, 75)},
  2557.1965187215546: {(72, 52), (75, 51)},
  2560.051807503919: {(82, 76)},
- 2560.0549510644096: {(75, 81)},
+ 2560.0549523406025: {(75, 81)},
  2562.2247250858395: {(78, 53)},
- 2563.0142532417567: {(60, 78)},
+ 2563.0142549445554: {(60, 78)},
  2563.8632085416048: {(81, 38)},
  2566.6677219767957: {(82, 40)},
- 2567.2130485511593: {(78, 77)},
+ 2567.2132926917843: {(78, 77)},
  2567.3587371828735: {(83, 69)},
- 2569.33159813085: {(79, 77)},
+ 2569.3315969593: {(79, 77)},
  2570.92224029922: {(83, 43), (83, 36)},
  2573.732535115886: {(92, 51)},
  2574.658577090567: {(53, 44)},
  2574.7944549624035: {(85, 72)},
  2575.8510325678994: {(81, 65), (80, 63)},
  2576.9250318582476: {(90, 38)},
- 2576.9702525946614: {(78, 60), (80, 63)},
+ 2576.970254288768: {(78, 60), (80, 63)},
  2581.2576899614737: {(73, 78)},
  2583.2558841467608: {(84, 31)},
- 2583.532753380975: {(84, 54)},
+ 2583.5327553614447: {(84, 54)},
  2583.757556126505: {(70, 84)},
  2591.9153573859367: {(66, 34), (71, 40)},
  2592.88477227848: {(64, 36)},
- 2603.110398702295: {(80, 55)},
+ 2603.1104028205696: {(80, 55)},
  2613.442298175292: {(61, 37)}}
 #+end_example
 
@@ -9132,8 +9203,8 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-Main: {'Min': -0.9252461, 'Max': 1.0, 'Mean': 0.7945676, 'Stdev': 0.5639851}
-Fork: {'Min': -0.9252461, 'Max': 1.0, 'Mean': 0.7984583, 'Stdev': 0.5611056}
+Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945676, 'Stdev': 0.5639851}
+Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7984583, 'Stdev': 0.5611056}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -9141,11 +9212,11 @@ Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
 Main: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2057383, 'Stdev': 0.63797617}
-Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890503, 'Stdev': 0.630512}
+Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890503, 'Stdev': 0.63051194}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27232373, 'Max': 359.69888, 'Mean': 190.26033, 'Stdev': 117.35212}
-Fork: {'Min': 0.27232373, 'Max': 359.69888, 'Mean': 192.25833, 'Stdev': 116.70386}
+Main: {'Min': 0.27233186, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35212}
+Fork: {'Min': 0.27233186, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70386}
 
 Fireline Intensity (kW/m)
 Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078642, 'Stdev': 9.036594}
