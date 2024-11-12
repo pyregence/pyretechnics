@@ -3,19 +3,22 @@ import cython as cy
 import numpy as np
 
 
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                        cols: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given the cell width dx.
     """
-    east_x: cy.Py_ssize_t = x + 1
-    west_x: cy.Py_ssize_t = x - 1
+    east_x: pyidx = x + 1
+    west_x: pyidx = x - 1
     if east_x < cols:
         if west_x >= 0:
             return (phi[y][east_x] - phi[y][west_x]) / (2.0 * dx)
@@ -33,14 +36,13 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: c
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                        rows: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given the cell height dy.
     """
-    north_y: cy.Py_ssize_t = y + 1
-    south_y: cy.Py_ssize_t = y - 1
+    north_y: pyidx = y + 1
+    south_y: pyidx = y - 1
     if north_y < rows:
         if south_y >= 0:
             return (phi[north_y][x] - phi[south_y][x]) / (2.0 * dy)
@@ -55,16 +57,15 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: c
 
 # TODO: Pass rows and cols and create returned array without np.asarray?
 # TODO: @cy.ccall
-def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float,
-                             x: cy.Py_ssize_t, y: cy.Py_ssize_t) -> cy.float[:,:]:
+def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> cy.float[:,:]:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
     """
-    rows   : cy.Py_ssize_t = phi.shape[0]
-    cols   : cy.Py_ssize_t = phi.shape[1]
-    dphi_dx: cy.float      = calc_dphi_dx_approx(phi, dx, x, y, cols)
-    dphi_dy: cy.float      = calc_dphi_dy_approx(phi, dy, x, y, rows)
+    rows   : pyidx    = phi.shape[0]
+    cols   : pyidx    = phi.shape[1]
+    dphi_dx: cy.float = calc_dphi_dx_approx(phi, dx, x, y, cols)
+    dphi_dy: cy.float = calc_dphi_dy_approx(phi, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
@@ -135,11 +136,14 @@ import cython as cy
 import numpy as np
 
 
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(-1.0)
-def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                 cols: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given:
@@ -158,8 +162,7 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: cy.Py_ssize
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(-1.0)
-def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                 rows: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given:
@@ -178,7 +181,7 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: cy.Py_ssize
 # TODO: Pass rows and cols and create returned array without np.asarray?
 # TODO: @cy.ccall
 def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
-                      x: cy.Py_ssize_t, y: cy.Py_ssize_t) -> cy.float[:,:]:
+                      x: pyidx, y: pyidx) -> cy.float[:,:]:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y) given:
     - phi :: 2D float array of values in [-1,1]
@@ -189,14 +192,18 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
     - x   :: integer column index in phi
     - y   :: integer row index in phi
     """
-    rows   : cy.Py_ssize_t = phi.shape[0]
-    cols   : cy.Py_ssize_t = phi.shape[1]
-    dphi_dx: cy.float      = calc_dphi_dx(phi, u_x, dx, x, y, cols)
-    dphi_dy: cy.float      = calc_dphi_dy(phi, u_y, dy, x, y, rows)
+    rows   : pyidx    = phi.shape[0]
+    cols   : pyidx    = phi.shape[1]
+    dphi_dx: cy.float = calc_dphi_dx(phi, u_x, dx, x, y, cols)
+    dphi_dy: cy.float = calc_dphi_dy(phi, u_y, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
 import cython as cy
+
+
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
 
 
 @cy.profile(False)
@@ -204,8 +211,7 @@ import cython as cy
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                  cols: cy.Py_ssize_t) -> cy.float:
+def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given:
@@ -215,9 +221,9 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    very_east_x: cy.Py_ssize_t = min(x+2, cols-1)
-    east_x     : cy.Py_ssize_t = min(x+1, cols-1)
-    west_x     : cy.Py_ssize_t = max(x-1, 0)
+    very_east_x: pyidx = min(x+2, cols-1)
+    east_x     : pyidx = min(x+1, cols-1)
+    west_x     : pyidx = max(x-1, 0)
 
     dphi_loc: cy.float = phi[y][east_x] - phi[y][x]
     if u_x >= 0.0:
@@ -233,13 +239,16 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_
 import cython as cy
 
 
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                  cols: cy.Py_ssize_t) -> cy.float:
+def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the -x (east->west)
     direction at grid cell (x,y) given:
@@ -249,9 +258,9 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    east_x     : cy.Py_ssize_t = min(x+1, cols-1)
-    west_x     : cy.Py_ssize_t = max(x-1, 0)
-    very_west_x: cy.Py_ssize_t = max(x-2, 0)
+    east_x     : pyidx = min(x+1, cols-1)
+    west_x     : pyidx = max(x-1, 0)
+    very_west_x: pyidx = max(x-2, 0)
 
     dphi_loc: cy.float = phi[y][west_x] - phi[y][x]
     if u_x >= 0.0:
@@ -267,13 +276,16 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_
 import cython as cy
 
 
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                   rows: cy.Py_ssize_t) -> cy.float:
+def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given:
@@ -283,9 +295,9 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    very_north_y: cy.Py_ssize_t = min(y+2, rows-1)
-    north_y     : cy.Py_ssize_t = min(y+1, rows-1)
-    south_y     : cy.Py_ssize_t = max(y-1, 0)
+    very_north_y: pyidx = min(y+2, rows-1)
+    north_y     : pyidx = min(y+1, rows-1)
+    south_y     : pyidx = max(y-1, 0)
 
     dphi_loc: cy.float = phi[north_y][x] - phi[y][x]
     if u_y >= 0.0:
@@ -301,13 +313,16 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py
 import cython as cy
 
 
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
-                   rows: cy.Py_ssize_t) -> cy.float:
+def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the -y (north->south)
     direction at grid cell (x,y) given:
@@ -317,9 +332,9 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    north_y     : cy.Py_ssize_t = min(y+1, rows-1)
-    south_y     : cy.Py_ssize_t = max(y-1, 0)
-    very_south_y: cy.Py_ssize_t = max(y-2, 0)
+    north_y     : pyidx = min(y+1, rows-1)
+    south_y     : pyidx = max(y-1, 0)
+    very_south_y: pyidx = max(y-2, 0)
 
     dphi_loc: cy.float = phi[south_y][x] - phi[y][x]
     if u_y >= 0.0:
