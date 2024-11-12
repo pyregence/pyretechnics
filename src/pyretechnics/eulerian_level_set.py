@@ -5,11 +5,11 @@ import numpy as np
 
 @cy.profile(False)
 @cy.cfunc
-@cy.inline
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t, cols: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                        cols: cy.Py_ssize_t) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given the cell width dx.
@@ -30,11 +30,11 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: cy.Py_ssize_t, y: c
 
 @cy.profile(False)
 @cy.cfunc
-@cy.inline
 @cy.exceptval(-1.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t, rows: cy.Py_ssize_t) -> cy.float:
+def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                        rows: cy.Py_ssize_t) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given the cell height dy.
@@ -53,10 +53,10 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: cy.Py_ssize_t, y: c
             return 0.0
 
 
-@cy.wraparound(False)
-@cy.boundscheck(False)
 # TODO: Pass rows and cols and create returned array without np.asarray?
-def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t):
+# TODO: @cy.ccall
+def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float,
+                             x: cy.Py_ssize_t, y: cy.Py_ssize_t) -> cy.float[:,:]:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
@@ -112,25 +112,37 @@ def calc_phi_normal_azimuth(phi_normal_vector):
     return degrees(angle)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
-def calc_superbee_flux_limiter(dphi_up, dphi_loc):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
     """
     TODO: Add docstring
     """
     if dphi_loc == 0.0:
         return 0.0
     else:
-        r = dphi_up / dphi_loc
-        return max(0,
-                   min(2 * r, 1),
-                   min(r, 2))
+        r: cy.float = dphi_up / dphi_loc
+        return max(0.0,
+                   min(2.0 * r, 1.0),
+                   min(r, 2.0))
 # superbee-flux-limiter ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
+import cython as cy
 import numpy as np
 
 
-def calc_dphi_dx(phi, u_x, dx, x, y, cols):
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                 cols: cy.Py_ssize_t) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the x (west->east)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_x  :: m/min
     - dx   :: meters
@@ -138,14 +150,19 @@ def calc_dphi_dx(phi, u_x, dx, x, y, cols):
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    phi_east = calc_phi_east(phi, u_x, x, y, cols)
-    phi_west = calc_phi_west(phi, u_x, x, y, cols)
+    phi_east: cy.float = calc_phi_east(phi, u_x, x, y, cols)
+    phi_west: cy.float = calc_phi_west(phi, u_x, x, y, cols)
     return (phi_east - phi_west) / dx
 
 
-def calc_dphi_dy(phi, u_y, dy, x, y, rows):
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                 rows: cy.Py_ssize_t) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the y (south->north)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_y  :: m/min
     - dy   :: meters
@@ -153,14 +170,17 @@ def calc_dphi_dy(phi, u_y, dy, x, y, rows):
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    phi_north = calc_phi_north(phi, u_y, x, y, rows)
-    phi_south = calc_phi_south(phi, u_y, x, y, rows)
+    phi_north: cy.float = calc_phi_north(phi, u_y, x, y, rows)
+    phi_south: cy.float = calc_phi_south(phi, u_y, x, y, rows)
     return (phi_north - phi_south) / dy
 
 
-def calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y):
+# TODO: Pass rows and cols and create returned array without np.asarray?
+# TODO: @cy.ccall
+def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
+                      x: cy.Py_ssize_t, y: cy.Py_ssize_t) -> cy.float[:,:]:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster at grid cell (x,y) given:
     - phi :: 2D float array of values in [-1,1]
     - u_x :: m/min
     - u_y :: m/min
@@ -169,105 +189,146 @@ def calc_phi_gradient(phi, u_x, u_y, dx, dy, x, y):
     - x   :: integer column index in phi
     - y   :: integer row index in phi
     """
-    (rows, cols) = phi.shape
-    dphi_dx      = calc_dphi_dx(phi, u_x, dx, x, y, cols)
-    dphi_dy      = calc_dphi_dy(phi, u_y, dy, x, y, rows)
+    rows   : cy.Py_ssize_t = phi.shape[0]
+    cols   : cy.Py_ssize_t = phi.shape[1]
+    dphi_dx: cy.float      = calc_dphi_dx(phi, u_x, dx, x, y, cols)
+    dphi_dy: cy.float      = calc_dphi_dy(phi, u_y, dy, x, y, rows)
     return np.asarray((dphi_dx, dphi_dy))
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
-def calc_phi_east(phi, u_x, x, y, cols):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                  cols: cy.Py_ssize_t) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the x (west->east)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_x  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    very_east_x = min(x+2, cols-1)
-    east_x      = min(x+1, cols-1)
-    west_x      = max(x-1, 0)
+    very_east_x: cy.Py_ssize_t = min(x+2, cols-1)
+    east_x     : cy.Py_ssize_t = min(x+1, cols-1)
+    west_x     : cy.Py_ssize_t = max(x-1, 0)
 
-    dphi_loc = phi[y][east_x] - phi[y][x]
-    if u_x >= 0:
-        dphi_up = phi[y][x] - phi[y][west_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[y][east_x] - phi[y][x]
+    if u_x >= 0.0:
+        dphi_up: cy.float = phi[y][x] - phi[y][west_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][very_east_x] - phi[y][east_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[y][very_east_x] - phi[y][east_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][east_x] - 0.5 * B * dphi_loc
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
-def calc_phi_west(phi, u_x, x, y, cols):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                  cols: cy.Py_ssize_t) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the -x (east->west)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_x  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    east_x      = min(x+1, cols-1)
-    west_x      = max(x-1, 0)
-    very_west_x = max(x-2, 0)
+    east_x     : cy.Py_ssize_t = min(x+1, cols-1)
+    west_x     : cy.Py_ssize_t = max(x-1, 0)
+    very_west_x: cy.Py_ssize_t = max(x-2, 0)
 
-    dphi_loc = phi[y][west_x] - phi[y][x]
-    if u_x >= 0:
-        dphi_up = phi[y][very_west_x] - phi[y][west_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[y][west_x] - phi[y][x]
+    if u_x >= 0.0:
+        dphi_up: cy.float = phi[y][very_west_x] - phi[y][west_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][west_x] - 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x] - phi[y][east_x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[y][x] - phi[y][east_x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
-def calc_phi_north(phi, u_y, x, y, rows):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                   rows: cy.Py_ssize_t) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the y (south->north)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_y  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    very_north_y = min(y+2, rows-1)
-    north_y      = min(y+1, rows-1)
-    south_y      = max(y-1, 0)
+    very_north_y: cy.Py_ssize_t = min(y+2, rows-1)
+    north_y     : cy.Py_ssize_t = min(y+1, rows-1)
+    south_y     : cy.Py_ssize_t = max(y-1, 0)
 
-    dphi_loc = phi[north_y][x] - phi[y][x]
-    if u_y >= 0:
-        dphi_up = phi[y][x] - phi[south_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[north_y][x] - phi[y][x]
+    if u_y >= 0.0:
+        dphi_up: cy.float = phi[y][x] - phi[south_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[very_north_y][x] - phi[north_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[very_north_y][x] - phi[north_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[north_y][x] - 0.5 * B * dphi_loc
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
-def calc_phi_south(phi, u_y, x, y, rows):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(-1.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: cy.Py_ssize_t, y: cy.Py_ssize_t,
+                   rows: cy.Py_ssize_t) -> cy.float:
     """
-    TODO: Add docstring
+    Calculate the spatial gradient of the phi raster in the -y (north->south)
+    direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
     - u_y  :: m/min
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    north_y      = min(y+1, rows-1)
-    south_y      = max(y-1, 0)
-    very_south_y = max(y-2, 0)
+    north_y     : cy.Py_ssize_t = min(y+1, rows-1)
+    south_y     : cy.Py_ssize_t = max(y-1, 0)
+    very_south_y: cy.Py_ssize_t = max(y-2, 0)
 
-    dphi_loc = phi[south_y][x] - phi[y][x]
-    if u_y >= 0:
-        dphi_up = phi[very_south_y][x] - phi[south_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    dphi_loc: cy.float = phi[south_y][x] - phi[y][x]
+    if u_y >= 0.0:
+        dphi_up: cy.float = phi[very_south_y][x] - phi[south_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[south_y][x] - 0.5 * B * dphi_loc
     else:
-        dphi_up = phi[y][x] - phi[north_y][x]
-        B = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+        dphi_up: cy.float = phi[y][x] - phi[north_y][x]
+        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
