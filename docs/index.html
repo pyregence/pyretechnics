@@ -8083,7 +8083,7 @@ illustrated below.
 <span class="org-doc">    - slope  :: rise/run</span>
 <span class="org-doc">    - aspect :: degrees clockwise from North</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    <span class="org-keyword">return</span> np.asarray(conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect)))
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_on_slope</span>(phi_gradient_xy, elevation_gradient):
@@ -10616,17 +10616,39 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
 <h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.2.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
-<pre class="src src-python" id="vector-utilities"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians, sin, cos, sqrt
+<pre class="src src-python" id="vector-utilities"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians, sin, cos
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude</span>(vector):
-    <span class="org-keyword">return</span> sqrt(np.dot(vector, vector))
+<span class="org-comment-delimiter"># </span><span class="org-comment">Conditionally import Python's sqrt function when in Python mode</span>
+<span class="org-keyword">if</span> <span class="org-keyword">not</span> cy.compiled:
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Set an alias for the Python array index type</span>
+<span class="org-variable-name">pyidx</span> <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Verify that we always pass double arrays</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.profile(False)</span>
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>65504.0)
+<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude</span>(vector: cy.double[:]) <span class="org-operator">-&gt;</span> cy.double:
+    i  : pyidx
+    x  : cy.double
+    <span class="org-variable-name">acc</span>: cy.double <span class="org-operator">=</span> 0.0
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(vector)):
+        <span class="org-variable-name">x</span>    <span class="org-operator">=</span> vector[i]
+        <span class="org-variable-name">acc</span> <span class="org-operator">+=</span> x <span class="org-operator">*</span> x
+    <span class="org-keyword">return</span> sqrt(acc)
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector</span>(vector):
-    <span class="org-keyword">return</span> np.asarray(vector) <span class="org-operator">/</span> vector_magnitude(vector)
+    <span class="org-keyword">return</span> vector <span class="org-operator">/</span> vector_magnitude(vector)
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">to_slope_plane</span>(vector_2d, elevation_gradient):
@@ -10642,7 +10664,7 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">get_slope_normal_vector</span>(elevation_gradient):
-    <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> (<span class="org-operator">-</span>elevation_gradient[0], <span class="org-operator">-</span>elevation_gradient[1], 1)
+    <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> np.asarray((<span class="org-operator">-</span>elevation_gradient[0], <span class="org-operator">-</span>elevation_gradient[1], 1))
     <span class="org-keyword">return</span> as_unit_vector(slope_normal_vector)
 
 
@@ -10654,6 +10676,12 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
     <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
     <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> radians(theta)
     <span class="org-keyword">return</span> cos(theta_rad) <span class="org-operator">*</span> vector <span class="org-operator">+</span> np.cross(sin(theta_rad) <span class="org-operator">*</span> vector, slope_normal_vector)
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-cython" id="vector-utilities-c-fns">cdef extern from "math.h":
+     cpdef double sqrt(double arg)
 </pre>
 </div>
 </div>

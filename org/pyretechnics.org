@@ -7241,7 +7241,7 @@ def calc_elevation_gradient(slope, aspect):
     - slope  :: rise/run
     - aspect :: degrees clockwise from North
     """
-    return conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    return np.asarray(conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect)))
 
 
 def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):
@@ -10277,17 +10277,38 @@ def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
 
 #+NAME: vector-utilities
 #+begin_src python
-from math import radians, sin, cos, sqrt
+import cython as cy
+from math import radians, sin, cos
 import numpy as np
 import pyretechnics.conversion as conv
 
 
-def vector_magnitude(vector):
-    return sqrt(np.dot(vector, vector))
+# Conditionally import Python's sqrt function when in Python mode
+if not cy.compiled:
+    from math import sqrt
+
+
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
+@cy.profile(False)
+@cy.ccall
+@cy.exceptval(-65504.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def vector_magnitude(vector: cy.double[:]) -> cy.double:
+    i  : pyidx
+    x  : cy.double
+    acc: cy.double = 0.0
+    for i in range(len(vector)):
+        x    = vector[i]
+        acc += x * x
+    return sqrt(acc)
 
 
 def as_unit_vector(vector):
-    return np.asarray(vector) / vector_magnitude(vector)
+    return vector / vector_magnitude(vector)
 
 
 def to_slope_plane(vector_2d, elevation_gradient):
@@ -10303,7 +10324,7 @@ def to_horizontal_plane(vector_3d):
 
 
 def get_slope_normal_vector(elevation_gradient):
-    slope_normal_vector = (-elevation_gradient[0], -elevation_gradient[1], 1)
+    slope_normal_vector = np.asarray((-elevation_gradient[0], -elevation_gradient[1], 1))
     return as_unit_vector(slope_normal_vector)
 
 
@@ -10315,6 +10336,12 @@ def rotate_on_sloped_plane(vector, theta, slope, aspect):
     # Rotate theta degrees clockwise around the slope_normal_vector
     theta_rad = radians(theta)
     return cos(theta_rad) * vector + np.cross(sin(theta_rad) * vector, slope_normal_vector)
+#+end_src
+
+#+NAME: vector-utilities-c-fns
+#+begin_src cython :eval no :tangle ../src/pyretechnics/vector_utils.pxd
+cdef extern from "math.h":
+     cpdef double sqrt(double arg)
 #+end_src
 
 ** SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)

@@ -343,7 +343,7 @@ def calc_elevation_gradient(slope, aspect):
     - slope  :: rise/run
     - aspect :: degrees clockwise from North
     """
-    return conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    return np.asarray(conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect)))
 
 
 def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):

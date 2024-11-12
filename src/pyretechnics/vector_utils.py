@@ -1,15 +1,36 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
-from math import radians, sin, cos, sqrt
+import cython as cy
+from math import radians, sin, cos
 import numpy as np
 import pyretechnics.conversion as conv
 
 
-def vector_magnitude(vector):
-    return sqrt(np.dot(vector, vector))
+# Conditionally import Python's sqrt function when in Python mode
+if not cy.compiled:
+    from math import sqrt
+
+
+# Set an alias for the Python array index type
+pyidx = cy.typedef(cy.Py_ssize_t)
+
+
+@cy.profile(False)
+@cy.ccall
+@cy.exceptval(-65504.0)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def vector_magnitude(vector: cy.double[:]) -> cy.double:
+    i  : pyidx
+    x  : cy.double
+    acc: cy.double = 0.0
+    for i in range(len(vector)):
+        x    = vector[i]
+        acc += x * x
+    return sqrt(acc)
 
 
 def as_unit_vector(vector):
-    return np.asarray(vector) / vector_magnitude(vector)
+    return vector / vector_magnitude(vector)
 
 
 def to_slope_plane(vector_2d, elevation_gradient):
@@ -25,7 +46,7 @@ def to_horizontal_plane(vector_3d):
 
 
 def get_slope_normal_vector(elevation_gradient):
-    slope_normal_vector = (-elevation_gradient[0], -elevation_gradient[1], 1)
+    slope_normal_vector = np.asarray((-elevation_gradient[0], -elevation_gradient[1], 1))
     return as_unit_vector(slope_normal_vector)
 
 
