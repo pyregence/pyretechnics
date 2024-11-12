@@ -9,7 +9,7 @@ pyidx = cy.typedef(cy.Py_ssize_t)
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -33,7 +33,7 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, co
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -55,7 +55,8 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, ro
             return 0.0
 
 
-# TODO: Pass rows and cols and create returned array without np.asarray?
+# TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])
+# TODO: @cy.profile(False)
 # TODO: @cy.ccall
 def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> cy.float[:,:]:
     """
@@ -118,7 +119,7 @@ import cython as cy
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
     """
     TODO: Add docstring
@@ -136,13 +137,9 @@ import cython as cy
 import numpy as np
 
 
-# Set an alias for the Python array index type
-pyidx = cy.typedef(cy.Py_ssize_t)
-
-
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
@@ -161,7 +158,7 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: p
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
@@ -178,7 +175,8 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
     return (phi_north - phi_south) / dy
 
 
-# TODO: Pass rows and cols and create returned array without np.asarray?
+# TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])
+# TODO: @cy.profile(False)
 # TODO: @cy.ccall
 def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
                       x: pyidx, y: pyidx) -> cy.float[:,:]:
@@ -202,13 +200,9 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
 import cython as cy
 
 
-# Set an alias for the Python array index type
-pyidx = cy.typedef(cy.Py_ssize_t)
-
-
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -239,13 +233,9 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
 import cython as cy
 
 
-# Set an alias for the Python array index type
-pyidx = cy.typedef(cy.Py_ssize_t)
-
-
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -276,13 +266,9 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
 import cython as cy
 
 
-# Set an alias for the Python array index type
-pyidx = cy.typedef(cy.Py_ssize_t)
-
-
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -313,13 +299,9 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 import cython as cy
 
 
-# Set an alias for the Python array index type
-pyidx = cy.typedef(cy.Py_ssize_t)
-
-
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(-1.0)
+@cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -745,26 +727,39 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             return surface_fire_normal
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
-def opposite_phi_signs(phi_matrix, y1, x1, y2, x2):
+import cython as cy
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyidx, x2: pyidx) -> cy.bint:
     """
-    TODO: Add docstring
+    Return True if the phi values at cells (x1,y1) and (x2,y2) have opposite signs.
     """
     return phi_matrix[y1, x1] * phi_matrix[y2, x2] < 0.0
 
 
-def identify_frontier_cells(phi_matrix, tracked_cells=None):
+# TODO: Is it faster to build up a list or a set?
+# TODO: @cy.profile(False)
+# TODO: @cy.ccall
+def identify_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict|None = None) -> set:
     """
     TODO: Add docstring
     """
-    (rows, cols)   = phi_matrix.shape
-    frontier_cells = set()
+    rows          : pyidx = phi_matrix.shape[0]
+    cols          : pyidx = phi_matrix.shape[1]
+    y             : pyidx
+    x             : pyidx
+    frontier_cells: set = set()
     if tracked_cells:
-        for (y, x) in tracked_cells:
+        for (y, x) in tracked_cells: # TODO: Might be SLOW!
             # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-            north_y = min(y+1, rows-1)
-            south_y = max(y-1, 0)
-            east_x  = min(x+1, cols-1)
-            west_x  = max(x-1, 0)
+            north_y: pyidx = min(y+1, rows-1)
+            south_y: pyidx = max(y-1, 0)
+            east_x : pyidx = min(x+1, cols-1)
+            west_x : pyidx = max(x-1, 0)
             if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, south_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, y, east_x) or
@@ -774,10 +769,10 @@ def identify_frontier_cells(phi_matrix, tracked_cells=None):
         for y in range(rows):
             for x in range(cols):
                 # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-                north_y = min(y+1, rows-1)
-                south_y = max(y-1, 0)
-                east_x  = min(x+1, cols-1)
-                west_x  = max(x-1, 0)
+                north_y: pyidx = min(y+1, rows-1)
+                south_y: pyidx = max(y-1, 0)
+                east_x : pyidx = min(x+1, cols-1)
+                west_x : pyidx = max(x-1, 0)
                 if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
                     opposite_phi_signs(phi_matrix, y, x, south_y, x) or
                     opposite_phi_signs(phi_matrix, y, x, y, east_x) or
