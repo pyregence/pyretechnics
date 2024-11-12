@@ -7538,16 +7538,23 @@ node-centered central differences, represented by the values in the
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx_approx</span>(phi, dx, x, y, cols):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.inline</span>
+<span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>1.0)
+<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, x: cy.Py_ssize_t, y: cy.Py_ssize_t, cols: cy.Py_ssize_t) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster in the x (west-&gt;east)</span>
 <span class="org-doc">    direction at grid cell (x,y) given the cell width dx.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">east_x</span> <span class="org-operator">=</span> x <span class="org-operator">+</span> 1
-    <span class="org-variable-name">west_x</span> <span class="org-operator">=</span> x <span class="org-operator">-</span> 1
+    <span class="org-variable-name">east_x</span>: cy.Py_ssize_t <span class="org-operator">=</span> x <span class="org-operator">+</span> 1
+    <span class="org-variable-name">west_x</span>: cy.Py_ssize_t <span class="org-operator">=</span> x <span class="org-operator">-</span> 1
     <span class="org-keyword">if</span> east_x <span class="org-operator">&lt;</span> cols:
         <span class="org-keyword">if</span> west_x <span class="org-operator">&gt;=</span> 0:
             <span class="org-keyword">return</span> (phi[y][east_x] <span class="org-operator">-</span> phi[y][west_x]) <span class="org-operator">/</span> (2.0 <span class="org-operator">*</span> dx)
@@ -7560,13 +7567,19 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy_approx</span>(phi, dy, x, y, rows):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.inline</span>
+<span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>1.0)
+<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dy: cy.<span class="org-builtin">float</span>, x: cy.Py_ssize_t, y: cy.Py_ssize_t, rows: cy.Py_ssize_t) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster in the y (south-&gt;north)</span>
 <span class="org-doc">    direction at grid cell (x,y) given the cell height dy.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">north_y</span> <span class="org-operator">=</span> y <span class="org-operator">+</span> 1
-    <span class="org-variable-name">south_y</span> <span class="org-operator">=</span> y <span class="org-operator">-</span> 1
+    <span class="org-variable-name">north_y</span>: cy.Py_ssize_t <span class="org-operator">=</span> y <span class="org-operator">+</span> 1
+    <span class="org-variable-name">south_y</span>: cy.Py_ssize_t <span class="org-operator">=</span> y <span class="org-operator">-</span> 1
     <span class="org-keyword">if</span> north_y <span class="org-operator">&lt;</span> rows:
         <span class="org-keyword">if</span> south_y <span class="org-operator">&gt;=</span> 0:
             <span class="org-keyword">return</span> (phi[north_y][x] <span class="org-operator">-</span> phi[south_y][x]) <span class="org-operator">/</span> (2.0 <span class="org-operator">*</span> dy)
@@ -7579,14 +7592,18 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi, dx, dy, x, y):
+<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray?</span>
+<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: cy.Py_ssize_t, y: cy.Py_ssize_t):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster at grid cell (x,y)</span>
 <span class="org-doc">    given the cell width dx and the cell height dy.</span>
 <span class="org-doc">    """</span>
-    (<span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>) <span class="org-operator">=</span> phi.shape
-    <span class="org-variable-name">dphi_dx</span>      <span class="org-operator">=</span> calc_dphi_dx_approx(phi, dx, x, y, cols)
-    <span class="org-variable-name">dphi_dy</span>      <span class="org-operator">=</span> calc_dphi_dy_approx(phi, dy, x, y, rows)
+    <span class="org-variable-name">rows</span>   : cy.Py_ssize_t <span class="org-operator">=</span> phi.shape[0]
+    <span class="org-variable-name">cols</span>   : cy.Py_ssize_t <span class="org-operator">=</span> phi.shape[1]
+    <span class="org-variable-name">dphi_dx</span>: cy.<span class="org-builtin">float</span>      <span class="org-operator">=</span> calc_dphi_dx_approx(phi, dx, x, y, cols)
+    <span class="org-variable-name">dphi_dy</span>: cy.<span class="org-builtin">float</span>      <span class="org-operator">=</span> calc_dphi_dy_approx(phi, dy, x, y, rows)
     <span class="org-keyword">return</span> np.asarray((dphi_dx, dphi_dy))
 </pre>
 </div>
@@ -9022,24 +9039,31 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">Create an input dictionary of SpaceTimeCubes (using constant data for this example)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-keyword">def</span> <span class="org-function-name">arr2d</span>(value):
+    <span class="org-keyword">return</span> np.full(grid_shape, value)
+
+<span class="org-keyword">def</span> <span class="org-function-name">arr3d</span>(value):
+    (<span class="org-variable-name">b</span>, <span class="org-variable-name">r</span>, <span class="org-variable-name">c</span>) <span class="org-operator">=</span> cube_shape
+    <span class="org-keyword">return</span> np.full((b, r<span class="org-operator">//</span>10, c<span class="org-operator">//</span>10) , value)
+
 <span class="org-variable-name">space_time_cubes</span> <span class="org-operator">=</span> {
-    <span class="org-string">"slope"</span>                        : SpaceTimeCube(cube_shape, 0.8),   <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
-    <span class="org-string">"aspect"</span>                       : SpaceTimeCube(cube_shape, 225.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
-    <span class="org-string">"fuel_model"</span>                   : SpaceTimeCube(cube_shape, 101),   <span class="org-comment-delimiter"># </span><span class="org-comment">integer index in fm.fuel_model_table</span>
-    <span class="org-string">"canopy_cover"</span>                 : SpaceTimeCube(cube_shape, 0.6),   <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
-    <span class="org-string">"canopy_height"</span>                : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-    <span class="org-string">"canopy_base_height"</span>           : SpaceTimeCube(cube_shape, 3.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-    <span class="org-string">"canopy_bulk_density"</span>          : SpaceTimeCube(cube_shape, 0.3),   <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
-    <span class="org-string">"wind_speed_10m"</span>               : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
-    <span class="org-string">"upwind_direction"</span>             : SpaceTimeCube(cube_shape, 180.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
-    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : SpaceTimeCube(cube_shape, 0.05),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_dead_10hr"</span>      : SpaceTimeCube(cube_shape, 0.10),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_dead_100hr"</span>     : SpaceTimeCube(cube_shape, 0.15),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_live_herbaceous"</span>: SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_live_woody"</span>     : SpaceTimeCube(cube_shape, 0.60),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"foliar_moisture"</span>              : SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_spread_adjustment"</span>       : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-    <span class="org-string">"weather_spread_adjustment"</span>    : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+    <span class="org-string">"slope"</span>                        : SpaceTimeCube(cube_shape, arr2d(0.8)),   <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
+    <span class="org-string">"aspect"</span>                       : SpaceTimeCube(cube_shape, arr2d(225.0)), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_model"</span>                   : SpaceTimeCube(cube_shape, arr2d(101)),   <span class="org-comment-delimiter"># </span><span class="org-comment">integer index in fm.fuel_model_table</span>
+    <span class="org-string">"canopy_cover"</span>                 : SpaceTimeCube(cube_shape, arr2d(0.6)),   <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+    <span class="org-string">"canopy_height"</span>                : SpaceTimeCube(cube_shape, arr2d(30.0)),  <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_base_height"</span>           : SpaceTimeCube(cube_shape, arr2d(3.0)),   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_bulk_density"</span>          : SpaceTimeCube(cube_shape, arr2d(0.3)),   <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
+    <span class="org-string">"wind_speed_10m"</span>               : SpaceTimeCube(cube_shape, arr3d(30.0)),  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+    <span class="org-string">"upwind_direction"</span>             : SpaceTimeCube(cube_shape, arr3d(180.0)), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : SpaceTimeCube(cube_shape, arr3d(0.05)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_10hr"</span>      : SpaceTimeCube(cube_shape, arr3d(0.10)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_100hr"</span>     : SpaceTimeCube(cube_shape, arr3d(0.15)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_herbaceous"</span>: SpaceTimeCube(cube_shape, arr3d(0.90)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_woody"</span>     : SpaceTimeCube(cube_shape, arr3d(0.60)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"foliar_moisture"</span>              : SpaceTimeCube(cube_shape, arr3d(0.90)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_spread_adjustment"</span>       : SpaceTimeCube(cube_shape, arr2d(1.0)),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+    <span class="org-string">"weather_spread_adjustment"</span>    : SpaceTimeCube(cube_shape, arr3d(1.0)),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -9154,19 +9178,19 @@ Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.63416344}
+{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.63416356}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.6585914, 'Max': 359.69888, 'Mean': 191.40175, 'Stdev': 117.93311}
+{'Min': 0.6586216, 'Max': 359.69888, 'Mean': 191.40175, 'Stdev': 117.93311}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.982589}
+{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.982591}
 
 Flame Length (meters)
-{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523625, 'Stdev': 0.073568314}
+{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523628, 'Stdev': 0.07356832}
 
 Time of Arrival (minutes)
-{'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83745}
+{'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83744}
 </pre>
 </div>
 </li>
@@ -9506,7 +9530,7 @@ Spread Rate (m/min)
 {'Min': 0.16055721, 'Max': 2.2964664, 'Mean': 1.383971, 'Stdev': 0.68492335}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.015651718, 'Max': 359.8231, 'Mean': 179.89366, 'Stdev': 127.714645}
+{'Min': 0.015651416, 'Max': 359.8231, 'Mean': 179.89366, 'Stdev': 127.714645}
 
 Fireline Intensity (kW/m)
 {'Min': 2.2742078, 'Max': 32.52823, 'Mean': 19.603214, 'Stdev': 9.701576}
@@ -9523,7 +9547,7 @@ Firebrand Count (number of firebrands)
 Total Firebrands on Grid: 743
 
 Future Spot Ignitions:
-{2551.1983484249668: {(78, 75)},
+{2551.198349531833: {(78, 75)},
  2551.4128378868545: {(79, 54), (80, 60)},
  2551.8570495625095: {(82, 36)},
  2553.243730269104: {(73, 50)},
@@ -9533,30 +9557,30 @@ Future Spot Ignitions:
  2555.5255703556245: {(78, 60), (78, 58)},
  2556.281415042003: {(80, 74)},
  2556.957528510658: {(79, 80), (78, 75)},
- 2557.1965199840843: {(72, 52), (75, 51)},
+ 2557.1965187215546: {(72, 52), (75, 51)},
  2560.051807503919: {(82, 76)},
  2560.0549510644096: {(75, 81)},
  2562.2247250858395: {(78, 53)},
- 2563.0142549445554: {(60, 78)},
+ 2563.0142532417567: {(60, 78)},
  2563.8632085416048: {(81, 38)},
  2566.6677219767957: {(82, 40)},
  2567.2130485511593: {(78, 77)},
  2567.3587371828735: {(83, 69)},
- 2569.3315993024007: {(79, 77)},
- 2570.9222418350946: {(83, 43), (83, 36)},
+ 2569.33159813085: {(79, 77)},
+ 2570.92224029922: {(83, 43), (83, 36)},
  2573.732535115886: {(92, 51)},
- 2574.6585753861295: {(53, 44)},
+ 2574.658577090567: {(53, 44)},
  2574.7944549624035: {(85, 72)},
  2575.8510325678994: {(81, 65), (80, 63)},
  2576.9250318582476: {(90, 38)},
- 2576.970254288768: {(78, 60), (80, 63)},
+ 2576.9702525946614: {(78, 60), (80, 63)},
  2581.2576899614737: {(73, 78)},
- 2583.255882787028: {(84, 31)},
+ 2583.2558841467608: {(84, 31)},
  2583.532753380975: {(84, 54)},
  2583.757556126505: {(70, 84)},
- 2591.9153606730115: {(66, 34), (71, 40)},
+ 2591.9153573859367: {(66, 34), (71, 40)},
  2592.88477227848: {(64, 36)},
- 2603.1104028205696: {(80, 55)},
+ 2603.110398702295: {(80, 55)},
  2613.442298175292: {(61, 37)}}
 </pre>
 </div>
@@ -9989,15 +10013,15 @@ Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
 Main: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2057383, 'Stdev': 0.63797617}
-Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890503, 'Stdev': 0.63051194}
+Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890503, 'Stdev': 0.630512}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27232167, 'Max': 359.69888, 'Mean': 190.26033, 'Stdev': 117.35212}
-Fork: {'Min': 0.27232167, 'Max': 359.69888, 'Mean': 192.25833, 'Stdev': 116.70386}
+Main: {'Min': 0.27232373, 'Max': 359.69888, 'Mean': 190.26033, 'Stdev': 117.35212}
+Fork: {'Min': 0.27232373, 'Max': 359.69888, 'Mean': 192.25833, 'Stdev': 116.70386}
 
 Fireline Intensity (kW/m)
-Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078642, 'Stdev': 9.036593}
-Fork: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 16.842266, 'Stdev': 8.930867}
+Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078642, 'Stdev': 9.036594}
+Fork: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 16.842266, 'Stdev': 8.930868}
 
 Flame Length (meters)
 Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27460188, 'Stdev': 0.07341512}
