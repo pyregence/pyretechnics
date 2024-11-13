@@ -2,6 +2,7 @@
 import numpy as np
 import pyretechnics.eulerian_level_set as els
 from pyretechnics.space_time_cube import SpaceTimeCube
+import time
 
 #============================================================================================
 # Specify the SpaceTimeCube dimensions
@@ -87,10 +88,25 @@ output_matrices["phi"][50,50] = -1.0
 # Spread fire from the start time for the max duration
 #============================================================================================
 
+runtime_start       = time.perf_counter()
 fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
                                                      start_time, max_duration)
+runtime_stop        = time.perf_counter()
 
 stop_time       = fire_spread_results["stop_time"]       # minutes
 stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached" or "no burnable cells"
 output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mutated from inputs)
+
+#============================================================================================
+# Print out the acres burned, total runtime, and runtime per burned cell
+#============================================================================================
+
+num_burned_cells        = np.count_nonzero(output_matrices["fire_type"]) # cells
+acres_burned            = num_burned_cells / 4.5                         # acres
+simulation_runtime      = runtime_stop - runtime_start                   # seconds
+runtime_per_burned_cell = 1000.0 * simulation_runtime / num_burned_cells # ms/cell
+
+print("Acres Burned: " + str(acres_burned))
+print("Total Runtime: " + str(simulation_runtime) + " seconds")
+print("Runtime per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
 # run-spread-fire-with-phi-field ends here

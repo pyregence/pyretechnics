@@ -9083,6 +9083,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <pre class="src src-python" id="run-spread-fire-with-phi-field"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> time
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -9168,12 +9169,27 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-variable-name">runtime_start</span>       <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
                                                      start_time, max_duration)
+<span class="org-variable-name">runtime_stop</span>        <span class="org-operator">=</span> time.perf_counter()
 
 <span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">num_burned_cells</span>        <span class="org-operator">=</span> np.count_nonzero(output_matrices[<span class="org-string">"fire_type"</span>]) <span class="org-comment-delimiter"># </span><span class="org-comment">cells</span>
+<span class="org-variable-name">acres_burned</span>            <span class="org-operator">=</span> num_burned_cells <span class="org-operator">/</span> 4.5                         <span class="org-comment-delimiter"># </span><span class="org-comment">acres</span>
+<span class="org-variable-name">simulation_runtime</span>      <span class="org-operator">=</span> runtime_stop <span class="org-operator">-</span> runtime_start                   <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">runtime_per_burned_cell</span> <span class="org-operator">=</span> 1000.0 <span class="org-operator">*</span> simulation_runtime <span class="org-operator">/</span> num_burned_cells <span class="org-comment-delimiter"># </span><span class="org-comment">ms/cell</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"Acres Burned: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(acres_burned))
+<span class="org-builtin">print</span>(<span class="org-string">"Total Runtime: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(simulation_runtime) <span class="org-operator">+</span> <span class="org-string">" seconds"</span>)
+<span class="org-builtin">print</span>(<span class="org-string">"Runtime per Burned Cell: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(runtime_per_burned_cell) <span class="org-operator">+</span> <span class="org-string">" ms/cell"</span>)
 </pre>
 </div>
 </div>
@@ -9410,6 +9426,7 @@ Time of Arrival (minutes)
 <pre class="src src-python" id="run-spread-fire-with-phi-field-with-spotting"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> time
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -9505,15 +9522,30 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-variable-name">runtime_start</span>       <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
                                                      start_time, max_duration, spot_ignitions<span class="org-operator">=</span>{},
                                                      spot_config<span class="org-operator">=</span>spot_config)
+<span class="org-variable-name">runtime_stop</span>        <span class="org-operator">=</span> time.perf_counter()
 
 <span class="org-variable-name">stop_time</span>        <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]                  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>   <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]             <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
 <span class="org-variable-name">output_matrices</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 <span class="org-variable-name">spot_ignitions</span>   <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {})     <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
 <span class="org-variable-name">random_generator</span> <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"random_generator"</span>, <span class="org-constant">None</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">numpy.random.Generator object</span>
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">num_burned_cells</span>        <span class="org-operator">=</span> np.count_nonzero(output_matrices[<span class="org-string">"fire_type"</span>]) <span class="org-comment-delimiter"># </span><span class="org-comment">cells</span>
+<span class="org-variable-name">acres_burned</span>            <span class="org-operator">=</span> num_burned_cells <span class="org-operator">/</span> 4.5                         <span class="org-comment-delimiter"># </span><span class="org-comment">acres</span>
+<span class="org-variable-name">simulation_runtime</span>      <span class="org-operator">=</span> runtime_stop <span class="org-operator">-</span> runtime_start                   <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">runtime_per_burned_cell</span> <span class="org-operator">=</span> 1000.0 <span class="org-operator">*</span> simulation_runtime <span class="org-operator">/</span> num_burned_cells <span class="org-comment-delimiter"># </span><span class="org-comment">ms/cell</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"Acres Burned: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(acres_burned))
+<span class="org-builtin">print</span>(<span class="org-string">"Total Runtime: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(simulation_runtime) <span class="org-operator">+</span> <span class="org-string">" seconds"</span>)
+<span class="org-builtin">print</span>(<span class="org-string">"Runtime per Burned Cell: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(runtime_per_burned_cell) <span class="org-operator">+</span> <span class="org-string">" ms/cell"</span>)
 </pre>
 </div>
 </div>
@@ -9821,6 +9853,7 @@ Future Spot Ignitions:
 <pre class="src src-python" id="run-spread-fire-with-phi-field-initial"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> time
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -9899,12 +9932,27 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-variable-name">runtime_start</span>         <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results_8</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
                                                        start_time, max_duration)
+<span class="org-variable-name">runtime_stop</span>          <span class="org-operator">=</span> time.perf_counter()
 
 <span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">num_burned_cells</span>        <span class="org-operator">=</span> np.count_nonzero(output_matrices[<span class="org-string">"fire_type"</span>]) <span class="org-comment-delimiter"># </span><span class="org-comment">cells</span>
+<span class="org-variable-name">acres_burned</span>            <span class="org-operator">=</span> num_burned_cells <span class="org-operator">/</span> 4.5                         <span class="org-comment-delimiter"># </span><span class="org-comment">acres</span>
+<span class="org-variable-name">simulation_runtime</span>      <span class="org-operator">=</span> runtime_stop <span class="org-operator">-</span> runtime_start                   <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">runtime_per_burned_cell</span> <span class="org-operator">=</span> 1000.0 <span class="org-operator">*</span> simulation_runtime <span class="org-operator">/</span> num_burned_cells <span class="org-comment-delimiter"># </span><span class="org-comment">ms/cell</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"Acres Burned: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(acres_burned))
+<span class="org-builtin">print</span>(<span class="org-string">"Total Runtime: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(simulation_runtime) <span class="org-operator">+</span> <span class="org-string">" seconds"</span>)
+<span class="org-builtin">print</span>(<span class="org-string">"Runtime per Burned Cell: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(runtime_per_burned_cell) <span class="org-operator">+</span> <span class="org-string">" ms/cell"</span>)
 </pre>
 </div>
 </div>
@@ -9949,20 +9997,54 @@ fuel_model_grid[60:,60:][(<span class="org-builtin">list</span>(<span class="org
 <span class="org-variable-name">new_max_duration</span> <span class="org-operator">=</span> 240     <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the main simulation</span>
+<span class="org-variable-name">runtime_start_main</span>     <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results_12</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
                                                         cube_resolution, new_start_time, new_max_duration)
+<span class="org-variable-name">runtime_stop_main</span>      <span class="org-operator">=</span> time.perf_counter()
 
 <span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the forked simulation</span>
+<span class="org-variable-name">runtime_start_fork</span>          <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results_12_fork</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes_fork, output_matrices_fork,
                                                              cube_resolution, new_start_time, new_max_duration)
+<span class="org-variable-name">runtime_stop_fork</span>           <span class="org-operator">=</span> time.perf_counter()
 
 <span class="org-variable-name">stop_time_fork</span>       <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition_fork</span>  <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
 <span class="org-variable-name">output_matrices_fork</span> <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell for the main run</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">num_burned_cells</span>         <span class="org-operator">=</span> np.count_nonzero(output_matrices[<span class="org-string">"fire_type"</span>])       <span class="org-comment-delimiter"># </span><span class="org-comment">cells</span>
+<span class="org-variable-name">acres_burned</span>             <span class="org-operator">=</span> num_burned_cells <span class="org-operator">/</span> 4.5                               <span class="org-comment-delimiter"># </span><span class="org-comment">acres</span>
+<span class="org-variable-name">simulation_runtime_main</span>  <span class="org-operator">=</span> runtime_stop_main <span class="org-operator">-</span> runtime_start_main               <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">simulation_runtime_total</span> <span class="org-operator">=</span> simulation_runtime <span class="org-operator">+</span> simulation_runtime_main         <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">runtime_per_burned_cell</span>  <span class="org-operator">=</span> 1000.0 <span class="org-operator">*</span> simulation_runtime_total <span class="org-operator">/</span> num_burned_cells <span class="org-comment-delimiter"># </span><span class="org-comment">ms/cell</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"Main Fire</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 60)
+<span class="org-builtin">print</span>(<span class="org-string">"Acres Burned: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(acres_burned))
+<span class="org-builtin">print</span>(<span class="org-string">"Total Runtime: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(simulation_runtime_total) <span class="org-operator">+</span> <span class="org-string">" seconds"</span>)
+<span class="org-builtin">print</span>(<span class="org-string">"Runtime per Burned Cell: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(runtime_per_burned_cell) <span class="org-operator">+</span> <span class="org-string">" ms/cell"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell for the forked run</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">num_burned_cells</span>         <span class="org-operator">=</span> np.count_nonzero(output_matrices_fork[<span class="org-string">"fire_type"</span>])  <span class="org-comment-delimiter"># </span><span class="org-comment">cells</span>
+<span class="org-variable-name">acres_burned</span>             <span class="org-operator">=</span> num_burned_cells <span class="org-operator">/</span> 4.5                               <span class="org-comment-delimiter"># </span><span class="org-comment">acres</span>
+<span class="org-variable-name">simulation_runtime_fork</span>  <span class="org-operator">=</span> runtime_stop_fork <span class="org-operator">-</span> runtime_start_fork               <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">simulation_runtime_total</span> <span class="org-operator">=</span> simulation_runtime <span class="org-operator">+</span> simulation_runtime_fork         <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
+<span class="org-variable-name">runtime_per_burned_cell</span>  <span class="org-operator">=</span> 1000.0 <span class="org-operator">*</span> simulation_runtime_total <span class="org-operator">/</span> num_burned_cells <span class="org-comment-delimiter"># </span><span class="org-comment">ms/cell</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Forked Fire</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 60)
+<span class="org-builtin">print</span>(<span class="org-string">"Acres Burned: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(acres_burned))
+<span class="org-builtin">print</span>(<span class="org-string">"Total Runtime: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(simulation_runtime_total) <span class="org-operator">+</span> <span class="org-string">" seconds"</span>)
+<span class="org-builtin">print</span>(<span class="org-string">"Runtime per Burned Cell: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(runtime_per_burned_cell) <span class="org-operator">+</span> <span class="org-string">" ms/cell"</span>)
 </pre>
 </div>
 </div>
@@ -10631,8 +10713,7 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
 <span class="org-variable-name">pyidx</span> <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Verify that we always pass double arrays</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.profile(False)</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
