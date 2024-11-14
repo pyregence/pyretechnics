@@ -1,13 +1,36 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
+import cython
+if cython.compiled:
+    from cython.cimports.pyretechnics.vector_utils import vector_magnitude_2d, dot_2d
+else:
+    from pyretechnics.vector_utils import vector_magnitude_2d, dot_2d
+
+
+# TODO: cimport these libraries in a .pxd file
+from math import atan, pi, degrees, sqrt
 import cython as cy
 import numpy as np
+import pyretechnics.conversion as conv
+import pyretechnics.crown_fire as cf
+import pyretechnics.fuel_models as fm
+import pyretechnics.spot_fire as spot
+import pyretechnics.surface_fire as sf
+from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_2d, as_unit_vector_3d, \
+    get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
+
+# TODO: Maybe pyidx should be cy.int?
+# TODO: Maybe we should use C arrays instead of tuples(structs)?
+# Define type aliases
+pyidx     = cy.typedef(cy.Py_ssize_t)
+# vec_xy    = cy.typedef(cy.float[2])
+# vec_xyz   = cy.typedef(cy.float[3])
+vec_xy    = cy.typedef(tuple[cy.float, cy.float])
+vec_xyz   = cy.typedef(tuple[cy.float, cy.float, cy.float])
+coord_yx  = cy.typedef(tuple[pyidx, pyidx])
+coord_tyx = cy.typedef(tuple[pyidx, pyidx, pyidx])
 
 
-# Set an alias for the Python array index type
-pyidx = cy.typedef(cy.Py_ssize_t)
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -31,7 +54,7 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, co
             return 0.0
 
 
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -55,10 +78,11 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, ro
             return 0.0
 
 
-# TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])
-# TODO: @cy.profile(False)
-# TODO: @cy.ccall
-def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> cy.float[:,:]:
+# TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)
+# TODO: Handle exception values from child functions
+@cy.profile(True)
+@cy.ccall
+def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
@@ -67,12 +91,10 @@ def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: 
     cols   : pyidx    = phi.shape[1]
     dphi_dx: cy.float = calc_dphi_dx_approx(phi, dx, x, y, cols)
     dphi_dy: cy.float = calc_dphi_dy_approx(phi, dy, x, y, rows)
-    return np.asarray((dphi_dx, dphi_dy))
+    return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
-import pyretechnics.vector_utils as vu
-
-
+# TODO: Remove unused function
 def calc_phi_normal_vector(phi, dx, dy, x, y):
     """
     Calculate the phi field normal vector in the x and y dimensions.
@@ -84,12 +106,10 @@ def calc_phi_normal_vector(phi, dx, dy, x, y):
     if phi_gradient[0] == 0.0 and phi_gradient[1] == 0.0:
         return phi_gradient # (n_x, n_y)
     else:
-        return vu.as_unit_vector(phi_gradient) # (n_x, n_y)
+        return as_unit_vector_2d(phi_gradient) # (n_x, n_y)
 # phi-field-normal-vector ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
-from math import atan, pi, degrees
-
-
+# TODO: Remove unused function
 def calc_phi_normal_azimuth(phi_normal_vector):
     """
     Calculate the angle (measured in degrees clockwise from North)
@@ -114,10 +134,7 @@ def calc_phi_normal_azimuth(phi_normal_vector):
     return degrees(angle)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
-import cython as cy
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
@@ -133,11 +150,7 @@ def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.floa
                    min(r, 2.0))
 # superbee-flux-limiter ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
-import cython as cy
-import numpy as np
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -156,7 +169,7 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: p
     return (phi_east - phi_west) / dx
 
 
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -175,11 +188,12 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
     return (phi_north - phi_south) / dy
 
 
-# TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])
-# TODO: @cy.profile(False)
-# TODO: @cy.ccall
+# TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)
+# TODO: Handle exception values from child functions
+@cy.profile(True)
+@cy.ccall
 def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
-                      x: pyidx, y: pyidx) -> cy.float[:,:]:
+                      x: pyidx, y: pyidx) -> vec_xy:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y) given:
     - phi :: 2D float array of values in [-1,1]
@@ -194,13 +208,10 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
     cols   : pyidx    = phi.shape[1]
     dphi_dx: cy.float = calc_dphi_dx(phi, u_x, dx, x, y, cols)
     dphi_dy: cy.float = calc_dphi_dy(phi, u_y, dy, x, y, rows)
-    return np.asarray((dphi_dx, dphi_dy))
+    return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
-import cython as cy
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -230,10 +241,7 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
         return phi[y][east_x] - 0.5 * B * dphi_loc
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
-import cython as cy
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -263,10 +271,7 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
-import cython as cy
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -296,10 +301,7 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
         return phi[north_y][x] - 0.5 * B * dphi_loc
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
-import cython as cy
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -329,13 +331,6 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
-from math import sqrt
-import numpy as np
-import pyretechnics.conversion as conv
-import pyretechnics.surface_fire as sf
-import pyretechnics.vector_utils as vu
-
-
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
 def calc_elevation_gradient(slope, aspect):
     """
@@ -343,7 +338,7 @@ def calc_elevation_gradient(slope, aspect):
     - slope  :: rise/run
     - aspect :: degrees clockwise from North
     """
-    return np.asarray(conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect)))
+    return conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
 
 
 def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):
@@ -354,10 +349,10 @@ def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):
     """
     (dphi_dx, dphi_dy) = phi_gradient_xy
     phi_gradient_xyz   = np.asarray((dphi_dx, dphi_dy, 0.0))
-    if vu.vector_magnitude(elevation_gradient) == 0.0:
+    if vector_magnitude_2d(elevation_gradient) == 0.0:
         return phi_gradient_xyz
     else:
-        slope_normal_vector = vu.get_slope_normal_vector(elevation_gradient) # (x,y,z) unit vector
+        slope_normal_vector = np.asarray(get_slope_normal_vector(elevation_gradient)) # (x,y,z) unit vector
         return phi_gradient_xyz - np.dot(phi_gradient_xyz, slope_normal_vector) * slope_normal_vector
 
 
@@ -391,7 +386,7 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vu.vector_magnitude(phi_gradient) # phi/m
+    phi_magnitude = vector_magnitude(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burning
@@ -482,14 +477,6 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
         }
 # calc-fireline-normal-behavior ends here
 # [[file:../../org/pyretechnics.org::burn-cell-toward-phi-gradient][burn-cell-toward-phi-gradient]]
-import numpy as np
-import pyretechnics.conversion as conv
-import pyretechnics.crown_fire as cf
-import pyretechnics.fuel_models as fm
-import pyretechnics.surface_fire as sf
-import pyretechnics.vector_utils as vu
-
-
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit=True,
                                   surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
@@ -581,7 +568,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vu.vector_magnitude(phi_gradient) # phi/m
+    phi_magnitude = vector_magnitude(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burnable
@@ -597,10 +584,10 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
         #================================================================================================
 
         if phi_magnitude > 0.0:
-            spread_direction = np.asarray(phi_gradient) / phi_magnitude
+            spread_direction = phi_gradient / phi_magnitude
         elif slope > 0.0:
-            slope_vector_3d  = vu.to_slope_plane(elevation_gradient, elevation_gradient)
-            spread_direction = vu.as_unit_vector(slope_vector_3d)
+            slope_vector_3d  = to_slope_plane(elevation_gradient, elevation_gradient)
+            spread_direction = np.asarray(as_unit_vector_3d(slope_vector_3d))
         else:
             spread_direction = np.asarray((0,1,0)) # default: North
 
@@ -727,10 +714,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             return surface_fire_normal
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
-import cython as cy
-
-
-@cy.profile(False)
+@cy.profile(True)
 @cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -742,19 +726,17 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 
 
 # TODO: Is it faster to build up a list or a set?
-# TODO: @cy.profile(False)
-# TODO: @cy.ccall
-def identify_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict|None = None) -> set:
+@cy.profile(True)
+@cy.ccall
+def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
     """
     TODO: Add docstring
     """
-    rows          : pyidx = phi_matrix.shape[0]
-    cols          : pyidx = phi_matrix.shape[1]
+    frontier_cells: set = set()
     y             : pyidx
     x             : pyidx
-    frontier_cells: set = set()
-    if tracked_cells:
-        for (y, x) in tracked_cells: # TODO: Might be SLOW!
+    for y in range(rows):
+        for x in range(cols):
             # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
             north_y: pyidx = min(y+1, rows-1)
             south_y: pyidx = max(y-1, 0)
@@ -765,27 +747,41 @@ def identify_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict|None 
                 opposite_phi_signs(phi_matrix, y, x, y, east_x) or
                 opposite_phi_signs(phi_matrix, y, x, y, west_x)):
                 frontier_cells.add((y, x))
-    else:
-        for y in range(rows):
-            for x in range(cols):
-                # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-                north_y: pyidx = min(y+1, rows-1)
-                south_y: pyidx = max(y-1, 0)
-                east_x : pyidx = min(x+1, cols-1)
-                west_x : pyidx = max(x-1, 0)
-                if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
-                    opposite_phi_signs(phi_matrix, y, x, south_y, x) or
-                    opposite_phi_signs(phi_matrix, y, x, y, east_x) or
-                    opposite_phi_signs(phi_matrix, y, x, y, west_x)):
-                    frontier_cells.add((y, x))
     return frontier_cells
 
 
-def project_buffer(cell, buffer_width, rows, cols):
+# TODO: Is it faster to build up a list or a set?
+@cy.profile(True)
+@cy.ccall
+def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict, rows: pyidx, cols: pyidx) -> set:
     """
     TODO: Add docstring
     """
-    (y, x)         = cell
+    frontier_cells: set = set()
+    for cell_index in tracked_cells.keys():
+        # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
+        y      : pyidx = cell_index[0]
+        x      : pyidx = cell_index[1]
+        north_y: pyidx = min(y+1, rows-1)
+        south_y: pyidx = max(y-1, 0)
+        east_x : pyidx = min(x+1, cols-1)
+        west_x : pyidx = max(x-1, 0)
+        if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
+            opposite_phi_signs(phi_matrix, y, x, south_y, x) or
+            opposite_phi_signs(phi_matrix, y, x, y, east_x) or
+            opposite_phi_signs(phi_matrix, y, x, y, west_x)):
+            frontier_cells.add(cell_index)
+    return frontier_cells
+
+
+@cy.profile(True)
+@cy.cfunc
+def project_buffer(cell: tuple, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> list[tuple]:
+    """
+    TODO: Add docstring
+    """
+    y: cy.int = cell[0]
+    x: cy.int = cell[1]
     buffer_range_y = range(max(0, y - buffer_width), min(rows, y + buffer_width + 1))
     buffer_range_x = range(max(0, x - buffer_width), min(cols, x + buffer_width + 1))
     return [(y_, x_)
@@ -793,11 +789,10 @@ def project_buffer(cell, buffer_width, rows, cols):
             for x_ in buffer_range_x]
 
 
-def identify_tracked_cells(frontier_cells, buffer_width, matrix_shape):
+def identify_tracked_cells(frontier_cells, buffer_width, rows, cols):
     """
     TODO: Add docstring
     """
-    (rows, cols)  = matrix_shape
     tracked_cells = {}
     for cell in frontier_cells:
         for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
@@ -805,14 +800,18 @@ def identify_tracked_cells(frontier_cells, buffer_width, matrix_shape):
     return tracked_cells
 
 
-def update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, buffer_width, matrix_shape):
+@cy.cprofile(True)
+@cy.ccall
+def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
+                         buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
     """
     TODO: Add docstring
     """
     # Determine which frontier cells have been added or dropped
-    (rows, cols)           = matrix_shape
-    frontier_cells_added   = frontier_cells_new.difference(frontier_cells_old)
-    frontier_cells_dropped = frontier_cells_old.difference(frontier_cells_new)
+    frontier_cells_added  : set = frontier_cells_new.difference(frontier_cells_old)
+    frontier_cells_dropped: set = frontier_cells_old.difference(frontier_cells_new)
+    cell                  : tuple
+    buffer_cell           : tuple
     # Increment reference counters for all cells within buffer_width of the added frontier cells
     for cell in frontier_cells_added:
         for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
@@ -827,12 +826,6 @@ def update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, 
     return tracked_cells
 # phi-field-perimeter-tracking ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
-import numpy as np
-import pyretechnics.conversion as conv
-from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
-import pyretechnics.vector_utils as vu
-
-
 # TODO: Move to pyretechnics.conversion
 fire_type_codes = {
     "unburned"      : 0,
@@ -842,20 +835,38 @@ fire_type_codes = {
 }
 
 
-# TODO: Move to pyretechnics.vector_utils
-def spread_direction_vector_to_angle(vector_3d):
-    """
-    TODO: Add docstring
-    """
-    (x, y)       = vu.to_horizontal_plane(vector_3d)
-    (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
-    return azimuth
-
-
-def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells, cube_resolution,
-                             start_time, max_timestep, use_wind_limit=True, surface_lw_ratio_model="rothermel",
-                             crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
-                             spot_ignitions={}, spot_config=None, random_generator=None):
+@cy.profile(True)
+# TODO: @cy.ccall
+# TODO: @cy.exceptval(NULL)
+# TODO: @cy.wraparound(False)
+# TODO: @cy.boundscheck(False)
+# TODO: Convert all cy.double -> cy.float
+# TODO: Eliminate optional arguments to function
+# TODO: Figure out how to type cube_resolution as vec_xyz
+# TODO: Make calc_phi_gradient and calc_phi_gradient_approx return a vec_xy
+# TODO: Eliminate calls to np.dot
+# TODO: See if we can use a C struct for the fire_behavior and fire_behavior_star dictionaries (not fire_behavior_dict)
+# TODO: Perhaps cell_index should be a Python tuple rather than a C tuple?
+# TODO: Replace fire_type_codes with as some kind of C type?
+# TODO: Convert spread_direction_vector_to_angle to a @cfunc
+# TODO: Convert SpaceTimeCube to a @cclass with methods that take pyidx values
+# TODO: Convert calc_elevation_gradient to a @cfunc
+# TODO: Convert spot.expected_firebrand_production to a @cfunc
+# TODO: Convert spot.spread_firebrands to a @cfunc
+# TODO: Replace set.union with list concatenation? (Should ignited_cells be a list for speed?)
+# TODO: Maybe ignition_time should be a Python float?
+# TODO: Convert update_tracked_cells to a @cfunc
+# TODO: Speed up burn_cell_toward_phi_gradient
+# TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d
+# TODO: cimport the remaining vector_utils functions
+# TODO: Turn off divide-by-zero checks
+# TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
+def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: dict,
+                             cube_resolution: tuple, start_time: cy.float, max_timestep: cy.float,
+                             max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,
+                             surface_lw_ratio_model: str|None = "rothermel", crown_max_lw_ratio: float|None = None,
+                             buffer_width: int|None = 3, spot_ignitions: dict|None = {}, spot_config: dict|None = None,
+                             random_generator: np.random.Generator|None = None) -> dict:
     """
     TODO: Add docstring
     NOTE:
@@ -866,68 +877,89 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
     - dt is the timestep in minutes.
     - start_time is the start time in minutes.
     """
-    # Extract simulation dimensions
-    (band_duration, cell_height, cell_width) = cube_resolution
-
-    # Unpack space_time_cubes
-    slope_cube  = space_time_cubes["slope"]
-    aspect_cube = space_time_cubes["aspect"]
-
    # Unpack output_matrices
-    phi_matrix                = output_matrices["phi"]
-    phi_star_matrix           = output_matrices["phi_star"]
-    fire_type_matrix          = output_matrices["fire_type"]
-    spread_rate_matrix        = output_matrices["spread_rate"]
-    spread_direction_matrix   = output_matrices["spread_direction"]
-    fireline_intensity_matrix = output_matrices["fireline_intensity"]
-    flame_length_matrix       = output_matrices["flame_length"]
-    time_of_arrival_matrix    = output_matrices["time_of_arrival"]
+    phi_matrix               : cy.float[:,:] = output_matrices["phi"]
+    phi_star_matrix          : cy.float[:,:] = output_matrices["phi_star"]
+    fire_type_matrix         : cy.uchar[:,:] = output_matrices["fire_type"]
+    spread_rate_matrix       : cy.float[:,:] = output_matrices["spread_rate"]
+    spread_direction_matrix  : cy.float[:,:] = output_matrices["spread_direction"]
+    fireline_intensity_matrix: cy.float[:,:] = output_matrices["fireline_intensity"]
+    flame_length_matrix      : cy.float[:,:] = output_matrices["flame_length"]
+    time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
 
-    # Extract the firebrands_per_unit_heat from the spot_config if provided
-    firebrands_per_unit_heat = spot_config["firebrands_per_unit_heat"] if spot_config else None
+    # Extract simulation dimensions
+    rows: pyidx = phi_matrix.shape[0]
+    cols: pyidx = phi_matrix.shape[1]
+
+    # Extract simulation resolution
+    band_duration: cy.float = cube_resolution[0]
+    cell_height  : cy.float = cube_resolution[1]
+    cell_width   : cy.float = cube_resolution[2]
 
     # Initialize max spread rates in the x and y dimensions to 0.0
-    max_spread_rate_x = 0.0
-    max_spread_rate_y = 0.0
+    max_spread_rate_x: cy.float = 0.0
+    max_spread_rate_y: cy.float = 0.0
 
     # Create an empty dictionary to store intermediate fire behavior values per cell
-    fire_behavior_dict = {}
+    fire_behavior_dict: dict = {}
 
     # Compute fire behavior values at start_time and identify the max spread rates in the x and y dimensions
-    t0 = int(start_time // band_duration)
+    cell_index           : coord_yx
+    y                    : pyidx
+    x                    : pyidx
+    space_time_coordinate: coord_tyx
+    dphi_dt              : cy.float
+    t0                   : pyidx = int(start_time // band_duration)
     for cell_index in tracked_cells:
         # Unpack cell_index
-        (y, x) = cell_index
+        y = cell_index[0]
+        x = cell_index[1]
 
         # Calculate phi gradient on the horizontal plane
-        phi_gradient_xy  = calc_phi_gradient_approx(phi_matrix, cell_width, cell_height, x, y)
-        phi_magnitude_xy = vu.vector_magnitude(phi_gradient_xy)
+        phi_gradient_xy : vec_xy   = calc_phi_gradient_approx(phi_matrix,
+                                                              cell_width,
+                                                              cell_height,
+                                                              x,
+                                                              y)
+        phi_magnitude_xy: cy.float = vector_magnitude_2d(phi_gradient_xy)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
-        fire_behavior = burn_cell_toward_phi_gradient(space_time_cubes, (t0, y, x),
-                                                      phi_gradient_xy, use_wind_limit,
-                                                      surface_lw_ratio_model,
-                                                      crown_max_lw_ratio)
+        space_time_coordinate = (t0, y, x)
+        fire_behavior: dict   = burn_cell_toward_phi_gradient(space_time_cubes,
+                                                              space_time_coordinate,
+                                                              phi_gradient_xy,
+                                                              use_wind_limit,
+                                                              surface_lw_ratio_model,
+                                                              crown_max_lw_ratio)
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
             # Keep a running tally of the max horizontal spread rates in the x and y dimensions
-            (dphi_dx, dphi_dy) = phi_gradient_xy
-            phi_magnitude_xy_2 = phi_magnitude_xy ** 2.0
-            dphi_dt            = fire_behavior["dphi_dt"]
-            spread_rate_x      = -dphi_dt * dphi_dx / phi_magnitude_xy_2
-            spread_rate_y      = -dphi_dt * dphi_dy / phi_magnitude_xy_2
-            max_spread_rate_x  = max(max_spread_rate_x, abs(spread_rate_x))
-            max_spread_rate_y  = max(max_spread_rate_y, abs(spread_rate_y))
+            dphi_dt                      = fire_behavior["dphi_dt"]
+            dphi_dx           : cy.float = phi_gradient_xy[0]
+            dphi_dy           : cy.float = phi_gradient_xy[1]
+            phi_magnitude_xy_2: cy.float = phi_magnitude_xy * phi_magnitude_xy
+            spread_rate_x     : cy.float = -dphi_dt * dphi_dx / phi_magnitude_xy_2
+            spread_rate_y     : cy.float = -dphi_dt * dphi_dy / phi_magnitude_xy_2
+            max_spread_rate_x            = max(max_spread_rate_x, abs(spread_rate_x))
+            max_spread_rate_y            = max(max_spread_rate_y, abs(spread_rate_y))
 
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
-            phi_gradient_xy_limited = calc_phi_gradient(phi_matrix, dphi_dx, dphi_dy, cell_width, cell_height, x, y)
-            fire_behavior["dphi_dt"] *= np.dot(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude_xy_2
+            phi_gradient_xy_limited: vec_xy = calc_phi_gradient(phi_matrix,
+                                                                dphi_dx,
+                                                                dphi_dy,
+                                                                cell_width,
+                                                                cell_height,
+                                                                x,
+                                                                y)
+            dphi_dt_correction: cy.float = dot_2d(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude_xy_2
+            fire_behavior["dphi_dt"] = dphi_dt * dphi_dt_correction
 
         # Store fire behavior values for later use
         fire_behavior_dict[cell_index] = fire_behavior
 
     # Calculate timestep using the CFL condition
+    dt: cy.float
     if max_spread_rate_x == 0.0:
         if max_spread_rate_y == 0.0:
             dt = max_timestep
@@ -941,47 +973,67 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                                                                 cell_height / max_spread_rate_y))
 
     # Calculate the stop_time using this timestep
-    stop_time = start_time + dt
+    stop_time: cy.float = start_time + dt
 
     # Update the tracked cell values in phi_star_matrix
     for cell_index in tracked_cells:
-        (y, x)  = cell_index
+        y = cell_index[0]
+        x = cell_index[1]
         dphi_dt = fire_behavior_dict[cell_index]["dphi_dt"]
         if dphi_dt != 0.0:
             phi_star_matrix[y,x] += dphi_dt * dt
 
     # Compute fire behavior values at stop_time and update the output_matrices
-    t1 = int(stop_time // band_duration)
+    ignition_time: float
+    ignited_cells: set
+    t1           : pyidx = int(stop_time // band_duration)
     for cell_index in tracked_cells:
         # Unpack cell_index
-        (y, x) = cell_index
+        y = cell_index[0]
+        x = cell_index[1]
 
         # Calculate phi gradient on the horizontal plane
-        phi_gradient_xy_star  = calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
-        phi_magnitude_xy_star = vu.vector_magnitude(phi_gradient_xy_star)
+        phi_gradient_xy_star : vec_xy   = calc_phi_gradient_approx(phi_star_matrix,
+                                                                   cell_width,
+                                                                   cell_height,
+                                                                   x,
+                                                                   y)
+        phi_magnitude_xy_star: cy.float = vector_magnitude_2d(phi_gradient_xy_star)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
-        fire_behavior_star = burn_cell_toward_phi_gradient(space_time_cubes, (t1, y, x),
-                                                           phi_gradient_xy_star, use_wind_limit,
-                                                           surface_lw_ratio_model,
-                                                           crown_max_lw_ratio)
+        space_time_coordinate    = (t1, y, x)
+        fire_behavior_star: dict = burn_cell_toward_phi_gradient(space_time_cubes,
+                                                                 space_time_coordinate,
+                                                                 phi_gradient_xy_star,
+                                                                 use_wind_limit,
+                                                                 surface_lw_ratio_model,
+                                                                 crown_max_lw_ratio)
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy_star > 0.0:
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
-            phi_gradient_xy_star_limited = calc_phi_gradient(phi_star_matrix, *phi_gradient_xy_star,
-                                                             cell_width, cell_height, x, y)
-            fire_behavior_star["dphi_dt"] *= (np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) /
-                                              (phi_magnitude_xy_star ** 2.0))
+            dphi_dt_star                : cy.float = fire_behavior_star["dphi_dt"]
+            dphi_dx_star                : cy.float = phi_gradient_xy_star[0]
+            dphi_dy_star                : cy.float = phi_gradient_xy_star[1]
+            phi_gradient_xy_star_limited: vec_xy   = calc_phi_gradient(phi_star_matrix,
+                                                                       dphi_dx_star,
+                                                                       dphi_dy_star,
+                                                                       cell_width,
+                                                                       cell_height,
+                                                                       x,
+                                                                       y)
+            dphi_dt_star_correction: cy.float = (dot_2d(phi_gradient_xy_star, phi_gradient_xy_star_limited)
+                                                 / (phi_magnitude_xy_star * phi_magnitude_xy_star))
+            fire_behavior_star["dphi_dt"] = dphi_dt_star * dphi_dt_star_correction
 
         # Calculate the new phi value at stop_time as phi_next
-        fire_behavior     = fire_behavior_dict[cell_index]
-        dphi_dt_estimate1 = fire_behavior["dphi_dt"]
-        dphi_dt_estimate2 = fire_behavior_star["dphi_dt"]
-        dphi_dt_average   = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
+        fire_behavior               = fire_behavior_dict[cell_index]
+        dphi_dt_estimate1: cy.float = fire_behavior["dphi_dt"]
+        dphi_dt_estimate2: cy.float = fire_behavior_star["dphi_dt"]
+        dphi_dt_average  : cy.float = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
         if dphi_dt_average != 0.0:
-            phi      = phi_matrix[y,x]
-            phi_next = phi + dphi_dt_average * dt
+            phi     : cy.float = phi_matrix[y,x]
+            phi_next: cy.float = phi + dphi_dt_average * dt
 
             # Update the tracked cell values in phi_matrix
             phi_matrix[y,x] = phi_next
@@ -998,21 +1050,27 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
-                    t_cast                   = int(time_of_arrival_matrix[y,x] // band_duration)
-                    space_time_coordinate    = (t_cast, y, x)
-                    slope                    = slope_cube.get(t_cast, y, x)
-                    aspect                   = aspect_cube.get(t_cast, y, x)
-                    elevation_gradient       = calc_elevation_gradient(slope, aspect)
-                    expected_firebrand_count = expected_firebrand_production(fire_behavior,
-                                                                             elevation_gradient,
-                                                                             cube_resolution,
-                                                                             firebrands_per_unit_heat)
-                    new_ignitions            = spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                                 space_time_coordinate, random_generator,
-                                                                 expected_firebrand_count, spot_config)
+                    t_cast                  : pyidx = int(time_of_arrival_matrix[y,x] // band_duration)
+                    space_time_coordinate           = (t_cast, y, x)
+                    slope                   : float = space_time_cubes["slope"].get(t_cast, y, x)
+                    aspect                  : float = space_time_cubes["aspect"].get(t_cast, y, x)
+                    elevation_gradient      : tuple = calc_elevation_gradient(slope, aspect)
+                    firebrands_per_unit_heat: float = spot_config["firebrands_per_unit_heat"]
+                    expected_firebrand_count: float = spot.expected_firebrand_production(fire_behavior,
+                                                                                         elevation_gradient,
+                                                                                         cube_resolution,
+                                                                                         firebrands_per_unit_heat)
+                    new_ignitions: tuple[float, set]|None = spot.spread_firebrands(space_time_cubes,
+                                                                                   output_matrices,
+                                                                                   cube_resolution,
+                                                                                   space_time_coordinate,
+                                                                                   random_generator,
+                                                                                   expected_firebrand_count,
+                                                                                   spot_config)
                     if new_ignitions:
-                        (ignition_time, ignited_cells) = new_ignitions
-                        concurrent_ignited_cells       = spot_ignitions.get(ignition_time)
+                        ignition_time                      = new_ignitions[0]
+                        ignited_cells                      = new_ignitions[1]
+                        concurrent_ignited_cells: set|None = spot_ignitions.get(ignition_time)
                         if concurrent_ignited_cells:
                             spot_ignitions[ignition_time] = set.union(ignited_cells, concurrent_ignited_cells)
                         else:
@@ -1023,7 +1081,8 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
         if ignition_time < stop_time:
             ignited_cells = spot_ignitions.pop(ignition_time)
             for cell_index in ignited_cells:
-                (y, x) = cell_index
+                y = cell_index[0]
+                x = cell_index[1]
                 if phi_matrix[y,x] > 0.0:
                     phi_matrix[y,x]             = -1.0
                     time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
@@ -1031,13 +1090,15 @@ def spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, 
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
 
     # Save the new phi_matrix values in phi_star_matrix
-    for (y,x) in tracked_cells:
+    for cell_index in tracked_cells:
+        y = cell_index[0]
+        x = cell_index[1]
         phi_star_matrix[y,x] = phi_matrix[y,x]
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
-    frontier_cells_new = identify_frontier_cells(phi_matrix, tracked_cells)
-    tracked_cells_new  = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
-                                              buffer_width, phi_matrix.shape)
+    frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, tracked_cells, rows, cols)
+    tracked_cells_new : dict = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
+                                                    buffer_width, rows, cols)
 
     # Return the updated world state
     return {
@@ -1148,8 +1209,8 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
 
     # Identify the sets of frontier cells and tracked cells based on the phi matrix
     phi_matrix     = output_matrices["phi"]
-    frontier_cells = identify_frontier_cells(phi_matrix)
-    tracked_cells  = identify_tracked_cells(frontier_cells, buffer_width, (rows, cols))
+    frontier_cells = identify_all_frontier_cells(phi_matrix, rows, cols)
+    tracked_cells  = identify_tracked_cells(frontier_cells, buffer_width, rows, cols)
 
     # Make a copy of the phi matrix to use for intermediate calculations in each timestep
     output_matrices["phi_star"] = np.copy(phi_matrix)
@@ -1168,8 +1229,8 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
 
         # Spread fire one timestep
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
-                                           cube_resolution, simulation_time, max_timestep, use_wind_limit,
-                                           surface_lw_ratio_model, crown_max_lw_ratio, max_cells_per_timestep,
+                                           cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
+                                           use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
                                            buffer_width, spot_ignitions, spot_config, random_generator)
 
         # Reset spread inputs

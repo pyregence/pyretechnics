@@ -183,12 +183,12 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     wind_vector_3d  = vectors["wind_vector_3d"]  # km/hr
     slope_vector_3d = vectors["slope_vector_3d"] # rise/run
     # Determine the max spread direction
-    wind_speed_10m_3d    = vu.vector_magnitude(wind_vector_3d)      # km/hr
-    max_spread_direction = (wind_vector_3d / wind_speed_10m_3d      # unit vector in the 3D downwind direction
+    wind_speed_10m_3d    = vu.vector_magnitude_3d(wind_vector_3d)      # km/hr
+    max_spread_direction = (vu.as_unit_vector_3d(wind_vector_3d)       # unit vector in the 3D downwind direction
                             if wind_speed_10m_3d > 0.0
-                            else vu.as_unit_vector(slope_vector_3d) # unit vector in the 3D upslope direction
+                            else vu.as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
                             if slope > 0.0
-                            else np.asarray((0,1,0)))               # default: North
+                            else (0,1,0))                              # default: North
     # Calculate the crown fire behavior in the max spread direction
     spread_info           = cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
                                                         estimated_fine_fuel_moisture)
@@ -200,7 +200,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     return {
         "max_fire_type"         : spread_info["fire_type"],
         "max_spread_rate"       : spread_rate,
-        "max_spread_direction"  : max_spread_direction, # unit vector
+        "max_spread_direction"  : np.asarray(max_spread_direction), # unit vector
         "max_fireline_intensity": fireline_intensity,
         "length_to_width_ratio" : length_to_width_ratio,
         "eccentricity"          : eccentricity,
@@ -238,7 +238,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     eccentricity           = crown_fire_max["eccentricity"]
     critical_spread_rate   = crown_fire_max["critical_spread_rate"]
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
-    cos_w = np.dot(max_spread_direction, np.asarray(spread_direction))
+    cos_w = np.dot(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     # Adjust the spread rate (possibly switching from an active to passive crown fire)
@@ -248,7 +248,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "active_crown",
             "spread_rate"       : spread_rate,
-            "spread_direction"  : spread_direction,
+            "spread_direction"  : np.asarray(spread_direction),
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
     elif max_fire_type == "passive_crown":
@@ -256,7 +256,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "passive_crown",
             "spread_rate"       : spread_rate,
-            "spread_direction"  : spread_direction,
+            "spread_direction"  : np.asarray(spread_direction),
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
     else:
@@ -264,7 +264,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
         return {
             "fire_type"         : "passive_crown",
             "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
-            "spread_direction"  : spread_direction,
+            "spread_direction"  : np.asarray(spread_direction),
             "fireline_intensity": max_fireline_intensity * adjustment,
         }
 # crown-fire-behavior-in-direction ends here

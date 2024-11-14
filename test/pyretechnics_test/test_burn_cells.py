@@ -96,12 +96,6 @@ fire_type_codes = {
 }
 
 
-def spread_direction_vector_to_angle(vector_3d):
-    (x, y)       = vu.to_horizontal_plane(vector_3d)
-    (r, azimuth) = conv.cartesian_to_azimuthal(x, y)
-    return azimuth
-
-
 def test_burn_all_cells_as_head_fire():
     input_layer_dict     = test_add_weather_cubes()
     (_bands, rows, cols) = input_layer_dict["elevation"].shape
@@ -119,7 +113,7 @@ def test_burn_all_cells_as_head_fire():
             results                            = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
             max_fire_type_matrix[y,x]          = fire_type_codes[results["fire_type"]]
             max_spread_rate_matrix[y,x]        = results["spread_rate"]
-            max_spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(results["spread_direction"])
+            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(results["spread_direction"])
             max_fireline_intensity_matrix[y,x] = results["fireline_intensity"]
             max_flame_length_matrix[y,x]       = results["flame_length"]
 

@@ -3314,7 +3314,7 @@ procedure provided by Waeselynck 2024.<sup><a id="fnr.21" class="footref" href="
 <div class="org-src-container">
 <pre class="src src-python" id="surface-fire-combine-wind-and-slope-vectors"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> azimuthal_to_cartesian
-<span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude, as_unit_vector, to_slope_plane
+<span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude, as_unit_vector_3d, to_slope_plane
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">project_wind_and_slope_vectors_3d</span>(wind_speed, downwind_direction, slope, upslope_direction):
@@ -3343,8 +3343,8 @@ procedure provided by Waeselynck 2024.<sup><a id="fnr.21" class="footref" href="
 
 <span class="org-keyword">def</span> <span class="org-function-name">get_phi_E</span>(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
     <span class="org-comment-delimiter"># </span><span class="org-comment">Convert wind and slope vectors to unit vectors on the slope-tangential plane</span>
-    <span class="org-variable-name">w_S</span> <span class="org-operator">=</span> as_unit_vector(wind_vector_3d)  <span class="org-keyword">if</span> phi_W <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> wind_vector_3d
-    <span class="org-variable-name">u_S</span> <span class="org-operator">=</span> as_unit_vector(slope_vector_3d) <span class="org-keyword">if</span> phi_S <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> slope_vector_3d
+    <span class="org-variable-name">w_S</span> <span class="org-operator">=</span> np.asarray(as_unit_vector_3d(wind_vector_3d)  <span class="org-keyword">if</span> phi_W <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> wind_vector_3d)
+    <span class="org-variable-name">u_S</span> <span class="org-operator">=</span> np.asarray(as_unit_vector_3d(slope_vector_3d) <span class="org-keyword">if</span> phi_S <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> slope_vector_3d)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Create the 3D slope-tangential phi_W, phi_S, and phi_E vectors</span>
     <span class="org-variable-name">phi_W_3d</span> <span class="org-operator">=</span> phi_W <span class="org-operator">*</span> w_S
     <span class="org-variable-name">phi_S_3d</span> <span class="org-operator">=</span> phi_S <span class="org-operator">*</span> u_S
@@ -3495,7 +3495,7 @@ off.
 
 <div class="org-src-container">
 <pre class="src src-python" id="surface-fire-behavior-max"><span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction
-<span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude
+<span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude_3d
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">maybe_limit_wind_speed</span>(use_wind_limit, max_wind_speed, get_phi_W, get_wind_speed, phi_E_magnitude):
@@ -3566,7 +3566,7 @@ off.
     <span class="org-variable-name">wind_vector_3d</span>  <span class="org-operator">=</span> vectors[<span class="org-string">"wind_vector_3d"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
     <span class="org-variable-name">slope_vector_3d</span> <span class="org-operator">=</span> vectors[<span class="org-string">"slope_vector_3d"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate phi_W and phi_S</span>
-    <span class="org-variable-name">phi_W</span> <span class="org-operator">=</span> get_phi_W(vector_magnitude(wind_vector_3d)) <span class="org-comment-delimiter"># </span><span class="org-comment">|wind_vector_3d| = slope-aligned midflame wind speed</span>
+    <span class="org-variable-name">phi_W</span> <span class="org-operator">=</span> get_phi_W(vector_magnitude_3d(wind_vector_3d)) <span class="org-comment-delimiter"># </span><span class="org-comment">|wind_vector_3d| = slope-aligned midflame wind speed</span>
     <span class="org-variable-name">phi_S</span> <span class="org-operator">=</span> get_phi_S(slope)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate phi_E and the max_spread_direction</span>
     <span class="org-variable-name">result</span>               <span class="org-operator">=</span> get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S)
@@ -3664,7 +3664,7 @@ this plane from \(\vec{u_{\max}}\).
     <span class="org-variable-name">max_fireline_intensity</span> <span class="org-operator">=</span> surface_fire_max[<span class="org-string">"max_fireline_intensity"</span>]
     <span class="org-variable-name">eccentricity</span>           <span class="org-operator">=</span> surface_fire_max[<span class="org-string">"eccentricity"</span>]
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane</span>
-    <span class="org-variable-name">cos_w</span> <span class="org-operator">=</span> np.dot(max_spread_direction, np.asarray(spread_direction))
+    <span class="org-variable-name">cos_w</span> <span class="org-operator">=</span> np.dot(max_spread_direction, spread_direction)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate adjustment due to the offset angle from the max spread direction</span>
     <span class="org-variable-name">adjustment</span> <span class="org-operator">=</span> (1.0 <span class="org-operator">-</span> eccentricity) <span class="org-operator">/</span> (1.0 <span class="org-operator">-</span> eccentricity <span class="org-operator">*</span> cos_w)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Update surface fire behavior values by the adjustment value</span>
@@ -3672,7 +3672,7 @@ this plane from \(\vec{u_{\max}}\).
     <span class="org-keyword">return</span> {
         <span class="org-string">"fire_type"</span>         : <span class="org-string">"surface"</span>,
         <span class="org-string">"spread_rate"</span>       : max_spread_rate <span class="org-operator">*</span> adjustment,
-        <span class="org-string">"spread_direction"</span>  : spread_direction,
+        <span class="org-string">"spread_direction"</span>  : np.asarray(spread_direction),
         <span class="org-string">"fireline_intensity"</span>: fireline_intensity,
         <span class="org-string">"flame_length"</span>      : calc_flame_length(fireline_intensity),
     }
@@ -3856,16 +3856,16 @@ Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.0
  'length_to_width_ratio': 2.0231959552088243,
  'max_fireline_intensity': 32.52824122084378,
  'max_flame_length': 0.38439328501240777,
- 'max_spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
+ 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502842]),
  'max_spread_rate': 2.2964672435747526}
 
 Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.9845208632281957,
- 'length_to_width_ratio': 5.705566830080509,
- 'max_fireline_intensity': 330.523270465988,
- 'max_flame_length': 1.116783178266655,
- 'max_spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
- 'max_spread_rate': 23.334672745170035}
+{'eccentricity': 0.9845208630180416,
+ 'length_to_width_ratio': 5.70556679165152,
+ 'max_fireline_intensity': 330.52326629643716,
+ 'max_flame_length': 1.1167831717860743,
+ 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502842]),
+ 'max_spread_rate': 23.334672450803154}
 </pre>
 </div>
 </div>
@@ -3908,7 +3908,7 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior for the heading, flanking, and backing fires</span>
 <span class="org-variable-name">heading_fire_direction</span>  <span class="org-operator">=</span> surface_fire_max[<span class="org-string">"max_spread_direction"</span>]
-<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> vu.rotate_on_sloped_plane(heading_fire_direction, 90, slope, aspect)
+<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> vu.rotate_on_sloped_plane(heading_fire_direction, 90.0, slope, aspect)
 <span class="org-variable-name">backing_fire_direction</span>  <span class="org-operator">=</span> <span class="org-operator">-</span>heading_fire_direction
 
 <span class="org-variable-name">heading_fire_behavior</span>  <span class="org-operator">=</span> sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
@@ -3935,24 +3935,24 @@ pprint(backing_fire_behavior)
 <pre class="example" id="compute-surface-fire-behavior-in-direction-results">
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 32.528241220843725,
- 'flame_length': 0.3843932850124075,
- 'spread_direction': array([0.57514211, 0.80992593, 0.11502842]),
- 'spread_rate': 2.2964672435747486}
+ 'fireline_intensity': 32.52824122084378,
+ 'flame_length': 0.38439328501240777,
+ 'spread_direction': array([0.57514209, 0.80992594, 0.11502842]),
+ 'spread_rate': 2.2964672435747526}
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.251120229437338,
- 'flame_length': 0.15074658520504813,
- 'spread_direction': array([ 0.79419771, -0.58653217,  0.15883954]),
- 'spread_rate': 0.3001256135897406}
+ 'fireline_intensity': 4.2511201782920365,
+ 'flame_length': 0.15074658437077615,
+ 'spread_direction': array([ 0.79419774, -0.58653218,  0.15883955]),
+ 'spread_rate': 0.3001256099789242}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 2.2741656204473273,
+ 'fireline_intensity': 2.274165620447327,
  'flame_length': 0.11305091610423658,
- 'spread_direction': array([-0.57514211, -0.80992593, -0.11502842]),
- 'spread_rate': 0.160554234038162}
+ 'spread_direction': array([-0.57514209, -0.80992594, -0.11502842]),
+ 'spread_rate': 0.16055423403816196}
 </pre>
 </div>
 </div>
@@ -4342,12 +4342,12 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
     <span class="org-variable-name">wind_vector_3d</span>  <span class="org-operator">=</span> vectors[<span class="org-string">"wind_vector_3d"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
     <span class="org-variable-name">slope_vector_3d</span> <span class="org-operator">=</span> vectors[<span class="org-string">"slope_vector_3d"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine the max spread direction</span>
-    <span class="org-variable-name">wind_speed_10m_3d</span>    <span class="org-operator">=</span> vu.vector_magnitude(wind_vector_3d)      <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
-    <span class="org-variable-name">max_spread_direction</span> <span class="org-operator">=</span> (wind_vector_3d <span class="org-operator">/</span> wind_speed_10m_3d      <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector in the 3D downwind direction</span>
+    <span class="org-variable-name">wind_speed_10m_3d</span>    <span class="org-operator">=</span> vu.vector_magnitude_3d(wind_vector_3d)      <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+    <span class="org-variable-name">max_spread_direction</span> <span class="org-operator">=</span> (vu.as_unit_vector_3d(wind_vector_3d)       <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector in the 3D downwind direction</span>
                             <span class="org-keyword">if</span> wind_speed_10m_3d <span class="org-operator">&gt;</span> 0.0
-                            <span class="org-keyword">else</span> vu.as_unit_vector(slope_vector_3d) <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector in the 3D upslope direction</span>
+                            <span class="org-keyword">else</span> vu.as_unit_vector_3d(slope_vector_3d) <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector in the 3D upslope direction</span>
                             <span class="org-keyword">if</span> slope <span class="org-operator">&gt;</span> 0.0
-                            <span class="org-keyword">else</span> np.asarray((0,1,0)))               <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
+                            <span class="org-keyword">else</span> (0,1,0))                              <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the crown fire behavior in the max spread direction</span>
     <span class="org-variable-name">spread_info</span>           <span class="org-operator">=</span> cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
                                                         estimated_fine_fuel_moisture)
@@ -4359,7 +4359,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
     <span class="org-keyword">return</span> {
         <span class="org-string">"max_fire_type"</span>         : spread_info[<span class="org-string">"fire_type"</span>],
         <span class="org-string">"max_spread_rate"</span>       : spread_rate,
-        <span class="org-string">"max_spread_direction"</span>  : max_spread_direction, <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector</span>
+        <span class="org-string">"max_spread_direction"</span>  : np.asarray(max_spread_direction), <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector</span>
         <span class="org-string">"max_fireline_intensity"</span>: fireline_intensity,
         <span class="org-string">"length_to_width_ratio"</span> : length_to_width_ratio,
         <span class="org-string">"eccentricity"</span>          : eccentricity,
@@ -4444,7 +4444,7 @@ this plane from \(\vec{u_{\max}}\).
     <span class="org-variable-name">eccentricity</span>           <span class="org-operator">=</span> crown_fire_max[<span class="org-string">"eccentricity"</span>]
     <span class="org-variable-name">critical_spread_rate</span>   <span class="org-operator">=</span> crown_fire_max[<span class="org-string">"critical_spread_rate"</span>]
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane</span>
-    <span class="org-variable-name">cos_w</span> <span class="org-operator">=</span> np.dot(max_spread_direction, np.asarray(spread_direction))
+    <span class="org-variable-name">cos_w</span> <span class="org-operator">=</span> np.dot(max_spread_direction, spread_direction)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate adjustment due to the offset angle from the max spread direction</span>
     <span class="org-variable-name">adjustment</span> <span class="org-operator">=</span> (1.0 <span class="org-operator">-</span> eccentricity) <span class="org-operator">/</span> (1.0 <span class="org-operator">-</span> eccentricity <span class="org-operator">*</span> cos_w)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Adjust the spread rate (possibly switching from an active to passive crown fire)</span>
@@ -4454,7 +4454,7 @@ this plane from \(\vec{u_{\max}}\).
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : <span class="org-string">"active_crown"</span>,
             <span class="org-string">"spread_rate"</span>       : spread_rate,
-            <span class="org-string">"spread_direction"</span>  : spread_direction,
+            <span class="org-string">"spread_direction"</span>  : np.asarray(spread_direction),
             <span class="org-string">"fireline_intensity"</span>: max_fireline_intensity <span class="org-operator">*</span> adjustment,
         }
     <span class="org-keyword">elif</span> max_fire_type <span class="org-operator">==</span> <span class="org-string">"passive_crown"</span>:
@@ -4462,7 +4462,7 @@ this plane from \(\vec{u_{\max}}\).
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : <span class="org-string">"passive_crown"</span>,
             <span class="org-string">"spread_rate"</span>       : spread_rate,
-            <span class="org-string">"spread_direction"</span>  : spread_direction,
+            <span class="org-string">"spread_direction"</span>  : np.asarray(spread_direction),
             <span class="org-string">"fireline_intensity"</span>: max_fireline_intensity <span class="org-operator">*</span> adjustment,
         }
     <span class="org-keyword">else</span>:
@@ -4470,7 +4470,7 @@ this plane from \(\vec{u_{\max}}\).
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : <span class="org-string">"passive_crown"</span>,
             <span class="org-string">"spread_rate"</span>       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
-            <span class="org-string">"spread_direction"</span>  : spread_direction,
+            <span class="org-string">"spread_direction"</span>  : np.asarray(spread_direction),
             <span class="org-string">"fireline_intensity"</span>: max_fireline_intensity <span class="org-operator">*</span> adjustment,
         }
 </pre>
@@ -4978,12 +4978,12 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.8218958698260199,
- 'length_to_width_ratio': 1.7555015973996304,
+ 'eccentricity': 0.8218958686973863,
+ 'length_to_width_ratio': 1.7555015923811355,
  'max_fire_type': 'active_crown',
- 'max_fireline_intensity': 82666.07067724908,
- 'max_spread_direction': array([0.        , 0.89442719, 0.4472136 ]),
- 'max_spread_rate': 32.907419619299176}
+ 'max_fireline_intensity': 82666.07018304318,
+ 'max_spread_direction': array([0.        , 0.89442718, 0.44721359]),
+ 'max_spread_rate': 32.90741942256743}
 
 Crown Fire Behavior Max with Wind and Slope Perpendicular
 ============================================================
@@ -5005,7 +5005,7 @@ Outputs:
  'length_to_width_ratio': 1.6757411715581005,
  'max_fire_type': 'active_crown',
  'max_fireline_intensity': 74768.3487091958,
- 'max_spread_direction': array([0.000000e+00, 1.000000e+00, 3.061617e-17]),
+ 'max_spread_direction': array([0.00000000e+00, 1.00000000e+00, 3.06161713e-17]),
  'max_spread_rate': 29.763522144675242}
 </pre>
 </div>
@@ -5044,7 +5044,7 @@ Outputs:
 <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
 <span class="org-variable-name">heading_fire_direction</span>  <span class="org-operator">=</span> crown_fire_max[<span class="org-string">"max_spread_direction"</span>]
-<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> vu.rotate_on_sloped_plane(heading_fire_direction, 90, slope, aspect)
+<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> vu.rotate_on_sloped_plane(heading_fire_direction, 90.0, slope, aspect)
 <span class="org-variable-name">backing_fire_direction</span>  <span class="org-operator">=</span> <span class="org-operator">-</span>heading_fire_direction
 
 <span class="org-variable-name">heading_fire_behavior</span>  <span class="org-operator">=</span> cf.calc_crown_fire_behavior_in_direction(crown_fire_max, heading_fire_direction)
@@ -5069,23 +5069,23 @@ pprint(backing_fire_behavior)
 Heading Fire Behavior
 ============================================================
 {'fire_type': 'active_crown',
- 'fireline_intensity': 78838.1499300167,
- 'spread_direction': array([0.        , 0.94280904, 0.33333333]),
- 'spread_rate': 31.38361434747966}
+ 'fireline_intensity': 78838.15458910092,
+ 'spread_direction': array([0.        , 0.94280905, 0.33333334]),
+ 'spread_rate': 31.383616202151572}
 
 Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204837586314,
- 'spread_direction': array([ 0.9486833 , -0.10540926,  0.2981424 ]),
- 'spread_rate': 3.264617932843692}
+ 'fireline_intensity': 14756.204249208162,
+ 'spread_direction': array([ 0.94868332, -0.1054093 ,  0.29814237]),
+ 'spread_rate': 3.2646178791364164}
 
 Backing Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 8139.876265831974,
- 'spread_direction': array([-0.        , -0.94280904, -0.33333333]),
- 'spread_rate': 2.3434742325850952}
+ 'fireline_intensity': 8139.8762162369485,
+ 'spread_direction': array([-0.        , -0.94280905, -0.33333334]),
+ 'spread_rate': 2.343474222933295}
 </pre>
 </div>
 </div>
@@ -5140,7 +5140,8 @@ Backing Fire Behavior
 
 <span class="org-variable-name">upslope_direction</span>               <span class="org-operator">=</span> conv.opposite_direction(aspect)
 <span class="org-variable-name">slope_vector_2d</span>                 <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, upslope_direction)
-<span class="org-variable-name">fire_perimeter_normal_vector_3d</span> <span class="org-operator">=</span> vu.as_unit_vector(vu.to_slope_plane(fire_perimeter_normal_vector_2d, slope_vector_2d))
+<span class="org-variable-name">fire_perimeter_normal_vector_3d</span> <span class="org-operator">=</span> vu.as_unit_vector_3d(vu.to_slope_plane(fire_perimeter_normal_vector_2d,
+                                                                         slope_vector_2d))
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate midflame wind speed</span>
@@ -5234,10 +5235,10 @@ Backing Fire Behavior
 Fire Behavior from Surface Fire (No Crown Fire Occurred)
 ============================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637272000784206,
- 'flame_length': 0.23956726229329667,
- 'spread_direction': array([0.87038828, 0.        , 0.49236596]),
- 'spread_rate': 0.8215818916531423}
+ 'fireline_intensity': 11.637272239331029,
+ 'flame_length': 0.23956726455225258,
+ 'spread_direction': array([0.87038827, 0.        , 0.49236599]),
+ 'spread_rate': 0.821581908494353}
 </pre>
 </div>
 </div>
@@ -6893,7 +6894,7 @@ surface fire behavior is returned.
         <span class="org-variable-name">upslope_direction</span> <span class="org-operator">=</span> conv.opposite_direction(aspect)
         <span class="org-variable-name">slope_vector_2d</span>   <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, upslope_direction)
         <span class="org-variable-name">slope_vector_3d</span>   <span class="org-operator">=</span> vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        <span class="org-variable-name">spread_direction</span>  <span class="org-operator">=</span> vu.as_unit_vector(slope_vector_3d) <span class="org-keyword">if</span> slope <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> np.asarray((0,1,0)) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
+        <span class="org-variable-name">spread_direction</span>  <span class="org-operator">=</span> vu.as_unit_vector_3d(slope_vector_3d) <span class="org-keyword">if</span> slope <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> (0,1,0) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return zero surface fire behavior</span>
@@ -6902,7 +6903,7 @@ surface fire behavior is returned.
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : <span class="org-string">"unburned"</span>,
             <span class="org-string">"spread_rate"</span>       : 0.0,
-            <span class="org-string">"spread_direction"</span>  : spread_direction,
+            <span class="org-string">"spread_direction"</span>  : np.asarray(spread_direction),
             <span class="org-string">"fireline_intensity"</span>: 0.0,
             <span class="org-string">"flame_length"</span>      : 0.0,
         }
@@ -7121,7 +7122,7 @@ azimuth direction is returned.
     <span class="org-variable-name">upslope_direction</span> <span class="org-operator">=</span> conv.opposite_direction(aspect)
     <span class="org-variable-name">slope_vector_2d</span>   <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, upslope_direction)
     <span class="org-variable-name">azimuth_vector_2d</span> <span class="org-operator">=</span> conv.azimuthal_to_cartesian(1.0, azimuth)
-    <span class="org-variable-name">spread_direction</span>  <span class="org-operator">=</span> vu.as_unit_vector(vu.to_slope_plane(azimuth_vector_2d, slope_vector_2d))
+    <span class="org-variable-name">spread_direction</span>  <span class="org-operator">=</span> vu.as_unit_vector_3d(vu.to_slope_plane(azimuth_vector_2d, slope_vector_2d))
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell is burnable</span>
@@ -7139,7 +7140,7 @@ azimuth direction is returned.
         <span class="org-keyword">return</span> {
             <span class="org-string">"fire_type"</span>         : <span class="org-string">"unburned"</span>,
             <span class="org-string">"spread_rate"</span>       : 0.0,
-            <span class="org-string">"spread_direction"</span>  : spread_direction,
+            <span class="org-string">"spread_direction"</span>  : np.asarray(spread_direction),
             <span class="org-string">"fireline_intensity"</span>: 0.0,
             <span class="org-string">"flame_length"</span>      : 0.0,
         }
@@ -7345,18 +7346,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 32.52824122084378,
- 'flame_length': 0.38439328501240777,
- 'spread_direction': array([0.48686888, 0.61304249, 0.62220383]),
- 'spread_rate': 2.2964672435747526}
+ 'fireline_intensity': 32.52824122084384,
+ 'flame_length': 0.38439328501240816,
+ 'spread_direction': array([0.48686888, 0.61304248, 0.62220383]),
+ 'spread_rate': 2.2964672435747566}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 50.61290793356301,
- 'flame_length': 0.47108157472046464,
- 'spread_direction': array([0.48686888, 0.61304249, 0.62220383]),
- 'spread_rate': 3.573229932180057}
+ 'fireline_intensity': 50.61290909473209,
+ 'flame_length': 0.4710815796919724,
+ 'spread_direction': array([0.48686888, 0.61304248, 0.62220383]),
+ 'spread_rate': 3.573230014157646}
 </pre>
 </div>
 </div>
@@ -7449,18 +7450,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637272000784206,
- 'flame_length': 0.23956726229329667,
- 'spread_direction': array([8.70388280e-01, 5.32959110e-17, 4.92365964e-01]),
- 'spread_rate': 0.8215818916531423}
+ 'fireline_intensity': 11.637272239331029,
+ 'flame_length': 0.23956726455225258,
+ 'spread_direction': array([8.70388269e-01, 5.32959119e-17, 4.92365986e-01]),
+ 'spread_rate': 0.821581908494353}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 13.898200796816093,
- 'flame_length': 0.25995422021281633,
- 'spread_direction': array([8.70388280e-01, 5.32959110e-17, 4.92365964e-01]),
- 'spread_rate': 0.9812016167065538}
+ 'fireline_intensity': 13.898201230152814,
+ 'flame_length': 0.2599542239412087,
+ 'spread_direction': array([8.70388269e-01, 5.32959119e-17, 4.92365986e-01]),
+ 'spread_rate': 0.9812016472997721}
 </pre>
 </div>
 </div>
@@ -7538,15 +7539,38 @@ node-centered central differences, represented by the values in the
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> cython
+<span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude_2d, dot_2d
+<span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude_2d, dot_2d
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport these libraries in a .pxd file</span>
+<span class="org-keyword">from</span> math <span class="org-keyword">import</span> atan, pi, degrees, sqrt
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
+<span class="org-keyword">import</span> pyretechnics.crown_fire <span class="org-keyword">as</span> cf
+<span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
+<span class="org-keyword">import</span> pyretechnics.spot_fire <span class="org-keyword">as</span> spot
+<span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
+<span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude, as_unit_vector_2d, as_unit_vector_3d, \
+    get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe pyidx should be cy.int?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe we should use C arrays instead of tuples(structs)?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Define type aliases</span>
+<span class="org-variable-name">pyidx</span>     <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+<span class="org-comment-delimiter"># </span><span class="org-comment">vec_xy    = cy.typedef(cy.float[2])</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">vec_xyz   = cy.typedef(cy.float[3])</span>
+<span class="org-variable-name">vec_xy</span>    <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">vec_xyz</span>   <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">coord_yx</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
+<span class="org-variable-name">coord_tyx</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">Set an alias for the Python array index type</span>
-<span class="org-variable-name">pyidx</span> <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7570,7 +7594,7 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7594,10 +7618,11 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.profile(False)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.ccall</span>
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>[:,:]:
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Handle exception values from child functions</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster at grid cell (x,y)</span>
 <span class="org-doc">    given the cell width dx and the cell height dy.</span>
@@ -7606,7 +7631,7 @@ node-centered central differences, represented by the values in the
     <span class="org-variable-name">cols</span>   : pyidx    <span class="org-operator">=</span> phi.shape[1]
     <span class="org-variable-name">dphi_dx</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dx_approx(phi, dx, x, y, cols)
     <span class="org-variable-name">dphi_dy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dy_approx(phi, dy, x, y, rows)
-    <span class="org-keyword">return</span> np.asarray((dphi_dx, dphi_dy))
+    <span class="org-keyword">return</span> (dphi_dx, dphi_dy)
 </pre>
 </div>
 
@@ -7617,9 +7642,7 @@ the fire front normal vector as follows:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-normal-vector"><span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
-
-
+<pre class="src src-python" id="phi-field-normal-vector"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove unused function</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_vector</span>(phi, dx, dy, x, y):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the phi field normal vector in the x and y dimensions.</span>
@@ -7631,7 +7654,7 @@ the fire front normal vector as follows:
     <span class="org-keyword">if</span> phi_gradient[0] <span class="org-operator">==</span> 0.0 <span class="org-keyword">and</span> phi_gradient[1] <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> phi_gradient <span class="org-comment-delimiter"># </span><span class="org-comment">(n_x, n_y)</span>
     <span class="org-keyword">else</span>:
-        <span class="org-keyword">return</span> vu.as_unit_vector(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">(n_x, n_y)</span>
+        <span class="org-keyword">return</span> as_unit_vector_2d(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">(n_x, n_y)</span>
 </pre>
 </div>
 
@@ -7654,9 +7677,7 @@ vector points:
 \end{equation}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-normal-vector-angle"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> atan, pi, degrees
-
-
+<pre class="src src-python" id="phi-field-normal-vector-angle"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove unused function</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_azimuth</span>(phi_normal_vector):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the angle (measured in degrees clockwise from North)</span>
@@ -7727,10 +7748,7 @@ First, we define the parameter \(r\) and the Superbee flux limiter
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="superbee-flux-limiter"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="superbee-flux-limiter"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_superbee_flux_limiter</span>(dphi_up: cy.<span class="org-builtin">float</span>, dphi_loc: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7760,11 +7778,7 @@ and "south" values as follows:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="phi-field-spatial-gradients"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_x: cy.<span class="org-builtin">float</span>, dx: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7783,7 +7797,7 @@ and "south" values as follows:
     <span class="org-keyword">return</span> (phi_east <span class="org-operator">-</span> phi_west) <span class="org-operator">/</span> dx
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_y: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, rows: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7802,11 +7816,12 @@ and "south" values as follows:
     <span class="org-keyword">return</span> (phi_north <span class="org-operator">-</span> phi_south) <span class="org-operator">/</span> dy
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray? (Try tuple[cy.float, cy.float])</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.profile(False)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.ccall</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Handle exception values from child functions</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_x: cy.<span class="org-builtin">float</span>, u_y: cy.<span class="org-builtin">float</span>, dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>,
-                      x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>[:,:]:
+                      x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster at grid cell (x,y) given:</span>
 <span class="org-doc">    - phi :: 2D float array of values in [-1,1]</span>
@@ -7821,7 +7836,7 @@ and "south" values as follows:
     <span class="org-variable-name">cols</span>   : pyidx    <span class="org-operator">=</span> phi.shape[1]
     <span class="org-variable-name">dphi_dx</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dx(phi, u_x, dx, x, y, cols)
     <span class="org-variable-name">dphi_dy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dy(phi, u_y, dy, x, y, rows)
-    <span class="org-keyword">return</span> np.asarray((dphi_dx, dphi_dy))
+    <span class="org-keyword">return</span> (dphi_dx, dphi_dy)
 </pre>
 </div>
 
@@ -7844,10 +7859,7 @@ For the east face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-east"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="phi-east"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7897,10 +7909,7 @@ For the west face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-west"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="phi-west"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7950,10 +7959,7 @@ For the north face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-north"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="phi-north"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -8003,10 +8009,7 @@ For the south face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-south"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="phi-south"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -8069,21 +8072,14 @@ illustrated below.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="calc-fireline-normal-behavior"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
-<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
-<span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
-<span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move this to pyretechnics.vector_utils and use throughout the literate program</span>
+<pre class="src src-python" id="calc-fireline-normal-behavior"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move this to pyretechnics.vector_utils and use throughout the literate program</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_elevation_gradient</span>(slope, aspect):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:</span>
 <span class="org-doc">    - slope  :: rise/run</span>
 <span class="org-doc">    - aspect :: degrees clockwise from North</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> np.asarray(conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect)))
+    <span class="org-keyword">return</span> conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_on_slope</span>(phi_gradient_xy, elevation_gradient):
@@ -8094,10 +8090,10 @@ illustrated below.
 <span class="org-doc">    """</span>
     (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>) <span class="org-operator">=</span> phi_gradient_xy
     <span class="org-variable-name">phi_gradient_xyz</span>   <span class="org-operator">=</span> np.asarray((dphi_dx, dphi_dy, 0.0))
-    <span class="org-keyword">if</span> vu.vector_magnitude(elevation_gradient) <span class="org-operator">==</span> 0.0:
+    <span class="org-keyword">if</span> vector_magnitude_2d(elevation_gradient) <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> phi_gradient_xyz
     <span class="org-keyword">else</span>:
-        <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> vu.get_slope_normal_vector(elevation_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">(x,y,z) unit vector</span>
+        <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> np.asarray(get_slope_normal_vector(elevation_gradient)) <span class="org-comment-delimiter"># </span><span class="org-comment">(x,y,z) unit vector</span>
         <span class="org-keyword">return</span> phi_gradient_xyz <span class="org-operator">-</span> np.dot(phi_gradient_xyz, slope_normal_vector) <span class="org-operator">*</span> slope_normal_vector
 
 
@@ -8131,7 +8127,7 @@ illustrated below.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the magnitude of the phi gradient</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vu.vector_magnitude(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
+    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vector_magnitude(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell is on the fire perimeter and burning</span>
@@ -8245,15 +8241,7 @@ is returned.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="burn-cell-toward-phi-gradient"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
-<span class="org-keyword">import</span> pyretechnics.crown_fire <span class="org-keyword">as</span> cf
-<span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
-<span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
-<span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a version of this function that runs efficiently over a space_time_region</span>
+<pre class="src src-python" id="burn-cell-toward-phi-gradient"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a version of this function that runs efficiently over a space_time_region</span>
 <span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_phi_gradient</span>(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
                                   surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>, crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
@@ -8344,7 +8332,7 @@ is returned.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the magnitude of the phi gradient</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vu.vector_magnitude(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
+    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vector_magnitude(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell is on the fire perimeter and burnable</span>
@@ -8360,10 +8348,10 @@ is returned.
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
         <span class="org-keyword">if</span> phi_magnitude <span class="org-operator">&gt;</span> 0.0:
-            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray(phi_gradient) <span class="org-operator">/</span> phi_magnitude
+            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> phi_gradient <span class="org-operator">/</span> phi_magnitude
         <span class="org-keyword">elif</span> slope <span class="org-operator">&gt;</span> 0.0:
-            <span class="org-variable-name">slope_vector_3d</span>  <span class="org-operator">=</span> vu.to_slope_plane(elevation_gradient, elevation_gradient)
-            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> vu.as_unit_vector(slope_vector_3d)
+            <span class="org-variable-name">slope_vector_3d</span>  <span class="org-operator">=</span> to_slope_plane(elevation_gradient, elevation_gradient)
+            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray(as_unit_vector_3d(slope_vector_3d))
         <span class="org-keyword">else</span>:
             <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray((0,1,0)) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
 
@@ -8563,10 +8551,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
 </dl>
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-perimeter-tracking"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<pre class="src src-python" id="phi-field-perimeter-tracking"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -8578,19 +8563,17 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Is it faster to build up a list or a set?</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.profile(False)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.ccall</span>
-<span class="org-keyword">def</span> <span class="org-function-name">identify_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], tracked_cells: <span class="org-builtin">dict</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">identify_all_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">rows</span>          : pyidx <span class="org-operator">=</span> phi_matrix.shape[0]
-    <span class="org-variable-name">cols</span>          : pyidx <span class="org-operator">=</span> phi_matrix.shape[1]
+    <span class="org-variable-name">frontier_cells</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>()
     y             : pyidx
     x             : pyidx
-    <span class="org-variable-name">frontier_cells</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>()
-    <span class="org-keyword">if</span> tracked_cells:
-        <span class="org-keyword">for</span> (y, x) <span class="org-keyword">in</span> tracked_cells: <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Might be SLOW!</span>
+    <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
+        <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
             <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south, east, west) neighboring cell pairs for opposite phi signs</span>
             <span class="org-variable-name">north_y</span>: pyidx <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
             <span class="org-variable-name">south_y</span>: pyidx <span class="org-operator">=</span> <span class="org-builtin">max</span>(y<span class="org-operator">-</span>1, 0)
@@ -8601,27 +8584,41 @@ near it, and decrement their tracking counter by 1. Upon reaching
                 opposite_phi_signs(phi_matrix, y, x, y, east_x) <span class="org-keyword">or</span>
                 opposite_phi_signs(phi_matrix, y, x, y, west_x)):
                 frontier_cells.add((y, x))
-    <span class="org-keyword">else</span>:
-        <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
-            <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
-                <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south, east, west) neighboring cell pairs for opposite phi signs</span>
-                <span class="org-variable-name">north_y</span>: pyidx <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
-                <span class="org-variable-name">south_y</span>: pyidx <span class="org-operator">=</span> <span class="org-builtin">max</span>(y<span class="org-operator">-</span>1, 0)
-                <span class="org-variable-name">east_x</span> : pyidx <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>1, cols<span class="org-operator">-</span>1)
-                <span class="org-variable-name">west_x</span> : pyidx <span class="org-operator">=</span> <span class="org-builtin">max</span>(x<span class="org-operator">-</span>1, 0)
-                <span class="org-keyword">if</span> (opposite_phi_signs(phi_matrix, y, x, north_y, x) <span class="org-keyword">or</span>
-                    opposite_phi_signs(phi_matrix, y, x, south_y, x) <span class="org-keyword">or</span>
-                    opposite_phi_signs(phi_matrix, y, x, y, east_x) <span class="org-keyword">or</span>
-                    opposite_phi_signs(phi_matrix, y, x, y, west_x)):
-                    frontier_cells.add((y, x))
     <span class="org-keyword">return</span> frontier_cells
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">project_buffer</span>(cell, buffer_width, rows, cols):
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Is it faster to build up a list or a set?</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], tracked_cells: <span class="org-builtin">dict</span>, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)         <span class="org-operator">=</span> cell
+    <span class="org-variable-name">frontier_cells</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>()
+    <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells.keys():
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Compare (north, south, east, west) neighboring cell pairs for opposite phi signs</span>
+        <span class="org-variable-name">y</span>      : pyidx <span class="org-operator">=</span> cell_index[0]
+        <span class="org-variable-name">x</span>      : pyidx <span class="org-operator">=</span> cell_index[1]
+        <span class="org-variable-name">north_y</span>: pyidx <span class="org-operator">=</span> <span class="org-builtin">min</span>(y<span class="org-operator">+</span>1, rows<span class="org-operator">-</span>1)
+        <span class="org-variable-name">south_y</span>: pyidx <span class="org-operator">=</span> <span class="org-builtin">max</span>(y<span class="org-operator">-</span>1, 0)
+        <span class="org-variable-name">east_x</span> : pyidx <span class="org-operator">=</span> <span class="org-builtin">min</span>(x<span class="org-operator">+</span>1, cols<span class="org-operator">-</span>1)
+        <span class="org-variable-name">west_x</span> : pyidx <span class="org-operator">=</span> <span class="org-builtin">max</span>(x<span class="org-operator">-</span>1, 0)
+        <span class="org-keyword">if</span> (opposite_phi_signs(phi_matrix, y, x, north_y, x) <span class="org-keyword">or</span>
+            opposite_phi_signs(phi_matrix, y, x, south_y, x) <span class="org-keyword">or</span>
+            opposite_phi_signs(phi_matrix, y, x, y, east_x) <span class="org-keyword">or</span>
+            opposite_phi_signs(phi_matrix, y, x, y, west_x)):
+            frontier_cells.add(cell_index)
+    <span class="org-keyword">return</span> frontier_cells
+
+
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.cfunc</span>
+<span class="org-keyword">def</span> <span class="org-function-name">project_buffer</span>(cell: <span class="org-builtin">tuple</span>, buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[<span class="org-builtin">tuple</span>]:
+    <span class="org-doc">"""</span>
+<span class="org-doc">    TODO: Add docstring</span>
+<span class="org-doc">    """</span>
+    <span class="org-variable-name">y</span>: cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> cell[0]
+    <span class="org-variable-name">x</span>: cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> cell[1]
     <span class="org-variable-name">buffer_range_y</span> <span class="org-operator">=</span> <span class="org-builtin">range</span>(<span class="org-builtin">max</span>(0, y <span class="org-operator">-</span> buffer_width), <span class="org-builtin">min</span>(rows, y <span class="org-operator">+</span> buffer_width <span class="org-operator">+</span> 1))
     <span class="org-variable-name">buffer_range_x</span> <span class="org-operator">=</span> <span class="org-builtin">range</span>(<span class="org-builtin">max</span>(0, x <span class="org-operator">-</span> buffer_width), <span class="org-builtin">min</span>(cols, x <span class="org-operator">+</span> buffer_width <span class="org-operator">+</span> 1))
     <span class="org-keyword">return</span> [(y_, x_)
@@ -8629,11 +8626,10 @@ near it, and decrement their tracking counter by 1. Upon reaching
             <span class="org-keyword">for</span> x_ <span class="org-keyword">in</span> buffer_range_x]
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells, buffer_width, matrix_shape):
+<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells, buffer_width, rows, cols):
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
-    (<span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)  <span class="org-operator">=</span> matrix_shape
     <span class="org-variable-name">tracked_cells</span> <span class="org-operator">=</span> {}
     <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> frontier_cells:
         <span class="org-keyword">for</span> buffer_cell <span class="org-keyword">in</span> project_buffer(cell, buffer_width, rows, cols):
@@ -8641,14 +8637,18 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-keyword">return</span> tracked_cells
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">update_tracked_cells</span>(tracked_cells, frontier_cells_old, frontier_cells_new, buffer_width, matrix_shape):
+<span class="org-type">@cy.cprofile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">update_tracked_cells</span>(tracked_cells: <span class="org-builtin">dict</span>, frontier_cells_old: <span class="org-builtin">set</span>, frontier_cells_new: <span class="org-builtin">set</span>,
+                         buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine which frontier cells have been added or dropped</span>
-    (<span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>)           <span class="org-operator">=</span> matrix_shape
-    <span class="org-variable-name">frontier_cells_added</span>   <span class="org-operator">=</span> frontier_cells_new.difference(frontier_cells_old)
-    <span class="org-variable-name">frontier_cells_dropped</span> <span class="org-operator">=</span> frontier_cells_old.difference(frontier_cells_new)
+    <span class="org-variable-name">frontier_cells_added</span>  : <span class="org-builtin">set</span> <span class="org-operator">=</span> frontier_cells_new.difference(frontier_cells_old)
+    <span class="org-variable-name">frontier_cells_dropped</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> frontier_cells_old.difference(frontier_cells_new)
+    cell                  : <span class="org-builtin">tuple</span>
+    buffer_cell           : <span class="org-builtin">tuple</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Increment reference counters for all cells within buffer_width of the added frontier cells</span>
     <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> frontier_cells_added:
         <span class="org-keyword">for</span> buffer_cell <span class="org-keyword">in</span> project_buffer(cell, buffer_width, rows, cols):
@@ -8698,13 +8698,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="spread-phi-field"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
-<span class="org-keyword">from</span> pyretechnics.spot_fire <span class="org-keyword">import</span> expected_firebrand_production, spread_firebrands
-<span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move to pyretechnics.conversion</span>
+<pre class="src src-python" id="spread-phi-field"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move to pyretechnics.conversion</span>
 <span class="org-variable-name">fire_type_codes</span> <span class="org-operator">=</span> {
     <span class="org-string">"unburned"</span>      : 0,
     <span class="org-string">"surface"</span>       : 1,
@@ -8713,20 +8707,38 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 }
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move to pyretechnics.vector_utils</span>
-<span class="org-keyword">def</span> <span class="org-function-name">spread_direction_vector_to_angle</span>(vector_3d):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    TODO: Add docstring</span>
-<span class="org-doc">    """</span>
-    (<span class="org-variable-name">x</span>, <span class="org-variable-name">y</span>)       <span class="org-operator">=</span> vu.to_horizontal_plane(vector_3d)
-    (<span class="org-variable-name">r</span>, <span class="org-variable-name">azimuth</span>) <span class="org-operator">=</span> conv.cartesian_to_azimuthal(x, y)
-    <span class="org-keyword">return</span> azimuth
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes, output_matrices, frontier_cells, tracked_cells, cube_resolution,
-                             start_time, max_timestep, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>,
-                             crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
-                             spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>, random_generator<span class="org-operator">=</span><span class="org-constant">None</span>):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.ccall</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.exceptval(NULL)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.wraparound(False)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.boundscheck(False)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert all cy.double -&gt; cy.float</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate optional arguments to function</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Figure out how to type cube_resolution as vec_xyz</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Make calc_phi_gradient and calc_phi_gradient_approx return a vec_xy</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate calls to np.dot</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: See if we can use a C struct for the fire_behavior and fire_behavior_star dictionaries (not fire_behavior_dict)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Perhaps cell_index should be a Python tuple rather than a C tuple?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace fire_type_codes with as some kind of C type?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert spread_direction_vector_to_angle to a @cfunc</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert SpaceTimeCube to a @cclass with methods that take pyidx values</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert calc_elevation_gradient to a @cfunc</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert spot.expected_firebrand_production to a @cfunc</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert spot.spread_firebrands to a @cfunc</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace set.union with list concatenation? (Should ignited_cells be a list for speed?)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe ignition_time should be a Python float?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert update_tracked_cells to a @cfunc</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Speed up burn_cell_toward_phi_gradient</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport the remaining vector_utils functions</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Turn off divide-by-zero checks</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())</span>
+<span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes: <span class="org-builtin">dict</span>, output_matrices: <span class="org-builtin">dict</span>, frontier_cells: <span class="org-builtin">set</span>, tracked_cells: <span class="org-builtin">dict</span>,
+                             cube_resolution: <span class="org-builtin">tuple</span>, start_time: cy.<span class="org-builtin">float</span>, max_timestep: cy.<span class="org-builtin">float</span>,
+                             max_cells_per_timestep: cy.<span class="org-builtin">float</span>, use_wind_limit: <span class="org-builtin">bool</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">True</span>,
+                             surface_lw_ratio_model: <span class="org-builtin">str</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-string">"rothermel"</span>, crown_max_lw_ratio: <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>,
+                             buffer_width: <span class="org-builtin">int</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> 3, spot_ignitions: <span class="org-builtin">dict</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> {}, spot_config: <span class="org-builtin">dict</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>,
+                             random_generator: np.random.Generator<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    NOTE:</span>
@@ -8737,68 +8749,89 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - dt is the timestep in minutes.</span>
 <span class="org-doc">    - start_time is the start time in minutes.</span>
 <span class="org-doc">    """</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
-    (<span class="org-variable-name">band_duration</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
-
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack space_time_cubes</span>
-    <span class="org-variable-name">slope_cube</span>  <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>]
-    <span class="org-variable-name">aspect_cube</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"aspect"</span>]
-
    <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack output_matrices</span>
-    <span class="org-variable-name">phi_matrix</span>                <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
-    <span class="org-variable-name">phi_star_matrix</span>           <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi_star"</span>]
-    <span class="org-variable-name">fire_type_matrix</span>          <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
-    <span class="org-variable-name">spread_rate_matrix</span>        <span class="org-operator">=</span> output_matrices[<span class="org-string">"spread_rate"</span>]
-    <span class="org-variable-name">spread_direction_matrix</span>   <span class="org-operator">=</span> output_matrices[<span class="org-string">"spread_direction"</span>]
-    <span class="org-variable-name">fireline_intensity_matrix</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"fireline_intensity"</span>]
-    <span class="org-variable-name">flame_length_matrix</span>       <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
-    <span class="org-variable-name">time_of_arrival_matrix</span>    <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
+    <span class="org-variable-name">phi_matrix</span>               : cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
+    <span class="org-variable-name">phi_star_matrix</span>          : cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi_star"</span>]
+    <span class="org-variable-name">fire_type_matrix</span>         : cy.uchar[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
+    <span class="org-variable-name">spread_rate_matrix</span>       : cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"spread_rate"</span>]
+    <span class="org-variable-name">spread_direction_matrix</span>  : cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"spread_direction"</span>]
+    <span class="org-variable-name">fireline_intensity_matrix</span>: cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"fireline_intensity"</span>]
+    <span class="org-variable-name">flame_length_matrix</span>      : cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
+    <span class="org-variable-name">time_of_arrival_matrix</span>   : cy.<span class="org-builtin">float</span>[:,:] <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the firebrands_per_unit_heat from the spot_config if provided</span>
-    <span class="org-variable-name">firebrands_per_unit_heat</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"firebrands_per_unit_heat"</span>] <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-constant">None</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
+    <span class="org-variable-name">rows</span>: pyidx <span class="org-operator">=</span> phi_matrix.shape[0]
+    <span class="org-variable-name">cols</span>: pyidx <span class="org-operator">=</span> phi_matrix.shape[1]
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation resolution</span>
+    <span class="org-variable-name">band_duration</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> cube_resolution[0]
+    <span class="org-variable-name">cell_height</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> cube_resolution[1]
+    <span class="org-variable-name">cell_width</span>   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> cube_resolution[2]
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize max spread rates in the x and y dimensions to 0.0</span>
-    <span class="org-variable-name">max_spread_rate_x</span> <span class="org-operator">=</span> 0.0
-    <span class="org-variable-name">max_spread_rate_y</span> <span class="org-operator">=</span> 0.0
+    <span class="org-variable-name">max_spread_rate_x</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 0.0
+    <span class="org-variable-name">max_spread_rate_y</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 0.0
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Create an empty dictionary to store intermediate fire behavior values per cell</span>
-    <span class="org-variable-name">fire_behavior_dict</span> <span class="org-operator">=</span> {}
+    <span class="org-variable-name">fire_behavior_dict</span>: <span class="org-builtin">dict</span> <span class="org-operator">=</span> {}
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Compute fire behavior values at start_time and identify the max spread rates in the x and y dimensions</span>
-    <span class="org-variable-name">t0</span> <span class="org-operator">=</span> <span class="org-builtin">int</span>(start_time <span class="org-operator">//</span> band_duration)
+    cell_index           : coord_yx
+    y                    : pyidx
+    x                    : pyidx
+    space_time_coordinate: coord_tyx
+    dphi_dt              : cy.<span class="org-builtin">float</span>
+    <span class="org-variable-name">t0</span>                   : pyidx <span class="org-operator">=</span> <span class="org-builtin">int</span>(start_time <span class="org-operator">//</span> band_duration)
     <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack cell_index</span>
-        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> cell_index
+        <span class="org-variable-name">y</span> <span class="org-operator">=</span> cell_index[0]
+        <span class="org-variable-name">x</span> <span class="org-operator">=</span> cell_index[1]
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate phi gradient on the horizontal plane</span>
-        <span class="org-variable-name">phi_gradient_xy</span>  <span class="org-operator">=</span> calc_phi_gradient_approx(phi_matrix, cell_width, cell_height, x, y)
-        <span class="org-variable-name">phi_magnitude_xy</span> <span class="org-operator">=</span> vu.vector_magnitude(phi_gradient_xy)
+        <span class="org-variable-name">phi_gradient_xy</span> : vec_xy   <span class="org-operator">=</span> calc_phi_gradient_approx(phi_matrix,
+                                                              cell_width,
+                                                              cell_height,
+                                                              x,
+                                                              y)
+        <span class="org-variable-name">phi_magnitude_xy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(phi_gradient_xy)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fire behavior normal to the fire front on the slope-tangential plane</span>
-        <span class="org-variable-name">fire_behavior</span> <span class="org-operator">=</span> burn_cell_toward_phi_gradient(space_time_cubes, (t0, y, x),
-                                                      phi_gradient_xy, use_wind_limit,
-                                                      surface_lw_ratio_model,
-                                                      crown_max_lw_ratio)
+        <span class="org-variable-name">space_time_coordinate</span> <span class="org-operator">=</span> (t0, y, x)
+        <span class="org-variable-name">fire_behavior</span>: <span class="org-builtin">dict</span>   <span class="org-operator">=</span> burn_cell_toward_phi_gradient(space_time_cubes,
+                                                              space_time_coordinate,
+                                                              phi_gradient_xy,
+                                                              use_wind_limit,
+                                                              surface_lw_ratio_model,
+                                                              crown_max_lw_ratio)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell has a positive phi magnitude</span>
         <span class="org-keyword">if</span> phi_magnitude_xy <span class="org-operator">&gt;</span> 0.0:
             <span class="org-comment-delimiter"># </span><span class="org-comment">Keep a running tally of the max horizontal spread rates in the x and y dimensions</span>
-            (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>) <span class="org-operator">=</span> phi_gradient_xy
-            <span class="org-variable-name">phi_magnitude_xy_2</span> <span class="org-operator">=</span> phi_magnitude_xy <span class="org-operator">**</span> 2.0
-            <span class="org-variable-name">dphi_dt</span>            <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
-            <span class="org-variable-name">spread_rate_x</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dx <span class="org-operator">/</span> phi_magnitude_xy_2
-            <span class="org-variable-name">spread_rate_y</span>      <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dy <span class="org-operator">/</span> phi_magnitude_xy_2
-            <span class="org-variable-name">max_spread_rate_x</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_x, <span class="org-builtin">abs</span>(spread_rate_x))
-            <span class="org-variable-name">max_spread_rate_y</span>  <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_y, <span class="org-builtin">abs</span>(spread_rate_y))
+            <span class="org-variable-name">dphi_dt</span>                      <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
+            <span class="org-variable-name">dphi_dx</span>           : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xy[0]
+            <span class="org-variable-name">dphi_dy</span>           : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xy[1]
+            <span class="org-variable-name">phi_magnitude_xy_2</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_magnitude_xy <span class="org-operator">*</span> phi_magnitude_xy
+            <span class="org-variable-name">spread_rate_x</span>     : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dx <span class="org-operator">/</span> phi_magnitude_xy_2
+            <span class="org-variable-name">spread_rate_y</span>     : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-operator">-</span>dphi_dt <span class="org-operator">*</span> dphi_dy <span class="org-operator">/</span> phi_magnitude_xy_2
+            <span class="org-variable-name">max_spread_rate_x</span>            <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_x, <span class="org-builtin">abs</span>(spread_rate_x))
+            <span class="org-variable-name">max_spread_rate_y</span>            <span class="org-operator">=</span> <span class="org-builtin">max</span>(max_spread_rate_y, <span class="org-builtin">abs</span>(spread_rate_y))
 
             <span class="org-comment-delimiter"># </span><span class="org-comment">Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable</span>
-            <span class="org-variable-name">phi_gradient_xy_limited</span> <span class="org-operator">=</span> calc_phi_gradient(phi_matrix, dphi_dx, dphi_dy, cell_width, cell_height, x, y)
-            <span class="org-variable-name">fire_behavior</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">*=</span> np.dot(phi_gradient_xy, phi_gradient_xy_limited) <span class="org-operator">/</span> phi_magnitude_xy_2
+            <span class="org-variable-name">phi_gradient_xy_limited</span>: vec_xy <span class="org-operator">=</span> calc_phi_gradient(phi_matrix,
+                                                                dphi_dx,
+                                                                dphi_dy,
+                                                                cell_width,
+                                                                cell_height,
+                                                                x,
+                                                                y)
+            <span class="org-variable-name">dphi_dt_correction</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> dot_2d(phi_gradient_xy, phi_gradient_xy_limited) <span class="org-operator">/</span> phi_magnitude_xy_2
+            <span class="org-variable-name">fire_behavior</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">=</span> dphi_dt <span class="org-operator">*</span> dphi_dt_correction
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Store fire behavior values for later use</span>
         <span class="org-variable-name">fire_behavior_dict</span>[cell_index] <span class="org-operator">=</span> fire_behavior
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate timestep using the CFL condition</span>
+    dt: cy.<span class="org-builtin">float</span>
     <span class="org-keyword">if</span> max_spread_rate_x <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">if</span> max_spread_rate_y <span class="org-operator">==</span> 0.0:
             <span class="org-variable-name">dt</span> <span class="org-operator">=</span> max_timestep
@@ -8812,47 +8845,67 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                 cell_height <span class="org-operator">/</span> max_spread_rate_y))
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the stop_time using this timestep</span>
-    <span class="org-variable-name">stop_time</span> <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt
+    <span class="org-variable-name">stop_time</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Update the tracked cell values in phi_star_matrix</span>
     <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
-        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)  <span class="org-operator">=</span> cell_index
+        <span class="org-variable-name">y</span> <span class="org-operator">=</span> cell_index[0]
+        <span class="org-variable-name">x</span> <span class="org-operator">=</span> cell_index[1]
         <span class="org-variable-name">dphi_dt</span> <span class="org-operator">=</span> fire_behavior_dict[cell_index][<span class="org-string">"dphi_dt"</span>]
         <span class="org-keyword">if</span> dphi_dt <span class="org-operator">!=</span> 0.0:
             <span class="org-variable-name">phi_star_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">+=</span> dphi_dt <span class="org-operator">*</span> dt
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Compute fire behavior values at stop_time and update the output_matrices</span>
-    <span class="org-variable-name">t1</span> <span class="org-operator">=</span> <span class="org-builtin">int</span>(stop_time <span class="org-operator">//</span> band_duration)
+    ignition_time: <span class="org-builtin">float</span>
+    ignited_cells: <span class="org-builtin">set</span>
+    <span class="org-variable-name">t1</span>           : pyidx <span class="org-operator">=</span> <span class="org-builtin">int</span>(stop_time <span class="org-operator">//</span> band_duration)
     <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack cell_index</span>
-        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> cell_index
+        <span class="org-variable-name">y</span> <span class="org-operator">=</span> cell_index[0]
+        <span class="org-variable-name">x</span> <span class="org-operator">=</span> cell_index[1]
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate phi gradient on the horizontal plane</span>
-        <span class="org-variable-name">phi_gradient_xy_star</span>  <span class="org-operator">=</span> calc_phi_gradient_approx(phi_star_matrix, cell_width, cell_height, x, y)
-        <span class="org-variable-name">phi_magnitude_xy_star</span> <span class="org-operator">=</span> vu.vector_magnitude(phi_gradient_xy_star)
+        <span class="org-variable-name">phi_gradient_xy_star</span> : vec_xy   <span class="org-operator">=</span> calc_phi_gradient_approx(phi_star_matrix,
+                                                                   cell_width,
+                                                                   cell_height,
+                                                                   x,
+                                                                   y)
+        <span class="org-variable-name">phi_magnitude_xy_star</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(phi_gradient_xy_star)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fire behavior normal to the fire front on the slope-tangential plane</span>
-        <span class="org-variable-name">fire_behavior_star</span> <span class="org-operator">=</span> burn_cell_toward_phi_gradient(space_time_cubes, (t1, y, x),
-                                                           phi_gradient_xy_star, use_wind_limit,
-                                                           surface_lw_ratio_model,
-                                                           crown_max_lw_ratio)
+        <span class="org-variable-name">space_time_coordinate</span>    <span class="org-operator">=</span> (t1, y, x)
+        <span class="org-variable-name">fire_behavior_star</span>: <span class="org-builtin">dict</span> <span class="org-operator">=</span> burn_cell_toward_phi_gradient(space_time_cubes,
+                                                                 space_time_coordinate,
+                                                                 phi_gradient_xy_star,
+                                                                 use_wind_limit,
+                                                                 surface_lw_ratio_model,
+                                                                 crown_max_lw_ratio)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell has a positive phi magnitude</span>
         <span class="org-keyword">if</span> phi_magnitude_xy_star <span class="org-operator">&gt;</span> 0.0:
             <span class="org-comment-delimiter"># </span><span class="org-comment">Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable</span>
-            <span class="org-variable-name">phi_gradient_xy_star_limited</span> <span class="org-operator">=</span> calc_phi_gradient(phi_star_matrix, <span class="org-operator">*</span>phi_gradient_xy_star,
-                                                             cell_width, cell_height, x, y)
-            <span class="org-variable-name">fire_behavior_star</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">*=</span> (np.dot(phi_gradient_xy_star, phi_gradient_xy_star_limited) <span class="org-operator">/</span>
-                                              (phi_magnitude_xy_star <span class="org-operator">**</span> 2.0))
+            <span class="org-variable-name">dphi_dt_star</span>                : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> fire_behavior_star[<span class="org-string">"dphi_dt"</span>]
+            <span class="org-variable-name">dphi_dx_star</span>                : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xy_star[0]
+            <span class="org-variable-name">dphi_dy_star</span>                : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xy_star[1]
+            <span class="org-variable-name">phi_gradient_xy_star_limited</span>: vec_xy   <span class="org-operator">=</span> calc_phi_gradient(phi_star_matrix,
+                                                                       dphi_dx_star,
+                                                                       dphi_dy_star,
+                                                                       cell_width,
+                                                                       cell_height,
+                                                                       x,
+                                                                       y)
+            <span class="org-variable-name">dphi_dt_star_correction</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (dot_2d(phi_gradient_xy_star, phi_gradient_xy_star_limited)
+                                                 <span class="org-operator">/</span> (phi_magnitude_xy_star <span class="org-operator">*</span> phi_magnitude_xy_star))
+            <span class="org-variable-name">fire_behavior_star</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">=</span> dphi_dt_star <span class="org-operator">*</span> dphi_dt_star_correction
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the new phi value at stop_time as phi_next</span>
-        <span class="org-variable-name">fire_behavior</span>     <span class="org-operator">=</span> fire_behavior_dict[cell_index]
-        <span class="org-variable-name">dphi_dt_estimate1</span> <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
-        <span class="org-variable-name">dphi_dt_estimate2</span> <span class="org-operator">=</span> fire_behavior_star[<span class="org-string">"dphi_dt"</span>]
-        <span class="org-variable-name">dphi_dt_average</span>   <span class="org-operator">=</span> (dphi_dt_estimate1 <span class="org-operator">+</span> dphi_dt_estimate2) <span class="org-operator">/</span> 2.0
+        <span class="org-variable-name">fire_behavior</span>               <span class="org-operator">=</span> fire_behavior_dict[cell_index]
+        <span class="org-variable-name">dphi_dt_estimate1</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> fire_behavior[<span class="org-string">"dphi_dt"</span>]
+        <span class="org-variable-name">dphi_dt_estimate2</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> fire_behavior_star[<span class="org-string">"dphi_dt"</span>]
+        <span class="org-variable-name">dphi_dt_average</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (dphi_dt_estimate1 <span class="org-operator">+</span> dphi_dt_estimate2) <span class="org-operator">/</span> 2.0
         <span class="org-keyword">if</span> dphi_dt_average <span class="org-operator">!=</span> 0.0:
-            <span class="org-variable-name">phi</span>      <span class="org-operator">=</span> phi_matrix[y,x]
-            <span class="org-variable-name">phi_next</span> <span class="org-operator">=</span> phi <span class="org-operator">+</span> dphi_dt_average <span class="org-operator">*</span> dt
+            <span class="org-variable-name">phi</span>     : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_matrix[y,x]
+            <span class="org-variable-name">phi_next</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi <span class="org-operator">+</span> dphi_dt_average <span class="org-operator">*</span> dt
 
             <span class="org-comment-delimiter"># </span><span class="org-comment">Update the tracked cell values in phi_matrix</span>
             <span class="org-variable-name">phi_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> phi_next
@@ -8869,21 +8922,27 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
                 <span class="org-comment-delimiter"># </span><span class="org-comment">Cast firebrands, update firebrand_count_matrix, and update spot_ignitions</span>
                 <span class="org-keyword">if</span> spot_config:
-                    <span class="org-variable-name">t_cast</span>                   <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
-                    <span class="org-variable-name">space_time_coordinate</span>    <span class="org-operator">=</span> (t_cast, y, x)
-                    <span class="org-variable-name">slope</span>                    <span class="org-operator">=</span> slope_cube.get(t_cast, y, x)
-                    <span class="org-variable-name">aspect</span>                   <span class="org-operator">=</span> aspect_cube.get(t_cast, y, x)
-                    <span class="org-variable-name">elevation_gradient</span>       <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
-                    <span class="org-variable-name">expected_firebrand_count</span> <span class="org-operator">=</span> expected_firebrand_production(fire_behavior,
-                                                                             elevation_gradient,
-                                                                             cube_resolution,
-                                                                             firebrands_per_unit_heat)
-                    <span class="org-variable-name">new_ignitions</span>            <span class="org-operator">=</span> spread_firebrands(space_time_cubes, output_matrices, cube_resolution,
-                                                                 space_time_coordinate, random_generator,
-                                                                 expected_firebrand_count, spot_config)
+                    <span class="org-variable-name">t_cast</span>                  : pyidx <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
+                    <span class="org-variable-name">space_time_coordinate</span>           <span class="org-operator">=</span> (t_cast, y, x)
+                    <span class="org-variable-name">slope</span>                   : <span class="org-builtin">float</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>].get(t_cast, y, x)
+                    <span class="org-variable-name">aspect</span>                  : <span class="org-builtin">float</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"aspect"</span>].get(t_cast, y, x)
+                    <span class="org-variable-name">elevation_gradient</span>      : <span class="org-builtin">tuple</span> <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
+                    <span class="org-variable-name">firebrands_per_unit_heat</span>: <span class="org-builtin">float</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"firebrands_per_unit_heat"</span>]
+                    <span class="org-variable-name">expected_firebrand_count</span>: <span class="org-builtin">float</span> <span class="org-operator">=</span> spot.expected_firebrand_production(fire_behavior,
+                                                                                         elevation_gradient,
+                                                                                         cube_resolution,
+                                                                                         firebrands_per_unit_heat)
+                    new_ignitions: <span class="org-builtin">tuple</span>[<span class="org-builtin">float</span>, <span class="org-builtin">set</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> spot.spread_firebrands(space_time_cubes,
+                                                                                   output_matrices,
+                                                                                   cube_resolution,
+                                                                                   space_time_coordinate,
+                                                                                   random_generator,
+                                                                                   expected_firebrand_count,
+                                                                                   spot_config)
                     <span class="org-keyword">if</span> new_ignitions:
-                        (<span class="org-variable-name">ignition_time</span>, <span class="org-variable-name">ignited_cells</span>) <span class="org-operator">=</span> new_ignitions
-                        <span class="org-variable-name">concurrent_ignited_cells</span>       <span class="org-operator">=</span> spot_ignitions.get(ignition_time)
+                        <span class="org-variable-name">ignition_time</span>                      <span class="org-operator">=</span> new_ignitions[0]
+                        <span class="org-variable-name">ignited_cells</span>                      <span class="org-operator">=</span> new_ignitions[1]
+                        concurrent_ignited_cells: <span class="org-builtin">set</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> spot_ignitions.get(ignition_time)
                         <span class="org-keyword">if</span> concurrent_ignited_cells:
                             <span class="org-variable-name">spot_ignitions</span>[ignition_time] <span class="org-operator">=</span> <span class="org-builtin">set</span>.union(ignited_cells, concurrent_ignited_cells)
                         <span class="org-keyword">else</span>:
@@ -8894,7 +8953,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-keyword">if</span> ignition_time <span class="org-operator">&lt;</span> stop_time:
             <span class="org-variable-name">ignited_cells</span> <span class="org-operator">=</span> spot_ignitions.pop(ignition_time)
             <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> ignited_cells:
-                (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> cell_index
+                <span class="org-variable-name">y</span> <span class="org-operator">=</span> cell_index[0]
+                <span class="org-variable-name">x</span> <span class="org-operator">=</span> cell_index[1]
                 <span class="org-keyword">if</span> phi_matrix[y,x] <span class="org-operator">&gt;</span> 0.0:
                     <span class="org-variable-name">phi_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]             <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
                     <span class="org-variable-name">time_of_arrival_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> ignition_time <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: REVIEW Should I use stop_time instead?</span>
@@ -8902,13 +8962,15 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                     <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: I need to calculate and store the fire_behavior values for these cells</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Save the new phi_matrix values in phi_star_matrix</span>
-    <span class="org-keyword">for</span> (y,x) <span class="org-keyword">in</span> tracked_cells:
+    <span class="org-keyword">for</span> cell_index <span class="org-keyword">in</span> tracked_cells:
+        <span class="org-variable-name">y</span> <span class="org-operator">=</span> cell_index[0]
+        <span class="org-variable-name">x</span> <span class="org-operator">=</span> cell_index[1]
         <span class="org-variable-name">phi_star_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> phi_matrix[y,x]
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Update the sets of frontier cells and tracked cells based on the updated phi matrix</span>
-    <span class="org-variable-name">frontier_cells_new</span> <span class="org-operator">=</span> identify_frontier_cells(phi_matrix, tracked_cells)
-    <span class="org-variable-name">tracked_cells_new</span>  <span class="org-operator">=</span> update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
-                                              buffer_width, phi_matrix.shape)
+    <span class="org-variable-name">frontier_cells_new</span>: <span class="org-builtin">set</span>  <span class="org-operator">=</span> identify_tracked_frontier_cells(phi_matrix, tracked_cells, rows, cols)
+    <span class="org-variable-name">tracked_cells_new</span> : <span class="org-builtin">dict</span> <span class="org-operator">=</span> update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
+                                                    buffer_width, rows, cols)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated world state</span>
     <span class="org-keyword">return</span> {
@@ -9019,8 +9081,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Identify the sets of frontier cells and tracked cells based on the phi matrix</span>
     <span class="org-variable-name">phi_matrix</span>     <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
-    <span class="org-variable-name">frontier_cells</span> <span class="org-operator">=</span> identify_frontier_cells(phi_matrix)
-    <span class="org-variable-name">tracked_cells</span>  <span class="org-operator">=</span> identify_tracked_cells(frontier_cells, buffer_width, (rows, cols))
+    <span class="org-variable-name">frontier_cells</span> <span class="org-operator">=</span> identify_all_frontier_cells(phi_matrix, rows, cols)
+    <span class="org-variable-name">tracked_cells</span>  <span class="org-operator">=</span> identify_tracked_cells(frontier_cells, buffer_width, rows, cols)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Make a copy of the phi matrix to use for intermediate calculations in each timestep</span>
     <span class="org-variable-name">output_matrices</span>[<span class="org-string">"phi_star"</span>] <span class="org-operator">=</span> np.copy(phi_matrix)
@@ -9039,8 +9101,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire one timestep</span>
         <span class="org-variable-name">results</span> <span class="org-operator">=</span> spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
-                                           cube_resolution, simulation_time, max_timestep, use_wind_limit,
-                                           surface_lw_ratio_model, crown_max_lw_ratio, max_cells_per_timestep,
+                                           cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
+                                           use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
                                            buffer_width, spot_ignitions, spot_config, random_generator)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Reset spread inputs</span>
@@ -9259,25 +9321,25 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9256892, 'Max': 1.0, 'Mean': 0.9060592, 'Stdev': 0.38920075}
+{'Min': -0.9256893, 'Max': 1.0, 'Mean': 0.9060591, 'Stdev': 0.38920093}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116491, 'Stdev': 0.6341635}
+{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116481, 'Stdev': 0.634163}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.658632, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.93311}
+{'Min': 0.6585794, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.93309}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162365, 'Stdev': 8.98259}
+{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162354, 'Stdev': 8.982582}
 
 Flame Length (meters)
-{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523625, 'Stdev': 0.073568314}
+{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356828}
 
 Time of Arrival (minutes)
-{'Min': 2081.8513, 'Max': 2548.1528, 'Mean': 2385.5913, 'Stdev': 116.83744}
+{'Min': 2081.8516, 'Max': 2548.1526, 'Mean': 2385.591, 'Stdev': 116.83734}
 </pre>
 </div>
 </li>
@@ -9624,25 +9686,25 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9967125, 'Max': 1.0, 'Mean': 0.7720053, 'Stdev': 0.5722494}
+{'Min': -0.9967122, 'Max': 1.0, 'Mean': 0.77200466, 'Stdev': 0.5722504}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16055721, 'Max': 2.2964664, 'Mean': 1.383971, 'Stdev': 0.68492335}
+{'Min': 0.16055718, 'Max': 2.2964664, 'Mean': 1.3839706, 'Stdev': 0.6849228}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.01565407, 'Max': 359.8231, 'Mean': 179.89366, 'Stdev': 127.71465}
+{'Min': 0.015502152, 'Max': 359.823, 'Mean': 179.89368, 'Stdev': 127.714645}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2742076, 'Max': 32.52823, 'Mean': 19.603214, 'Stdev': 9.701576}
+{'Min': 2.2742074, 'Max': 32.52823, 'Mean': 19.60321, 'Stdev': 9.701569}
 
 Flame Length (meters)
-{'Min': 0.11305188, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.07902973}
+{'Min': 0.11305187, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.079029635}
 
 Time of Arrival (minutes)
-{'Min': 2081.8513, 'Max': 2549.8733, 'Mean': 2406.4573, 'Stdev': 106.72768}
+{'Min': 2081.8516, 'Max': 2549.8735, 'Mean': 2406.4568, 'Stdev': 106.72756}
 
 Firebrand Count (number of firebrands)
 {'Min': 0, 'Max': 4, 'Mean': 0.0743, 'Stdev': 0.32307817939316175}
@@ -9650,41 +9712,41 @@ Firebrand Count (number of firebrands)
 Total Firebrands on Grid: 743
 
 Future Spot Ignitions:
-{2551.1983517455665: {(78, 75)},
- 2551.4128378868545: {(79, 54), (80, 60)},
- 2551.8570495625095: {(82, 36)},
- 2553.243730269104: {(73, 50)},
- 2553.5035515580585: {(82, 42)},
- 2553.670852433065: {(88, 50)},
- 2554.838036745546: {(78, 64)},
- 2555.5255703556245: {(78, 60), (78, 58)},
- 2556.281415042003: {(80, 74)},
- 2556.957528510658: {(79, 80), (78, 75)},
- 2557.1965187215546: {(72, 52), (75, 51)},
- 2560.051807503919: {(82, 76)},
- 2560.0549523406025: {(75, 81)},
- 2562.2247250858395: {(78, 53)},
- 2563.0142549445554: {(60, 78)},
- 2563.8632085416048: {(81, 38)},
- 2566.6677219767957: {(82, 40)},
- 2567.2132926917843: {(78, 77)},
- 2567.3587371828735: {(83, 69)},
- 2569.3315969593: {(79, 77)},
- 2570.92224029922: {(83, 43), (83, 36)},
- 2573.732535115886: {(92, 51)},
- 2574.658577090567: {(53, 44)},
- 2574.7944549624035: {(85, 72)},
- 2575.8510325678994: {(81, 65), (80, 63)},
- 2576.9250318582476: {(90, 38)},
- 2576.970254288768: {(78, 60), (80, 63)},
- 2581.2576899614737: {(73, 78)},
- 2583.2558841467608: {(84, 31)},
- 2583.5327553614447: {(84, 54)},
- 2583.757556126505: {(70, 84)},
- 2591.9153573859367: {(66, 34), (71, 40)},
- 2592.88477227848: {(64, 36)},
- 2603.1104028205696: {(80, 55)},
- 2613.442298175292: {(61, 37)}}
+{2551.1975872246294: {(78, 75)},
+ 2551.41264882651: {(79, 54), (80, 60)},
+ 2551.8568054218845: {(82, 36)},
+ 2553.242945427251: {(73, 50)},
+ 2553.503079660735: {(82, 42)},
+ 2553.67061785131: {(88, 50)},
+ 2554.8380765190304: {(78, 64)},
+ 2555.5251004606916: {(78, 60), (78, 58)},
+ 2556.2804252683736: {(80, 74)},
+ 2556.9567981901855: {(79, 80), (78, 75)},
+ 2557.1956166487: {(72, 52), (75, 51)},
+ 2560.051319222669: {(82, 76)},
+ 2560.0546762952063: {(75, 81)},
+ 2562.224290899111: {(78, 53)},
+ 2563.0130376470297: {(60, 78)},
+ 2563.863116897054: {(81, 38)},
+ 2566.6678267193665: {(82, 40)},
+ 2567.2125623007973: {(78, 77)},
+ 2567.358762535121: {(83, 69)},
+ 2569.330376256175: {(79, 77)},
+ 2570.921411182046: {(83, 43), (83, 36)},
+ 2573.7323021656953: {(92, 51)},
+ 2574.658589021639: {(53, 44)},
+ 2574.7942263212: {(85, 72)},
+ 2575.8510399606234: {(81, 65), (80, 63)},
+ 2576.9250378030665: {(90, 38)},
+ 2576.970322053317: {(78, 60), (80, 63)},
+ 2581.257439560457: {(73, 78)},
+ 2583.255900463565: {(84, 31)},
+ 2583.532527064589: {(84, 54)},
+ 2583.7573032810296: {(70, 84)},
+ 2591.914720289493: {(66, 34), (71, 40)},
+ 2592.883811381346: {(64, 36)},
+ 2603.1104057780935: {(80, 55)},
+ 2613.441074595893: {(61, 37)}}
 </pre>
 </div>
 </li>
@@ -10157,32 +10219,32 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945676, 'Stdev': 0.5639851}
-Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7984583, 'Stdev': 0.5611056}
+Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945679, 'Stdev': 0.5639848}
+Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.79845846, 'Stdev': 0.5611055}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-Main: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2057383, 'Stdev': 0.63797617}
-Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890503, 'Stdev': 0.63051194}
+Main: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2057377, 'Stdev': 0.6379759}
+Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890497, 'Stdev': 0.6305116}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27233186, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35212}
-Fork: {'Min': 0.27233186, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70386}
+Main: {'Min': 0.27237135, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.352104}
+Fork: {'Min': 0.27237135, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70384}
 
 Fireline Intensity (kW/m)
-Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078642, 'Stdev': 9.036594}
-Fork: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 16.842266, 'Stdev': 8.930868}
+Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078634, 'Stdev': 9.03659}
+Fork: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 16.842258, 'Stdev': 8.930863}
 
 Flame Length (meters)
-Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27460188, 'Stdev': 0.07341512}
-Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.2728712, 'Stdev': 0.07285747}
+Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27460182, 'Stdev': 0.0734151}
+Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27287114, 'Stdev': 0.07285745}
 
 Time of Arrival (minutes)
-Main: {'Min': 2081.8513, 'Max': 2789.7427, 'Mean': 2543.6892, 'Stdev': 173.15504}
-Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
+Main: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2543.6892, 'Stdev': 173.15517}
+Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945}
 </pre>
 </div>
 </li>
@@ -10698,24 +10760,24 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
 <h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.2.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
-<pre class="src src-python" id="vector-utilities"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-<span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians, sin, cos
+<pre class="src src-python" id="vector-utilities"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians
+<span class="org-keyword">import</span> cython
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">Conditionally import Python's sqrt function when in Python mode</span>
-<span class="org-keyword">if</span> <span class="org-keyword">not</span> cy.compiled:
-    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Set an alias for the Python array index type</span>
-<span class="org-variable-name">pyidx</span> <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
+<span class="org-keyword">if</span> cy.compiled:
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+<span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos
+    <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
-<span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude</span>(vector: cy.double[:]) <span class="org-operator">-&gt;</span> cy.double:
@@ -10728,41 +10790,162 @@ Fork: {'Min': 2081.8513, 'Max': 2789.7424, 'Mean': 2539.637, 'Stdev': 171.93935}
     <span class="org-keyword">return</span> sqrt(acc)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector</span>(vector):
-    <span class="org-keyword">return</span> vector <span class="org-operator">/</span> vector_magnitude(vector)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">dot_2d</span>(vector1: vec_xy, vector2: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1]
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">to_slope_plane</span>(vector_2d, elevation_gradient):
-    <span class="org-keyword">return</span> np.asarray((
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">dot_3d</span>(vector1: vec_xyz, vector2: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1] <span class="org-operator">+</span> vector1[2] <span class="org-operator">*</span> vector2[2]
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude_2d</span>(vector: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-keyword">return</span> sqrt(dot_2d(vector, vector))
+
+
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude_3d</span>(vector: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-keyword">return</span> sqrt(dot_3d(vector, vector))
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector_2d</span>(vector: vec_xy) <span class="org-operator">-&gt;</span> vec_xy:
+    <span class="org-variable-name">magnitude</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(vector)
+    <span class="org-variable-name">ux</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[0] <span class="org-operator">/</span> magnitude
+    <span class="org-variable-name">uy</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[1] <span class="org-operator">/</span> magnitude
+    <span class="org-keyword">return</span> (ux, uy)
+
+
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector_3d</span>(vector: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
+    <span class="org-variable-name">magnitude</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_3d(vector)
+    <span class="org-variable-name">ux</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[0] <span class="org-operator">/</span> magnitude
+    <span class="org-variable-name">uy</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[1] <span class="org-operator">/</span> magnitude
+    <span class="org-variable-name">uz</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[2] <span class="org-operator">/</span> magnitude
+    <span class="org-keyword">return</span> (ux, uy, uz)
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">to_slope_plane</span>(vector_2d: vec_xy, elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
+    <span class="org-keyword">return</span> (
         vector_2d[0],
         vector_2d[1],
-        np.dot(vector_2d, elevation_gradient)
-    ))
+        dot_2d(vector_2d, elevation_gradient)
+    )
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">to_horizontal_plane</span>(vector_3d):
-    <span class="org-keyword">return</span> np.asarray(vector_3d[0:2])
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace numpy arrays with vec_xyz and vec_xy</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">to_horizontal_plane</span>(vector_3d: cy.double[:]) <span class="org-operator">-&gt;</span> cy.double[:]:
+    <span class="org-keyword">return</span> vector_3d[0:2]
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">get_slope_normal_vector</span>(elevation_gradient):
-    <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> np.asarray((<span class="org-operator">-</span>elevation_gradient[0], <span class="org-operator">-</span>elevation_gradient[1], 1))
-    <span class="org-keyword">return</span> as_unit_vector(slope_normal_vector)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace numpy arrays with vec_xyz and vec_xy</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Speed up conv.cartesian_to_azimuthal</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">spread_direction_vector_to_angle</span>(vector_3d: cy.double[:]) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-variable-name">vector_2d</span>: cy.double[:] <span class="org-operator">=</span> to_horizontal_plane(vector_3d)
+    <span class="org-variable-name">x</span>        : cy.double    <span class="org-operator">=</span> vector_2d[0]
+    <span class="org-variable-name">y</span>        : cy.double    <span class="org-operator">=</span> vector_2d[1]
+    <span class="org-variable-name">az_coords</span>: <span class="org-builtin">tuple</span>        <span class="org-operator">=</span> conv.cartesian_to_azimuthal(x, y)
+    <span class="org-variable-name">azimuth</span>  : cy.<span class="org-builtin">float</span>     <span class="org-operator">=</span> az_coords[1]
+    <span class="org-keyword">return</span> azimuth
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector, theta, slope, aspect):
-    <span class="org-doc">"""Rotate a 3D vector &lt;x,y,z&gt; theta degrees clockwise on the plane defined by the slope and aspect."""</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">get_slope_normal_vector</span>(elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
+    <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> (<span class="org-operator">-</span>elevation_gradient[0], <span class="org-operator">-</span>elevation_gradient[1], 1.0)
+    <span class="org-keyword">return</span> as_unit_vector_3d(slope_normal_vector)
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate need for numpy</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Speed up conv.cartesian_to_azimuthal and conv.opposite_direction</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a primitive math radians function</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: np.ndarray, theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xyz:
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Rotate a 3D vector &lt;x,y,z&gt; theta degrees clockwise on the plane defined by the slope and aspect.</span>
+<span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the slope normal vector from the slope and aspect</span>
-    <span class="org-variable-name">elevation_gradient</span>  <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
-    <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient)
+    <span class="org-variable-name">elevation_gradient</span> : vec_xy  <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
-    <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> radians(theta)
+    <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> radians(theta)
     <span class="org-keyword">return</span> cos(theta_rad) <span class="org-operator">*</span> vector <span class="org-operator">+</span> np.cross(sin(theta_rad) <span class="org-operator">*</span> vector, slope_normal_vector)
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-cython" id="vector-utilities-c-fns">cdef extern from "math.h":
-     cpdef double sqrt(double arg)
+<pre class="src src-cython" id="vector-utils-pxd">cimport pyretechnics.types
+from pyretechnics.types cimport vec_xy
+
+#==================================================
+# Cython functions to cimport into other modules
+#==================================================
+
+cpdef float dot_2d(vec_xy vector1, vec_xy vector2)
+cpdef float vector_magnitude_2d(vec_xy vector)
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-cython" id="math-pxd">#==================================================
+# C functions to cimport into other modules
+#==================================================
+
+cdef extern from "math.h":
+     cdef double sqrt(double x)
+     cdef double sin(double x)
+     cdef double cos(double x)
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-cython" id="types-pxd">#==================================================
+# Type aliases
+#==================================================
+
+ctypedef Py_ssize_t pyidx
+ctypedef (float, float) vec_xy
+ctypedef (float, float, float) vec_xyz
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-python" id="types-py"><span class="org-keyword">import</span> cython
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Runtime-defined type aliases</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
+
+<span class="org-keyword">if</span> cy.compiled:
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+<span class="org-keyword">else</span>:
+    <span class="org-variable-name">pyidx</span>   <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+    <span class="org-variable-name">vec_xy</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+    <span class="org-variable-name">vec_xyz</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
 </pre>
 </div>
 </div>

@@ -96,7 +96,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
         upslope_direction = conv.opposite_direction(aspect)
         slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
         slope_vector_3d   = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        spread_direction  = vu.as_unit_vector(slope_vector_3d) if slope > 0.0 else np.asarray((0,1,0)) # default: North
+        spread_direction  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else (0,1,0) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior
@@ -105,7 +105,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
         return {
             "fire_type"         : "unburned",
             "spread_rate"       : 0.0,
-            "spread_direction"  : spread_direction,
+            "spread_direction"  : np.asarray(spread_direction),
             "fireline_intensity": 0.0,
             "flame_length"      : 0.0,
         }
@@ -301,7 +301,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
     upslope_direction = conv.opposite_direction(aspect)
     slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
     azimuth_vector_2d = conv.azimuthal_to_cartesian(1.0, azimuth)
-    spread_direction  = vu.as_unit_vector(vu.to_slope_plane(azimuth_vector_2d, slope_vector_2d))
+    spread_direction  = vu.as_unit_vector_3d(vu.to_slope_plane(azimuth_vector_2d, slope_vector_2d))
 
     #================================================================================================
     # Check whether cell is burnable
@@ -319,7 +319,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
         return {
             "fire_type"         : "unburned",
             "spread_rate"       : 0.0,
-            "spread_direction"  : spread_direction,
+            "spread_direction"  : np.asarray(spread_direction),
             "fireline_intensity": 0.0,
             "flame_length"      : 0.0,
         }
