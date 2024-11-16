@@ -3856,16 +3856,16 @@ Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.0
  'length_to_width_ratio': 2.0231959552088243,
  'max_fireline_intensity': 32.52824122084378,
  'max_flame_length': 0.38439328501240777,
- 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502842]),
+ 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502841]),
  'max_spread_rate': 2.2964672435747526}
 
 Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.9845208630180416,
- 'length_to_width_ratio': 5.70556679165152,
- 'max_fireline_intensity': 330.52326629643716,
- 'max_flame_length': 1.1167831717860743,
- 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502842]),
- 'max_spread_rate': 23.334672450803154}
+{'eccentricity': 0.9845208629992017,
+ 'length_to_width_ratio': 5.705566788206421,
+ 'max_fireline_intensity': 330.5232659226435,
+ 'max_flame_length': 1.1167831712051006,
+ 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502841]),
+ 'max_spread_rate': 23.334672424413625}
 </pre>
 </div>
 </div>
@@ -3935,24 +3935,24 @@ pprint(backing_fire_behavior)
 <pre class="example" id="compute-surface-fire-behavior-in-direction-results">
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 32.52824122084378,
- 'flame_length': 0.38439328501240777,
- 'spread_direction': array([0.57514209, 0.80992594, 0.11502842]),
- 'spread_rate': 2.2964672435747526}
+ 'fireline_intensity': 32.528241220843725,
+ 'flame_length': 0.3843932850124075,
+ 'spread_direction': array([0.57514209, 0.80992594, 0.11502841]),
+ 'spread_rate': 2.2964672435747486}
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.2511201782920365,
- 'flame_length': 0.15074658437077615,
- 'spread_direction': array([ 0.79419774, -0.58653218,  0.15883955]),
- 'spread_rate': 0.3001256099789242}
+ 'fireline_intensity': 4.25112006790012,
+ 'flame_length': 0.1507465825700851,
+ 'spread_direction': array([ 0.79419771, -0.58653219,  0.15883956]),
+ 'spread_rate': 0.3001256021853451}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 2.274165620447327,
+ 'fireline_intensity': 2.2741656204473273,
  'flame_length': 0.11305091610423658,
- 'spread_direction': array([-0.57514209, -0.80992594, -0.11502842]),
- 'spread_rate': 0.16055423403816196}
+ 'spread_direction': array([-0.57514209, -0.80992594, -0.11502841]),
+ 'spread_rate': 0.160554234038162}
 </pre>
 </div>
 </div>
@@ -5005,7 +5005,7 @@ Outputs:
  'length_to_width_ratio': 1.6757411715581005,
  'max_fire_type': 'active_crown',
  'max_fireline_intensity': 74768.3487091958,
- 'max_spread_direction': array([0.00000000e+00, 1.00000000e+00, 3.06161713e-17]),
+ 'max_spread_direction': array([ 0.00000000e+00,  1.00000000e+00, -2.18556941e-08]),
  'max_spread_rate': 29.763522144675242}
 </pre>
 </div>
@@ -5076,9 +5076,9 @@ Heading Fire Behavior
 Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204249208162,
- 'spread_direction': array([ 0.94868332, -0.1054093 ,  0.29814237]),
- 'spread_rate': 3.2646178791364164}
+ 'fireline_intensity': 14756.204313417364,
+ 'spread_direction': array([ 0.94868329, -0.1054093 ,  0.29814238]),
+ 'spread_rate': 3.264617884997446}
 
 Backing Fire Behavior
 ============================================================
@@ -5235,10 +5235,10 @@ Backing Fire Behavior
 Fire Behavior from Surface Fire (No Crown Fire Occurred)
 ============================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637272239331029,
- 'flame_length': 0.23956726455225258,
+ 'fireline_intensity': 11.637272830800834,
+ 'flame_length': 0.23956727015326687,
  'spread_direction': array([0.87038827, 0.        , 0.49236599]),
- 'spread_rate': 0.821581908494353}
+ 'spread_rate': 0.8215819502516378}
 </pre>
 </div>
 </div>
@@ -7346,18 +7346,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 32.52824122084384,
- 'flame_length': 0.38439328501240816,
- 'spread_direction': array([0.48686888, 0.61304248, 0.62220383]),
- 'spread_rate': 2.2964672435747566}
+ 'fireline_intensity': 32.52824122084375,
+ 'flame_length': 0.38439328501240766,
+ 'spread_direction': array([0.48686891, 0.61304247, 0.62220382]),
+ 'spread_rate': 2.2964672435747504}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 50.61290909473209,
- 'flame_length': 0.4710815796919724,
- 'spread_direction': array([0.48686888, 0.61304248, 0.62220383]),
- 'spread_rate': 3.573230014157646}
+ 'fireline_intensity': 50.61290579388001,
+ 'flame_length': 0.47108156555948116,
+ 'spread_direction': array([0.48686891, 0.61304247, 0.62220382]),
+ 'spread_rate': 3.5732297811201863}
 </pre>
 </div>
 </div>
@@ -7450,18 +7450,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637272239331029,
- 'flame_length': 0.23956726455225258,
- 'spread_direction': array([8.70388269e-01, 5.32959119e-17, 4.92365986e-01]),
- 'spread_rate': 0.821581908494353}
+ 'fireline_intensity': 11.637272184891115,
+ 'flame_length': 0.2395672640367254,
+ 'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
+ 'spread_rate': 0.8215819046509395}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 13.898201230152814,
- 'flame_length': 0.2599542239412087,
- 'spread_direction': array([8.70388269e-01, 5.32959119e-17, 4.92365986e-01]),
- 'spread_rate': 0.9812016472997721}
+ 'fireline_intensity': 13.898200839601216,
+ 'flame_length': 0.2599542205809359,
+ 'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
+ 'spread_rate': 0.9812016197271485}
 </pre>
 </div>
 </div>
@@ -7539,15 +7539,26 @@ node-centered central differences, represented by the values in the
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> cython
+<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
+<span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude_2d, dot_2d
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, atan
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">import</span> \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
+        get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 <span class="org-keyword">else</span>:
-    <span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude_2d, dot_2d
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, atan
+    <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian
+    <span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
+        get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport these libraries in a .pxd file</span>
-<span class="org-keyword">from</span> math <span class="org-keyword">import</span> atan, pi, degrees, sqrt
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace pi with a C constant</span>
+<span class="org-keyword">from</span> math <span class="org-keyword">import</span> pi, degrees
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
@@ -7555,22 +7566,9 @@ node-centered central differences, represented by the values in the
 <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
 <span class="org-keyword">import</span> pyretechnics.spot_fire <span class="org-keyword">as</span> spot
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
-<span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> vector_magnitude, as_unit_vector_2d, as_unit_vector_3d, \
-    get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe pyidx should be cy.int?</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe we should use C arrays instead of tuples(structs)?</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Define type aliases</span>
-<span class="org-variable-name">pyidx</span>     <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
-<span class="org-comment-delimiter"># </span><span class="org-comment">vec_xy    = cy.typedef(cy.float[2])</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">vec_xyz   = cy.typedef(cy.float[3])</span>
-<span class="org-variable-name">vec_xy</span>    <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">vec_xyz</span>   <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">coord_yx</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
-<span class="org-variable-name">coord_tyx</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7594,7 +7592,7 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7618,9 +7616,9 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Handle exception values from child functions</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
@@ -7748,7 +7746,7 @@ First, we define the parameter \(r\) and the Superbee flux limiter
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="superbee-flux-limiter"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="superbee-flux-limiter"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_superbee_flux_limiter</span>(dphi_up: cy.<span class="org-builtin">float</span>, dphi_loc: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7778,7 +7776,7 @@ and "south" values as follows:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="phi-field-spatial-gradients"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_x: cy.<span class="org-builtin">float</span>, dx: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7797,7 +7795,7 @@ and "south" values as follows:
     <span class="org-keyword">return</span> (phi_east <span class="org-operator">-</span> phi_west) <span class="org-operator">/</span> dx
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_y: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, rows: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7816,9 +7814,9 @@ and "south" values as follows:
     <span class="org-keyword">return</span> (phi_north <span class="org-operator">-</span> phi_south) <span class="org-operator">/</span> dy
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Handle exception values from child functions</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_x: cy.<span class="org-builtin">float</span>, u_y: cy.<span class="org-builtin">float</span>, dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>,
                       x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
@@ -7859,7 +7857,7 @@ For the east face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-east"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="phi-east"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7909,7 +7907,7 @@ For the west face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-west"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="phi-west"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -7959,7 +7957,7 @@ For the north face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-north"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="phi-north"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -8009,7 +8007,7 @@ For the south face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-south"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="phi-south"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -8073,28 +8071,36 @@ illustrated below.
 
 <div class="org-src-container">
 <pre class="src src-python" id="calc-fireline-normal-behavior"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move this to pyretechnics.vector_utils and use throughout the literate program</span>
-<span class="org-keyword">def</span> <span class="org-function-name">calc_elevation_gradient</span>(slope, aspect):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">calc_elevation_gradient</span>(slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:</span>
 <span class="org-doc">    - slope  :: rise/run</span>
 <span class="org-doc">    - aspect :: degrees clockwise from North</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    <span class="org-keyword">return</span> azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_on_slope</span>(phi_gradient_xy, elevation_gradient):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_on_slope</span>(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:</span>
 <span class="org-doc">    - phi_gradient_xy    :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane</span>
 <span class="org-doc">    - elevation_gradient :: (dz_dx: rise/run, dz_dy: rise/run)</span>
 <span class="org-doc">    """</span>
-    (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>) <span class="org-operator">=</span> phi_gradient_xy
-    <span class="org-variable-name">phi_gradient_xyz</span>   <span class="org-operator">=</span> np.asarray((dphi_dx, dphi_dy, 0.0))
+    (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>)        <span class="org-operator">=</span> phi_gradient_xy
+    <span class="org-variable-name">phi_gradient_xyz</span>: vec_xyz <span class="org-operator">=</span> (dphi_dx, dphi_dy, 0.0)
     <span class="org-keyword">if</span> vector_magnitude_2d(elevation_gradient) <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> phi_gradient_xyz
     <span class="org-keyword">else</span>:
-        <span class="org-variable-name">slope_normal_vector</span> <span class="org-operator">=</span> np.asarray(get_slope_normal_vector(elevation_gradient)) <span class="org-comment-delimiter"># </span><span class="org-comment">(x,y,z) unit vector</span>
-        <span class="org-keyword">return</span> phi_gradient_xyz <span class="org-operator">-</span> np.dot(phi_gradient_xyz, slope_normal_vector) <span class="org-operator">*</span> slope_normal_vector
+        <span class="org-variable-name">slope_normal_vector</span>: vec_xyz  <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">(x,y,z) unit vector</span>
+        <span class="org-variable-name">phi_slope_agreement</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> dot_3d(phi_gradient_xyz, slope_normal_vector)
+        <span class="org-variable-name">dphi_dx_on_slope</span>   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xyz[0] <span class="org-operator">-</span> phi_slope_agreement <span class="org-operator">*</span> slope_normal_vector[0]
+        <span class="org-variable-name">dphi_dy_on_slope</span>   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xyz[1] <span class="org-operator">-</span> phi_slope_agreement <span class="org-operator">*</span> slope_normal_vector[1]
+        <span class="org-variable-name">dphi_dz_on_slope</span>   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> phi_gradient_xyz[2] <span class="org-operator">-</span> phi_slope_agreement <span class="org-operator">*</span> slope_normal_vector[2]
+        <span class="org-keyword">return</span> (dphi_dx_on_slope, dphi_dy_on_slope, dphi_dz_on_slope)
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate &lt; critical_spread_rate?</span>
@@ -8127,7 +8133,7 @@ illustrated below.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the magnitude of the phi gradient</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vector_magnitude(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
+    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vector_magnitude_3d(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell is on the fire perimeter and burning</span>
@@ -8332,7 +8338,7 @@ is returned.
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the magnitude of the phi gradient</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
-    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vector_magnitude(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
+    <span class="org-variable-name">phi_magnitude</span> <span class="org-operator">=</span> vector_magnitude_3d(phi_gradient) <span class="org-comment-delimiter"># </span><span class="org-comment">phi/m</span>
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Check whether cell is on the fire perimeter and burnable</span>
@@ -8348,7 +8354,7 @@ is returned.
         <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
         <span class="org-keyword">if</span> phi_magnitude <span class="org-operator">&gt;</span> 0.0:
-            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> phi_gradient <span class="org-operator">/</span> phi_magnitude
+            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray(phi_gradient) <span class="org-operator">/</span> phi_magnitude
         <span class="org-keyword">elif</span> slope <span class="org-operator">&gt;</span> 0.0:
             <span class="org-variable-name">slope_vector_3d</span>  <span class="org-operator">=</span> to_slope_plane(elevation_gradient, elevation_gradient)
             <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray(as_unit_vector_3d(slope_vector_3d))
@@ -8551,7 +8557,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
 </dl>
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-perimeter-tracking"><span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<pre class="src src-python" id="phi-field-perimeter-tracking"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -8563,7 +8569,8 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Is it faster to build up a list or a set?</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Should we store each frontier_cells entry as a coord_xy?</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">identify_all_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
     <span class="org-doc">"""</span>
@@ -8588,7 +8595,8 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Is it faster to build up a list or a set?</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Should we store each frontier_cells entry as a coord_xy?</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], tracked_cells: <span class="org-builtin">dict</span>, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
     <span class="org-doc">"""</span>
@@ -8611,7 +8619,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-keyword">return</span> frontier_cells
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">project_buffer</span>(cell: <span class="org-builtin">tuple</span>, buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[<span class="org-builtin">tuple</span>]:
     <span class="org-doc">"""</span>
@@ -8626,18 +8634,22 @@ near it, and decrement their tracking counter by 1. Upon reaching
             <span class="org-keyword">for</span> x_ <span class="org-keyword">in</span> buffer_range_x]
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells, buffer_width, rows, cols):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells: <span class="org-builtin">set</span>, buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">tracked_cells</span> <span class="org-operator">=</span> {}
+    <span class="org-variable-name">tracked_cells</span>: <span class="org-builtin">dict</span> <span class="org-operator">=</span> {}
+    cell         : <span class="org-builtin">tuple</span>
+    buffer_cell  : <span class="org-builtin">tuple</span>
     <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> frontier_cells:
         <span class="org-keyword">for</span> buffer_cell <span class="org-keyword">in</span> project_buffer(cell, buffer_width, rows, cols):
             <span class="org-variable-name">tracked_cells</span>[buffer_cell] <span class="org-operator">=</span> tracked_cells.get(buffer_cell, 0) <span class="org-operator">+</span> 1
     <span class="org-keyword">return</span> tracked_cells
 
 
-<span class="org-type">@cy.cprofile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">update_tracked_cells</span>(tracked_cells: <span class="org-builtin">dict</span>, frontier_cells_old: <span class="org-builtin">set</span>, frontier_cells_new: <span class="org-builtin">set</span>,
                          buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
@@ -8712,17 +8724,13 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.exceptval(NULL)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.wraparound(False)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.boundscheck(False)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert all cy.double -&gt; cy.float</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate optional arguments to function</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Figure out how to type cube_resolution as vec_xyz</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Make calc_phi_gradient and calc_phi_gradient_approx return a vec_xy</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate calls to np.dot</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: See if we can use a C struct for the fire_behavior and fire_behavior_star dictionaries (not fire_behavior_dict)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Perhaps cell_index should be a Python tuple rather than a C tuple?</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace fire_type_codes with as some kind of C type?</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert spread_direction_vector_to_angle to a @cfunc</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert SpaceTimeCube to a @cclass with methods that take pyidx values</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert calc_elevation_gradient to a @cfunc</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert spot.expected_firebrand_production to a @cfunc</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert spot.spread_firebrands to a @cfunc</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace set.union with list concatenation? (Should ignited_cells be a list for speed?)</span>
@@ -8730,7 +8738,6 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Convert update_tracked_cells to a @cfunc</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Speed up burn_cell_toward_phi_gradient</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport the remaining vector_utils functions</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Turn off divide-by-zero checks</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())</span>
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes: <span class="org-builtin">dict</span>, output_matrices: <span class="org-builtin">dict</span>, frontier_cells: <span class="org-builtin">set</span>, tracked_cells: <span class="org-builtin">dict</span>,
@@ -8922,16 +8929,16 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
                 <span class="org-comment-delimiter"># </span><span class="org-comment">Cast firebrands, update firebrand_count_matrix, and update spot_ignitions</span>
                 <span class="org-keyword">if</span> spot_config:
-                    <span class="org-variable-name">t_cast</span>                  : pyidx <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
-                    <span class="org-variable-name">space_time_coordinate</span>           <span class="org-operator">=</span> (t_cast, y, x)
-                    <span class="org-variable-name">slope</span>                   : <span class="org-builtin">float</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>].get(t_cast, y, x)
-                    <span class="org-variable-name">aspect</span>                  : <span class="org-builtin">float</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"aspect"</span>].get(t_cast, y, x)
-                    <span class="org-variable-name">elevation_gradient</span>      : <span class="org-builtin">tuple</span> <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
-                    <span class="org-variable-name">firebrands_per_unit_heat</span>: <span class="org-builtin">float</span> <span class="org-operator">=</span> spot_config[<span class="org-string">"firebrands_per_unit_heat"</span>]
-                    <span class="org-variable-name">expected_firebrand_count</span>: <span class="org-builtin">float</span> <span class="org-operator">=</span> spot.expected_firebrand_production(fire_behavior,
-                                                                                         elevation_gradient,
-                                                                                         cube_resolution,
-                                                                                         firebrands_per_unit_heat)
+                    <span class="org-variable-name">t_cast</span>                  : pyidx    <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival_matrix[y,x] <span class="org-operator">//</span> band_duration)
+                    <span class="org-variable-name">space_time_coordinate</span>              <span class="org-operator">=</span> (t_cast, y, x)
+                    <span class="org-variable-name">slope</span>                   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>].get(t_cast, y, x)
+                    <span class="org-variable-name">aspect</span>                  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"aspect"</span>].get(t_cast, y, x)
+                    <span class="org-variable-name">elevation_gradient</span>      : vec_xy   <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
+                    <span class="org-variable-name">firebrands_per_unit_heat</span>: <span class="org-builtin">float</span>    <span class="org-operator">=</span> spot_config[<span class="org-string">"firebrands_per_unit_heat"</span>]
+                    <span class="org-variable-name">expected_firebrand_count</span>: <span class="org-builtin">float</span>    <span class="org-operator">=</span> spot.expected_firebrand_production(fire_behavior,
+                                                                                            elevation_gradient,
+                                                                                            cube_resolution,
+                                                                                            firebrands_per_unit_heat)
                     new_ignitions: <span class="org-builtin">tuple</span>[<span class="org-builtin">float</span>, <span class="org-builtin">set</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> spot.spread_firebrands(space_time_cubes,
                                                                                    output_matrices,
                                                                                    cube_resolution,
@@ -8983,6 +8990,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     }
 
 
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration<span class="org-operator">=</span><span class="org-constant">None</span>, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>,
                                crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
@@ -9327,19 +9335,19 @@ Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2116481, 'Stdev': 0.634163}
+{'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.211648, 'Stdev': 0.6341628}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.6585794, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.93309}
+{'Min': 0.65846, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.93309}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.162354, 'Stdev': 8.982582}
+{'Min': 2.2772386, 'Max': 32.528233, 'Mean': 17.16235, 'Stdev': 8.98258}
 
 Flame Length (meters)
-{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356828}
+{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356827}
 
 Time of Arrival (minutes)
-{'Min': 2081.8516, 'Max': 2548.1526, 'Mean': 2385.591, 'Stdev': 116.83734}
+{'Min': 2081.8516, 'Max': 2548.1523, 'Mean': 2385.591, 'Stdev': 116.83734}
 </pre>
 </div>
 </li>
@@ -9686,16 +9694,16 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9967122, 'Max': 1.0, 'Mean': 0.77200466, 'Stdev': 0.5722504}
+{'Min': -0.9967122, 'Max': 1.0, 'Mean': 0.77200466, 'Stdev': 0.57225037}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16055718, 'Max': 2.2964664, 'Mean': 1.3839706, 'Stdev': 0.6849228}
+{'Min': 0.16055718, 'Max': 2.2964666, 'Mean': 1.3839706, 'Stdev': 0.6849228}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.015502152, 'Max': 359.823, 'Mean': 179.89368, 'Stdev': 127.714645}
+{'Min': 0.015501725, 'Max': 359.823, 'Mean': 179.89368, 'Stdev': 127.71465}
 
 Fireline Intensity (kW/m)
 {'Min': 2.2742074, 'Max': 32.52823, 'Mean': 19.60321, 'Stdev': 9.701569}
@@ -9715,38 +9723,38 @@ Future Spot Ignitions:
 {2551.1975872246294: {(78, 75)},
  2551.41264882651: {(79, 54), (80, 60)},
  2551.8568054218845: {(82, 36)},
- 2553.242945427251: {(73, 50)},
+ 2553.242946902038: {(73, 50)},
  2553.503079660735: {(82, 42)},
- 2553.67061785131: {(88, 50)},
- 2554.8380765190304: {(78, 64)},
+ 2553.670619046169: {(88, 50)},
+ 2554.838075045936: {(78, 64)},
  2555.5251004606916: {(78, 60), (78, 58)},
  2556.2804252683736: {(80, 74)},
- 2556.9567981901855: {(79, 80), (78, 75)},
- 2557.1956166487: {(72, 52), (75, 51)},
+ 2556.956797139484: {(79, 80), (78, 75)},
+ 2557.1956179112426: {(72, 52), (75, 51)},
  2560.051319222669: {(82, 76)},
  2560.0546762952063: {(75, 81)},
  2562.224290899111: {(78, 53)},
- 2563.0130376470297: {(60, 78)},
+ 2563.01303934983: {(60, 78)},
  2563.863116897054: {(81, 38)},
  2566.6678267193665: {(82, 40)},
- 2567.2125623007973: {(78, 77)},
- 2567.358762535121: {(83, 69)},
+ 2567.2125612853533: {(78, 77)},
+ 2567.3587640264323: {(83, 69)},
  2569.330376256175: {(79, 77)},
- 2570.921411182046: {(83, 43), (83, 36)},
+ 2570.921655322671: {(83, 43), (83, 36)},
  2573.7323021656953: {(92, 51)},
- 2574.658589021639: {(53, 44)},
- 2574.7942263212: {(85, 72)},
+ 2574.658587317199: {(53, 44)},
+ 2574.7942252879043: {(85, 72)},
  2575.8510399606234: {(81, 65), (80, 63)},
- 2576.9250378030665: {(90, 38)},
+ 2576.9250366141023: {(90, 38)},
  2576.970322053317: {(78, 60), (80, 63)},
- 2581.257439560457: {(73, 78)},
+ 2581.2574406038552: {(73, 78)},
  2583.255900463565: {(84, 31)},
- 2583.532527064589: {(84, 54)},
- 2583.7573032810296: {(70, 84)},
+ 2583.532525084117: {(84, 54)},
+ 2583.7573020374803: {(70, 84)},
  2591.914720289493: {(66, 34), (71, 40)},
  2592.883811381346: {(64, 36)},
  2603.1104057780935: {(80, 55)},
- 2613.441074595893: {(61, 37)}}
+ 2613.441077472167: {(61, 37)}}
 </pre>
 </div>
 </li>
@@ -10219,32 +10227,32 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945679, 'Stdev': 0.5639848}
-Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.79845846, 'Stdev': 0.5611055}
+Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945678, 'Stdev': 0.5639848}
+Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7984585, 'Stdev': 0.5611055}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-Main: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.2057377, 'Stdev': 0.6379759}
-Fork: {'Min': 0.16077119, 'Max': 2.2964668, 'Mean': 1.1890497, 'Stdev': 0.6305116}
+Main: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.2057377, 'Stdev': 0.63797575}
+Fork: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.1890496, 'Stdev': 0.63051146}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27237135, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.352104}
-Fork: {'Min': 0.27237135, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70384}
+Main: {'Min': 0.27234477, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35211}
+Fork: {'Min': 0.27234477, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70385}
 
 Fireline Intensity (kW/m)
-Main: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 17.078634, 'Stdev': 9.03659}
-Fork: {'Min': 2.2772386, 'Max': 32.528236, 'Mean': 16.842258, 'Stdev': 8.930863}
+Main: {'Min': 2.2772386, 'Max': 32.528233, 'Mean': 17.078634, 'Stdev': 9.036589}
+Fork: {'Min': 2.2772386, 'Max': 32.528233, 'Mean': 16.842258, 'Stdev': 8.9308605}
 
 Flame Length (meters)
-Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27460182, 'Stdev': 0.0734151}
-Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27287114, 'Stdev': 0.07285745}
+Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.2746018, 'Stdev': 0.073415086}
+Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27287117, 'Stdev': 0.07285743}
 
 Time of Arrival (minutes)
 Main: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2543.6892, 'Stdev': 173.15517}
-Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945}
+Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 </pre>
 </div>
 </li>
@@ -10504,7 +10512,18 @@ Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945
 <h3 id="units-conversion-functions-(pyretechnics.conversion)"><span class="section-number-3">10.1.</span> Units Conversion Functions (pyretechnics.conversion)</h3>
 <div class="outline-text-3" id="text-units-conversion-functions-(pyretechnics.conversion)">
 <div class="org-src-container">
-<pre class="src src-python" id="units-conversion"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, degrees, radians, sin, cos, tan, atan, atan2, pi
+<pre class="src src-python" id="units-conversion"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
+<span class="org-keyword">import</span> cython
+<span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos, tan, atan, atan2
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> vec_xy
+<span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos, tan, atan, atan2
+    <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> vec_xy
+
+
+<span class="org-keyword">from</span> math <span class="org-keyword">import</span> degrees, radians, pi
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">F_to_K</span>(degrees):
@@ -10723,23 +10742,31 @@ Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945
     <span class="org-keyword">return</span> (x, y)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_azimuthal</span>(x, y):
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Implement a primitive degrees function</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_azimuthal</span>(x: cy.<span class="org-builtin">float</span>, y: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""</span>
-    <span class="org-variable-name">r</span>           <span class="org-operator">=</span> sqrt(x <span class="org-operator">**</span> 2.0 <span class="org-operator">+</span> y <span class="org-operator">**</span> 2.0)
-    <span class="org-variable-name">azimuth_rad</span> <span class="org-operator">=</span> atan2(x, y)
-    <span class="org-variable-name">azimuth</span>     <span class="org-operator">=</span> degrees(azimuth_rad) <span class="org-operator">%</span> 360.0
+    <span class="org-variable-name">r</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt(x <span class="org-operator">*</span> x <span class="org-operator">+</span> y <span class="org-operator">*</span> y)
+    <span class="org-variable-name">azimuth_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> atan2(x, y)
+    <span class="org-variable-name">azimuth</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> degrees(azimuth_rad) <span class="org-operator">%</span> 360.0
     <span class="org-keyword">return</span> (r, azimuth)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">azimuthal_to_cartesian</span>(r, azimuth):
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Implement a primitive radians function</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">azimuthal_to_cartesian</span>(r: cy.<span class="org-builtin">float</span>, azimuth: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""</span>
-    <span class="org-variable-name">azimuth_rad</span> <span class="org-operator">=</span> radians(azimuth)
-    <span class="org-variable-name">x</span>           <span class="org-operator">=</span> r <span class="org-operator">*</span> sin(azimuth_rad)
-    <span class="org-variable-name">y</span>           <span class="org-operator">=</span> r <span class="org-operator">*</span> cos(azimuth_rad)
+    <span class="org-variable-name">azimuth_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> radians(azimuth)
+    <span class="org-variable-name">x</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> r <span class="org-operator">*</span> sin(azimuth_rad)
+    <span class="org-variable-name">y</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> r <span class="org-operator">*</span> cos(azimuth_rad)
     <span class="org-keyword">return</span> (x, y)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">opposite_direction</span>(theta):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">opposite_direction</span>(theta: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert theta to theta + 180 degrees."""</span>
     <span class="org-keyword">return</span> (theta <span class="org-operator">+</span> 180.0) <span class="org-operator">%</span> 360.0
 
@@ -10754,26 +10781,42 @@ Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945
     <span class="org-keyword">return</span> wind_speed_20ft <span class="org-operator">/</span> 0.87
 </pre>
 </div>
+
+<div class="org-src-container">
+<pre class="src src-python" id="conversion-pxd">cimport pyretechnics.types
+<span class="org-keyword">from</span> pyretechnics.types cimport vec_xy
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Cython functions to cimport into other modules</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+
+cpdef vec_xy cartesian_to_azimuthal(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y)
+cpdef vec_xy azimuthal_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> azimuth)
+cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org-builtin">float</span> theta)
+</pre>
+</div>
 </div>
 </div>
 <div id="outline-container-vector-utility-functions-(pyretechnics.vector_utils)" class="outline-3">
 <h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.2.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
-<pre class="src src-python" id="vector-utilities"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians
+<pre class="src src-python" id="vector-utilities"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
 <span class="org-keyword">import</span> cython
-<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
-
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
-<span class="org-keyword">if</span> cy.compiled:
+<span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
 <span class="org-keyword">else</span>:
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+    <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+
+
+<span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
@@ -10857,7 +10900,6 @@ Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace numpy arrays with vec_xyz and vec_xy</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Speed up conv.cartesian_to_azimuthal</span>
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
@@ -10866,7 +10908,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945
     <span class="org-variable-name">vector_2d</span>: cy.double[:] <span class="org-operator">=</span> to_horizontal_plane(vector_3d)
     <span class="org-variable-name">x</span>        : cy.double    <span class="org-operator">=</span> vector_2d[0]
     <span class="org-variable-name">y</span>        : cy.double    <span class="org-operator">=</span> vector_2d[1]
-    <span class="org-variable-name">az_coords</span>: <span class="org-builtin">tuple</span>        <span class="org-operator">=</span> conv.cartesian_to_azimuthal(x, y)
+    <span class="org-variable-name">az_coords</span>: vec_xy       <span class="org-operator">=</span> cartesian_to_azimuthal(x, y)
     <span class="org-variable-name">azimuth</span>  : cy.<span class="org-builtin">float</span>     <span class="org-operator">=</span> az_coords[1]
     <span class="org-keyword">return</span> azimuth
 
@@ -10874,61 +10916,80 @@ Fork: {'Min': 2081.8516, 'Max': 2789.7427, 'Mean': 2539.6372, 'Stdev': 171.93945
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">get_slope_normal_vector</span>(elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
-    <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> (<span class="org-operator">-</span>elevation_gradient[0], <span class="org-operator">-</span>elevation_gradient[1], 1.0)
+    (<span class="org-variable-name">dz_dx</span>, <span class="org-variable-name">dz_dy</span>)               <span class="org-operator">=</span> elevation_gradient
+    <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> (<span class="org-operator">-</span>dz_dx, <span class="org-operator">-</span>dz_dy, 1.0)
     <span class="org-keyword">return</span> as_unit_vector_3d(slope_normal_vector)
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate need for numpy</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Speed up conv.cartesian_to_azimuthal and conv.opposite_direction</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a primitive math radians function</span>
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
-<span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: np.ndarray, theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xyz:
+<span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: cy.double[:], theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.double[:]:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Rotate a 3D vector &lt;x,y,z&gt; theta degrees clockwise on the plane defined by the slope and aspect.</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the slope normal vector from the slope and aspect</span>
-    <span class="org-variable-name">elevation_gradient</span> : vec_xy  <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    <span class="org-variable-name">elevation_gradient</span> : vec_xy  <span class="org-operator">=</span> azimuthal_to_cartesian(slope, opposite_direction(aspect))
     <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
     <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> radians(theta)
-    <span class="org-keyword">return</span> cos(theta_rad) <span class="org-operator">*</span> vector <span class="org-operator">+</span> np.cross(sin(theta_rad) <span class="org-operator">*</span> vector, slope_normal_vector)
+    <span class="org-keyword">return</span> np.add(np.multiply(cos(theta_rad),
+                              vector),
+                  np.cross(np.multiply(sin(theta_rad),
+                                       vector),
+                           slope_normal_vector))
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-cython" id="vector-utils-pxd">cimport pyretechnics.types
-from pyretechnics.types cimport vec_xy
+<pre class="src src-python" id="vector-utils-pxd">cimport pyretechnics.types
+<span class="org-keyword">from</span> pyretechnics.types cimport vec_xy, vec_xyz
 
-#==================================================
-# Cython functions to cimport into other modules
-#==================================================
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Cython functions to cimport into other modules</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 
-cpdef float dot_2d(vec_xy vector1, vec_xy vector2)
-cpdef float vector_magnitude_2d(vec_xy vector)
+cpdef double vector_magnitude(double[:] vector)
+cpdef <span class="org-builtin">float</span> dot_2d(vec_xy vector1, vec_xy vector2)
+cpdef <span class="org-builtin">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2)
+cpdef <span class="org-builtin">float</span> vector_magnitude_2d(vec_xy vector)
+cpdef <span class="org-builtin">float</span> vector_magnitude_3d(vec_xyz vector)
+cpdef vec_xy as_unit_vector_2d(vec_xy vector)
+cpdef vec_xyz as_unit_vector_3d(vec_xyz vector)
+cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient)
+cpdef double[:] to_horizontal_plane(double[:] vector_3d)
+cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(double[:] vector_3d)
+cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient)
+cpdef double[:] rotate_on_sloped_plane(double[:] vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect)
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-cython" id="math-pxd">#==================================================
-# C functions to cimport into other modules
-#==================================================
+<pre class="src src-python" id="math-pxd"><span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">C functions to cimport into other modules</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 
-cdef extern from "math.h":
+cdef extern <span class="org-keyword">from</span> <span class="org-string">"math.h"</span>:
      cdef double sqrt(double x)
      cdef double sin(double x)
      cdef double cos(double x)
+     cdef double tan(double x)
+     cdef double atan(double x)
+     cdef double atan2(double y, double x)
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-cython" id="types-pxd">#==================================================
-# Type aliases
-#==================================================
+<pre class="src src-python" id="types-pxd"><span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Type aliases</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 
 ctypedef Py_ssize_t pyidx
-ctypedef (float, float) vec_xy
-ctypedef (float, float, float) vec_xyz
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) vec_xy
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) vec_xyz
+ctypedef (pyidx, pyidx) coord_yx
+ctypedef (pyidx, pyidx, pyidx) coord_tyx
 </pre>
 </div>
 
@@ -10941,11 +11002,15 @@ ctypedef (float, float, float) vec_xyz
 <span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
 
 <span class="org-keyword">if</span> cy.compiled:
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
 <span class="org-keyword">else</span>:
-    <span class="org-variable-name">pyidx</span>   <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
-    <span class="org-variable-name">vec_xy</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-    <span class="org-variable-name">vec_xyz</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe pyidx should be cy.int?</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe we should use C arrays instead of tuples(structs)?</span>
+    <span class="org-variable-name">pyidx</span>     <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+    <span class="org-variable-name">vec_xy</span>    <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+    <span class="org-variable-name">vec_xyz</span>   <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+    <span class="org-variable-name">coord_yx</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
+    <span class="org-variable-name">coord_tyx</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
 </pre>
 </div>
 </div>

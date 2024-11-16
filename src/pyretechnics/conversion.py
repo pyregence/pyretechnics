@@ -1,5 +1,16 @@
 # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
-from math import sqrt, degrees, radians, sin, cos, tan, atan, atan2, pi
+# TODO: Fix error with importing pyretechnics.types
+import cython
+if cython.compiled:
+    from cython.cimports.pyretechnics.math import sqrt, sin, cos, tan, atan, atan2
+    from cython.cimports.pyretechnics.types import vec_xy
+else:
+    from math import sqrt, sin, cos, tan, atan, atan2
+    from pyretechnics.types import vec_xy
+
+
+from math import degrees, radians, pi
+import cython as cy
 
 
 def F_to_K(degrees):
@@ -218,23 +229,31 @@ def polar_to_cartesian(r, theta):
     return (x, y)
 
 
-def cartesian_to_azimuthal(x, y):
+# TODO: Implement a primitive degrees function
+@cy.profile(True)
+@cy.ccall
+def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
-    r           = sqrt(x ** 2.0 + y ** 2.0)
-    azimuth_rad = atan2(x, y)
-    azimuth     = degrees(azimuth_rad) % 360.0
+    r          : cy.float = sqrt(x * x + y * y)
+    azimuth_rad: cy.float = atan2(x, y)
+    azimuth    : cy.float = degrees(azimuth_rad) % 360.0
     return (r, azimuth)
 
 
-def azimuthal_to_cartesian(r, azimuth):
+# TODO: Implement a primitive radians function
+@cy.profile(True)
+@cy.ccall
+def azimuthal_to_cartesian(r: cy.float, azimuth: cy.float) -> vec_xy:
     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
-    azimuth_rad = radians(azimuth)
-    x           = r * sin(azimuth_rad)
-    y           = r * cos(azimuth_rad)
+    azimuth_rad: cy.float = radians(azimuth)
+    x          : cy.float = r * sin(azimuth_rad)
+    y          : cy.float = r * cos(azimuth_rad)
     return (x, y)
 
 
-def opposite_direction(theta):
+@cy.profile(True)
+@cy.ccall
+def opposite_direction(theta: cy.float) -> cy.float:
     """Convert theta to theta + 180 degrees."""
     return (theta + 180.0) % 360.0
 

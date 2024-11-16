@@ -1,18 +1,20 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
-from math import radians
-import cython
-import cython as cy
-import numpy as np
-import pyretechnics.conversion as conv
-
-
 # TODO: Fix error with importing pyretechnics.types
-if cy.compiled:
+import cython
+if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz
+    from cython.cimports.pyretechnics.conversion import \
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
 else:
     from math import sqrt, sin, cos
     from pyretechnics.types import pyidx, vec_xy, vec_xyz
+    from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+
+
+from math import radians
+import cython as cy
+import numpy as np
 
 
 @cy.profile(False)
@@ -96,7 +98,6 @@ def to_horizontal_plane(vector_3d: cy.double[:]) -> cy.double[:]:
 
 
 # TODO: Replace numpy arrays with vec_xyz and vec_xy
-# TODO: Speed up conv.cartesian_to_azimuthal
 @cy.profile(False)
 @cy.ccall
 @cy.wraparound(False)
@@ -105,7 +106,7 @@ def spread_direction_vector_to_angle(vector_3d: cy.double[:]) -> cy.float:
     vector_2d: cy.double[:] = to_horizontal_plane(vector_3d)
     x        : cy.double    = vector_2d[0]
     y        : cy.double    = vector_2d[1]
-    az_coords: tuple        = conv.cartesian_to_azimuthal(x, y)
+    az_coords: vec_xy       = cartesian_to_azimuthal(x, y)
     azimuth  : cy.float     = az_coords[1]
     return azimuth
 
@@ -113,23 +114,27 @@ def spread_direction_vector_to_angle(vector_3d: cy.double[:]) -> cy.float:
 @cy.profile(False)
 @cy.ccall
 def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
-    slope_normal_vector: vec_xyz = (-elevation_gradient[0], -elevation_gradient[1], 1.0)
+    (dz_dx, dz_dy)               = elevation_gradient
+    slope_normal_vector: vec_xyz = (-dz_dx, -dz_dy, 1.0)
     return as_unit_vector_3d(slope_normal_vector)
 
 
 # TODO: Eliminate need for numpy
-# TODO: Speed up conv.cartesian_to_azimuthal and conv.opposite_direction
 # TODO: Create a primitive math radians function
 @cy.profile(False)
 @cy.ccall
-def rotate_on_sloped_plane(vector: np.ndarray, theta: cy.float, slope: cy.float, aspect: cy.float) -> vec_xyz:
+def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
     """
     Rotate a 3D vector <x,y,z> theta degrees clockwise on the plane defined by the slope and aspect.
     """
     # Calculate the slope normal vector from the slope and aspect
-    elevation_gradient : vec_xy  = conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    elevation_gradient : vec_xy  = azimuthal_to_cartesian(slope, opposite_direction(aspect))
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
     # Rotate theta degrees clockwise around the slope_normal_vector
     theta_rad: cy.float = radians(theta)
-    return cos(theta_rad) * vector + np.cross(sin(theta_rad) * vector, slope_normal_vector)
+    return np.add(np.multiply(cos(theta_rad),
+                              vector),
+                  np.cross(np.multiply(sin(theta_rad),
+                                       vector),
+                           slope_normal_vector))
 # vector-utilities ends here

@@ -15,6 +15,7 @@
        (root-directory       (file-name-parent-directory script-directory))
        (detangle-file-regexp (string-join '("\\.py$"
                                             "\\.pyx$"
+                                            "\\.pxd$"
                                             "\\.sh$"
                                             "\\.el$")
                                           "\\|"))

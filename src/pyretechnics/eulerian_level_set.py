@@ -1,13 +1,24 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
+# TODO: Fix error with importing pyretechnics.types
 import cython
 if cython.compiled:
-    from cython.cimports.pyretechnics.vector_utils import vector_magnitude_2d, dot_2d
+    from cython.cimports.pyretechnics.math import sqrt, atan
+    from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from cython.cimports.pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
+    from cython.cimports.pyretechnics.vector_utils import \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
+        get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
-    from pyretechnics.vector_utils import vector_magnitude_2d, dot_2d
+    from math import sqrt, atan
+    from pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
+    from pyretechnics.vector_utils import \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
+        get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 
 
-# TODO: cimport these libraries in a .pxd file
-from math import atan, pi, degrees, sqrt
+# TODO: Replace pi with a C constant
+from math import pi, degrees
 import cython as cy
 import numpy as np
 import pyretechnics.conversion as conv
@@ -15,22 +26,9 @@ import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 import pyretechnics.spot_fire as spot
 import pyretechnics.surface_fire as sf
-from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_2d, as_unit_vector_3d, \
-    get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
-
-# TODO: Maybe pyidx should be cy.int?
-# TODO: Maybe we should use C arrays instead of tuples(structs)?
-# Define type aliases
-pyidx     = cy.typedef(cy.Py_ssize_t)
-# vec_xy    = cy.typedef(cy.float[2])
-# vec_xyz   = cy.typedef(cy.float[3])
-vec_xy    = cy.typedef(tuple[cy.float, cy.float])
-vec_xyz   = cy.typedef(tuple[cy.float, cy.float, cy.float])
-coord_yx  = cy.typedef(tuple[pyidx, pyidx])
-coord_tyx = cy.typedef(tuple[pyidx, pyidx, pyidx])
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -54,7 +52,7 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, co
             return 0.0
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -78,9 +76,9 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, ro
             return 0.0
 
 
-# TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)
+# TODO: Pass rows and cols
 # TODO: Handle exception values from child functions
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
@@ -134,7 +132,7 @@ def calc_phi_normal_azimuth(phi_normal_vector):
     return degrees(angle)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
@@ -150,7 +148,7 @@ def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.floa
                    min(r, 2.0))
 # superbee-flux-limiter ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -169,7 +167,7 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: p
     return (phi_east - phi_west) / dx
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -188,9 +186,9 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
     return (phi_north - phi_south) / dy
 
 
-# TODO: Pass rows and cols and create returned array without np.asarray? (Try vec_xy)
+# TODO: Pass rows and cols
 # TODO: Handle exception values from child functions
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
                       x: pyidx, y: pyidx) -> vec_xy:
@@ -211,7 +209,7 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
     return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -241,7 +239,7 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
         return phi[y][east_x] - 0.5 * B * dphi_loc
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -271,7 +269,7 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -301,7 +299,7 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
         return phi[north_y][x] - 0.5 * B * dphi_loc
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -332,28 +330,36 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
-def calc_elevation_gradient(slope, aspect):
+@cy.profile(True)
+@cy.ccall
+def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
     Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:
     - slope  :: rise/run
     - aspect :: degrees clockwise from North
     """
-    return conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
+    return azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-def calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient):
+@cy.profile(True)
+@cy.ccall
+def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
     Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:
     - phi_gradient_xy    :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane
     - elevation_gradient :: (dz_dx: rise/run, dz_dy: rise/run)
     """
-    (dphi_dx, dphi_dy) = phi_gradient_xy
-    phi_gradient_xyz   = np.asarray((dphi_dx, dphi_dy, 0.0))
+    (dphi_dx, dphi_dy)        = phi_gradient_xy
+    phi_gradient_xyz: vec_xyz = (dphi_dx, dphi_dy, 0.0)
     if vector_magnitude_2d(elevation_gradient) == 0.0:
         return phi_gradient_xyz
     else:
-        slope_normal_vector = np.asarray(get_slope_normal_vector(elevation_gradient)) # (x,y,z) unit vector
-        return phi_gradient_xyz - np.dot(phi_gradient_xyz, slope_normal_vector) * slope_normal_vector
+        slope_normal_vector: vec_xyz  = get_slope_normal_vector(elevation_gradient) # (x,y,z) unit vector
+        phi_slope_agreement: cy.float = dot_3d(phi_gradient_xyz, slope_normal_vector)
+        dphi_dx_on_slope   : cy.float = phi_gradient_xyz[0] - phi_slope_agreement * slope_normal_vector[0]
+        dphi_dy_on_slope   : cy.float = phi_gradient_xyz[1] - phi_slope_agreement * slope_normal_vector[1]
+        dphi_dz_on_slope   : cy.float = phi_gradient_xyz[2] - phi_slope_agreement * slope_normal_vector[2]
+        return (dphi_dx_on_slope, dphi_dy_on_slope, dphi_dz_on_slope)
 
 
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
@@ -386,7 +392,7 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vector_magnitude(phi_gradient) # phi/m
+    phi_magnitude = vector_magnitude_3d(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burning
@@ -568,7 +574,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vector_magnitude(phi_gradient) # phi/m
+    phi_magnitude = vector_magnitude_3d(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burnable
@@ -584,7 +590,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
         #================================================================================================
 
         if phi_magnitude > 0.0:
-            spread_direction = phi_gradient / phi_magnitude
+            spread_direction = np.asarray(phi_gradient) / phi_magnitude
         elif slope > 0.0:
             slope_vector_3d  = to_slope_plane(elevation_gradient, elevation_gradient)
             spread_direction = np.asarray(as_unit_vector_3d(slope_vector_3d))
@@ -714,7 +720,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             return surface_fire_normal
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -726,7 +732,8 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 
 
 # TODO: Is it faster to build up a list or a set?
-@cy.profile(True)
+# TODO: Should we store each frontier_cells entry as a coord_xy?
+@cy.profile(False)
 @cy.ccall
 def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
     """
@@ -751,7 +758,8 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
 
 
 # TODO: Is it faster to build up a list or a set?
-@cy.profile(True)
+# TODO: Should we store each frontier_cells entry as a coord_xy?
+@cy.profile(False)
 @cy.ccall
 def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict, rows: pyidx, cols: pyidx) -> set:
     """
@@ -774,7 +782,7 @@ def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: di
     return frontier_cells
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.cfunc
 def project_buffer(cell: tuple, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> list[tuple]:
     """
@@ -789,18 +797,22 @@ def project_buffer(cell: tuple, buffer_width: cy.int, rows: cy.int, cols: cy.int
             for x_ in buffer_range_x]
 
 
-def identify_tracked_cells(frontier_cells, buffer_width, rows, cols):
+@cy.profile(False)
+@cy.ccall
+def identify_tracked_cells(frontier_cells: set, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
     """
     TODO: Add docstring
     """
-    tracked_cells = {}
+    tracked_cells: dict = {}
+    cell         : tuple
+    buffer_cell  : tuple
     for cell in frontier_cells:
         for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
             tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
     return tracked_cells
 
 
-@cy.cprofile(True)
+@cy.profile(False)
 @cy.ccall
 def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
                          buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
@@ -840,17 +852,13 @@ fire_type_codes = {
 # TODO: @cy.exceptval(NULL)
 # TODO: @cy.wraparound(False)
 # TODO: @cy.boundscheck(False)
-# TODO: Convert all cy.double -> cy.float
 # TODO: Eliminate optional arguments to function
 # TODO: Figure out how to type cube_resolution as vec_xyz
-# TODO: Make calc_phi_gradient and calc_phi_gradient_approx return a vec_xy
 # TODO: Eliminate calls to np.dot
 # TODO: See if we can use a C struct for the fire_behavior and fire_behavior_star dictionaries (not fire_behavior_dict)
 # TODO: Perhaps cell_index should be a Python tuple rather than a C tuple?
 # TODO: Replace fire_type_codes with as some kind of C type?
-# TODO: Convert spread_direction_vector_to_angle to a @cfunc
 # TODO: Convert SpaceTimeCube to a @cclass with methods that take pyidx values
-# TODO: Convert calc_elevation_gradient to a @cfunc
 # TODO: Convert spot.expected_firebrand_production to a @cfunc
 # TODO: Convert spot.spread_firebrands to a @cfunc
 # TODO: Replace set.union with list concatenation? (Should ignited_cells be a list for speed?)
@@ -858,7 +866,6 @@ fire_type_codes = {
 # TODO: Convert update_tracked_cells to a @cfunc
 # TODO: Speed up burn_cell_toward_phi_gradient
 # TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d
-# TODO: cimport the remaining vector_utils functions
 # TODO: Turn off divide-by-zero checks
 # TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
 def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: dict,
@@ -1050,16 +1057,16 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
-                    t_cast                  : pyidx = int(time_of_arrival_matrix[y,x] // band_duration)
-                    space_time_coordinate           = (t_cast, y, x)
-                    slope                   : float = space_time_cubes["slope"].get(t_cast, y, x)
-                    aspect                  : float = space_time_cubes["aspect"].get(t_cast, y, x)
-                    elevation_gradient      : tuple = calc_elevation_gradient(slope, aspect)
-                    firebrands_per_unit_heat: float = spot_config["firebrands_per_unit_heat"]
-                    expected_firebrand_count: float = spot.expected_firebrand_production(fire_behavior,
-                                                                                         elevation_gradient,
-                                                                                         cube_resolution,
-                                                                                         firebrands_per_unit_heat)
+                    t_cast                  : pyidx    = int(time_of_arrival_matrix[y,x] // band_duration)
+                    space_time_coordinate              = (t_cast, y, x)
+                    slope                   : cy.float = space_time_cubes["slope"].get(t_cast, y, x)
+                    aspect                  : cy.float = space_time_cubes["aspect"].get(t_cast, y, x)
+                    elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
+                    firebrands_per_unit_heat: float    = spot_config["firebrands_per_unit_heat"]
+                    expected_firebrand_count: float    = spot.expected_firebrand_production(fire_behavior,
+                                                                                            elevation_gradient,
+                                                                                            cube_resolution,
+                                                                                            firebrands_per_unit_heat)
                     new_ignitions: tuple[float, set]|None = spot.spread_firebrands(space_time_cubes,
                                                                                    output_matrices,
                                                                                    cube_resolution,
@@ -1111,6 +1118,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     }
 
 
+@cy.profile(True)
 def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution, start_time,
                                max_duration=None, use_wind_limit=True, surface_lw_ratio_model="rothermel",
                                crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
