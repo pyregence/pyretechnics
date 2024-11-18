@@ -394,7 +394,7 @@ org_html_manager.setup();  // activate after the parameters are set
 </li>
 </ul>
 </li>
-<li><a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9. Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)</a>
+<li><a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9. Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)</a>
 <ul>
 <li><a href="#for-developers-fire-spread">9.1. For Developers</a>
 <ul>
@@ -7468,7 +7468,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 </div>
 </div>
 <div id="outline-container-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)" class="outline-2">
-<h2 id="fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)"><span class="section-number-2">9.</span> Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)</h2>
+<h2 id="fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)"><span class="section-number-2">9.</span> Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)</h2>
 <div class="outline-text-2" id="text-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">
 </div>
 <div id="outline-container-for-developers-fire-spread" class="outline-3">
@@ -8071,7 +8071,7 @@ illustrated below.
 
 <div class="org-src-container">
 <pre class="src src-python" id="calc-fireline-normal-behavior"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move this to pyretechnics.vector_utils and use throughout the literate program</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_elevation_gradient</span>(slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
@@ -8082,7 +8082,7 @@ illustrated below.
     <span class="org-keyword">return</span> azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_on_slope</span>(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-doc">"""</span>
@@ -8105,6 +8105,7 @@ illustrated below.
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate &lt; critical_spread_rate?</span>
 <span class="org-comment-delimiter">#        </span><span class="org-comment">Did I do this correctly in calc_crown_fire_behavior_in_direction?</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_fireline_normal_behavior</span>(fire_behavior_max, phi_gradient):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
@@ -8248,6 +8249,7 @@ is returned.
 
 <div class="org-src-container">
 <pre class="src src-python" id="burn-cell-toward-phi-gradient"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a version of this function that runs efficiently over a space_time_region</span>
+<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_phi_gradient</span>(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>,
                                   surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>, crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
@@ -8621,22 +8623,31 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
-<span class="org-keyword">def</span> <span class="org-function-name">project_buffer</span>(cell: <span class="org-builtin">tuple</span>, buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[<span class="org-builtin">tuple</span>]:
+<span class="org-keyword">def</span> <span class="org-function-name">project_buffer</span>(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[coord_yx]:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">y</span>: cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> cell[0]
-    <span class="org-variable-name">x</span>: cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> cell[1]
-    <span class="org-variable-name">buffer_range_y</span> <span class="org-operator">=</span> <span class="org-builtin">range</span>(<span class="org-builtin">max</span>(0, y <span class="org-operator">-</span> buffer_width), <span class="org-builtin">min</span>(rows, y <span class="org-operator">+</span> buffer_width <span class="org-operator">+</span> 1))
-    <span class="org-variable-name">buffer_range_x</span> <span class="org-operator">=</span> <span class="org-builtin">range</span>(<span class="org-builtin">max</span>(0, x <span class="org-operator">-</span> buffer_width), <span class="org-builtin">min</span>(cols, x <span class="org-operator">+</span> buffer_width <span class="org-operator">+</span> 1))
-    <span class="org-keyword">return</span> [(y_, x_)
-            <span class="org-keyword">for</span> y_ <span class="org-keyword">in</span> buffer_range_y
-            <span class="org-keyword">for</span> x_ <span class="org-keyword">in</span> buffer_range_x]
+    <span class="org-variable-name">y</span>            : pyidx          <span class="org-operator">=</span> cell[0]
+    <span class="org-variable-name">x</span>            : pyidx          <span class="org-operator">=</span> cell[1]
+    <span class="org-variable-name">buffer_y_min</span> : pyidx          <span class="org-operator">=</span> <span class="org-builtin">max</span>(0, y <span class="org-operator">-</span> buffer_width)
+    <span class="org-variable-name">buffer_x_min</span> : pyidx          <span class="org-operator">=</span> <span class="org-builtin">max</span>(0, x <span class="org-operator">-</span> buffer_width)
+    <span class="org-variable-name">buffer_y_max</span> : pyidx          <span class="org-operator">=</span> <span class="org-builtin">min</span>(rows, y <span class="org-operator">+</span> buffer_width <span class="org-operator">+</span> 1)
+    <span class="org-variable-name">buffer_x_max</span> : pyidx          <span class="org-operator">=</span> <span class="org-builtin">min</span>(cols, x <span class="org-operator">+</span> buffer_width <span class="org-operator">+</span> 1)
+    <span class="org-variable-name">buffer_y_span</span>: pyidx          <span class="org-operator">=</span> buffer_y_max <span class="org-operator">-</span> buffer_y_min
+    <span class="org-variable-name">buffer_x_span</span>: pyidx          <span class="org-operator">=</span> buffer_x_max <span class="org-operator">-</span> buffer_x_min
+    <span class="org-variable-name">buffer_cells</span> : <span class="org-builtin">list</span>[coord_yx] <span class="org-operator">=</span> []
+    y_idx        : pyidx
+    x_idx        : pyidx
+    <span class="org-keyword">for</span> y_idx <span class="org-keyword">in</span> <span class="org-builtin">range</span>(buffer_y_span):
+        <span class="org-keyword">for</span> x_idx <span class="org-keyword">in</span> <span class="org-builtin">range</span>(buffer_x_span):
+            <span class="org-variable-name">buffer_cell</span>: coord_yx <span class="org-operator">=</span> (y_idx <span class="org-operator">+</span> buffer_y_min, x_idx <span class="org-operator">+</span> buffer_x_min)
+            buffer_cells.append(buffer_cell)
+    <span class="org-keyword">return</span> buffer_cells
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
-<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells: <span class="org-builtin">set</span>, buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
+<span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells: <span class="org-builtin">set</span>, buffer_width: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
@@ -8652,7 +8663,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">update_tracked_cells</span>(tracked_cells: <span class="org-builtin">dict</span>, frontier_cells_old: <span class="org-builtin">set</span>, frontier_cells_new: <span class="org-builtin">set</span>,
-                         buffer_width: cy.<span class="org-builtin">int</span>, rows: cy.<span class="org-builtin">int</span>, cols: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
+                         buffer_width: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    TODO: Add docstring</span>
 <span class="org-doc">    """</span>
@@ -8740,6 +8751,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Turn off divide-by-zero checks</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport numpy</span>
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_one_timestep</span>(space_time_cubes: <span class="org-builtin">dict</span>, output_matrices: <span class="org-builtin">dict</span>, frontier_cells: <span class="org-builtin">set</span>, tracked_cells: <span class="org-builtin">dict</span>,
                              cube_resolution: <span class="org-builtin">tuple</span>, start_time: cy.<span class="org-builtin">float</span>, max_timestep: cy.<span class="org-builtin">float</span>,
                              max_cells_per_timestep: cy.<span class="org-builtin">float</span>, use_wind_limit: <span class="org-builtin">bool</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">True</span>,
@@ -10522,8 +10534,35 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> vec_xy
 
 
-<span class="org-keyword">from</span> math <span class="org-keyword">import</span> degrees, radians, pi
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+
+
+<span class="org-variable-name">PI</span> <span class="org-operator">=</span> cy.declare(cy.double, 3.14159265358979323846)
+
+
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">rad_to_deg</span>(radians: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-doc">"""Convert radians to degrees."""</span>
+    <span class="org-keyword">return</span> radians <span class="org-operator">*</span> 180.0 <span class="org-operator">/</span> PI
+
+
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">deg_to_rad</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-doc">"""Convert degrees to radians."""</span>
+    <span class="org-keyword">return</span> degrees <span class="org-operator">*</span> PI <span class="org-operator">/</span> 180.0
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">deg_to_ratio</span>(degrees):
+    <span class="org-doc">"""Convert degrees to ratio."""</span>
+    <span class="org-keyword">return</span> tan(deg_to_rad(degrees))
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">ratio_to_deg</span>(ratio):
+    <span class="org-doc">"""Convert ratio to degrees."""</span>
+    <span class="org-keyword">return</span> rad_to_deg(atan(ratio))
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">F_to_K</span>(degrees):
@@ -10544,16 +10583,6 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 <span class="org-keyword">def</span> <span class="org-function-name">C_to_F</span>(degrees):
     <span class="org-doc">"""Convert celsius to fahrenheit."""</span>
     <span class="org-keyword">return</span> (degrees <span class="org-operator">*</span> 1.8) <span class="org-operator">+</span> 32.0
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">deg_to_ratio</span>(degrees):
-    <span class="org-doc">"""Convert degrees to ratio."""</span>
-    <span class="org-keyword">return</span> tan(radians(degrees))
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">ratio_to_deg</span>(ratio):
-    <span class="org-doc">"""Convert ratio to degrees."""</span>
-    <span class="org-keyword">return</span> degrees(atan(ratio))
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">ch_to_m</span>(ch):
@@ -10730,41 +10759,39 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""</span>
     <span class="org-variable-name">r</span>         <span class="org-operator">=</span> sqrt(x <span class="org-operator">**</span> 2.0 <span class="org-operator">+</span> y <span class="org-operator">**</span> 2.0)
     <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> atan2(y, x)
-    <span class="org-variable-name">theta</span>     <span class="org-operator">=</span> degrees(theta_rad) <span class="org-operator">%</span> 360.0
+    <span class="org-variable-name">theta</span>     <span class="org-operator">=</span> rad_to_deg(theta_rad) <span class="org-operator">%</span> 360.0
     <span class="org-keyword">return</span> (r, theta)
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">polar_to_cartesian</span>(r, theta):
     <span class="org-doc">"""Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""</span>
-    <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> radians(theta)
+    <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> deg_to_rad(theta)
     <span class="org-variable-name">x</span>         <span class="org-operator">=</span> r <span class="org-operator">*</span> cos(theta_rad)
     <span class="org-variable-name">y</span>         <span class="org-operator">=</span> r <span class="org-operator">*</span> sin(theta_rad)
     <span class="org-keyword">return</span> (x, y)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Implement a primitive degrees function</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_azimuthal</span>(x: cy.<span class="org-builtin">float</span>, y: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""</span>
     <span class="org-variable-name">r</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt(x <span class="org-operator">*</span> x <span class="org-operator">+</span> y <span class="org-operator">*</span> y)
     <span class="org-variable-name">azimuth_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> atan2(x, y)
-    <span class="org-variable-name">azimuth</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> degrees(azimuth_rad) <span class="org-operator">%</span> 360.0
+    <span class="org-variable-name">azimuth</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> rad_to_deg(azimuth_rad) <span class="org-operator">%</span> 360.0
     <span class="org-keyword">return</span> (r, azimuth)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Implement a primitive radians function</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">azimuthal_to_cartesian</span>(r: cy.<span class="org-builtin">float</span>, azimuth: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""</span>
-    <span class="org-variable-name">azimuth_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> radians(azimuth)
+    <span class="org-variable-name">azimuth_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> deg_to_rad(azimuth)
     <span class="org-variable-name">x</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> r <span class="org-operator">*</span> sin(azimuth_rad)
     <span class="org-variable-name">y</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> r <span class="org-operator">*</span> cos(azimuth_rad)
     <span class="org-keyword">return</span> (x, y)
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">opposite_direction</span>(theta: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert theta to theta + 180 degrees."""</span>
@@ -10790,6 +10817,8 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 <span class="org-comment-delimiter"># </span><span class="org-comment">Cython functions to cimport into other modules</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 
+cpdef <span class="org-builtin">float</span> rad_to_deg(<span class="org-builtin">float</span> radians)
+cpdef <span class="org-builtin">float</span> deg_to_rad(<span class="org-builtin">float</span> degrees)
 cpdef vec_xy cartesian_to_azimuthal(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y)
 cpdef vec_xy azimuthal_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> azimuth)
 cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org-builtin">float</span> theta)
@@ -10807,14 +10836,14 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
-        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 <span class="org-keyword">else</span>:
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
-    <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+    <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> \
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 
 
-<span class="org-keyword">from</span> math <span class="org-keyword">import</span> radians
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 
@@ -10922,7 +10951,6 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate need for numpy</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create a primitive math radians function</span>
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: cy.double[:], theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.double[:]:
@@ -10933,7 +10961,7 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
     <span class="org-variable-name">elevation_gradient</span> : vec_xy  <span class="org-operator">=</span> azimuthal_to_cartesian(slope, opposite_direction(aspect))
     <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
-    <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> radians(theta)
+    <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> deg_to_rad(theta)
     <span class="org-keyword">return</span> np.add(np.multiply(cos(theta_rad),
                               vector),
                   np.cross(np.multiply(sin(theta_rad),

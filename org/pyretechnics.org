@@ -5405,7 +5405,7 @@ Once the locations, ignition probabilities, and times of ignition have
 been calculated for each of the firebrands, a tuple of
 *(spot_ignition_time, ignition_locations)* are returned, to be
 processed in the fire spread algorithm (see section [[Fire Spread
-Algorithm: Eulerian Level Set Method
+Algorithm: Eulerian Level Set Method (ELMFIRE)
 (pyretechnics.eulerian_level_set)]]), where *spot_ignition_time* is the
 ignition time of the spot fire in minutes, and *ignition_locations* is
 a list of *(y,x)* grid coordinates in which spot fires will be
@@ -6656,7 +6656,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
  'spread_rate': 0.9812016197271485}
 #+end_example
 
-* Fire Spread Algorithm: Eulerian Level Set Method (pyretechnics.eulerian_level_set)
+* Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)
   :PROPERTIES:
   :CUSTOM_ID: fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)
   :END:
@@ -7229,7 +7229,7 @@ illustrated below.
 #+NAME: calc-fireline-normal-behavior
 #+begin_src python
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
@@ -7240,7 +7240,7 @@ def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     return azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
@@ -7263,6 +7263,7 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
+@cy.profile(True)
 def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     """
     Given these inputs:
@@ -7406,6 +7407,7 @@ is returned.
 #+NAME: burn-cell-toward-phi-gradient
 #+begin_src python
 # TODO: Create a version of this function that runs efficiently over a space_time_region
+@cy.profile(True)
 def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit=True,
                                   surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
     """
@@ -7785,22 +7787,31 @@ def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: di
 
 @cy.profile(False)
 @cy.cfunc
-def project_buffer(cell: tuple, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> list[tuple]:
+def project_buffer(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> list[coord_yx]:
     """
     TODO: Add docstring
     """
-    y: cy.int = cell[0]
-    x: cy.int = cell[1]
-    buffer_range_y = range(max(0, y - buffer_width), min(rows, y + buffer_width + 1))
-    buffer_range_x = range(max(0, x - buffer_width), min(cols, x + buffer_width + 1))
-    return [(y_, x_)
-            for y_ in buffer_range_y
-            for x_ in buffer_range_x]
+    y            : pyidx          = cell[0]
+    x            : pyidx          = cell[1]
+    buffer_y_min : pyidx          = max(0, y - buffer_width)
+    buffer_x_min : pyidx          = max(0, x - buffer_width)
+    buffer_y_max : pyidx          = min(rows, y + buffer_width + 1)
+    buffer_x_max : pyidx          = min(cols, x + buffer_width + 1)
+    buffer_y_span: pyidx          = buffer_y_max - buffer_y_min
+    buffer_x_span: pyidx          = buffer_x_max - buffer_x_min
+    buffer_cells : list[coord_yx] = []
+    y_idx        : pyidx
+    x_idx        : pyidx
+    for y_idx in range(buffer_y_span):
+        for x_idx in range(buffer_x_span):
+            buffer_cell: coord_yx = (y_idx + buffer_y_min, x_idx + buffer_x_min)
+            buffer_cells.append(buffer_cell)
+    return buffer_cells
 
 
 @cy.profile(False)
 @cy.ccall
-def identify_tracked_cells(frontier_cells: set, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
+def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
     """
     TODO: Add docstring
     """
@@ -7816,7 +7827,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: cy.int, rows: cy.i
 @cy.profile(False)
 @cy.ccall
 def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
-                         buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
+                         buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
     """
     TODO: Add docstring
     """
@@ -7891,6 +7902,7 @@ fire_type_codes = {
 # TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d
 # TODO: Turn off divide-by-zero checks
 # TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
+# TODO: cimport numpy
 def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: dict,
                              cube_resolution: tuple, start_time: cy.float, max_timestep: cy.float,
                              max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,
@@ -10179,8 +10191,35 @@ else:
     from pyretechnics.types import vec_xy
 
 
-from math import degrees, radians, pi
 import cython as cy
+
+
+PI = cy.declare(cy.double, 3.14159265358979323846)
+
+
+@cy.profile(False)
+@cy.ccall
+@cy.cdivision(True)
+def rad_to_deg(radians: cy.float) -> cy.float:
+    """Convert radians to degrees."""
+    return radians * 180.0 / PI
+
+
+@cy.profile(False)
+@cy.ccall
+def deg_to_rad(degrees: cy.float) -> cy.float:
+    """Convert degrees to radians."""
+    return degrees * PI / 180.0
+
+
+def deg_to_ratio(degrees):
+    """Convert degrees to ratio."""
+    return tan(deg_to_rad(degrees))
+
+
+def ratio_to_deg(ratio):
+    """Convert ratio to degrees."""
+    return rad_to_deg(atan(ratio))
 
 
 def F_to_K(degrees):
@@ -10201,16 +10240,6 @@ def F_to_C(degrees):
 def C_to_F(degrees):
     """Convert celsius to fahrenheit."""
     return (degrees * 1.8) + 32.0
-
-
-def deg_to_ratio(degrees):
-    """Convert degrees to ratio."""
-    return tan(radians(degrees))
-
-
-def ratio_to_deg(ratio):
-    """Convert ratio to degrees."""
-    return degrees(atan(ratio))
 
 
 def ch_to_m(ch):
@@ -10387,41 +10416,39 @@ def cartesian_to_polar(x, y):
     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
     r         = sqrt(x ** 2.0 + y ** 2.0)
     theta_rad = atan2(y, x)
-    theta     = degrees(theta_rad) % 360.0
+    theta     = rad_to_deg(theta_rad) % 360.0
     return (r, theta)
 
 
 def polar_to_cartesian(r, theta):
     """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
-    theta_rad = radians(theta)
+    theta_rad = deg_to_rad(theta)
     x         = r * cos(theta_rad)
     y         = r * sin(theta_rad)
     return (x, y)
 
 
-# TODO: Implement a primitive degrees function
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
     r          : cy.float = sqrt(x * x + y * y)
     azimuth_rad: cy.float = atan2(x, y)
-    azimuth    : cy.float = degrees(azimuth_rad) % 360.0
+    azimuth    : cy.float = rad_to_deg(azimuth_rad) % 360.0
     return (r, azimuth)
 
 
-# TODO: Implement a primitive radians function
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def azimuthal_to_cartesian(r: cy.float, azimuth: cy.float) -> vec_xy:
     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
-    azimuth_rad: cy.float = radians(azimuth)
+    azimuth_rad: cy.float = deg_to_rad(azimuth)
     x          : cy.float = r * sin(azimuth_rad)
     y          : cy.float = r * cos(azimuth_rad)
     return (x, y)
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def opposite_direction(theta: cy.float) -> cy.float:
     """Convert theta to theta + 180 degrees."""
@@ -10447,6 +10474,8 @@ from pyretechnics.types cimport vec_xy
 # Cython functions to cimport into other modules
 #==================================================
 
+cpdef float rad_to_deg(float radians)
+cpdef float deg_to_rad(float degrees)
 cpdef vec_xy cartesian_to_azimuthal(float x, float y)
 cpdef vec_xy azimuthal_to_cartesian(float r, float azimuth)
 cpdef float opposite_direction(float theta)
@@ -10468,14 +10497,14 @@ if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
-        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
     from math import sqrt, sin, cos
     from pyretechnics.types import pyidx, vec_xy, vec_xyz
-    from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+    from pyretechnics.conversion import \
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 
 
-from math import radians
 import cython as cy
 import numpy as np
 
@@ -10583,7 +10612,6 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
 
 
 # TODO: Eliminate need for numpy
-# TODO: Create a primitive math radians function
 @cy.profile(False)
 @cy.ccall
 def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
@@ -10594,7 +10622,7 @@ def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.floa
     elevation_gradient : vec_xy  = azimuthal_to_cartesian(slope, opposite_direction(aspect))
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
     # Rotate theta degrees clockwise around the slope_normal_vector
-    theta_rad: cy.float = radians(theta)
+    theta_rad: cy.float = deg_to_rad(theta)
     return np.add(np.multiply(cos(theta_rad),
                               vector),
                   np.cross(np.multiply(sin(theta_rad),
