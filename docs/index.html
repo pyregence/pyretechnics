@@ -7543,14 +7543,14 @@ node-centered central differences, represented by the values in the
 <span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, atan
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">import</span> \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 <span class="org-keyword">else</span>:
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, atan
-    <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian
     <span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
@@ -10528,10 +10528,10 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 <span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos, tan, atan, atan2
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> vec_xy
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> vec_xy
 <span class="org-keyword">else</span>:
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos, tan, atan, atan2
-    <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> vec_xy
+    <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> vec_xy
 
 
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
@@ -10810,8 +10810,8 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 </div>
 
 <div class="org-src-container">
-<pre class="src src-python" id="conversion-pxd">cimport pyretechnics.types
-<span class="org-keyword">from</span> pyretechnics.types cimport vec_xy
+<pre class="src src-python" id="conversion-pxd">cimport pyretechnics.cy_types
+<span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Cython functions to cimport into other modules</span>
@@ -10834,12 +10834,12 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
 <span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 <span class="org-keyword">else</span>:
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos
-    <span class="org-keyword">from</span> pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
+    <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 
@@ -10971,8 +10971,8 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
 </div>
 
 <div class="org-src-container">
-<pre class="src src-python" id="vector-utils-pxd">cimport pyretechnics.types
-<span class="org-keyword">from</span> pyretechnics.types cimport vec_xy, vec_xyz
+<pre class="src src-python" id="vector-utils-pxd">cimport pyretechnics.cy_types
+<span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy, vec_xyz
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Cython functions to cimport into other modules</span>
@@ -11009,7 +11009,7 @@ cdef extern <span class="org-keyword">from</span> <span class="org-string">"math
 </div>
 
 <div class="org-src-container">
-<pre class="src src-python" id="types-pxd"><span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+<pre class="src src-python" id="cy-types-pxd"><span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Type aliases</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 
@@ -11022,23 +11022,19 @@ ctypedef (pyidx, pyidx, pyidx) coord_tyx
 </div>
 
 <div class="org-src-container">
-<pre class="src src-python" id="types-py"><span class="org-keyword">import</span> cython
-<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<pre class="src src-python" id="py-types-py"><span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Runtime-defined type aliases</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
 
-<span class="org-keyword">if</span> cy.compiled:
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
-<span class="org-keyword">else</span>:
-    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe pyidx should be cy.int?</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe we should use C arrays instead of tuples(structs)?</span>
-    <span class="org-variable-name">pyidx</span>     <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
-    <span class="org-variable-name">vec_xy</span>    <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-    <span class="org-variable-name">vec_xyz</span>   <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-    <span class="org-variable-name">coord_yx</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
-    <span class="org-variable-name">coord_tyx</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe pyidx should be cy.int?</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Maybe we should use C arrays instead of tuples(structs)?</span>
+<span class="org-variable-name">pyidx</span>     <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+<span class="org-variable-name">vec_xy</span>    <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">vec_xyz</span>   <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">coord_yx</span>  <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
+<span class="org-variable-name">coord_tyx</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
 </pre>
 </div>
 </div>

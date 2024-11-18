@@ -1,6 +1,6 @@
 # [[file:../../org/pyretechnics.org::vector-utils-pxd][vector-utils-pxd]]
-cimport pyretechnics.types
-from pyretechnics.types cimport vec_xy, vec_xyz
+cimport pyretechnics.cy_types
+from pyretechnics.cy_types cimport vec_xy, vec_xyz
 
 #==================================================
 # Cython functions to cimport into other modules

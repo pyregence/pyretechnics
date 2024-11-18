@@ -3,14 +3,14 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
-    from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     from cython.cimports.pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
     from math import sqrt, atan
-    from pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \

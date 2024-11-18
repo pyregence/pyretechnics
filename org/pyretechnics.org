@@ -6728,14 +6728,14 @@ $\phi$ raster's grid cells.
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
-    from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     from cython.cimports.pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
     from math import sqrt, atan
-    from pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
@@ -10185,10 +10185,10 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos, tan, atan, atan2
-    from cython.cimports.pyretechnics.types import vec_xy
+    from cython.cimports.pyretechnics.cy_types import vec_xy
 else:
     from math import sqrt, sin, cos, tan, atan, atan2
-    from pyretechnics.types import vec_xy
+    from pyretechnics.py_types import vec_xy
 
 
 import cython as cy
@@ -10467,8 +10467,8 @@ def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft):
 
 #+NAME: conversion-pxd
 #+begin_src python :eval no :tangle ../src/pyretechnics/conversion.pxd
-cimport pyretechnics.types
-from pyretechnics.types cimport vec_xy
+cimport pyretechnics.cy_types
+from pyretechnics.cy_types cimport vec_xy
 
 #==================================================
 # Cython functions to cimport into other modules
@@ -10495,12 +10495,12 @@ cpdef float opposite_direction(float theta)
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
-    from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
     from math import sqrt, sin, cos
-    from pyretechnics.types import pyidx, vec_xy, vec_xyz
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz
     from pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 
@@ -10632,8 +10632,8 @@ def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.floa
 
 #+NAME: vector-utils-pxd
 #+begin_src python :eval no :tangle ../src/pyretechnics/vector_utils.pxd
-cimport pyretechnics.types
-from pyretechnics.types cimport vec_xy, vec_xyz
+cimport pyretechnics.cy_types
+from pyretechnics.cy_types cimport vec_xy, vec_xyz
 
 #==================================================
 # Cython functions to cimport into other modules
@@ -10668,8 +10668,8 @@ cdef extern from "math.h":
      cdef double atan2(double y, double x)
 #+end_src
 
-#+NAME: types-pxd
-#+begin_src python :eval no :tangle ../src/pyretechnics/types.pxd
+#+NAME: cy-types-pxd
+#+begin_src python :eval no :tangle ../src/pyretechnics/cy_types.pxd
 #==================================================
 # Type aliases
 #==================================================
@@ -10681,25 +10681,21 @@ ctypedef (pyidx, pyidx) coord_yx
 ctypedef (pyidx, pyidx, pyidx) coord_tyx
 #+end_src
 
-#+NAME: types-py
-#+begin_src python :eval no :tangle ../src/pyretechnics/types.py
-import cython
+#+NAME: py-types-py
+#+begin_src python :tangle ../src/pyretechnics/py_types.py
 import cython as cy
 
 #==============================================================
 # Runtime-defined type aliases
 #==============================================================
 
-if cy.compiled:
-    from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
-else:
-    # TODO: Maybe pyidx should be cy.int?
-    # TODO: Maybe we should use C arrays instead of tuples(structs)?
-    pyidx     = cy.typedef(cy.Py_ssize_t)
-    vec_xy    = cy.typedef(tuple[cy.float, cy.float])
-    vec_xyz   = cy.typedef(tuple[cy.float, cy.float, cy.float])
-    coord_yx  = cy.typedef(tuple[pyidx, pyidx])
-    coord_tyx = cy.typedef(tuple[pyidx, pyidx, pyidx])
+# TODO: Maybe pyidx should be cy.int?
+# TODO: Maybe we should use C arrays instead of tuples(structs)?
+pyidx     = cy.typedef(cy.Py_ssize_t)
+vec_xy    = cy.typedef(tuple[cy.float, cy.float])
+vec_xyz   = cy.typedef(tuple[cy.float, cy.float, cy.float])
+coord_yx  = cy.typedef(tuple[pyidx, pyidx])
+coord_tyx = cy.typedef(tuple[pyidx, pyidx, pyidx])
 #+end_src
 
 ** SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)

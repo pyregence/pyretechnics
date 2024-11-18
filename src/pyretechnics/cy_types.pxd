@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::types-pxd][types-pxd]]
+# [[file:../../org/pyretechnics.org::cy-types-pxd][cy-types-pxd]]
 #==================================================
 # Type aliases
 #==================================================
@@ -8,4 +8,4 @@ ctypedef (float, float) vec_xy
 ctypedef (float, float, float) vec_xyz
 ctypedef (pyidx, pyidx) coord_yx
 ctypedef (pyidx, pyidx, pyidx) coord_tyx
-# types-pxd ends here
+# cy-types-pxd ends here

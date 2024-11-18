@@ -3,12 +3,12 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
-    from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
     from math import sqrt, sin, cos
-    from pyretechnics.types import pyidx, vec_xy, vec_xyz
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz
     from pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 
