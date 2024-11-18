@@ -786,22 +786,31 @@ def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: di
 
 @cy.profile(False)
 @cy.cfunc
-def project_buffer(cell: tuple, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> list[tuple]:
+def project_buffer(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> list[coord_yx]:
     """
     TODO: Add docstring
     """
-    y: cy.int = cell[0]
-    x: cy.int = cell[1]
-    buffer_range_y = range(max(0, y - buffer_width), min(rows, y + buffer_width + 1))
-    buffer_range_x = range(max(0, x - buffer_width), min(cols, x + buffer_width + 1))
-    return [(y_, x_)
-            for y_ in buffer_range_y
-            for x_ in buffer_range_x]
+    y            : pyidx          = cell[0]
+    x            : pyidx          = cell[1]
+    buffer_y_min : pyidx          = max(0, y - buffer_width)
+    buffer_x_min : pyidx          = max(0, x - buffer_width)
+    buffer_y_max : pyidx          = min(rows, y + buffer_width + 1)
+    buffer_x_max : pyidx          = min(cols, x + buffer_width + 1)
+    buffer_y_span: pyidx          = buffer_y_max - buffer_y_min
+    buffer_x_span: pyidx          = buffer_x_max - buffer_x_min
+    buffer_cells : list[coord_yx] = []
+    y_idx        : pyidx
+    x_idx        : pyidx
+    for y_idx in range(buffer_y_span):
+        for x_idx in range(buffer_x_span):
+            buffer_cell: coord_yx = (y_idx + buffer_y_min, x_idx + buffer_x_min)
+            buffer_cells.append(buffer_cell)
+    return buffer_cells
 
 
 @cy.profile(False)
 @cy.ccall
-def identify_tracked_cells(frontier_cells: set, buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
+def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
     """
     TODO: Add docstring
     """
@@ -817,7 +826,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: cy.int, rows: cy.i
 @cy.profile(False)
 @cy.ccall
 def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
-                         buffer_width: cy.int, rows: cy.int, cols: cy.int) -> dict:
+                         buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
     """
     TODO: Add docstring
     """
