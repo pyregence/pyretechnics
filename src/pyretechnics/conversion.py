@@ -9,8 +9,35 @@ else:
     from pyretechnics.types import vec_xy
 
 
-from math import degrees, radians, pi
 import cython as cy
+
+
+PI = cy.declare(cy.double, 3.14159265358979323846)
+
+
+@cy.profile(False)
+@cy.ccall
+@cy.cdivision(True)
+def rad_to_deg(radians: cy.float) -> cy.float:
+    """Convert radians to degrees."""
+    return radians * 180.0 / PI
+
+
+@cy.profile(False)
+@cy.ccall
+def deg_to_rad(degrees: cy.float) -> cy.float:
+    """Convert degrees to radians."""
+    return degrees * PI / 180.0
+
+
+def deg_to_ratio(degrees):
+    """Convert degrees to ratio."""
+    return tan(deg_to_rad(degrees))
+
+
+def ratio_to_deg(ratio):
+    """Convert ratio to degrees."""
+    return rad_to_deg(atan(ratio))
 
 
 def F_to_K(degrees):
@@ -31,16 +58,6 @@ def F_to_C(degrees):
 def C_to_F(degrees):
     """Convert celsius to fahrenheit."""
     return (degrees * 1.8) + 32.0
-
-
-def deg_to_ratio(degrees):
-    """Convert degrees to ratio."""
-    return tan(radians(degrees))
-
-
-def ratio_to_deg(ratio):
-    """Convert ratio to degrees."""
-    return degrees(atan(ratio))
 
 
 def ch_to_m(ch):
@@ -217,41 +234,39 @@ def cartesian_to_polar(x, y):
     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
     r         = sqrt(x ** 2.0 + y ** 2.0)
     theta_rad = atan2(y, x)
-    theta     = degrees(theta_rad) % 360.0
+    theta     = rad_to_deg(theta_rad) % 360.0
     return (r, theta)
 
 
 def polar_to_cartesian(r, theta):
     """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
-    theta_rad = radians(theta)
+    theta_rad = deg_to_rad(theta)
     x         = r * cos(theta_rad)
     y         = r * sin(theta_rad)
     return (x, y)
 
 
-# TODO: Implement a primitive degrees function
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
     r          : cy.float = sqrt(x * x + y * y)
     azimuth_rad: cy.float = atan2(x, y)
-    azimuth    : cy.float = degrees(azimuth_rad) % 360.0
+    azimuth    : cy.float = rad_to_deg(azimuth_rad) % 360.0
     return (r, azimuth)
 
 
-# TODO: Implement a primitive radians function
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def azimuthal_to_cartesian(r: cy.float, azimuth: cy.float) -> vec_xy:
     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
-    azimuth_rad: cy.float = radians(azimuth)
+    azimuth_rad: cy.float = deg_to_rad(azimuth)
     x          : cy.float = r * sin(azimuth_rad)
     y          : cy.float = r * cos(azimuth_rad)
     return (x, y)
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def opposite_direction(theta: cy.float) -> cy.float:
     """Convert theta to theta + 180 degrees."""

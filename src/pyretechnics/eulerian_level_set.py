@@ -330,7 +330,7 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
@@ -341,7 +341,7 @@ def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     return azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-@cy.profile(True)
+@cy.profile(False)
 @cy.ccall
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
@@ -364,6 +364,7 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
+@cy.profile(True)
 def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     """
     Given these inputs:
@@ -484,6 +485,7 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
 # calc-fireline-normal-behavior ends here
 # [[file:../../org/pyretechnics.org::burn-cell-toward-phi-gradient][burn-cell-toward-phi-gradient]]
 # TODO: Create a version of this function that runs efficiently over a space_time_region
+@cy.profile(True)
 def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit=True,
                                   surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
     """
@@ -868,6 +870,7 @@ fire_type_codes = {
 # TODO: cimport the vec_xy and vec_xyz types to prevent typecasting when calling vector_magnitude_2d and dot_2d
 # TODO: Turn off divide-by-zero checks
 # TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
+# TODO: cimport numpy
 def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: dict,
                              cube_resolution: tuple, start_time: cy.float, max_timestep: cy.float,
                              max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,

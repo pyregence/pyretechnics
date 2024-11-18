@@ -5,14 +5,14 @@ if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
-        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
     from math import sqrt, sin, cos
     from pyretechnics.types import pyidx, vec_xy, vec_xyz
-    from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal
+    from pyretechnics.conversion import \
+        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 
 
-from math import radians
 import cython as cy
 import numpy as np
 
@@ -120,7 +120,6 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
 
 
 # TODO: Eliminate need for numpy
-# TODO: Create a primitive math radians function
 @cy.profile(False)
 @cy.ccall
 def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
@@ -131,7 +130,7 @@ def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.floa
     elevation_gradient : vec_xy  = azimuthal_to_cartesian(slope, opposite_direction(aspect))
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
     # Rotate theta degrees clockwise around the slope_normal_vector
-    theta_rad: cy.float = radians(theta)
+    theta_rad: cy.float = deg_to_rad(theta)
     return np.add(np.multiply(cos(theta_rad),
                               vector),
                   np.cross(np.multiply(sin(theta_rad),
