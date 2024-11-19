@@ -10,6 +10,7 @@ Usage: $0 <command>
   - test
   - benchmark
   - profile
+  - snakeviz
   - build-cython
   - build-guix
   - build-dist
