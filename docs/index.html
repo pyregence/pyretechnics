@@ -7539,8 +7539,7 @@ node-centered central differences, represented by the values in the
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
-<span class="org-keyword">import</span> cython
+<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, atan
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
@@ -10524,8 +10523,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 <h3 id="units-conversion-functions-(pyretechnics.conversion)"><span class="section-number-3">10.1.</span> Units Conversion Functions (pyretechnics.conversion)</h3>
 <div class="outline-text-3" id="text-units-conversion-functions-(pyretechnics.conversion)">
 <div class="org-src-container">
-<pre class="src src-python" id="units-conversion"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
-<span class="org-keyword">import</span> cython
+<pre class="src src-python" id="units-conversion"><span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos, tan, atan, atan2
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> vec_xy
@@ -10830,14 +10828,17 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
 <h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.2.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
-<pre class="src src-python" id="vector-utilities"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix error with importing pyretechnics.types</span>
+<pre class="src src-python" id="vector-utilities"><span class="org-comment-delimiter"># </span><span class="org-comment">Fix cimport of numpy</span>
 <span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> add, multiply, cross
+    <span class="org-comment-delimiter"># </span><span class="org-comment">from cython.cimports.numpy import add, multiply, cross</span>
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 <span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> add, multiply, cross
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> \
@@ -10845,7 +10846,6 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
 
 
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
@@ -10962,11 +10962,11 @@ cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org
     <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
     <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> deg_to_rad(theta)
-    <span class="org-keyword">return</span> np.add(np.multiply(cos(theta_rad),
+    <span class="org-keyword">return</span> add(multiply(cos(theta_rad),
+                        vector),
+               cross(multiply(sin(theta_rad),
                               vector),
-                  np.cross(np.multiply(sin(theta_rad),
-                                       vector),
-                           slope_normal_vector))
+                    slope_normal_vector))
 </pre>
 </div>
 

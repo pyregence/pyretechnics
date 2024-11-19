@@ -1,5 +1,4 @@
 # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
-# TODO: Fix error with importing pyretechnics.types
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos, tan, atan, atan2

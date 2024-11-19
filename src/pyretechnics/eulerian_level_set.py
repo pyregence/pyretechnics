@@ -1,5 +1,4 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
-# TODO: Fix error with importing pyretechnics.types
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan

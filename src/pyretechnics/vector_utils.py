@@ -1,12 +1,15 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
-# TODO: Fix error with importing pyretechnics.types
+# Fix cimport of numpy
 import cython
 if cython.compiled:
+    from numpy import add, multiply, cross
+    # from cython.cimports.numpy import add, multiply, cross
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
+    from numpy import add, multiply, cross
     from math import sqrt, sin, cos
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz
     from pyretechnics.conversion import \
@@ -14,7 +17,6 @@ else:
 
 
 import cython as cy
-import numpy as np
 
 
 @cy.profile(False)
@@ -131,9 +133,9 @@ def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.floa
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
     # Rotate theta degrees clockwise around the slope_normal_vector
     theta_rad: cy.float = deg_to_rad(theta)
-    return np.add(np.multiply(cos(theta_rad),
+    return add(multiply(cos(theta_rad),
+                        vector),
+               cross(multiply(sin(theta_rad),
                               vector),
-                  np.cross(np.multiply(sin(theta_rad),
-                                       vector),
-                           slope_normal_vector))
+                    slope_normal_vector))
 # vector-utilities ends here
