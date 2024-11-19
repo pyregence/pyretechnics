@@ -597,7 +597,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             slope_vector_3d  = to_slope_plane(elevation_gradient, elevation_gradient)
             spread_direction = np.asarray(as_unit_vector_3d(slope_vector_3d))
         else:
-            spread_direction = np.asarray((0,1,0)) # default: North
+            spread_direction = np.asarray((0.0,1.0,0.0)) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior

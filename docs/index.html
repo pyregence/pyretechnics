@@ -3365,7 +3365,7 @@ procedure provided by Waeselynck 2024.<sup><a id="fnr.21" class="footref" href="
     <span class="org-keyword">else</span>:
         <span class="org-keyword">return</span> {
             <span class="org-string">"phi_E"</span>               : phi_E,
-            <span class="org-string">"max_spread_direction"</span>: np.asarray((0,1,0)), <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
+            <span class="org-string">"max_spread_direction"</span>: np.asarray((0.0,1.0,0.0)), <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
         }
 </pre>
 </div>
@@ -4347,7 +4347,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
                             <span class="org-keyword">if</span> wind_speed_10m_3d <span class="org-operator">&gt;</span> 0.0
                             <span class="org-keyword">else</span> vu.as_unit_vector_3d(slope_vector_3d) <span class="org-comment-delimiter"># </span><span class="org-comment">unit vector in the 3D upslope direction</span>
                             <span class="org-keyword">if</span> slope <span class="org-operator">&gt;</span> 0.0
-                            <span class="org-keyword">else</span> (0,1,0))                              <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
+                            <span class="org-keyword">else</span> (0.0,1.0,0.0))                        <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the crown fire behavior in the max spread direction</span>
     <span class="org-variable-name">spread_info</span>           <span class="org-operator">=</span> cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
                                                         estimated_fine_fuel_moisture)
@@ -6894,7 +6894,7 @@ surface fire behavior is returned.
         <span class="org-variable-name">upslope_direction</span> <span class="org-operator">=</span> conv.opposite_direction(aspect)
         <span class="org-variable-name">slope_vector_2d</span>   <span class="org-operator">=</span> conv.azimuthal_to_cartesian(slope, upslope_direction)
         <span class="org-variable-name">slope_vector_3d</span>   <span class="org-operator">=</span> vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        <span class="org-variable-name">spread_direction</span>  <span class="org-operator">=</span> vu.as_unit_vector_3d(slope_vector_3d) <span class="org-keyword">if</span> slope <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> (0,1,0) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
+        <span class="org-variable-name">spread_direction</span>  <span class="org-operator">=</span> vu.as_unit_vector_3d(slope_vector_3d) <span class="org-keyword">if</span> slope <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">else</span> (0.0,1.0,0.0) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return zero surface fire behavior</span>
@@ -8361,7 +8361,7 @@ is returned.
             <span class="org-variable-name">slope_vector_3d</span>  <span class="org-operator">=</span> to_slope_plane(elevation_gradient, elevation_gradient)
             <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray(as_unit_vector_3d(slope_vector_3d))
         <span class="org-keyword">else</span>:
-            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray((0,1,0)) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
+            <span class="org-variable-name">spread_direction</span> <span class="org-operator">=</span> np.asarray((0.0,1.0,0.0)) <span class="org-comment-delimiter"># </span><span class="org-comment">default: North</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return zero surface fire behavior</span>

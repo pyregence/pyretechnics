@@ -361,7 +361,7 @@ def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
     else:
         return {
             "phi_E"               : phi_E,
-            "max_spread_direction": np.asarray((0,1,0)), # default: North
+            "max_spread_direction": np.asarray((0.0,1.0,0.0)), # default: North
         }
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]

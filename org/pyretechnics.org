@@ -2862,7 +2862,7 @@ def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
     else:
         return {
             "phi_E"               : phi_E,
-            "max_spread_direction": np.asarray((0,1,0)), # default: North
+            "max_spread_direction": np.asarray((0.0,1.0,0.0)), # default: North
         }
 #+end_src
 
@@ -3799,7 +3799,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
                             if wind_speed_10m_3d > 0.0
                             else vu.as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
                             if slope > 0.0
-                            else (0,1,0))                              # default: North
+                            else (0.0,1.0,0.0))                        # default: North
     # Calculate the crown fire behavior in the max spread direction
     spread_info           = cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
                                                         estimated_fine_fuel_moisture)
@@ -6080,7 +6080,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
         upslope_direction = conv.opposite_direction(aspect)
         slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
         slope_vector_3d   = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        spread_direction  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else (0,1,0) # default: North
+        spread_direction  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else (0.0,1.0,0.0) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior
@@ -7519,7 +7519,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             slope_vector_3d  = to_slope_plane(elevation_gradient, elevation_gradient)
             spread_direction = np.asarray(as_unit_vector_3d(slope_vector_3d))
         else:
-            spread_direction = np.asarray((0,1,0)) # default: North
+            spread_direction = np.asarray((0.0,1.0,0.0)) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior

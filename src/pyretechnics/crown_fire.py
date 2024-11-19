@@ -188,7 +188,7 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
                             if wind_speed_10m_3d > 0.0
                             else vu.as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
                             if slope > 0.0
-                            else (0,1,0))                              # default: North
+                            else (0.0,1.0,0.0))                        # default: North
     # Calculate the crown fire behavior in the max spread direction
     spread_info           = cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
                                                         estimated_fine_fuel_moisture)
