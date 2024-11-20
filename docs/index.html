@@ -3748,9 +3748,9 @@ pprint({k: surface_fire_min[k] <span class="org-keyword">for</span> k <span clas
 
 <pre class="example">
 No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'base_fireline_intensity': 1.789997884491001,
- 'base_spread_rate': 0.12637238760906658,
- 'max_effective_wind_speed': 109.77292783706747}
+{'base_fireline_intensity': 1.7899978160858154,
+ 'base_spread_rate': 0.12637238204479218,
+ 'max_effective_wind_speed': 109.7729263305664}
 </pre>
 </div>
 </div>
@@ -3789,7 +3789,7 @@ No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [
 <pre class="example">
 Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Direction = 45.0
  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
-- Speed: 27.224285989299275 (m/min)
+- Speed: 27.22428573967944 (m/min)
 - Downwind Direction: 225.0 (degrees clockwise from North)
 </pre>
 </div>
@@ -3852,20 +3852,20 @@ pprint(surface_fire_max_unlimited)
 
 <pre class="example" id="compute-surface-fire-behavior-max-results">
 Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.8693098652160369,
- 'length_to_width_ratio': 2.0231959552088243,
- 'max_fireline_intensity': 32.52824122084378,
- 'max_flame_length': 0.38439328501240777,
- 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502841]),
- 'max_spread_rate': 2.2964672435747526}
+{'eccentricity': 0.8693098689345452,
+ 'length_to_width_ratio': 2.02319598197937,
+ 'max_fireline_intensity': 32.52824021555232,
+ 'max_flame_length': 0.384393279547724,
+ 'max_spread_direction': array([0.57514209, 0.80992595, 0.11502841]),
+ 'max_spread_rate': 2.2964671592467902}
 
 Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.9845208629992017,
- 'length_to_width_ratio': 5.705566788206421,
- 'max_fireline_intensity': 330.5232659226435,
- 'max_flame_length': 1.1167831712051006,
- 'max_spread_direction': array([0.57514209, 0.80992594, 0.11502841]),
- 'max_spread_rate': 23.334672424413625}
+{'eccentricity': 0.9845208635180694,
+ 'length_to_width_ratio': 5.705566883087158,
+ 'max_fireline_intensity': 330.52326520812335,
+ 'max_flame_length': 1.1167831700945479,
+ 'max_spread_direction': array([0.57514209, 0.80992595, 0.11502841]),
+ 'max_spread_rate': 23.334672238265263}
 </pre>
 </div>
 </div>
@@ -3935,24 +3935,24 @@ pprint(backing_fire_behavior)
 <pre class="example" id="compute-surface-fire-behavior-in-direction-results">
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 32.528241220843725,
- 'flame_length': 0.3843932850124075,
- 'spread_direction': array([0.57514209, 0.80992594, 0.11502841]),
- 'spread_rate': 2.2964672435747486}
+ 'fireline_intensity': 32.52824021555232,
+ 'flame_length': 0.384393279547724,
+ 'spread_direction': array([0.57514209, 0.80992595, 0.11502841]),
+ 'spread_rate': 2.2964671592467902}
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.25112006790012,
- 'flame_length': 0.1507465825700851,
+ 'fireline_intensity': 4.251119815561923,
+ 'flame_length': 0.15074657845399436,
  'spread_direction': array([ 0.79419771, -0.58653219,  0.15883956]),
- 'spread_rate': 0.3001256021853451}
+ 'spread_rate': 0.30012558262508093}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 2.2741656204473273,
- 'flame_length': 0.11305091610423658,
- 'spread_direction': array([-0.57514209, -0.80992594, -0.11502841]),
- 'spread_rate': 0.160554234038162}
+ 'fireline_intensity': 2.2741654809334264,
+ 'flame_length': 0.11305091291396749,
+ 'spread_direction': array([-0.57514209, -0.80992595, -0.11502841]),
+ 'spread_rate': 0.1605542232548844}
 </pre>
 </div>
 </div>
@@ -4978,8 +4978,8 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.8218958686973863,
- 'length_to_width_ratio': 1.7555015923811355,
+ 'eccentricity': 0.821895863285579,
+ 'length_to_width_ratio': 1.7555015683174133,
  'max_fire_type': 'active_crown',
  'max_fireline_intensity': 82666.07018304318,
  'max_spread_direction': array([0.        , 0.89442718, 0.44721359]),
@@ -5001,8 +5001,8 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.8024265702196313,
- 'length_to_width_ratio': 1.6757411715581005,
+ 'eccentricity': 0.8024265608222492,
+ 'length_to_width_ratio': 1.6757411360740662,
  'max_fire_type': 'active_crown',
  'max_fireline_intensity': 74768.3487091958,
  'max_spread_direction': array([ 0.00000000e+00,  1.00000000e+00, -2.18556941e-08]),
@@ -5069,23 +5069,23 @@ pprint(backing_fire_behavior)
 Heading Fire Behavior
 ============================================================
 {'fire_type': 'active_crown',
- 'fireline_intensity': 78838.15458910092,
+ 'fireline_intensity': 78838.15458910078,
  'spread_direction': array([0.        , 0.94280905, 0.33333334]),
- 'spread_rate': 31.383616202151572}
+ 'spread_rate': 31.383616202151522}
 
 Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204313417364,
+ 'fireline_intensity': 14756.204692934614,
  'spread_direction': array([ 0.94868329, -0.1054093 ,  0.29814238]),
- 'spread_rate': 3.264617884997446}
+ 'spread_rate': 3.264617919639856}
 
 Backing Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 8139.8762162369485,
+ 'fireline_intensity': 8139.876447202802,
  'spread_direction': array([-0.        , -0.94280905, -0.33333334]),
- 'spread_rate': 2.343474222933295}
+ 'spread_rate': 2.343474267882084}
 </pre>
 </div>
 </div>
@@ -5235,10 +5235,10 @@ Backing Fire Behavior
 Fire Behavior from Surface Fire (No Crown Fire Occurred)
 ============================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637272830800834,
- 'flame_length': 0.23956727015326687,
+ 'fireline_intensity': 11.637272319887389,
+ 'flame_length': 0.2395672653150934,
  'spread_direction': array([0.87038827, 0.        , 0.49236599]),
- 'spread_rate': 0.8215819502516378}
+ 'spread_rate': 0.82158190940362}
 </pre>
 </div>
 </div>
@@ -6421,15 +6421,17 @@ pprint({
 <pre class="example" id="run-estimate-areal-heat-output">
 Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 ================================================================================
-{'dry': 9517.751902280774, 'mod': 7050.167242235583, 'wet': 3533.8204025496834}
+{'dry': 9517.751889162279, 'mod': 7050.1670422893385, 'wet': 3533.8201824045955}
 
 Mean Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 ================================================================================
-{'dry': 14270.339257437603, 'mod': 10954.33091872254, 'wet': 5705.411098489761}
+{'dry': 14270.339217272918,
+ 'mod': 10954.330808704475,
+ 'wet': 5705.4111616613945}
 
 Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 ================================================================================
-{'dry': 54285.277323657836, 'mod': 45108.62895623446, 'wet': 32325.036430921675}
+{'dry': 54285.275558317175, 'mod': 45108.6289738327, 'wet': 32325.037970995523}
 </pre>
 
 
@@ -7346,18 +7348,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 32.52824122084375,
- 'flame_length': 0.38439328501240766,
+ 'fireline_intensity': 32.52824021555232,
+ 'flame_length': 0.384393279547724,
  'spread_direction': array([0.48686891, 0.61304247, 0.62220382]),
- 'spread_rate': 2.2964672435747504}
+ 'spread_rate': 2.2964671592467902}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 50.61290579388001,
- 'flame_length': 0.47108156555948116,
+ 'fireline_intensity': 50.61290348687427,
+ 'flame_length': 0.4710815556821105,
  'spread_direction': array([0.48686891, 0.61304247, 0.62220382]),
- 'spread_rate': 3.5732297811201863}
+ 'spread_rate': 3.5732295974671913}
 </pre>
 </div>
 </div>
@@ -7450,18 +7452,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637272184891115,
- 'flame_length': 0.2395672640367254,
+ 'fireline_intensity': 11.637271673977688,
+ 'flame_length': 0.23956725919855196,
  'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.8215819046509395}
+ 'spread_rate': 0.8215818638029233}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 13.898200839601216,
- 'flame_length': 0.2599542205809359,
+ 'fireline_intensity': 13.898200206313783,
+ 'flame_length': 0.2599542151321845,
  'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.9812016197271485}
+ 'spread_rate': 0.9812015693113519}
 </pre>
 </div>
 </div>
@@ -9340,25 +9342,25 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9256893, 'Max': 1.0, 'Mean': 0.9060591, 'Stdev': 0.38920093}
+{'Min': -0.9256893, 'Max': 1.0, 'Mean': 0.9060591, 'Stdev': 0.3892009}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.211648, 'Stdev': 0.6341628}
+{'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.2116479, 'Stdev': 0.63416284}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.65846, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.93309}
+{'Min': 0.65860283, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.9331}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772386, 'Max': 32.528233, 'Mean': 17.16235, 'Stdev': 8.98258}
+{'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.16235, 'Stdev': 8.98258}
 
 Flame Length (meters)
 {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356827}
 
 Time of Arrival (minutes)
-{'Min': 2081.8516, 'Max': 2548.1523, 'Mean': 2385.591, 'Stdev': 116.83734}
+{'Min': 2081.8516, 'Max': 2548.1523, 'Mean': 2385.591, 'Stdev': 116.83735}
 </pre>
 </div>
 </li>
@@ -9711,13 +9713,13 @@ Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16055718, 'Max': 2.2964666, 'Mean': 1.3839706, 'Stdev': 0.6849228}
+{'Min': 0.16055717, 'Max': 2.2964664, 'Mean': 1.3839705, 'Stdev': 0.6849228}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.015501725, 'Max': 359.823, 'Mean': 179.89368, 'Stdev': 127.71465}
+{'Min': 0.015500052, 'Max': 359.823, 'Mean': 179.89368, 'Stdev': 127.71465}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2742074, 'Max': 32.52823, 'Mean': 19.60321, 'Stdev': 9.701569}
+{'Min': 2.274207, 'Max': 32.52823, 'Mean': 19.603209, 'Stdev': 9.701569}
 
 Flame Length (meters)
 {'Min': 0.11305187, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.079029635}
@@ -9731,41 +9733,41 @@ Firebrand Count (number of firebrands)
 Total Firebrands on Grid: 743
 
 Future Spot Ignitions:
-{2551.1975872246294: {(78, 75)},
- 2551.41264882651: {(79, 54), (80, 60)},
- 2551.8568054218845: {(82, 36)},
- 2553.242946902038: {(73, 50)},
- 2553.503079660735: {(82, 42)},
- 2553.670619046169: {(88, 50)},
- 2554.838075045936: {(78, 64)},
- 2555.5251004606916: {(78, 60), (78, 58)},
- 2556.2804252683736: {(80, 74)},
- 2556.956797139484: {(79, 80), (78, 75)},
- 2557.1956179112426: {(72, 52), (75, 51)},
- 2560.051319222669: {(82, 76)},
- 2560.0546762952063: {(75, 81)},
- 2562.224290899111: {(78, 53)},
- 2563.01303934983: {(60, 78)},
- 2563.863116897054: {(81, 38)},
- 2566.6678267193665: {(82, 40)},
- 2567.2125612853533: {(78, 77)},
- 2567.3587640264323: {(83, 69)},
- 2569.330376256175: {(79, 77)},
- 2570.921655322671: {(83, 43), (83, 36)},
- 2573.7323021656953: {(92, 51)},
- 2574.658587317199: {(53, 44)},
- 2574.7942252879043: {(85, 72)},
- 2575.8510399606234: {(81, 65), (80, 63)},
- 2576.9250366141023: {(90, 38)},
- 2576.970322053317: {(78, 60), (80, 63)},
- 2581.2574406038552: {(73, 78)},
- 2583.255900463565: {(84, 31)},
- 2583.532525084117: {(84, 54)},
- 2583.7573020374803: {(70, 84)},
- 2591.914720289493: {(66, 34), (71, 40)},
- 2592.883811381346: {(64, 36)},
- 2603.1104057780935: {(80, 55)},
- 2613.441077472167: {(61, 37)}}
+{2551.197586000257: {(78, 75)},
+ 2551.4126499292092: {(79, 54), (80, 60)},
+ 2551.856804638606: {(82, 36)},
+ 2553.2429458344905: {(73, 50)},
+ 2553.503079371683: {(82, 42)},
+ 2553.67061884271: {(88, 50)},
+ 2554.83807664013: {(78, 64)},
+ 2555.525101157285: {(78, 60), (78, 58)},
+ 2556.2804247854724: {(80, 74)},
+ 2556.956798222929: {(79, 80), (78, 75)},
+ 2557.1956190287556: {(72, 52), (75, 51)},
+ 2560.051319507768: {(82, 76)},
+ 2560.054675129427: {(75, 81)},
+ 2562.2242880384597: {(78, 53)},
+ 2563.013039281081: {(60, 78)},
+ 2563.8631185172394: {(81, 38)},
+ 2566.6678273977955: {(82, 40)},
+ 2567.212561600751: {(78, 77)},
+ 2567.3587638733025: {(83, 69)},
+ 2569.330376022855: {(79, 77)},
+ 2570.921410793652: {(83, 43), (83, 36)},
+ 2573.732302770297: {(92, 51)},
+ 2574.6585895680705: {(53, 44)},
+ 2574.794226434831: {(85, 72)},
+ 2575.851040433648: {(81, 65), (80, 63)},
+ 2576.9250365965636: {(90, 38)},
+ 2576.970322423062: {(78, 60), (80, 63)},
+ 2581.257440902062: {(73, 78)},
+ 2583.2559022370483: {(84, 31)},
+ 2583.532526699624: {(84, 54)},
+ 2583.757301741892: {(70, 84)},
+ 2591.9147207078995: {(66, 34), (71, 40)},
+ 2592.883811071109: {(64, 36)},
+ 2603.1104006041915: {(80, 55)},
+ 2613.4410783216385: {(61, 37)}}
 </pre>
 </div>
 </li>
@@ -10238,28 +10240,28 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945678, 'Stdev': 0.5639848}
-Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7984585, 'Stdev': 0.5611055}
+Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945679, 'Stdev': 0.5639848}
+Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7984585, 'Stdev': 0.56110543}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-Main: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.2057377, 'Stdev': 0.63797575}
+Main: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.2057376, 'Stdev': 0.63797575}
 Fork: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.1890496, 'Stdev': 0.63051146}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27234477, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35211}
-Fork: {'Min': 0.27234477, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70385}
+Main: {'Min': 0.27234977, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35211}
+Fork: {'Min': 0.27234977, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70385}
 
 Fireline Intensity (kW/m)
-Main: {'Min': 2.2772386, 'Max': 32.528233, 'Mean': 17.078634, 'Stdev': 9.036589}
-Fork: {'Min': 2.2772386, 'Max': 32.528233, 'Mean': 16.842258, 'Stdev': 8.9308605}
+Main: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.078634, 'Stdev': 9.036589}
+Fork: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 16.842258, 'Stdev': 8.9308605}
 
 Flame Length (meters)
-Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.2746018, 'Stdev': 0.073415086}
-Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27287117, 'Stdev': 0.07285743}
+Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.2746018, 'Stdev': 0.07341509}
+Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27287114, 'Stdev': 0.07285744}
 
 Time of Arrival (minutes)
 Main: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2543.6892, 'Stdev': 173.15517}
@@ -10523,7 +10525,8 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 <h3 id="units-conversion-functions-(pyretechnics.conversion)"><span class="section-number-3">10.1.</span> Units Conversion Functions (pyretechnics.conversion)</h3>
 <div class="outline-text-3" id="text-units-conversion-functions-(pyretechnics.conversion)">
 <div class="org-src-container">
-<pre class="src src-python" id="units-conversion"><span class="org-keyword">import</span> cython
+<pre class="src src-python" id="units-conversion"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace @cy.profile(False) calls with a file-level compiler directive</span>
+<span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos, tan, atan, atan2
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> vec_xy
@@ -10553,219 +10556,303 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> degrees <span class="org-operator">*</span> PI <span class="org-operator">/</span> 180.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">deg_to_ratio</span>(degrees):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">deg_to_ratio</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert degrees to ratio."""</span>
     <span class="org-keyword">return</span> tan(deg_to_rad(degrees))
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">ratio_to_deg</span>(ratio):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">ratio_to_deg</span>(ratio: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert ratio to degrees."""</span>
     <span class="org-keyword">return</span> rad_to_deg(atan(ratio))
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">F_to_K</span>(degrees):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">F_to_K</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert fahrenheit to kelvin."""</span>
     <span class="org-keyword">return</span> (degrees <span class="org-operator">+</span> 459.67) <span class="org-operator">*</span> 0.5555555555555556
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">K_to_F</span>(degrees):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">K_to_F</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kelvin to fahrenheit."""</span>
     <span class="org-keyword">return</span> (degrees <span class="org-operator">*</span> 1.8) <span class="org-operator">-</span> 459.67
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">F_to_C</span>(degrees):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">F_to_C</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert fahrenheit to celsius."""</span>
     <span class="org-keyword">return</span> (degrees <span class="org-operator">-</span> 32.0) <span class="org-operator">*</span> 0.5555555555555556
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">C_to_F</span>(degrees):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">C_to_F</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert celsius to fahrenheit."""</span>
     <span class="org-keyword">return</span> (degrees <span class="org-operator">*</span> 1.8) <span class="org-operator">+</span> 32.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">ch_to_m</span>(ch):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">ch_to_m</span>(ch: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert chains to meters."""</span>
     <span class="org-keyword">return</span> ch <span class="org-operator">*</span> 20.1168
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">m_to_ch</span>(m):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">m_to_ch</span>(m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters to chains."""</span>
     <span class="org-keyword">return</span> m <span class="org-operator">*</span> 0.0497097
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">m_to_ft</span>(m):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">m_to_ft</span>(m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters to feet."""</span>
     <span class="org-keyword">return</span> m <span class="org-operator">*</span> 3.281
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">ft_to_m</span>(ft):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">ft_to_m</span>(ft: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert feet to meters."""</span>
     <span class="org-keyword">return</span> ft <span class="org-operator">*</span> 0.30478512648582745
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mph_to_mps</span>(mph):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mph_to_mps</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert miles per hour to meters per second."""</span>
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 0.44701818551254696
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mps_to_mph</span>(mps):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mps_to_mph</span>(mps: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters per second to miles per hour."""</span>
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 2.237045454545455
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mps</span>(km_hr):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mps</span>(km_hr: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kilometers per hour to meters per second."""</span>
     <span class="org-keyword">return</span> km_hr <span class="org-operator">*</span> 0.277764222883701
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mps_to_km_hr</span>(mps):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mps_to_km_hr</span>(mps: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters per second to kilometers per hour."""</span>
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 3.6001756800000004
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mph_to_km_hr</span>(mph):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mph_to_km_hr</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert miles per hour to kilometers per hour."""</span>
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 1.609344
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mph</span>(km_hr):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mph</span>(km_hr: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kilometers per hour to miles per hour."""</span>
     <span class="org-keyword">return</span> km_hr <span class="org-operator">*</span> 0.621371192237334
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">m_min_to_km_hr</span>(m_min):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">m_min_to_km_hr</span>(m_min: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters per minute to kilometers per hour."""</span>
     <span class="org-keyword">return</span> m_min <span class="org-operator">*</span> 0.06
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_m_min</span>(km_hr):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_m_min</span>(km_hr: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kilometers per hour to meters per minute."""</span>
     <span class="org-keyword">return</span> km_hr <span class="org-operator">/</span> 0.06
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">m_min_to_mph</span>(m_min):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">m_min_to_mph</span>(m_min: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters per minute to miles per hour."""</span>
     <span class="org-keyword">return</span> m_min <span class="org-operator">*</span> 0.0372840909091
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mph_to_m_min</span>(mph):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mph_to_m_min</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert miles per hour to meters per minute."""</span>
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 26.8210911307
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mps_to_fpm</span>(mps):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mps_to_fpm</span>(mps: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert meters per second to feet per minute."""</span>
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 196.86
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">fpm_to_mps</span>(fpm):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">fpm_to_mps</span>(fpm: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert feet per minute to meters per second."""</span>
     <span class="org-keyword">return</span> fpm <span class="org-operator">/</span> 196.86
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">mph_to_fpm</span>(mph):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">mph_to_fpm</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert miles per hour to feet per minute."""</span>
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 88.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">fpm_to_mph</span>(fpm):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">fpm_to_mph</span>(fpm: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert feet per minute to miles per hour."""</span>
     <span class="org-keyword">return</span> fpm <span class="org-operator">/</span> 88.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">Btu_ft_s_to_kW_m</span>(Btu_ft_s):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">Btu_ft_s_to_kW_m</span>(Btu_ft_s: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert BTU per feet per second to kilowatt per meter."""</span>
     <span class="org-keyword">return</span> Btu_ft_s <span class="org-operator">*</span> 3.46165186
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">kW_m_to_Btu_ft_s</span>(kW_m):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">kW_m_to_Btu_ft_s</span>(kW_m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kilowatt per meter to BTU per feet per second."""</span>
     <span class="org-keyword">return</span> kW_m <span class="org-operator">*</span> 0.28887942532730604
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">Btu_lb_to_kJ_kg</span>(Btu_lb):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">Btu_lb_to_kJ_kg</span>(Btu_lb: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert BTU per lb to kilojoule per kilogram."""</span>
     <span class="org-keyword">return</span> Btu_lb <span class="org-operator">*</span> 2.3259999996185
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">kJ_kg_to_Btu_lb</span>(kJ_kg):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">kJ_kg_to_Btu_lb</span>(kJ_kg: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kilojoule per kilogram to BTU per lb."""</span>
     <span class="org-keyword">return</span> kJ_kg <span class="org-operator">/</span> 2.3259999996185
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">kg_m3_to_lb_ft3</span>(kg_m3):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">kg_m3_to_lb_ft3</span>(kg_m3: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert kilogram per cubic meter to pound per cubic foot."""</span>
     <span class="org-keyword">return</span> kg_m3 <span class="org-operator">*</span> 0.0624
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">lb_ft3_to_kg_m3</span>(lb_ft3):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">lb_ft3_to_kg_m3</span>(lb_ft3: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert pound per cubic foot to kilogram per cubic meter."""</span>
     <span class="org-keyword">return</span> lb_ft3 <span class="org-operator">*</span> 16.025641025641026
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">percent_to_dec</span>(percent):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">percent_to_dec</span>(percent: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert percent to decimal."""</span>
     <span class="org-keyword">return</span> percent <span class="org-operator">*</span> 0.01
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">dec_to_percent</span>(decimal):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">dec_to_percent</span>(decimal: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert decimal to percent."""</span>
     <span class="org-keyword">return</span> decimal <span class="org-operator">*</span> 100.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">sec_to_min</span>(seconds):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">sec_to_min</span>(seconds: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert seconds to minutes."""</span>
     <span class="org-keyword">return</span> seconds <span class="org-operator">*</span> 0.016666666666666666
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">min_to_sec</span>(minutes):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">min_to_sec</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert minutes to seconds."""</span>
     <span class="org-keyword">return</span> minutes <span class="org-operator">*</span> 60.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">ms_to_min</span>(milliseconds):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">ms_to_min</span>(milliseconds: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert milliseconds to minutes."""</span>
     <span class="org-keyword">return</span> milliseconds <span class="org-operator">*</span> 0.000016667
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">min_to_ms</span>(minutes):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">min_to_ms</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert minutes to milliseconds."""</span>
-    <span class="org-keyword">return</span> <span class="org-builtin">int</span>(minutes <span class="org-operator">*</span> 60000.0)
+    <span class="org-keyword">return</span> minutes <span class="org-operator">*</span> 60000.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">hour_to_min</span>(hours):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">hour_to_min</span>(hours: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Converts hours to minutes."""</span>
     <span class="org-keyword">return</span> hours <span class="org-operator">*</span> 60.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">min_to_hour</span>(minutes):
-    <span class="org-doc">"""Converts minutes to hours. (rounds down)"""</span>
-    <span class="org-keyword">return</span> <span class="org-builtin">int</span>(minutes <span class="org-operator">/</span> 60.0)
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">min_to_hour</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-doc">"""Converts minutes to hours."""</span>
+    <span class="org-keyword">return</span> minutes <span class="org-operator">/</span> 60.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">day_to_min</span>(days):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">day_to_min</span>(days: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert days to minutes."""</span>
     <span class="org-keyword">return</span> days <span class="org-operator">*</span> 1440.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">min_to_day</span>(minutes):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">min_to_day</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert minutes to days."""</span>
     <span class="org-keyword">return</span> minutes <span class="org-operator">/</span> 1440.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_polar</span>(x, y):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_polar</span>(x: cy.<span class="org-builtin">float</span>, y: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""</span>
-    <span class="org-variable-name">r</span>         <span class="org-operator">=</span> sqrt(x <span class="org-operator">**</span> 2.0 <span class="org-operator">+</span> y <span class="org-operator">**</span> 2.0)
-    <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> atan2(y, x)
-    <span class="org-variable-name">theta</span>     <span class="org-operator">=</span> rad_to_deg(theta_rad) <span class="org-operator">%</span> 360.0
+    <span class="org-variable-name">r</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt(x <span class="org-operator">*</span> x <span class="org-operator">+</span> y <span class="org-operator">*</span> y)
+    <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> atan2(y, x)
+    <span class="org-variable-name">theta</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> rad_to_deg(theta_rad) <span class="org-operator">%</span> 360.0
     <span class="org-keyword">return</span> (r, theta)
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">polar_to_cartesian</span>(r, theta):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">polar_to_cartesian</span>(r: cy.<span class="org-builtin">float</span>, theta: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""</span>
-    <span class="org-variable-name">theta_rad</span> <span class="org-operator">=</span> deg_to_rad(theta)
-    <span class="org-variable-name">x</span>         <span class="org-operator">=</span> r <span class="org-operator">*</span> cos(theta_rad)
-    <span class="org-variable-name">y</span>         <span class="org-operator">=</span> r <span class="org-operator">*</span> sin(theta_rad)
+    <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> deg_to_rad(theta)
+    <span class="org-variable-name">x</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> r <span class="org-operator">*</span> cos(theta_rad)
+    <span class="org-variable-name">y</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> r <span class="org-operator">*</span> sin(theta_rad)
     <span class="org-keyword">return</span> (x, y)
 
 
@@ -10796,12 +10883,16 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (theta <span class="org-operator">+</span> 180.0) <span class="org-operator">%</span> 360.0
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">wind_speed_10m_to_wind_speed_20ft</span>(wind_speed_10m):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">wind_speed_10m_to_wind_speed_20ft</span>(wind_speed_10m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert wind speed at 10m to wind speed at 20ft."""</span>
     <span class="org-keyword">return</span> 0.87 <span class="org-operator">*</span> wind_speed_10m
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">wind_speed_20ft_to_wind_speed_10m</span>(wind_speed_20ft):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">wind_speed_20ft_to_wind_speed_10m</span>(wind_speed_20ft: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""Convert wind speed at 20ft to wind speed at 10m."""</span>
     <span class="org-keyword">return</span> wind_speed_20ft <span class="org-operator">/</span> 0.87
 </pre>
