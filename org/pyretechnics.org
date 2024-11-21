@@ -6731,7 +6731,7 @@ if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     from cython.cimports.pyretechnics.conversion import \
-        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
@@ -6740,21 +6740,23 @@ else:
     from math import sqrt, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     from pyretechnics.conversion import \
-        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 
 
-# TODO: Replace pi with a C constant
-from math import pi, degrees
 import cython as cy
+# TODO: cimport all of the modules below
 import numpy as np
 import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 import pyretechnics.spot_fire as spot
 import pyretechnics.surface_fire as sf
+
+
+PI = cy.declare(cy.double, 3.14159265358979323846)
 
 
 @cy.profile(False)
@@ -6828,14 +6830,16 @@ the fire front normal vector as follows:
 #+NAME: phi-field-normal-vector
 #+begin_src python
 # TODO: Remove unused function
-def calc_phi_normal_vector(phi, dx, dy, x, y):
+@cy.profile(False)
+@cy.ccall
+def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
     Calculate the phi field normal vector in the x and y dimensions.
 
     - n_x: eastward component of the unit normal vector
     - n_y: northward component of the unit normal vector
     """
-    phi_gradient = calc_phi_gradient_approx(phi, dx, dy, x, y)
+    phi_gradient: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
     if phi_gradient[0] == 0.0 and phi_gradient[1] == 0.0:
         return phi_gradient # (n_x, n_y)
     else:
@@ -6861,28 +6865,32 @@ vector points:
 #+NAME: phi-field-normal-vector-angle
 #+begin_src python
 # TODO: Remove unused function
-def calc_phi_normal_azimuth(phi_normal_vector):
+@cy.profile(False)
+@cy.ccall
+@cy.cdivision(True)
+def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
     """
     Calculate the angle (measured in degrees clockwise from North)
     to which the phi field's normal vector points.
     """
     (n_x, n_y) = phi_normal_vector
-    if n_x > 0:
-        if n_y >= 0:
-            angle = 1/2 * pi - atan(n_y / n_x)
-        elif n_y < 0:
-            angle = 1/2 * pi + atan(abs(n_y) / n_x)
-    elif n_x < 0:
-        if n_y >= 0:
-            angle = 3/2 * pi + atan(n_y / abs(n_x))
-        elif n_y < 0:
-            angle = 3/2 * pi - atan(n_y / n_x)
+    angle: cy.float
+    if n_x > 0.0:
+        if n_y >= 0.0:
+            angle = 0.5 * PI - atan(n_y / n_x)
+        elif n_y < 0.0:
+            angle = 0.5 * PI + atan(abs(n_y) / n_x)
+    elif n_x < 0.0:
+        if n_y >= 0.0:
+            angle = 1.5 * PI + atan(n_y / abs(n_x))
+        elif n_y < 0.0:
+            angle = 1.5 * PI - atan(n_y / n_x)
     else:
-        if n_y >= 0:
+        if n_y >= 0.0:
             angle = 0.0
-        elif n_y < 0:
-            angle = pi
-    return degrees(angle)
+        elif n_y < 0.0:
+            angle = PI
+    return rad_to_deg(angle)
 #+end_src
 
 Now that we can compute the fire front normal vector, we can find the

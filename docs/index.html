@@ -7546,7 +7546,7 @@ node-centered central differences, represented by the values in the
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, atan
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
-        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">import</span> \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
@@ -7555,21 +7555,23 @@ node-centered central differences, represented by the values in the
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, atan
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
     <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> \
-        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     <span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace pi with a C constant</span>
-<span class="org-keyword">from</span> math <span class="org-keyword">import</span> pi, degrees
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: cimport all of the modules below</span>
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.crown_fire <span class="org-keyword">as</span> cf
 <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
 <span class="org-keyword">import</span> pyretechnics.spot_fire <span class="org-keyword">as</span> spot
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
+
+
+<span class="org-variable-name">PI</span> <span class="org-operator">=</span> cy.declare(cy.double, 3.14159265358979323846)
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
@@ -7645,14 +7647,16 @@ the fire front normal vector as follows:
 
 <div class="org-src-container">
 <pre class="src src-python" id="phi-field-normal-vector"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove unused function</span>
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_vector</span>(phi, dx, dy, x, y):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_vector</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the phi field normal vector in the x and y dimensions.</span>
 
 <span class="org-doc">    - n_x: eastward component of the unit normal vector</span>
 <span class="org-doc">    - n_y: northward component of the unit normal vector</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">phi_gradient</span> <span class="org-operator">=</span> calc_phi_gradient_approx(phi, dx, dy, x, y)
+    <span class="org-variable-name">phi_gradient</span>: vec_xy <span class="org-operator">=</span> calc_phi_gradient_approx(phi, dx, dy, x, y)
     <span class="org-keyword">if</span> phi_gradient[0] <span class="org-operator">==</span> 0.0 <span class="org-keyword">and</span> phi_gradient[1] <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> phi_gradient <span class="org-comment-delimiter"># </span><span class="org-comment">(n_x, n_y)</span>
     <span class="org-keyword">else</span>:
@@ -7680,28 +7684,32 @@ vector points:
 
 <div class="org-src-container">
 <pre class="src src-python" id="phi-field-normal-vector-angle"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove unused function</span>
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_azimuth</span>(phi_normal_vector):
+<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_azimuth</span>(phi_normal_vector: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the angle (measured in degrees clockwise from North)</span>
 <span class="org-doc">    to which the phi field's normal vector points.</span>
 <span class="org-doc">    """</span>
     (<span class="org-variable-name">n_x</span>, <span class="org-variable-name">n_y</span>) <span class="org-operator">=</span> phi_normal_vector
-    <span class="org-keyword">if</span> n_x <span class="org-operator">&gt;</span> 0:
-        <span class="org-keyword">if</span> n_y <span class="org-operator">&gt;=</span> 0:
-            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 1<span class="org-operator">/</span>2 <span class="org-operator">*</span> pi <span class="org-operator">-</span> atan(n_y <span class="org-operator">/</span> n_x)
-        <span class="org-keyword">elif</span> n_y <span class="org-operator">&lt;</span> 0:
-            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 1<span class="org-operator">/</span>2 <span class="org-operator">*</span> pi <span class="org-operator">+</span> atan(<span class="org-builtin">abs</span>(n_y) <span class="org-operator">/</span> n_x)
-    <span class="org-keyword">elif</span> n_x <span class="org-operator">&lt;</span> 0:
-        <span class="org-keyword">if</span> n_y <span class="org-operator">&gt;=</span> 0:
-            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 3<span class="org-operator">/</span>2 <span class="org-operator">*</span> pi <span class="org-operator">+</span> atan(n_y <span class="org-operator">/</span> <span class="org-builtin">abs</span>(n_x))
-        <span class="org-keyword">elif</span> n_y <span class="org-operator">&lt;</span> 0:
-            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 3<span class="org-operator">/</span>2 <span class="org-operator">*</span> pi <span class="org-operator">-</span> atan(n_y <span class="org-operator">/</span> n_x)
+    angle: cy.<span class="org-builtin">float</span>
+    <span class="org-keyword">if</span> n_x <span class="org-operator">&gt;</span> 0.0:
+        <span class="org-keyword">if</span> n_y <span class="org-operator">&gt;=</span> 0.0:
+            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 0.5 <span class="org-operator">*</span> PI <span class="org-operator">-</span> atan(n_y <span class="org-operator">/</span> n_x)
+        <span class="org-keyword">elif</span> n_y <span class="org-operator">&lt;</span> 0.0:
+            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 0.5 <span class="org-operator">*</span> PI <span class="org-operator">+</span> atan(<span class="org-builtin">abs</span>(n_y) <span class="org-operator">/</span> n_x)
+    <span class="org-keyword">elif</span> n_x <span class="org-operator">&lt;</span> 0.0:
+        <span class="org-keyword">if</span> n_y <span class="org-operator">&gt;=</span> 0.0:
+            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 1.5 <span class="org-operator">*</span> PI <span class="org-operator">+</span> atan(n_y <span class="org-operator">/</span> <span class="org-builtin">abs</span>(n_x))
+        <span class="org-keyword">elif</span> n_y <span class="org-operator">&lt;</span> 0.0:
+            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 1.5 <span class="org-operator">*</span> PI <span class="org-operator">-</span> atan(n_y <span class="org-operator">/</span> n_x)
     <span class="org-keyword">else</span>:
-        <span class="org-keyword">if</span> n_y <span class="org-operator">&gt;=</span> 0:
+        <span class="org-keyword">if</span> n_y <span class="org-operator">&gt;=</span> 0.0:
             <span class="org-variable-name">angle</span> <span class="org-operator">=</span> 0.0
-        <span class="org-keyword">elif</span> n_y <span class="org-operator">&lt;</span> 0:
-            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> pi
-    <span class="org-keyword">return</span> degrees(angle)
+        <span class="org-keyword">elif</span> n_y <span class="org-operator">&lt;</span> 0.0:
+            <span class="org-variable-name">angle</span> <span class="org-operator">=</span> PI
+    <span class="org-keyword">return</span> rad_to_deg(angle)
 </pre>
 </div>
 
