@@ -7545,14 +7545,18 @@ node-centered central differences, represented by the values in the
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, atan
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
+        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">import</span> \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 <span class="org-keyword">else</span>:
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, atan
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
-    <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> opposite_direction, azimuthal_to_cartesian
+    <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> \
+        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     <span class="org-keyword">from</span> pyretechnics.vector_utils <span class="org-keyword">import</span> \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
@@ -7562,7 +7566,6 @@ node-centered central differences, represented by the values in the
 <span class="org-keyword">from</span> math <span class="org-keyword">import</span> pi, degrees
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
 <span class="org-keyword">import</span> pyretechnics.crown_fire <span class="org-keyword">as</span> cf
 <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
 <span class="org-keyword">import</span> pyretechnics.spot_fire <span class="org-keyword">as</span> spot
@@ -8389,26 +8392,26 @@ is returned.
                                         fuel_moisture_dead_100hr,
                                         0.0, <span class="org-comment-delimiter"># </span><span class="org-comment">fuel_moisture_dead_herbaceous</span>
                                         fuel_moisture_live_herbaceous,
-                                        fuel_moisture_live_woody]               <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-        <span class="org-variable-name">fuel_bed_depth</span>               <span class="org-operator">=</span> fuel_model[<span class="org-string">"delta"</span>]                      <span class="org-comment-delimiter"># </span><span class="org-comment">ft</span>
-        <span class="org-variable-name">heat_of_combustion</span>           <span class="org-operator">=</span> conv.Btu_lb_to_kJ_kg(fuel_model[<span class="org-string">"h"</span>][0]) <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/kg</span>
-        <span class="org-variable-name">estimated_fine_fuel_moisture</span> <span class="org-operator">=</span> fuel_moisture_dead_1hr                   <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+                                        fuel_moisture_live_woody]          <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+        <span class="org-variable-name">fuel_bed_depth</span>               <span class="org-operator">=</span> fuel_model[<span class="org-string">"delta"</span>]                 <span class="org-comment-delimiter"># </span><span class="org-comment">ft</span>
+        <span class="org-variable-name">heat_of_combustion</span>           <span class="org-operator">=</span> Btu_lb_to_kJ_kg(fuel_model[<span class="org-string">"h"</span>][0]) <span class="org-comment-delimiter"># </span><span class="org-comment">kJ/kg</span>
+        <span class="org-variable-name">estimated_fine_fuel_moisture</span> <span class="org-operator">=</span> fuel_moisture_dead_1hr              <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate midflame wind speed</span>
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Convert from 10m wind speed to 20ft wind speed</span>
-        <span class="org-variable-name">wind_speed_20ft</span> <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+        <span class="org-variable-name">wind_speed_20ft</span> <span class="org-operator">=</span> wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Convert 20ft wind speed from km/hr to m/min</span>
-        <span class="org-variable-name">wind_speed_20ft_m_min</span> <span class="org-operator">=</span> conv.km_hr_to_m_min(wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+        <span class="org-variable-name">wind_speed_20ft_m_min</span> <span class="org-operator">=</span> km_hr_to_m_min(wind_speed_20ft) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Convert from 20ft wind speed to midflame wind speed in m/min</span>
-        <span class="org-variable-name">midflame_wind_speed</span> <span class="org-operator">=</span> sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,       <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
-                                                          fuel_bed_depth,              <span class="org-comment-delimiter"># </span><span class="org-comment">ft</span>
-                                                          conv.m_to_ft(canopy_height), <span class="org-comment-delimiter"># </span><span class="org-comment">ft</span>
-                                                          canopy_cover)                <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+        <span class="org-variable-name">midflame_wind_speed</span> <span class="org-operator">=</span> sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,  <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+                                                          fuel_bed_depth,         <span class="org-comment-delimiter"># </span><span class="org-comment">ft</span>
+                                                          m_to_ft(canopy_height), <span class="org-comment-delimiter"># </span><span class="org-comment">ft</span>
+                                                          canopy_cover)           <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
 
         <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior in the direction of maximum spread</span>

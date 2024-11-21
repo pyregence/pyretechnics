@@ -3,14 +3,18 @@ import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
-    from cython.cimports.pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
+    from cython.cimports.pyretechnics.conversion import \
+        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
     from math import sqrt, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
-    from pyretechnics.conversion import opposite_direction, azimuthal_to_cartesian
+    from pyretechnics.conversion import \
+        opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
+        Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
@@ -20,7 +24,6 @@ else:
 from math import pi, degrees
 import cython as cy
 import numpy as np
-import pyretechnics.conversion as conv
 import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 import pyretechnics.spot_fire as spot
@@ -623,26 +626,26 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
                                         fuel_moisture_dead_100hr,
                                         0.0, # fuel_moisture_dead_herbaceous
                                         fuel_moisture_live_herbaceous,
-                                        fuel_moisture_live_woody]               # kg moisture/kg ovendry weight
-        fuel_bed_depth               = fuel_model["delta"]                      # ft
-        heat_of_combustion           = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
-        estimated_fine_fuel_moisture = fuel_moisture_dead_1hr                   # kg moisture/kg ovendry weight
+                                        fuel_moisture_live_woody]          # kg moisture/kg ovendry weight
+        fuel_bed_depth               = fuel_model["delta"]                 # ft
+        heat_of_combustion           = Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
+        estimated_fine_fuel_moisture = fuel_moisture_dead_1hr              # kg moisture/kg ovendry weight
 
         #============================================================================================
         # Calculate midflame wind speed
         #============================================================================================
 
         # Convert from 10m wind speed to 20ft wind speed
-        wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+        wind_speed_20ft = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
 
         # Convert 20ft wind speed from km/hr to m/min
-        wind_speed_20ft_m_min = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
+        wind_speed_20ft_m_min = km_hr_to_m_min(wind_speed_20ft) # m/min
 
         # Convert from 20ft wind speed to midflame wind speed in m/min
-        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,       # m/min
-                                                          fuel_bed_depth,              # ft
-                                                          conv.m_to_ft(canopy_height), # ft
-                                                          canopy_cover)                # 0-1
+        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,  # m/min
+                                                          fuel_bed_depth,         # ft
+                                                          m_to_ft(canopy_height), # ft
+                                                          canopy_cover)           # 0-1
 
         #============================================================================================
         # Calculate surface fire behavior in the direction of maximum spread
