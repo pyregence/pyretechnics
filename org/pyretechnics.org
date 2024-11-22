@@ -2809,12 +2809,23 @@ procedure provided by Waeselynck 2024.[fn::Waeselynck2024]
 
 #+NAME: surface-fire-combine-wind-and-slope-vectors
 #+begin_src python
-import numpy as np
-from pyretechnics.conversion import azimuthal_to_cartesian
-from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_3d, to_slope_plane
+import cython
+if cython.compiled:
+    from cython.cimports.pyretechnics.cy_types import vec_xy, vec_xyz
+    from cython.cimports.pyretechnics.conversion import azimuthal_to_cartesian
+    from cython.cimports.pyretechnics.vector_utils import vector_magnitude_3d, as_unit_vector_3d, to_slope_plane
+else:
+    from pyretechnics.py_types import vec_xy, vec_xyz
+    from pyretechnics.conversion import azimuthal_to_cartesian
+    from pyretechnics.vector_utils import vector_magnitude_3d, as_unit_vector_3d, to_slope_plane
 
 
-def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, upslope_direction):
+import cython as cy
+
+
+@cy.ccall
+def project_wind_and_slope_vectors_3d(wind_speed: cy.float, downwind_direction: cy.float,
+                                      slope: cy.float, upslope_direction: cy.float) -> dict[str,vec_xyz]:
     """
     Given these inputs:
     - wind_speed         :: S
@@ -2827,32 +2838,35 @@ def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, ups
     - slope_vector_3d :: (x, y, z)
     """
     # Convert wind and slope vectors from azimuthal to cartesian coordinates
-    wind_vector_2d  = azimuthal_to_cartesian(wind_speed, downwind_direction)
-    slope_vector_2d = azimuthal_to_cartesian(slope, upslope_direction)
+    wind_vector_2d : vec_xy = azimuthal_to_cartesian(wind_speed, downwind_direction)
+    slope_vector_2d: vec_xy = azimuthal_to_cartesian(slope, upslope_direction)
     # Project wind and slope vectors onto the slope-tangential plane
-    wind_vector_3d  = to_slope_plane(wind_vector_2d, slope_vector_2d)
-    slope_vector_3d = to_slope_plane(slope_vector_2d, slope_vector_2d)
+    wind_vector_3d : vec_xyz = to_slope_plane(wind_vector_2d, slope_vector_2d)
+    slope_vector_3d: vec_xyz = to_slope_plane(slope_vector_2d, slope_vector_2d)
     return {
         "wind_vector_3d" : wind_vector_3d,
         "slope_vector_3d": slope_vector_3d,
     }
 
 
-def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
+@cy.ccall
+def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float, phi_S: cy.float) -> dict:
     # Convert wind and slope vectors to unit vectors on the slope-tangential plane
-    w_S = np.asarray(as_unit_vector_3d(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d)
-    u_S = np.asarray(as_unit_vector_3d(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d)
+    w_S: vec_xyz = as_unit_vector_3d(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
+    u_S: vec_xyz = as_unit_vector_3d(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d
     # Create the 3D slope-tangential phi_W, phi_S, and phi_E vectors
-    phi_W_3d = phi_W * w_S
-    phi_S_3d = phi_S * u_S
-    phi_E_3d = phi_W_3d + phi_S_3d
+    phi_E_3d: vec_xyz = (
+        phi_W * w_S[0] + phi_S * u_S[0],
+        phi_W * w_S[1] + phi_S * u_S[1],
+        phi_W * w_S[2] + phi_S * u_S[2],
+    )
     # Calculate phi_E
-    phi_E = vector_magnitude(phi_E_3d)
+    phi_E: cy.float = vector_magnitude_3d(phi_E_3d)
     # Determine max spread direction and return results
     if phi_E > 0.0:
         return {
             "phi_E"               : phi_E,
-            "max_spread_direction": phi_E_3d / phi_E,
+            "max_spread_direction": as_unit_vector_3d(phi_E_3d),
         }
     elif phi_S > 0.0:
         return {
@@ -2862,7 +2876,7 @@ def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
     else:
         return {
             "phi_E"               : phi_E,
-            "max_spread_direction": np.asarray((0.0,1.0,0.0)), # default: North
+            "max_spread_direction": (0.0,1.0,0.0), # default: North
         }
 #+end_src
 
@@ -2972,6 +2986,7 @@ off.
 
 #+NAME: surface-fire-behavior-max
 #+begin_src python
+import numpy as np
 from pyretechnics.conversion import opposite_direction
 from pyretechnics.vector_utils import vector_magnitude_3d
 
@@ -3059,7 +3074,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     length_to_width_ratio  = surface_length_to_width_ratio(limited_wind_speed, surface_lw_ratio_model)
     return {
         "max_spread_rate"       : max_spread_rate,
-        "max_spread_direction"  : max_spread_direction, # unit vector
+        "max_spread_direction"  : np.asarray(max_spread_direction), # unit vector
         "max_fireline_intensity": max_fireline_intensity,
         "max_flame_length"      : calc_flame_length(max_fireline_intensity),
         "length_to_width_ratio" : length_to_width_ratio,
@@ -3327,16 +3342,16 @@ Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.0
  'length_to_width_ratio': 2.02319598197937,
  'max_fireline_intensity': 32.52824021555232,
  'max_flame_length': 0.384393279547724,
- 'max_spread_direction': array([0.57514209, 0.80992595, 0.11502841]),
+ 'max_spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
  'max_spread_rate': 2.2964671592467902}
 
 Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'eccentricity': 0.9845208635180694,
  'length_to_width_ratio': 5.705566883087158,
- 'max_fireline_intensity': 330.52326520812335,
- 'max_flame_length': 1.1167831700945479,
- 'max_spread_direction': array([0.57514209, 0.80992595, 0.11502841]),
- 'max_spread_rate': 23.334672238265263}
+ 'max_fireline_intensity': 330.52327700735987,
+ 'max_flame_length': 1.116783188433671,
+ 'max_spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
+ 'max_spread_rate': 23.334673071281713}
 #+end_example
 
 *** How to Calculate the Surface Fire Behavior in Any Direction
@@ -3409,24 +3424,24 @@ pprint(backing_fire_behavior)
 #+begin_example
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 32.52824021555232,
- 'flame_length': 0.384393279547724,
- 'spread_direction': array([0.57514209, 0.80992595, 0.11502841]),
- 'spread_rate': 2.2964671592467902}
+ 'fireline_intensity': 32.52822719177826,
+ 'flame_length': 0.38439320875152366,
+ 'spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
+ 'spread_rate': 2.2964662397789914}
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.251119815561923,
- 'flame_length': 0.15074657845399436,
- 'spread_direction': array([ 0.79419771, -0.58653219,  0.15883956]),
- 'spread_rate': 0.30012558262508093}
+ 'fireline_intensity': 4.251119815561932,
+ 'flame_length': 0.15074657845399453,
+ 'spread_direction': array([ 0.79419768, -0.58653219,  0.15883955]),
+ 'spread_rate': 0.3001255826250815}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 2.2741654809334264,
- 'flame_length': 0.11305091291396749,
- 'spread_direction': array([-0.57514209, -0.80992595, -0.11502841]),
- 'spread_rate': 0.1605542232548844}
+ 'fireline_intensity': 2.2741655445924582,
+ 'flame_length': 0.11305091436966075,
+ 'spread_direction': array([-0.57514209, -0.80992591, -0.11502841]),
+ 'spread_rate': 0.16055422774915998}
 #+end_example
 
 * Crown Fire Equations (pyretechnics.crown_fire)
@@ -4673,10 +4688,10 @@ else:
 : Fire Behavior from Surface Fire (No Crown Fire Occurred)
 : ============================================================
 : {'fire_type': 'surface',
-:  'fireline_intensity': 11.637272319887389,
-:  'flame_length': 0.2395672653150934,
+:  'fireline_intensity': 11.637273243704481,
+:  'flame_length': 0.23956727406332143,
 :  'spread_direction': array([0.87038827, 0.        , 0.49236599]),
-:  'spread_rate': 0.82158190940362}
+:  'spread_rate': 0.8215819746243512}
 
 * Spot Fire Equations (pyretechnics.spot_fire)
   :PROPERTIES:
@@ -6537,18 +6552,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 32.52824021555232,
- 'flame_length': 0.384393279547724,
- 'spread_direction': array([0.48686891, 0.61304247, 0.62220382]),
- 'spread_rate': 2.2964671592467902}
+ 'fireline_intensity': 32.528250853562525,
+ 'flame_length': 0.38439333737509035,
+ 'spread_direction': array([0.48686895, 0.61304247, 0.62220383]),
+ 'spread_rate': 2.2964679102816112}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 50.61290348687427,
- 'flame_length': 0.4710815556821105,
- 'spread_direction': array([0.48686891, 0.61304247, 0.62220382]),
- 'spread_rate': 3.5732295974671913}
+ 'fireline_intensity': 50.61292548195906,
+ 'flame_length': 0.47108164985334633,
+ 'spread_direction': array([0.48686895, 0.61304247, 0.62220383]),
+ 'spread_rate': 3.5732311503021905}
 #+end_example
 
 *** How to Burn a Cell in Any Direction
@@ -6644,18 +6659,18 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 11.637271673977688,
- 'flame_length': 0.23956725919855196,
+ 'fireline_intensity': 11.637272597794672,
+ 'flame_length': 0.23956726794677918,
  'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.8215818638029233}
+ 'spread_rate': 0.8215819290236468}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 'surface',
- 'fireline_intensity': 13.898200206313783,
- 'flame_length': 0.2599542151321845,
+ 'fireline_intensity': 13.89820197455359,
+ 'flame_length': 0.2599542303459697,
  'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.9812015693113519}
+ 'spread_rate': 0.9812016941476362}
 #+end_example
 
 * Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)
@@ -8587,16 +8602,16 @@ Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.2116479, 'Stdev': 0.63416284}
+{'Min': 0.16077116, 'Max': 2.2964668, 'Mean': 1.2116479, 'Stdev': 0.6341628}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.65860283, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.9331}
+{'Min': 0.658666, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.9331}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.16235, 'Stdev': 8.98258}
+{'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.16235, 'Stdev': 8.982579}
 
 Flame Length (meters)
-{'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356827}
+{'Min': 0.11312115, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356826}
 
 Time of Arrival (minutes)
 {'Min': 2081.8516, 'Max': 2548.1523, 'Mean': 2385.591, 'Stdev': 116.83735}
@@ -8931,22 +8946,22 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.9967122, 'Max': 1.0, 'Mean': 0.77200466, 'Stdev': 0.57225037}
+{'Min': -0.9967122, 'Max': 1.0, 'Mean': 0.7720047, 'Stdev': 0.5722504}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16055717, 'Max': 2.2964664, 'Mean': 1.3839705, 'Stdev': 0.6849228}
+{'Min': 0.16055717, 'Max': 2.2964664, 'Mean': 1.3839706, 'Stdev': 0.6849228}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.015500052, 'Max': 359.823, 'Mean': 179.89368, 'Stdev': 127.71465}
+{'Min': 0.015500054, 'Max': 359.82297, 'Mean': 179.89368, 'Stdev': 127.714645}
 
 Fireline Intensity (kW/m)
-{'Min': 2.274207, 'Max': 32.52823, 'Mean': 19.603209, 'Stdev': 9.701569}
+{'Min': 2.274207, 'Max': 32.52823, 'Mean': 19.60321, 'Stdev': 9.701569}
 
 Flame Length (meters)
-{'Min': 0.11305187, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.079029635}
+{'Min': 0.11305186, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.079029635}
 
 Time of Arrival (minutes)
 {'Min': 2081.8516, 'Max': 2549.8735, 'Mean': 2406.4568, 'Stdev': 106.72756}
@@ -8962,35 +8977,35 @@ Future Spot Ignitions:
  2551.856804638606: {(82, 36)},
  2553.2429458344905: {(73, 50)},
  2553.503079371683: {(82, 42)},
- 2553.67061884271: {(88, 50)},
+ 2553.670617042156: {(88, 50)},
  2554.83807664013: {(78, 64)},
  2555.525101157285: {(78, 60), (78, 58)},
  2556.2804247854724: {(80, 74)},
  2556.956798222929: {(79, 80), (78, 75)},
- 2557.1956190287556: {(72, 52), (75, 51)},
+ 2557.195619307969: {(72, 52), (75, 51)},
  2560.051319507768: {(82, 76)},
- 2560.054675129427: {(75, 81)},
+ 2560.0546776037436: {(75, 81)},
  2562.2242880384597: {(78, 53)},
  2563.013039281081: {(60, 78)},
- 2563.8631185172394: {(81, 38)},
+ 2563.863116389773: {(81, 38)},
  2566.6678273977955: {(82, 40)},
- 2567.212561600751: {(78, 77)},
+ 2567.2125614511942: {(78, 77)},
  2567.3587638733025: {(83, 69)},
  2569.330376022855: {(79, 77)},
- 2570.921410793652: {(83, 43), (83, 36)},
- 2573.732302770297: {(92, 51)},
+ 2570.921652617251: {(83, 43), (83, 36)},
+ 2573.7323031261817: {(92, 51)},
  2574.6585895680705: {(53, 44)},
  2574.794226434831: {(85, 72)},
  2575.851040433648: {(81, 65), (80, 63)},
  2576.9250365965636: {(90, 38)},
  2576.970322423062: {(78, 60), (80, 63)},
- 2581.257440902062: {(73, 78)},
+ 2581.2574393261707: {(73, 78)},
  2583.2559022370483: {(84, 31)},
- 2583.532526699624: {(84, 54)},
+ 2583.5325256200385: {(84, 54)},
  2583.757301741892: {(70, 84)},
- 2591.9147207078995: {(66, 34), (71, 40)},
+ 2591.9147157633897: {(66, 34), (71, 40)},
  2592.883811071109: {(64, 36)},
- 2603.1104006041915: {(80, 55)},
+ 2603.1103976938066: {(80, 55)},
  2613.4410783216385: {(61, 37)}}
 #+end_example
 
@@ -9456,23 +9471,23 @@ Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-Main: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.2057376, 'Stdev': 0.63797575}
-Fork: {'Min': 0.16077118, 'Max': 2.2964668, 'Mean': 1.1890496, 'Stdev': 0.63051146}
+Main: {'Min': 0.16077116, 'Max': 2.2964668, 'Mean': 1.2057376, 'Stdev': 0.6379757}
+Fork: {'Min': 0.16077116, 'Max': 2.2964668, 'Mean': 1.1890496, 'Stdev': 0.63051146}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27234977, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35211}
-Fork: {'Min': 0.27234977, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70385}
+Main: {'Min': 0.27235666, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35212}
+Fork: {'Min': 0.27235666, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70386}
 
 Fireline Intensity (kW/m)
-Main: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.078634, 'Stdev': 9.036589}
+Main: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.078634, 'Stdev': 9.036588}
 Fork: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 16.842258, 'Stdev': 8.9308605}
 
 Flame Length (meters)
-Main: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.2746018, 'Stdev': 0.07341509}
-Fork: {'Min': 0.11312116, 'Max': 0.38439324, 'Mean': 0.27287114, 'Stdev': 0.07285744}
+Main: {'Min': 0.11312115, 'Max': 0.38439324, 'Mean': 0.27460182, 'Stdev': 0.073415086}
+Fork: {'Min': 0.11312115, 'Max': 0.38439324, 'Mean': 0.27287114, 'Stdev': 0.07285743}
 
 Time of Arrival (minutes)
-Main: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2543.6892, 'Stdev': 173.15517}
+Main: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2543.6892, 'Stdev': 173.15518}
 Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 #+end_example
 

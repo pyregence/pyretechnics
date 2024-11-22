@@ -308,12 +308,23 @@ def calc_midflame_wind_speed(wind_speed_20ft, fuel_bed_depth, canopy_height, can
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
-import numpy as np
-from pyretechnics.conversion import azimuthal_to_cartesian
-from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_3d, to_slope_plane
+import cython
+if cython.compiled:
+    from cython.cimports.pyretechnics.cy_types import vec_xy, vec_xyz
+    from cython.cimports.pyretechnics.conversion import azimuthal_to_cartesian
+    from cython.cimports.pyretechnics.vector_utils import vector_magnitude_3d, as_unit_vector_3d, to_slope_plane
+else:
+    from pyretechnics.py_types import vec_xy, vec_xyz
+    from pyretechnics.conversion import azimuthal_to_cartesian
+    from pyretechnics.vector_utils import vector_magnitude_3d, as_unit_vector_3d, to_slope_plane
 
 
-def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, upslope_direction):
+import cython as cy
+
+
+@cy.ccall
+def project_wind_and_slope_vectors_3d(wind_speed: cy.float, downwind_direction: cy.float,
+                                      slope: cy.float, upslope_direction: cy.float) -> dict[str,vec_xyz]:
     """
     Given these inputs:
     - wind_speed         :: S
@@ -326,32 +337,35 @@ def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, ups
     - slope_vector_3d :: (x, y, z)
     """
     # Convert wind and slope vectors from azimuthal to cartesian coordinates
-    wind_vector_2d  = azimuthal_to_cartesian(wind_speed, downwind_direction)
-    slope_vector_2d = azimuthal_to_cartesian(slope, upslope_direction)
+    wind_vector_2d : vec_xy = azimuthal_to_cartesian(wind_speed, downwind_direction)
+    slope_vector_2d: vec_xy = azimuthal_to_cartesian(slope, upslope_direction)
     # Project wind and slope vectors onto the slope-tangential plane
-    wind_vector_3d  = to_slope_plane(wind_vector_2d, slope_vector_2d)
-    slope_vector_3d = to_slope_plane(slope_vector_2d, slope_vector_2d)
+    wind_vector_3d : vec_xyz = to_slope_plane(wind_vector_2d, slope_vector_2d)
+    slope_vector_3d: vec_xyz = to_slope_plane(slope_vector_2d, slope_vector_2d)
     return {
         "wind_vector_3d" : wind_vector_3d,
         "slope_vector_3d": slope_vector_3d,
     }
 
 
-def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
+@cy.ccall
+def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float, phi_S: cy.float) -> dict:
     # Convert wind and slope vectors to unit vectors on the slope-tangential plane
-    w_S = np.asarray(as_unit_vector_3d(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d)
-    u_S = np.asarray(as_unit_vector_3d(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d)
+    w_S: vec_xyz = as_unit_vector_3d(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
+    u_S: vec_xyz = as_unit_vector_3d(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d
     # Create the 3D slope-tangential phi_W, phi_S, and phi_E vectors
-    phi_W_3d = phi_W * w_S
-    phi_S_3d = phi_S * u_S
-    phi_E_3d = phi_W_3d + phi_S_3d
+    phi_E_3d: vec_xyz = (
+        phi_W * w_S[0] + phi_S * u_S[0],
+        phi_W * w_S[1] + phi_S * u_S[1],
+        phi_W * w_S[2] + phi_S * u_S[2],
+    )
     # Calculate phi_E
-    phi_E = vector_magnitude(phi_E_3d)
+    phi_E: cy.float = vector_magnitude_3d(phi_E_3d)
     # Determine max spread direction and return results
     if phi_E > 0.0:
         return {
             "phi_E"               : phi_E,
-            "max_spread_direction": phi_E_3d / phi_E,
+            "max_spread_direction": as_unit_vector_3d(phi_E_3d),
         }
     elif phi_S > 0.0:
         return {
@@ -361,7 +375,7 @@ def get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S):
     else:
         return {
             "phi_E"               : phi_E,
-            "max_spread_direction": np.asarray((0.0,1.0,0.0)), # default: North
+            "max_spread_direction": (0.0,1.0,0.0), # default: North
         }
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
@@ -401,6 +415,7 @@ def surface_fire_eccentricity(length_to_width_ratio):
     return sqrt(length_to_width_ratio ** 2.0 - 1.0) / length_to_width_ratio
 # surface-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
+import numpy as np
 from pyretechnics.conversion import opposite_direction
 from pyretechnics.vector_utils import vector_magnitude_3d
 
@@ -488,7 +503,7 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed, upwind
     length_to_width_ratio  = surface_length_to_width_ratio(limited_wind_speed, surface_lw_ratio_model)
     return {
         "max_spread_rate"       : max_spread_rate,
-        "max_spread_direction"  : max_spread_direction, # unit vector
+        "max_spread_direction"  : np.asarray(max_spread_direction), # unit vector
         "max_fireline_intensity": max_fireline_intensity,
         "max_flame_length"      : calc_flame_length(max_fireline_intensity),
         "length_to_width_ratio" : length_to_width_ratio,
