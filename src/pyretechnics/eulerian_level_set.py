@@ -26,6 +26,7 @@ import cython as cy
 import numpy as np
 import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
+from pyretechnics.space_time_cube import SpaceTimeCube, LazySpaceTimeCube
 import pyretechnics.spot_fire as spot
 import pyretechnics.surface_fire as sf
 
@@ -1128,10 +1129,12 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
 
 @cy.profile(True)
-def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution, start_time,
-                               max_duration=None, use_wind_limit=True, surface_lw_ratio_model="rothermel",
-                               crown_max_lw_ratio=None, max_cells_per_timestep=0.4, buffer_width=3,
-                               spot_ignitions={}, spot_config=None):
+def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cube_resolution: tuple,
+                               start_time: float, max_duration: float|None = None,
+                               max_cells_per_timestep: float|None = 0.4, buffer_width: int|None = 3,
+                               use_wind_limit: bool|None = True, surface_lw_ratio_model: str|None = "rothermel",
+                               crown_max_lw_ratio: float|None = None, spot_ignitions: dict|None = {},
+                               spot_config: dict|None = None):
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -1168,11 +1171,11 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - cell_width                    :: meters
     - start_time                   :: minutes (from the start of the space_time_cube's temporal origin)
     - max_duration                 :: minutes (Optional)
+    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)
+    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
     - use_wind_limit               :: boolean (Optional)
     - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
-    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)
-    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
     - spot_ignitions               :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config                  :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: seed for a numpy.random.Generator object
@@ -1197,11 +1200,81 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
       - time_of_arrival       :: 2D float array (min)
       - firebrand_count       :: 2D integer array (number of firebrands) (only included when provided as an input)
     - spot_ignitions       :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
+    - random_generator     :: numpy.random.Generator object (only included when spotting is used)
     """
+    # Define the provided, required, and optional keys for space_time_cubes
+    provided_cubes = set(space_time_cubes.keys())
+    required_cubes = {
+        "slope",
+        "aspect",
+        "fuel_model",
+        "canopy_cover",
+        "canopy_height",
+        "canopy_base_height",
+        "canopy_bulk_density",
+        "wind_speed_10m",
+        "upwind_direction",
+        "fuel_moisture_dead_1hr",
+        "fuel_moisture_dead_10hr",
+        "fuel_moisture_dead_100hr",
+        "fuel_moisture_live_herbaceous",
+        "fuel_moisture_live_woody",
+        "foliar_moisture",
+    } | ({"temperature"} if spot_config else {})
+    optional_cubes = {
+        "fuel_spread_adjustment",
+        "weather_spread_adjustment",
+    }
+
+    # Ensure that all required_cubes are present in provided_cubes
+    if not provided_cubes.issuperset(required_cubes):
+        raise ValueError("The space_time_cubes dictionary is missing these required keys: "
+                         + str(required_cubes.difference(provided_cubes)))
+
+    # Ensure that only required_cubes and optional_cubes are present in provided_cubes
+    if not (required_cubes | optional_cubes).issuperset(provided_cubes):
+        raise ValueError("The space_time_cubes dictionary contains these unused keys: "
+                         + str(provided_cubes.difference((required_cubes | optional_cubes))))
+
+    # Ensure that all space_time_cubes values are SpaceTimeCube objects
+    for cube in space_time_cubes.values():
+        if not(isinstance(cube, SpaceTimeCube) or isinstance(cube, LazySpaceTimeCube)):
+            raise ValueError("All values in the space_time_cubes dictionary must be SpaceTimeCube or "
+                             + "LazySpaceTimeCube objects. See pyretechnics.space_time_cube for more information.")
+
+    # Define the provided, required, and optional keys for output_matrices
+    provided_matrices = set(output_matrices.keys())
+    required_matrices = {
+        "phi",
+        "fire_type",
+        "spread_rate",
+        "spread_direction",
+        "fireline_intensity",
+        "flame_length",
+        "time_of_arrival",
+    }
+    optional_matrices = {
+        "firebrand_count",
+    }
+
+    # Ensure that all required_matrices are present in output_matrices
+    if not provided_matrices.issuperset(required_matrices):
+        raise ValueError("The output_matrices dictionary is missing these required keys: " + str(required_matrices.difference(provided_matrices)))
+
+    # Ensure that only required_matrices and optional_matrices are present in provided_matrices
+    if not (required_matrices | optional_matrices).issuperset(provided_matrices):
+        raise ValueError("The output_matrices dictionary contains these unused keys: " + str(provided_matrices.difference((required_matrices | optional_matrices))))
+
+    # Ensure that all output_matrices values are 2D Numpy arrays
+    for matrix in output_matrices.values():
+        if not(isinstance(matrix, np.ndarray) and np.ndim(matrix) == 2):
+            raise ValueError("All values in the output_matrices dictionary must be 2D Numpy arrays.")
+
     # Extract simulation dimensions
     (bands, rows, cols) = space_time_cubes["slope"].shape
-    band_duration       = cube_resolution[0]
-    cube_duration       = bands * band_duration
+
+    # Extract simulation resolution
+    (band_duration, cell_height, cell_width) = cube_resolution
 
     # Ensure that all space_time_cubes have the same spatial resolution
     for cube in space_time_cubes.values():
@@ -1209,16 +1282,23 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
             raise ValueError("The space_time_cubes must all share the same spatial resolution.")
 
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
-    for layer in output_matrices.values():
-        if layer.shape != (rows, cols):
-            raise ValueError("The space_time_cubes and output_matrices must share the same spatial resolution.")
+    for matrix in output_matrices.values():
+        if matrix.shape != (rows, cols):
+            raise ValueError("The space_time_cubes and output_matrices must all share the same spatial resolution.")
+
+    # Ensure that all cube resolution values are positive
+    if band_duration <= 0.0 or cell_height <= 0.0 or cell_width <= 0.0:
+        raise ValueError("The cube_resolution tuple may only contain positive values.")
+
+    # Calculate the cube duration
+    cube_duration = bands * band_duration
+
+    # Ensure that start_time exists within the temporal bounds of the space_time_cubes
+    if not(0.0 <= start_time < cube_duration):
+        raise ValueError("The start_time falls outside of the temporal bounds of the space_time_cubes.")
 
     # Calculate the max stop time
     max_stop_time = start_time + max_duration if max_duration else cube_duration
-
-    # Ensure that start_time does not exceed the cube_duration
-    if start_time > cube_duration:
-        raise ValueError("The start_time exceeds the temporal limit of the space_time_cubes.")
 
     # Ensure that the max_stop_time does not exceed the cube_duration
     if max_stop_time > cube_duration:
