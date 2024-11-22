@@ -21,20 +21,6 @@ else:
 import cython as cy
 
 
-# TODO: Replace with vector_magnitude_3d and remove
-@cy.ccall
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def vector_magnitude(vector: cy.double[:]) -> cy.double:
-    i  : pyidx
-    x  : cy.double
-    acc: cy.double = 0.0
-    for i in range(len(vector)):
-        x    = vector[i]
-        acc += x * x
-    return sqrt(acc)
-
-
 @cy.ccall
 def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1]

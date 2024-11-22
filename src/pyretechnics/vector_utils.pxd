@@ -6,7 +6,6 @@ from pyretechnics.cy_types cimport vec_xy, vec_xyz
 # Cython functions to cimport into other modules
 #==================================================
 
-cpdef double vector_magnitude(double[:] vector)
 cpdef float dot_2d(vec_xy vector1, vec_xy vector2)
 cpdef float dot_3d(vec_xyz vector1, vec_xyz vector2)
 cpdef float vector_magnitude_2d(vec_xy vector)

@@ -11031,20 +11031,6 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace with vector_magnitude_3d and remove</span>
-<span class="org-type">@cy.ccall</span>
-<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
-<span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude</span>(vector: cy.double[:]) <span class="org-operator">-&gt;</span> cy.double:
-    i  : pyidx
-    x  : cy.double
-    <span class="org-variable-name">acc</span>: cy.double <span class="org-operator">=</span> 0.0
-    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(vector)):
-        <span class="org-variable-name">x</span>    <span class="org-operator">=</span> vector[i]
-        <span class="org-variable-name">acc</span> <span class="org-operator">+=</span> x <span class="org-operator">*</span> x
-    <span class="org-keyword">return</span> sqrt(acc)
-
-
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">dot_2d</span>(vector1: vec_xy, vector2: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1]
@@ -11150,7 +11136,6 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
 <span class="org-comment-delimiter"># </span><span class="org-comment">Cython functions to cimport into other modules</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
 
-cpdef double vector_magnitude(double[:] vector)
 cpdef <span class="org-builtin">float</span> dot_2d(vec_xy vector1, vec_xy vector2)
 cpdef <span class="org-builtin">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2)
 cpdef <span class="org-builtin">float</span> vector_magnitude_2d(vec_xy vector)
