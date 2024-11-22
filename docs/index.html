@@ -7541,7 +7541,8 @@ node-centered central differences, represented by the values in the
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-keyword">import</span> cython
+<pre class="src src-python" id="phi-field-spatial-gradients-approx"><span class="org-comment-delimiter"># </span><span class="org-comment">cython: profile=False</span>
+<span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, atan
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
@@ -7567,6 +7568,7 @@ node-centered central differences, represented by the values in the
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> pyretechnics.crown_fire <span class="org-keyword">as</span> cf
 <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
+<span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube, LazySpaceTimeCube
 <span class="org-keyword">import</span> pyretechnics.spot_fire <span class="org-keyword">as</span> spot
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
@@ -7574,11 +7576,11 @@ node-centered central differences, represented by the values in the
 <span class="org-variable-name">PI</span> <span class="org-operator">=</span> cy.declare(cy.double, 3.14159265358979323846)
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster in the x (west-&gt;east)</span>
@@ -7598,11 +7600,11 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
+<span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, rows: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster in the y (south-&gt;north)</span>
@@ -7622,17 +7624,13 @@ node-centered central differences, represented by the values in the
             <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Handle exception values from child functions</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.ccall</span>
-<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
+<span class="org-type">@cy.cfunc</span>
+<span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_approx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx,
+                             rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster at grid cell (x,y)</span>
 <span class="org-doc">    given the cell width dx and the cell height dy.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">rows</span>   : pyidx    <span class="org-operator">=</span> phi.shape[0]
-    <span class="org-variable-name">cols</span>   : pyidx    <span class="org-operator">=</span> phi.shape[1]
     <span class="org-variable-name">dphi_dx</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dx_approx(phi, dx, x, y, cols)
     <span class="org-variable-name">dphi_dy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dy_approx(phi, dy, x, y, rows)
     <span class="org-keyword">return</span> (dphi_dx, dphi_dy)
@@ -7647,7 +7645,6 @@ the fire front normal vector as follows:
 
 <div class="org-src-container">
 <pre class="src src-python" id="phi-field-normal-vector"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove unused function</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_vector</span>(phi: cy.<span class="org-builtin">float</span>[:,:], dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
@@ -7656,7 +7653,9 @@ the fire front normal vector as follows:
 <span class="org-doc">    - n_x: eastward component of the unit normal vector</span>
 <span class="org-doc">    - n_y: northward component of the unit normal vector</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">phi_gradient</span>: vec_xy <span class="org-operator">=</span> calc_phi_gradient_approx(phi, dx, dy, x, y)
+    <span class="org-variable-name">rows</span>        : pyidx  <span class="org-operator">=</span> phi.shape[0]
+    <span class="org-variable-name">cols</span>        : pyidx  <span class="org-operator">=</span> phi.shape[1]
+    <span class="org-variable-name">phi_gradient</span>: vec_xy <span class="org-operator">=</span> calc_phi_gradient_approx(phi, dx, dy, x, y, rows, cols)
     <span class="org-keyword">if</span> phi_gradient[0] <span class="org-operator">==</span> 0.0 <span class="org-keyword">and</span> phi_gradient[1] <span class="org-operator">==</span> 0.0:
         <span class="org-keyword">return</span> phi_gradient <span class="org-comment-delimiter"># </span><span class="org-comment">(n_x, n_y)</span>
     <span class="org-keyword">else</span>:
@@ -7684,7 +7683,6 @@ vector points:
 
 <div class="org-src-container">
 <pre class="src src-python" id="phi-field-normal-vector-angle"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove unused function</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_normal_azimuth</span>(phi_normal_vector: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7758,8 +7756,7 @@ First, we define the parameter \(r\) and the Superbee flux limiter
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="superbee-flux-limiter"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="superbee-flux-limiter"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_superbee_flux_limiter</span>(dphi_up: cy.<span class="org-builtin">float</span>, dphi_loc: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
@@ -7788,8 +7785,7 @@ and "south" values as follows:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-spatial-gradients"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="phi-field-spatial-gradients"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dx</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_x: cy.<span class="org-builtin">float</span>, dx: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
@@ -7807,7 +7803,6 @@ and "south" values as follows:
     <span class="org-keyword">return</span> (phi_east <span class="org-operator">-</span> phi_west) <span class="org-operator">/</span> dx
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_dphi_dy</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_y: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>, x: pyidx, y: pyidx, rows: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -7826,24 +7821,21 @@ and "south" values as follows:
     <span class="org-keyword">return</span> (phi_north <span class="org-operator">-</span> phi_south) <span class="org-operator">/</span> dy
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass rows and cols</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Handle exception values from child functions</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient</span>(phi: cy.<span class="org-builtin">float</span>[:,:], u_x: cy.<span class="org-builtin">float</span>, u_y: cy.<span class="org-builtin">float</span>, dx: cy.<span class="org-builtin">float</span>, dy: cy.<span class="org-builtin">float</span>,
-                      x: pyidx, y: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
+                      x: pyidx, y: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the spatial gradient of the phi raster at grid cell (x,y) given:</span>
-<span class="org-doc">    - phi :: 2D float array of values in [-1,1]</span>
-<span class="org-doc">    - u_x :: m/min</span>
-<span class="org-doc">    - u_y :: m/min</span>
-<span class="org-doc">    - dx  :: meters</span>
-<span class="org-doc">    - dy  :: meters</span>
-<span class="org-doc">    - x   :: integer column index in phi</span>
-<span class="org-doc">    - y   :: integer row index in phi</span>
+<span class="org-doc">    - phi  :: 2D float array of values in [-1,1]</span>
+<span class="org-doc">    - u_x  :: m/min</span>
+<span class="org-doc">    - u_y  :: m/min</span>
+<span class="org-doc">    - dx   :: meters</span>
+<span class="org-doc">    - dy   :: meters</span>
+<span class="org-doc">    - x    :: integer column index in phi</span>
+<span class="org-doc">    - y    :: integer row index in phi</span>
+<span class="org-doc">    - rows :: row count in phi matrix</span>
+<span class="org-doc">    - cols :: column count in phi matrix</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">rows</span>   : pyidx    <span class="org-operator">=</span> phi.shape[0]
-    <span class="org-variable-name">cols</span>   : pyidx    <span class="org-operator">=</span> phi.shape[1]
     <span class="org-variable-name">dphi_dx</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dx(phi, u_x, dx, x, y, cols)
     <span class="org-variable-name">dphi_dy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_dphi_dy(phi, u_y, dy, x, y, rows)
     <span class="org-keyword">return</span> (dphi_dx, dphi_dy)
@@ -7869,8 +7861,7 @@ For the east face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-east"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="phi-east"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -7919,8 +7910,7 @@ For the west face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-west"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="phi-west"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -7969,8 +7959,7 @@ For the north face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-north"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="phi-north"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -8019,8 +8008,7 @@ For the south face:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-south"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="phi-south"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(65504.0)
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -8083,7 +8071,6 @@ illustrated below.
 
 <div class="org-src-container">
 <pre class="src src-python" id="calc-fireline-normal-behavior"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move this to pyretechnics.vector_utils and use throughout the literate program</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_elevation_gradient</span>(slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""</span>
@@ -8094,7 +8081,6 @@ illustrated below.
     <span class="org-keyword">return</span> azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">calc_phi_gradient_on_slope</span>(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-doc">"""</span>
@@ -8571,8 +8557,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
 </dl>
 
 <div class="org-src-container">
-<pre class="src src-python" id="phi-field-perimeter-tracking"><span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="phi-field-perimeter-tracking"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">opposite_phi_signs</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], y1: pyidx, x1: pyidx, y2: pyidx, x2: pyidx) <span class="org-operator">-&gt;</span> cy.bint:
@@ -8584,7 +8569,6 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Is it faster to build up a list or a set?</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Should we store each frontier_cells entry as a coord_xy?</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">identify_all_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
     <span class="org-doc">"""</span>
@@ -8610,7 +8594,6 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Is it faster to build up a list or a set?</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Should we store each frontier_cells entry as a coord_xy?</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_frontier_cells</span>(phi_matrix: cy.<span class="org-builtin">float</span>[:,:], tracked_cells: <span class="org-builtin">dict</span>, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
     <span class="org-doc">"""</span>
@@ -8633,7 +8616,6 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-keyword">return</span> frontier_cells
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">project_buffer</span>(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[coord_yx]:
     <span class="org-doc">"""</span>
@@ -8657,7 +8639,6 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-keyword">return</span> buffer_cells
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">identify_tracked_cells</span>(frontier_cells: <span class="org-builtin">set</span>, buffer_width: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
@@ -8672,7 +8653,6 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-keyword">return</span> tracked_cells
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">update_tracked_cells</span>(tracked_cells: <span class="org-builtin">dict</span>, frontier_cells_old: <span class="org-builtin">set</span>, frontier_cells_new: <span class="org-builtin">set</span>,
                          buffer_width: pyidx, rows: pyidx, cols: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
@@ -8743,7 +8723,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.ccall</span>
+<span class="org-type">@cy.cfunc</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.exceptval(NULL)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.wraparound(False)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: @cy.boundscheck(False)</span>
@@ -8823,7 +8803,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                               cell_width,
                                                               cell_height,
                                                               x,
-                                                              y)
+                                                              y,
+                                                              rows,
+                                                              cols)
         <span class="org-variable-name">phi_magnitude_xy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(phi_gradient_xy)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fire behavior normal to the fire front on the slope-tangential plane</span>
@@ -8854,7 +8836,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                 cell_width,
                                                                 cell_height,
                                                                 x,
-                                                                y)
+                                                                y,
+                                                                rows,
+                                                                cols)
             <span class="org-variable-name">dphi_dt_correction</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> dot_2d(phi_gradient_xy, phi_gradient_xy_limited) <span class="org-operator">/</span> phi_magnitude_xy_2
             <span class="org-variable-name">fire_behavior</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">=</span> dphi_dt <span class="org-operator">*</span> dphi_dt_correction
 
@@ -8900,7 +8884,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                    cell_width,
                                                                    cell_height,
                                                                    x,
-                                                                   y)
+                                                                   y,
+                                                                   rows,
+                                                                   cols)
         <span class="org-variable-name">phi_magnitude_xy_star</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(phi_gradient_xy_star)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fire behavior normal to the fire front on the slope-tangential plane</span>
@@ -8924,7 +8910,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                        cell_width,
                                                                        cell_height,
                                                                        x,
-                                                                       y)
+                                                                       y,
+                                                                       rows,
+                                                                       cols)
             <span class="org-variable-name">dphi_dt_star_correction</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (dot_2d(phi_gradient_xy_star, phi_gradient_xy_star_limited)
                                                  <span class="org-operator">/</span> (phi_magnitude_xy_star <span class="org-operator">*</span> phi_magnitude_xy_star))
             <span class="org-variable-name">fire_behavior_star</span>[<span class="org-string">"dphi_dt"</span>] <span class="org-operator">=</span> dphi_dt_star <span class="org-operator">*</span> dphi_dt_star_correction
@@ -9015,10 +9003,12 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 
 <span class="org-type">@cy.profile</span>(<span class="org-constant">True</span>)
-<span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes, output_matrices, cube_resolution, start_time,
-                               max_duration<span class="org-operator">=</span><span class="org-constant">None</span>, use_wind_limit<span class="org-operator">=</span><span class="org-constant">True</span>, surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>,
-                               crown_max_lw_ratio<span class="org-operator">=</span><span class="org-constant">None</span>, max_cells_per_timestep<span class="org-operator">=</span>0.4, buffer_width<span class="org-operator">=</span>3,
-                               spot_ignitions<span class="org-operator">=</span>{}, spot_config<span class="org-operator">=</span><span class="org-constant">None</span>):
+<span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes: <span class="org-builtin">dict</span>, output_matrices: <span class="org-builtin">dict</span>, cube_resolution: <span class="org-builtin">tuple</span>,
+                               start_time: <span class="org-builtin">float</span>, max_duration: <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>,
+                               max_cells_per_timestep: <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> 0.4, buffer_width: <span class="org-builtin">int</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> 3,
+                               use_wind_limit: <span class="org-builtin">bool</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">True</span>, surface_lw_ratio_model: <span class="org-builtin">str</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-string">"rothermel"</span>,
+                               crown_max_lw_ratio: <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>, spot_ignitions: <span class="org-builtin">dict</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> {},
+                               spot_config: <span class="org-builtin">dict</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>):
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types</span>
@@ -9055,11 +9045,11 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - cell_width                    :: meters</span>
 <span class="org-doc">    - start_time                   :: minutes (from the start of the space_time_cube's temporal origin)</span>
 <span class="org-doc">    - max_duration                 :: minutes (Optional)</span>
+<span class="org-doc">    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)</span>
+<span class="org-doc">    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
 <span class="org-doc">    - use_wind_limit               :: boolean (Optional)</span>
 <span class="org-doc">    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)</span>
 <span class="org-doc">    - crown_max_lw_ratio           :: float &gt; 0.0 (Optional)</span>
-<span class="org-doc">    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)</span>
-<span class="org-doc">    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
 <span class="org-doc">    - spot_ignitions               :: dictionary of (ignition_time -&gt; ignited_cells) (Optional: needed for spotting)</span>
 <span class="org-doc">    - spot_config                  :: dictionary of spotting parameters (Optional: needed for spotting)</span>
 <span class="org-doc">      - random_seed                   :: seed for a numpy.random.Generator object</span>
@@ -9084,11 +9074,83 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - time_of_arrival       :: 2D float array (min)</span>
 <span class="org-doc">      - firebrand_count       :: 2D integer array (number of firebrands) (only included when provided as an input)</span>
 <span class="org-doc">    - spot_ignitions       :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
+<span class="org-doc">    - random_generator     :: numpy.random.Generator object (only included when spotting is used)</span>
 <span class="org-doc">    """</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Define the provided, required, and optional keys for space_time_cubes</span>
+    <span class="org-variable-name">provided_cubes</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>(space_time_cubes.keys())
+    <span class="org-variable-name">required_cubes</span> <span class="org-operator">=</span> {
+        <span class="org-string">"slope"</span>,
+        <span class="org-string">"aspect"</span>,
+        <span class="org-string">"fuel_model"</span>,
+        <span class="org-string">"canopy_cover"</span>,
+        <span class="org-string">"canopy_height"</span>,
+        <span class="org-string">"canopy_base_height"</span>,
+        <span class="org-string">"canopy_bulk_density"</span>,
+        <span class="org-string">"wind_speed_10m"</span>,
+        <span class="org-string">"upwind_direction"</span>,
+        <span class="org-string">"fuel_moisture_dead_1hr"</span>,
+        <span class="org-string">"fuel_moisture_dead_10hr"</span>,
+        <span class="org-string">"fuel_moisture_dead_100hr"</span>,
+        <span class="org-string">"fuel_moisture_live_herbaceous"</span>,
+        <span class="org-string">"fuel_moisture_live_woody"</span>,
+        <span class="org-string">"foliar_moisture"</span>,
+    } <span class="org-operator">|</span> ({<span class="org-string">"temperature"</span>} <span class="org-keyword">if</span> spot_config <span class="org-keyword">else</span> <span class="org-builtin">set</span>())
+    <span class="org-variable-name">optional_cubes</span> <span class="org-operator">=</span> {
+        <span class="org-string">"fuel_spread_adjustment"</span>,
+        <span class="org-string">"weather_spread_adjustment"</span>,
+    }
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all required_cubes are present in provided_cubes</span>
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span> provided_cubes.issuperset(required_cubes):
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes dictionary is missing these required keys: "</span>
+                         <span class="org-operator">+</span> <span class="org-builtin">str</span>(required_cubes.difference(provided_cubes)))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that only required_cubes and optional_cubes are present in provided_cubes</span>
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span> (required_cubes <span class="org-operator">|</span> optional_cubes).issuperset(provided_cubes):
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes dictionary contains these unused keys: "</span>
+                         <span class="org-operator">+</span> <span class="org-builtin">str</span>(provided_cubes.difference((required_cubes <span class="org-operator">|</span> optional_cubes))))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all space_time_cubes values are SpaceTimeCube objects</span>
+    <span class="org-keyword">for</span> cube <span class="org-keyword">in</span> space_time_cubes.values():
+        <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(cube, SpaceTimeCube) <span class="org-keyword">or</span> <span class="org-builtin">isinstance</span>(cube, LazySpaceTimeCube)):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"All values in the space_time_cubes dictionary must be SpaceTimeCube or "</span>
+                             <span class="org-operator">+</span> <span class="org-string">"LazySpaceTimeCube objects. See pyretechnics.space_time_cube for more information."</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Define the provided, required, and optional keys for output_matrices</span>
+    <span class="org-variable-name">provided_matrices</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>(output_matrices.keys())
+    <span class="org-variable-name">required_matrices</span> <span class="org-operator">=</span> {
+        <span class="org-string">"phi"</span>,
+        <span class="org-string">"fire_type"</span>,
+        <span class="org-string">"spread_rate"</span>,
+        <span class="org-string">"spread_direction"</span>,
+        <span class="org-string">"fireline_intensity"</span>,
+        <span class="org-string">"flame_length"</span>,
+        <span class="org-string">"time_of_arrival"</span>,
+    }
+    <span class="org-variable-name">optional_matrices</span> <span class="org-operator">=</span> {
+        <span class="org-string">"firebrand_count"</span>,
+    }
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all required_matrices are present in output_matrices</span>
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span> provided_matrices.issuperset(required_matrices):
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The output_matrices dictionary is missing these required keys: "</span>
+                         <span class="org-operator">+</span> <span class="org-builtin">str</span>(required_matrices.difference(provided_matrices)))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that only required_matrices and optional_matrices are present in provided_matrices</span>
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span> (required_matrices <span class="org-operator">|</span> optional_matrices).issuperset(provided_matrices):
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The output_matrices dictionary contains these unused keys: "</span>
+                         <span class="org-operator">+</span> <span class="org-builtin">str</span>(provided_matrices.difference((required_matrices <span class="org-operator">|</span> optional_matrices))))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all output_matrices values are 2D Numpy arrays</span>
+    <span class="org-keyword">for</span> matrix <span class="org-keyword">in</span> output_matrices.values():
+        <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(matrix, np.ndarray) <span class="org-keyword">and</span> np.ndim(matrix) <span class="org-operator">==</span> 2):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"All values in the output_matrices dictionary must be 2D Numpy arrays."</span>)
+
     <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
     (<span class="org-variable-name">bands</span>, <span class="org-variable-name">rows</span>, <span class="org-variable-name">cols</span>) <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"slope"</span>].shape
-    <span class="org-variable-name">band_duration</span>       <span class="org-operator">=</span> cube_resolution[0]
-    <span class="org-variable-name">cube_duration</span>       <span class="org-operator">=</span> bands <span class="org-operator">*</span> band_duration
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation resolution</span>
+    (<span class="org-variable-name">band_duration</span>, <span class="org-variable-name">cell_height</span>, <span class="org-variable-name">cell_width</span>) <span class="org-operator">=</span> cube_resolution
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all space_time_cubes have the same spatial resolution</span>
     <span class="org-keyword">for</span> cube <span class="org-keyword">in</span> space_time_cubes.values():
@@ -9096,16 +9158,23 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
             <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes must all share the same spatial resolution."</span>)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that space_time_cubes and output_matrices have the same spatial resolution</span>
-    <span class="org-keyword">for</span> layer <span class="org-keyword">in</span> output_matrices.values():
-        <span class="org-keyword">if</span> layer.shape <span class="org-operator">!=</span> (rows, cols):
-            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes and output_matrices must share the same spatial resolution."</span>)
+    <span class="org-keyword">for</span> matrix <span class="org-keyword">in</span> output_matrices.values():
+        <span class="org-keyword">if</span> matrix.shape <span class="org-operator">!=</span> (rows, cols):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes and output_matrices must all share the same spatial resolution."</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all cube resolution values are positive</span>
+    <span class="org-keyword">if</span> band_duration <span class="org-operator">&lt;=</span> 0.0 <span class="org-keyword">or</span> cell_height <span class="org-operator">&lt;=</span> 0.0 <span class="org-keyword">or</span> cell_width <span class="org-operator">&lt;=</span> 0.0:
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The cube_resolution tuple may only contain positive values."</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the cube duration</span>
+    <span class="org-variable-name">cube_duration</span> <span class="org-operator">=</span> bands <span class="org-operator">*</span> band_duration
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that start_time exists within the temporal bounds of the space_time_cubes</span>
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0.0 <span class="org-operator">&lt;=</span> start_time <span class="org-operator">&lt;</span> cube_duration):
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The start_time falls outside of the temporal bounds of the space_time_cubes."</span>)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the max stop time</span>
     <span class="org-variable-name">max_stop_time</span> <span class="org-operator">=</span> start_time <span class="org-operator">+</span> max_duration <span class="org-keyword">if</span> max_duration <span class="org-keyword">else</span> cube_duration
-
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that start_time does not exceed the cube_duration</span>
-    <span class="org-keyword">if</span> start_time <span class="org-operator">&gt;</span> cube_duration:
-        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The start_time exceeds the temporal limit of the space_time_cubes."</span>)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the max_stop_time does not exceed the cube_duration</span>
     <span class="org-keyword">if</span> max_stop_time <span class="org-operator">&gt;</span> cube_duration:
@@ -10925,7 +10994,9 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
 <h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.2.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
-<pre class="src src-python" id="vector-utilities"><span class="org-comment-delimiter"># </span><span class="org-comment">Fix cimport of numpy</span>
+<pre class="src src-python" id="vector-utilities"><span class="org-comment-delimiter"># </span><span class="org-comment">cython: profile=False</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix "result uninitialized" warnings</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix cimport of numpy</span>
 <span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> add, multiply, cross
@@ -10945,7 +11016,7 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace with vector_magnitude_3d and remove</span>
 <span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
@@ -10959,54 +11030,51 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
     <span class="org-keyword">return</span> sqrt(acc)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">dot_2d</span>(vector1: vec_xy, vector2: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1]
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">dot_3d</span>(vector1: vec_xyz, vector2: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1] <span class="org-operator">+</span> vector1[2] <span class="org-operator">*</span> vector2[2]
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude_2d</span>(vector: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> sqrt(dot_2d(vector, vector))
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude_3d</span>(vector: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> sqrt(dot_3d(vector, vector))
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector_2d</span>(vector: vec_xy) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-variable-name">magnitude</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(vector)
-    <span class="org-variable-name">ux</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[0] <span class="org-operator">/</span> magnitude
-    <span class="org-variable-name">uy</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[1] <span class="org-operator">/</span> magnitude
-    <span class="org-keyword">return</span> (ux, uy)
+    <span class="org-keyword">if</span> magnitude <span class="org-operator">==</span> 0.0:
+        <span class="org-keyword">return</span> vector
+    <span class="org-keyword">else</span>:
+        <span class="org-variable-name">ux</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[0] <span class="org-operator">/</span> magnitude
+        <span class="org-variable-name">uy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[1] <span class="org-operator">/</span> magnitude
+        <span class="org-keyword">return</span> (ux, uy)
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.cdivision</span>(<span class="org-constant">True</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector_3d</span>(vector: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-variable-name">magnitude</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_3d(vector)
-    <span class="org-variable-name">ux</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[0] <span class="org-operator">/</span> magnitude
-    <span class="org-variable-name">uy</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[1] <span class="org-operator">/</span> magnitude
-    <span class="org-variable-name">uz</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[2] <span class="org-operator">/</span> magnitude
-    <span class="org-keyword">return</span> (ux, uy, uz)
+    <span class="org-keyword">if</span> magnitude <span class="org-operator">==</span> 0.0:
+        <span class="org-keyword">return</span> vector
+    <span class="org-keyword">else</span>:
+        <span class="org-variable-name">ux</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[0] <span class="org-operator">/</span> magnitude
+        <span class="org-variable-name">uy</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[1] <span class="org-operator">/</span> magnitude
+        <span class="org-variable-name">uz</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector[2] <span class="org-operator">/</span> magnitude
+        <span class="org-keyword">return</span> (ux, uy, uz)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: result uninitialized warning</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">to_slope_plane</span>(vector_2d: vec_xy, elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-keyword">return</span> (
@@ -11016,30 +11084,23 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
     )
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace numpy arrays with vec_xyz and vec_xy</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
-<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
-<span class="org-keyword">def</span> <span class="org-function-name">to_horizontal_plane</span>(vector_3d: cy.double[:]) <span class="org-operator">-&gt;</span> cy.double[:]:
-    <span class="org-keyword">return</span> vector_3d[0:2]
+<span class="org-keyword">def</span> <span class="org-function-name">to_horizontal_plane</span>(vector_3d: vec_xyz) <span class="org-operator">-&gt;</span> vec_xy:
+    <span class="org-keyword">return</span> (vector_3d[0], vector_3d[1])
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace numpy arrays with vec_xyz and vec_xy</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace input numpy array with vec_xyz</span>
 <span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">spread_direction_vector_to_angle</span>(vector_3d: cy.double[:]) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
-    <span class="org-variable-name">vector_2d</span>: cy.double[:] <span class="org-operator">=</span> to_horizontal_plane(vector_3d)
-    <span class="org-variable-name">x</span>        : cy.double    <span class="org-operator">=</span> vector_2d[0]
-    <span class="org-variable-name">y</span>        : cy.double    <span class="org-operator">=</span> vector_2d[1]
-    <span class="org-variable-name">az_coords</span>: vec_xy       <span class="org-operator">=</span> cartesian_to_azimuthal(x, y)
-    <span class="org-variable-name">azimuth</span>  : cy.<span class="org-builtin">float</span>     <span class="org-operator">=</span> az_coords[1]
+    <span class="org-variable-name">x</span>        : cy.double <span class="org-operator">=</span> vector_3d[0]
+    <span class="org-variable-name">y</span>        : cy.double <span class="org-operator">=</span> vector_3d[1]
+    <span class="org-variable-name">az_coords</span>: vec_xy    <span class="org-operator">=</span> cartesian_to_azimuthal(x, y)
+    <span class="org-variable-name">azimuth</span>  : cy.<span class="org-builtin">float</span>  <span class="org-operator">=</span> az_coords[1]
     <span class="org-keyword">return</span> azimuth
 
 
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">get_slope_normal_vector</span>(elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
     (<span class="org-variable-name">dz_dx</span>, <span class="org-variable-name">dz_dy</span>)               <span class="org-operator">=</span> elevation_gradient
@@ -11048,7 +11109,6 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate need for numpy</span>
-<span class="org-type">@cy.profile</span>(<span class="org-constant">False</span>)
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: cy.double[:], theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.double[:]:
     <span class="org-doc">"""</span>
@@ -11083,7 +11143,7 @@ cpdef <span class="org-builtin">float</span> vector_magnitude_3d(vec_xyz vector)
 cpdef vec_xy as_unit_vector_2d(vec_xy vector)
 cpdef vec_xyz as_unit_vector_3d(vec_xyz vector)
 cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient)
-cpdef double[:] to_horizontal_plane(double[:] vector_3d)
+cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d)
 cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(double[:] vector_3d)
 cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient)
 cpdef double[:] rotate_on_sloped_plane(double[:] vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect)

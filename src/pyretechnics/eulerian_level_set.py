@@ -1220,7 +1220,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
         "fuel_moisture_live_herbaceous",
         "fuel_moisture_live_woody",
         "foliar_moisture",
-    } | ({"temperature"} if spot_config else {})
+    } | ({"temperature"} if spot_config else set())
     optional_cubes = {
         "fuel_spread_adjustment",
         "weather_spread_adjustment",
@@ -1259,11 +1259,13 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
 
     # Ensure that all required_matrices are present in output_matrices
     if not provided_matrices.issuperset(required_matrices):
-        raise ValueError("The output_matrices dictionary is missing these required keys: " + str(required_matrices.difference(provided_matrices)))
+        raise ValueError("The output_matrices dictionary is missing these required keys: "
+                         + str(required_matrices.difference(provided_matrices)))
 
     # Ensure that only required_matrices and optional_matrices are present in provided_matrices
     if not (required_matrices | optional_matrices).issuperset(provided_matrices):
-        raise ValueError("The output_matrices dictionary contains these unused keys: " + str(provided_matrices.difference((required_matrices | optional_matrices))))
+        raise ValueError("The output_matrices dictionary contains these unused keys: "
+                         + str(provided_matrices.difference((required_matrices | optional_matrices))))
 
     # Ensure that all output_matrices values are 2D Numpy arrays
     for matrix in output_matrices.values():
