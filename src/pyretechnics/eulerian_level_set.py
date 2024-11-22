@@ -1060,7 +1060,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             if phi > 0.0 and phi_next <= 0.0:
                 fire_type_matrix[y,x]          = fire_type_codes[fire_behavior["fire_type"]]
                 spread_rate_matrix[y,x]        = fire_behavior["spread_rate"]
-                spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fire_behavior["spread_direction"])
+                # FIXME: Change upstream functions to return spread_direction as type vec_xyz
+                (dx, dy, dz)                   = fire_behavior["spread_direction"]
+                spread_direction_matrix[y,x]   = spread_direction_vector_to_angle((dx, dy, dz))
                 fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
                 flame_length_matrix[y,x]       = fire_behavior["flame_length"]
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)

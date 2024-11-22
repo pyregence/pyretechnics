@@ -3361,6 +3361,7 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 
 #+NAME: compute-surface-fire-behavior-in-direction
 #+begin_src python
+import numpy as np
 from pprint import pprint
 import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
@@ -3396,8 +3397,11 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
 
 # Calculate surface fire behavior for the heading, flanking, and backing fires
 heading_fire_direction  = surface_fire_max["max_spread_direction"]
-flanking_fire_direction = vu.rotate_on_sloped_plane(heading_fire_direction, 90.0, slope, aspect)
-backing_fire_direction  = -heading_fire_direction
+# FIXME: Change upstream functions to return max_spread_direction as type vec_xyz
+#        and change downstream functions to accept spread_direction as type vec_xyz
+(dx, dy, dz)            = heading_fire_direction
+flanking_fire_direction = np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 90.0, slope, aspect))
+backing_fire_direction  = np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 180.0, slope, aspect))
 
 heading_fire_behavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
 flanking_fire_behavior = sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_direction)
@@ -3431,17 +3435,17 @@ Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.251119815561932,
- 'flame_length': 0.15074657845399453,
- 'spread_direction': array([ 0.79419768, -0.58653219,  0.15883955]),
- 'spread_rate': 0.3001255826250815}
+ 'fireline_intensity': 4.251119786484406,
+ 'flame_length': 0.15074657797968766,
+ 'spread_direction': array([ 0.79419774, -0.58653224,  0.15883955]),
+ 'spread_rate': 0.30012558057223193}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 2.2741655445924582,
- 'flame_length': 0.11305091436966075,
- 'spread_direction': array([-0.57514209, -0.80992591, -0.11502841]),
- 'spread_rate': 0.16055422774915998}
+ 'fireline_intensity': 2.274165557579764,
+ 'flame_length': 0.1130509146666419,
+ 'spread_direction': array([-0.57514215, -0.80992585, -0.11502843]),
+ 'spread_rate': 0.16055422866605315}
 #+end_example
 
 * Crown Fire Equations (pyretechnics.crown_fire)
@@ -4464,6 +4468,7 @@ Outputs:
 
 #+NAME: compute-crown-fire-behavior-in-direction
 #+begin_src python
+import numpy as np
 from pprint import pprint
 import pyretechnics.crown_fire as cf
 import pyretechnics.vector_utils as vu
@@ -4494,8 +4499,11 @@ crown_fire_max = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_heig
 #================================================================================================
 
 heading_fire_direction  = crown_fire_max["max_spread_direction"]
-flanking_fire_direction = vu.rotate_on_sloped_plane(heading_fire_direction, 90.0, slope, aspect)
-backing_fire_direction  = -heading_fire_direction
+# FIXME: Change upstream functions to return max_spread_direction as type vec_xyz
+#        and change downstream functions to accept spread_direction as type vec_xyz
+(dx, dy, dz)            = heading_fire_direction
+flanking_fire_direction = np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 90.0, slope, aspect))
+backing_fire_direction  = np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 180.0, slope, aspect))
 
 heading_fire_behavior  = cf.calc_crown_fire_behavior_in_direction(crown_fire_max, heading_fire_direction)
 flanking_fire_behavior = cf.calc_crown_fire_behavior_in_direction(crown_fire_max, flanking_fire_direction)
@@ -4527,16 +4535,16 @@ Heading Fire Behavior
 Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204692934614,
- 'spread_direction': array([ 0.94868329, -0.1054093 ,  0.29814238]),
- 'spread_rate': 3.264617919639856}
+ 'fireline_intensity': 14756.204747877806,
+ 'spread_direction': array([ 0.94868332, -0.1054093 ,  0.2981424 ]),
+ 'spread_rate': 3.2646179246550817}
 
 Backing Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 8139.876447202802,
- 'spread_direction': array([-0.        , -0.94280905, -0.33333334]),
- 'spread_rate': 2.343474267882084}
+ 'fireline_intensity': 8139.876410946037,
+ 'spread_direction': array([-8.29365305e-08, -9.42809045e-01, -3.33333373e-01]),
+ 'spread_rate': 2.3434742608260732}
 #+end_example
 
 *** How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction
@@ -5420,11 +5428,11 @@ Once the locations, ignition probabilities, and times of ignition have
 been calculated for each of the firebrands, a tuple of
 *(spot_ignition_time, ignition_locations)* are returned, to be
 processed in the fire spread algorithm (see section [[Fire Spread
-Algorithm: Eulerian Level Set Method (ELMFIRE)
-(pyretechnics.eulerian_level_set)]]), where *spot_ignition_time* is the
-ignition time of the spot fire in minutes, and *ignition_locations* is
-a list of *(y,x)* grid coordinates in which spot fires will be
-ignited.
+Algorithm (ELMFIRE): Eulerian Level Set Method
+(pyretechnics.eulerian_level_set)]]), where *spot_ignition_time* is
+the ignition time of the spot fire in minutes, and
+*ignition_locations* is a list of *(y,x)* grid coordinates in which
+spot fires will be ignited.
 
 
 #+NAME: spread-firebrands
@@ -6673,7 +6681,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
  'spread_rate': 0.9812016941476362}
 #+end_example
 
-* Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)
+* Fire Spread Algorithm (ELMFIRE): Eulerian Level Set Method (pyretechnics.eulerian_level_set)
   :PROPERTIES:
   :CUSTOM_ID: fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)
   :END:
@@ -8100,7 +8108,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             if phi > 0.0 and phi_next <= 0.0:
                 fire_type_matrix[y,x]          = fire_type_codes[fire_behavior["fire_type"]]
                 spread_rate_matrix[y,x]        = fire_behavior["spread_rate"]
-                spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fire_behavior["spread_direction"])
+                # FIXME: Change upstream functions to return spread_direction as type vec_xyz
+                (dx, dy, dz)                   = fire_behavior["spread_direction"]
+                spread_direction_matrix[y,x]   = spread_direction_vector_to_angle((dx, dy, dz))
                 fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
                 flame_length_matrix[y,x]       = fire_behavior["flame_length"]
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
@@ -10672,17 +10682,13 @@ cpdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft)
 #+begin_src python
 # cython: profile=False
 # TODO: Fix "result uninitialized" warnings
-# TODO: Fix cimport of numpy
 import cython
 if cython.compiled:
-    from numpy import add, multiply, cross
-    # from cython.cimports.numpy import add, multiply, cross
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
-    from numpy import add, multiply, cross
     from math import sqrt, sin, cos
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz
     from pyretechnics.conversion import \
@@ -10751,15 +10757,12 @@ def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
     return (vector_3d[0], vector_3d[1])
 
 
-# TODO: Replace input numpy array with vec_xyz
 @cy.ccall
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def spread_direction_vector_to_angle(vector_3d: cy.double[:]) -> cy.float:
-    x        : cy.double = vector_3d[0]
-    y        : cy.double = vector_3d[1]
-    az_coords: vec_xy    = cartesian_to_azimuthal(x, y)
-    azimuth  : cy.float  = az_coords[1]
+def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
+    x        : cy.float = vector_3d[0]
+    y        : cy.float = vector_3d[1]
+    az_coords: vec_xy   = cartesian_to_azimuthal(x, y)
+    azimuth  : cy.float = az_coords[1]
     return azimuth
 
 
@@ -10770,22 +10773,46 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     return as_unit_vector_3d(slope_normal_vector)
 
 
-# TODO: Eliminate need for numpy
 @cy.ccall
-def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
+def cross_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
+    (a, b, c) = vector1
+    (d, e, f) = vector2
+    return (
+        b * f - e * c,
+        -a * f + d * c,
+        a * e - d * b,
+    )
+
+
+@cy.ccall
+def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, aspect: cy.float) -> vec_xyz:
     """
     Rotate a 3D vector <x,y,z> theta degrees clockwise on the plane defined by the slope and aspect.
     """
     # Calculate the slope normal vector from the slope and aspect
     elevation_gradient : vec_xy  = azimuthal_to_cartesian(slope, opposite_direction(aspect))
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
-    # Rotate theta degrees clockwise around the slope_normal_vector
+    # Calculate sine and cosine of theta
     theta_rad: cy.float = deg_to_rad(theta)
-    return add(multiply(cos(theta_rad),
-                        vector),
-               cross(multiply(sin(theta_rad),
-                              vector),
-                    slope_normal_vector))
+    cos_theta: cy.float = cos(theta_rad)
+    sin_theta: cy.float = sin(theta_rad)
+    # Rotate theta degrees clockwise around the slope_normal_vector
+    vector_i: vec_xyz = (
+        cos_theta * vector[0],
+        cos_theta * vector[1],
+        cos_theta * vector[2],
+    )
+    vector_j: vec_xyz = (
+        sin_theta * vector[0],
+        sin_theta * vector[1],
+        sin_theta * vector[2],
+    )
+    vector_k: vec_xyz = cross_3d(vector_j, slope_normal_vector)
+    return (
+        vector_i[0] + vector_k[0],
+        vector_i[1] + vector_k[1],
+        vector_i[2] + vector_k[2],
+    )
 #+end_src
 
 #+NAME: vector-utils-pxd
@@ -10805,9 +10832,10 @@ cpdef vec_xy as_unit_vector_2d(vec_xy vector)
 cpdef vec_xyz as_unit_vector_3d(vec_xyz vector)
 cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient)
 cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d)
-cpdef float spread_direction_vector_to_angle(double[:] vector_3d)
+cpdef float spread_direction_vector_to_angle(vec_xyz vector_3d)
 cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient)
-cpdef double[:] rotate_on_sloped_plane(double[:] vector, float theta, float slope, float aspect)
+cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2)
+cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, float theta, float slope, float aspect)
 #+end_src
 
 #+NAME: math-pxd
@@ -11379,7 +11407,9 @@ def test_burn_all_cells_as_head_fire():
             results                            = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
             max_fire_type_matrix[y,x]          = fire_type_codes[results["fire_type"]]
             max_spread_rate_matrix[y,x]        = results["spread_rate"]
-            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(results["spread_direction"])
+            # FIXME: Change upstream functions to return spread_direction as type vec_xyz
+            (dx, dy, dz)                       = results["spread_direction"]
+            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle((dx, dy, dz))
             max_fireline_intensity_matrix[y,x] = results["fireline_intensity"]
             max_flame_length_matrix[y,x]       = results["flame_length"]
 

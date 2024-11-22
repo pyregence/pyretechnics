@@ -1,17 +1,13 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
 # cython: profile=False
 # TODO: Fix "result uninitialized" warnings
-# TODO: Fix cimport of numpy
 import cython
 if cython.compiled:
-    from numpy import add, multiply, cross
-    # from cython.cimports.numpy import add, multiply, cross
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 else:
-    from numpy import add, multiply, cross
     from math import sqrt, sin, cos
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz
     from pyretechnics.conversion import \
@@ -80,15 +76,12 @@ def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
     return (vector_3d[0], vector_3d[1])
 
 
-# TODO: Replace input numpy array with vec_xyz
 @cy.ccall
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def spread_direction_vector_to_angle(vector_3d: cy.double[:]) -> cy.float:
-    x        : cy.double = vector_3d[0]
-    y        : cy.double = vector_3d[1]
-    az_coords: vec_xy    = cartesian_to_azimuthal(x, y)
-    azimuth  : cy.float  = az_coords[1]
+def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
+    x        : cy.float = vector_3d[0]
+    y        : cy.float = vector_3d[1]
+    az_coords: vec_xy   = cartesian_to_azimuthal(x, y)
+    azimuth  : cy.float = az_coords[1]
     return azimuth
 
 
@@ -99,20 +92,44 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     return as_unit_vector_3d(slope_normal_vector)
 
 
-# TODO: Eliminate need for numpy
 @cy.ccall
-def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
+def cross_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
+    (a, b, c) = vector1
+    (d, e, f) = vector2
+    return (
+        b * f - e * c,
+        -a * f + d * c,
+        a * e - d * b,
+    )
+
+
+@cy.ccall
+def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, aspect: cy.float) -> vec_xyz:
     """
     Rotate a 3D vector <x,y,z> theta degrees clockwise on the plane defined by the slope and aspect.
     """
     # Calculate the slope normal vector from the slope and aspect
     elevation_gradient : vec_xy  = azimuthal_to_cartesian(slope, opposite_direction(aspect))
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
-    # Rotate theta degrees clockwise around the slope_normal_vector
+    # Calculate sine and cosine of theta
     theta_rad: cy.float = deg_to_rad(theta)
-    return add(multiply(cos(theta_rad),
-                        vector),
-               cross(multiply(sin(theta_rad),
-                              vector),
-                    slope_normal_vector))
+    cos_theta: cy.float = cos(theta_rad)
+    sin_theta: cy.float = sin(theta_rad)
+    # Rotate theta degrees clockwise around the slope_normal_vector
+    vector_i: vec_xyz = (
+        cos_theta * vector[0],
+        cos_theta * vector[1],
+        cos_theta * vector[2],
+    )
+    vector_j: vec_xyz = (
+        sin_theta * vector[0],
+        sin_theta * vector[1],
+        sin_theta * vector[2],
+    )
+    vector_k: vec_xyz = cross_3d(vector_j, slope_normal_vector)
+    return (
+        vector_i[0] + vector_k[0],
+        vector_i[1] + vector_k[1],
+        vector_i[2] + vector_k[2],
+    )
 # vector-utilities ends here
