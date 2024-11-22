@@ -5,8 +5,6 @@ import cython as cy
 # Runtime-defined type aliases
 #==============================================================
 
-# TODO: Maybe pyidx should be cy.int?
-# TODO: Maybe we should use C arrays instead of tuples(structs)?
 pyidx     = cy.typedef(cy.Py_ssize_t)
 vec_xy    = cy.typedef(tuple[cy.float, cy.float])
 vec_xyz   = cy.typedef(tuple[cy.float, cy.float, cy.float])
