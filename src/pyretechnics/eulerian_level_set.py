@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
+# cython: profile=False
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
@@ -32,11 +33,11 @@ import pyretechnics.surface_fire as sf
 PI = cy.declare(cy.double, 3.14159265358979323846)
 
 
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.cdivision(True)
 def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
@@ -56,11 +57,11 @@ def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, co
             return 0.0
 
 
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.cdivision(True)
 def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
@@ -80,24 +81,19 @@ def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, ro
             return 0.0
 
 
-# TODO: Pass rows and cols
-# TODO: Handle exception values from child functions
-@cy.profile(False)
-@cy.ccall
-def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
+@cy.cfunc
+def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx,
+                             rows: pyidx, cols: pyidx) -> vec_xy:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
     """
-    rows   : pyidx    = phi.shape[0]
-    cols   : pyidx    = phi.shape[1]
     dphi_dx: cy.float = calc_dphi_dx_approx(phi, dx, x, y, cols)
     dphi_dy: cy.float = calc_dphi_dy_approx(phi, dy, x, y, rows)
     return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
 # TODO: Remove unused function
-@cy.profile(False)
 @cy.ccall
 def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
@@ -106,7 +102,9 @@ def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: py
     - n_x: eastward component of the unit normal vector
     - n_y: northward component of the unit normal vector
     """
-    phi_gradient: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
+    rows        : pyidx  = phi.shape[0]
+    cols        : pyidx  = phi.shape[1]
+    phi_gradient: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y, rows, cols)
     if phi_gradient[0] == 0.0 and phi_gradient[1] == 0.0:
         return phi_gradient # (n_x, n_y)
     else:
@@ -114,7 +112,6 @@ def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: py
 # phi-field-normal-vector ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
 # TODO: Remove unused function
-@cy.profile(False)
 @cy.ccall
 @cy.cdivision(True)
 def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
@@ -142,7 +139,6 @@ def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
     return rad_to_deg(angle)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
@@ -158,7 +154,6 @@ def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.floa
                    min(r, 2.0))
 # superbee-flux-limiter ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -177,7 +172,6 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: p
     return (phi_east - phi_west) / dx
 
 
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -196,30 +190,26 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
     return (phi_north - phi_south) / dy
 
 
-# TODO: Pass rows and cols
-# TODO: Handle exception values from child functions
-@cy.profile(False)
-@cy.ccall
+@cy.cfunc
 def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
-                      x: pyidx, y: pyidx) -> vec_xy:
+                      x: pyidx, y: pyidx, rows: pyidx, cols: pyidx) -> vec_xy:
     """
     Calculate the spatial gradient of the phi raster at grid cell (x,y) given:
-    - phi :: 2D float array of values in [-1,1]
-    - u_x :: m/min
-    - u_y :: m/min
-    - dx  :: meters
-    - dy  :: meters
-    - x   :: integer column index in phi
-    - y   :: integer row index in phi
+    - phi  :: 2D float array of values in [-1,1]
+    - u_x  :: m/min
+    - u_y  :: m/min
+    - dx   :: meters
+    - dy   :: meters
+    - x    :: integer column index in phi
+    - y    :: integer row index in phi
+    - rows :: row count in phi matrix
+    - cols :: column count in phi matrix
     """
-    rows   : pyidx    = phi.shape[0]
-    cols   : pyidx    = phi.shape[1]
     dphi_dx: cy.float = calc_dphi_dx(phi, u_x, dx, x, y, cols)
     dphi_dy: cy.float = calc_dphi_dy(phi, u_y, dy, x, y, rows)
     return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -249,7 +239,6 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
         return phi[y][east_x] - 0.5 * B * dphi_loc
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -279,7 +268,6 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
         return phi[y][x] + 0.5 * B * dphi_loc
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -309,7 +297,6 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
         return phi[north_y][x] - 0.5 * B * dphi_loc
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
-@cy.profile(False)
 @cy.cfunc
 @cy.exceptval(65504.0)
 @cy.wraparound(False)
@@ -340,7 +327,6 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
-@cy.profile(False)
 @cy.ccall
 def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
@@ -351,7 +337,6 @@ def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     return azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
 
-@cy.profile(False)
 @cy.ccall
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
@@ -732,7 +717,6 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             return surface_fire_normal
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
-@cy.profile(False)
 @cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -745,7 +729,6 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_xy?
-@cy.profile(False)
 @cy.ccall
 def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
     """
@@ -771,7 +754,6 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_xy?
-@cy.profile(False)
 @cy.ccall
 def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict, rows: pyidx, cols: pyidx) -> set:
     """
@@ -794,7 +776,6 @@ def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: di
     return frontier_cells
 
 
-@cy.profile(False)
 @cy.cfunc
 def project_buffer(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> list[coord_yx]:
     """
@@ -818,7 +799,6 @@ def project_buffer(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx
     return buffer_cells
 
 
-@cy.profile(False)
 @cy.ccall
 def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
     """
@@ -833,7 +813,6 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     return tracked_cells
 
 
-@cy.profile(False)
 @cy.ccall
 def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
                          buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
@@ -869,7 +848,7 @@ fire_type_codes = {
 
 
 @cy.profile(True)
-# TODO: @cy.ccall
+@cy.cfunc
 # TODO: @cy.exceptval(NULL)
 # TODO: @cy.wraparound(False)
 # TODO: @cy.boundscheck(False)
@@ -949,7 +928,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                               cell_width,
                                                               cell_height,
                                                               x,
-                                                              y)
+                                                              y,
+                                                              rows,
+                                                              cols)
         phi_magnitude_xy: cy.float = vector_magnitude_2d(phi_gradient_xy)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
@@ -980,7 +961,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                                 cell_width,
                                                                 cell_height,
                                                                 x,
-                                                                y)
+                                                                y,
+                                                                rows,
+                                                                cols)
             dphi_dt_correction: cy.float = dot_2d(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude_xy_2
             fire_behavior["dphi_dt"] = dphi_dt * dphi_dt_correction
 
@@ -1026,7 +1009,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                                    cell_width,
                                                                    cell_height,
                                                                    x,
-                                                                   y)
+                                                                   y,
+                                                                   rows,
+                                                                   cols)
         phi_magnitude_xy_star: cy.float = vector_magnitude_2d(phi_gradient_xy_star)
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
@@ -1050,7 +1035,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                                        cell_width,
                                                                        cell_height,
                                                                        x,
-                                                                       y)
+                                                                       y,
+                                                                       rows,
+                                                                       cols)
             dphi_dt_star_correction: cy.float = (dot_2d(phi_gradient_xy_star, phi_gradient_xy_star_limited)
                                                  / (phi_magnitude_xy_star * phi_magnitude_xy_star))
             fire_behavior_star["dphi_dt"] = dphi_dt_star * dphi_dt_star_correction
