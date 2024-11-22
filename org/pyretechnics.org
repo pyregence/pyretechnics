@@ -10586,7 +10586,9 @@ cpdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft)
 
 #+NAME: vector-utilities
 #+begin_src python
-# Fix cimport of numpy
+# cython: profile=False
+# TODO: Fix "result uninitialized" warnings
+# TODO: Fix cimport of numpy
 import cython
 if cython.compiled:
     from numpy import add, multiply, cross
@@ -10606,7 +10608,7 @@ else:
 import cython as cy
 
 
-@cy.profile(False)
+# TODO: Replace with vector_magnitude_3d and remove
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -10620,54 +10622,51 @@ def vector_magnitude(vector: cy.double[:]) -> cy.double:
     return sqrt(acc)
 
 
-# TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1]
 
 
-@cy.profile(False)
 @cy.ccall
 def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
 
 
-# TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 def vector_magnitude_2d(vector: vec_xy) -> cy.float:
     return sqrt(dot_2d(vector, vector))
 
 
-@cy.profile(False)
 @cy.ccall
 def vector_magnitude_3d(vector: vec_xyz) -> cy.float:
     return sqrt(dot_3d(vector, vector))
 
 
-# TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
+@cy.cdivision(True)
 def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
     magnitude: cy.float = vector_magnitude_2d(vector)
-    ux       : cy.float = vector[0] / magnitude
-    uy       : cy.float = vector[1] / magnitude
-    return (ux, uy)
+    if magnitude == 0.0:
+        return vector
+    else:
+        ux: cy.float = vector[0] / magnitude
+        uy: cy.float = vector[1] / magnitude
+        return (ux, uy)
 
 
-@cy.profile(False)
 @cy.ccall
+@cy.cdivision(True)
 def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
     magnitude: cy.float = vector_magnitude_3d(vector)
-    ux       : cy.float = vector[0] / magnitude
-    uy       : cy.float = vector[1] / magnitude
-    uz       : cy.float = vector[2] / magnitude
-    return (ux, uy, uz)
+    if magnitude == 0.0:
+        return vector
+    else:
+        ux: cy.float = vector[0] / magnitude
+        uy: cy.float = vector[1] / magnitude
+        uz: cy.float = vector[2] / magnitude
+        return (ux, uy, uz)
 
 
-# TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     return (
@@ -10677,30 +10676,23 @@ def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     )
 
 
-# TODO: Replace numpy arrays with vec_xyz and vec_xy
-@cy.profile(False)
 @cy.ccall
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def to_horizontal_plane(vector_3d: cy.double[:]) -> cy.double[:]:
-    return vector_3d[0:2]
+def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
+    return (vector_3d[0], vector_3d[1])
 
 
-# TODO: Replace numpy arrays with vec_xyz and vec_xy
-@cy.profile(False)
+# TODO: Replace input numpy array with vec_xyz
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def spread_direction_vector_to_angle(vector_3d: cy.double[:]) -> cy.float:
-    vector_2d: cy.double[:] = to_horizontal_plane(vector_3d)
-    x        : cy.double    = vector_2d[0]
-    y        : cy.double    = vector_2d[1]
-    az_coords: vec_xy       = cartesian_to_azimuthal(x, y)
-    azimuth  : cy.float     = az_coords[1]
+    x        : cy.double = vector_3d[0]
+    y        : cy.double = vector_3d[1]
+    az_coords: vec_xy    = cartesian_to_azimuthal(x, y)
+    azimuth  : cy.float  = az_coords[1]
     return azimuth
 
 
-@cy.profile(False)
 @cy.ccall
 def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     (dz_dx, dz_dy)               = elevation_gradient
@@ -10709,7 +10701,6 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
 
 
 # TODO: Eliminate need for numpy
-@cy.profile(False)
 @cy.ccall
 def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
     """
@@ -10744,7 +10735,7 @@ cpdef float vector_magnitude_3d(vec_xyz vector)
 cpdef vec_xy as_unit_vector_2d(vec_xy vector)
 cpdef vec_xyz as_unit_vector_3d(vec_xyz vector)
 cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient)
-cpdef double[:] to_horizontal_plane(double[:] vector_3d)
+cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d)
 cpdef float spread_direction_vector_to_angle(double[:] vector_3d)
 cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient)
 cpdef double[:] rotate_on_sloped_plane(double[:] vector, float theta, float slope, float aspect)
