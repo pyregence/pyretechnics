@@ -10,8 +10,12 @@ def calc_surface_area_to_volume_ratio(f_i, f_ij, sigma):
 
 def calc_packing_ratio(w_o, rho_p, delta):
     if (delta > 0.0):
-        beta_i = size_class_sum(lambda i: w_o[i] / rho_p[i])
-        return category_sum(lambda i: beta_i[i]) / delta
+        def scs_beta_i(i):
+            return w_o[i] / rho_p[i]
+        beta_i = size_class_sum(scs_beta_i) # TODO seems quite wasteful to realize this array
+        def cs_beta_i(i):
+            return beta_i[i]
+        return category_sum(cs_beta_i) / delta
     else:
         return 0.0
 
@@ -21,37 +25,49 @@ def calc_optimum_packing_ratio(sigma_prime):
 # surface-fire-common-intermediate-calculations ends here
 # [[file:../../org/pyretechnics.org::surface-fire-reaction-intensity][surface-fire-reaction-intensity]]
 def calc_mineral_damping_coefficients(f_ij, S_e):
-    S_e_i = size_class_sum(lambda i: f_ij[i] * S_e[i])
-    return map_category(lambda i:
-                        (lambda S_e_i:
-                         0.174 / (S_e_i ** 0.19) if (S_e_i > 0.0) else 1.0
-                         )(S_e_i[i]))
+    def scs_S_e_i(i):
+        return f_ij[i] * S_e[i]
+    S_e_i = size_class_sum(scs_S_e_i)
+    def cs_mineral_damping_coefficient(i):
+        S = S_e_i[i]
+        return 0.174 / (S ** 0.19) if (S > 0.0) else 1.0
+    return map_category(cs_mineral_damping_coefficient)
 
 
 def calc_moisture_damping_coefficients(f_ij, M_f, M_x):
-    M_f_i = size_class_sum(lambda i: f_ij[i] * M_f[i])
-    M_x_i = size_class_sum(lambda i: f_ij[i] * M_x[i])
-    return map_category(lambda i:
-                        (lambda M_f, M_x:
-                         (lambda r_M:
-                          1.0 - 2.59 * r_M + 5.11 * r_M ** 2.0 - 3.52 * r_M ** 3.0
-                          )(min(1.0, M_f / M_x) if (M_x > 0.0) else 1.0)
-                         )(M_f_i[i], M_x_i[i]))
+    def scs_M_f_i(i):
+        return f_ij[i] * M_f[i]
+    M_f_i = size_class_sum(scs_M_f_i)
+    def scs_M_x_i(i):
+        return f_ij[i] * M_x[i]
+    M_x_i = size_class_sum(scs_M_x_i)
+    def cs_moisture_damping_coefficient(i):
+        M_f = M_f_i[i]
+        M_x = M_x_i[i]
+        r_M = min(1.0, M_f / M_x) if (M_x > 0.0) else 1.0
+        return 1.0 - 2.59 * r_M + 5.11 * r_M ** 2.0 - 3.52 * r_M ** 3.0
+    return map_category(cs_moisture_damping_coefficient)
 
 
 def calc_low_heat_content(f_ij, h):
-    return size_class_sum(lambda i: f_ij[i] * h[i])
+    def scs_h_i(i):
+        return f_ij[i] * h[i]
+    return size_class_sum(scs_h_i)
 
 
 def calc_net_fuel_loading(g_ij, w_o, S_T):
-    return size_class_sum(lambda i:
-                          (lambda g_ij, w_o, S_T:
-                           g_ij * w_o * (1.0 - S_T)
-                           )(g_ij[i], w_o[i], S_T[i]))
+    def scs_net_fuel_loading_i(i):
+        g_ij_i = g_ij[i]
+        w_o_i = w_o[i]
+        S_T_i = S_T[i]
+        return g_ij_i * w_o_i * (1.0 - S_T_i)
+    return size_class_sum(scs_net_fuel_loading_i)
 
 
 def calc_heat_per_unit_area(eta_S_i, eta_M_i, h_i, W_n_i):
-    return category_sum(lambda i: W_n_i[i] * h_i[i] * eta_M_i[i] * eta_S_i[i])
+    def cs_heat_per_unit_area(i):
+        return W_n_i[i] * h_i[i] * eta_M_i[i] * eta_S_i[i]
+    return category_sum(cs_heat_per_unit_area)
 
 
 def calc_optimum_reaction_velocity(sigma_prime, beta, beta_op):
@@ -93,26 +109,37 @@ def calc_heat_source(I_R, xi):
 # [[file:../../org/pyretechnics.org::surface-fire-oven-dry-fuel-bed-bulk-density][surface-fire-oven-dry-fuel-bed-bulk-density]]
 def calc_ovendry_bulk_density(w_o, delta):
     if (delta > 0.0):
-        rho_b_i = size_class_sum(lambda i: w_o[i])
-        return category_sum(lambda i: rho_b_i[i]) / delta
+        def scs_rho_b_i(i):
+            return w_o[i]
+        rho_b_i = size_class_sum(scs_rho_b_i)
+        def cs_ovendry_bulk_density(i):
+            return rho_b_i[i]
+        return category_sum(cs_ovendry_bulk_density) / delta
     else:
         return 0.0
 # surface-fire-oven-dry-fuel-bed-bulk-density ends here
 # [[file:../../org/pyretechnics.org::surface-fire-effective-heating-number-distribution][surface-fire-effective-heating-number-distribution]]
 def calc_effective_heating_number_distribution(sigma):
-    return map_size_class(lambda i:
-                          (lambda sigma:
-                           exp(-138.0 / sigma) if (sigma > 0.0) else 0.0
-                           )(sigma[i]))
+    def msc_heating_number(i):
+        sigma_i = sigma[i]
+        return exp(-138.0 / sigma_i) if (sigma_i > 0.0) else 0.0
+    return map_size_class(msc_heating_number)
 # surface-fire-effective-heating-number-distribution ends here
 # [[file:../../org/pyretechnics.org::surface-fire-heat-of-preignition-distribution][surface-fire-heat-of-preignition-distribution]]
 def calc_heat_of_preignition_distribution(M_f):
-    return map_size_class(lambda i: 250.0 + 1116.0 * M_f[i])
+    def msc_heat_of_preignition(i):
+        M_f_i = M_f[i]
+        return 250.0 + 1116.0 * M_f_i if (M_f_i > 0.0) else 0.0
+    return map_size_class(msc_heat_of_preignition)
 # surface-fire-heat-of-preignition-distribution ends here
 # [[file:../../org/pyretechnics.org::surface-fire-heat-sink][surface-fire-heat-sink]]
 def calc_heat_sink(f_i, f_ij, rho_b, epsilon_ij, Q_ig_ij):
-    effective_heat_of_preignition_i = size_class_sum(lambda i: f_ij[i] * epsilon_ij[i] * Q_ig_ij[i])
-    effective_heat_of_preignition   = category_sum(lambda i: f_i[i] * effective_heat_of_preignition_i[i])
+    def scs_effective_heat_of_preignition_i(i):
+        return f_ij[i] * epsilon_ij[i] * Q_ig_ij[i]
+    effective_heat_of_preignition_i = size_class_sum(scs_effective_heat_of_preignition_i)
+    def cs_effective_heat_of_preignition(i):
+        return f_i[i] * effective_heat_of_preignition_i[i]
+    effective_heat_of_preignition   = category_sum(cs_effective_heat_of_preignition)
     return rho_b * effective_heat_of_preignition
 # surface-fire-heat-sink ends here
 # [[file:../../org/pyretechnics.org::surface-fire-spread-rate-no-wind-no-slope][surface-fire-spread-rate-no-wind-no-slope]]

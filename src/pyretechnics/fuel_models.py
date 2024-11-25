@@ -164,28 +164,45 @@ def add_weighting_factors(fuel_model):
     w_o                         = fuel_model["w_o"]
     sigma                       = fuel_model["sigma"]
     rho_p                       = fuel_model["rho_p"]
-    A_ij                        = map_size_class(lambda i: (sigma[i] * w_o[i]) / rho_p[i])
-    A_i                         = size_class_sum(lambda i: A_ij[i])
-    A_T                         = category_sum(lambda i: A_i[i])
-    f_ij                        = map_size_class(lambda i: (lambda A: (A_ij[i] / A) if A > 0.0 else 0.0)(A_i[i//4]))
-    f_i                         = map_category(lambda i: (A_i[i] / A_T) if A_T > 0.0 else 0.0)
-    firemod_size_classes        = map_size_class(lambda i: (lambda s:
-                                                            1 if (s >= 1200.0)
-                                                            else 2 if (s >= 192.0)
-                                                            else 3 if (s >= 96.0)
-                                                            else 4 if (s >= 48.0)
-                                                            else 5 if (s >= 16.0)
-                                                            else 6
-                                                            )(sigma[i]))
-    g_ij                        = map_size_class(lambda i: (lambda c:
-                                                            ((f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
-                                                             + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
-                                                             + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
-                                                             + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
-                                                            if (i < 4) else
-                                                            ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
-                                                             + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0))
-                                                            )(firemod_size_classes[i]))
+    def msc_Aij(i):
+        return (sigma[i] * w_o[i]) / rho_p[i]
+    A_ij                        = map_size_class(msc_Aij)
+    def scs_A_ij(i):
+        return A_ij[i]
+    A_i                         = size_class_sum(msc_Aij)
+    def scs_A_i(i):
+        return A_i[i]
+    A_T                         = category_sum(scs_A_i)
+    def msc_fij(i):
+        A = A_i[i//4]
+        return (A_ij[i] / A) if (A > 0.0) else 0.0
+    f_ij                        = map_size_class(msc_fij)
+    def msc_f_i(i):
+        return (A_i[i] / A_T) if A_T > 0.0 else 0.0
+    f_i                         = map_category(msc_f_i)
+    def msc_firemod_size_class(i):
+        s = sigma[i]
+        return (
+            1 if (s >= 1200.0)
+            else 2 if (s >= 192.0)
+            else 3 if (s >= 96.0)
+            else 4 if (s >= 48.0)
+            else 5 if (s >= 16.0)
+            else 6
+        )
+    firemod_size_classes        = map_size_class(msc_firemod_size_class)
+    def msc_gij(i):
+        c = firemod_size_classes[i]
+        return ((
+            (f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
+            + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
+                + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
+                + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
+            if (i < 4) else
+            ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
+                + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0)))
+            
+    g_ij                        = map_size_class(msc_gij)
     weighted_fuel_model         = fuel_model.copy() # shallow copy
     weighted_fuel_model["f_ij"] = f_ij
     weighted_fuel_model["f_i"]  = f_i
@@ -203,13 +220,18 @@ def add_live_moisture_of_extinction(fuel_model):
     sigma                     = fuel_model["sigma"]
     M_f                       = fuel_model["M_f"]
     M_x                       = fuel_model["M_x"]
-    loading_factors           = map_size_class(lambda i:
-                                               (lambda sigma_ij, A:
-                                                w_o[i] * exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
-                                                )(sigma[i], -138.0 if (i < 4) else -500.0))
+    def msc_loading_factor(i):
+        sigma_ij = sigma[i]
+        A = -138.0 if (i < 4) else -500.0
+        return w_o[i] * exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
+    loading_factors           = map_size_class(msc_loading_factor)
+    def scs_loading_factor(i):
+        return loading_factors[i]
     [dead_loading_factor,
-     live_loading_factor]     = size_class_sum(lambda i: loading_factors[i])
-    [dead_moisture_factor, _] = size_class_sum(lambda i: M_f[i] * loading_factors[i])
+     live_loading_factor]     = size_class_sum(scs_loading_factor)
+    def scs_dead_moisture_factor(i):
+        return M_f[i] * loading_factors[i]
+    [dead_moisture_factor, _] = size_class_sum(scs_dead_moisture_factor)
     dead_to_live_ratio        = (dead_loading_factor / live_loading_factor) if (live_loading_factor > 0.0) else None
     dead_fuel_moisture        = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
     M_x_dead                  = M_x[0]
