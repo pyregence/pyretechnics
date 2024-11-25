@@ -18,6 +18,8 @@ else:
 
 import cython as cy
 
+# TODO try inlining with @cy.inline (might require an inline directive in the .pxd file)
+
 
 @cy.profile(False)
 @cy.ccall
@@ -44,6 +46,29 @@ def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
 @cy.ccall
 def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
+
+
+@cy.profile(False)
+@cy.ccall
+def scale_2d(scalar: cy.float, vector: vec_xy) -> vec_xy:
+    return (scalar * vector[0], scalar * vector[1])
+
+
+@cy.profile(False)
+@cy.ccall
+def scale_3d(scalar: cy.float, vector: vec_xyz) -> vec_xyz:
+    return (scalar * vector[0], scalar * vector[1], scalar * vector[2])
+
+@cy.profile(False)
+@cy.ccall
+def add_2d(vector1: vec_xy, vector2: vec_xy) -> vec_xy:
+    return (vector1[0] + vector2[0], vector1[1] + vector2[1])
+
+
+@cy.profile(False)
+@cy.ccall
+def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
+    return (vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2])
 
 
 # TODO: result uninitialized warning
