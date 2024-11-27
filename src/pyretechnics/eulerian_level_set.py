@@ -563,33 +563,67 @@ fuel_model_structs = fm_structs()
 
 
 
-p_ISpaceTimeCube = cy.typedef(cy.p_void)
+@cy.cclass
+class SpreadInputs:
+    slope: ISpaceTimeCube
+    aspect: ISpaceTimeCube
+    fuel_model: ISpaceTimeCube
+    canopy_cover: ISpaceTimeCube
+    canopy_height: ISpaceTimeCube
+    canopy_base_height: ISpaceTimeCube
+    canopy_bulk_density: ISpaceTimeCube
+    wind_speed_10m: ISpaceTimeCube
+    upwind_direction: ISpaceTimeCube
+    fuel_moisture_dead_1hr: ISpaceTimeCube
+    fuel_moisture_dead_10hr: ISpaceTimeCube
+    fuel_moisture_dead_100hr: ISpaceTimeCube
+    fuel_moisture_live_herbaceous: ISpaceTimeCube
+    fuel_moisture_live_woody: ISpaceTimeCube
+    foliar_moisture: ISpaceTimeCube
+    fuel_spread_adjustment: ISpaceTimeCube
+    weather_spread_adjustment: ISpaceTimeCube
 
-# TODO try using a class instead of a struct.
-SpreadInputs = cy.struct( # INTRO a struct so that the SpaceTimeCube objects can be accessed faster.
-    slope                         = p_ISpaceTimeCube,
-    aspect                        = p_ISpaceTimeCube,
-    fuel_model                    = p_ISpaceTimeCube,
-    canopy_cover                  = p_ISpaceTimeCube,
-    canopy_height                 = p_ISpaceTimeCube,
-    canopy_base_height            = p_ISpaceTimeCube,
-    canopy_bulk_density           = p_ISpaceTimeCube,
-    wind_speed_10m                = p_ISpaceTimeCube,
-    upwind_direction              = p_ISpaceTimeCube,
-    fuel_moisture_dead_1hr        = p_ISpaceTimeCube,
-    fuel_moisture_dead_10hr       = p_ISpaceTimeCube,
-    fuel_moisture_dead_100hr      = p_ISpaceTimeCube,
-    fuel_moisture_live_herbaceous = p_ISpaceTimeCube,
-    fuel_moisture_live_woody      = p_ISpaceTimeCube,
-    foliar_moisture               = p_ISpaceTimeCube,
-    fuel_spread_adjustment        = p_ISpaceTimeCube,
-    weather_spread_adjustment     = p_ISpaceTimeCube
-)
+    def __init__(self,
+                 slope: ISpaceTimeCube,
+                 aspect: ISpaceTimeCube,
+                 fuel_model: ISpaceTimeCube,
+                 canopy_cover: ISpaceTimeCube,
+                 canopy_height: ISpaceTimeCube,
+                 canopy_base_height: ISpaceTimeCube,
+                 canopy_bulk_density: ISpaceTimeCube,
+                 wind_speed_10m: ISpaceTimeCube,
+                 upwind_direction: ISpaceTimeCube,
+                 fuel_moisture_dead_1hr: ISpaceTimeCube,
+                 fuel_moisture_dead_10hr: ISpaceTimeCube,
+                 fuel_moisture_dead_100hr: ISpaceTimeCube,
+                 fuel_moisture_live_herbaceous: ISpaceTimeCube,
+                 fuel_moisture_live_woody: ISpaceTimeCube,
+                 foliar_moisture: ISpaceTimeCube,
+                 fuel_spread_adjustment: ISpaceTimeCube,
+                 weather_spread_adjustment: ISpaceTimeCube
+                 ):
+        self.slope = slope
+        self.aspect = aspect
+        self.fuel_model = fuel_model
+        self.canopy_cover = canopy_cover
+        self.canopy_height = canopy_height
+        self.canopy_base_height = canopy_base_height
+        self.canopy_bulk_density = canopy_bulk_density
+        self.wind_speed_10m = wind_speed_10m
+        self.upwind_direction = upwind_direction
+        self.fuel_moisture_dead_1hr = fuel_moisture_dead_1hr
+        self.fuel_moisture_dead_10hr = fuel_moisture_dead_10hr
+        self.fuel_moisture_dead_100hr = fuel_moisture_dead_100hr
+        self.fuel_moisture_live_herbaceous = fuel_moisture_live_herbaceous
+        self.fuel_moisture_live_woody = fuel_moisture_live_woody
+        self.foliar_moisture = foliar_moisture
+        self.fuel_spread_adjustment = fuel_spread_adjustment
+        self.weather_spread_adjustment = weather_spread_adjustment
+
 
 @cy.profile(False)
 @cy.cfunc
-def lookup_space_time_cube_float32(p_space_time_cube: p_ISpaceTimeCube, space_time_coordinate: coord_tyx) -> cy.float:
-    space_time_cube: ISpaceTimeCube = cy.cast(ISpaceTimeCube, p_space_time_cube)
+def lookup_space_time_cube_float32(space_time_cube: ISpaceTimeCube, space_time_coordinate: coord_tyx) -> cy.float:
     t: pyidx = space_time_coordinate[0]
     y: pyidx = space_time_coordinate[1]
     x: pyidx = space_time_coordinate[2]
@@ -598,10 +632,7 @@ def lookup_space_time_cube_float32(p_space_time_cube: p_ISpaceTimeCube, space_ti
 
 
 @cy.profile(True)
-@cy.cfunc # NOTE I cannot seem to make ccall work here: I get a compilation  "Cannot convert Python object argument to type 'SpreadInputs'". 
-# I don't understand why it fails here but not for calc_fireline_normal_behavior... It might be a Cython bug. I already tried:
-# 1. Removing the optional arguments
-# 2. Moving the type declarations to cy_types.pxd
+@cy.ccall
 def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs, 
                                   space_time_coordinate: coord_tyx, 
                                   phi_gradient_xy: vec_xy, 
@@ -655,11 +686,9 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    space_time_cubes: SpreadInputs = cy.cast(SpreadInputs, space_time_cubes)
     slope               = lookup_space_time_cube_float32(space_time_cubes.slope, tyx)               # rise/run
     aspect              = lookup_space_time_cube_float32(space_time_cubes.aspect, tyx)              # degrees clockwise from North
-    fuel_model_stc: ISpaceTimeCube = cy.cast(ISpaceTimeCube, space_time_cubes.fuel_model)
-    fuel_model_number   = fuel_model_stc.get(t,y,x)          # integer index in fm.fuel_model_table
+    fuel_model_number   = space_time_cubes.fuel_model.get(t,y,x)          # integer index in fm.fuel_model_table
     canopy_cover        = lookup_space_time_cube_float32(space_time_cubes.canopy_cover, tyx)        # 0-1
     canopy_height       = lookup_space_time_cube_float32(space_time_cubes.canopy_height, tyx)       # m
     canopy_base_height  = lookup_space_time_cube_float32(space_time_cubes.canopy_base_height, tyx)  # m
@@ -676,15 +705,13 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
     foliar_moisture               = lookup_space_time_cube_float32(space_time_cubes.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment_stc: ISpaceTimeCube = cy.cast(ISpaceTimeCube, space_time_cubes.fuel_spread_adjustment)
-    fuel_spread_adjustment    = (fuel_spread_adjustment_stc.get(t,y,x)
+    fuel_spread_adjustment    = (space_time_cubes.fuel_spread_adjustment.get(t,y,x)
                                  #if "fuel_spread_adjustment" in space_time_cubes
-                                 if fuel_spread_adjustment_stc is not None
+                                 if space_time_cubes.fuel_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment_stc: object = cy.cast(object, space_time_cubes.weather_spread_adjustment)
-    weather_spread_adjustment = (weather_spread_adjustment_stc.get(t,y,x)
+    weather_spread_adjustment = (space_time_cubes.weather_spread_adjustment.get(t,y,x)
                                  #if "weather_spread_adjustment" in space_time_cubes
-                                 if weather_spread_adjustment_stc is not None
+                                 if space_time_cubes.weather_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
     spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
 
@@ -999,13 +1026,6 @@ fire_type_codes = {
 }
 
 
-@cy.cfunc
-def space_time_cube_pointer(space_time_cube: object) -> p_ISpaceTimeCube:
-    stc: ISpaceTimeCube = space_time_cube
-    p_stc: p_ISpaceTimeCube = cy.cast(cy.p_void, stc)
-    return p_stc
-
-
 @cy.profile(True)
 @cy.cfunc
 # TODO: @cy.exceptval(NULL)
@@ -1066,23 +1086,23 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
     
     stc: SpreadInputs = SpreadInputs(
-        slope               = space_time_cube_pointer(space_time_cubes["slope"]),
-        aspect              = space_time_cube_pointer(space_time_cubes["aspect"]),
-        fuel_model          = space_time_cube_pointer(space_time_cubes["fuel_model"]),
-        canopy_cover        = space_time_cube_pointer(space_time_cubes["canopy_cover"]),
-        canopy_height       = space_time_cube_pointer(space_time_cubes["canopy_height"]),
-        canopy_base_height  = space_time_cube_pointer(space_time_cubes["canopy_base_height"]),
-        canopy_bulk_density = space_time_cube_pointer(space_time_cubes["canopy_bulk_density"]),
-        wind_speed_10m      = space_time_cube_pointer(space_time_cubes["wind_speed_10m"]),
-        upwind_direction    = space_time_cube_pointer(space_time_cubes["upwind_direction"]),
-        fuel_moisture_dead_1hr  = space_time_cube_pointer(space_time_cubes["fuel_moisture_dead_1hr"]),
-        fuel_moisture_dead_10hr        = space_time_cube_pointer(space_time_cubes["fuel_moisture_dead_10hr"]),
-        fuel_moisture_dead_100hr       = space_time_cube_pointer(space_time_cubes["fuel_moisture_dead_100hr"]),
-        fuel_moisture_live_herbaceous  = space_time_cube_pointer(space_time_cubes["fuel_moisture_live_herbaceous"]),
-        fuel_moisture_live_woody       = space_time_cube_pointer(space_time_cubes["fuel_moisture_live_woody"]),
-        foliar_moisture                = space_time_cube_pointer(space_time_cubes["foliar_moisture"]),
-        fuel_spread_adjustment         = space_time_cube_pointer(space_time_cubes["fuel_spread_adjustment"]),
-        weather_spread_adjustment      = space_time_cube_pointer(space_time_cubes["weather_spread_adjustment"])
+        space_time_cubes["slope"],
+        space_time_cubes["aspect"],
+        space_time_cubes["fuel_model"],
+        space_time_cubes["canopy_cover"],
+        space_time_cubes["canopy_height"],
+        space_time_cubes["canopy_base_height"],
+        space_time_cubes["canopy_bulk_density"],
+        space_time_cubes["wind_speed_10m"],
+        space_time_cubes["upwind_direction"],
+        space_time_cubes["fuel_moisture_dead_1hr"],
+        space_time_cubes["fuel_moisture_dead_10hr"],
+        space_time_cubes["fuel_moisture_dead_100hr"],
+        space_time_cubes["fuel_moisture_live_herbaceous"],
+        space_time_cubes["fuel_moisture_live_woody"],
+        space_time_cubes["foliar_moisture"],
+        space_time_cubes["fuel_spread_adjustment"],
+        space_time_cubes["weather_spread_adjustment"]
     )
 
     # Extract simulation dimensions
