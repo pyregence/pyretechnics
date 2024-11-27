@@ -3,7 +3,7 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax, SpreadBehavior
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
@@ -14,7 +14,7 @@ if cython.compiled:
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
     from math import sqrt, atan
-    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax, SpreadBehavior
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
@@ -508,23 +508,17 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
 # [[file:../../org/pyretechnics.org::burn-cell-toward-phi-gradient][burn-cell-toward-phi-gradient]]
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 
+@cy.cfunc
+def fclaarr_from_list(l: object) -> fclaarr:
+    l0: cy.float = l[0]
+    l1: cy.float = l[1]
+    l2: cy.float = l[2]
+    l3: cy.float = l[3]
+    l4: cy.float = l[4]
+    l5: cy.float = l[5]
+    ret: fclaarr = (l0, l1, l2, l3, l4, l5)
+    return ret
 
-
-FuelModel = cy.struct(
-    # name    = cy.string,
-    number   = cy.int,
-    delta    = cy.float,
-    M_x      = cy.float[6],
-    # FIXME let's use cy.float for everything
-    w_o      = cy.double[6],
-    sigma    = cy.double[6],
-    h        = cy.double[6],
-    rho_p    = cy.double[6],
-    S_T      = cy.double[6],
-    S_e      = cy.double[6],
-    dynamic  = cy.bint,
-    burnable = cy.bint
-)
 
 @cy.profile(False)
 @cy.ccall
@@ -532,17 +526,209 @@ def fm_struct(fm: dict) -> FuelModel:
     return FuelModel(
         number   = fm["number"],
         delta    = fm["delta"],
-        M_x      = fm["M_x"],
-        w_o      = fm["w_o"],
-        sigma    = fm["sigma"],
-        h        = fm["h"],
-        rho_p    = fm["rho_p"],
-        S_T      = fm["S_T"],
-        S_e      = fm["S_e"],
+        M_x      = fclaarr_from_list(fm["M_x"]),
+        M_f      = fclaarr_from_list(fm["M_x"]),
+        w_o      = fclaarr_from_list(fm["w_o"]),
+        sigma    = fclaarr_from_list(fm["sigma"]),
+        h        = fclaarr_from_list(fm["h"]),
+        rho_p    = fclaarr_from_list(fm["rho_p"]),
+        S_T      = fclaarr_from_list(fm["S_T"]),
+        S_e      = fclaarr_from_list(fm["S_e"]),
         dynamic  = fm["dynamic"],
         burnable = fm["burnable"],
+        f_ij    = (0.,0.,0.,0.,0.,0.),
+        f_i = (0.,0.),
+        g_ij = (0.,0.,0.,0.,0.,0.)
     )
 
+if cython.compiled:
+    from cython.cimports.pyretechnics.math import exp
+else:
+    from math import exp
+
+@cy.cfunc
+def map_category(f) -> fcatarr:
+    return [f(0), f(1)]
+
+@cy.cfunc
+def map_size_class(f) -> fclaarr:
+    return [f(0), f(1), f(2), f(3), f(4), f(5)]
+
+@cy.cfunc
+def category_sum(f) -> cy.float:
+    return f(0) + f(1)
+
+@cy.cfunc
+def size_class_sum(f) -> fcatarr: # WARNING no longer in an array.
+    return (
+        f(0) + f(1) + f(2) + f(3), 
+        f(4) + f(5)
+        )
+
+
+@cy.cfunc
+@cy.exceptval(False)
+def fclaarr_into_arr(src: fclaarr, into: cy.float[6]) -> cy.bint:
+    into[0] = src[0]
+    into[1] = src[1]
+    into[2] = src[2]
+    into[3] = src[3]
+    into[4] = src[4]
+    into[5] = src[5]
+    return True
+
+
+@cy.cfunc
+@cy.exceptval(False)
+def fcatarr_into_arr(src: fcatarr, into: cy.float[2]) -> cy.bint:
+    into[0] = src[0]
+    into[1] = src[1]
+    return True
+
+@cy.cfunc
+def add_dynamic_fuel_loading(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
+    if fuel_model.dynamic:
+        # dynamic fuel model
+        w_o: fclaarr              = fuel_model.w_o
+        live_herbaceous_load: cy.float      = w_o[4]
+        live_herbaceous_moisture: cy.float  = M_f[4]
+        fraction_green: cy.float            = max(0.0, min(1.0, (live_herbaceous_moisture / 0.9) - 0.3333333333333333))
+        fraction_cured: cy.float            = 1.0 - fraction_green
+        dynamic_fuel_model        = fuel_model
+        M_f1: fclaarr = (
+            M_f[0],
+            M_f[1],
+            M_f[2],
+            M_f[0], # set dead_herbaceous to dead_1hr
+            M_f[4],
+            M_f[5],
+        )
+        dynamic_fuel_model.M_f = M_f1
+        w_o1: fclaarr = (
+            w_o[0],
+            w_o[1],
+            w_o[2],
+            live_herbaceous_load * fraction_cured, # dead_herbaceous
+            live_herbaceous_load * fraction_green, # live_herbaceous
+            w_o[5]
+        )
+        dynamic_fuel_model.w_o = w_o1
+        return dynamic_fuel_model
+    else:
+        # static fuel model
+        static_fuel_model = fuel_model
+        static_fuel_model.M_f = M_f
+        return static_fuel_model
+
+
+@cy.cfunc
+def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
+    """
+    Assigns f_ij, f_i and g_ij.
+    
+    """
+    w_o: fclaarr                         = fuel_model.w_o
+    sigma: fclaarr                       = fuel_model.sigma
+    rho_p: fclaarr                       = fuel_model.rho_p
+    def msc_Aij(i):
+        return (sigma[i] * w_o[i]) / rho_p[i]
+    A_ij: fclaarr                        = map_size_class(msc_Aij)
+    def scs_A_ij(i):
+        return A_ij[i]
+    A_i: fcatarr                         = size_class_sum(scs_A_ij)
+    def scs_A_i(i):
+        return A_i[i]
+    A_T: cy.float                         = category_sum(scs_A_i)
+    def msc_fij(i):
+        A = A_i[i//4] # FIXME clever but unclear
+        return (A_ij[i] / A) if (A > 0.0) else 0.0
+    f_ij: fclaarr                        = map_size_class(msc_fij)
+    def msc_f_i(i):
+        return (A_i[i] / A_T) if A_T > 0.0 else 0.0
+    f_i: fcatarr                         = map_category(msc_f_i)
+    def msc_firemod_size_class(i):
+        s = sigma[i]
+        return (
+            1 if (s >= 1200.0)
+            else 2 if (s >= 192.0)
+            else 3 if (s >= 96.0)
+            else 4 if (s >= 48.0)
+            else 5 if (s >= 16.0)
+            else 6
+        )
+    firemod_size_classes: fclaarr        = map_size_class(msc_firemod_size_class)
+    def msc_gij(i):
+        c = firemod_size_classes[i]
+        # NOTE there may be repetitions in firemod_size_classes, this is why this expression is not trivially equal to f_ij[i]:
+        return ((
+            (f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
+            + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
+                + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
+                + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
+            if (i < 4) else
+            ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
+                + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0)))
+            
+    g_ij: fclaarr                        = map_size_class(msc_gij)
+    weighted_fuel_model         = fuel_model
+    weighted_fuel_model.f_ij = f_ij
+    weighted_fuel_model.f_i = f_i
+    weighted_fuel_model.g_ij = g_ij
+    return weighted_fuel_model
+
+
+@cy.cfunc
+def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
+    """
+    Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
+
+    Updates M_x.
+    """
+    w_o: fclaarr                       = fuel_model.w_o
+    sigma: fclaarr                     = fuel_model.sigma
+    M_f: fclaarr                       = fuel_model.M_f
+    M_x: fclaarr                       = fuel_model.M_x
+    def msc_loading_factor(i):
+        sigma_ij = sigma[i]
+        A = -138.0 if (i < 4) else -500.0
+        return w_o[i] * exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
+    loading_factors: fclaarr           = map_size_class(msc_loading_factor)
+    def scs_loading_factor(i):
+        return loading_factors[i]
+    (dead_loading_factor,
+     live_loading_factor)     = size_class_sum(scs_loading_factor)
+    def scs_dead_moisture_factor(i):
+        return M_f[i] * loading_factors[i]
+    (dead_moisture_factor, _) = size_class_sum(scs_dead_moisture_factor)
+    dead_fuel_moisture: cy.float        = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
+    M_x_dead: cy.float = M_x[0]
+    M_x_live: cy.float
+    if (live_loading_factor > 0.0):
+        dead_to_live_ratio: cy.float = (dead_loading_factor / live_loading_factor)
+        M_x_live = max(
+            M_x_dead,
+            (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226)
+    else:
+        M_x_live = M_x_dead
+    moisturized_fuel_model    = fuel_model
+    M_x1: fclaarr = (
+        M_x[0],
+        M_x[1],
+        M_x[2],
+        M_x[3],
+        M_x_live,
+        M_x_live,
+    )
+    moisturized_fuel_model.M_x = M_x1
+    return moisturized_fuel_model
+
+@cy.cfunc
+def moisturize(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
+    dynamic_fuel_model     = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
+    weighted_fuel_model    = add_weighting_factors(dynamic_fuel_model)
+    moisturized_fuel_model = add_live_moisture_of_extinction(weighted_fuel_model)
+    return moisturized_fuel_model
+# moisturize ends here
 
 def fm_structs() -> dict[int, FuelModel]:
     return {f["number"]: fm_struct(f) for f in fm.fuel_model_table.values()}
@@ -766,12 +952,20 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         # Compute derived parameters
         #============================================================================================
 
+        # FIXME
         fuel_moisture                = [fuel_moisture_dead_1hr,
                                         fuel_moisture_dead_10hr,
                                         fuel_moisture_dead_100hr,
                                         0.0, # fuel_moisture_dead_herbaceous
                                         fuel_moisture_live_herbaceous,
                                         fuel_moisture_live_woody]          # kg moisture/kg ovendry weight
+        M_f: fclaarr = (
+            fuel_moisture_dead_1hr,
+            fuel_moisture_dead_10hr,
+            fuel_moisture_dead_100hr,
+            0.0, # fuel_moisture_dead_herbaceous
+            fuel_moisture_live_herbaceous,
+            fuel_moisture_live_woody)
         fuel_bed_depth               = fm_struct.delta                     # ft
         heat_of_combustion           = Btu_lb_to_kJ_kg(fm_struct.h[0])     # kJ/kg
         estimated_fine_fuel_moisture = fuel_moisture_dead_1hr              # kg moisture/kg ovendry weight
@@ -798,7 +992,20 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         #============================================================================================
 
         # Apply fuel moisture to fuel model
-        moisturized_fuel_model = fm.moisturize(fuel_model, fuel_moisture)
+        #moisturized_fuel_model0 = fm.moisturize(fuel_model, fuel_moisture) # FIXME clean
+        mfm = moisturize(fm_struct, M_f)
+        moisturized_fuel_model: dict = {
+            **fuel_model,
+            "w_o": list(mfm.w_o),
+            "M_x": list(mfm.M_x),
+            "M_f": list(mfm.M_f),
+            "f_ij": list(mfm.f_ij),
+            "f_i": list(mfm.f_i),
+            "g_ij": list(mfm.g_ij)
+        }
+        #print(moisturized_fuel_model0)
+        #print(moisturized_fuel_model)
+        #raise "and now I'm done"
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior

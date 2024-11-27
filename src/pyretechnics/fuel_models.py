@@ -131,6 +131,9 @@ def size_class_sum(f):
 # fuel-category-and-size-class-functions ends here
 # [[file:../../org/pyretechnics.org::add-dynamic-fuel-loading][add-dynamic-fuel-loading]]
 def add_dynamic_fuel_loading(fuel_model, M_f):
+    """
+    Updates M_f and w_o.
+    """
     if fuel_model["dynamic"]:
         # dynamic fuel model
         w_o                       = fuel_model["w_o"]
@@ -164,6 +167,9 @@ def add_dynamic_fuel_loading(fuel_model, M_f):
 # add-dynamic-fuel-loading ends here
 # [[file:../../org/pyretechnics.org::add-weighting-factors][add-weighting-factors]]
 def add_weighting_factors(fuel_model):
+    """
+    Assigns f_ij, f_i and g_ij.
+    """
     w_o                         = fuel_model["w_o"]
     sigma                       = fuel_model["sigma"]
     rho_p                       = fuel_model["rho_p"]
@@ -218,6 +224,8 @@ from math import exp
 def add_live_moisture_of_extinction(fuel_model):
     """
     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
+
+    Assigns M_x.
     """
     w_o                       = fuel_model["w_o"]
     sigma                     = fuel_model["sigma"]

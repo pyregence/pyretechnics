@@ -149,6 +149,7 @@ class SpaceTimeCube(ISpaceTimeCube):
                          y // self.y_repetitions,
                          x // self.x_repetitions]
 
+    @cy.profile(False)
     @cy.cdivision(True)
     def get_float(self, t, y, x):
         arr: cy.double[:, :, ::] = self.data # FIXME can't rely on that
