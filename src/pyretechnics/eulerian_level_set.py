@@ -7,6 +7,7 @@ if cython.compiled:
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     import cython.cimports.pyretechnics.surface_fire as sf
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
@@ -16,6 +17,7 @@ else:
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
+    from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.surface_fire as sf
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
@@ -575,10 +577,52 @@ fuel_model_structs = fm_structs()
 
 
 
+p_ISpaceTimeCube = cy.typedef(cy.p_void)
+
+# TODO try using a class instead of a struct.
+SpreadInputs = cy.struct( # INTRO a struct so that the SpaceTimeCube objects can be accessed faster.
+    slope                         = p_ISpaceTimeCube,
+    aspect                        = p_ISpaceTimeCube,
+    fuel_model                    = p_ISpaceTimeCube,
+    canopy_cover                  = p_ISpaceTimeCube,
+    canopy_height                 = p_ISpaceTimeCube,
+    canopy_base_height            = p_ISpaceTimeCube,
+    canopy_bulk_density           = p_ISpaceTimeCube,
+    wind_speed_10m                = p_ISpaceTimeCube,
+    upwind_direction              = p_ISpaceTimeCube,
+    fuel_moisture_dead_1hr        = p_ISpaceTimeCube,
+    fuel_moisture_dead_10hr       = p_ISpaceTimeCube,
+    fuel_moisture_dead_100hr      = p_ISpaceTimeCube,
+    fuel_moisture_live_herbaceous = p_ISpaceTimeCube,
+    fuel_moisture_live_woody      = p_ISpaceTimeCube,
+    foliar_moisture               = p_ISpaceTimeCube,
+    fuel_spread_adjustment        = p_ISpaceTimeCube,
+    weather_spread_adjustment     = p_ISpaceTimeCube
+)
+
+@cy.profile(False)
+@cy.cfunc
+def lookup_space_time_cube_float32(p_space_time_cube: p_ISpaceTimeCube, space_time_coordinate: coord_tyx) -> cy.float:
+    space_time_cube: ISpaceTimeCube = cy.cast(ISpaceTimeCube, p_space_time_cube)
+    t: pyidx = space_time_coordinate[0]
+    y: pyidx = space_time_coordinate[1]
+    x: pyidx = space_time_coordinate[2]
+    return space_time_cube.get_float(t, y, x)
+
+
+
 @cy.profile(True)
-@cy.ccall
-def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit=True,
-                                  surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
+@cy.cfunc # NOTE I cannot seem to make ccall work here: I get a compilation  "Cannot convert Python object argument to type 'SpreadInputs'". 
+# I don't understand why it fails here but not for calc_fireline_normal_behavior... It might be a Cython bug. I already tried:
+# 1. Removing the optional arguments
+# 2. Moving the type declarations to cy_types.pxd
+def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs, 
+                                  space_time_coordinate: coord_tyx, 
+                                  phi_gradient_xy: vec_xy, 
+                                  use_wind_limit: cy.bint = True,
+                                  surface_lw_ratio_model: object = "rothermel",
+                                  crown_max_lw_ratio: cy.float = 1e10 # FIXME None not allowed as float
+                                  ):
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -618,36 +662,43 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
     #================================================================================================
 
     (t, y, x) = space_time_coordinate
+    tyx: coord_tyx = (t, y, x)
 
     #================================================================================================
     # Unpack the space_time_cubes dictionary
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    slope               = space_time_cubes["slope"].get(t,y,x)               # rise/run
-    aspect              = space_time_cubes["aspect"].get(t,y,x)              # degrees clockwise from North
-    fuel_model_number   = space_time_cubes["fuel_model"].get(t,y,x)          # integer index in fm.fuel_model_table
-    canopy_cover        = space_time_cubes["canopy_cover"].get(t,y,x)        # 0-1
-    canopy_height       = space_time_cubes["canopy_height"].get(t,y,x)       # m
-    canopy_base_height  = space_time_cubes["canopy_base_height"].get(t,y,x)  # m
-    canopy_bulk_density = space_time_cubes["canopy_bulk_density"].get(t,y,x) # kg/m^3
+    space_time_cubes: SpreadInputs = cy.cast(SpreadInputs, space_time_cubes)
+    slope               = lookup_space_time_cube_float32(space_time_cubes.slope, tyx)               # rise/run
+    aspect              = lookup_space_time_cube_float32(space_time_cubes.aspect, tyx)              # degrees clockwise from North
+    fuel_model_stc: ISpaceTimeCube = cy.cast(ISpaceTimeCube, space_time_cubes.fuel_model)
+    fuel_model_number   = fuel_model_stc.get(t,y,x)          # integer index in fm.fuel_model_table
+    canopy_cover        = lookup_space_time_cube_float32(space_time_cubes.canopy_cover, tyx)        # 0-1
+    canopy_height       = lookup_space_time_cube_float32(space_time_cubes.canopy_height, tyx)       # m
+    canopy_base_height  = lookup_space_time_cube_float32(space_time_cubes.canopy_base_height, tyx)  # m
+    canopy_bulk_density = lookup_space_time_cube_float32(space_time_cubes.canopy_bulk_density, tyx) # kg/m^3
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m                = space_time_cubes["wind_speed_10m"].get(t,y,x)                # km/hr
-    upwind_direction              = space_time_cubes["upwind_direction"].get(t,y,x)              # degrees clockwise from North
-    fuel_moisture_dead_1hr        = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)        # kg moisture/kg ovendry weight
-    fuel_moisture_dead_10hr       = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)       # kg moisture/kg ovendry weight
-    fuel_moisture_dead_100hr      = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)      # kg moisture/kg ovendry weight
-    fuel_moisture_live_herbaceous = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x) # kg moisture/kg ovendry weight
-    fuel_moisture_live_woody      = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)      # kg moisture/kg ovendry weight
-    foliar_moisture               = space_time_cubes["foliar_moisture"].get(t,y,x)               # kg moisture/kg ovendry weight
+    wind_speed_10m                = lookup_space_time_cube_float32(space_time_cubes.wind_speed_10m, tyx)                # km/hr
+    upwind_direction              = lookup_space_time_cube_float32(space_time_cubes.upwind_direction, tyx)              # degrees clockwise from North
+    fuel_moisture_dead_1hr        = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
+    foliar_moisture               = lookup_space_time_cube_float32(space_time_cubes.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment    = (space_time_cubes["fuel_spread_adjustment"].get(t,y,x)
-                                 if "fuel_spread_adjustment" in space_time_cubes
+    fuel_spread_adjustment_stc: ISpaceTimeCube = cy.cast(ISpaceTimeCube, space_time_cubes.fuel_spread_adjustment)
+    fuel_spread_adjustment    = (fuel_spread_adjustment_stc.get(t,y,x)
+                                 #if "fuel_spread_adjustment" in space_time_cubes
+                                 if fuel_spread_adjustment_stc is not None
                                  else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
-                                 if "weather_spread_adjustment" in space_time_cubes
+    weather_spread_adjustment_stc: object = cy.cast(object, space_time_cubes.weather_spread_adjustment)
+    weather_spread_adjustment = (weather_spread_adjustment_stc.get(t,y,x)
+                                 #if "weather_spread_adjustment" in space_time_cubes
+                                 if weather_spread_adjustment_stc is not None
                                  else 1.0)                                         # float >= 0.0
     spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
 
@@ -968,6 +1019,13 @@ fire_type_codes = {
 }
 
 
+@cy.cfunc
+def space_time_cube_pointer(space_time_cube: object) -> p_ISpaceTimeCube:
+    stc: ISpaceTimeCube = space_time_cube
+    p_stc: p_ISpaceTimeCube = cy.cast(cy.p_void, stc)
+    return p_stc
+
+
 @cy.profile(True)
 # TODO: @cy.ccall
 # TODO: @cy.exceptval(NULL)
@@ -1006,7 +1064,18 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     - dt is the timestep in minutes.
     - start_time is the start time in minutes.
     """
-   # Unpack output_matrices
+    # Primitive defaults
+    if use_wind_limit is None:
+        use_wind_limit = True
+    if surface_lw_ratio_model is None:
+        surface_lw_ratio_model = "rothermel"
+    if crown_max_lw_ratio is None:
+        crown_max_lw_ratio = 1e10
+    use_wind_limit: cy.bint = use_wind_limit
+    surface_lw_ratio_model: object = surface_lw_ratio_model
+    crown_max_lw_ratio: cy.float = crown_max_lw_ratio
+
+    # Unpack output_matrices
     phi_matrix               : cy.float[:,:] = output_matrices["phi"]
     phi_star_matrix          : cy.float[:,:] = output_matrices["phi_star"]
     fire_type_matrix         : cy.uchar[:,:] = output_matrices["fire_type"]
@@ -1015,6 +1084,26 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     fireline_intensity_matrix: cy.float[:,:] = output_matrices["fireline_intensity"]
     flame_length_matrix      : cy.float[:,:] = output_matrices["flame_length"]
     time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
+    
+    stc: SpreadInputs = SpreadInputs(
+        slope               = space_time_cube_pointer(space_time_cubes["slope"]),
+        aspect              = space_time_cube_pointer(space_time_cubes["aspect"]),
+        fuel_model          = space_time_cube_pointer(space_time_cubes["fuel_model"]),
+        canopy_cover        = space_time_cube_pointer(space_time_cubes["canopy_cover"]),
+        canopy_height       = space_time_cube_pointer(space_time_cubes["canopy_height"]),
+        canopy_base_height  = space_time_cube_pointer(space_time_cubes["canopy_base_height"]),
+        canopy_bulk_density = space_time_cube_pointer(space_time_cubes["canopy_bulk_density"]),
+        wind_speed_10m      = space_time_cube_pointer(space_time_cubes["wind_speed_10m"]),
+        upwind_direction    = space_time_cube_pointer(space_time_cubes["upwind_direction"]),
+        fuel_moisture_dead_1hr  = space_time_cube_pointer(space_time_cubes["fuel_moisture_dead_1hr"]),
+        fuel_moisture_dead_10hr        = space_time_cube_pointer(space_time_cubes["fuel_moisture_dead_10hr"]),
+        fuel_moisture_dead_100hr       = space_time_cube_pointer(space_time_cubes["fuel_moisture_dead_100hr"]),
+        fuel_moisture_live_herbaceous  = space_time_cube_pointer(space_time_cubes["fuel_moisture_live_herbaceous"]),
+        fuel_moisture_live_woody       = space_time_cube_pointer(space_time_cubes["fuel_moisture_live_woody"]),
+        foliar_moisture                = space_time_cube_pointer(space_time_cubes["foliar_moisture"]),
+        fuel_spread_adjustment         = space_time_cube_pointer(space_time_cubes["fuel_spread_adjustment"]),
+        weather_spread_adjustment      = space_time_cube_pointer(space_time_cubes["weather_spread_adjustment"])
+    )
 
     # Extract simulation dimensions
     rows: pyidx = phi_matrix.shape[0]
@@ -1054,12 +1143,13 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate = (t0, y, x)
-        fire_behavior: dict   = burn_cell_toward_phi_gradient(space_time_cubes,
+        fire_behavior: dict   = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
                                                               space_time_coordinate,
                                                               phi_gradient_xy,
                                                               use_wind_limit,
                                                               surface_lw_ratio_model,
-                                                              crown_max_lw_ratio)
+                                                              crown_max_lw_ratio
+                                                              )
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
@@ -1131,12 +1221,13 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate    = (t1, y, x)
-        fire_behavior_star: dict = burn_cell_toward_phi_gradient(space_time_cubes,
+        fire_behavior_star: dict = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
                                                                  space_time_coordinate,
                                                                  phi_gradient_xy_star,
                                                                  use_wind_limit,
                                                                  surface_lw_ratio_model,
-                                                                 crown_max_lw_ratio)
+                                                                 crown_max_lw_ratio
+                                                                 )
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy_star > 0.0:

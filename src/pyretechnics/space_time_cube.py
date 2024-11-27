@@ -47,7 +47,21 @@ def maybe_repeat_array(array, axis_repetitions):
             return np.repeat(array, repetitions, axis)
 # space-time-cube-utilities ends here
 # [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
-class SpaceTimeCube:
+import cython
+if cython.compiled:
+    from cython.cimports.pyretechnics.cy_types import pyidx
+else:
+    from pyretechnics.py_types import pyidx
+import cython as cy
+
+class ISpaceTimeCube:
+    def get(self, t, x, y):
+        pass
+    def get_float(self, t, x, y):
+        pass
+
+@cy.cclass
+class SpaceTimeCube(ISpaceTimeCube):
     """
     Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.
     Internally, data is stored as a 3D Numpy array at the resolution of the provided base data.
@@ -56,6 +70,15 @@ class SpaceTimeCube:
     expand them (if necessary) back into the cube_shape resolution, and return the resulting scalar
     value or array to the caller.
     """
+    ndim: cy.int
+    size: cy.int
+    shape: object
+    base: object
+    t_repetitions: cy.int
+    y_repetitions: cy.int
+    x_repetitions: cy.int
+    data: object
+
     def __init__(self, cube_shape, base):
         """
         NOTE: The resolutions in cube_shape must be exact multiples of any existing dimensions
@@ -114,7 +137,6 @@ class SpaceTimeCube:
             # 4D+: Invalid Input
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
-
     def get(self, t, y, x):
         """
         Return the scalar value at index (t,y,x) by translating these cube coordinates
@@ -126,6 +148,13 @@ class SpaceTimeCube:
         return self.data[t // self.t_repetitions,
                          y // self.y_repetitions,
                          x // self.x_repetitions]
+
+    @cy.cdivision(True)
+    def get_float(self, t, y, x):
+        arr: cy.double[:, :, ::] = self.data # FIXME can't rely on that
+        return arr[t // self.t_repetitions,
+                   y // self.y_repetitions,
+                   x // self.x_repetitions]
 
 
     def getTimeSeries(self, t_range, y, x):
