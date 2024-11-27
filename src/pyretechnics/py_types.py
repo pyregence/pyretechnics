@@ -21,4 +21,13 @@ FireBehaviorMax = cy.struct(
     eccentricity          : cy.float,
     critical_spread_rate  : cy.float
 )
+
+SpreadBehavior = cy.struct(
+    dphi_dt            : cy.float,
+    fire_type          : cy.int,
+    spread_rate        : cy.float,
+    spread_direction   : vec_xyz,
+    fireline_intensity : cy.float,
+    flame_length       : cy.float,
+)
 # py-types-py ends here

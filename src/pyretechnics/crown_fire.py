@@ -158,9 +158,18 @@ import cython as cy
 
 @cy.profile(False)
 @cy.ccall
-def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_density, heat_of_combustion,
-                                 estimated_fine_fuel_moisture, wind_speed_10m, upwind_direction,
-                                 slope, aspect, crown_max_lw_ratio=None) -> py_types.FireBehaviorMax:
+def calc_crown_fire_behavior_max( # FIXME in .pxd
+        canopy_height, 
+        canopy_base_height, 
+        canopy_bulk_density, 
+        heat_of_combustion,
+        estimated_fine_fuel_moisture, 
+        wind_speed_10m, 
+        upwind_direction,
+        slope, 
+        aspect, 
+        crown_max_lw_ratio=None
+        ) -> py_types.FireBehaviorMax:
     """
     Given these inputs:
     - canopy_height                                    :: m
@@ -282,7 +291,8 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
 import pyretechnics.surface_fire as sf
 
 
-def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
+@cy.ccall
+def calc_combined_fire_behavior(surface_fire_behavior: py_types.SpreadBehavior, crown_fire_behavior: py_types.SpreadBehavior) -> py_types.SpreadBehavior:
     """
     Given these inputs:
     - surface_fire_behavior :: dictionary of surface fire behavior values
@@ -305,14 +315,23 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
     - flame_length       :: m
     """
     # Unpack the surface fire behavior values
-    surface_spread_rate        = surface_fire_behavior["spread_rate"]        # m/min
-    surface_spread_direction   = surface_fire_behavior["spread_direction"]   # (x, y, z) unit vector
-    surface_fireline_intensity = surface_fire_behavior["fireline_intensity"] # kW/m
+    surface_spread_rate        = surface_fire_behavior.spread_rate        # m/min
+    surface_spread_direction   = surface_fire_behavior.spread_direction   # (x, y, z) unit vector
+    surface_fireline_intensity = surface_fire_behavior.fireline_intensity # kW/m
     # Unpack the crown fire behavior values
-    crown_fire_type          = crown_fire_behavior["fire_type"]          # "passive_crown" or "active_crown"
-    crown_spread_rate        = crown_fire_behavior["spread_rate"]        # m/min
-    crown_spread_direction   = crown_fire_behavior["spread_direction"]   # (x, y, z) unit vector
-    crown_fireline_intensity = crown_fire_behavior["fireline_intensity"] # kW/m
+    crown_fire_type          = crown_fire_behavior.fire_type          # "passive_crown" or "active_crown"
+    crown_spread_rate        = crown_fire_behavior.spread_rate        # m/min
+    crown_spread_direction   = crown_fire_behavior.spread_direction   # (x, y, z) unit vector
+    crown_fireline_intensity = crown_fire_behavior.fireline_intensity # kW/m
+    
+    surfc_dphi_dt = surface_fire_behavior.dphi_dt
+    crown_dphi_dt = crown_fire_behavior.dphi_dt
+    dphi_dt: cy.float
+    if surfc_dphi_dt < crown_dphi_dt:
+        dphi_dt = surfc_dphi_dt
+    else:
+        dphi_dt = crown_dphi_dt
+
     # Determine whether the surface or crown fire has the fastest spread rate
     if surface_spread_rate == 0.0:
         # Independent crown fire (This is probably user error.)
@@ -324,22 +343,24 @@ def calc_combined_fire_behavior(surface_fire_behavior, crown_fire_behavior):
         # Surface fire spreads faster
         combined_fireline_intensity = (surface_fireline_intensity
                                        + crown_fireline_intensity * surface_spread_rate / crown_spread_rate)
-        return {
-            "fire_type"         : crown_fire_type,
-            "spread_rate"       : surface_spread_rate,
-            "spread_direction"  : surface_spread_direction,
-            "fireline_intensity": combined_fireline_intensity,
-            "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
-        }
+        return py_types.SpreadBehavior(
+            dphi_dt,
+            crown_fire_type,
+            surface_spread_rate,
+            surface_spread_direction,
+            combined_fireline_intensity,
+            sf.calc_flame_length(combined_fireline_intensity),
+        )
     else:
         # Crown fire spreads faster
         combined_fireline_intensity = (surface_fireline_intensity * crown_spread_rate / surface_spread_rate
                                        + crown_fireline_intensity)
-        return {
-            "fire_type"         : crown_fire_type,
-            "spread_rate"       : crown_spread_rate,
-            "spread_direction"  : crown_spread_direction,
-            "fireline_intensity": combined_fireline_intensity,
-            "flame_length"      : sf.calc_flame_length(combined_fireline_intensity),
-        }
+        return py_types.SpreadBehavior(
+            dphi_dt,
+            crown_fire_type,
+            crown_spread_rate,
+            crown_spread_direction,
+            combined_fireline_intensity,
+            sf.calc_flame_length(combined_fireline_intensity),
+        )
 # combined-fire-behavior ends here
