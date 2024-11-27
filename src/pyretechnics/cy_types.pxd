@@ -18,4 +18,12 @@ cdef struct FireBehaviorMax:
     float length_to_width_ratio
     float eccentricity
     float critical_spread_rate
+
+cdef struct SpreadBehavior:
+    float dphi_dt
+    int fire_type
+    float spread_rate
+    vec_xyz spread_direction
+    float fireline_intensity
+    float flame_length
 # cy-types-pxd ends here

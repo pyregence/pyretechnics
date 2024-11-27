@@ -2,7 +2,7 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
@@ -13,7 +13,7 @@ if cython.compiled:
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
     from math import sqrt, atan
-    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax, SpreadBehavior
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
@@ -366,17 +366,6 @@ def stringify_fire_type(fire_type: integer) -> string: # TODO only here for back
             else "passive_crown" if fire_type == fire_type_crown_passive
             else "active_crown")
 
-SpreadBehavior = cy.struct(
-    dphi_dt            = cy.float,
-    fire_type          = cy.int,
-    spread_rate        = cy.float,
-    spread_direction   = vec_xyz,
-    fireline_intensity = cy.float,
-    flame_length       = cy.float,
-)
-
-
-
 
 @cy.profile(False)
 @cy.ccall
@@ -653,7 +642,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
                                   use_wind_limit: cy.bint = True,
                                   surface_lw_ratio_model: object = "rothermel",
                                   crown_max_lw_ratio: cy.float = 1e10 # FIXME None not allowed as float
-                                  ):
+                                  ) -> SpreadBehavior:
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -762,26 +751,27 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         # Set the spread direction to the phi gradient direction, upslope, or North
         #================================================================================================
 
+        spread_direction: vec_xyz
         if phi_magnitude > 0.0:
-            spread_direction = np.asarray(phi_gradient) / phi_magnitude
+            spread_direction = scale_3d(1./ phi_magnitude, phi_gradient)
         elif slope > 0.0:
             slope_vector_3d  = to_slope_plane(elevation_gradient, elevation_gradient)
-            spread_direction = np.asarray(as_unit_vector_3d(slope_vector_3d))
+            spread_direction = as_unit_vector_3d(slope_vector_3d)
         else:
-            spread_direction = np.asarray((0.0,1.0,0.0)) # default: North
+            spread_direction = (0., 1., 0.) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior
         #============================================================================================
 
-        return {
-            "dphi_dt"           : 0.0,
-            "fire_type"         : "unburned",
-            "spread_rate"       : 0.0,
-            "spread_direction"  : spread_direction,
-            "fireline_intensity": 0.0,
-            "flame_length"      : 0.0,
-        }
+        return SpreadBehavior(
+            dphi_dt           = 0.0,
+            fire_type         = fire_type_unburned,
+            spread_rate       = 0.0,
+            spread_direction  = spread_direction,
+            fireline_intensity= 0.0,
+            flame_length      = 0.0,
+        )
 
     else:
         # Cell is on the fire perimeter and contains a burnable fuel model
@@ -843,20 +833,12 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         #============================================================================================
 
         sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, phi_gradient)
-        surface_fire_normal = {
-            "dphi_dt"           : sfn.dphi_dt,
-            "fire_type"         : stringify_fire_type(sfn.fire_type),
-            "spread_rate"       : sfn.spread_rate,
-            "spread_direction"  : np.array(sfn.spread_direction),
-            "fireline_intensity": sfn.fireline_intensity,
-            "flame_length"      : sfn.flame_length,
-        }
 
         #============================================================================================
         # Determine whether the surface fire transitions to a crown fire
         #============================================================================================
 
-        if cf.van_wagner_crown_fire_initiation(surface_fire_normal["fireline_intensity"],
+        if cf.van_wagner_crown_fire_initiation(sfn.fireline_intensity,
                                                canopy_cover,
                                                canopy_base_height,
                                                foliar_moisture):
@@ -876,25 +858,13 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
             #========================================================================================
 
             cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)
-            crown_fire_normal = {
-                "dphi_dt"           : cfn.dphi_dt,
-                "fire_type"         : stringify_fire_type(cfn.fire_type),
-                "spread_rate"       : cfn.spread_rate,
-                "spread_direction"  : np.array(cfn.spread_direction),
-                "fireline_intensity": cfn.fireline_intensity,
-                "flame_length"      : cfn.flame_length,
-            }
 
             #========================================================================================
             # Calculate combined fire behavior normal to the fire perimeter
             #========================================================================================
 
-            combined_fire_normal = cf.calc_combined_fire_behavior(surface_fire_normal, crown_fire_normal)
-            surface_dphi_dt      = surface_fire_normal["dphi_dt"]
-            crown_dphi_dt        = crown_fire_normal["dphi_dt"]
-            combined_dphi_dt     = surface_dphi_dt if abs(surface_dphi_dt) > abs(crown_dphi_dt) else crown_dphi_dt
-            combined_fire_normal["dphi_dt"] = combined_dphi_dt
-
+            combined_fire_normal = cf.calc_combined_fire_behavior(sfn, cfn)
+            
             #========================================================================================
             # Return the combined fire behavior normal to the fire perimeter
             #========================================================================================
@@ -907,7 +877,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
             # Return the surface fire behavior normal to the fire perimeter
             #========================================================================================
 
-            return surface_fire_normal
+            return sfn
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
 @cy.profile(False)
@@ -1163,18 +1133,18 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate = (t0, y, x)
-        fire_behavior: dict   = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
-                                                              space_time_coordinate,
-                                                              phi_gradient_xy,
-                                                              use_wind_limit,
-                                                              surface_lw_ratio_model,
-                                                              crown_max_lw_ratio
-                                                              )
+        fb: SpreadBehavior = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
+                                                           space_time_coordinate,
+                                                           phi_gradient_xy,
+                                                           use_wind_limit,
+                                                           surface_lw_ratio_model,
+                                                           crown_max_lw_ratio
+                                                           )
 
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
             # Keep a running tally of the max horizontal spread rates in the x and y dimensions
-            dphi_dt                      = fire_behavior["dphi_dt"]
+            dphi_dt                      = fb.dphi_dt
             dphi_dx           : cy.float = phi_gradient_xy[0]
             dphi_dy           : cy.float = phi_gradient_xy[1]
             phi_magnitude_xy_2: cy.float = phi_magnitude_xy * phi_magnitude_xy
@@ -1192,10 +1162,10 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                                 x,
                                                                 y)
             dphi_dt_correction: cy.float = dot_2d(phi_gradient_xy, phi_gradient_xy_limited) / phi_magnitude_xy_2
-            fire_behavior["dphi_dt"] = dphi_dt * dphi_dt_correction
+            fb.dphi_dt = dphi_dt * dphi_dt_correction
 
         # Store fire behavior values for later use
-        fire_behavior_dict[cell_index] = fire_behavior
+        fire_behavior_dict[cell_index] = fb
 
     # Calculate timestep using the CFL condition
     dt: cy.float
@@ -1218,7 +1188,8 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     for cell_index in tracked_cells:
         y = cell_index[0]
         x = cell_index[1]
-        dphi_dt = fire_behavior_dict[cell_index]["dphi_dt"]
+        fb: SpreadBehavior = cy.cast(SpreadBehavior, fire_behavior_dict[cell_index])
+        dphi_dt = fb.dphi_dt
         if dphi_dt != 0.0:
             phi_star_matrix[y,x] += dphi_dt * dt
 
@@ -1241,7 +1212,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate    = (t1, y, x)
-        fire_behavior_star: dict = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
+        fire_behavior_star: SpreadBehavior = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
                                                                  space_time_coordinate,
                                                                  phi_gradient_xy_star,
                                                                  use_wind_limit,
@@ -1252,7 +1223,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy_star > 0.0:
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
-            dphi_dt_star                : cy.float = fire_behavior_star["dphi_dt"]
+            dphi_dt_star                : cy.float = fire_behavior_star.dphi_dt
             dphi_dx_star                : cy.float = phi_gradient_xy_star[0]
             dphi_dy_star                : cy.float = phi_gradient_xy_star[1]
             phi_gradient_xy_star_limited: vec_xy   = calc_phi_gradient(phi_star_matrix,
@@ -1264,12 +1235,13 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                                        y)
             dphi_dt_star_correction: cy.float = (dot_2d(phi_gradient_xy_star, phi_gradient_xy_star_limited)
                                                  / (phi_magnitude_xy_star * phi_magnitude_xy_star))
-            fire_behavior_star["dphi_dt"] = dphi_dt_star * dphi_dt_star_correction
+            fire_behavior_star.dphi_dt = dphi_dt_star * dphi_dt_star_correction
 
         # Calculate the new phi value at stop_time as phi_next
-        fire_behavior               = fire_behavior_dict[cell_index]
-        dphi_dt_estimate1: cy.float = fire_behavior["dphi_dt"]
-        dphi_dt_estimate2: cy.float = fire_behavior_star["dphi_dt"]
+        fb: SpreadBehavior = cy.cast(SpreadBehavior, fire_behavior_dict[cell_index])
+        dphi_dt_estimate1: cy.float = fb.dphi_dt
+        dphi_dt_estimate2: cy.float = fire_behavior_star.dphi_dt
+        # FIXME * 0.5
         dphi_dt_average  : cy.float = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
         if dphi_dt_average != 0.0:
             phi     : cy.float = phi_matrix[y,x]
@@ -1281,7 +1253,15 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             # Record fire behavior values in the output_matrices for cells that are burned in this timestep
             # NOTE: This records the fire behavior values at start_time and not at the time of arrival.
             if phi > 0.0 and phi_next <= 0.0:
-                fire_type_matrix[y,x]          = fire_type_codes[fire_behavior["fire_type"]]
+                fire_behavior: dict = { # FIXME
+                    "dphi_dt": fb.dphi_dt,
+                    "fire_type": fb.fire_type,
+                    "spread_rate": fb.spread_rate,
+                    "spread_direction": np.asarray(fb.spread_direction),
+                    "fireline_intensity": fb.fireline_intensity,
+                    "flame_length": fb.flame_length
+                }
+                fire_type_matrix[y,x]          = fire_behavior["fire_type"]
                 spread_rate_matrix[y,x]        = fire_behavior["spread_rate"]
                 spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fire_behavior["spread_direction"])
                 fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
