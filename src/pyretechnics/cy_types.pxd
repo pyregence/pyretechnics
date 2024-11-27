@@ -9,6 +9,27 @@ ctypedef (float, float, float) vec_xyz
 ctypedef (pyidx, pyidx) coord_yx
 ctypedef (pyidx, pyidx, pyidx) coord_tyx
 
+ctypedef (float, float, float, float, float, float) fclaarr
+ctypedef (float, float) fcatarr
+
+cdef struct FuelModel:
+    int number
+    float delta
+    fclaarr M_x   
+    fclaarr M_f   
+    fclaarr w_o   
+    fclaarr sigma 
+    fclaarr h     
+    fclaarr rho_p 
+    fclaarr S_T   
+    fclaarr S_e   
+    bint dynamic
+    bint burnable
+    fclaarr f_ij
+    fcatarr f_i
+    fclaarr g_ij
+
+
 cdef struct FireBehaviorMax:
     int max_fire_type
     float max_spread_rate
