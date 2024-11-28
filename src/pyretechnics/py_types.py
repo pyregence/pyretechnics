@@ -50,6 +50,8 @@ FuelModel = cy.struct(
     S_e      : fclaarr,
     dynamic  : cy.bint,
     burnable : cy.bint,
+    exp_A_sigma: fclaarr,
+    firemod_size_classes: fclaarr,
     f_ij     : fclaarr
     f_i      : fcatarr
     g_ij     : fclaarr
