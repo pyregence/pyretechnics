@@ -250,16 +250,37 @@ class FireBehaviorMin: # INTRO an Extension Type that represents no-wind/no-slop
 
     @cy.ccall
     @cy.profile(False)
-    def get_phi_S(self, slope: cy.float) -> cy.float:
+    def _get_phi_S(self, slope: cy.float) -> cy.float:
         return self._phiS_G * (slope * slope)
     @cy.ccall
     @cy.profile(False)
-    def get_phi_W(self, midflame_wind_speed: cy.float) -> cy.float :
+    def _get_phi_W(self, midflame_wind_speed: cy.float) -> cy.float :
         return self._phiW_scalr * pow(midflame_wind_speed, self._phiW_expnt)
     @cy.ccall
     @cy.profile(False)
-    def get_wind_speed(self, phi_W: cy.float) -> cy.float:
+    def _get_wind_speed(self, phi_W: cy.float) -> cy.float:
         return self._ws_scalr * pow(phi_W, self._ws_expnt)
+
+
+@cy.ccall
+@cy.inline
+@cy.profile(False)
+def get_phi_S(sfmin: FireBehaviorMin, slope: cy.float) -> cy.float:
+    return sfmin._get_phi_S(slope)
+
+@cy.ccall
+@cy.inline
+@cy.profile(False)
+def get_phi_W(sfmin: FireBehaviorMin, midflame_wind_speed: cy.float) -> cy.float:
+    return sfmin._get_phi_W(midflame_wind_speed)
+
+@cy.ccall
+@cy.inline
+@cy.profile(False)
+def get_wind_speed(sfmin: FireBehaviorMin, phi_W: cy.float) -> cy.float:
+    return sfmin._get_wind_speed(phi_W)
+
+
 
 @cy.cfunc
 @cy.cdivision(True)
@@ -527,11 +548,11 @@ def maybe_limit_wind_speed(use_wind_limit: cy.bint, max_wind_speed: cy.float, sf
     - limited_wind_speed :: m/min
     - limited_phi_E      :: unitless
     """
-    effective_wind_speed = sfmin.get_wind_speed(phi_E_magnitude)
+    effective_wind_speed = get_wind_speed(sfmin, phi_E_magnitude)
     if (use_wind_limit and effective_wind_speed > max_wind_speed):
         return (
             max_wind_speed,
-            sfmin.get_phi_W(max_wind_speed),
+            get_phi_W(sfmin, max_wind_speed),
         )
     else:
         return (
@@ -585,8 +606,8 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed: cy.flo
     wind_vector_3d: vec_xyz  = vectors.wind_vector_3d  # m/min
     slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
     # Calculate phi_W and phi_S
-    phi_W = sfmin.get_phi_W(vu.vector_magnitude_3d(wind_vector_3d)) # |wind_vector_3d| = slope-aligned midflame wind speed
-    phi_S = sfmin.get_phi_S(slope)
+    phi_W = get_phi_W(sfmin, vu.vector_magnitude_3d(wind_vector_3d)) # |wind_vector_3d| = slope-aligned midflame wind speed
+    phi_S = get_phi_S(sfmin, slope)
     # Calculate phi_E and the max_spread_direction
     phi_E_3d: vec_xyz = get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S)
     phi_E: cy.float = vu.vector_magnitude_3d(phi_E_3d)
