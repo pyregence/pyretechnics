@@ -519,23 +519,62 @@ def fclaarr_from_list(l: object) -> fclaarr:
     ret: fclaarr = (l0, l1, l2, l3, l4, l5)
     return ret
 
+@cy.cfunc
+@cy.cdivision(True)
+def compute_f_A_sigma(A: cy.float, sigma_ij: cy.float) -> cy.float:
+    if sigma_ij > 0:
+        return exp(A / sigma_ij)
+    else:
+        return 0
+
+
+@cy.cfunc
+@cy.profile(False)
+@cy.exceptval(check=False)
+def firemod_size_class(sigma_i: cy.float) -> cy.float:
+    s: cy.float = sigma_i    
+    return (
+        1 if (s >= 1200.0)
+        else 2 if (s >= 192.0)
+        else 3 if (s >= 96.0)
+        else 4 if (s >= 48.0)
+        else 5 if (s >= 16.0)
+        else 6
+    )
 
 @cy.profile(False)
 @cy.ccall
 def fm_struct(fm: dict) -> FuelModel:
+    sigma: fclaarr = fclaarr_from_list(fm["sigma"])
     return FuelModel(
         number   = fm["number"],
         delta    = fm["delta"],
         M_x      = fclaarr_from_list(fm["M_x"]),
         M_f      = fclaarr_from_list(fm["M_x"]),
         w_o      = fclaarr_from_list(fm["w_o"]),
-        sigma    = fclaarr_from_list(fm["sigma"]),
+        sigma    = sigma,
         h        = fclaarr_from_list(fm["h"]),
         rho_p    = fclaarr_from_list(fm["rho_p"]),
         S_T      = fclaarr_from_list(fm["S_T"]),
         S_e      = fclaarr_from_list(fm["S_e"]),
         dynamic  = fm["dynamic"],
         burnable = fm["burnable"],
+        exp_A_sigma = (
+            compute_f_A_sigma(-138.0, sigma[0]),
+            compute_f_A_sigma(-138.0, sigma[1]),
+            compute_f_A_sigma(-138.0, sigma[2]),
+            compute_f_A_sigma(-138.0, sigma[3]),
+            compute_f_A_sigma(-500.0, sigma[4]),
+            compute_f_A_sigma(-500.0, sigma[5])
+        ),
+        firemod_size_classes = (
+            firemod_size_class(sigma[0]),
+            firemod_size_class(sigma[1]),
+            firemod_size_class(sigma[2]),
+            firemod_size_class(sigma[3]),
+            firemod_size_class(sigma[4]),
+            firemod_size_class(sigma[5]),
+        ),
         f_ij    = (0.,0.,0.,0.,0.,0.),
         f_i = (0.,0.),
         g_ij = (0.,0.,0.,0.,0.,0.)
@@ -585,19 +624,6 @@ def _compute_f_ij(A_ij: cy.float, A: cy.float) -> cy.float:
     return (A_ij / A) if A > 0.0 else 0.0
 
 
-@cy.cfunc
-@cy.profile(False)
-@cy.exceptval(check=False)
-def firemod_size_class(sigma_i: cy.float) -> cy.float:
-    s: cy.float = sigma_i    
-    return (
-        1 if (s >= 1200.0)
-        else 2 if (s >= 192.0)
-        else 3 if (s >= 96.0)
-        else 4 if (s >= 48.0)
-        else 5 if (s >= 16.0)
-        else 6
-    )
 
 
 @cy.cfunc
@@ -661,14 +687,7 @@ def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
         A_T_inv: cy.float = 1. / A_T
         f_i[0] = A_0 * A_T_inv
         f_i[1] = A_1 * A_T_inv
-    firemod_size_classes: fclaarr = ( # TODO OPTIM pre-compute
-        firemod_size_class(sigma[0]),
-        firemod_size_class(sigma[1]),
-        firemod_size_class(sigma[2]),
-        firemod_size_class(sigma[3]),
-        firemod_size_class(sigma[4]),
-        firemod_size_class(sigma[5])
-    )
+    firemod_size_classes: fclaarr = fuel_model.firemod_size_classes
     g_ij: fclaarr = (
         gij_i(firemod_size_classes, f_ij, firemod_size_classes[0], True),
         gij_i(firemod_size_classes, f_ij, firemod_size_classes[1], True),
@@ -712,14 +731,15 @@ def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
     sigma: fclaarr                     = fuel_model.sigma
     M_f: fclaarr                       = fuel_model.M_f
     M_x: fclaarr                       = fuel_model.M_x
-    loading_factors: fclaarr = [
-        _lf(sigma[0], 0, w_o[0]),
-        _lf(sigma[1], 1, w_o[1]),
-        _lf(sigma[2], 2, w_o[2]),
-        _lf(sigma[3], 3, w_o[3]),
-        _lf(sigma[4], 4, w_o[4]),
-        _lf(sigma[5], 5, w_o[5])
-    ]
+    exp_A_sigma: fclaarr               = fuel_model.exp_A_sigma
+    loading_factors: fclaarr = (
+        w_o[0] * exp_A_sigma[0],
+        w_o[1] * exp_A_sigma[1],
+        w_o[2] * exp_A_sigma[2],
+        w_o[3] * exp_A_sigma[3],
+        w_o[4] * exp_A_sigma[4],
+        w_o[5] * exp_A_sigma[5]
+    )
     lf: fclaarr = loading_factors
     dead_loading_factor: cy.float = lf[0] + lf[1] + lf[2] + lf[3]
     live_loading_factor: cy.float = lf[4] + lf[5]

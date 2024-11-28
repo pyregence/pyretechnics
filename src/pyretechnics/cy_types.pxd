@@ -25,6 +25,8 @@ cdef struct FuelModel:
     fclaarr S_e   
     bint dynamic
     bint burnable
+    fclaarr exp_A_sigma
+    fclaarr firemod_size_classes
     fclaarr f_ij
     fcatarr f_i
     fclaarr g_ij
