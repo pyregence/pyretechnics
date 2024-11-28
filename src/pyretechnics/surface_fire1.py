@@ -1,12 +1,12 @@
 # [[file:../../org/pyretechnics.org::surface-fire-imports][surface-fire-imports]]
 import cython
 if cython.compiled:
-    from cython.cimports.pyretechnics.math import exp, log, sqrt
+    from cython.cimports.pyretechnics.math import exp, log, sqrt, pow
     import cython.cimports.pyretechnics.conversion as conv
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     import cython.cimports.pyretechnics.vector_utils as vu
 else:
-    from math import exp, log, sqrt
+    from math import exp, log, sqrt, pow
     import pyretechnics.conversion as conv
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     import pyretechnics.vector_utils as vu
@@ -249,16 +249,20 @@ class FireBehaviorMin: # INTRO an Extension Type that represents no-wind/no-slop
         self._ws_expnt = _ws_expnt
 
     @cy.ccall
+    @cy.profile(False)
     def get_phi_S(self, slope: cy.float) -> cy.float:
         return self._phiS_G * (slope * slope)
     @cy.ccall
+    @cy.profile(False)
     def get_phi_W(self, midflame_wind_speed: cy.float) -> cy.float :
-        return self._phiW_scalr * (midflame_wind_speed ** self._phiW_expnt)
+        return self._phiW_scalr * pow(midflame_wind_speed, self._phiW_expnt)
     @cy.ccall
+    @cy.profile(False)
     def get_wind_speed(self, phi_W: cy.float) -> cy.float:
-        return self._ws_scalr * (phi_W ** self._ws_expnt)
+        return self._ws_scalr * pow(phi_W, self._ws_expnt)
 
 @cy.cfunc
+@cy.cdivision(True)
 def make_surface_fire_min(
         base_spread_rate: cy.float,
         base_fireline_intensity: cy.float,
@@ -270,22 +274,23 @@ def make_surface_fire_min(
         ) -> FireBehaviorMin:
     _phiS_G: cy.float = 0
     if (beta > 0.0):
-        _phiS_G = 5.275 * beta ** -0.3
+        _phiS_G = 5.275 * pow(beta, -0.3)
     
     _phiW_scalr: cy.float = 0
     _phiW_expnt: cy.float = 0
     if (F > 0.0):
-        _phiW_scalr = (C / F) * (conv.m_to_ft(1.) ** B)
+        _phiW_scalr = (C / F) * pow(conv.m_to_ft(1.), B)
         _phiW_expnt = B
     
     _ws_scalr: cy.float = 0
     _ws_expnt: cy.float = 0
     if (B > 0.0):
         B_inverse: cy.float = 1.0 / B
-        _ws_scalr = conv.ft_to_m((F / C) ** B_inverse)
+        _ws_scalr = conv.ft_to_m(pow((F / C), B_inverse))
         _ws_expnt = B_inverse
     
     return FireBehaviorMin.__new__(FireBehaviorMin, # TIP fast instantiation https://cython.readthedocs.io/en/latest/src/userguide/extension_types.html#fast-instantiation
+        # FIXME despite __new__, this seems slow - I see a lot of PyFloat_FromDouble, it looks like Cython is making boxed objects...
         base_spread_rate,
         base_fireline_intensity,
         max_effective_wind_speed,
@@ -294,8 +299,6 @@ def make_surface_fire_min(
         _phiW_expnt,
         _ws_scalr,
         _ws_expnt)
-    
-    
     
 
 
