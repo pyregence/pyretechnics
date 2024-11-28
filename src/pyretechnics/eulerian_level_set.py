@@ -8,7 +8,7 @@ if cython.compiled:
     from cython.cimports.pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
-    import cython.cimports.pyretechnics.surface_fire as sf
+    import cython.cimports.pyretechnics.surface_fire1 as sf
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
@@ -20,7 +20,7 @@ else:
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     from pyretechnics.space_time_cube import ISpaceTimeCube
-    import pyretechnics.surface_fire as sf
+    import pyretechnics.surface_fire1 as sf
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
@@ -33,7 +33,7 @@ import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 from pyretechnics.space_time_cube import SpaceTimeCube, LazySpaceTimeCube
 import pyretechnics.spot_fire as spot
-import pyretechnics.surface_fire as sf0
+import pyretechnics.surface_fire1 as sf0
     
 
 PI = cy.declare(cy.double, 3.14159265358979323846)
