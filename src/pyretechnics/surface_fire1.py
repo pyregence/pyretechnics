@@ -217,68 +217,32 @@ def calc_max_effective_wind_speed(reaction_intensity):
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
 
 
-@cy.cclass # Why an Extension Type? So that the get_... functions are now methods.
-# TODO maybe we want a struct instead. There's no reason for this to leave the stack...
-class FireBehaviorMin: # INTRO an Extension Type that represents no-wind/no-slope fire behavior.
-    base_spread_rate: cy.float
-    base_fireline_intensity: cy.float
-    max_effective_wind_speed: cy.float
-    _phiS_G: cy.float
-    _phiW_scalr: cy.float
-    _phiW_expnt: cy.float
-    _ws_scalr: cy.float
-    _ws_expnt: cy.float
-
-    def __cinit__(self,
-            base_spread_rate: cy.float,
-            base_fireline_intensity: cy.float,
-            max_effective_wind_speed: cy.float,
-            _phiS_G: cy.float,
-            _phiW_scalr: cy.float,
-            _phiW_expnt: cy.float,
-            _ws_scalr: cy.float,
-            _ws_expnt: cy.float,
-            ):
-        self.base_spread_rate = base_spread_rate
-        self.base_fireline_intensity = base_fireline_intensity
-        self.max_effective_wind_speed = max_effective_wind_speed
-        self._phiS_G = _phiS_G
-        self._phiW_scalr = _phiW_scalr
-        self._phiW_expnt = _phiW_expnt
-        self._ws_scalr = _ws_scalr
-        self._ws_expnt = _ws_expnt
-
-    @cy.ccall
-    @cy.profile(False)
-    def _get_phi_S(self, slope: cy.float) -> cy.float:
-        return self._phiS_G * (slope * slope)
-    @cy.ccall
-    @cy.profile(False)
-    def _get_phi_W(self, midflame_wind_speed: cy.float) -> cy.float :
-        return self._phiW_scalr * pow(midflame_wind_speed, self._phiW_expnt)
-    @cy.ccall
-    @cy.profile(False)
-    def _get_wind_speed(self, phi_W: cy.float) -> cy.float:
-        return self._ws_scalr * pow(phi_W, self._ws_expnt)
-
+FireBehaviorMin = cy.struct(
+    base_spread_rate = cy.float,
+    base_fireline_intensity = cy.float,
+    max_effective_wind_speed = cy.float,
+    _phiS_G = cy.float,
+    _phiW_scalr = cy.float,
+    _phiW_expnt = cy.float,
+    _ws_scalr = cy.float,
+    _ws_expnt = cy.float,
+)
 
 @cy.ccall
 @cy.inline
 @cy.profile(False)
 def get_phi_S(sfmin: FireBehaviorMin, slope: cy.float) -> cy.float:
-    return sfmin._get_phi_S(slope)
+    return sfmin._phiS_G * (slope * slope)
 
 @cy.ccall
-@cy.inline
 @cy.profile(False)
 def get_phi_W(sfmin: FireBehaviorMin, midflame_wind_speed: cy.float) -> cy.float:
-    return sfmin._get_phi_W(midflame_wind_speed)
+    return sfmin._phiW_scalr * pow(midflame_wind_speed, sfmin._phiW_expnt)
 
 @cy.ccall
-@cy.inline
 @cy.profile(False)
 def get_wind_speed(sfmin: FireBehaviorMin, phi_W: cy.float) -> cy.float:
-    return sfmin._get_wind_speed(phi_W)
+    return sfmin._ws_scalr * pow(phi_W, sfmin._ws_expnt)
 
 
 
@@ -310,8 +274,7 @@ def make_surface_fire_min(
         _ws_scalr = conv.ft_to_m(pow((F / C), B_inverse))
         _ws_expnt = B_inverse
     
-    return FireBehaviorMin.__new__(FireBehaviorMin, # TIP fast instantiation https://cython.readthedocs.io/en/latest/src/userguide/extension_types.html#fast-instantiation
-        # FIXME despite __new__, this seems slow - I see a lot of PyFloat_FromDouble, it looks like Cython is making boxed objects...
+    return FireBehaviorMin(
         base_spread_rate,
         base_fireline_intensity,
         max_effective_wind_speed,
@@ -564,7 +527,7 @@ def maybe_limit_wind_speed(use_wind_limit: cy.bint, max_wind_speed: cy.float, sf
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 @cy.profile(True)
 @cy.ccall
-def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed: cy.float, upwind_direction: cy.float,
+def calc_surface_fire_behavior_max(sfmin: FireBehaviorMin, midflame_wind_speed: cy.float, upwind_direction: cy.float,
                                    slope: cy.float, aspect: cy.float, 
                                    use_wind_limit: cy.bint,# = True, # FIXME optional can't seem to work in Cython, getting puzzling errors unexplained by documentation.
                                    surface_lw_ratio_model: object# = "rothermel"
@@ -594,7 +557,6 @@ def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed: cy.flo
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
     # Unpack no-wind-no-slope surface fire behavior values
-    sfmin: FireBehaviorMin = surface_fire_min
     spread_rate        = sfmin.base_spread_rate
     fireline_intensity = sfmin.base_fireline_intensity
     max_wind_speed     = sfmin.max_effective_wind_speed
