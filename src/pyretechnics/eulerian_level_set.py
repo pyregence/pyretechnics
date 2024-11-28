@@ -1,6 +1,7 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
 import cython
 if cython.compiled:
+    from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Realloc, PyMem_Free
     from cython.cimports.pyretechnics.math import sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.conversion import \
@@ -823,8 +824,10 @@ class SpreadInputs:
     foliar_moisture: ISpaceTimeCube
     fuel_spread_adjustment: ISpaceTimeCube
     weather_spread_adjustment: ISpaceTimeCube
+    
+    fuel_models_arr: cy.pointer(FuelModel)
 
-    def __init__(self,
+    def __cinit__(self,
                  slope: ISpaceTimeCube,
                  aspect: ISpaceTimeCube,
                  fuel_model: ISpaceTimeCube,
@@ -860,6 +863,35 @@ class SpreadInputs:
         self.foliar_moisture = foliar_moisture
         self.fuel_spread_adjustment = fuel_spread_adjustment
         self.weather_spread_adjustment = weather_spread_adjustment
+        self._init_fuel_models()
+
+
+    @cy.ccall
+    def _init_fuel_models(self):
+        # fm_arr = cvarray(shape=(300,), itemsize=cython.sizeof(FuelModel), format="i")
+        # fuel_models_arr = cython.declare(FuelModel[:], fm_arr)
+        self.fuel_models_arr = cy.cast(
+            cy.pointer(FuelModel), 
+            PyMem_Malloc(300 * cython.sizeof(FuelModel)))
+        if not self.fuel_models_arr:
+            raise MemoryError()
+        for f in fm.fuel_model_table.values():
+            fm_number: pyidx = f["number"]
+            fuel_model: FuelModel = fm_struct(f)
+            self.fuel_models_arr[fm_number] = fuel_model
+        
+    @cy.ccall
+    def get_fm_struct(self, fm_number: pyidx) -> FuelModel:
+        fuel_models_arr: cy.pointer(FuelModel) = self.fuel_models_arr
+        fuel_model: FuelModel = fuel_models_arr[fm_number]
+        return fuel_model
+    
+
+    def __dealloc__(self):
+        PyMem_Free(self.fuel_models_arr)  # no-op if self.data is NULL
+
+
+
 
 
 @cy.profile(False)
@@ -978,8 +1010,10 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
     # Check whether cell is on the fire perimeter and burnable
     #================================================================================================
 
-    fuel_model = fm.fuel_model_table.get(fuel_model_number)
-    fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
+    fm_number: pyidx = cy.cast(pyidx, fuel_model_number)
+    fuel_model = fm.fuel_model_table.get(fm_number)
+    #fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
+    fm_struct: FuelModel = space_time_cubes.get_fm_struct(fm_number)
     
 
     if not (phi_magnitude > 0.0 and fm_struct.burnable):
@@ -1275,6 +1309,7 @@ fire_type_codes = {
 }
 
 
+
 @cy.profile(True)
 # TODO: @cy.ccall
 # TODO: @cy.exceptval(NULL)
@@ -1334,7 +1369,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     flame_length_matrix      : cy.float[:,:] = output_matrices["flame_length"]
     time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
     
-    stc: SpreadInputs = SpreadInputs(
+    stc: SpreadInputs = SpreadInputs( # TODO OPTIM move up the call graph
         space_time_cubes["slope"],
         space_time_cubes["aspect"],
         space_time_cubes["fuel_model"],
