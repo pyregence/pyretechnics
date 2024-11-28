@@ -14,9 +14,9 @@ cdef class FireBehaviorMin:
     cdef float _phiW_expnt
     cdef float _ws_scalr
     cdef float _ws_expnt
-    cpdef float get_phi_W(self, float midflame_wind_speed)
-    cpdef float get_phi_S(self, float slope)
-    cpdef float get_wind_speed(self, float phi_W)
+    cpdef float _get_phi_W(self, float midflame_wind_speed)
+    cpdef float _get_phi_S(self, float slope)
+    cpdef float _get_wind_speed(self, float phi_W)
 
 
 cdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
