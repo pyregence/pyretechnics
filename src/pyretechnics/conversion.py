@@ -77,12 +77,14 @@ def m_to_ch(m: cy.float) -> cy.float:
 
 
 @cy.ccall
+@cy.inline
 def m_to_ft(m: cy.float) -> cy.float:
     """Convert meters to feet."""
     return m * 3.281
 
 
 @cy.ccall
+@cy.inline
 def ft_to_m(ft: cy.float) -> cy.float:
     """Convert feet to meters."""
     return ft * 0.30478512648582745
