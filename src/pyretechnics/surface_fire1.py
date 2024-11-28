@@ -2,10 +2,12 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp, log, sqrt
+    import cython.cimports.pyretechnics.conversion as conv
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     import cython.cimports.pyretechnics.vector_utils as vu
 else:
     from math import exp, log, sqrt
+    import pyretechnics.conversion as conv
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     import pyretechnics.vector_utils as vu
 
@@ -167,7 +169,10 @@ def calc_residence_time(sigma_prime):
     return 384.0 / sigma_prime if (sigma_prime > 0.0) else 0.0
 
 
-def calc_flame_depth(spread_rate, residence_time):
+@cy.ccall
+@cy.profile(False)
+@cy.inline
+def calc_flame_depth(spread_rate: cy.float, residence_time: cy.float) -> cy.float:
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone
     of a free-spreading fire (ft) given:
@@ -186,7 +191,8 @@ def calc_fireline_intensity(reaction_intensity, flame_depth):
     return (reaction_intensity * flame_depth) / 60.0
 
 
-def calc_flame_length(fireline_intensity):
+@cy.ccall
+def calc_flame_length(fireline_intensity: cy.float) -> cy.float:
     """
     Returns the average flame length (m) given:
     - fireline_intensity :: kW/m
@@ -207,41 +213,98 @@ def calc_max_effective_wind_speed(reaction_intensity):
     return 0.9 * reaction_intensity
 # surface-fire-max-effective-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-slope-factor-function][surface-fire-slope-factor-function]]
-def get_phi_S_fn(beta):
-    if (beta > 0.0):
-        G = 5.275 * beta ** -0.3
-        return lambda slope: (slope ** 2.0) * G
-    else:
-        return lambda _: 0.0
-# surface-fire-slope-factor-function ends here
-# [[file:../../org/pyretechnics.org::surface-fire-wind-factor-function][surface-fire-wind-factor-function]]
-import pyretechnics.conversion as conv
-
-
-def get_phi_W_fn(B, C, F):
-    if (F > 0.0):
-        C_over_F = C / F
-        return lambda midflame_wind_speed: (conv.m_to_ft(midflame_wind_speed) ** B) * C_over_F
-    else:
-        return lambda _: 0.0
-# surface-fire-wind-factor-function ends here
-# [[file:../../org/pyretechnics.org::surface-fire-wind-speed-function][surface-fire-wind-speed-function]]
-import pyretechnics.conversion as conv
-
-
-def get_wind_speed_fn(B, C, F):
-    if (B > 0.0):
-        F_over_C  = F / C
-        B_inverse = 1.0 / B
-        return lambda phi_W: conv.ft_to_m((phi_W * F_over_C) ** B_inverse)
-    else:
-        return lambda _: 0.0
 # surface-fire-wind-speed-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
-import pyretechnics.conversion as conv
 
 
-def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_rate_adjustment=1.0):
+@cy.cclass # Why an Extension Type? So that the get_... functions are now methods.
+# TODO maybe we want a struct instead. There's no reason for this to leave the stack...
+class FireBehaviorMin: # INTRO an Extension Type that represents no-wind/no-slope fire behavior.
+    base_spread_rate: cy.float
+    base_fireline_intensity: cy.float
+    max_effective_wind_speed: cy.float
+    _phiS_G: cy.float
+    _phiW_scalr: cy.float
+    _phiW_expnt: cy.float
+    _ws_scalr: cy.float
+    _ws_expnt: cy.float
+
+    def __cinit__(self,
+            base_spread_rate: cy.float,
+            base_fireline_intensity: cy.float,
+            max_effective_wind_speed: cy.float,
+            _phiS_G: cy.float,
+            _phiW_scalr: cy.float,
+            _phiW_expnt: cy.float,
+            _ws_scalr: cy.float,
+            _ws_expnt: cy.float,
+            ):
+        self.base_spread_rate = base_spread_rate
+        self.base_fireline_intensity = base_fireline_intensity
+        self.max_effective_wind_speed = max_effective_wind_speed
+        self._phiS_G = _phiS_G
+        self._phiW_scalr = _phiW_scalr
+        self._phiW_expnt = _phiW_expnt
+        self._ws_scalr = _ws_scalr
+        self._ws_expnt = _ws_expnt
+
+    @cy.ccall
+    def get_phi_S(self, slope: cy.float) -> cy.float:
+        return self._phiS_G * (slope * slope)
+    @cy.ccall
+    def get_phi_W(self, midflame_wind_speed: cy.float) -> cy.float :
+        return self._phiW_scalr * (midflame_wind_speed ** self._phiW_expnt)
+    @cy.ccall
+    def get_wind_speed(self, phi_W: cy.float) -> cy.float:
+        return self._ws_scalr * (phi_W ** self._ws_expnt)
+
+@cy.cfunc
+def make_surface_fire_min(
+        base_spread_rate: cy.float,
+        base_fireline_intensity: cy.float,
+        max_effective_wind_speed: cy.float,
+        B: cy.float, 
+        C: cy.float, 
+        F: cy.float, 
+        beta: cy.float
+        ) -> FireBehaviorMin:
+    _phiS_G: cy.float = 0
+    if (beta > 0.0):
+        _phiS_G = 5.275 * beta ** -0.3
+    
+    _phiW_scalr: cy.float = 0
+    _phiW_expnt: cy.float = 0
+    if (F > 0.0):
+        _phiW_scalr = (C / F) * (conv.m_to_ft(1.) ** B)
+        _phiW_expnt = B
+    
+    _ws_scalr: cy.float = 0
+    _ws_expnt: cy.float = 0
+    if (B > 0.0):
+        B_inverse: cy.float = 1.0 / B
+        _ws_scalr = conv.ft_to_m((F / C) ** B_inverse)
+        _ws_expnt = B_inverse
+    
+    return FireBehaviorMin.__new__(FireBehaviorMin, # TIP fast instantiation https://cython.readthedocs.io/en/latest/src/userguide/extension_types.html#fast-instantiation
+        base_spread_rate,
+        base_fireline_intensity,
+        max_effective_wind_speed,
+        _phiS_G,
+        _phiW_scalr,
+        _phiW_expnt,
+        _ws_scalr,
+        _ws_expnt)
+    
+    
+    
+
+
+
+@cy.cfunc
+def calc_surface_fire_behavior_no_wind_no_slope(
+        moisturized_fuel_model: object,#FuelModel, 
+        spread_rate_adjustment: cy.float#=1.0
+        ) -> FireBehaviorMin:
     """
     Given these inputs:
     - moisturized_fuel_model :: dictionary of fuel model and fuel moisture properties
@@ -297,18 +360,18 @@ def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model, spread_r
     C              = 7.47 * exp(-0.133 * (sigma_prime ** 0.55))
     E              = 0.715 * exp(-3.59 * (sigma_prime / 10000.0))
     F              = (beta / beta_op) ** E
-    get_phi_S      = get_phi_S_fn(beta)
-    get_phi_W      = get_phi_W_fn(B, C, F)
-    get_wind_speed = get_wind_speed_fn(B, C, F)
     # Return no-wind-no-slope surface fire behavior values
-    return {
-        "base_spread_rate"        : conv.ft_to_m(R0 * spread_rate_adjustment),
-        "base_fireline_intensity" : conv.Btu_ft_s_to_kW_m(I_s * spread_rate_adjustment),
-        "max_effective_wind_speed": conv.ft_to_m(U_eff_max),
-        "get_phi_S"               : get_phi_S,
-        "get_phi_W"               : get_phi_W,
-        "get_wind_speed"          : get_wind_speed,
-    }
+    base_spread_rate = conv.ft_to_m(R0 * spread_rate_adjustment)
+    base_fireline_intensity = conv.Btu_ft_s_to_kW_m(I_s * spread_rate_adjustment)
+    max_effective_wind_speed = conv.ft_to_m(U_eff_max)
+    return make_surface_fire_min(
+        base_spread_rate,
+        base_fireline_intensity,
+        max_effective_wind_speed,
+        B, 
+        C, 
+        F, 
+        beta)
 # surface-fire-behavior-no-wind-no-slope ends here
 # [[file:../../org/pyretechnics.org::midflame-wind-speed][midflame-wind-speed]]
 
@@ -350,12 +413,24 @@ def calc_midflame_wind_speed(wind_speed_20ft: cy.float, fuel_bed_depth: cy.float
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
-import numpy as np
+import numpy as np # FIXME
 from pyretechnics.conversion import azimuthal_to_cartesian
 from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_3d, to_slope_plane
 
 
-def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, upslope_direction):
+
+ # FIXME export for crown_fire
+ProjectedVectors = cy.struct(
+    wind_vector_3d = vec_xyz,
+    slope_vector_3d = vec_xyz
+)
+
+@cy.cfunc
+@cy.profile(False)
+def project_wind_and_slope_vectors_3d(
+    wind_speed: cy.float, downwind_direction: cy.float, 
+    slope: cy.float, upslope_direction: cy.float
+    ) -> ProjectedVectors:
     """
     Given these inputs:
     - wind_speed         :: S
@@ -368,23 +443,20 @@ def project_wind_and_slope_vectors_3d(wind_speed, downwind_direction, slope, ups
     - slope_vector_3d :: (x, y, z)
     """
     # Convert wind and slope vectors from azimuthal to cartesian coordinates
-    wind_vector_2d  = azimuthal_to_cartesian(wind_speed, downwind_direction)
-    slope_vector_2d = azimuthal_to_cartesian(slope, upslope_direction)
+    wind_vector_2d: vec_xy  = conv.azimuthal_to_cartesian(wind_speed, downwind_direction)
+    slope_vector_2d: vec_xy = conv.azimuthal_to_cartesian(slope, upslope_direction)
     # Project wind and slope vectors onto the slope-tangential plane
-    wind_vector_3d  = to_slope_plane(wind_vector_2d, slope_vector_2d)
-    slope_vector_3d = to_slope_plane(slope_vector_2d, slope_vector_2d)
-    return {
-        "wind_vector_3d" : wind_vector_3d,
-        "slope_vector_3d": slope_vector_3d,
-    }
+    wind_vector_3d: vec_xyz  = vu.to_slope_plane(wind_vector_2d, slope_vector_2d)
+    slope_vector_3d: vec_xyz = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
+    return ProjectedVectors(wind_vector_3d, slope_vector_3d)
 
 
-@cy.profile(False)
 @cy.ccall
+@cy.profile(False)
 def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float, phi_S: cy.float) -> vec_xyz:
     # Convert wind and slope vectors to unit vectors on the slope-tangential plane
-    w_S: vec_xyz = as_unit_vector_3d(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
-    u_S: vec_xyz = as_unit_vector_3d(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d
+    w_S: vec_xyz = vu.as_unit_vector_3d(wind_vector_3d)  if phi_W > 0.0 else wind_vector_3d
+    u_S: vec_xyz = vu.as_unit_vector_3d(slope_vector_3d) if phi_S > 0.0 else slope_vector_3d
     # Create the 3D slope-tangential phi_W, phi_S, and phi_E vectors
     phi_W_3d: vec_xyz = vu.scale_3d(phi_W, w_S)
     phi_S_3d: vec_xyz = vu.scale_3d(phi_S, u_S)
@@ -395,13 +467,16 @@ def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float
 from pyretechnics.conversion import m_min_to_mph
 
 
-def surface_length_to_width_ratio(effective_wind_speed, model="rothermel"):
+@cy.ccall
+@cy.exceptval(-1)
+@cy.profile(False)
+def surface_length_to_width_ratio(effective_wind_speed: cy.float, model="rothermel") -> cy.float:
     """
     Calculate the length_to_width_ratio of the surface fire front given:
     - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
     - model                :: "rothermel" or "behave" (Optional)
     """
-    effective_wind_speed_mph = m_min_to_mph(effective_wind_speed)
+    effective_wind_speed_mph = conv.m_min_to_mph(effective_wind_speed)
     # Select formula by model
     if model == "rothermel":
         return 1.0 + 0.25 * effective_wind_speed_mph
@@ -418,7 +493,11 @@ def surface_length_to_width_ratio(effective_wind_speed, model="rothermel"):
         raise ValueError("Invalid input: model must be 'rothermel' or 'behave'.")
 
 
-def surface_fire_eccentricity(length_to_width_ratio):
+@cy.ccall
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+@cy.profile(False)
+def surface_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     """
     Calculate the eccentricity (E) of the surface fire front using eq. 8 from
     Albini and Chase 1980 given:
@@ -430,8 +509,9 @@ def surface_fire_eccentricity(length_to_width_ratio):
 from pyretechnics.conversion import opposite_direction
 from pyretechnics.vector_utils import vector_magnitude_3d
 
-
-def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_speed, phi_E_magnitude):
+@cy.ccall
+@cy.profile(False)
+def maybe_limit_wind_speed(use_wind_limit: cy.bint, max_wind_speed: cy.float, sfmin: FireBehaviorMin, phi_E_magnitude: cy.float) -> cy.tuple[cy.float, cy.float]:
     """
     Given these inputs:
     - use_wind_limit  :: boolean
@@ -444,11 +524,11 @@ def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_s
     - limited_wind_speed :: m/min
     - limited_phi_E      :: unitless
     """
-    effective_wind_speed = get_wind_speed(phi_E_magnitude)
+    effective_wind_speed = sfmin.get_wind_speed(phi_E_magnitude)
     if (use_wind_limit and effective_wind_speed > max_wind_speed):
         return (
             max_wind_speed,
-            get_phi_W(max_wind_speed),
+            sfmin.get_phi_W(max_wind_speed),
         )
     else:
         return (
@@ -460,7 +540,7 @@ def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_s
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 @cy.profile(True)
 @cy.ccall
-def calc_surface_fire_behavior_max(surface_fire_min: object, midflame_wind_speed: cy.float, upwind_direction: cy.float,
+def calc_surface_fire_behavior_max(surface_fire_min, midflame_wind_speed: cy.float, upwind_direction: cy.float,
                                    slope: cy.float, aspect: cy.float, 
                                    use_wind_limit: cy.bint,# = True, # FIXME optional can't seem to work in Cython, getting puzzling errors unexplained by documentation.
                                    surface_lw_ratio_model: object# = "rothermel"
@@ -490,22 +570,20 @@ def calc_surface_fire_behavior_max(surface_fire_min: object, midflame_wind_speed
     - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
     """
     # Unpack no-wind-no-slope surface fire behavior values
-    spread_rate        = surface_fire_min["base_spread_rate"]
-    fireline_intensity = surface_fire_min["base_fireline_intensity"]
-    max_wind_speed     = surface_fire_min["max_effective_wind_speed"]
-    get_phi_W          = surface_fire_min["get_phi_W"]
-    get_phi_S          = surface_fire_min["get_phi_S"]
-    get_wind_speed     = surface_fire_min["get_wind_speed"]
+    sfmin: FireBehaviorMin = surface_fire_min
+    spread_rate        = sfmin.base_spread_rate
+    fireline_intensity = sfmin.base_fireline_intensity
+    max_wind_speed     = sfmin.max_effective_wind_speed
     # Reverse the provided wind and slope directions
-    downwind_direction = opposite_direction(upwind_direction)
-    upslope_direction  = opposite_direction(aspect)
+    downwind_direction = conv.opposite_direction(upwind_direction)
+    upslope_direction  = conv.opposite_direction(aspect)
     # Project wind and slope vectors onto the slope-tangential plane
-    vectors = project_wind_and_slope_vectors_3d(midflame_wind_speed, downwind_direction, slope, upslope_direction)
-    wind_vector_3d  = vectors["wind_vector_3d"]  # m/min
-    slope_vector_3d = vectors["slope_vector_3d"] # rise/run
+    vectors: ProjectedVectors = project_wind_and_slope_vectors_3d(midflame_wind_speed, downwind_direction, slope, upslope_direction)
+    wind_vector_3d: vec_xyz  = vectors.wind_vector_3d  # m/min
+    slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
     # Calculate phi_W and phi_S
-    phi_W = get_phi_W(vu.vector_magnitude_3d(wind_vector_3d)) # |wind_vector_3d| = slope-aligned midflame wind speed
-    phi_S = get_phi_S(slope)
+    phi_W = sfmin.get_phi_W(vu.vector_magnitude_3d(wind_vector_3d)) # |wind_vector_3d| = slope-aligned midflame wind speed
+    phi_S = sfmin.get_phi_S(slope)
     # Calculate phi_E and the max_spread_direction
     phi_E_3d: vec_xyz = get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S)
     phi_E: cy.float = vu.vector_magnitude_3d(phi_E_3d)
@@ -518,13 +596,13 @@ def calc_surface_fire_behavior_max(surface_fire_min: object, midflame_wind_speed
         max_spread_direction = (0.0, 1.0, 0.0) # default: North
     # Limit effective wind speed to max wind speed if use_wind_limit == True
     (limited_wind_speed, limited_phi_E) = maybe_limit_wind_speed(use_wind_limit, max_wind_speed,
-                                                                 get_phi_W, get_wind_speed, phi_E)
+                                                                 sfmin, phi_E)
     # Calculate and return max surface fire behavior values
     max_spread_rate        = spread_rate * (1.0 + limited_phi_E)
     max_fireline_intensity = fireline_intensity * (1.0 + limited_phi_E)
-    length_to_width_ratio  = surface_length_to_width_ratio(limited_wind_speed, surface_lw_ratio_model)
+    length_to_width_ratio: cy.float  = surface_length_to_width_ratio(limited_wind_speed, surface_lw_ratio_model)
     return FireBehaviorMax(
-        -1.0, # FIXME
+        -1, # FIXME
         max_spread_rate,
         max_spread_direction,
         max_fireline_intensity,
