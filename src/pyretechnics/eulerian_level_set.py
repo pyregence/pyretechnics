@@ -561,46 +561,12 @@ else:
     from math import exp
 
 @cy.cfunc
-def map_category(f) -> fcatarr:
-    return [f(0), f(1)]
-
-@cy.cfunc
-def map_size_class(f) -> fclaarr:
-    return [f(0), f(1), f(2), f(3), f(4), f(5)]
-
-@cy.cfunc
-def category_sum(f) -> cy.float:
-    return f(0) + f(1)
-
-@cy.cfunc
-def size_class_sum(f) -> fcatarr: # WARNING no longer in an array.
-    return (
-        f(0) + f(1) + f(2) + f(3), 
-        f(4) + f(5)
-        )
-
-
-@cy.cfunc
-@cy.exceptval(False)
-def fclaarr_into_arr(src: fclaarr, into: cy.float[6]) -> cy.bint:
-    into[0] = src[0]
-    into[1] = src[1]
-    into[2] = src[2]
-    into[3] = src[3]
-    into[4] = src[4]
-    into[5] = src[5]
-    return True
-
-
-@cy.cfunc
-@cy.exceptval(False)
-def fcatarr_into_arr(src: fcatarr, into: cy.float[2]) -> cy.bint:
-    into[0] = src[0]
-    into[1] = src[1]
-    return True
-
-@cy.cfunc
+@cy.profile(False)
+#@cy.inline
 def add_dynamic_fuel_loading(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
+    """
+    Updates M_f and w_o.
+    """
     if fuel_model.dynamic:
         # dynamic fuel model
         w_o: fclaarr              = fuel_model.w_o
@@ -609,23 +575,12 @@ def add_dynamic_fuel_loading(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
         fraction_green: cy.float            = max(0.0, min(1.0, (live_herbaceous_moisture / 0.9) - 0.3333333333333333))
         fraction_cured: cy.float            = 1.0 - fraction_green
         dynamic_fuel_model        = fuel_model
-        M_f1: fclaarr = (
-            M_f[0],
-            M_f[1],
-            M_f[2],
-            M_f[0], # set dead_herbaceous to dead_1hr
-            M_f[4],
-            M_f[5],
-        )
+        M_f1: fclaarr = M_f
+        M_f1[3] = M_f1[0] # set dead_herbaceous to dead_1hr
         dynamic_fuel_model.M_f = M_f1
-        w_o1: fclaarr = (
-            w_o[0],
-            w_o[1],
-            w_o[2],
-            live_herbaceous_load * fraction_cured, # dead_herbaceous
-            live_herbaceous_load * fraction_green, # live_herbaceous
-            w_o[5]
-        )
+        w_o1: fclaarr = w_o
+        w_o1[3] = live_herbaceous_load * fraction_cured # dead_herbaceous
+        w_o1[4] = live_herbaceous_load * fraction_green # live_herbaceous
         dynamic_fuel_model.w_o = w_o1
         return dynamic_fuel_model
     else:
@@ -636,6 +591,52 @@ def add_dynamic_fuel_loading(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
 
 
 @cy.cfunc
+@cy.profile(False)
+@cy.inline
+@cy.exceptval(check=False)
+@cy.cdivision(True)
+def _compute_f_ij(A_ij: cy.float, A: cy.float) -> cy.float:
+    return (A_ij / A) if A > 0.0 else 0.0
+
+
+@cy.cfunc
+@cy.profile(False)
+@cy.exceptval(check=False)
+def firemod_size_class(sigma_i: cy.float) -> cy.float:
+    s: cy.float = sigma_i    
+    return (
+        1 if (s >= 1200.0)
+        else 2 if (s >= 192.0)
+        else 3 if (s >= 96.0)
+        else 4 if (s >= 48.0)
+        else 5 if (s >= 16.0)
+        else 6
+    )
+
+
+@cy.cfunc
+@cy.profile(False)
+@cy.exceptval(check=False)
+def gij_i(firemod_size_classes: fclaarr, f_ij: fclaarr, firemod_size_class_i: cy.float, is_dead: cy.bint) -> cy.float:
+    """
+    Sums the f_ij of the same category (dead/live) as i, and having the same firemod_size_class.
+    """
+    c: cy.float = firemod_size_class_i
+    # NOTE there may be repetitions in firemod_size_classes, this is why this expression is not trivially equal to f_ij[i]:
+    return (( # TODO OPTIM pre-compute this conditional branching (it's fully determined by sigma). Might be represented efficienty in bit flags.
+        (f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
+        + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
+            + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
+            + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
+        if is_dead else
+        ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
+            + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0)))
+
+
+@cy.cfunc
+@cy.cdivision(True)
+#@cy.inline
+@cy.profile(False)
 def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
     """
     Assigns f_ij, f_i and g_ij.
@@ -644,54 +645,77 @@ def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
     w_o: fclaarr                         = fuel_model.w_o
     sigma: fclaarr                       = fuel_model.sigma
     rho_p: fclaarr                       = fuel_model.rho_p
-    def msc_Aij(i):
-        return (sigma[i] * w_o[i]) / rho_p[i]
-    A_ij: fclaarr                        = map_size_class(msc_Aij)
-    def scs_A_ij(i):
-        return A_ij[i]
-    A_i: fcatarr                         = size_class_sum(scs_A_ij)
-    def scs_A_i(i):
-        return A_i[i]
-    A_T: cy.float                         = category_sum(scs_A_i)
-    def msc_fij(i):
-        A = A_i[i//4] # FIXME clever but unclear
-        return (A_ij[i] / A) if (A > 0.0) else 0.0
-    f_ij: fclaarr                        = map_size_class(msc_fij)
-    def msc_f_i(i):
-        return (A_i[i] / A_T) if A_T > 0.0 else 0.0
-    f_i: fcatarr                         = map_category(msc_f_i)
-    def msc_firemod_size_class(i):
-        s = sigma[i]
-        return (
-            1 if (s >= 1200.0)
-            else 2 if (s >= 192.0)
-            else 3 if (s >= 96.0)
-            else 4 if (s >= 48.0)
-            else 5 if (s >= 16.0)
-            else 6
-        )
-    firemod_size_classes: fclaarr        = map_size_class(msc_firemod_size_class)
-    def msc_gij(i):
-        c = firemod_size_classes[i]
-        # NOTE there may be repetitions in firemod_size_classes, this is why this expression is not trivially equal to f_ij[i]:
-        return ((
-            (f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
-            + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
-                + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
-                + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
-            if (i < 4) else
-            ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
-                + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0)))
-            
-    g_ij: fclaarr                        = map_size_class(msc_gij)
-    weighted_fuel_model         = fuel_model
+    A_ij: fclaarr = ( # TODO OPTIM pre-compute sigma/rho_p
+        (sigma[0] * w_o[0]) / rho_p[0],
+        (sigma[1] * w_o[1]) / rho_p[1],
+        (sigma[2] * w_o[2]) / rho_p[2],
+        (sigma[3] * w_o[3]) / rho_p[3],
+        (sigma[4] * w_o[4]) / rho_p[4],
+        (sigma[5] * w_o[5]) / rho_p[5]
+    )
+    A_i: fcatarr = (
+        A_ij[0] + A_ij[1] + A_ij[2] + A_ij[3],
+        A_ij[4] + A_ij[5]
+    )
+    A_0, A_1 = A_i
+    f_ij: fclaarr = (0, 0, 0, 0, 0, 0)
+    if A_0 > 0:
+        A0_inv: cy.float = 1. / A_0
+        f_ij[0] = A_ij[0] * A0_inv
+        f_ij[1] = A_ij[1] * A0_inv
+        f_ij[2] = A_ij[2] * A0_inv
+        f_ij[3] = A_ij[3] * A0_inv
+    if A_1 > 0:
+        A1_inv: cy.float = 1. / A_1
+        f_ij[4] = A_ij[4] * A1_inv
+        f_ij[5] = A_ij[5] * A1_inv
+    A_T: cy.float = A_0 + A_1
+    f_i: fcatarr = (0, 0)
+    if A_T > 0.0:
+        A_T_inv: cy.float = 1. / A_T
+        f_i[0] = A_0 * A_T_inv
+        f_i[1] = A_1 * A_T_inv
+    firemod_size_classes: fclaarr = ( # TODO OPTIM pre-compute
+        firemod_size_class(sigma[0]),
+        firemod_size_class(sigma[1]),
+        firemod_size_class(sigma[2]),
+        firemod_size_class(sigma[3]),
+        firemod_size_class(sigma[4]),
+        firemod_size_class(sigma[5])
+    )
+    g_ij: fclaarr = (
+        gij_i(firemod_size_classes, f_ij, firemod_size_classes[0], True),
+        gij_i(firemod_size_classes, f_ij, firemod_size_classes[1], True),
+        gij_i(firemod_size_classes, f_ij, firemod_size_classes[2], True),
+        gij_i(firemod_size_classes, f_ij, firemod_size_classes[3], True),
+        gij_i(firemod_size_classes, f_ij, firemod_size_classes[4], False),
+        gij_i(firemod_size_classes, f_ij, firemod_size_classes[5], False)
+    )
+    weighted_fuel_model      = fuel_model
     weighted_fuel_model.f_ij = f_ij
-    weighted_fuel_model.f_i = f_i
+    weighted_fuel_model.f_i  = f_i
     weighted_fuel_model.g_ij = g_ij
     return weighted_fuel_model
 
+@cy.profile(False)
+@cy.cdivision(True)
+@cy.cfunc
+#@cy.inline
+@cy.exceptval(check=False)
+def _lf(sigma_ij: cy.float, i: cy.int, w_o_i: cy.float) -> cy.float:
+    A: cy.float = -138.0 if (i < 4) else -500.0
+    lfi: cy.float
+    if (sigma_ij > 0.0):
+        lfi = w_o_i * exp(A / sigma_ij) # TODO OPTIM pre-compute the exponential.
+    else:
+        lfi = 0.0
+    return lfi
+
 
 @cy.cfunc
+@cy.cdivision(True)
+#@cy.inline
+@cy.profile(False)
 def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
     """
     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
@@ -702,18 +726,23 @@ def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
     sigma: fclaarr                     = fuel_model.sigma
     M_f: fclaarr                       = fuel_model.M_f
     M_x: fclaarr                       = fuel_model.M_x
-    def msc_loading_factor(i):
-        sigma_ij = sigma[i]
-        A = -138.0 if (i < 4) else -500.0
-        return w_o[i] * exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
-    loading_factors: fclaarr           = map_size_class(msc_loading_factor)
-    def scs_loading_factor(i):
-        return loading_factors[i]
-    (dead_loading_factor,
-     live_loading_factor)     = size_class_sum(scs_loading_factor)
-    def scs_dead_moisture_factor(i):
-        return M_f[i] * loading_factors[i]
-    (dead_moisture_factor, _) = size_class_sum(scs_dead_moisture_factor)
+    loading_factors: fclaarr = [
+        _lf(sigma[0], 0, w_o[0]),
+        _lf(sigma[1], 1, w_o[1]),
+        _lf(sigma[2], 2, w_o[2]),
+        _lf(sigma[3], 3, w_o[3]),
+        _lf(sigma[4], 4, w_o[4]),
+        _lf(sigma[5], 5, w_o[5])
+    ]
+    lf: fclaarr = loading_factors
+    dead_loading_factor: cy.float = lf[0] + lf[1] + lf[2] + lf[3]
+    live_loading_factor: cy.float = lf[4] + lf[5]
+    dead_moisture_factor: cy.float = (
+        M_f[0] * loading_factors[0] +
+        M_f[1] * loading_factors[1] +
+        M_f[2] * loading_factors[2] +
+        M_f[3] * loading_factors[3]
+    )
     dead_fuel_moisture: cy.float        = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
     M_x_dead: cy.float = M_x[0]
     M_x_live: cy.float
@@ -738,6 +767,9 @@ def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
 
 @cy.cfunc
 def moisturize(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
+    """
+    Updates w_o and M_f, and assigns M_x, f_ij, f_i and g_ij.
+    """
     dynamic_fuel_model     = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
     weighted_fuel_model    = add_weighting_factors(dynamic_fuel_model)
     moisturized_fuel_model = add_live_moisture_of_extinction(weighted_fuel_model)
