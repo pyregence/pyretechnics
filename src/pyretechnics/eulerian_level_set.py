@@ -1094,23 +1094,11 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         # Apply fuel moisture to fuel model
         #moisturized_fuel_model0 = fm.moisturize(fuel_model, fuel_moisture) # FIXME clean
         mfm = moisturize(fm_struct, M_f)
-        moisturized_fuel_model: dict = {
-            **fuel_model,
-            "w_o": list(mfm.w_o),
-            "M_x": list(mfm.M_x),
-            "M_f": list(mfm.M_f),
-            "f_ij": list(mfm.f_ij),
-            "f_i": list(mfm.f_i),
-            "g_ij": list(mfm.g_ij)
-        }
-        #print(moisturized_fuel_model0)
-        #print(moisturized_fuel_model)
-        #raise "and now I'm done"
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior
-        surface_fire_min = sf0.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model,
-                                                                          spread_rate_adjustment)
+        mfm1: object = mfm
+        surface_fire_min: sf.FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm1, spread_rate_adjustment)
 
         # Calculate surface fire behavior in the direction of maximum spread
         surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
