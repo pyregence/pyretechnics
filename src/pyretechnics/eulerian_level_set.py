@@ -894,6 +894,81 @@ def lookup_space_time_cube_float32(space_time_cube: ISpaceTimeCube, space_time_c
     return space_time_cube.get_float(t, y, x)
 
 
+CellInputs = cy.struct(
+    slope                         = cy.float,
+    aspect                        = cy.float,
+    fuel_model_number             = cy.float,
+    canopy_cover                  = cy.float,
+    canopy_height                 = cy.float,
+    canopy_base_height            = cy.float,
+    canopy_bulk_density           = cy.float,
+    wind_speed_10m                = cy.float,
+    upwind_direction              = cy.float,
+    fuel_moisture_dead_1hr        = cy.float,
+    fuel_moisture_dead_10hr       = cy.float,
+    fuel_moisture_dead_100hr      = cy.float,
+    fuel_moisture_live_herbaceous = cy.float,
+    fuel_moisture_live_woody      = cy.float,
+    foliar_moisture               = cy.float,
+    fuel_spread_adjustment        = cy.float,
+    weather_spread_adjustment     = cy.float
+)
+
+
+@cy.cfunc
+@cy.profile(True)
+def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellInputs:
+
+    (t, y, x) = tyx
+    inputs: SpreadInputs = space_time_cubes
+    # Topography, Fuel Model, and Vegetation
+    slope               : cy.float = lookup_space_time_cube_float32(inputs.slope, tyx)               # rise/run
+    aspect              : cy.float = lookup_space_time_cube_float32(inputs.aspect, tyx)              # degrees clockwise from North
+    fuel_model_number   : cy.float = inputs.fuel_model.get(t,y,x)          # integer index in fm.fuel_model_table
+    canopy_cover        : cy.float = lookup_space_time_cube_float32(inputs.canopy_cover, tyx)        # 0-1
+    canopy_height       : cy.float = lookup_space_time_cube_float32(inputs.canopy_height, tyx)       # m
+    canopy_base_height  : cy.float = lookup_space_time_cube_float32(inputs.canopy_base_height, tyx)  # m
+    canopy_bulk_density : cy.float = lookup_space_time_cube_float32(inputs.canopy_bulk_density, tyx) # kg/m^3
+
+    # Wind, Surface Moisture, and Foliar Moisture
+    wind_speed_10m                : cy.float = lookup_space_time_cube_float32(inputs.wind_speed_10m, tyx)                # km/hr
+    upwind_direction              : cy.float = lookup_space_time_cube_float32(inputs.upwind_direction, tyx)              # degrees clockwise from North
+    fuel_moisture_dead_1hr        : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
+    foliar_moisture               : cy.float = lookup_space_time_cube_float32(inputs.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
+
+    # Spread Rate Adjustments (Optional)
+    fuel_spread_adjustment    : cy.float = (inputs.fuel_spread_adjustment.get(t,y,x)
+                                 #if "fuel_spread_adjustment" in space_time_cubes
+                                 if inputs.fuel_spread_adjustment is not None
+                                 else 1.0)                                         # float >= 0.0
+    weather_spread_adjustment : cy.float = (inputs.weather_spread_adjustment.get(t,y,x)
+                                 #if "weather_spread_adjustment" in space_time_cubes
+                                 if inputs.weather_spread_adjustment is not None
+                                 else 1.0)                                         # float >= 0.0
+
+    return CellInputs(
+        slope                          = slope,
+        aspect                         = aspect,
+        fuel_model_number              = fuel_model_number,
+        canopy_cover                   = canopy_cover,
+        canopy_height                  = canopy_height,
+        canopy_base_height             = canopy_base_height,
+        canopy_bulk_density            = canopy_bulk_density,
+        wind_speed_10m                 = wind_speed_10m,
+        upwind_direction               = upwind_direction,
+        fuel_moisture_dead_1hr         = fuel_moisture_dead_1hr,
+        fuel_moisture_dead_10hr        = fuel_moisture_dead_10hr,
+        fuel_moisture_dead_100hr       = fuel_moisture_dead_100hr,
+        fuel_moisture_live_herbaceous  = fuel_moisture_live_herbaceous,
+        fuel_moisture_live_woody       = fuel_moisture_live_woody,
+        foliar_moisture                = foliar_moisture,
+        fuel_spread_adjustment         = fuel_spread_adjustment,
+        weather_spread_adjustment      = weather_spread_adjustment
+    )
 
 @cy.profile(True)
 @cy.ccall
@@ -952,33 +1027,27 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
 
     inputs: SpreadInputs = space_time_cubes
     # Topography, Fuel Model, and Vegetation
-    slope               : cy.float = lookup_space_time_cube_float32(inputs.slope, tyx)               # rise/run
-    aspect              : cy.float = lookup_space_time_cube_float32(inputs.aspect, tyx)              # degrees clockwise from North
-    fuel_model_number   : cy.float = inputs.fuel_model.get(t,y,x)          # integer index in fm.fuel_model_table
-    canopy_cover        : cy.float = lookup_space_time_cube_float32(inputs.canopy_cover, tyx)        # 0-1
-    canopy_height       : cy.float = lookup_space_time_cube_float32(inputs.canopy_height, tyx)       # m
-    canopy_base_height  : cy.float = lookup_space_time_cube_float32(inputs.canopy_base_height, tyx)  # m
-    canopy_bulk_density : cy.float = lookup_space_time_cube_float32(inputs.canopy_bulk_density, tyx) # kg/m^3
+    slope               : cy.float = cell_inputs.slope               # rise/run
+    aspect              : cy.float = cell_inputs.aspect              # degrees clockwise from North
+    fuel_model_number   : cy.float = cell_inputs.fuel_model_number   # integer index in fm.fuel_model_table
+    canopy_cover        : cy.float = cell_inputs.canopy_cover        # 0-1
+    canopy_height       : cy.float = cell_inputs.canopy_height       # m
+    canopy_base_height  : cy.float = cell_inputs.canopy_base_height  # m
+    canopy_bulk_density : cy.float = cell_inputs.canopy_bulk_density # kg/m^3
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m                : cy.float = lookup_space_time_cube_float32(inputs.wind_speed_10m, tyx)                # km/hr
-    upwind_direction              : cy.float = lookup_space_time_cube_float32(inputs.upwind_direction, tyx)              # degrees clockwise from North
-    fuel_moisture_dead_1hr        : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
-    fuel_moisture_dead_10hr       : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
-    fuel_moisture_dead_100hr      : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
-    fuel_moisture_live_herbaceous : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
-    fuel_moisture_live_woody      : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
-    foliar_moisture               : cy.float = lookup_space_time_cube_float32(inputs.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
+    wind_speed_10m                : cy.float = cell_inputs.wind_speed_10m                # km/hr
+    upwind_direction              : cy.float = cell_inputs.upwind_direction              # degrees clockwise from North
+    fuel_moisture_dead_1hr        : cy.float = cell_inputs.fuel_moisture_dead_1hr        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       : cy.float = cell_inputs.fuel_moisture_dead_10hr       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      : cy.float = cell_inputs.fuel_moisture_dead_100hr      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous : cy.float = cell_inputs.fuel_moisture_live_herbaceous # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      : cy.float = cell_inputs.fuel_moisture_live_woody      # kg moisture/kg ovendry weight
+    foliar_moisture               : cy.float = cell_inputs.foliar_moisture               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment    : cy.float = (inputs.fuel_spread_adjustment.get(t,y,x)
-                                 #if "fuel_spread_adjustment" in space_time_cubes
-                                 if inputs.fuel_spread_adjustment is not None
-                                 else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment : cy.float = (inputs.weather_spread_adjustment.get(t,y,x)
-                                 #if "weather_spread_adjustment" in space_time_cubes
-                                 if inputs.weather_spread_adjustment is not None
-                                 else 1.0)                                         # float >= 0.0
+    fuel_spread_adjustment    : cy.float = cell_inputs.fuel_spread_adjustment    # float >= 0.0
+    weather_spread_adjustment : cy.float = cell_inputs.weather_spread_adjustment # float >= 0.0
     spread_rate_adjustment    : cy.float = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
 
     #================================================================================================
