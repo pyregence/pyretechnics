@@ -17,8 +17,7 @@ cdef struct FireBehaviorMin:
 
 
 cdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
-    #FuelModel moisturized_fuel_model, 
-    object moisturized_fuel_model, 
+    FuelModel moisturized_fuel_model, 
     float spread_rate_adjustment)
 
 
