@@ -4,6 +4,7 @@ if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Realloc, PyMem_Free
     from cython.cimports.pyretechnics.math import sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
+    import cython.cimports.pyretechnics.crown_fire as cf
     from cython.cimports.pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
@@ -18,6 +19,7 @@ else:
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
+    import pyretechnics.crown_fire as cf
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.surface_fire1 as sf
     from pyretechnics.vector_utils import \
@@ -28,7 +30,6 @@ else:
 import cython as cy
 # TODO: cimport all of the modules below
 import numpy as np
-import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 import pyretechnics.spot_fire as spot
 import pyretechnics.surface_fire1 as sf0
@@ -345,7 +346,7 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
-@cy.profile(False)
+@cy.profile(True)
 @cy.ccall
 def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
@@ -368,7 +369,7 @@ def stringify_fire_type(fire_type: integer) -> string: # TODO only here for back
             else "active_crown")
 
 
-@cy.profile(False)
+@cy.profile(True)
 @cy.ccall
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
@@ -906,7 +907,8 @@ def lookup_space_time_cube_float32(space_time_cube: ISpaceTimeCube, space_time_c
 
 @cy.profile(True)
 @cy.ccall
-def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs, 
+@cy.cdivision(True)
+def burn_cell_toward_phi_gradient(space_time_cubes: object, 
                                   space_time_coordinate: coord_tyx, 
                                   phi_gradient_xy: vec_xy, 
                                   use_wind_limit: cy.bint = True,
@@ -958,62 +960,62 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
     # Unpack the space_time_cubes dictionary
     #================================================================================================
 
+    inputs: SpreadInputs = space_time_cubes
     # Topography, Fuel Model, and Vegetation
-    slope               = lookup_space_time_cube_float32(space_time_cubes.slope, tyx)               # rise/run
-    aspect              = lookup_space_time_cube_float32(space_time_cubes.aspect, tyx)              # degrees clockwise from North
-    fuel_model_number   = space_time_cubes.fuel_model.get(t,y,x)          # integer index in fm.fuel_model_table
-    canopy_cover        = lookup_space_time_cube_float32(space_time_cubes.canopy_cover, tyx)        # 0-1
-    canopy_height       = lookup_space_time_cube_float32(space_time_cubes.canopy_height, tyx)       # m
-    canopy_base_height  = lookup_space_time_cube_float32(space_time_cubes.canopy_base_height, tyx)  # m
-    canopy_bulk_density = lookup_space_time_cube_float32(space_time_cubes.canopy_bulk_density, tyx) # kg/m^3
+    slope               : cy.float = lookup_space_time_cube_float32(inputs.slope, tyx)               # rise/run
+    aspect              : cy.float = lookup_space_time_cube_float32(inputs.aspect, tyx)              # degrees clockwise from North
+    fuel_model_number   : cy.float = inputs.fuel_model.get(t,y,x)          # integer index in fm.fuel_model_table
+    canopy_cover        : cy.float = lookup_space_time_cube_float32(inputs.canopy_cover, tyx)        # 0-1
+    canopy_height       : cy.float = lookup_space_time_cube_float32(inputs.canopy_height, tyx)       # m
+    canopy_base_height  : cy.float = lookup_space_time_cube_float32(inputs.canopy_base_height, tyx)  # m
+    canopy_bulk_density : cy.float = lookup_space_time_cube_float32(inputs.canopy_bulk_density, tyx) # kg/m^3
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m                = lookup_space_time_cube_float32(space_time_cubes.wind_speed_10m, tyx)                # km/hr
-    upwind_direction              = lookup_space_time_cube_float32(space_time_cubes.upwind_direction, tyx)              # degrees clockwise from North
-    fuel_moisture_dead_1hr        = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
-    fuel_moisture_dead_10hr       = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
-    fuel_moisture_dead_100hr      = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
-    fuel_moisture_live_herbaceous = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
-    fuel_moisture_live_woody      = lookup_space_time_cube_float32(space_time_cubes.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
-    foliar_moisture               = lookup_space_time_cube_float32(space_time_cubes.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
+    wind_speed_10m                : cy.float = lookup_space_time_cube_float32(inputs.wind_speed_10m, tyx)                # km/hr
+    upwind_direction              : cy.float = lookup_space_time_cube_float32(inputs.upwind_direction, tyx)              # degrees clockwise from North
+    fuel_moisture_dead_1hr        : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      : cy.float = lookup_space_time_cube_float32(inputs.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
+    foliar_moisture               : cy.float = lookup_space_time_cube_float32(inputs.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment    = (space_time_cubes.fuel_spread_adjustment.get(t,y,x)
+    fuel_spread_adjustment    : cy.float = (inputs.fuel_spread_adjustment.get(t,y,x)
                                  #if "fuel_spread_adjustment" in space_time_cubes
-                                 if space_time_cubes.fuel_spread_adjustment is not None
+                                 if inputs.fuel_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment = (space_time_cubes.weather_spread_adjustment.get(t,y,x)
+    weather_spread_adjustment : cy.float = (inputs.weather_spread_adjustment.get(t,y,x)
                                  #if "weather_spread_adjustment" in space_time_cubes
-                                 if space_time_cubes.weather_spread_adjustment is not None
+                                 if inputs.weather_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
-    spread_rate_adjustment    = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
+    spread_rate_adjustment    : cy.float = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
 
     #================================================================================================
     # Calculate the elevation gradient
     #================================================================================================
 
-    elevation_gradient = calc_elevation_gradient(slope, aspect)
+    elevation_gradient: vec_xy = calc_elevation_gradient(slope, aspect)
 
     #============================================================================================
     # Project the horizontal phi gradient onto the slope-tangential plane
     #============================================================================================
 
-    phi_gradient = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
+    phi_gradient: vec_xyz = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
 
     #================================================================================================
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vector_magnitude_3d(phi_gradient) # phi/m
+    phi_magnitude: cy.float = vector_magnitude_3d(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burnable
     #================================================================================================
 
     fm_number: pyidx = cy.cast(pyidx, fuel_model_number)
-    fuel_model = fm.fuel_model_table.get(fm_number)
     #fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
-    fm_struct: FuelModel = space_time_cubes.get_fm_struct(fm_number)
+    fm_struct: FuelModel = inputs.get_fm_struct(fm_number)
     
 
     if not (phi_magnitude > 0.0 and fm_struct.burnable):
@@ -1027,7 +1029,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         if phi_magnitude > 0.0:
             spread_direction = scale_3d(1./ phi_magnitude, phi_gradient)
         elif slope > 0.0:
-            slope_vector_3d  = to_slope_plane(elevation_gradient, elevation_gradient)
+            slope_vector_3d: vec_xyz = to_slope_plane(elevation_gradient, elevation_gradient)
             spread_direction = as_unit_vector_3d(slope_vector_3d)
         else:
             spread_direction = (0., 1., 0.) # default: North
@@ -1052,13 +1054,6 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
         # Compute derived parameters
         #============================================================================================
 
-        # FIXME
-        fuel_moisture                = [fuel_moisture_dead_1hr,
-                                        fuel_moisture_dead_10hr,
-                                        fuel_moisture_dead_100hr,
-                                        0.0, # fuel_moisture_dead_herbaceous
-                                        fuel_moisture_live_herbaceous,
-                                        fuel_moisture_live_woody]          # kg moisture/kg ovendry weight
         M_f: fclaarr = (
             fuel_moisture_dead_1hr,
             fuel_moisture_dead_10hr,
@@ -1066,26 +1061,26 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
             0.0, # fuel_moisture_dead_herbaceous
             fuel_moisture_live_herbaceous,
             fuel_moisture_live_woody)
-        fuel_bed_depth               = fm_struct.delta                     # ft
-        heat_of_combustion           = Btu_lb_to_kJ_kg(fm_struct.h[0])     # kJ/kg
-        estimated_fine_fuel_moisture = fuel_moisture_dead_1hr              # kg moisture/kg ovendry weight
+        fuel_bed_depth               : cy.float = fm_struct.delta                     # ft
+        heat_of_combustion           : cy.float = Btu_lb_to_kJ_kg(fm_struct.h[0])     # kJ/kg
+        estimated_fine_fuel_moisture : cy.float = fuel_moisture_dead_1hr              # kg moisture/kg ovendry weight
 
         #============================================================================================
         # Calculate midflame wind speed
         #============================================================================================
 
         # Convert from 10m wind speed to 20ft wind speed
-        wind_speed_20ft = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+        wind_speed_20ft: cy.float = wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
 
         # Convert 20ft wind speed from km/hr to m/min
-        wind_speed_20ft_m_min = km_hr_to_m_min(wind_speed_20ft) # m/min
+        wind_speed_20ft_m_min: cy.float = km_hr_to_m_min(wind_speed_20ft) # m/min
 
         # Convert from 20ft wind speed to midflame wind speed in m/min
         # FIXME this is getting called as a Python function
-        midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,  # m/min
-                                                          fuel_bed_depth,         # ft
-                                                          m_to_ft(canopy_height), # ft
-                                                          canopy_cover)           # 0-1
+        midflame_wind_speed: cy.float = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,  # m/min
+                                                                    fuel_bed_depth,         # ft
+                                                                    m_to_ft(canopy_height), # ft
+                                                                    canopy_cover)           # 0-1
 
         #============================================================================================
         # Calculate surface fire behavior in the direction of maximum spread
@@ -1093,14 +1088,14 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
 
         # Apply fuel moisture to fuel model
         #moisturized_fuel_model0 = fm.moisturize(fuel_model, fuel_moisture) # FIXME clean
-        mfm = moisturize(fm_struct, M_f)
+        mfm: FuelModel = moisturize(fm_struct, M_f)
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior
         surface_fire_min: sf.FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
 
         # Calculate surface fire behavior in the direction of maximum spread
-        surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
+        surface_fire_max: sf.FireBehaviorMax = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                              midflame_wind_speed,
                                                              upwind_direction,
                                                              slope,
@@ -1127,7 +1122,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
             # Calculate crown fire behavior in the direction of maximum spread
             #========================================================================================
 
-            crown_fire_max = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
+            crown_fire_max: sf.FireBehaviorMax = cf.calc_crown_fire_behavior_max(canopy_height, canopy_base_height,
                                                              canopy_bulk_density, heat_of_combustion,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
