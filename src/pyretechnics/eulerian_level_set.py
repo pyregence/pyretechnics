@@ -1036,6 +1036,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
     #================================================================================================
 
     inputs: SpreadInputs = space_time_cubes
+    cell_inputs: CellInputs = lookup_cell_inputs(inputs, tyx)
     # Topography, Fuel Model, and Vegetation
     slope               : cy.float = cell_inputs.slope               # rise/run
     aspect              : cy.float = cell_inputs.aspect              # degrees clockwise from North
@@ -1811,12 +1812,12 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     output_matrices.pop("phi_star")
 
     # Return the final simulation results
-    return {
+    return {**{
         "stop_time"      : simulation_time,
         "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
         "output_matrices": output_matrices,
-    } | ({
+    }, **({ # FIXME restore | operator when done testing on older Python.
         "spot_ignitions"  : spot_ignitions,
         "random_generator": random_generator,
-    } if spot_config else {})
+    } if spot_config else {})}
 # spread-phi-field ends here
