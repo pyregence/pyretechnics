@@ -13,5 +13,5 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int t_repetitions
     cdef public int y_repetitions
     cdef public int x_repetitions
-    cdef public object data
+    cdef public float[:,:,:] data
 

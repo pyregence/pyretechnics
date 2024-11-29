@@ -77,7 +77,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     t_repetitions: cy.int
     y_repetitions: cy.int
     x_repetitions: cy.int
-    data: object
+    data: cy.float[:,:,:]
 
     def __init__(self, cube_shape, base):
         """
@@ -91,6 +91,9 @@ class SpaceTimeCube(ISpaceTimeCube):
         if not(all(map(is_pos_int, cube_shape))):
             raise ValueError("The cube_shape must only contain positive integers.")
 
+
+        base = np.asarray(base, dtype=np.float32)
+
         # Store the cube metadata for later
         self.ndim  = 3
         self.size  = cube_bands * cube_rows * cube_cols
@@ -100,12 +103,13 @@ class SpaceTimeCube(ISpaceTimeCube):
         # Store the base data as a 3D array along with its axis repetitions
         base_dimensions = np.ndim(base)
 
+        data: cy.float[:,:,:]
         if base_dimensions == 0:
             # 0D: Constant Input
             self.t_repetitions = cube_bands
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
-            self.data = np.asarray([[[base]]])
+            data =  np.asarray([[[base]]])
 
         elif base_dimensions == 1:
             # 1D: Time-Series Input
@@ -114,7 +118,7 @@ class SpaceTimeCube(ISpaceTimeCube):
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
             # Expand (base_bands) -> (base_bands,1,1)
-            self.data = np.expand_dims(base, axis=(1,2))
+            data = np.expand_dims(base, axis=(1,2))
 
         elif base_dimensions == 2:
             # 2D: Spatial Input
@@ -123,7 +127,7 @@ class SpaceTimeCube(ISpaceTimeCube):
             self.y_repetitions = divide_evenly(cube_rows, base_rows)
             self.x_repetitions = divide_evenly(cube_cols, base_cols)
             # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
-            self.data = np.expand_dims(base, axis=0)
+            data = np.expand_dims(base, axis=0)
 
         elif base_dimensions == 3:
             # 3D: Spatio-Temporal Input
@@ -131,11 +135,12 @@ class SpaceTimeCube(ISpaceTimeCube):
             self.t_repetitions = divide_evenly(cube_bands, base_bands)
             self.y_repetitions = divide_evenly(cube_rows, base_rows)
             self.x_repetitions = divide_evenly(cube_cols, base_cols)
-            self.data = np.asarray(base)
+            data = np.asarray(base)
 
         else:
             # 4D+: Invalid Input
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
+        self.data = data
 
     def get(self, t, y, x):
         """
@@ -152,7 +157,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     @cy.profile(False)
     @cy.cdivision(True)
     def get_float(self, t, y, x):
-        arr: cy.double[:, :, ::] = self.data # FIXME can't rely on that
+        arr: cy.float[:, :, ::] = self.data # FIXME can't rely on that
         return arr[t // self.t_repetitions,
                    y // self.y_repetitions,
                    x // self.x_repetitions]
