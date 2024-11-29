@@ -1097,8 +1097,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: SpreadInputs,
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior
-        mfm1: object = mfm
-        surface_fire_min: sf.FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm1, spread_rate_adjustment)
+        surface_fire_min: sf.FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
 
         # Calculate surface fire behavior in the direction of maximum spread
         surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
