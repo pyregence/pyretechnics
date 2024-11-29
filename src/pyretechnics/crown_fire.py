@@ -1,5 +1,8 @@
 # [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
-def van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture):
+import cython as cy
+@cy.ccall
+@cy.profile(False)
+def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_moisture: cy.float) -> cy.float:
     """
     Returns the critical fireline intensity (kW/m) given:
     - canopy_base_height :: m
@@ -10,10 +13,16 @@ def van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture):
     0.01 = empirical estimate for C in Van Wagner 1977 (eq. 4)
     """
     H = 460.0 + 2600.0 * foliar_moisture
-    return (0.01 * canopy_base_height * H) ** 1.5
+    return pow((0.01 * canopy_base_height * H), 1.5)
 # van-wagner-critical-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
-def van_wagner_crown_fire_initiation(surface_fireline_intensity, canopy_cover, canopy_base_height, foliar_moisture):
+@cy.ccall
+def van_wagner_crown_fire_initiation(
+        surface_fireline_intensity: cy.float, 
+        canopy_cover: cy.float, 
+        canopy_base_height: cy.float, 
+        foliar_moisture: cy.float
+        ) -> cy.bint:
     """
     Returns True if the surface fire transitions to a crown fire or False otherwise given:
     - surface_fireline_intensity :: kW/m
@@ -158,16 +167,16 @@ import cython as cy
 
 @cy.profile(False)
 @cy.ccall
-def calc_crown_fire_behavior_max( # FIXME in .pxd
-        canopy_height, 
-        canopy_base_height, 
-        canopy_bulk_density, 
-        heat_of_combustion,
-        estimated_fine_fuel_moisture, 
-        wind_speed_10m, 
-        upwind_direction,
-        slope, 
-        aspect, 
+def calc_crown_fire_behavior_max(
+        canopy_height: cy.float, 
+        canopy_base_height: cy.float, 
+        canopy_bulk_density: cy.float, 
+        heat_of_combustion: cy.float,
+        estimated_fine_fuel_moisture: cy.float, 
+        wind_speed_10m: cy.float, 
+        upwind_direction: cy.float,
+        slope: cy.float, 
+        aspect: cy.float, 
         crown_max_lw_ratio=None
         ) -> py_types.FireBehaviorMax:
     """
@@ -196,6 +205,7 @@ def calc_crown_fire_behavior_max( # FIXME in .pxd
     downwind_direction = conv.opposite_direction(upwind_direction)
     upslope_direction  = conv.opposite_direction(aspect)
     # Project wind and slope vectors onto the slope-tangential plane
+    # FIXME let's just have these vectors as arguments to the function instead of re-computing them.
     vectors = sf.project_wind_and_slope_vectors_3d(wind_speed_10m, downwind_direction, slope, upslope_direction)
     wind_vector_3d  = vectors["wind_vector_3d"]  # km/hr
     slope_vector_3d = vectors["slope_vector_3d"] # rise/run
@@ -221,6 +231,7 @@ def calc_crown_fire_behavior_max( # FIXME in .pxd
         spread_rate,
         max_spread_direction, # unit vector
         fireline_intensity,
+        0., # FIXME max_flame_length
         length_to_width_ratio,
         eccentricity,
         spread_info["critical_spread_rate"],
