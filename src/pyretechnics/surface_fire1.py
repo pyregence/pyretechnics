@@ -51,6 +51,7 @@ def _dotp_categories(x_i: fcatarr, y_i: fcatarr) -> cy.float:
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_surface_area_to_volume_ratio(f_i: fcatarr, f_ij: fclaarr, sigma: fclaarr) -> cy.float:
     sigma_prime: fcatarr = _dotp_in_category(f_ij, sigma)
     return _dotp_categories(f_i, sigma_prime)
@@ -59,6 +60,7 @@ def calc_surface_area_to_volume_ratio(f_i: fcatarr, f_ij: fclaarr, sigma: fclaar
 @cy.ccall
 @cy.profile(False)
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_packing_ratio(w_o: fclaarr, rho_p: fclaarr, delta: cy.float) -> cy.float:
     if (delta > 0.0):
         rho_p_inv: fclaarr = ( # TODO OPTIM pre-compute
@@ -77,6 +79,7 @@ def calc_packing_ratio(w_o: fclaarr, rho_p: fclaarr, delta: cy.float) -> cy.floa
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_optimum_packing_ratio(sigma_prime: cy.float) -> cy.float:
     return (3.348 * pow(sigma_prime, -0.8189)) if (sigma_prime > 0.0) else 1.0
 # surface-fire-common-intermediate-calculations ends here
@@ -84,6 +87,7 @@ def calc_optimum_packing_ratio(sigma_prime: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_mineral_damping_coefficients(f_ij: fclaarr, S_e: fclaarr) -> fcatarr:
     S_e_i: fcatarr = _dotp_in_category(f_ij, S_e)
     S_e_0, S_e_1 = S_e_i
@@ -120,6 +124,7 @@ def calc_moisture_damping_coefficients(f_ij: fclaarr, M_f: fclaarr, M_x: fclaarr
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_low_heat_content(f_ij: fclaarr, h: fclaarr) -> fcatarr:
     return _dotp_in_category(f_ij, h)
 
@@ -127,6 +132,7 @@ def calc_low_heat_content(f_ij: fclaarr, h: fclaarr) -> fcatarr:
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_net_fuel_loading(g_ij: fclaarr, w_o: fclaarr, S_T: fclaarr) -> fcatarr:
     return (
         (
@@ -152,6 +158,7 @@ def calc_heat_per_unit_area(eta_S_i: fcatarr, eta_M_i: fcatarr, h_i: fcatarr, W_
 @cy.ccall
 @cy.profile(False)
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_optimum_reaction_velocity(sigma_prime: cy.float, beta: cy.float, beta_op: cy.float) -> cy.float:
     # Albini 1976 replaces 1 / (4.774 * (sigma_prime ** 0.1) - 7.27)
     A               = (133.0 * pow(sigma_prime, -0.7913)) if (sigma_prime > 0.0) else 0.0
@@ -185,6 +192,7 @@ def calc_reaction_intensity(moisturized_fuel_model: FuelModel, sigma_prime: cy.f
 @cy.ccall
 @cy.profile(False)
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_propagating_flux_ratio(sigma_prime: cy.float, beta: cy.float) -> cy.float:
     return exp((0.792 + 0.681 * sqrt(sigma_prime)) * (beta + 0.1)) / (192.0 + 0.2595 * sigma_prime)
 # surface-fire-propagating-flux-ratio ends here
@@ -192,6 +200,7 @@ def calc_propagating_flux_ratio(sigma_prime: cy.float, beta: cy.float) -> cy.flo
 @cy.ccall
 @cy.profile(False)
 @cy.inline
+@cy.exceptval(check=False)
 def calc_heat_source(I_R: cy.float, xi: cy.float) -> cy.float:
     return I_R * xi
 # surface-fire-heat-source-no-wind-no-slope ends here
@@ -200,6 +209,7 @@ def calc_heat_source(I_R: cy.float, xi: cy.float) -> cy.float:
 @cy.profile(False)
 @cy.inline
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_ovendry_bulk_density(w_o: fclaarr, delta: cy.float) -> cy.float:
     if (delta > 0.0):
         w_o_sum: cy.float = w_o[0] + w_o[1] + w_o[2] + w_o[3] + w_o[4] + w_o[5]
@@ -219,6 +229,7 @@ def _sizeclass_heating_number(sigma_i: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_effective_heating_number_distribution(sigma: fclaarr) -> fclaarr: # OPTIM pre-compute, exp is expensive
     return (
         _sizeclass_heating_number(sigma[0]),
@@ -240,6 +251,7 @@ def _sizeclass_heat_of_preignition_distribution(M_f_i: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_heat_of_preignition_distribution(M_f: fclaarr) -> fclaarr:
     return (
         _sizeclass_heat_of_preignition_distribution(M_f[0]),
@@ -253,6 +265,7 @@ def calc_heat_of_preignition_distribution(M_f: fclaarr) -> fclaarr:
 # [[file:../../org/pyretechnics.org::surface-fire-heat-sink][surface-fire-heat-sink]]
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_heat_sink(f_i: fcatarr, f_ij: fclaarr, rho_b: cy.float, epsilon_ij: fclaarr, Q_ig_ij: fclaarr) -> cy.float:
     effective_heat_of_preignition_i: fcatarr = (
         (
@@ -272,6 +285,7 @@ def calc_heat_sink(f_i: fcatarr, f_ij: fclaarr, rho_b: cy.float, epsilon_ij: fcl
 @cy.ccall
 @cy.profile(False)
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_spread_rate(heat_source: cy.float, heat_sink: cy.float) -> cy.float:
     return heat_source / heat_sink if (heat_sink > 0.0) else 0.0
 # surface-fire-spread-rate-no-wind-no-slope ends here
@@ -279,6 +293,7 @@ def calc_spread_rate(heat_source: cy.float, heat_sink: cy.float) -> cy.float:
 @cy.ccall
 @cy.profile(False)
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_residence_time(sigma_prime: cy.float) -> cy.float:
     """
     Returns the residence time (total burning time) of fuel (min) given:
@@ -290,6 +305,7 @@ def calc_residence_time(sigma_prime: cy.float) -> cy.float:
 @cy.ccall
 @cy.profile(False)
 @cy.inline
+@cy.exceptval(check=False)
 def calc_flame_depth(spread_rate: cy.float, residence_time: cy.float) -> cy.float:
     """
     Returns the depth, or front-to-back distance, of the actively flaming zone
@@ -303,6 +319,7 @@ def calc_flame_depth(spread_rate: cy.float, residence_time: cy.float) -> cy.floa
 @cy.ccall
 @cy.inline
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_fireline_intensity(reaction_intensity: cy.float, flame_depth: cy.float) -> cy.float:
     """
     Returns the rate of heat release per unit of fire edge (Btu/ft/s) given:
@@ -324,6 +341,7 @@ def calc_flame_length(fireline_intensity: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.profile(False)
+@cy.cdivision(True)
 def calc_areal_heat_output(spread_rate: cy.float, fireline_intensity: cy.float) -> cy.float:
     """
     Returns the heat per unit area (kJ/m^2) given:
@@ -336,6 +354,7 @@ def calc_areal_heat_output(spread_rate: cy.float, fireline_intensity: cy.float) 
 @cy.ccall
 @cy.inline
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_max_effective_wind_speed(reaction_intensity: cy.float) -> cy.float:
     return 0.9 * reaction_intensity
 # surface-fire-max-effective-wind-speed ends here
@@ -358,16 +377,19 @@ FireBehaviorMin = cy.struct(
 @cy.ccall
 @cy.inline
 @cy.profile(False)
+@cy.exceptval(check=False)
 def get_phi_S(sfmin: FireBehaviorMin, slope: cy.float) -> cy.float:
     return sfmin._phiS_G * (slope * slope)
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def get_phi_W(sfmin: FireBehaviorMin, midflame_wind_speed: cy.float) -> cy.float:
     return sfmin._phiW_scalr * pow(midflame_wind_speed, sfmin._phiW_expnt)
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def get_wind_speed(sfmin: FireBehaviorMin, phi_W: cy.float) -> cy.float:
     return sfmin._ws_scalr * pow(phi_W, sfmin._ws_expnt)
 
@@ -375,6 +397,7 @@ def get_wind_speed(sfmin: FireBehaviorMin, phi_W: cy.float) -> cy.float:
 
 @cy.cfunc
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def make_surface_fire_min(
         base_spread_rate: cy.float,
         base_fireline_intensity: cy.float,
@@ -415,6 +438,7 @@ def make_surface_fire_min(
 
 
 @cy.cfunc
+@cy.cdivision(True)
 def calc_surface_fire_behavior_no_wind_no_slope(
         moisturized_fuel_model: FuelModel, 
         spread_rate_adjustment: cy.float#=1.0
