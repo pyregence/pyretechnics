@@ -1238,7 +1238,7 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_xy?
-@cy.profile(False)
+@cy.profile(True)
 @cy.ccall
 def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
     """
@@ -1264,7 +1264,7 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_xy?
-@cy.profile(False)
+@cy.profile(True)
 @cy.ccall
 def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict, rows: pyidx, cols: pyidx) -> set:
     """
@@ -1311,7 +1311,7 @@ def project_buffer(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx
     return buffer_cells
 
 
-@cy.profile(False)
+@cy.profile(True)
 @cy.ccall
 def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
     """
@@ -1326,7 +1326,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     return tracked_cells
 
 
-@cy.profile(False)
+@cy.profile(True)
 @cy.ccall
 def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
                          buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
@@ -1361,6 +1361,18 @@ fire_type_codes = {
 }
 
 
+@cy.profile(True)
+@cy.cfunc
+def _save_fire_behavior(fire_behavior_dict: dict, cell_index: object, fb: SpreadBehavior):
+    fire_behavior_dict[cell_index] = fb
+
+
+@cy.profile(True)
+@cy.cfunc
+def _get_fire_behavior(fire_behavior_dict: dict, cell_index: object) -> SpreadBehavior:
+    fb: SpreadBehavior = fire_behavior_dict[cell_index] 
+    return fb
+
 
 @cy.profile(True)
 # TODO: @cy.ccall
@@ -1384,6 +1396,7 @@ fire_type_codes = {
 # TODO: Turn off divide-by-zero checks
 # TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
 # TODO: cimport numpy
+@cy.ccall
 def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: dict,
                              cube_resolution: tuple, start_time: cy.float, max_timestep: cy.float,
                              max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,
@@ -1490,14 +1503,14 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
         # Check whether cell has a positive phi magnitude
         if phi_magnitude_xy > 0.0:
             # Keep a running tally of the max horizontal spread rates in the x and y dimensions
-            dphi_dt                      = fb.dphi_dt
+            dphi_dt           : cy.float = fb.dphi_dt
             dphi_dx           : cy.float = phi_gradient_xy[0]
             dphi_dy           : cy.float = phi_gradient_xy[1]
             phi_magnitude_xy_2: cy.float = phi_magnitude_xy * phi_magnitude_xy
             spread_rate_x     : cy.float = -dphi_dt * dphi_dx / phi_magnitude_xy_2
             spread_rate_y     : cy.float = -dphi_dt * dphi_dy / phi_magnitude_xy_2
-            max_spread_rate_x            = max(max_spread_rate_x, abs(spread_rate_x))
-            max_spread_rate_y            = max(max_spread_rate_y, abs(spread_rate_y))
+            max_spread_rate_x : cy.float = max(max_spread_rate_x, abs(spread_rate_x))
+            max_spread_rate_y : cy.float = max(max_spread_rate_y, abs(spread_rate_y))
 
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
             phi_gradient_xy_limited: vec_xy = calc_phi_gradient(phi_matrix,
@@ -1511,7 +1524,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             fb.dphi_dt = dphi_dt * dphi_dt_correction
 
         # Store fire behavior values for later use
-        fire_behavior_dict[cell_index] = fb
+        _save_fire_behavior(fire_behavior_dict, cell_index, fb)
 
     # Calculate timestep using the CFL condition
     dt: cy.float
@@ -1534,7 +1547,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     for cell_index in tracked_cells:
         y = cell_index[0]
         x = cell_index[1]
-        fb: SpreadBehavior = cy.cast(SpreadBehavior, fire_behavior_dict[cell_index])
+        fb: SpreadBehavior =  _get_fire_behavior(fire_behavior_dict, cell_index)
         dphi_dt = fb.dphi_dt
         if dphi_dt != 0.0:
             phi_star_matrix[y,x] += dphi_dt * dt
@@ -1545,8 +1558,8 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     t1           : pyidx = int(stop_time // band_duration)
     for cell_index in tracked_cells:
         # Unpack cell_index
-        y = cell_index[0]
-        x = cell_index[1]
+        y: pyidx = cell_index[0]
+        x: pyidx = cell_index[1]
 
         # Calculate phi gradient on the horizontal plane
         phi_gradient_xy_star : vec_xy   = calc_phi_gradient_approx(phi_star_matrix,
@@ -1584,7 +1597,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             fire_behavior_star.dphi_dt = dphi_dt_star * dphi_dt_star_correction
 
         # Calculate the new phi value at stop_time as phi_next
-        fb: SpreadBehavior = cy.cast(SpreadBehavior, fire_behavior_dict[cell_index])
+        fb: SpreadBehavior = _get_fire_behavior(fire_behavior_dict, cell_index)
         dphi_dt_estimate1: cy.float = fb.dphi_dt
         dphi_dt_estimate2: cy.float = fire_behavior_star.dphi_dt
         # FIXME * 0.5
@@ -1599,23 +1612,23 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             # Record fire behavior values in the output_matrices for cells that are burned in this timestep
             # NOTE: This records the fire behavior values at start_time and not at the time of arrival.
             if phi > 0.0 and phi_next <= 0.0:
-                fire_behavior: dict = { # FIXME
-                    "dphi_dt": fb.dphi_dt,
-                    "fire_type": fb.fire_type,
-                    "spread_rate": fb.spread_rate,
-                    "spread_direction": np.asarray(fb.spread_direction),
-                    "fireline_intensity": fb.fireline_intensity,
-                    "flame_length": fb.flame_length
-                }
-                fire_type_matrix[y,x]          = fire_behavior["fire_type"]
-                spread_rate_matrix[y,x]        = fire_behavior["spread_rate"]
-                spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fire_behavior["spread_direction"])
-                fireline_intensity_matrix[y,x] = fire_behavior["fireline_intensity"]
-                flame_length_matrix[y,x]       = fire_behavior["flame_length"]
+                fire_type_matrix[y,x]          = fb.fire_type
+                spread_rate_matrix[y,x]        = fb.spread_rate
+                spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fb.spread_direction)
+                fireline_intensity_matrix[y,x] = fb.fireline_intensity
+                flame_length_matrix[y,x]       = fb.flame_length
                 time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
+                    fire_behavior: dict = { # FIXME
+                        "dphi_dt": fb.dphi_dt,
+                        "fire_type": fb.fire_type,
+                        "spread_rate": fb.spread_rate,
+                        "spread_direction": np.asarray(fb.spread_direction),
+                        "fireline_intensity": fb.fireline_intensity,
+                        "flame_length": fb.flame_length
+                    }
                     t_cast                  : pyidx    = int(time_of_arrival_matrix[y,x] // band_duration)
                     space_time_coordinate              = (t_cast, y, x)
                     slope                   : cy.float = space_time_cubes["slope"].get(t_cast, y, x)

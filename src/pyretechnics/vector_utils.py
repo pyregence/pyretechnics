@@ -129,10 +129,9 @@ def to_horizontal_plane(vector_3d: cy.double[:]) -> cy.double[:]:
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def spread_direction_vector_to_angle(vector_3d: cy.double[:]) -> cy.float:
-    vector_2d: cy.double[:] = to_horizontal_plane(vector_3d)
-    x        : cy.double    = vector_2d[0]
-    y        : cy.double    = vector_2d[1]
+def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
+    x        : cy.double    = vector_3d[0]
+    y        : cy.double    = vector_3d[1]
     az_coords: vec_xy       = cartesian_to_azimuthal(x, y)
     azimuth  : cy.float     = az_coords[1]
     return azimuth

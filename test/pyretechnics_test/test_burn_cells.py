@@ -113,7 +113,7 @@ def test_burn_all_cells_as_head_fire():
             results                            = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
             max_fire_type_matrix[y,x]          = fire_type_codes[results["fire_type"]]
             max_spread_rate_matrix[y,x]        = results["spread_rate"]
-            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(results["spread_direction"])
+            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(results["spread_direction"]) # FIXME maybe broken by change to numpy array.
             max_fireline_intensity_matrix[y,x] = results["fireline_intensity"]
             max_flame_length_matrix[y,x]       = results["flame_length"]
 
