@@ -1369,7 +1369,7 @@ class TrackedCellBehavior:
 
 
 @cy.inline
-@cy.exceptval(tracked=False)
+@cy.exceptval(check=False)
 @cy.cfunc
 def new_TrackedCellBehavior(
         spread_behavior: SpreadBehavior,
@@ -1381,24 +1381,6 @@ def new_TrackedCellBehavior(
     t.x = x
     t.spread_behavior = spread_behavior
     return t
-
-
-
-@cy.profile(True)
-@cy.cfunc
-def _save_fire_behavior(fire_behavior_dict: dict, cell_index: object, fb: SpreadBehavior):
-    y: pyidx = cell_index[0]
-    x: pyidx = cell_index[1]
-    t: TrackedCellBehavior = new_TrackedCellBehavior(y, x, fb)
-    fire_behavior_dict[cell_index] = t
-
-
-@cy.profile(True)
-@cy.cfunc
-def _get_fire_behavior(fire_behavior_dict: dict, cell_index: object) -> SpreadBehavior:
-    t: TrackedCellBehavior = fire_behavior_dict[cell_index] 
-    fb: SpreadBehavior = t.spread_behavior
-    return fb
 
 
 @cy.profile(True)
@@ -1495,7 +1477,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     max_spread_rate_y: cy.float = 0.0
 
     # Create an empty dictionary to store intermediate fire behavior values per cell
-    fire_behavior_dict: dict = {}
+    fire_behavior_list: list = [] # INTRO a list recording the SpreadBehavior and tracked cells after the first pass.
 
     # Compute fire behavior values at start_time and identify the max spread rates in the x and y dimensions
     cell_index           : coord_yx
@@ -1551,7 +1533,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             fb.dphi_dt = dphi_dt * dphi_dt_correction
 
         # Store fire behavior values for later use
-        _save_fire_behavior(fire_behavior_dict, cell_index, fb)
+        fire_behavior_list.append(new_TrackedCellBehavior(fb, y, x))
 
     # Calculate timestep using the CFL condition
     dt: cy.float
@@ -1571,22 +1553,22 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     stop_time: cy.float = start_time + dt
 
     # Update the tracked cell values in phi_star_matrix
-    for cell_index in tracked_cells:
-        y = cell_index[0]
-        x = cell_index[1]
-        fb: SpreadBehavior =  _get_fire_behavior(fire_behavior_dict, cell_index)
+    for t in fire_behavior_list:
+        tcb: TrackedCellBehavior = t
+        fb: SpreadBehavior = tcb.spread_behavior
         dphi_dt = fb.dphi_dt
         if dphi_dt != 0.0:
-            phi_star_matrix[y,x] += dphi_dt * dt
+            phi_star_matrix[tcb.y,tcb.x] += dphi_dt * dt
 
     # Compute fire behavior values at stop_time and update the output_matrices
     ignition_time: float
     ignited_cells: set
     t1           : pyidx = int(stop_time // band_duration)
-    for cell_index in tracked_cells:
+    for t in fire_behavior_list:
+        tcb: TrackedCellBehavior = t
         # Unpack cell_index
-        y: pyidx = cell_index[0]
-        x: pyidx = cell_index[1]
+        y: pyidx = tcb.y
+        x: pyidx = tcb.x
 
         # Calculate phi gradient on the horizontal plane
         phi_gradient_xy_star : vec_xy   = calc_phi_gradient_approx(phi_star_matrix,
@@ -1624,7 +1606,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             fire_behavior_star.dphi_dt = dphi_dt_star * dphi_dt_star_correction
 
         # Calculate the new phi value at stop_time as phi_next
-        fb: SpreadBehavior = _get_fire_behavior(fire_behavior_dict, cell_index)
+        fb: SpreadBehavior = tcb.spread_behavior
         dphi_dt_estimate1: cy.float = fb.dphi_dt
         dphi_dt_estimate2: cy.float = fire_behavior_star.dphi_dt
         # FIXME * 0.5
@@ -1696,9 +1678,10 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
 
     # Save the new phi_matrix values in phi_star_matrix
-    for cell_index in tracked_cells:
-        y = cell_index[0]
-        x = cell_index[1]
+    for t in fire_behavior_list:
+        tcb: TrackedCellBehavior = t
+        y = tcb.y
+        x = tcb.x
         phi_star_matrix[y,x] = phi_matrix[y,x]
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
