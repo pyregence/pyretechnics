@@ -1361,16 +1361,43 @@ fire_type_codes = {
 }
 
 
+@cy.cclass
+class TrackedCellBehavior:
+    spread_behavior: SpreadBehavior
+    y: pyidx
+    x: pyidx
+
+
+@cy.inline
+@cy.exceptval(tracked=False)
+@cy.cfunc
+def new_TrackedCellBehavior(
+        spread_behavior: SpreadBehavior,
+        y: pyidx,
+        x: pyidx
+        ) -> TrackedCellBehavior:
+    t: TrackedCellBehavior = TrackedCellBehavior()
+    t.y = y
+    t.x = x
+    t.spread_behavior = spread_behavior
+    return t
+
+
+
 @cy.profile(True)
 @cy.cfunc
 def _save_fire_behavior(fire_behavior_dict: dict, cell_index: object, fb: SpreadBehavior):
-    fire_behavior_dict[cell_index] = fb
+    y: pyidx = cell_index[0]
+    x: pyidx = cell_index[1]
+    t: TrackedCellBehavior = new_TrackedCellBehavior(y, x, fb)
+    fire_behavior_dict[cell_index] = t
 
 
 @cy.profile(True)
 @cy.cfunc
 def _get_fire_behavior(fire_behavior_dict: dict, cell_index: object) -> SpreadBehavior:
-    fb: SpreadBehavior = fire_behavior_dict[cell_index] 
+    t: TrackedCellBehavior = fire_behavior_dict[cell_index] 
+    fb: SpreadBehavior = t.spread_behavior
     return fb
 
 
