@@ -156,11 +156,15 @@ class SpaceTimeCube(ISpaceTimeCube):
 
     @cy.profile(False)
     @cy.cdivision(True)
+    #@cy.nogil
+    @cy.exceptval(check=False)
+    @cy.boundscheck(False)
     def get_float(self, t, y, x):
-        arr: cy.float[:, :, ::] = self.data # FIXME can't rely on that
-        return arr[t // self.t_repetitions,
-                   y // self.y_repetitions,
-                   x // self.x_repetitions]
+        return self.data[
+            t // self.t_repetitions,
+            y // self.y_repetitions,
+            x // self.x_repetitions
+            ]
 
 
     def getTimeSeries(self, t_range, y, x):
