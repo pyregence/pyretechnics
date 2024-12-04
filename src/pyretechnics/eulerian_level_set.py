@@ -1250,6 +1250,182 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
                 frontier_cells.add((y, x))
     return frontier_cells
 
+@cy.cclass
+class CellsCountSegment:
+    """
+    For inner use of TrackedCellsCountingMap.
+
+    A CellsCountSegment maps each (y, x) for x from x0 (included) to x0+16 (excluded)
+    to a positive integer.
+    """
+
+    y: cy.int
+    x0: cy.int
+    counts: cy.ushort[16]
+
+    @cy.ccall
+    def is_pos_at(self, k: pyidx) -> object:
+        return (self.counts[k] > 0)
+    
+    @cy.ccall
+    def is_empty(self) -> cy.bint:
+        for k in range(16):
+            if self.counts[k] > 0:
+                return False
+        return True
+
+
+@cy.ccall
+def make_CellsCountSegment(y: cy.int, x0: cy.int) -> CellsCountSegment:
+    """
+    Creates an empty CellsCountSegment (with all counts to zero).
+    """
+    ret: CellsCountSegment = CellsCountSegment()
+    ret.y = y
+    ret.x0 = x0
+    return ret
+
+
+@cy.cclass
+class TrackedCellsCountingMap: # FIXME move to own file once optimized.
+    """
+    A custom class for keeping track of cells in the narrow band efficiently.
+    Logically, this class acts a sorted dict from (y, x) -> n,
+    in which n is the number of frontier cells which buffer contains (y, x).
+    """
+    # INVARIANT for all (y, x) in the keys, ys_offset <= y < ys_offset + len(ys_list)
+    ys_offset: cy.int
+    ys_list: list # ys_list[i] logically represents the row for y := ys_offset + i.
+    # INVARIANT ys_list[i] is either None or a non-empty SortedDict s;
+    # ys_list[i] is None iff the row is empty.
+    # INVARIANT the SortecDict s := ys_list[i] maps each (x // 16) value to a non-empty CellsCountSegment segm,
+    # i.e. one of the counts in segm.counts will be > 0.
+
+    _rows_count: cy.int # INVARIANT the count of y_idx for which ys_list[y_idx] is not None. Therefore the count of distinct y values with positive counts.
+
+    @cy.ccall
+    def _ensure_y(self, y: cy.int):
+        """
+        Ensures that index y is covered by ys_offset and ys_list.
+        """
+        if self.ys_list is None:
+            self.ys_offset = y
+            self.ys_list = [None] * 8
+        n: cy.int = len(self.ys_list)
+        while y < self.ys_offset: # Double the size, extending left
+            ys_list_new: list = [None] * (2*n)
+            ys_list_new[n:(2*n)] = self.ys_list
+            self.ys_offset -= n
+            n = 2*n
+            self.ys_list = ys_list_new
+        while y >= self.ys_offset + n: # Double the size, extending right
+            self.ys_list[n:(2*n)] = [None] * n
+            n = 2*n
+
+
+    @cy.ccall
+    def incr_y_segment(self, y: cy.int, x_start: cy.int, segm_length: cy.int):
+        self._ensure_y(y)
+        y_idx: object = y - self.ys_offset
+        s: sortc.SortedDict = self.ys_list[y_idx]
+        if s is None:
+            s = sortc.SortedDict()
+            self.ys_list[y_idx] = s
+            self._rows_count += 1
+        xk: cy.int = (x_start // 16) - 1
+        segm: object = None
+        i: cy.int
+        for i in range(segm_length):
+            if (x_start + i)//16 != xk:
+                xk = (x_start + i)//16
+                segm = s.get(xk)
+                if segm is None:
+                    segm = make_CellsCountSegment(y, xk*16)
+                    s[xk] = segm
+            segment: CellsCountSegment = segm
+            k: pyidx = (x_start + i) % 16
+            segment.counts[k] += 1
+
+    @cy.ccall
+    def decr_y_segment(self, y: cy.int, x_start: cy.int, segm_length: cy.int):
+        y_idx: object = y - self.ys_offset
+        s: object = self.ys_list[y_idx]
+        if s is None:
+            raise ValueError("Empty SortedDict")
+        xk: cy.int = (x_start // 16)
+        segm: cy.Optional[CellsCountSegment] = s.get(xk)
+        if segm is None:
+            raise ValueError("No Segment found!")
+        i: cy.int
+        for i in range(segm_length):
+            k: cy.int = (x_start + i) % 16
+            segment: CellsCountSegment = segm
+            segment.counts[k] -= 1
+            if segm.is_empty():
+                del s[xk]
+            if (x_start + i + 1)//16 != xk: # we're about to change segment
+                xk = (x_start + i + 1)//16
+                segm = s.get(xk)
+        if len(s) == 0:
+            self.ys_list[y_idx] = None
+            self._rows_count -= 1
+
+
+    def iterate_segments(self):
+        ys_list: list = self.ys_list
+        if ys_list is not None:
+            for s in ys_list:
+                if s is not None:
+                    for segment in s.values():
+                        segm: Optional[CellsCountSegment] = segment
+                        if segm is None:
+                            raise ValueError("None value!")
+                        yield segm
+
+    @cy.ccall
+    def is_empty(self) -> cy.bint:
+        return self._rows_count == 0
+
+
+    def iterate_pos_cells(self): # TODO OPTIM we might want to instead return a native TrackedCellsIterator type with a .next() -> coord_yx method.
+        for segm in self.iterate_segments():
+            segment: CellsCountSegment = segm 
+            for k in range(16):
+                if segment.is_pos_at(k):
+                    x = segment.x0 + k
+                    yield (segment.y, x)
+
+
+
+def iterate_tracked_cells(m: TrackedCellsCountingMap):
+    return m.iterate_pos_cells()
+
+
+@cy.ccall
+def empty_tracked_cells(m: TrackedCellsCountingMap) -> cy.bint:
+    return m.is_empty()
+
+
+@cy.ccall
+def incr_tracked_square(m: TrackedCellsCountingMap, y: cy.int, x: cy.int, buffer_width: cy.int):
+    width: cy.int = 2*buffer_width + 1
+    i: cy.int
+    for i in range(width):
+        y1: cy.int = y - buffer_width + i
+        m.incr_y_segment(y1, x - buffer_width, width)
+
+
+@cy.ccall
+def decr_tracked_square(m: TrackedCellsCountingMap, y: cy.int, x: cy.int, buffer_width: cy.int):
+    width: cy.int = 2*buffer_width + 1
+    i: cy.int
+    for i in range(width):
+        y1: cy.int = y - buffer_width + i
+        m.decr_y_segment(y1, x - buffer_width, width)
+
+
+
+
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_xy?
@@ -1260,7 +1436,7 @@ def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: ob
     TODO: Add docstring
     """
     frontier_cells: set = set()
-    for cell_index in tracked_cells.keys():
+    for cell_index in iterate_tracked_cells(tracked_cells):
         # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
         y      : pyidx = cell_index[0]
         x      : pyidx = cell_index[1]
@@ -1310,19 +1486,17 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     """
     TODO: Add docstring
     """
-    tracked_cells: object = sortc.SortedDict(cell_index_sort_key)
+    tracked_cells: object = TrackedCellsCountingMap() #sortc.SortedDict(cell_index_sort_key)
     cell         : tuple
-    buffer_cell  : tuple
     for cell in frontier_cells:
-        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
-            tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
+        incr_tracked_square(tracked_cells, cell[0], cell[1], buffer_width)
     return tracked_cells
 
 
 @cy.profile(True)
 @cy.ccall
 def update_tracked_cells(tracked_cells: object, frontier_cells_old: set, frontier_cells_new: set,
-                         buffer_width: pyidx, rows: pyidx, cols: pyidx) -> object:
+                         buffer_width: pyidx, _rows: pyidx, _cols: pyidx) -> object:
     """
     TODO: Add docstring
     """
@@ -1330,17 +1504,12 @@ def update_tracked_cells(tracked_cells: object, frontier_cells_old: set, frontie
     frontier_cells_added  : set = frontier_cells_new.difference(frontier_cells_old)
     frontier_cells_dropped: set = frontier_cells_old.difference(frontier_cells_new)
     cell                  : tuple
-    buffer_cell           : tuple
     # Increment reference counters for all cells within buffer_width of the added frontier cells
     for cell in frontier_cells_added:
-        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
-            tracked_cells[buffer_cell] = tracked_cells.get(buffer_cell, 0) + 1
+        incr_tracked_square(tracked_cells, cell[0], cell[1], buffer_width)
     # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
     for cell in frontier_cells_dropped:
-        for buffer_cell in project_buffer(cell, buffer_width, rows, cols):
-            tracked_cells[buffer_cell] -= 1
-            if tracked_cells[buffer_cell] == 0:
-                tracked_cells.pop(buffer_cell)
+        decr_tracked_square(tracked_cells, cell[0], cell[1], buffer_width)
     # Return updated tracked cells
     return tracked_cells
 # phi-field-perimeter-tracking ends here
@@ -1352,6 +1521,7 @@ fire_type_codes = {
     "passive_crown" : 2,
     "active_crown"  : 3,
 }
+
 
 
 @cy.cclass
@@ -1415,6 +1585,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     - dt is the timestep in minutes.
     - start_time is the start time in minutes.
     """
+
     # Primitive defaults
     if use_wind_limit is None:
         use_wind_limit = True
@@ -1479,7 +1650,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     space_time_coordinate: coord_tyx
     dphi_dt              : cy.float
     t0                   : pyidx = int(start_time // band_duration)
-    for cell_index in tracked_cells:
+    for cell_index in tracked_cells.iterate_pos_cells():
         # Unpack cell_index
         y = cell_index[0]
         x = cell_index[1]
@@ -1894,7 +2065,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
     simulation_time = start_time
-    while(simulation_time < max_stop_time and (len(tracked_cells) > 0 or len(spot_ignitions) > 0)):
+    while(simulation_time < max_stop_time and (not empty_tracked_cells(tracked_cells) or len(spot_ignitions) > 0)):
         # Compute max_timestep based on the remaining time in the temporal band and simulation
         remaining_time_in_band       = band_duration - simulation_time % band_duration
         remaining_time_in_simulation = max_stop_time - simulation_time
@@ -1920,7 +2091,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     # Return the final simulation results
     return {**{
         "stop_time"      : simulation_time,
-        "stop_condition" : "max duration reached" if len(tracked_cells) > 0 else "no burnable cells",
+        "stop_condition" : "max duration reached" if not empty_tracked_cells(tracked_cells) else "no burnable cells",
         "output_matrices": output_matrices,
     }, **({ # FIXME restore | operator when done testing on older Python.
         "spot_ignitions"  : spot_ignitions,
