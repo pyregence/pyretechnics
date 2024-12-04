@@ -33,7 +33,7 @@ import numpy as np
 import pyretechnics.fuel_models as fm
 import pyretechnics.spot_fire as spot
 import pyretechnics.surface_fire1 as sf0
-    
+import sortedcontainers as sortc    
 
 PI = cy.declare(cy.double, 3.14159265358979323846)
 
@@ -934,7 +934,7 @@ def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellIn
     # Topography, Fuel Model, and Vegetation
     slope               : cy.float = lookup_space_time_cube_float32(inputs.slope, tyx)               # rise/run
     aspect              : cy.float = lookup_space_time_cube_float32(inputs.aspect, tyx)              # degrees clockwise from North
-    fuel_model_number   : cy.float = inputs.fuel_model.get(t,y,x)          # integer index in fm.fuel_model_table
+    fuel_model_number   : cy.float = lookup_space_time_cube_float32(inputs.fuel_model, tyx)          # integer index in fm.fuel_model_table
     canopy_cover        : cy.float = lookup_space_time_cube_float32(inputs.canopy_cover, tyx)        # 0-1
     canopy_height       : cy.float = lookup_space_time_cube_float32(inputs.canopy_height, tyx)       # m
     canopy_base_height  : cy.float = lookup_space_time_cube_float32(inputs.canopy_base_height, tyx)  # m
@@ -951,11 +951,11 @@ def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellIn
     foliar_moisture               : cy.float = lookup_space_time_cube_float32(inputs.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment    : cy.float = (inputs.fuel_spread_adjustment.get(t,y,x)
+    fuel_spread_adjustment    : cy.float = (lookup_space_time_cube_float32(inputs.fuel_spread_adjustment, tyx) 
                                  #if "fuel_spread_adjustment" in space_time_cubes
                                  if inputs.fuel_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment : cy.float = (inputs.weather_spread_adjustment.get(t,y,x)
+    weather_spread_adjustment : cy.float = (lookup_space_time_cube_float32(inputs.weather_spread_adjustment, tyx) 
                                  #if "weather_spread_adjustment" in space_time_cubes
                                  if inputs.weather_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
@@ -1266,7 +1266,7 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
 # TODO: Should we store each frontier_cells entry as a coord_xy?
 @cy.profile(True)
 @cy.ccall
-def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: dict, rows: pyidx, cols: pyidx) -> set:
+def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: object, rows: pyidx, cols: pyidx) -> set:
     """
     TODO: Add docstring
     """
@@ -1311,13 +1311,18 @@ def project_buffer(cell: coord_yx, buffer_width: pyidx, rows: pyidx, cols: pyidx
     return buffer_cells
 
 
+def cell_index_sort_key(cell_index):
+    yx = cell_index
+    return (int(yx[0]) << 32) + int(yx[1])
+
+
 @cy.profile(True)
 @cy.ccall
-def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
+def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> object:
     """
     TODO: Add docstring
     """
-    tracked_cells: dict = {}
+    tracked_cells: object = sortc.SortedDict(cell_index_sort_key)
     cell         : tuple
     buffer_cell  : tuple
     for cell in frontier_cells:
@@ -1328,8 +1333,8 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
 
 @cy.profile(True)
 @cy.ccall
-def update_tracked_cells(tracked_cells: dict, frontier_cells_old: set, frontier_cells_new: set,
-                         buffer_width: pyidx, rows: pyidx, cols: pyidx) -> dict:
+def update_tracked_cells(tracked_cells: object, frontier_cells_old: set, frontier_cells_new: set,
+                         buffer_width: pyidx, rows: pyidx, cols: pyidx) -> object:
     """
     TODO: Add docstring
     """
@@ -1406,7 +1411,7 @@ def new_TrackedCellBehavior(
 # TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
 # TODO: cimport numpy
 @cy.ccall
-def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: dict,
+def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: object,
                              cube_resolution: tuple, start_time: cy.float, max_timestep: cy.float,
                              max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,
                              surface_lw_ratio_model: str|None = "rothermel", crown_max_lw_ratio: float|None = None,
@@ -1686,8 +1691,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
     frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, tracked_cells, rows, cols)
-    tracked_cells_new : dict = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
-                                                    buffer_width, rows, cols)
+    tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new,
+                                                      buffer_width, rows, cols)
+
 
     # Return the updated world state
     return {
