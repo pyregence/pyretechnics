@@ -109,4 +109,7 @@ runtime_per_burned_cell = 1000.0 * simulation_runtime / num_burned_cells # ms/ce
 print("Acres Burned: " + str(acres_burned))
 print("Total Runtime: " + str(simulation_runtime) + " seconds")
 print("Runtime per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
+Mha_per_cell = 0.09e-6
+ms_per_hr = 3.6e6
+print(f"Areal throughput: {(ms_per_hr*Mha_per_cell/runtime_per_burned_cell):.2f} Mha/(CPU.hr)")
 # run-spread-fire-with-phi-field ends here
