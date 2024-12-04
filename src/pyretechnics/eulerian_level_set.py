@@ -1387,7 +1387,7 @@ class TrackedCellsCountingMap: # FIXME move to own file once optimized.
         return self._rows_count == 0
 
 
-    def iterate_pos_cells(self): # TODO OPTIM we might want to instead return a native TrackedCellsIterator type with a .next() -> coord_yx method.
+    def iterate_pos_cells(self):
         for segm in self.iterate_segments():
             segment: CellsCountSegment = segm 
             for k in range(16):
@@ -1396,9 +1396,73 @@ class TrackedCellsCountingMap: # FIXME move to own file once optimized.
                     yield (segment.y, x)
 
 
+@cy.ccall
+@cy.exceptval(-1)
+def _find_first_k(segm: CellsCountSegment) -> cy.int:
+    k: cy.int
+    for k in range(16):
+        if segm.is_pos_at(k):
+            return k
+    raise ValueError("Segment is empty!")
 
-def iterate_tracked_cells(m: TrackedCellsCountingMap):
-    return m.iterate_pos_cells()
+
+@cy.cclass
+class TrackedCellsIterator:
+    segm_iter: object # A Python Iterator of CellsCountSegment. INVARIANT None iff iteration is exhausted.
+    current_segm: CellsCountSegment # INVARIANT never None
+    current_k: cy.int # INVARIANT points to the index for the next return cell.
+
+    # NOTE this implementation relies on the fact that a CellsCountSegment is never empty.
+    def __cinit__(self, segm_iter):
+        self.segm_iter = segm_iter
+        try:
+            self.current_segm = next(segm_iter)
+            self.current_k = _find_first_k(self.current_segm)
+        except StopIteration: # Only if the iterator started empty!
+            self.segm_iter = None
+            self.current_segm = make_CellsCountSegment(-1, -1)
+            self.current_k = 0
+
+
+    @cy.ccall
+    def _resolve_next(self) -> cy.bint:
+        # At the end of this, either segm_iter is None (exhausted),
+        # or current_segm and current_k point to the next cell.
+        # Returns whether iteration exhausted.
+        current_segm: CellsCountSegment = self.current_segm
+        k: cy.int = self.current_k + 1
+        while k < 16:
+            if current_segm.is_pos_at(k):
+                self.current_k = k
+                return False
+            k += 1
+        # We exhausted the segment, beginning the next one:
+        try:
+            self.current_segm = next(self.segm_iter)
+        except StopIteration:
+            self.segm_iter = None
+            return True
+        self.current_k = _find_first_k(self.current_segm)
+        return False
+        
+
+    @cy.ccall
+    def has_next(self) -> cy.bint:
+        return (self.segm_iter is not None)
+
+    @cy.ccall
+    def next_cell(self) -> coord_yx:
+        segm: CellsCountSegment = self.current_segm
+        y: pyidx = segm.y
+        x: pyidx = segm.x0 + self.current_k
+        ret: coord_yx = (y, x)
+        self._resolve_next()
+        return ret
+
+
+@cy.ccall
+def tracked_cells_iterator(m: TrackedCellsCountingMap) -> TrackedCellsIterator:
+    return TrackedCellsIterator(m.iterate_segments())
 
 
 @cy.ccall
@@ -1436,7 +1500,9 @@ def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: ob
     TODO: Add docstring
     """
     frontier_cells: set = set()
-    for cell_index in iterate_tracked_cells(tracked_cells):
+    tracked_cells_itr: TrackedCellsIterator = tracked_cells_iterator(tracked_cells)
+    while tracked_cells_itr.has_next():
+        cell_index: coord_yx = tracked_cells_itr.next_cell()
         # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
         y      : pyidx = cell_index[0]
         x      : pyidx = cell_index[1]
@@ -1650,7 +1716,9 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     space_time_coordinate: coord_tyx
     dphi_dt              : cy.float
     t0                   : pyidx = int(start_time // band_duration)
-    for cell_index in tracked_cells.iterate_pos_cells():
+    tracked_cells_itr: TrackedCellsIterator = tracked_cells_iterator(tracked_cells)
+    while tracked_cells_itr.has_next():
+        cell_index = tracked_cells_itr.next_cell()
         # Unpack cell_index
         y = cell_index[0]
         x = cell_index[1]
