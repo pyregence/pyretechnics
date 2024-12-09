@@ -5,6 +5,20 @@ cpdef float calc_flame_length(float fireline_intensity)
 
 cpdef float calc_midflame_wind_speed(float wind_speed_20ft, float fuel_bed_depth, float canopy_height, float canopy_cover)
 
+
+cdef struct ProjectedVectors:
+    vec_xyz wind_vector_3d
+    vec_xyz slope_vector_3d
+
+
+cpdef ProjectedVectors project_wind_and_slope_vectors_3d(
+        float wind_speed, 
+        float downwind_direction, 
+        float slope,
+        float upslope_direction
+    )
+
+
 cdef struct FireBehaviorMin:
     float base_spread_rate
     float base_fireline_intensity
