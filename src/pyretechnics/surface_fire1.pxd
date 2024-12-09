@@ -46,3 +46,4 @@ cpdef FireBehaviorMax calc_surface_fire_behavior_max(
     )
 
 
+cpdef float calc_areal_heat_output(float spread_rate, float fireline_intensity)

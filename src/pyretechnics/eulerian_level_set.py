@@ -11,6 +11,8 @@ if cython.compiled:
     import cython.cimports.pyretechnics.narrow_band_tracking as nbt
     import cython.cimports.pyretechnics.surface_fire1 as sf
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
+    from cython.cimports.pyretechnics.random import BufferedRandGen
+    import cython.cimports.pyretechnics.spot_fire as spot
     from cython.cimports.pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
@@ -22,7 +24,9 @@ else:
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
     import pyretechnics.crown_fire as cf
     from pyretechnics.space_time_cube import ISpaceTimeCube
+    import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
+    from pyretechnics.random import BufferedRandGen
     import pyretechnics.surface_fire1 as sf
     from pyretechnics.vector_utils import \
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
@@ -33,7 +37,6 @@ import cython as cy
 # TODO: cimport all of the modules below
 import numpy as np
 import pyretechnics.fuel_models as fm
-import pyretechnics.spot_fire as spot
 import pyretechnics.surface_fire1 as sf0
 import sortedcontainers as sortc    
 
@@ -1371,7 +1374,6 @@ def new_TrackedCellBehavior(
 # TODO: Perhaps cell_index should be a Python tuple rather than a C tuple?
 # TODO: Replace fire_type_codes with as some kind of C type?
 # TODO: Convert SpaceTimeCube to a @cclass with methods that take pyidx values
-# TODO: Convert spot.expected_firebrand_production to a @cfunc
 # TODO: Convert spot.spread_firebrands to a @cfunc
 # TODO: Replace set.union with list concatenation? (Should ignited_cells be a list for speed?)
 # TODO: Maybe ignition_time should be a Python float?
@@ -1387,7 +1389,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                              max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,
                              surface_lw_ratio_model: str|None = "rothermel", crown_max_lw_ratio: float|None = None,
                              buffer_width: int|None = 3, spot_ignitions: dict|None = {}, spot_config: dict|None = None,
-                             random_generator: np.random.Generator|None = None) -> dict:
+                             random_generator: object = None) -> dict:
     """
     TODO: Add docstring
     NOTE:
@@ -1543,6 +1545,8 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     ignition_time: float
     ignited_cells: set
     t1           : pyidx = int(stop_time // band_duration)
+
+    cell_horizontal_area_m2: cy.float = cube_resolution[1] * cube_resolution[2]
     for t in fire_behavior_list:
         tcb: TrackedCellBehavior = t
         # Unpack cell_index
@@ -1609,23 +1613,15 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
-                    fire_behavior: dict = { # FIXME
-                        "dphi_dt": fb.dphi_dt,
-                        "fire_type": fb.fire_type,
-                        "spread_rate": fb.spread_rate,
-                        "spread_direction": np.asarray(fb.spread_direction),
-                        "fireline_intensity": fb.fireline_intensity,
-                        "flame_length": fb.flame_length
-                    }
                     t_cast                  : pyidx    = int(time_of_arrival_matrix[y,x] // band_duration)
                     space_time_coordinate              = (t_cast, y, x)
                     slope                   : cy.float = space_time_cubes["slope"].get(t_cast, y, x)
                     aspect                  : cy.float = space_time_cubes["aspect"].get(t_cast, y, x)
                     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
-                    firebrands_per_unit_heat: float    = spot_config["firebrands_per_unit_heat"]
-                    expected_firebrand_count: float    = spot.expected_firebrand_production(fire_behavior,
+                    firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
+                    expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb,
                                                                                             elevation_gradient,
-                                                                                            cube_resolution,
+                                                                                            cell_horizontal_area_m2,
                                                                                             firebrands_per_unit_heat)
                     new_ignitions: tuple[float, set]|None = spot.spread_firebrands(space_time_cubes,
                                                                                    output_matrices,
@@ -1653,7 +1649,7 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                 if phi_matrix[y,x] > 0.0:
                     phi_matrix[y,x]             = -1.0
                     time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
-                    tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0)
+                    #tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0) # FIXME not sure why this was useful, since the cell will get tracked as a result of updating phi_matrix?
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
 
     # Save the new phi_matrix values in phi_star_matrix
@@ -1785,7 +1781,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     output_matrices["phi_star"] = np.copy(phi_matrix)
 
     # Create a numpy.random.Generator object to produce random samples if spot_config is provided
-    random_generator = np.random.default_rng(seed=spot_config["random_seed"]) if spot_config else None
+    random_generator = BufferedRandGen(np.random.default_rng(seed=spot_config["random_seed"])) if spot_config else None
 
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.

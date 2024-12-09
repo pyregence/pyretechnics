@@ -1,9 +1,32 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
-from math import sqrt
-import pyretechnics.surface_fire as sf
+import cython
+if cython.compiled:
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.cy_types as py_types
+    from cython.cimports.pyretechnics.random import BufferedRandGen
+    import cython.cimports.pyretechnics.surface_fire1 as sf
+    from cython.cimports.pyretechnics.math import exp, sqrt, log
+else:
+    import pyretechnics.conversion as conv
+    import pyretechnics.py_types as py_types
+    from pyretechnics.random import BufferedRandGen
+    import pyretechnics.surface_fire1 as sf
+    from math import exp, sqrt, log
+import math
+import numpy as np
+import cython as cy
 
 
-def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolution, firebrands_per_unit_heat=1e-6):
+
+
+@cy.ccall
+@cy.exceptval(-1)
+def expct_firebrand_production(
+        fire_behavior: py_types.SpreadBehavior,
+        elevation_gradient: py_types.vec_xy, 
+        cell_horizontal_area_m2: cy.float,
+        firebrands_per_unit_heat: cy.float=1e-6
+        ) -> cy.float:
     """
     Return the expected number of firebrands produced by an entire cell when it burns given:
     - fire_behavior            :: dictionary of surface or crown fire behavior values
@@ -21,33 +44,31 @@ def expected_firebrand_production(fire_behavior, elevation_gradient, cube_resolu
       - cell_width                :: meters
     - firebrands_per_unit_heat :: firebrands/kJ
     """
-    if fire_behavior["spread_rate"] == 0.0:
+    if fire_behavior.spread_rate == 0.0:
         return 0.0
     else:
         #================================================================================================
         # Calculate the heat output per unit area
         #================================================================================================
 
-        spread_rate          = fire_behavior["spread_rate"]                               # m/min
-        fireline_intensity   = fire_behavior["fireline_intensity"]                        # kW/m
-        heat_output_per_area = sf.calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
+        spread_rate: cy.float          = fire_behavior.spread_rate                               # m/min
+        fireline_intensity: cy.float   = fire_behavior.fireline_intensity                        # kW/m
+        heat_output_per_area: cy.float = sf.calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
 
         #================================================================================================
         # Calculate the slope-adjusted cell area
         #================================================================================================
 
         (dz_dx, dz_dy) = elevation_gradient                      # (rise/run, rise/run)
-        slope_factor   = sqrt(1.0 + dz_dx ** 2.0 + dz_dy ** 2.0) # unitless
-        cell_height    = cube_resolution[1]                      # meters
-        cell_width     = cube_resolution[2]                      # meters
-        cell_area      = cell_height * cell_width * slope_factor # m^2
+        slope_factor: cy.float   = sqrt(1.0 + (dz_dx * dz_dx) + (dz_dy * dz_dy)) # unitless
+        cell_area: cy.float      = cell_horizontal_area_m2 * slope_factor # m^2
 
         #================================================================================================
         # Calculate the expected number of firebrands produced in this cell
         #================================================================================================
 
-        cell_heat_output = heat_output_per_area * cell_area            # kJ
-        firebrand_count  = firebrands_per_unit_heat * cell_heat_output # number of firebrands
+        cell_heat_output: cy.float = heat_output_per_area * cell_area            # kJ
+        firebrand_count: cy.float  = firebrands_per_unit_heat * cell_heat_output # number of firebrands
         return firebrand_count
 # expected-firebrand-production ends here
 # [[file:../../org/pyretechnics.org::convert-deltas][convert-deltas]]
@@ -71,14 +92,16 @@ def delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y):
     return delta_x * wdir_y + delta_y * wdir_perp_y
 
 
-def distance_to_n_cells(distance, cell_size):
+@cy.ccall
+@cy.inline
+@cy.cdivision(True)
+def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.float:
     """
     Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
     """
     return round(distance / cell_size)
 # convert-deltas ends here
 # [[file:../../org/pyretechnics.org::resolve-spotting-lognormal-elmfire][resolve-spotting-lognormal-elmfire]]
-from math import log, sqrt
 
 
 def resolve_exp_delta_x(spot_config, fireline_intensity, wind_speed_20ft):
@@ -132,22 +155,21 @@ def resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft):
     }
 # resolve-spotting-lognormal-elmfire ends here
 # [[file:../../org/pyretechnics.org::sardoy-firebrand-dispersal][sardoy-firebrand-dispersal]]
-from math import exp, sqrt, log
-import pyretechnics.conversion as conv
 
-
-def sample_normal(random_generator, mu, sd):
+@cy.ccall
+def sample_normal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
     """
     Returns sample from normal/gaussian distribution given mu and sd.
     """
-    return random_generator.normal(mu, sd)
+    return mu + sd * (rng.next_normal())
 
 
-def sample_lognormal(random_generator, mu, sd):
+@cy.ccall
+def sample_lognormal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
     """
     Returns sample from log-normal distribution given mu and sd.
     """
-    return random_generator.lognormal(mu, sd)
+    return exp(sample_normal(rng, mu, sd))
 
 
 # FIXME: unused
@@ -220,7 +242,6 @@ def sample_number_of_firebrands(random_generator, expected_firebrand_count):
     return sample_poisson(random_generator, expected_firebrand_count)
 # sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
-from math import exp
 
 
 def firebrand_flight_survival_probability(spotting_distance, decay_distance):
@@ -270,8 +291,6 @@ def schroeder_ignition_probability(temperature, fine_fuel_moisture):
     return min(P_Ignition, 1.0)
 # firebrand-ignition-probability ends here
 # [[file:../../org/pyretechnics.org::firebrands-time-of-ignition][firebrands-time-of-ignition]]
-from math import sqrt
-import pyretechnics.conversion as conv
 
 
 def albini_firebrand_maximum_height(firebrand_diameter):
@@ -318,18 +337,19 @@ def spot_ignition_time(time_of_arrival, flame_length):
 # [[file:../../org/pyretechnics.org::spread-firebrands][spread-firebrands]]
 from math import sin, cos, hypot, radians
 import numpy as np
-import pyretechnics.conversion as conv
 import pyretechnics.fuel_models as fm
 
 
-def is_in_bounds(y, x, rows, cols):
+@cy.ccall
+@cy.inline
+def is_in_bounds(y: cy.int, x: cy.int, rows: py_types.pyidx, cols: py_types.pyidx) -> cy.bint:
     """
     Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
     """
     return (y >= 0) and (x >= 0) and (y < rows) and (x < cols)
 
 
-def is_burnable_cell(fuel_model_cube, t, y, x):
+def is_burnable_cell(fuel_model_cube, t, y, x): # FIXME INSANELY slow
     """
     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
     """
@@ -338,22 +358,23 @@ def is_burnable_cell(fuel_model_cube, t, y, x):
     return fuel_model and fuel_model["burnable"]
 
 
-def cast_firebrand(random_generator,
+@cy.ccall
+def cast_firebrand(rng: BufferedRandGen,
                    fuel_model_cube,
                    temperature_cube,
                    fuel_moisture_dead_1hr_cube,
-                   fire_type_matrix,
+                   fire_type_matrix: cy.uchar[:,:],
                    firebrand_count_matrix, # NOTE: May be None
-                   rows,
-                   cols,
-                   cell_height,
-                   cell_width,
-                   source_t,
-                   source_y,
-                   source_x,
-                   decay_distance,
-                   cos_wdir,
-                   sin_wdir,
+                   rows: py_types.pyidx,
+                   cols: py_types.pyidx,
+                   cell_height: cy.float,
+                   cell_width: cy.float,
+                   source_t: py_types.pyidx,
+                   source_y: py_types.pyidx,
+                   source_x: py_types.pyidx,
+                   decay_distance: cy.float,
+                   cos_wdir: cy.float,
+                   sin_wdir: cy.float,
                    sample_delta_y_fn,
                    sample_delta_x_fn):
     """
@@ -367,12 +388,13 @@ def cast_firebrand(random_generator,
     # Determine where the firebrand will land
     #=======================================================================================
 
-    delta_y  = sample_delta_y_fn(random_generator)                    # meters
-    delta_x  = sample_delta_x_fn(random_generator)                    # meters
-    grid_dy  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
-    grid_dx  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
-    target_y = source_y + distance_to_n_cells(grid_dy, cell_height)
-    target_x = source_x + distance_to_n_cells(grid_dx, cell_width)
+    delta_y: cy.float  = sample_delta_y_fn(rng)                    # meters
+    delta_x: cy.float  = sample_delta_x_fn(rng)                    # meters
+    grid_dy: cy.float  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
+    grid_dx: cy.float  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
+    # NOTE it would cause a bug to type the following as py_types.pyidx.
+    target_y: cy.int = source_y + cy.cast(cy.int, distance_to_n_cells(grid_dy, cell_height))
+    target_x: cy.int = source_x + cy.cast(cy.int, distance_to_n_cells(grid_dx, cell_width))
 
     #=======================================================================================
     # Determine whether the firebrand will start a fire or fizzle out
@@ -381,18 +403,19 @@ def cast_firebrand(random_generator,
     if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0:
         # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)
         if isinstance(firebrand_count_matrix, np.ndarray):
-            firebrand_count_matrix[target_y,target_x] += 1
+            firebrand_count_matrix[target_y,target_x] += 1 # FIXME remove this useless performance hog.
 
         # Calculate the probability that the firebrand survived its flight and landed while still burning
-        spotting_distance           = hypot(grid_dx, grid_dy) # meters
-        flight_survival_probability = firebrand_flight_survival_probability(spotting_distance, decay_distance)
+        spotting_distance: cy.float           = sqrt(grid_dx*grid_dx + grid_dy*grid_dy) # meters
+        flight_survival_probability: cy.float = firebrand_flight_survival_probability(spotting_distance, decay_distance)
 
         # Roll the dice
-        uniform_sample = random_generator.uniform(0.0, 1.0)
+        uniform_sample: cy.float = rng.next_uniform()
 
         if (uniform_sample <= flight_survival_probability
             and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
-            # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
+            # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability``
+            # FIXME USE .get_float()
             temperature          = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
             fine_fuel_moisture   = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
             ignition_probability = schroeder_ignition_probability(temperature, fine_fuel_moisture)
@@ -401,7 +424,7 @@ def cast_firebrand(random_generator,
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
 
-
+@cy.ccall
 def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
                       random_generator, expected_firebrand_count, spot_config):
     """
@@ -446,7 +469,8 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
     # Sample the number of firebrands to cast from the source cell
     #=======================================================================================
 
-    num_firebrands = sample_number_of_firebrands(random_generator, expected_firebrand_count)
+    rng: BufferedRandGen = random_generator
+    num_firebrands: py_types.pyidx = sample_number_of_firebrands(rng.numpy_rand, expected_firebrand_count)
 
     if num_firebrands > 0:
 
@@ -473,6 +497,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             decay_distance               = spot_config["decay_distance"]
             upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
             downwind_direction           = radians(conv.opposite_direction(upwind_direction))
+            # FIXME use native math funcs or get rid of trigonometry here.
             cos_wdir                     = cos(downwind_direction)
             sin_wdir                     = sin(downwind_direction)
             fireline_intensity           = output_matrices["fireline_intensity"][y,x]             # m
@@ -511,8 +536,11 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             #=======================================================================================
 
             if len(ignited_cells) > 0:
+                # FIXME it's inefficient and fragile to look these up here in output_matrices:
+                # calling code might totally want to call this function before writing to outputs.
+                # Accept these as inputs or compute them instead.
                 time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
-                flame_length    = output_matrices["flame_length"][y,x]              # meters
+                flame_length    = output_matrices["flame_length"][y,x]              # meters 
                 ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
 
                 return (ignition_time, ignited_cells)

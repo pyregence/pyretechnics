@@ -221,7 +221,7 @@ class TrackedCellsIterator:
     def __cinit__(self, segm_iter):
         self.segm_iter = segm_iter
         try:
-            self.current_segm = next(segm_iter) # OPTIM maybe we could make even this faster by iterating directly in NarrowBandTracker instead of relying on a Python iterator, effectively reimplementing iterate_segments() without yield.
+            self.current_segm = next(segm_iter) # OPTIM maybe we could make even this faster by iterating directly in NarrowBandTracker instead of relying on a Python iterator, effectively reimplementing iterate_segments() without yield. Basic testing suggests of 4x potential efficiency gain by getting rid of yield.
             self.current_k = _find_first_k(self.current_segm)
         except StopIteration: # Only if the iterator started empty!
             self.segm_iter = None
