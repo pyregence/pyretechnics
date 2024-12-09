@@ -425,8 +425,17 @@ def cast_firebrand(rng: BufferedRandGen,
                 return (target_y, target_x)
 
 @cy.ccall
-def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_time_coordinate,
-                      random_generator, expected_firebrand_count, spot_config):
+def spread_firebrands(
+        space_time_cubes,
+        fire_type_matrix: cy.uchar[:,:],
+        cube_resolution,
+        space_time_coordinate,
+        fireline_intensity: cy.float,
+        flame_length: cy.float,
+        time_of_arrival: cy.float,
+        random_generator, 
+        expected_firebrand_count,
+        spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -490,8 +499,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             fuel_model_cube              = space_time_cubes["fuel_model"]
             temperature_cube             = space_time_cubes["temperature"]
             fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
-            fire_type_matrix             = output_matrices["fire_type"]
-            firebrand_count_matrix       = output_matrices.get("firebrand_count")
+            firebrand_count_matrix       = None # FIXME
             (_, rows, cols)              = fuel_model_cube.shape
             (_, cell_height, cell_width) = cube_resolution
             decay_distance               = spot_config["decay_distance"]
@@ -500,7 +508,6 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             # FIXME use native math funcs or get rid of trigonometry here.
             cos_wdir                     = cos(downwind_direction)
             sin_wdir                     = sin(downwind_direction)
-            fireline_intensity           = output_matrices["fireline_intensity"][y,x]             # m
             wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
             wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
             sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
@@ -516,7 +523,7 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
                                                                 temperature_cube,
                                                                 fuel_moisture_dead_1hr_cube,
                                                                 fire_type_matrix,
-                                                                firebrand_count_matrix,
+                                                                firebrand_count_matrix, # FIXME clear
                                                                 rows,
                                                                 cols,
                                                                 cell_height,
@@ -536,12 +543,6 @@ def spread_firebrands(space_time_cubes, output_matrices, cube_resolution, space_
             #=======================================================================================
 
             if len(ignited_cells) > 0:
-                # FIXME it's inefficient and fragile to look these up here in output_matrices:
-                # calling code might totally want to call this function before writing to outputs.
-                # Accept these as inputs or compute them instead.
-                time_of_arrival = output_matrices["time_of_arrival"][y,x]           # minutes
-                flame_length    = output_matrices["flame_length"][y,x]              # meters 
                 ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
-
                 return (ignition_time, ignited_cells)
 # spread-firebrands ends here

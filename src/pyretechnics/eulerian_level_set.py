@@ -1601,12 +1601,13 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
             # Record fire behavior values in the output_matrices for cells that are burned in this timestep
             # NOTE: This records the fire behavior values at start_time and not at the time of arrival.
             if phi > 0.0 and phi_next <= 0.0:
+                toa: cy.float = start_time + dt * phi / (phi - phi_next)
                 fire_type_matrix[y,x]          = fb.fire_type
                 spread_rate_matrix[y,x]        = fb.spread_rate
                 spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fb.spread_direction)
                 fireline_intensity_matrix[y,x] = fb.fireline_intensity
                 flame_length_matrix[y,x]       = fb.flame_length
-                time_of_arrival_matrix[y,x]    = start_time + dt * phi / (phi - phi_next)
+                time_of_arrival_matrix[y,x]    = toa
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
@@ -1621,9 +1622,12 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                                                                                             cell_horizontal_area_m2,
                                                                                             firebrands_per_unit_heat)
                     new_ignitions: tuple[float, set]|None = spot.spread_firebrands(space_time_cubes,
-                                                                                   output_matrices,
+                                                                                   fire_type_matrix,
                                                                                    cube_resolution,
                                                                                    space_time_coordinate,
+                                                                                   fb.fireline_intensity,
+                                                                                   fb.flame_length,
+                                                                                   toa,
                                                                                    random_generator,
                                                                                    expected_firebrand_count,
                                                                                    spot_config)

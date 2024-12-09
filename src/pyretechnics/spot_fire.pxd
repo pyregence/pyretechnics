@@ -10,9 +10,12 @@ cpdef float expct_firebrand_production(
 
 cpdef object spread_firebrands(
     space_time_cubes, 
-    output_matrices,
+    unsigned char[:,:] fire_type_matrix,
     cube_resolution, 
     space_time_coordinate,
+    float fireline_intensity,
+    float flame_length,
+    float time_of_arrival,
     random_generator,
     expected_firebrand_count, 
     spot_config)
