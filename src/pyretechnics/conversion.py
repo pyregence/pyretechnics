@@ -357,7 +357,7 @@ def opposite_direction(theta: cy.float) -> cy.float:
 @cy.inline
 def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m: cy.float) -> cy.float:
     """Convert wind speed at 10m to wind speed at 20ft."""
-    return 0.87 * wind_speed_10m
+    return 0.87 * wind_speed_10m # FIXME only 2 significant digits??? Add more!
 
 
 @cy.ccall
@@ -365,5 +365,5 @@ def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m: cy.float) -> cy.float:
 @cy.cdivision(True)
 def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft: cy.float) -> cy.float:
     """Convert wind speed at 20ft to wind speed at 10m."""
-    return wind_speed_20ft / 0.87
+    return wind_speed_20ft / 0.87 # FIXME only 2 significant digits??? Add more!
 # units-conversion ends here

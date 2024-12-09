@@ -22,7 +22,7 @@ cpdef FireBehaviorMax calc_crown_fire_behavior_max(
         float upwind_direction,
         float slope, 
         float aspect, 
-        object crown_max_lw_ratio=?
+        float crown_max_lw_ratio=?
         )
 
 cpdef SpreadBehavior calc_combined_fire_behavior(

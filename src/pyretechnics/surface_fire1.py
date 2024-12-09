@@ -557,13 +557,12 @@ from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_3d, to_sl
 
 
 
- # FIXME export for crown_fire
 ProjectedVectors = cy.struct(
     wind_vector_3d = vec_xyz,
     slope_vector_3d = vec_xyz
 )
 
-@cy.cfunc
+@cy.ccall
 @cy.profile(False)
 def project_wind_and_slope_vectors_3d(
     wind_speed: cy.float, downwind_direction: cy.float, 
@@ -602,9 +601,6 @@ def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float
     return phi_E_3d
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
-from pyretechnics.conversion import m_min_to_mph
-
-
 @cy.ccall
 @cy.exceptval(-1)
 @cy.profile(False)
