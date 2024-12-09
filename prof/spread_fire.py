@@ -108,6 +108,26 @@ acres_burned            = num_burned_cells / 4.5                         # acres
 simulation_runtime      = runtime_stop - runtime_start                   # seconds
 runtime_per_burned_cell = 1000.0 * simulation_runtime / num_burned_cells # ms/cell
 
+
+ftype = output_matrices["fire_type"]
+
+def empirical_LoW(ftype):
+    """
+    Estimates the length/width ratio (elliptical shape) by computing the empirical covariance matrix of the burned coordinates,
+    and using its eigenvalues.
+    """
+    burned_yx = np.argwhere(ftype > 0)
+    c = np.cov(burned_yx.astype(float), rowvar=False)
+    eig = np.linalg.eig(c)
+    v1, v2 = eig.eigenvalues
+    return np.sqrt(v1 / v2)
+
+
+
+num_crowned = np.count_nonzero(ftype > 1)
+print(f"Crowning fraction: {num_crowned / num_burned_cells}")
+print(f"Empirical length/width ratio: {empirical_LoW(ftype)}")
+
 print("Acres Burned: " + str(acres_burned))
 print("Total Runtime: " + str(simulation_runtime) + " seconds")
 print("Runtime per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
