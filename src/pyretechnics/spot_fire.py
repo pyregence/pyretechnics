@@ -254,17 +254,6 @@ def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGe
 
 # sardoy-firebrand-dispersal ends here
 # [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
-@cy.ccall
-def sample_poisson(random_generator, mu: cy.float) -> py_types.pyidx:
-    """
-    Returns sample from poisson distribution given mu.
-    """
-    return random_generator.poisson(mu) # FIXME we can be faster than this.
-
-
-@cy.ccall
-def sample_number_of_firebrands(rng: BufferedRandGen, expected_firebrand_count: cy.float) -> py_types.pyidx:
-    return rng.next_poisson(expected_firebrand_count)
 # sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 
@@ -477,7 +466,7 @@ def spread_firebrands(
         flame_length: cy.float,
         time_of_arrival: cy.float,
         random_generator,
-        expected_firebrand_count: cy.float,
+        num_firebrands: py_types.pyidx,
         spot_config):
     """
     Given these inputs:
@@ -520,9 +509,6 @@ def spread_firebrands(
     #=======================================================================================
     # Sample the number of firebrands to cast from the source cell
     #=======================================================================================
-
-    rng: BufferedRandGen = random_generator
-    num_firebrands: py_types.pyidx = sample_number_of_firebrands(rng, expected_firebrand_count) # OPTIM make fast .next_poisson() method (using seq of exponential vars).
 
     if num_firebrands > 0:
 

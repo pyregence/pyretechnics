@@ -1,4 +1,4 @@
-from pyretechnics.cy_types cimport coord_yx, coord_tyx, vec_xy, vec_xyz, SpreadBehavior
+from pyretechnics.cy_types cimport pyidx, coord_yx, coord_tyx, vec_xy, vec_xyz, SpreadBehavior
 from pyretechnics.random cimport BufferedRandGen
 from pyretechnics.space_time_cube cimport ISpaceTimeCube
 
@@ -22,5 +22,5 @@ cpdef object spread_firebrands(
     float flame_length,
     float time_of_arrival,
     random_generator,
-    float expected_firebrand_count, 
+    pyidx num_firebrands, 
     spot_config)
