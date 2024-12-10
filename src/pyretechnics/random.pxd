@@ -9,6 +9,14 @@ cdef class BufferedRandGen:
     cdef pyidx normal_pos
     cdef float[:] normal_buf
 
+    cdef long[:] poisson16buf
+    cdef pyidx poisson16pos
+    cdef long[:] poisson1buf
+    cdef pyidx poisson1pos
+    cdef double[:] poisson_exp_buf
+    cdef pyidx poisson_exp_pos
+
     cpdef float next_uniform(self)
     cpdef float next_normal(self)
+    cpdef pyidx next_poisson(self, double M)
 
