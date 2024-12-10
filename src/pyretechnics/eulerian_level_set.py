@@ -1350,6 +1350,35 @@ def new_TrackedCellBehavior(
     t.spread_behavior = spread_behavior
     return t
 
+@cy.ccall
+def ignite_from_spotting(spot_ignitions, output_matrices, stop_time: cy.float) -> cy.void:
+    if len(spot_ignitions) > 0:
+        phi_matrix               : cy.float[:,:] = output_matrices["phi"]
+        time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
+        ignition_time: cy.float
+        for ignition_time in sorted(spot_ignitions): # FIXME use sortedcontainers
+            if ignition_time < stop_time:
+                ignited_cells = spot_ignitions.pop(ignition_time)
+                for cell_index in ignited_cells:
+                    y: pyidx = cell_index[0]
+                    x: pydix = cell_index[1]
+                    if phi_matrix[y,x] > 0.0: # Not burned yet
+                        phi_matrix[y,x]             = -1.0
+                        time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
+                        #tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0) # FIXME not sure why this was useful, since the cell will get tracked as a result of updating phi_matrix?
+                        # FIXME: I need to calculate and store the fire_behavior values for these cells
+
+@cy.ccall
+def reset_phi_star(
+        fire_behavior_list: list,
+        phi_star_matrix: cy.float[:,:],
+        phi_matrix: cy.float[:,:]
+    ) -> cy.void:
+    for t in fire_behavior_list:
+        tcb: TrackedCellBehavior = t
+        y = tcb.y
+        x = tcb.x
+        phi_star_matrix[y,x] = phi_matrix[y,x] 
 
 @cy.profile(True)
 @cy.cfunc
@@ -1650,24 +1679,12 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                             spot_ignitions[ignition_time] = ignited_cells
 
     # Update phi_matrix and time_of_arrival matrix for all cells that ignite a new spot fire before stop_time
-    for ignition_time in sorted(spot_ignitions):
-        if ignition_time < stop_time:
-            ignited_cells = spot_ignitions.pop(ignition_time)
-            for cell_index in ignited_cells:
-                y = cell_index[0]
-                x = cell_index[1]
-                if phi_matrix[y,x] > 0.0:
-                    phi_matrix[y,x]             = -1.0
-                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
-                    #tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0) # FIXME not sure why this was useful, since the cell will get tracked as a result of updating phi_matrix?
-                    # FIXME: I need to calculate and store the fire_behavior values for these cells
+    # FIXME factor this out into function, for profiling
+
+    ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
 
     # Save the new phi_matrix values in phi_star_matrix
-    for t in fire_behavior_list:
-        tcb: TrackedCellBehavior = t
-        y = tcb.y
-        x = tcb.x
-        phi_star_matrix[y,x] = phi_matrix[y,x]
+    reset_phi_star(fire_behavior_list, phi_star_matrix, phi_matrix)
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
     frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, tracked_cells, rows, cols)
