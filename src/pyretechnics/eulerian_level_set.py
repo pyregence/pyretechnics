@@ -1291,7 +1291,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     """
     TODO: Add docstring
     """
-    tracked_cells: object = nbt.NarrowBandTracker()
+    tracked_cells: object = nbt.new_NarrowBandTracker(cols, rows)
     cell         : tuple
     for cell in frontier_cells:
         nbt.incr_square_around(tracked_cells, cell[0], cell[1], buffer_width)

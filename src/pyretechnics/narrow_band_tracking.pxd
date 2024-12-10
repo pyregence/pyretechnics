@@ -10,9 +10,13 @@ cdef class CellsCountSegment:
 
 
 cdef class NarrowBandTracker:
+    cdef pyidx y_high
+    cdef pyidx x_high
     cdef int ys_offset
     cdef list ys_list
     cdef int _rows_count
+
+cpdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
 
 
 cdef class TrackedCellsIterator:
