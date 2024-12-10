@@ -38,7 +38,7 @@ import cython as cy
 import numpy as np
 import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire1 as sf0
-import sortedcontainers as sortc    
+import sortedcontainers as sortc
 
 PI = cy.declare(cy.double, 3.14159265358979323846)
 
@@ -1362,22 +1362,23 @@ def new_TrackedCellBehavior(
     return t
 
 @cy.ccall
-def ignite_from_spotting(spot_ignitions, output_matrices, stop_time: cy.float) -> cy.void:
+def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop_time: cy.float) -> cy.void:
     if len(spot_ignitions) > 0:
         phi_matrix               : cy.float[:,:] = output_matrices["phi"]
         time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
         ignition_time: cy.float
-        for ignition_time in sorted(spot_ignitions): # FIXME use sortedcontainers
-            if ignition_time < stop_time:
-                ignited_cells = spot_ignitions.pop(ignition_time)
-                for cell_index in ignited_cells:
-                    y: pyidx = cell_index[0]
-                    x: pydix = cell_index[1]
-                    if phi_matrix[y,x] > 0.0: # Not burned yet
-                        phi_matrix[y,x]             = -1.0
-                        time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
-                        #tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0) # FIXME not sure why this was useful, since the cell will get tracked as a result of updating phi_matrix?
-                        # FIXME: I need to calculate and store the fire_behavior values for these cells
+        # https://grantjenks.com/docs/sortedcontainers/sorteddict.html
+        n: pyidx = spot_ignitions.bisect_left(stop_time) # number of ignition_time values smaller than stop_time.
+        for _i in range(n):
+            ignition_time, ignited_cells = spot_ignitions.popitem(index=0) # remove and return smallest ignition_time.
+            for cell_index in ignited_cells:
+                y: pyidx = cell_index[0]
+                x: pydix = cell_index[1]
+                if phi_matrix[y,x] > 0.0: # Not burned yet
+                    phi_matrix[y,x]             = -1.0
+                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
+                    #tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0) # FIXME not sure why this was useful, since the cell will get tracked as a result of updating phi_matrix?
+                    # FIXME: I need to calculate and store the fire_behavior values for these cells
 
 @cy.ccall
 def reset_phi_star(
@@ -1813,6 +1814,9 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     # Create a numpy.random.Generator object to produce random samples if spot_config is provided
     random_generator = BufferedRandGen(np.random.default_rng(seed=spot_config["random_seed"])) if spot_config else None
 
+    # Ensure that spot_ignitions is initialized as a SortedDict
+    spot_igns = sortc.SortedDict(spot_ignitions)
+
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
     simulation_time = start_time
@@ -1826,7 +1830,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
                                            use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
-                                           buffer_width, spot_ignitions, spot_config, random_generator)
+                                           buffer_width, spot_igns, spot_config, random_generator)
 
         # Reset spread inputs
         simulation_time  = results["simulation_time"]
@@ -1845,7 +1849,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "stop_condition" : "max duration reached" if nbt.nonempty_tracked_cells(tracked_cells) else "no burnable cells",
         "output_matrices": output_matrices,
     }, **({ # FIXME restore | operator when done testing on older Python.
-        "spot_ignitions"  : spot_ignitions,
+        "spot_ignitions"  : spot_igns,
         "random_generator": random_generator,
     } if spot_config else {})}
 # spread-phi-field ends here
