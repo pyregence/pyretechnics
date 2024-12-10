@@ -818,6 +818,7 @@ class SpreadInputs:
     fuel_moisture_live_herbaceous: ISpaceTimeCube
     fuel_moisture_live_woody: ISpaceTimeCube
     foliar_moisture: ISpaceTimeCube
+    temperature: ISpaceTimeCube
     fuel_spread_adjustment: ISpaceTimeCube
     weather_spread_adjustment: ISpaceTimeCube
     
@@ -839,6 +840,7 @@ class SpreadInputs:
                  fuel_moisture_live_herbaceous: ISpaceTimeCube,
                  fuel_moisture_live_woody: ISpaceTimeCube,
                  foliar_moisture: ISpaceTimeCube,
+                 temperature: ISpaceTimeCube,
                  fuel_spread_adjustment: ISpaceTimeCube,
                  weather_spread_adjustment: ISpaceTimeCube
                  ):
@@ -857,6 +859,7 @@ class SpreadInputs:
         self.fuel_moisture_live_herbaceous = fuel_moisture_live_herbaceous
         self.fuel_moisture_live_woody = fuel_moisture_live_woody
         self.foliar_moisture = foliar_moisture
+        self.temperature = temperature
         self.fuel_spread_adjustment = fuel_spread_adjustment
         self.weather_spread_adjustment = weather_spread_adjustment
         self._init_fuel_models()
@@ -886,8 +889,29 @@ class SpreadInputs:
     def __dealloc__(self):
         PyMem_Free(self.fuel_models_arr)  # no-op if self.data is NULL
 
-
-
+@cy.ccall
+def make_SpreadInputs(space_time_cubes: dict) -> SpreadInputs:
+    stc: SpreadInputs = SpreadInputs( # TODO OPTIM move up the call graph
+        space_time_cubes["slope"],
+        space_time_cubes["aspect"],
+        space_time_cubes["fuel_model"],
+        space_time_cubes["canopy_cover"],
+        space_time_cubes["canopy_height"],
+        space_time_cubes["canopy_base_height"],
+        space_time_cubes["canopy_bulk_density"],
+        space_time_cubes["wind_speed_10m"],
+        space_time_cubes["upwind_direction"],
+        space_time_cubes["fuel_moisture_dead_1hr"],
+        space_time_cubes["fuel_moisture_dead_10hr"],
+        space_time_cubes["fuel_moisture_dead_100hr"],
+        space_time_cubes["fuel_moisture_live_herbaceous"],
+        space_time_cubes["fuel_moisture_live_woody"],
+        space_time_cubes["foliar_moisture"],
+        space_time_cubes.get("temperature"),
+        space_time_cubes["fuel_spread_adjustment"],
+        space_time_cubes["weather_spread_adjustment"]
+    )
+    return stc
 
 
 @cy.profile(False)
@@ -1433,7 +1457,7 @@ def reset_phi_star(
 # TODO: Change for loops to use tracked_cells.keys() and sorted(spot_ignitions.keys())
 # TODO: cimport numpy
 @cy.ccall
-def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, frontier_cells: set, tracked_cells: object,
+def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_cells: set, tracked_cells: object,
                              cube_resolution: tuple, start_time: cy.float, max_timestep: cy.float,
                              max_cells_per_timestep: cy.float, use_wind_limit: bool|None = True,
                              surface_lw_ratio_model: str|None = "rothermel", crown_max_lw_ratio: float|None = None,
@@ -1470,26 +1494,6 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     fireline_intensity_matrix: cy.float[:,:] = output_matrices["fireline_intensity"]
     flame_length_matrix      : cy.float[:,:] = output_matrices["flame_length"]
     time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
-    
-    stc: SpreadInputs = SpreadInputs( # TODO OPTIM move up the call graph
-        space_time_cubes["slope"],
-        space_time_cubes["aspect"],
-        space_time_cubes["fuel_model"],
-        space_time_cubes["canopy_cover"],
-        space_time_cubes["canopy_height"],
-        space_time_cubes["canopy_base_height"],
-        space_time_cubes["canopy_bulk_density"],
-        space_time_cubes["wind_speed_10m"],
-        space_time_cubes["upwind_direction"],
-        space_time_cubes["fuel_moisture_dead_1hr"],
-        space_time_cubes["fuel_moisture_dead_10hr"],
-        space_time_cubes["fuel_moisture_dead_100hr"],
-        space_time_cubes["fuel_moisture_live_herbaceous"],
-        space_time_cubes["fuel_moisture_live_woody"],
-        space_time_cubes["foliar_moisture"],
-        space_time_cubes["fuel_spread_adjustment"],
-        space_time_cubes["weather_spread_adjustment"]
-    )
 
     # Extract simulation dimensions
     rows: pyidx = phi_matrix.shape[0]
@@ -1673,9 +1677,8 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
                 if spot_config:
                     t_cast                  : pyidx    = int(toa // band_duration)
                     space_time_coordinate   : coord_tyx = (t_cast, y, x)
-                    # FIXME native lookup
-                    slope                   : cy.float = space_time_cubes["slope"].get(t_cast, y, x)
-                    aspect                  : cy.float = space_time_cubes["aspect"].get(t_cast, y, x)
+                    slope                   : cy.float = lookup_space_time_cube_float32(stc.slope, space_time_coordinate)
+                    aspect                  : cy.float = lookup_space_time_cube_float32(stc.aspect, space_time_coordinate)
                     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
                     firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
                     expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb, # FIXME restore fn name
@@ -1887,6 +1890,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     for cube in space_time_cubes.values():
         if cube.shape != (bands, rows, cols):
             raise ValueError("The space_time_cubes must all share the same spatial resolution.")
+    stc: SpreadInputs = make_SpreadInputs(space_time_cubes)
 
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
     for matrix in output_matrices.values():
@@ -1935,7 +1939,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
         max_timestep                 = min(remaining_time_in_band, remaining_time_in_simulation)
 
         # Spread fire one timestep
-        results = spread_fire_one_timestep(space_time_cubes, output_matrices, frontier_cells, tracked_cells,
+        results = spread_fire_one_timestep(stc, output_matrices, frontier_cells, tracked_cells,
                                            cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
                                            use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
                                            buffer_width, spot_igns, spot_config, random_generator)
