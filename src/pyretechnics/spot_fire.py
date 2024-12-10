@@ -386,7 +386,6 @@ def cast_firebrand(rng: BufferedRandGen,
                    fuel_model_cube: ISpaceTimeCube,
                    temperature_cube: ISpaceTimeCube,
                    fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
-                   fire_type_matrix: cy.uchar[:,:],
                    firebrand_count_matrix, # NOTE: May be None
                    rows: py_types.pyidx,
                    cols: py_types.pyidx,
@@ -427,7 +426,7 @@ def cast_firebrand(rng: BufferedRandGen,
     # Determine whether the firebrand will start a fire or fizzle out
     #=======================================================================================
 
-    if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0: # FIXME the rationale for this "not yet burned" check is questionable - best done at ignition time.
+    if is_in_bounds(target_y, target_x, rows, cols): # and fire_type_matrix[target_y,target_x] == 0: # NOTE REVIEW I removed this call because it is inconsistent. The target cell may well burn between firebrand emission and spot ignition.
         # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)
         if firebrand_count_matrix is not None:
             firebrand_count_matrix[target_y,target_x] += 1 # FIXME remove this useless performance hog.
@@ -452,13 +451,12 @@ def cast_firebrand(rng: BufferedRandGen,
         return (source_y, source_x) # For efficiency, the source cell is used as a sentinel value for a failed spot ignition.
 
 @cy.ccall
-def spread_firebrands(# FIXME callers
+def spread_firebrands(
         fuel_model_cube: ISpaceTimeCube,
         temperature_cube: ISpaceTimeCube,
         fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
-        fire_type_matrix: cy.uchar[:,:],
         sim_area_bounds: py_types.coord_yx,
-        cube_resolution: py_types.vec_xyz,
+        spatial_resolution: py_types.vec_xy,
         space_time_coordinate: py_types.coord_tyx,
         upwind_direction: cy.float, # degrees
         wind_speed_10m: cy.float, # km/hr (for shame!)
@@ -528,7 +526,7 @@ def spread_firebrands(# FIXME callers
             #=======================================================================================
             firebrand_count_matrix       = None # FIXME
             (rows, cols)                 = sim_area_bounds
-            (_, cell_height, cell_width) = cube_resolution
+            (cell_height, cell_width)    = spatial_resolution
             decay_distance: cy.float               = spot_config["decay_distance"] # FIXME faster lookup (Extension Type)
             downwind_direction: cy.float           = conv.deg_to_rad(conv.opposite_direction(upwind_direction))
             # OPTIM get rid of trigonometry here if possible by having callers pass vectors.
@@ -550,7 +548,6 @@ def spread_firebrands(# FIXME callers
                                                                 fuel_model_cube,
                                                                 temperature_cube,
                                                                 fuel_moisture_dead_1hr_cube,
-                                                                fire_type_matrix,
                                                                 firebrand_count_matrix, # FIXME clear
                                                                 rows,
                                                                 cols,
