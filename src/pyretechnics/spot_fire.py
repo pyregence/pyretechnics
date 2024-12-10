@@ -191,16 +191,6 @@ def deltax_coefficient_of_variation(sigma_x):
     return sqrt(exp(sigma_x ** 2.0) - 1.0)
 
 
-def delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft):
-    """
-    Returns a function for randomly sampling ΔX, the spotting jump along the wind direction (in meters).
-    """
-    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
-    mu_x      = ln_params["prob.lognormal.mu"]    # meters
-    sigma_x   = ln_params["prob.lognormal.sigma"] # meters
-    return lambda random_generator: sample_lognormal(random_generator, mu_x, sigma_x) # meters
-
-
 # When will we have the default sigma_Y > E[ΔX]?
 # It can be seen that this nonsensical situation
 # happens iff sigma_X exceeds the following number:
@@ -232,12 +222,36 @@ def resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
 
 
-def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
-    """
-    Returns a function for randomly sampling ΔY, the spotting jump perpendicular to the wind direction (in meters).
-    """
-    sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
-    return lambda random_generator: sample_normal(random_generator, 0.0, sigma_y) # meters
+@cy.cclass
+class JumpDistribution:
+    # Downwind LogNormal params
+    mu_x: cy.float # dimensionless (log-space)
+    sigma_x: cy.float # dimensionless (log-space)
+    # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
+    
+    # Cross-wind normal params
+    sigma_y: cy.float # meters
+    # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
+
+@cy.ccall
+def resolve_JumpDistribution(spot_config, fireline_intensity: cy.float, wind_speed_20ft: cy.float) -> JumpDistribution:
+    ret: JumpDistribution = JumpDistribution()
+    ln_params = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
+    # FIXME why are these described as meters, when they're log-space quantities?
+    ret.mu_x      = ln_params["prob.lognormal.mu"]    # meters
+    ret.sigma_x   = ln_params["prob.lognormal.sigma"] # meters
+    ret.sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
+    return ret
+
+@cy.ccall
+def sample_downwind_jump(jd: JumpDistribution, random_generator: BufferedRandGen) -> cy.float:
+    return sample_lognormal(random_generator, jd.mu_x, jd.sigma_x)
+
+@cy.ccall
+def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGen) -> cy.float:
+    return sample_normal(random_generator, 0, jd.sigma_y)
+
+
 # sardoy-firebrand-dispersal ends here
 # [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
 @cy.ccall
@@ -397,8 +411,7 @@ def cast_firebrand(rng: BufferedRandGen,
                    decay_distance: cy.float,
                    cos_wdir: cy.float,
                    sin_wdir: cy.float,
-                   sample_delta_y_fn,
-                   sample_delta_x_fn
+                   jd: JumpDistribution
                    ) -> py_types.coord_yx:
     """
     TODO: Add docstring
@@ -414,8 +427,8 @@ def cast_firebrand(rng: BufferedRandGen,
     # Determine where the firebrand will land
     #=======================================================================================
 
-    delta_y: cy.float  = sample_delta_y_fn(rng)                    # meters
-    delta_x: cy.float  = sample_delta_x_fn(rng)                    # meters
+    delta_y: cy.float  = sample_crosswind_jump(jd, rng)                    # meters
+    delta_x: cy.float  = sample_downwind_jump(jd, rng)                     # meters
     grid_dy: cy.float  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     grid_dx: cy.float  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     # NOTE it would cause a bug to type the following as py_types.pyidx.
@@ -534,9 +547,7 @@ def spread_firebrands(
             sin_wdir: cy.float                     = sin(downwind_direction)
             wind_speed_20ft: cy.float              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
             wind_speed_20ft_mps: cy.float          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
-            # FIXME JumpDistribution struct.
-            sample_delta_y_fn                      = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-            sample_delta_x_fn                      = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+            jd: JumpDistribution                   = resolve_JumpDistribution(spot_config, fireline_intensity, wind_speed_20ft_mps)
 
             #=======================================================================================
             # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
@@ -559,8 +570,7 @@ def spread_firebrands(
                                                                 decay_distance,
                                                                 cos_wdir,
                                                                 sin_wdir,
-                                                                sample_delta_y_fn,
-                                                                sample_delta_x_fn))
+                                                                jd))
                              != (y, x)}
 
             #=======================================================================================
