@@ -1614,20 +1614,29 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
                 if spot_config:
-                    t_cast                  : pyidx    = int(time_of_arrival_matrix[y,x] // band_duration)
-                    space_time_coordinate              = (t_cast, y, x)
+                    t_cast                  : pyidx    = int(toa // band_duration)
+                    space_time_coordinate   : coord_tyx = (t_cast, y, x)
+                    # FIXME native lookup
                     slope                   : cy.float = space_time_cubes["slope"].get(t_cast, y, x)
                     aspect                  : cy.float = space_time_cubes["aspect"].get(t_cast, y, x)
                     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
                     firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
-                    expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb,
+                    expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb, # FIXME restore fn name
                                                                                             elevation_gradient,
                                                                                             cell_horizontal_area_m2,
                                                                                             firebrands_per_unit_heat)
-                    new_ignitions: tuple[float, set]|None = spot.spread_firebrands(space_time_cubes,
+                    # OPTIM we might want to hold to the SpreadInputs and look these up in there.
+                    wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
+                    upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
+                    new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
+                                                                                   space_time_cubes["temperature"], # FIXME
+                                                                                   stc.fuel_moisture_dead_1hr,
                                                                                    fire_type_matrix,
+                                                                                   (rows, cols),
                                                                                    cube_resolution,
                                                                                    space_time_coordinate,
+                                                                                   upwind_direction,
+                                                                                   wind_speed_10m,
                                                                                    fb.fireline_intensity,
                                                                                    fb.flame_length,
                                                                                    toa,

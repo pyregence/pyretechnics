@@ -4,15 +4,18 @@ if cython.compiled:
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.cy_types as py_types
     from cython.cimports.pyretechnics.random import BufferedRandGen
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.surface_fire1 as sf
-    from cython.cimports.pyretechnics.math import exp, sqrt, log
+    from cython.cimports.pyretechnics.math import exp, sqrt, log, sin, cos, pow
+    import cython.cimports.pyretechnics.math as math
 else:
     import pyretechnics.conversion as conv
     import pyretechnics.py_types as py_types
     from pyretechnics.random import BufferedRandGen
+    from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.surface_fire1 as sf
-    from math import exp, sqrt, log
-import math
+    from math import exp, sqrt, log, sin, cos, pow
+    import math
 import numpy as np
 import cython as cy
 
@@ -72,23 +75,29 @@ def expct_firebrand_production(
         return firebrand_count
 # expected-firebrand-production ends here
 # [[file:../../org/pyretechnics.org::convert-deltas][convert-deltas]]
-def delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y):
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def delta_to_grid_dx(cos_wdir: cy.float, sin_wdir: cy.float, delta_x: cy.float, delta_y: cy.float) -> cy.float:
     """
     Computes the grid-aligned x coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
     Returns a signed distance (same unit as ΔX and ΔY).
     """
-    wdir_x      = sin_wdir
-    wdir_perp_x = cos_wdir
+    wdir_x: cy.float      = sin_wdir
+    wdir_perp_x: cy.float = cos_wdir
     return delta_x * wdir_x + delta_y * wdir_perp_x
 
 
-def delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y):
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def delta_to_grid_dy(cos_wdir: cy.float, sin_wdir: cy.float, delta_x: cy.float, delta_y: cy.float) -> cy.float:
     """
     Computes the grid-aligned y coordinate of the delta vector, given the wind-aligned [ΔX ΔY] coordinates.
     Returns a signed distance (same unit as ΔX and ΔY).
     """
-    wdir_y      = cos_wdir  # FIXME: Should this be negative or positive?
-    wdir_perp_y = sin_wdir
+    wdir_y: cy.float      = cos_wdir  # FIXME: Should this be negative or positive?
+    wdir_perp_y: cy.float = sin_wdir
     return delta_x * wdir_y + delta_y * wdir_perp_y
 
 
@@ -99,7 +108,7 @@ def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.float:
     """
     Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
     """
-    return round(distance / cell_size)
+    return math.round(distance / cell_size)
 # convert-deltas ends here
 # [[file:../../org/pyretechnics.org::resolve-spotting-lognormal-elmfire][resolve-spotting-lognormal-elmfire]]
 
@@ -231,20 +240,24 @@ def delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft):
     return lambda random_generator: sample_normal(random_generator, 0.0, sigma_y) # meters
 # sardoy-firebrand-dispersal ends here
 # [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
-def sample_poisson(random_generator, mu):
+@cy.ccall
+def sample_poisson(random_generator, mu: cy.float) -> py_types.pyidx:
     """
     Returns sample from poisson distribution given mu.
     """
-    return random_generator.poisson(mu)
+    return random_generator.poisson(mu) # FIXME we can be faster than this.
 
 
-def sample_number_of_firebrands(random_generator, expected_firebrand_count):
+@cy.ccall
+def sample_number_of_firebrands(random_generator, expected_firebrand_count: cy.float) -> py_types.pyidx:
     return sample_poisson(random_generator, expected_firebrand_count)
 # sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 
 
-def firebrand_flight_survival_probability(spotting_distance, decay_distance):
+@cy.ccall
+@cy.cdivision(True)
+def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
     """
     Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
     - spotting_distance :: meters (d)
@@ -254,8 +267,9 @@ def firebrand_flight_survival_probability(spotting_distance, decay_distance):
     """
     return exp(-spotting_distance / decay_distance)
 
-
-def heat_of_preignition(temperature, fine_fuel_moisture):
+@cy.ccall
+@cy.exceptval(check=False)
+def heat_of_preignition(temperature: cy.float, fine_fuel_moisture: cy.float):
     """
     Returns heat of preignition given:
     - temperature        :: degrees Celsius
@@ -263,20 +277,21 @@ def heat_of_preignition(temperature, fine_fuel_moisture):
 
     Q_ig = 144.512 - 0.266 * T_o - 0.00058 * (T_o)^2 - T_o * M + 18.54 * (1 - exp(-15.1 * M)) + 640 * M (eq. 10)
     """
-    T_o = temperature
-    M   = fine_fuel_moisture
+    T_o: cy.float = temperature
+    M: cy.float   = fine_fuel_moisture
     # Heat required to reach ignition temperature
-    Q_a = 144.512 - 0.266 * T_o - 0.00058 * (T_o ** 2.0)
+    Q_a: cy.float = 144.512 - 0.266 * T_o - 0.00058 * (T_o*T_o)
     # Heat required to raise moisture to the boiling point
-    Q_b = -T_o * M
+    Q_b: cy.float = -T_o * M
     # Heat of desorption
-    Q_c = 18.54 * (1.0 - exp(-15.1 * M))
+    Q_c: cy.float = 18.54 * (1.0 - exp(-15.1 * M))
     # Heat required to vaporize moisture
-    Q_d = 640.0 * M
+    Q_d: cy.float = 640.0 * M
     return Q_a + Q_b + Q_c + Q_d
 
-
-def schroeder_ignition_probability(temperature, fine_fuel_moisture):
+@cy.ccall
+@cy.exceptval(check=False)
+def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy.float) -> cy.float:
     """
     Returns the probability of spot fire ignition (Schroeder 1969) given:
     - temperature        :: degrees Celsius
@@ -285,19 +300,23 @@ def schroeder_ignition_probability(temperature, fine_fuel_moisture):
     X           = (400 - Q_ig) / 10
     P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
     """
-    Q_ig        = heat_of_preignition(temperature, fine_fuel_moisture)
-    X           = max(0.0, 400.0 - Q_ig) / 10.0
-    P_Ignition  = 0.000048 * (X ** 4.3) / 50.0
+    Q_ig: cy.float        = heat_of_preignition(temperature, fine_fuel_moisture)
+    X: cy.float           = max(0.0, 400.0 - Q_ig) * 0.1
+    P_Ignition: cy.float  = 0.000048 * pow(X, 4.3) * 0.02
     return min(P_Ignition, 1.0)
 # firebrand-ignition-probability ends here
 # [[file:../../org/pyretechnics.org::firebrands-time-of-ignition][firebrands-time-of-ignition]]
 
-
-def albini_firebrand_maximum_height(firebrand_diameter):
+@cy.ccall
+@cy.exceptval(check=False)
+@cy.inline
+def albini_firebrand_maximum_height(firebrand_diameter: cy.float) -> cy.float:
     return 0.39e5 * firebrand_diameter
 
-
-def albini_t_max(flame_length):
+@cy.ccall
+@cy.exceptval(-1)
+@cy.cdivision(True)
+def albini_t_max(flame_length: cy.float) -> cy.float:
     """
     Returns the time of spot ignition using Albini1979spot in minutes given:
     - flame_length :: meters [z_F]
@@ -311,18 +330,22 @@ def albini_t_max(flame_length):
     t_o         = t_c / (2 * z_F / w_F)
     travel_time = t_1 + t_2 + t_3 = 1.2 + (a / 3) * (((b + (z/z_F)) / a)^3/2 - 1)   (D43)
     """
-    a           = 5.963  # dimensionless constant from (D33)
-    b           = 4.563  # dimensionless constant from (D34)
-    z           = 117.0  # maximum altitude of firebrands in meters [derived for (D44) in (Albini1979spot)]
-    z_F         = flame_length                      # m
-    w_F         = 2.3 * sqrt(flame_length)          # m/s
-    charact_t   = conv.sec_to_min(2.0 * z_F / w_F)  # min
+    a: cy.float           = 5.963  # dimensionless constant from (D33)
+    b: cy.float           = 4.563  # dimensionless constant from (D34)
+    z: cy.float           = 117.0  # maximum altitude of firebrands in meters [derived for (D44) in (Albini1979spot)]
+    z_F: cy.float         = flame_length                      # m
+    w_F: cy.float         = 2.3 * sqrt(flame_length)          # m/s
+    charact_t: cy.float   = conv.sec_to_min(2.0 * z_F / w_F)  # min
     # The following dimensionless factor is equal to t_T - t_o, with t_T defined by (D43) in Albini1979spot.
-    travel_time = 1.2 + (a / 3.0) * (((b + z / z_F) / a) ** 1.5 - 1.0)
+    u: cy.float = (b + z / z_F) / a
+    u3_2: cy.float = u*sqrt(u) # Faster than ** 1.5
+    travel_time: cy.float = 1.2 + (a / 3.0) * (u3_2 - 1.0)
     return charact_t * travel_time
 
-
-def spot_ignition_time(time_of_arrival, flame_length):
+@cy.ccall
+@cy.exceptval(-1)
+@cy.cdivision(True)
+def spot_ignition_time(time_of_arrival: cy.float, flame_length: cy.float) -> cy.float:
     """
     Returns the time of spot ignition using Albini 1979 and Perryman 2012 in minutes given:
     - time_of_arrival :: minutes
@@ -330,12 +353,11 @@ def spot_ignition_time(time_of_arrival, flame_length):
 
     t_spot = time_of_arrival + (2 * t_max) + t_ss
     """
-    t_max          = albini_t_max(flame_length)
-    t_steady_state = 20.0 # period of building up to steady state from ignition (min)
+    t_max: cy.float          = albini_t_max(flame_length) # FIXME what is this still doing here? I thought we decided to neglect the flight time! (Val)
+    t_steady_state: cy.float = 20.0 # period of building up to steady state from ignition (min)
     return time_of_arrival + 2.0 * t_max + t_steady_state
 # firebrands-time-of-ignition ends here
 # [[file:../../org/pyretechnics.org::spread-firebrands][spread-firebrands]]
-from math import sin, cos, hypot, radians
 import numpy as np
 import pyretechnics.fuel_models as fm
 
@@ -348,21 +370,22 @@ def is_in_bounds(y: cy.int, x: cy.int, rows: py_types.pyidx, cols: py_types.pyid
     """
     return (y >= 0) and (x >= 0) and (y < rows) and (x < cols)
 
-
-def is_burnable_cell(fuel_model_cube, t, y, x): # FIXME INSANELY slow
+@cy.ccall
+def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: py_types.pyidx, y: py_types.pyidx, x: py_types.pyidx) -> cy.bint:
     """
     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
     """
-    fuel_model_number = fuel_model_cube.get(t,y,x)
-    fuel_model        = fm.fuel_model_table.get(fuel_model_number)
+    fuel_model_number: py_types.pyidx = cy.cast(py_types.pyidx, fuel_model_cube.get_float(t,y,x))
+    fm_table: dict = fm.fuel_model_table
+    fuel_model     = fm_table.get(fuel_model_number)  # FIXME INSANELY slow
     return fuel_model and fuel_model["burnable"]
 
 
 @cy.ccall
 def cast_firebrand(rng: BufferedRandGen,
-                   fuel_model_cube,
-                   temperature_cube,
-                   fuel_moisture_dead_1hr_cube,
+                   fuel_model_cube: ISpaceTimeCube,
+                   temperature_cube: ISpaceTimeCube,
+                   fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
                    fire_type_matrix: cy.uchar[:,:],
                    firebrand_count_matrix, # NOTE: May be None
                    rows: py_types.pyidx,
@@ -376,13 +399,17 @@ def cast_firebrand(rng: BufferedRandGen,
                    cos_wdir: cy.float,
                    sin_wdir: cy.float,
                    sample_delta_y_fn,
-                   sample_delta_x_fn):
+                   sample_delta_x_fn
+                   ) -> py_types.coord_yx:
     """
     TODO: Add docstring
     Draws a random [ΔX, ΔY] pair of signed distances (in meters) from
     the supplied cell, representing the coordinates of the spotting jump in the directions
     parallel and perpendicular to the wind. ΔX will typically be positive (downwind),
     and positive ΔY means to the right of the downwind direction.
+
+    Note that if the random draw yields no spot ignition, the source cell coordinates will be returned:
+    calling code should check that.
     """
     #=======================================================================================
     # Determine where the firebrand will land
@@ -400,9 +427,9 @@ def cast_firebrand(rng: BufferedRandGen,
     # Determine whether the firebrand will start a fire or fizzle out
     #=======================================================================================
 
-    if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0:
+    if is_in_bounds(target_y, target_x, rows, cols) and fire_type_matrix[target_y,target_x] == 0: # FIXME the rationale for this "not yet burned" check is questionable - best done at ignition time.
         # Firebrand landed on the grid in an unburned cell, so record it in firebrand_count_matrix (if provided)
-        if isinstance(firebrand_count_matrix, np.ndarray):
+        if firebrand_count_matrix is not None:
             firebrand_count_matrix[target_y,target_x] += 1 # FIXME remove this useless performance hog.
 
         # Calculate the probability that the firebrand survived its flight and landed while still burning
@@ -415,26 +442,31 @@ def cast_firebrand(rng: BufferedRandGen,
         if (uniform_sample <= flight_survival_probability
             and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
             # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability``
-            # FIXME USE .get_float()
-            temperature          = temperature_cube.get(source_t, target_y, target_x)            # degrees Celsius
-            fine_fuel_moisture   = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # kg/kg
-            ignition_probability = schroeder_ignition_probability(temperature, fine_fuel_moisture)
+            temperature: cy.float          = temperature_cube.get_float(source_t, target_y, target_x)            # degrees Celsius
+            fine_fuel_moisture: cy.float   = fuel_moisture_dead_1hr_cube.get_float(source_t, target_y, target_x) # kg/kg
+            ignition_probability: cy.float = schroeder_ignition_probability(temperature, fine_fuel_moisture)
 
             if uniform_sample <= flight_survival_probability * ignition_probability:
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
+        return (source_y, source_x) # For efficiency, the source cell is used as a sentinel value for a failed spot ignition.
 
 @cy.ccall
-def spread_firebrands(
-        space_time_cubes,
+def spread_firebrands(# FIXME callers
+        fuel_model_cube: ISpaceTimeCube,
+        temperature_cube: ISpaceTimeCube,
+        fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
         fire_type_matrix: cy.uchar[:,:],
-        cube_resolution,
-        space_time_coordinate,
+        sim_area_bounds: py_types.coord_yx,
+        cube_resolution: py_types.vec_xyz,
+        space_time_coordinate: py_types.coord_tyx,
+        upwind_direction: cy.float, # degrees
+        wind_speed_10m: cy.float, # km/hr (for shame!)
         fireline_intensity: cy.float,
         flame_length: cy.float,
         time_of_arrival: cy.float,
-        random_generator, 
-        expected_firebrand_count,
+        random_generator,
+        expected_firebrand_count: cy.float,
         spot_config):
     """
     Given these inputs:
@@ -479,7 +511,7 @@ def spread_firebrands(
     #=======================================================================================
 
     rng: BufferedRandGen = random_generator
-    num_firebrands: py_types.pyidx = sample_number_of_firebrands(rng.numpy_rand, expected_firebrand_count)
+    num_firebrands: py_types.pyidx = sample_number_of_firebrands(rng.numpy_rand, expected_firebrand_count) # OPTIM make fast .next_poisson() method (using seq of exponential vars).
 
     if num_firebrands > 0:
 
@@ -488,36 +520,32 @@ def spread_firebrands(
         #=======================================================================================
 
         (t, y, x)      = space_time_coordinate
-        wind_speed_10m = space_time_cubes["wind_speed_10m"].get(t,y,x) # km/hr
 
         if wind_speed_10m > 0.0:
 
             #=======================================================================================
             # Unpack all firebrand-related features of the source cell
             #=======================================================================================
-
-            fuel_model_cube              = space_time_cubes["fuel_model"]
-            temperature_cube             = space_time_cubes["temperature"]
-            fuel_moisture_dead_1hr_cube  = space_time_cubes["fuel_moisture_dead_1hr"]
             firebrand_count_matrix       = None # FIXME
-            (_, rows, cols)              = fuel_model_cube.shape
+            (rows, cols)                 = sim_area_bounds
             (_, cell_height, cell_width) = cube_resolution
-            decay_distance               = spot_config["decay_distance"]
-            upwind_direction             = space_time_cubes["upwind_direction"].get(t,y,x)
-            downwind_direction           = radians(conv.opposite_direction(upwind_direction))
-            # FIXME use native math funcs or get rid of trigonometry here.
-            cos_wdir                     = cos(downwind_direction)
-            sin_wdir                     = sin(downwind_direction)
-            wind_speed_20ft              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
-            wind_speed_20ft_mps          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
-            sample_delta_y_fn            = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
-            sample_delta_x_fn            = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+            decay_distance: cy.float               = spot_config["decay_distance"] # FIXME faster lookup (Extension Type)
+            downwind_direction: cy.float           = conv.deg_to_rad(conv.opposite_direction(upwind_direction))
+            # OPTIM get rid of trigonometry here if possible by having callers pass vectors.
+            cos_wdir: cy.float                     = cos(downwind_direction)
+            sin_wdir: cy.float                     = sin(downwind_direction)
+            wind_speed_20ft: cy.float              = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+            wind_speed_20ft_mps: cy.float          = conv.km_hr_to_mps(wind_speed_20ft)                     # m/s
+            # FIXME JumpDistribution struct.
+            sample_delta_y_fn                      = delta_y_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
+            sample_delta_x_fn                      = delta_x_sampler(spot_config, fireline_intensity, wind_speed_20ft_mps)
 
             #=======================================================================================
             # Cast each firebrand, update firebrand_count_matrix, and accumulate any ignited cells
             #=======================================================================================
 
-            ignited_cells = {ignited_cell for _i in range(num_firebrands)
+            # FIXME a set is slow, use a list instead. Collisions can happen with other source cells anyway.
+            ignited_cells = {ignited_cell for _i in range(num_firebrands) # FIXME native type.
                              if (ignited_cell := cast_firebrand(random_generator,
                                                                 fuel_model_cube,
                                                                 temperature_cube,
@@ -536,12 +564,11 @@ def spread_firebrands(
                                                                 sin_wdir,
                                                                 sample_delta_y_fn,
                                                                 sample_delta_x_fn))
-                             is not None}
+                             != (y, x)}
 
             #=======================================================================================
             # Return any cells ignited by firebrands along with their time of ignition
             #=======================================================================================
-
             if len(ignited_cells) > 0:
                 ignition_time   = spot_ignition_time(time_of_arrival, flame_length) # minutes
                 return (ignition_time, ignited_cells)
