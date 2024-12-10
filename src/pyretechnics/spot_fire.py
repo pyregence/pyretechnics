@@ -263,8 +263,8 @@ def sample_poisson(random_generator, mu: cy.float) -> py_types.pyidx:
 
 
 @cy.ccall
-def sample_number_of_firebrands(random_generator, expected_firebrand_count: cy.float) -> py_types.pyidx:
-    return sample_poisson(random_generator, expected_firebrand_count)
+def sample_number_of_firebrands(rng: BufferedRandGen, expected_firebrand_count: cy.float) -> py_types.pyidx:
+    return rng.next_poisson(expected_firebrand_count)
 # sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 
@@ -522,7 +522,7 @@ def spread_firebrands(
     #=======================================================================================
 
     rng: BufferedRandGen = random_generator
-    num_firebrands: py_types.pyidx = sample_number_of_firebrands(rng.numpy_rand, expected_firebrand_count) # OPTIM make fast .next_poisson() method (using seq of exponential vars).
+    num_firebrands: py_types.pyidx = sample_number_of_firebrands(rng, expected_firebrand_count) # OPTIM make fast .next_poisson() method (using seq of exponential vars).
 
     if num_firebrands > 0:
 
