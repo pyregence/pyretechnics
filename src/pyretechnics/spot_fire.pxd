@@ -2,7 +2,7 @@ from pyretechnics.cy_types cimport coord_yx, coord_tyx, vec_xy, vec_xyz, SpreadB
 from pyretechnics.random cimport BufferedRandGen
 from pyretechnics.space_time_cube cimport ISpaceTimeCube
 
-cpdef float expct_firebrand_production(
+cpdef float expected_firebrand_production(
     SpreadBehavior fire_behavior, 
     vec_xy elevation_gradient, 
     float cell_horizontal_area_m2, 
