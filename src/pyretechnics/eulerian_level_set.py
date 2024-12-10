@@ -1255,32 +1255,46 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
                 frontier_cells.add((y, x))
     return frontier_cells
 
-
+@cy.ccall
+def is_frontier_cell(rows: pyidx, cols: pyidx, phi_matrix: cy.float[:,:], y: pyidx, x: pyidx) -> cy.bint:
+    north_y: pyidx = min(y+1, rows-1)
+    south_y: pyidx = max(y-1, 0)
+    east_x : pyidx = min(x+1, cols-1)
+    west_x : pyidx = max(x-1, 0)
+    return (
+        opposite_phi_signs(phi_matrix, y, x, north_y, x) or
+        opposite_phi_signs(phi_matrix, y, x, south_y, x) or
+        opposite_phi_signs(phi_matrix, y, x, y, east_x) or
+        opposite_phi_signs(phi_matrix, y, x, y, west_x)
+        )
 
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_xy?
 @cy.profile(True)
 @cy.ccall
-def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], tracked_cells: object, rows: pyidx, cols: pyidx) -> set:
+def identify_tracked_frontier_cells(phi_matrix: cy.float[:,:], fire_behavior_list: list, spot_ignited: list, rows: pyidx, cols: pyidx) -> set:
     """
-    TODO: Add docstring
+    Resolves the set of frontier cells, returning a set of (y, x) coordinates.
+    
+    `fire_behavior_list` and `spot_ignited` are lists that cover the set of potential frontier cells.
     """
     frontier_cells: set = set()
-    tracked_cells_itr: nbt.TrackedCellsIterator = nbt.tracked_cells_iterator(tracked_cells)
-    while tracked_cells_itr.has_next():
-        cell_index: coord_yx = tracked_cells_itr.next_cell()
+    tcb: TrackedCellBehavior
+    y: pyidx
+    x: pyidx
+    cell_index: object
+    for tcb in fire_behavior_list:
         # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-        y      : pyidx = cell_index[0]
-        x      : pyidx = cell_index[1]
-        north_y: pyidx = min(y+1, rows-1)
-        south_y: pyidx = max(y-1, 0)
-        east_x : pyidx = min(x+1, cols-1)
-        west_x : pyidx = max(x-1, 0)
-        if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
-            opposite_phi_signs(phi_matrix, y, x, south_y, x) or
-            opposite_phi_signs(phi_matrix, y, x, y, east_x) or
-            opposite_phi_signs(phi_matrix, y, x, y, west_x)):
+        y = tcb.y
+        x = tcb.x
+        if is_frontier_cell(rows, cols, phi_matrix, y, x):
+            cell_index = (y, x)
+            frontier_cells.add(cell_index)
+    for cell_index in spot_ignited:
+        y = cell_index[0]
+        x = cell_index[0]
+        if is_frontier_cell(rows, cols, phi_matrix, y, x):
             frontier_cells.add(cell_index)
     return frontier_cells
 
@@ -1351,35 +1365,51 @@ def new_TrackedCellBehavior(
     return t
 
 @cy.ccall
-def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop_time: cy.float) -> cy.void:
+def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop_time: cy.float) -> list:
+    """
+    Resolves the cells to be ignited by spotting in the current time step,
+    returning them as a list of (y, x) tuples,
+    and mutates `output_matrices` accordingly.
+    """
+    ignited: list = []
     if len(spot_ignitions) > 0:
         phi_matrix               : cy.float[:,:] = output_matrices["phi"]
         time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
         ignition_time: cy.float
         # https://grantjenks.com/docs/sortedcontainers/sorteddict.html
         n: pyidx = spot_ignitions.bisect_left(stop_time) # number of ignition_time values smaller than stop_time.
+        _i: pyidx
         for _i in range(n):
             ignition_time, ignited_cells = spot_ignitions.popitem(index=0) # remove and return smallest ignition_time.
             for cell_index in ignited_cells:
                 y: pyidx = cell_index[0]
-                x: pydix = cell_index[1]
+                x: pyidx = cell_index[1]
                 if phi_matrix[y,x] > 0.0: # Not burned yet
                     phi_matrix[y,x]             = -1.0
                     time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
-                    #tracked_cells[cell_index]   = tracked_cells.get(cell_index, 0) # FIXME not sure why this was useful, since the cell will get tracked as a result of updating phi_matrix?
+                    ignited.append(cell_index)
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
+    return ignited
 
 @cy.ccall
 def reset_phi_star(
         fire_behavior_list: list,
         phi_star_matrix: cy.float[:,:],
-        phi_matrix: cy.float[:,:]
+        phi_matrix: cy.float[:,:],
+        spot_ignited: list
     ) -> cy.void:
+    y: pyidx
+    x: pyidx
     for t in fire_behavior_list:
         tcb: TrackedCellBehavior = t
         y = tcb.y
         x = tcb.x
-        phi_star_matrix[y,x] = phi_matrix[y,x] 
+        phi_star_matrix[y,x] = phi_matrix[y,x]
+    for cell_index in spot_ignited:
+        y = cell_index[0]
+        x = cell_index[1]
+        phi_star_matrix[y,x] = phi_matrix[y,x]
+
 
 @cy.profile(True)
 @cy.cfunc
@@ -1682,13 +1712,13 @@ def spread_fire_one_timestep(space_time_cubes: dict, output_matrices: dict, fron
     # Update phi_matrix and time_of_arrival matrix for all cells that ignite a new spot fire before stop_time
     # FIXME factor this out into function, for profiling
 
-    ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
+    spot_ignited = ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
 
     # Save the new phi_matrix values in phi_star_matrix
-    reset_phi_star(fire_behavior_list, phi_star_matrix, phi_matrix)
+    reset_phi_star(fire_behavior_list, phi_star_matrix, phi_matrix, spot_ignited)
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
-    frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, tracked_cells, rows, cols)
+    frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, fire_behavior_list, spot_ignited, rows, cols)
     tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new, buffer_width)
 
 
