@@ -1448,11 +1448,11 @@ def reset_phi_star(
 @cy.ccall
 def spot_from_burned_cell(
         spot_config,
-        cube_resolution: vec_xyz, # HACK
+        band_duration: cy.float,
+        spatial_resolution: vec_xy,
         rows: pyidx, 
         cols: pyidx,
         stc: SpreadInputs,
-        fire_type_matrix: cy.uchar[:,:],
         random_generator: BufferedRandGen,
         y: pyidx,
         x: pyidx,
@@ -1460,8 +1460,7 @@ def spot_from_burned_cell(
         toa: cy.float,
         spot_ignitions: object
     ) -> cy.void:
-    band_duration           : cy.float = cube_resolution[0]
-    cell_horizontal_area_m2 : cy.float = cube_resolution[1] * cube_resolution[2]
+    cell_horizontal_area_m2 : cy.float = spatial_resolution[0] * spatial_resolution[1]
     t_cast                  : pyidx    = int(toa // band_duration)
     space_time_coordinate   : coord_tyx = (t_cast, y, x)
     slope                   : cy.float = lookup_space_time_cube_float32(stc.slope, space_time_coordinate)
@@ -1479,9 +1478,8 @@ def spot_from_burned_cell(
     new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
                                                                     stc.temperature,
                                                                     stc.fuel_moisture_dead_1hr,
-                                                                    fire_type_matrix,
                                                                     (rows, cols),
-                                                                    cube_resolution,
+                                                                    spatial_resolution,
                                                                     space_time_coordinate,
                                                                     upwind_direction,
                                                                     wind_speed_10m,
@@ -1569,6 +1567,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
     band_duration: cy.float = cube_resolution[0]
     cell_height  : cy.float = cube_resolution[1]
     cell_width   : cy.float = cube_resolution[2]
+    spatial_resolution: vec_xy = (cell_height, cell_width)
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x: cy.float = 0.0
@@ -1739,11 +1738,11 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
                 if spot_config:
                     spot_from_burned_cell(
                         spot_config,
-                        cube_resolution,
+                        band_duration,
+                        spatial_resolution,
                         rows, 
                         cols,
                         stc,
-                        fire_type_matrix,
                         random_generator,
                         y,
                         x,
