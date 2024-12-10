@@ -78,6 +78,8 @@ class NarrowBandTracker:
     Logically, this class acts a sorted dict from (y, x) -> n,
     in which n is the number of frontier cells which buffer contains (y, x).
     """
+    y_high: pyidx
+    x_high: pyidx
     # INVARIANT for all (y, x) in the keys, ys_offset <= y < ys_offset + len(ys_list)
     ys_offset: cy.int
     # OPTIM maybe we can make this faster by making ys_list a raw array.
@@ -88,6 +90,14 @@ class NarrowBandTracker:
     # i.e. one of the counts in segm.counts will be > 0.
 
     _rows_count: cy.int # INVARIANT the count of y_idx for which ys_list[y_idx] is not None. Therefore the count of distinct y values with positive counts.
+
+
+@cy.ccall
+def new_NarrowBandTracker(y_high: pyidx, x_high: pyidx) -> NarrowBandTracker:
+    ret: NarrowBandTracker = NarrowBandTracker()
+    ret.y_high = y_high
+    ret.x_high = x_high
+    return ret
 
 
 # NOTE writing these are like methods, but writing them as functions keeps them private and simplifies pxd declarations.
@@ -160,6 +170,15 @@ def decr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
 
 
 @cy.ccall
+@cy.exceptval(check=False)
+def resolve_truncated_x_segment(tracked_cells: NarrowBandTracker, x: cy.int, buffer_width: cy.int) -> cy.tuple[cy.int, cy.int]:
+    x_start: cy.int = max(0, x - buffer_width)
+    x_end: cy.int = min(tracked_cells.x_high - 1, x + buffer_width)
+    width_truncated: cy.int = x_end - x_start
+    return (x_start, width_truncated)
+
+
+@cy.ccall
 def incr_square_around(tracked_cells: NarrowBandTracker, y: cy.int, x: cy.int, buffer_width: cy.int):
     """
     Mutates tracked_cells by incrementing all cells within `buffer_width` of (y, x).
@@ -168,9 +187,11 @@ def incr_square_around(tracked_cells: NarrowBandTracker, y: cy.int, x: cy.int, b
     """
     width: cy.int = 2*buffer_width + 1
     i: cy.int
+    x_start, width_truncated = resolve_truncated_x_segment(tracked_cells, x, buffer_width)
     for i in range(width):
         y1: cy.int = y - buffer_width + i
-        incr_y_segment(tracked_cells, y1, x - buffer_width, width)
+        if (y1 >= 0) and (y1 < tracked_cells.y_high):
+            incr_y_segment(tracked_cells, y1, x_start, width_truncated)
 
 
 @cy.ccall
@@ -184,9 +205,11 @@ def decr_square_around(tracked_cells: NarrowBandTracker, y: cy.int, x: cy.int, b
     """
     width: cy.int = 2*buffer_width + 1
     i: cy.int
+    x_start, width_truncated = resolve_truncated_x_segment(tracked_cells, x, buffer_width)
     for i in range(width):
         y1: cy.int = y - buffer_width + i
-        decr_y_segment(tracked_cells, y1, x - buffer_width, width)
+        if (y1 >= 0) and (y1 < tracked_cells.y_high):
+            decr_y_segment(tracked_cells, y1, x_start, width_truncated)
 
 
 @cy.ccall
