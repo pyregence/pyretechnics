@@ -1445,6 +1445,61 @@ def reset_phi_star(
         x = cell_index[1]
         phi_star_matrix[y,x] = phi_matrix[y,x]
 
+@cy.ccall
+def spot_from_burned_cell(
+        spot_config,
+        cube_resolution: vec_xyz, # HACK
+        rows: pyidx, 
+        cols: pyidx,
+        stc: SpreadInputs,
+        fire_type_matrix: cy.uchar[:,:],
+        random_generator: BufferedRandGen,
+        y: pyidx,
+        x: pyidx,
+        fb: SpreadBehavior,
+        toa: cy.float,
+        spot_ignitions: object
+    ) -> cy.void:
+    band_duration           : cy.float = cube_resolution[0]
+    cell_horizontal_area_m2 : cy.float = cube_resolution[1] * cube_resolution[2]
+    t_cast                  : pyidx    = int(toa // band_duration)
+    space_time_coordinate   : coord_tyx = (t_cast, y, x)
+    slope                   : cy.float = lookup_space_time_cube_float32(stc.slope, space_time_coordinate)
+    aspect                  : cy.float = lookup_space_time_cube_float32(stc.aspect, space_time_coordinate)
+    elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
+    firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
+    expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb, # FIXME restore fn name
+                                                                            elevation_gradient,
+                                                                            cell_horizontal_area_m2,
+                                                                            firebrands_per_unit_heat)
+    # OPTIM we might want to hold to the SpreadInputs and look these up in there.
+    wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
+    upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
+    # FIXME optim first sample the number of firebrands (usually zero), then call this.
+    new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
+                                                                    stc.temperature,
+                                                                    stc.fuel_moisture_dead_1hr,
+                                                                    fire_type_matrix,
+                                                                    (rows, cols),
+                                                                    cube_resolution,
+                                                                    space_time_coordinate,
+                                                                    upwind_direction,
+                                                                    wind_speed_10m,
+                                                                    fb.fireline_intensity,
+                                                                    fb.flame_length,
+                                                                    toa,
+                                                                    random_generator,
+                                                                    expected_firebrand_count,
+                                                                    spot_config)
+    if new_ignitions:
+        ignition_time                      = new_ignitions[0]
+        ignited_cells                      = new_ignitions[1]
+        concurrent_ignited_cells: set|None = spot_ignitions.get(ignition_time)
+        if concurrent_ignited_cells:
+            spot_ignitions[ignition_time] = set.union(ignited_cells, concurrent_ignited_cells)
+        else:
+            spot_ignitions[ignition_time] = ignited_cells
+
 
 @cy.profile(True)
 # TODO: @cy.ccall
@@ -1522,6 +1577,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
     # Create an empty dictionary to store intermediate fire behavior values per cell
     fire_behavior_list: list = [] # INTRO a list recording the SpreadBehavior and tracked cells after the first pass.
 
+    # First Runge-Kutta iteration.
     # Compute fire behavior values at start_time and identify the max spread rates in the x and y dimensions
     cell_index           : coord_yx
     y                    : pyidx
@@ -1598,6 +1654,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
     stop_time: cy.float = start_time + dt
 
     # Update the tracked cell values in phi_star_matrix
+    # FIXME factor out to function
     for t in fire_behavior_list:
         tcb: TrackedCellBehavior = t
         fb: SpreadBehavior = tcb.spread_behavior
@@ -1606,11 +1663,12 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
             phi_star_matrix[tcb.y,tcb.x] += dphi_dt * dt
 
     # Compute fire behavior values at stop_time and update the output_matrices
-    ignition_time: float
-    ignited_cells: set
     t1           : pyidx = int(stop_time // band_duration)
 
+    # 2nd Runge-Kutta iteration
     cell_horizontal_area_m2: cy.float = cube_resolution[1] * cube_resolution[2]
+    ignition_time: float
+    ignited_cells: set
     for t in fire_behavior_list:
         tcb: TrackedCellBehavior = t
         # Unpack cell_index
@@ -1627,7 +1685,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
 
         # Calculate the fire behavior normal to the fire front on the slope-tangential plane
         space_time_coordinate    = (t1, y, x)
-        fire_behavior_star: SpreadBehavior = burn_cell_toward_phi_gradient(stc,#space_time_cubes,
+        fire_behavior_star: SpreadBehavior = burn_cell_toward_phi_gradient(stc,
                                                                  space_time_coordinate,
                                                                  phi_gradient_xy_star,
                                                                  use_wind_limit,
@@ -1653,12 +1711,12 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
             fire_behavior_star.dphi_dt = dphi_dt_star * dphi_dt_star_correction
 
         # Calculate the new phi value at stop_time as phi_next
-        fb: SpreadBehavior = tcb.spread_behavior
+        fb: SpreadBehavior = tcb.spread_behavior # NOTE we will use the fire behavior at the first Runge-Kutta iteration as output.
         dphi_dt_estimate1: cy.float = fb.dphi_dt
         dphi_dt_estimate2: cy.float = fire_behavior_star.dphi_dt
         # FIXME * 0.5
         dphi_dt_average  : cy.float = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
-        if dphi_dt_average != 0.0:
+        if dphi_dt_average != 0.0: # FIXME why are we doing this unlikely check?
             phi     : cy.float = phi_matrix[y,x]
             phi_next: cy.float = phi + dphi_dt_average * dt
 
@@ -1667,7 +1725,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
 
             # Record fire behavior values in the output_matrices for cells that are burned in this timestep
             # NOTE: This records the fire behavior values at start_time and not at the time of arrival.
-            if phi > 0.0 and phi_next <= 0.0:
+            if phi > 0.0 and phi_next <= 0.0: # This cell burned during this iteration.
                 toa: cy.float = start_time + dt * phi / (phi - phi_next)
                 fire_type_matrix[y,x]          = fb.fire_type
                 spread_rate_matrix[y,x]        = fb.spread_rate
@@ -1677,46 +1735,22 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
                 time_of_arrival_matrix[y,x]    = toa
 
                 # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
+                # FIXME factor out to function
                 if spot_config:
-                    t_cast                  : pyidx    = int(toa // band_duration)
-                    space_time_coordinate   : coord_tyx = (t_cast, y, x)
-                    slope                   : cy.float = lookup_space_time_cube_float32(stc.slope, space_time_coordinate)
-                    aspect                  : cy.float = lookup_space_time_cube_float32(stc.aspect, space_time_coordinate)
-                    elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
-                    firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
-                    expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb, # FIXME restore fn name
-                                                                                            elevation_gradient,
-                                                                                            cell_horizontal_area_m2,
-                                                                                            firebrands_per_unit_heat)
-                    # OPTIM we might want to hold to the SpreadInputs and look these up in there.
-                    wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
-                    upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
-                    new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
-                                                                                   space_time_cubes["temperature"], # FIXME
-                                                                                   stc.fuel_moisture_dead_1hr,
-                                                                                   fire_type_matrix,
-                                                                                   (rows, cols),
-                                                                                   cube_resolution,
-                                                                                   space_time_coordinate,
-                                                                                   upwind_direction,
-                                                                                   wind_speed_10m,
-                                                                                   fb.fireline_intensity,
-                                                                                   fb.flame_length,
-                                                                                   toa,
-                                                                                   random_generator,
-                                                                                   expected_firebrand_count,
-                                                                                   spot_config)
-                    if new_ignitions:
-                        ignition_time                      = new_ignitions[0]
-                        ignited_cells                      = new_ignitions[1]
-                        concurrent_ignited_cells: set|None = spot_ignitions.get(ignition_time)
-                        if concurrent_ignited_cells:
-                            spot_ignitions[ignition_time] = set.union(ignited_cells, concurrent_ignited_cells)
-                        else:
-                            spot_ignitions[ignition_time] = ignited_cells
-
-    # Update phi_matrix and time_of_arrival matrix for all cells that ignite a new spot fire before stop_time
-    # FIXME factor this out into function, for profiling
+                    spot_from_burned_cell(
+                        spot_config,
+                        cube_resolution,
+                        rows, 
+                        cols,
+                        stc,
+                        fire_type_matrix,
+                        random_generator,
+                        y,
+                        x,
+                        fb,
+                        toa,
+                        spot_ignitions
+                        )
 
     spot_ignited = ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
 
