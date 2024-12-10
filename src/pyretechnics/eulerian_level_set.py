@@ -1460,32 +1460,34 @@ def spot_from_burned_cell(
                                                                             elevation_gradient,
                                                                             cell_horizontal_area_m2,
                                                                             firebrands_per_unit_heat)
-    # OPTIM we might want to hold to the SpreadInputs and look these up in there.
-    wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
-    upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
-    # FIXME optim first sample the number of firebrands (usually zero), then call this.
-    new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
-                                                                    stc.temperature,
-                                                                    stc.fuel_moisture_dead_1hr,
-                                                                    (rows, cols),
-                                                                    spatial_resolution,
-                                                                    space_time_coordinate,
-                                                                    upwind_direction,
-                                                                    wind_speed_10m,
-                                                                    fb.fireline_intensity,
-                                                                    fb.flame_length,
-                                                                    toa,
-                                                                    random_generator,
-                                                                    expected_firebrand_count,
-                                                                    spot_config)
-    if new_ignitions:
-        ignition_time                      = new_ignitions[0]
-        ignited_cells                      = new_ignitions[1]
-        concurrent_ignited_cells: set|None = spot_ignitions.get(ignition_time)
-        if concurrent_ignited_cells:
-            spot_ignitions[ignition_time] = set.union(ignited_cells, concurrent_ignited_cells)
-        else:
-            spot_ignitions[ignition_time] = ignited_cells
+    num_firebrands: pyidx = random_generator.next_poisson(expected_firebrand_count)
+    if num_firebrands > 0:
+        # OPTIM we might want to hold to the SpreadInputs and look these up in there.
+        wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
+        upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
+        # FIXME optim first sample the number of firebrands (usually zero), then call this.
+        new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
+                                                                        stc.temperature,
+                                                                        stc.fuel_moisture_dead_1hr,
+                                                                        (rows, cols),
+                                                                        spatial_resolution,
+                                                                        space_time_coordinate,
+                                                                        upwind_direction,
+                                                                        wind_speed_10m,
+                                                                        fb.fireline_intensity,
+                                                                        fb.flame_length,
+                                                                        toa,
+                                                                        random_generator,
+                                                                        num_firebrands,
+                                                                        spot_config)
+        if new_ignitions:
+            ignition_time                      = new_ignitions[0]
+            ignited_cells                      = new_ignitions[1]
+            concurrent_ignited_cells: set|None = spot_ignitions.get(ignition_time)
+            if concurrent_ignited_cells:
+                spot_ignitions[ignition_time] = set.union(ignited_cells, concurrent_ignited_cells)
+            else:
+                spot_ignitions[ignition_time] = ignited_cells
 
 
 @cy.profile(True)
