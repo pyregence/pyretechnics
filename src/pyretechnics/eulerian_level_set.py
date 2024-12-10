@@ -1467,7 +1467,7 @@ def spot_from_burned_cell(
     aspect                  : cy.float = lookup_space_time_cube_float32(stc.aspect, space_time_coordinate)
     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
     firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
-    expected_firebrand_count: cy.float = spot.expct_firebrand_production(fb, # FIXME restore fn name
+    expected_firebrand_count: cy.float = spot.expected_firebrand_production(fb,
                                                                             elevation_gradient,
                                                                             cell_horizontal_area_m2,
                                                                             firebrands_per_unit_heat)

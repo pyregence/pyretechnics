@@ -24,7 +24,7 @@ import cython as cy
 
 @cy.ccall
 @cy.exceptval(-1)
-def expct_firebrand_production(
+def expected_firebrand_production(
         fire_behavior: py_types.SpreadBehavior,
         elevation_gradient: py_types.vec_xy, 
         cell_horizontal_area_m2: cy.float,
