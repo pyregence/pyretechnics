@@ -44,6 +44,8 @@ def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
 
 @cy.profile(False)
 @cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
 def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
 
@@ -61,12 +63,16 @@ def scale_3d(scalar: cy.float, vector: vec_xyz) -> vec_xyz:
 
 @cy.profile(False)
 @cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
 def add_2d(vector1: vec_xy, vector2: vec_xy) -> vec_xy:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1])
 
 
 @cy.profile(False)
 @cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
 def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2])
 
@@ -74,12 +80,16 @@ def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
 # TODO: result uninitialized warning
 @cy.profile(False)
 @cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
 def vector_magnitude_2d(vector: vec_xy) -> cy.float:
     return sqrt(dot_2d(vector, vector))
 
 
 @cy.profile(False)
 @cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
 def vector_magnitude_3d(vector: vec_xyz) -> cy.float:
     return sqrt(dot_3d(vector, vector))
 

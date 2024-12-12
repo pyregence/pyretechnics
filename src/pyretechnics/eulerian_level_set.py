@@ -249,7 +249,7 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
     east_x     : pyidx = min(x+1, cols-1)
     west_x     : pyidx = max(x-1, 0)
 
-    dphi_loc: cy.float = phi[y][east_x] - phi[y][x]
+    dphi_loc: cy.float = phi[y][east_x] - phi[y][x] # FIXME bad array lookup notation I think?
     if u_x >= 0.0:
         dphi_up: cy.float = phi[y][x] - phi[y][west_x]
         B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
@@ -1009,6 +1009,32 @@ def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellIn
         weather_spread_adjustment      = weather_spread_adjustment
     )
 
+@cy.ccall
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def unburned_SpreadBehavior(elevation_gradient: vec_xy, dphi_st: vec_xyz) -> SpreadBehavior:
+    # NOTE we're only going through these annoying calculations because we are required to return a spread_direction unit vector, which is of questionable value.
+    # IMPROVEMENT We wouldn't have to go through this trouble if we simply returned a Cartesian speed vector instead, which would play more nicely with the rest of the code.
+    spread_direction: vec_xyz
+    if dphi_st != (0, 0, 0): # IMPROVEMENT numerical stability
+        spread_direction = scale_3d(1./ vector_magnitude_3d(dphi_st), dphi_st)
+    elif elevation_gradient != (0, 0): # IMPROVEMENT numerical stability
+        slope_vector_3d: vec_xyz = to_slope_plane(elevation_gradient, elevation_gradient)
+        spread_direction = as_unit_vector_3d(slope_vector_3d)
+    else:
+        spread_direction = (0., 1., 0.) # default: North
+    #============================================================================================
+    # Return zero surface fire behavior
+    #============================================================================================
+    return SpreadBehavior(
+        dphi_dt           = 0.0,
+        fire_type         = fire_type_unburned,
+        spread_rate       = 0.0,
+        spread_direction  = spread_direction,
+        fireline_intensity= 0.0,
+        flame_length      = 0.0,
+    )
+
 @cy.profile(True)
 @cy.ccall
 @cy.cdivision(True)
@@ -1118,34 +1144,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
     
 
     if not (phi_magnitude > 0.0 and fm_struct.burnable):
-        # Cell is not on the fire perimeter and/or contains an unknown or non-burnable fuel model
-
-        #================================================================================================
-        # Set the spread direction to the phi gradient direction, upslope, or North
-        #================================================================================================
-
-        spread_direction: vec_xyz
-        if phi_magnitude > 0.0:
-            spread_direction = scale_3d(1./ phi_magnitude, phi_gradient)
-        elif slope > 0.0:
-            slope_vector_3d: vec_xyz = to_slope_plane(elevation_gradient, elevation_gradient)
-            spread_direction = as_unit_vector_3d(slope_vector_3d)
-        else:
-            spread_direction = (0., 1., 0.) # default: North
-
-        #============================================================================================
-        # Return zero surface fire behavior
-        #============================================================================================
-
-        return SpreadBehavior(
-            dphi_dt           = 0.0,
-            fire_type         = fire_type_unburned,
-            spread_rate       = 0.0,
-            spread_direction  = spread_direction,
-            fireline_intensity= 0.0,
-            flame_length      = 0.0,
-        )
-
+        return unburned_SpreadBehavior(elevation_gradient, phi_gradient)
     else:
         # Cell is on the fire perimeter and contains a burnable fuel model
 
@@ -1772,6 +1771,797 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         "spot_ignitions"  : spot_ignitions,
         "random_generator": random_generator,
     }
+
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+@cy.cdivision(True)
+def compute_st_dphi_2(
+    slp_dz: vec_xy, # Elevation gradient (dimensionless)
+    dphi: vec_xy # 2D horizontal phi gradient (phi/m)
+    ) -> cy.float:
+    """
+    Computes st_dphi_2, the squared norm (_2) of slope-tangential (st_) phi gradient (dphi).
+    """
+    dz0, dz1 = slp_dz
+    dp0, dp1 = dphi
+    p_z: cy.float = dp0*dz0 + dp1*dz1
+    st_dphi_2: cy.float = dp0*dp0 + dp1*dp1 - (p_z * p_z)/(1.0 + dz0*dz0 + dz1*dz1)
+    return st_dphi_2
+
+
+PartialedEllWavelet = cy.struct( # INTRO Pre-computed coefficients to apply elliptical wavelet math as fast as possible (once the phi gradient information is available). See `dphi_dt_from_partialed_wavelet()``.
+    Vh_3d = vec_xyz, # Heading spread rate vector (m/min).
+    # The 'ewc_' prefix stands for 'elliptical wavelet coefficient', making the name easy to track for in the code.
+    # I deliberately didn't choose descriptive names for these - I find that short, collision-free synthetic names are more useful to programmers here.
+    ewc_A = cy.float, # Dimensionless coefficient (<= 0).
+    ewc_B = cy.float, # Dimensionless coefficient (<= 0).
+    ewc_C = cy.float, # Dimensionless coefficient (>= 0).
+)
+
+
+@cy.ccall
+@cy.exceptval(check=False)
+@cy.cdivision(True)
+def prepare_partialed_wavelet(
+        Vh_3d: vec_xyz, # Heading spread rate vector.
+        Vf: cy.float, # Flanking spread rate.
+        Vb: cy.float, # Backing spread rate.
+        # NOTE accepting the (Vf, Vb) pair is more robust than just eccentricity (or equivalently LoW),
+        # because not all fire models use elliptical wavelets that grow around their focus:
+        # for example, ELMFIRE defaults to something else.
+        ) -> PartialedEllWavelet:
+    """
+    Prepares ('partials') the elliptical wavelet calculation based on the given elliptical dimensions.
+    The returned data is meant to be passed to function `dphi_dt_from_partialed_wavelet()`.
+    """
+    Vh: cy.float = vector_magnitude_3d(Vh_3d)
+    Vh_inv: cy.float = (1.0/Vh) if Vh > 0 else 0.0
+    LoW: cy.float = 0.5*(Vh + Vb)*Vh_inv # Length/Width ratio
+    return PartialedEllWavelet(
+        # NOTE if Vh = 0, all of the following will be 0, as they should.
+        Vh_3d = Vh_3d, 
+        ewc_A = -0.5 * (Vh - Vb) * Vh_inv, # INTRO
+        ewc_B = -(Vf * Vh_inv), # INTRO
+        ewc_C = (LoW*LoW - 1) # INTRO
+        )
+
+
+@cy.ccall
+@cy.exceptval(check=False)
+def zero_partialed_wavelet() -> PartialedEllWavelet:
+    Vh_3d: vec_xyz = (0, 0, 0)
+    return prepare_partialed_wavelet(Vh_3d, 0, 0)
+
+
+@cy.ccall
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def pw_from_FireBehaviorMax(fb_max: sf.FireBehaviorMax) -> PartialedEllWavelet:
+    Vh: cy.float = fb_max.max_spread_rate
+    Vh_3d: vec_xyz = scale_3d(Vh, fb_max.max_spread_direction)
+    if Vh > 0:
+        LoW: cy.float = fb_max.length_to_width_ratio
+        ecc: cy.float = fb_max.eccentricity
+        backing_adjustment: cy.float   = (1.0 - ecc) / (1.0 + ecc)
+        Vb: cy.float  = Vh * backing_adjustment
+        Vf: cy.float = (Vh + Vb) / (2.0 * LoW) # m/min
+        return prepare_partialed_wavelet(Vh_3d, Vf, Vb)
+    else:
+        return zero_partialed_wavelet()
+
+
+
+@cy.ccall
+@cy.exceptval(check=False)
+def dphi_dt_from_partialed_wavelet(
+        pw: PartialedEllWavelet,
+        dphi: vec_xy, # 2D horizontal gradient of phi.
+        st_dphi_2: cy.float # INTRO Squared norm (_2) of slope-tangential (st_) phi gradient (dphi)
+        ) -> cy.float:
+    """
+    Computes the dphi/dt (phi/min, <= 0) of one elliptical wavelet based on the spatial gradient of phi.
+    """
+    Vx, Vy, Vz = pw.Vh_3d
+    Vh2 = (Vx*Vx + Vy*Vy + Vz*Vz) # Note: this could have been pre-computed too, but it's not clear that it would make things faster.
+    dphi_dx, dphi_dy = dphi
+    Delta: cy.float = (Vx*dphi_dx + Vy*dphi_dy) # Nontrivially, this is the dot-product (hence 'Delta') between the 3D heading spread rate vector and the 3D slope-tangential gradient of phi.
+    dphi_dt: cy.float = (
+        pw.ewc_A * Delta +
+        pw.ewc_B * sqrt(
+            Vh2 * st_dphi_2 +
+            pw.ewc_C * (Delta*Delta)
+            )
+        )
+    return dphi_dt
+
+EllipticalInfo = cy.struct( # Pre-computed information required to compute dphi/dt, once the phi gradient is known. Derived from the surface and crowning wavelets.
+    # NOTE the reason to make this a small struct stored in an array is efficiency - we want the CPU to have a low cache miss rate.
+    cell_index = coord_yx,
+    slp_dz = vec_xy, # Elevation gradient
+    surfc_wavelet = PartialedEllWavelet,
+    crowning_spread_rate = cy.float, # INTRO pre-computed critical threshold in surface spread rate at which crowning occurs.
+    crown_wavelet = PartialedEllWavelet,
+)
+# NOTE a significant benefit of this architecture is that it's Rothermel-agnostic:
+# EllipticalInfo could conceivably be implemented using variants of the Rothermel model.
+# This can be valuable to give flexibility to users.
+
+@cy.ccall
+@cy.exceptval(check=False)
+def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # NOTE this code has to be very fast!
+    """
+    Calculates the dphi/dt (a negative number in phi/min) of the combined surface and crown elliptical wavelets.
+
+    The reason for computing and returning _only_ dphi/dt is efficiency:
+    nothing else is needed in the front-propagating tight loop
+    that iterates over tracked cells.
+    """
+    st_dphi_2: cy.float = compute_st_dphi_2(ell_i.slp_dz, dphi)
+    surfc_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.surfc_wavelet, dphi, st_dphi_2)
+    csr: cy.float = ell_i.crowning_spread_rate
+    csr_2: cy.float = csr * csr
+    does_crown: cy.bint = (surfc_dphi_dt * surfc_dphi_dt) > csr_2 * st_dphi_2 # Logically equivalent to: (surface_spread_rate > crowning_spread_rate), but faster to compute and robust to zero phi gradient.
+    if does_crown:
+        crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.crown_wavelet, dphi, st_dphi_2)
+        return min(surfc_dphi_dt, crown_dphi_dt) # Note that dphi_dt <= 0
+    else:
+        return surfc_dphi_dt
+
+p_CellInputs = cy.declare(pyidx, 17) # FIXME move
+
+from cython.cimports.cython.view import array as cvarray # FIXME move
+
+Pass1CellOutput = cy.struct( # INTRO some data saved during the 1st Runge-Kutta pass.
+    cell_index = coord_yx,
+    dphi = vec_xy,
+    dphi_dt_0 = cy.float, # FIXME rename and be explicit about flux-limiting
+    )
+
+@cy.cclass
+class TrackedCellsArrays:
+    """
+    Arrays used as on-heap supporting data structures during spread.
+    """
+    _arrays_length: pyidx # power of 2, double each time there is a dynamic resizing.
+    n_tracked_cells: pyidx
+
+    # These are arrays
+    float_inputs: cy.float[:, :] # Shape: (n_tracked_cells, p)
+    ell_info: cy.pointer(EllipticalInfo) # Array of structs (needs to be iterated over very efficiently).
+    pass1outputs: cy.pointer(Pass1CellOutput) # The dphi_dt of the 1st pass (FIXME flux-limited?)
+
+    def __cinit__(self, _arrays_length: pyidx = 256):
+        self._arrays_length = _arrays_length
+        self.n_tracked_cells = 0
+        self.float_inputs = cvarray(shape=(self._arrays_length, p_CellInputs), itemsize=cy.sizeof(cy.float), allocate_buffer=True, format='i')
+        self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
+        self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
+        if not self.ell_info:
+            raise MemoryError()
+
+
+    @cy.ccall
+    def reset_size(self, n_tracked_cells: pyidx) -> cy.void:
+        """
+        Ensures that this can hold at least `n_tracked_cells`, resizing the internal arrays if necessary.
+        Also updates `self.n_tracked_cells`.
+        This can erase any data present in this object: callers must make sure this information is no longer needed.
+        """
+        self.n_tracked_cells = n_tracked_cells
+        while self.n_tracked_cells > self._arrays_length:
+            self._arrays_length *= 2
+        PyMem_Free(self.ell_info)
+        self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
+        if not self.ell_info:
+            raise MemoryError()
+        self.float_inputs = cvarray(shape=(self._arrays_length, p_CellInputs), itemsize=cy.sizeof(cy.float), allocate_buffer=True, format='i')
+        self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
+        if not self.pass1outputs:
+            raise MemoryError()
+
+    def __dealloc__(self):
+        PyMem_Free(self.ell_info)
+
+
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
+    """
+    Lexicographic comparison of (y, x) coordinates. Returns -1, 0 or 1.
+    """
+    if c0[0] < c1[0]:
+        return -1
+    if c0[0] > c1[0]:
+        return 1
+    # Now we know both have the same y
+    if c0[1] < c1[1]:
+        return -1
+    if c0[1] > c1[1]:
+        return 1
+    return 0
+
+
+@cy.ccall
+@cy.exceptval(check=False)
+@cy.boundscheck(False)
+@cy.wraparound(False)
+def copy_tracked_cell_data(i_old: pyidx, tca_old: TrackedCellsArrays, i_new: pyidx, tca_new: TrackedCellsArrays) -> cy.void:
+    for k in range(p_CellInputs): # OPTIM maybe we should unroll that loop, or use a native array copy function?
+        tca_new.float_inputs[i_new, k] = tca_old.float_inputs[i_old, k]
+    tca_new.ell_info[i_new] = tca_new.ell_info[i_old]
+    # NOTE tca_old.pass1outputs does not need to be copied over given how it will get used.
+
+
+@cy.cclass
+class InputsLoadingInfo:
+    """
+    This data structures compactly holds all the required information to load inputs,
+    avoiding to pass lots of arguments around.
+    """
+    stc: SpreadInputs
+    rows: pyidx
+    cols: pyidx
+    band_duration: cy.float # seconds
+    spatial_resolution: vec_xy # meters
+    # Options FIXME Maybe split into another type FireBehaviorOptions
+    use_wind_limit: cy.bint
+    surface_lw_ratio_model: object
+    crown_max_lw_ratio: cy.float
+
+
+    
+
+@cy.ccall
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def load_float_inputs_for_cell(
+        ili: InputsLoadingInfo,
+        tyx: coord_tyx,
+        # Where to write the data to:
+        tca: TrackedCellsArrays,
+        i: pyidx) -> cy.void: # FIXME maybe return the CellInputs struct instead?
+    """
+    Reads variables from input SpaceTimeCubes and saves them by mutating `tca.float_inputs`.
+    """
+    inputs: SpreadInputs = ili.stc
+    float_inputs: cy.float[:,:] = tca.float_inputs
+    float_inputs[i,0] = lookup_space_time_cube_float32(inputs.slope, tyx)               # rise/run
+    float_inputs[i,1] = lookup_space_time_cube_float32(inputs.aspect, tyx)              # degrees clockwise from North
+    
+    float_inputs[i,2] = lookup_space_time_cube_float32(inputs.fuel_model, tyx)          # integer index in fm.fuel_model_table
+    
+    float_inputs[i,3] = lookup_space_time_cube_float32(inputs.canopy_cover, tyx)        # 0-1
+    float_inputs[i,4] = lookup_space_time_cube_float32(inputs.canopy_height, tyx)       # m
+    float_inputs[i,5] = lookup_space_time_cube_float32(inputs.canopy_base_height, tyx)  # m
+    float_inputs[i,6] = lookup_space_time_cube_float32(inputs.canopy_bulk_density, tyx) # kg/m^3
+    
+    float_inputs[i,7] = lookup_space_time_cube_float32(inputs.wind_speed_10m, tyx)                # km/hr
+    float_inputs[i,8] = lookup_space_time_cube_float32(inputs.upwind_direction, tyx)              # degrees clockwise from North
+    
+    float_inputs[i,9] = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
+    float_inputs[i,10] = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
+    float_inputs[i,11] = lookup_space_time_cube_float32(inputs.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
+    float_inputs[i,12] = lookup_space_time_cube_float32(inputs.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
+    float_inputs[i,13] = lookup_space_time_cube_float32(inputs.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
+    float_inputs[i,14] = lookup_space_time_cube_float32(inputs.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
+
+    # Spread Rate Adjustments (Optional)
+    float_inputs[i,15] = (lookup_space_time_cube_float32(inputs.fuel_spread_adjustment, tyx) 
+                                 if inputs.fuel_spread_adjustment is not None
+                                 else 1.0)                                         # float >= 0.0
+    float_inputs[i,16] = (lookup_space_time_cube_float32(inputs.weather_spread_adjustment, tyx) 
+                                 if inputs.weather_spread_adjustment is not None
+                                 else 1.0)       
+
+
+@cy.ccall
+@cy.exceptval(check=False)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def load_saved_CellInputs(float_inputs: cy.float[:,:], i: pyidx) -> CellInputs:
+    """
+    Loads the CellInputs struct by reading the data saved in the the float_inputs array.
+    """
+    slope               : cy.float = float_inputs[i, 0]               # rise/run
+    aspect              : cy.float = float_inputs[i, 1]              # degrees clockwise from North
+    
+    fuel_model_number   : cy.float = float_inputs[i, 2]   # integer index in fm.fuel_model_table
+    
+    canopy_cover        : cy.float = float_inputs[i, 3]        # 0-1
+    canopy_height       : cy.float = float_inputs[i, 4]       # m
+    canopy_base_height  : cy.float = float_inputs[i, 5]  # m
+    canopy_bulk_density : cy.float = float_inputs[i, 6] # kg/m^3
+    # Wind, Surface Moisture, and Foliar Moisture
+    wind_speed_10m                : cy.float = float_inputs[i, 7]                # km/hr
+    upwind_direction              : cy.float = float_inputs[i, 8]              # degrees clockwise from North
+    
+    fuel_moisture_dead_1hr        : cy.float = float_inputs[i, 9]        # kg moisture/kg ovendry weight
+    fuel_moisture_dead_10hr       : cy.float = float_inputs[i, 10]       # kg moisture/kg ovendry weight
+    fuel_moisture_dead_100hr      : cy.float = float_inputs[i, 11]      # kg moisture/kg ovendry weight
+    fuel_moisture_live_herbaceous : cy.float = float_inputs[i, 12] # kg moisture/kg ovendry weight
+    fuel_moisture_live_woody      : cy.float = float_inputs[i, 13]      # kg moisture/kg ovendry weight
+    foliar_moisture               : cy.float = float_inputs[i, 14]               # kg moisture/kg ovendry weight
+
+    # Spread Rate Adjustments (Optional)
+    fuel_spread_adjustment    : cy.float = float_inputs[i, 15]    # float >= 0.0
+    weather_spread_adjustment : cy.float = float_inputs[i, 16] # float >= 0.0
+
+    cell_inputs: CellInputs = CellInputs(
+        slope = slope,
+        aspect = aspect,
+        fuel_model_number = fuel_model_number,
+        canopy_cover = canopy_cover,
+        canopy_height = canopy_height,
+        canopy_base_height = canopy_base_height,
+        canopy_bulk_density = canopy_bulk_density,
+        wind_speed_10m = wind_speed_10m,
+        upwind_direction = upwind_direction,
+        fuel_moisture_dead_1hr = fuel_moisture_dead_1hr,
+        fuel_moisture_dead_10hr = fuel_moisture_dead_10hr,
+        fuel_moisture_dead_100hr = fuel_moisture_dead_100hr,
+        fuel_moisture_live_herbaceous = fuel_moisture_live_herbaceous,
+        fuel_moisture_live_woody = fuel_moisture_live_woody,
+        foliar_moisture = foliar_moisture,
+        fuel_spread_adjustment = fuel_spread_adjustment,
+        weather_spread_adjustment = weather_spread_adjustment,
+    )
+    return cell_inputs
+
+
+@cy.ccall
+def resolve_surface_max_behavior(
+        ili: InputsLoadingInfo,
+        ci: CellInputs,
+        fm_struct: FuelModel,
+        elevation_gradient: vec_xy,
+        ) -> sf.FireBehaviorMax:
+    spread_rate_adjustment    : cy.float = ci.fuel_spread_adjustment * ci.weather_spread_adjustment # float >= 0.0
+    
+    #============================================================================================
+    # No wind/no-slope behavior
+    #============================================================================================
+
+    M_f: fclaarr = (
+        ci.fuel_moisture_dead_1hr,
+        ci.fuel_moisture_dead_10hr,
+        ci.fuel_moisture_dead_100hr,
+        0.0, # fuel_moisture_dead_herbaceous
+        ci.fuel_moisture_live_herbaceous,
+        ci.fuel_moisture_live_woody)
+    # FIXME factor this out into a function for reusability.
+    fuel_bed_depth               : cy.float = fm_struct.delta                     # ft
+    # Apply fuel moisture to fuel model
+    mfm: FuelModel = moisturize(fm_struct, M_f)
+    surface_fire_min: sf.FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
+
+    #============================================================================================
+    # Max surface fire behavior
+    #============================================================================================
+
+    # Convert from 10m wind speed to 20ft wind speed
+    wind_speed_20ft: cy.float = wind_speed_10m_to_wind_speed_20ft(ci.wind_speed_10m) # km/hr
+
+    # Convert 20ft wind speed from km/hr to m/min
+    wind_speed_20ft_m_min: cy.float = km_hr_to_m_min(wind_speed_20ft) # m/min
+
+    # Convert from 20ft wind speed to midflame wind speed in m/min
+    # FIXME this is getting called as a Python function
+    midflame_wind_speed: cy.float = sf.calc_midflame_wind_speed(
+                                        wind_speed_20ft_m_min,  # m/min
+                                        fuel_bed_depth,         # ft
+                                        m_to_ft(ci.canopy_height), # ft
+                                        ci.canopy_cover)           # 0-1
+    
+    # Calculate surface fire behavior in the direction of maximum spread
+    surface_fire_max: sf.FireBehaviorMax = sf.calc_surface_fire_behavior_max(
+                                                surface_fire_min,
+                                                midflame_wind_speed,
+                                                ci.upwind_direction,
+                                                ci.slope,
+                                                ci.aspect,
+                                                ili.use_wind_limit,
+                                                ili.surface_lw_ratio_model)
+    return surface_fire_max
+
+@cy.ccall
+def resolve_crown_max_behavior(
+        ili: InputsLoadingInfo,
+        ci: CellInputs,
+        fm_struct: FuelModel,
+        elevation_gradient: vec_xy,
+        ) -> sf.FireBehaviorMax:
+    heat_of_combustion: cy.float = Btu_lb_to_kJ_kg(fm_struct.h[0]) # kJ/kg
+    return cf.calc_crown_fire_behavior_max(
+        ci.canopy_height, 
+        ci.canopy_base_height,
+        ci.canopy_bulk_density, 
+        heat_of_combustion,
+        ci.wind_speed_10m, 
+        ci.upwind_direction,
+        ci.slope, 
+        ci.aspect, 
+        ili.crown_max_lw_ratio)
+
+
+@cy.ccall
+@cy.cdivision(True)
+def crown_critical_spread_rate( # FIXME maybe move to spot_fire module.
+        ci: CellInputs,
+        surface_fire_max: sf.FireBehaviorMax,
+        ) -> cy.float:
+    surfc_max_fli: cy.float = surface_fire_max.max_fireline_intensity
+    crown_fli: cy.float = cf.van_wagner_critical_fireline_intensity(ci.canopy_base_height, ci.foliar_moisture)
+    crown_spread_rate: cy.float = (surface_fire_max.max_spread_rate * crown_fli / surfc_max_fli # NOTE this uses the fact that fireline intensity is proportional to spread rate.
+                                   if surfc_max_fli > 0
+                                   else 0)
+    return crown_spread_rate
+
+
+@cy.ccall
+@cy.cdivision(True)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def resolve_cell_elliptical_info(
+        ili: InputsLoadingInfo,
+        tyx: coord_tyx,
+        stc: SpreadInputs, # NOTE only used to call stc.get_fm_struct(fm_number). We're not really reading the rasters here.
+        float_inputs: cy.float[:,:],
+        i: pyidx, 
+        ) -> EllipticalInfo:
+    
+    cell_index: coord_yx = (tyx[1], tyx[2])
+    ci: CellInputs = load_saved_CellInputs(float_inputs, i)
+    elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
+
+    # Load the fuel model
+    fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
+    #fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
+    fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+
+    surfc_pw: PartialedEllWavelet
+    crown_pw: PartialedEllWavelet
+    crown_spread_rate: cy.float
+    if not fm_struct.burnable:
+        surfc_pw = zero_partialed_wavelet()
+        crown_spread_rate = 1234.5 # arbitrary positive value - this threshold will never be reached.
+        crown_pw = zero_partialed_wavelet()
+    else:
+        surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(ili, ci, fm_struct, elevation_gradient)
+        surfc_pw = pw_from_FireBehaviorMax(surface_fire_max)
+        crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
+        crown_fire_max: sf.FireBehaviorMax = resolve_crown_max_behavior(ili, ci, fm_struct, elevation_gradient)
+        crown_pw = pw_from_FireBehaviorMax(crown_fire_max)
+        
+        
+    #============================================================================================
+    # Build the struct
+    #============================================================================================
+
+    ell_i: EllipticalInfo = EllipticalInfo(
+        cell_index = cell_index,
+        slp_dz = elevation_gradient,
+        surfc_wavelet = surfc_pw,
+        crowning_spread_rate = crown_spread_rate,
+        crown_wavelet = crown_pw
+    )
+    return ell_i
+
+
+@cy.ccall
+def resolve_combined_spread_behavior(
+        ili: InputsLoadingInfo,
+        tyx: coord_tyx,
+        dphi: vec_xy,
+        ) -> SpreadBehavior:
+    """
+    Similar to resolve_cell_elliptical_info, but does a more exhaustive computation and returns the SpreadBehavior struct.
+    """
+    stc: SpreadInputs = ili.stc
+    ci: CellInputs = lookup_cell_inputs(stc, tyx)
+    elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
+    dphi_st: vec_xyz = calc_phi_gradient_on_slope(dphi, elevation_gradient)
+    phi_magnitude: cy.float = vector_magnitude_3d(dphi_st)
+    # Load the fuel model
+    fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
+    #fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
+    fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+    if phi_magnitude == 0.0 or not fm_struct.burnable:
+        return unburned_SpreadBehavior(elevation_gradient, dphi_st)
+    else:
+        surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(ili, ci, fm_struct, elevation_gradient)
+        crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
+        sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, dphi_st)
+        doesnt_crown: cy.bint = (sfn.spread_rate <= crown_spread_rate)
+        if doesnt_crown:
+            return sfn
+        else:
+            crown_fire_max: sf.FireBehaviorMax = resolve_crown_max_behavior(ili, ci, fm_struct, elevation_gradient)
+            cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, dphi_st)
+            combined_fire_normal: SpreadBehavior = cf.calc_combined_fire_behavior(sfn, cfn)
+            return combined_fire_normal
+        
+
+
+
+@cy.ccall
+def load_tracked_cell_data(
+        # How to resolve inputs:
+        ili: InputsLoadingInfo,
+        tyx: coord_tyx,
+        # Where to write the data to:
+        tca: TrackedCellsArrays,
+        i: pyidx
+        ) -> cy.void:
+    load_float_inputs_for_cell(ili, tyx, tca, i)
+    # FIXME factor the rest into a new function
+    ell_i: EllipticalInfo = resolve_cell_elliptical_info(ili, tyx, ili.stc, tca.float_inputs, i)
+    tca.ell_info[i] = ell_i
+
+
+
+@cy.ccall
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def sync_tracked_cells_arrays(
+        ili: InputsLoadingInfo,
+        t: pyidx,
+        tracked_cells: nbt.NarrowBandTracker,
+        n_tracked_cells: pyidx,
+        tca_old: TrackedCellsArrays,
+        tca_new: TrackedCellsArrays
+        ) -> cy.void:
+    """
+    Mutates `tca_new` to contain the same cells as `tracked_cells`, 
+    """
+    tca_new.reset_size(n_tracked_cells)
+    cell_new: coord_yx
+    i_old: pyidx = 0
+    i_new: pyidx = 0
+    cell_old: coord_yx = (0, 0)
+    exhausted_old: cy.bint = i_old < tca_old.n_tracked_cells
+    if not(exhausted_old):
+        cell_old = tca_old.ell_info[i_old].cell_index
+    # This loop uses the fact that both tca_old and new_cells_itr are sorted consistently with compare_cell_indexes().
+    new_cells_itr: nbt.TrackedCellsIterator = nbt.tracked_cells_iterator(tracked_cells)
+    while new_cells_itr.has_next(): # OPTIM if needed, make the iteration even faster by avoiding the use of the iterator, which will make the code a bit more ugly and coupled.
+        cell_new = new_cells_itr.next_cell()
+        while not(exhausted_old) and compare_cell_indexes(cell_old, cell_new) < 0: # cell_old is no longer tracked; just move forward.
+            i_old += 1
+            exhausted_old = i_old < tca_old.n_tracked_cells
+            if not(exhausted_old):
+                cell_old = tca_old.ell_info[i_old].cell_index
+        if not(exhausted_old) and (compare_cell_indexes(cell_old, cell_new) == 0): # cell_new was already tracked: copy the data.
+            copy_tracked_cell_data(i_old, tca_old, i_new, tca_new)
+        else: # cell_new was not in tca_old
+            tyx: coord_tyx = (t, cell_new[0], cell_new[1])
+            load_tracked_cell_data(ili, tyx, tca_new, i_new) # FIXME implement; will need other inputs.
+        i_new += 1
+
+
+@cy.ccall
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def update_phi_star(
+        n_tracked_cells: pyidx, 
+        tca: TrackedCellsArrays,
+        dt: cy.float, 
+        phi: cy.float[:,:], 
+        phs: cy.float[:,:]
+        ) -> cy.void:
+    """
+    Mutates the phs ('phi star') matrix, by using the dt and dphi/dt computed in the 1st Runge-Kutta pass.
+    To be called between Runge-Kutta passes.
+    """
+    pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
+    for i in range(n_tracked_cells):
+        pass1out: Pass1CellOutput = pass1outputs[i]
+        cell_index: coord_yx = pass1out.cell_index
+        y, x = cell_index
+        dphi_dt_0i: cy.float = pass1out.dphi_dt_0
+        phs[y, x] = phi[y, x] + (dt * dphi_dt_0i)
+
+
+@cy.cclass
+class BurnedCellInfo: # Using an Extension Type instead of a struct because it's convenient to store in Python data structures like lists and dicts.
+    """
+    This data structure simply records information about a burned cell.
+    """
+    cell_index: coord_yx
+    toa: cy.float # Time Of Arrival
+    dphi: vec_xy # Gradient of Phi field, indicative of front direction.
+    from_spotting: cy.bint # Whether spotting is what caused the cell to ignite.
+
+
+def new_BurnedCellInfo(
+        cell_index: coord_yx,
+        toa: cy.float, # Time Of Arrival
+        dphi: vec_xy, # Gradient of Phi field, indicative of front direction.
+        from_spotting: cy.bint
+        ) -> BurnedCellInfo:
+    ret: BurnedCellInfo = BurnedCellInfo()
+    ret.cell_index = cell_index
+    ret.toa = toa
+    ret.dphi = dphi
+    ret.from_spotting = from_spotting
+    return ret
+
+
+def process_spread_burned_cells(
+        ili: InputsLoadingInfo,
+        output_matrices: dict,
+        spot_ignitions: object,
+        random_generator: BufferedRandGen,
+        spread_burned_cells: list[BurnedCellInfo]
+        ) -> dict:
+    fire_type_matrix: cy.uchar[:,:] = output_matrices["fire_type"]
+    spread_rate_matrix: cy.float[:,:] = output_matrices["spread_rate"]
+    spread_direction_matrix: cy.float[:,:] = output_matrices["spread_direction"]
+    fireline_intensity_matrix: cy.float[:,:] = output_matrices["fireline_intensity"]
+    flame_length_matrix: cy.float[:,:] = output_matrices["flame_length"]
+    time_of_arrival_matrix: cy.float[:,:] = output_matrices["time_of_arrival"]
+
+    burned_cell: BurnedCellInfo
+    for burned_cell in spread_burned_cells:
+        toa: cy.float = burned_cell.toa
+        t: pyidx = int(toa // ili.band_duration)
+        cell_index: coord_yx = burned_cell.cell_index
+        y, x = cell_index
+        tyx: coord_tyx = (t, y, x)
+        # Re-compute the spread behavior. It's OK to re-compute it because a cell burning is a relatively rare event.
+        fb: SpreadBehavior = resolve_combined_spread_behavior(ili, tyx, burned_cell.dphi)
+        # Write to outputs
+        fire_type_matrix[y,x]          = fb.fire_type
+        spread_rate_matrix[y,x]        = fb.spread_rate
+        spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fb.spread_direction)
+        fireline_intensity_matrix[y,x] = fb.fireline_intensity
+        flame_length_matrix[y,x]       = fb.flame_length
+        time_of_arrival_matrix[y,x]    = toa
+
+        # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
+        if ili.spot_config: # FIXME
+            spot_from_burned_cell(
+                ili.spot_config,
+                ili.band_duration,
+                ili.spatial_resolution,
+                ili.rows, 
+                ili.cols,
+                ili.stc,
+                random_generator,
+                y,
+                x,
+                fb,
+                toa,
+                spot_ignitions)
+
+
+
+# @cy.ccall
+# @cy.cdivision(True)
+# def spread_once_timestep(
+#         sim_state: dict,
+#         ili: InputsLoadingInfo
+#     ) -> dict:
+#     output_matrices: dict = sim_state["output_matrices"]
+#     spot_ignitions: object = sim_state["spot_ignitions"]
+#     random_generator: BufferedRandGen = sim_state["random_generator"]
+#     phi: cy.float[:,:] = output_matrices["phi"]
+#     phs: cy.float[:,:] = output_matrices["phi_star"]
+
+#     # FIXME resolve
+#     band_duration: cy.float
+#     dx: cy.float
+#     dy: cy.float
+#     n_tracked_cells: pyidx
+
+#     i: pyidx # Index of tracked cells over 1D arrays
+#     # Insert missing tracked cells.
+#     tracked_cells: nbt.NarrowBandTracker = sim_state["tracked_cells"]
+#     tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
+#     tca_new: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
+#     start_time: cy.float = sim_state["simulation_time"]
+#     t0: pyidx = int(start_time // band_duration)
+#     t_load: pyidx = t0
+#     sync_tracked_cells_arrays(ili, t_load, tracked_cells, n_tracked_cells, tca_old, tca_new)
+    
+#     needs_recompute: cy.bint = False
+#     # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
+
+#     # OPTIM: if fuel moistures haven't changed, don't recomute the no-wind/no-slope behavior.
+#     # This makes sense if the wind field is refreshed more frequently than fuel moistures.
+    
+#     # Re-compute elliptical dimensions if needed.
+    
+#     # 1st Runge-Kutta loop over elliptical dimensions, which:
+#     #   1. helps resolve dt from the CFL condition
+#     #   2. Saves a Pass1CellOutput struct for each cell
+#     # FIXME factor out to function.
+#     ell: cy.pointer[EllipticalInfo] = tca_new.ell_info # FIXME
+#     pass1outputs: cy.pointer[Pass1CellOutput] = tca_new.pass1outputs
+#     dt_max: cy.float # FIXME
+#     dt: cy.float = dt_max
+#     for i in range(n_tracked_cells):
+#         ell_i: EllipticalInfo = ell[i]
+#         cell_index: coord_yx = ell_i.cell_index # FIXME
+#         y: pyidx = cell_index[0]
+#         x: pyidx = cell_index[1]
+#         dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
+#         dphi_dx: cy.float = dphi[0]
+#         dphi_dy: cy.float = dphi[1]
+#         dphi_flim: vec_xy = calc_phi_gradient(phi, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
+#         dphi_norm2: cy.float =(dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+#         dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+#         dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME implement
+#         pass1outputs[i] = Pass1CellOutput( # INTRO
+#             dphi = dphi,
+#             dphi_dt_0 = (dphi_dt * dphi_dt_correction)
+#             )
+#         dt = dt # FIXME update dt, using some notion of min_ux
+
+#     # Now that dt is known, update phi_star_matrix.
+#     update_phi_star(n_tracked_cells, tca_new, dt, phi, phs)
+#     stop_time: cy.float = start_time + dt
+    
+
+#     # 2nd Runge-Kutta loop, which:
+#     #   1. Updates the phi matrix
+#     #   2. Stores the old phi value (I guess)
+#     # FIXME factor out to function.
+#     spread_burned_cells: list[BurnedCellInfo] = []
+#     for i in range(n_tracked_cells):
+#         ell_i: EllipticalInfo = ell[i]
+#         cell_index: coord_yx = ell_i.cell_index # FIXME
+#         y: pyidx = cell_index[0]
+#         x: pyidx = cell_index[1]
+#         dphi: vec_xy = calc_phi_gradient_approx(phs, dx, dy, x, y)
+#         dphi_dx: cy.float = dphi[0]
+#         dphi_dy: cy.float = dphi[1]
+#         dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
+#         dphi_norm2: cy.float =(dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+#         dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+#         dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME
+#         dphi_dt_1i: cy.float = (dphi_dt * dphi_dt_correction)
+#         dphi_dt_0i: cy.float = dphi_dt_0[i] # NOTE we could also infer it from phi_star, phi_old and dt.
+#         phi_old: cy.float = phi[y, x] # NOTE could be inferred from phi_star.
+#         phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
+#         phi[y, x] = phi_new
+#         i_just_burned: cy.bint = (phi_old * phi_new) < 0
+#         if i_just_burned:
+#             spread_burned_cells.append(new_BurnedCellInfo(
+#                 cell_index, 
+#                 toa = start_time + dt * phi_old / (phi_old - phi_new),
+#                 dphi = pass1outputs[i].dphi, # FIXME to be consistent with the toa, we might want to average this with the dphi from the 2nd pass.
+#                 from_spotting=False))
+    
+#     # Side-effects of the burned cells (outputs etc.).
+#     process_spread_burned_cells(ili, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
+    
+
+#     spot_ignited: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, output_matrices, stop_time) # FIXME re-implement to produce BurnedCellInfo
+
+#     # Save the new phi_matrix values in phi_star_matrix
+#     reset_phi_star(spread_burned_cells, phs, phi, spot_ignited) # FIXME
+
+#     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
+#     frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, fire_behavior_list, spot_ignited, rows, cols)
+#     tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new, buffer_width)
+
+
+#     # Return the updated world state
+#     sim_state_new = {
+#         "simulation_time" : stop_time,
+#         "output_matrices" : output_matrices,
+#         "frontier_cells"  : frontier_cells_new,
+#         "tracked_cells"   : tracked_cells_new,
+#         # Purposefully swapping the tracked_cells_arrays
+#         "_tracked_cells_arrays": tca_old,
+#         "_tracked_cells_arrays_old": tca_new,
+#         "spot_ignitions"  : spot_ignitions,
+#         "random_generator": random_generator,
+#     }
+#     return sim_state_new
+
 
 
 @cy.profile(True)
