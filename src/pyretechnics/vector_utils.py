@@ -38,6 +38,7 @@ def vector_magnitude(vector: cy.double[:]) -> cy.double:
 # TODO: result uninitialized warning
 @cy.profile(False)
 @cy.ccall
+@cy.inline
 def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1]
 

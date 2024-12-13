@@ -1489,7 +1489,6 @@ def spot_from_burned_cell(
         # OPTIM we might want to hold to the SpreadInputs and look these up in there.
         wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
         upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
-        # FIXME optim first sample the number of firebrands (usually zero), then call this.
         new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
                                                                         stc.temperature,
                                                                         stc.fuel_moisture_dead_1hr,
@@ -2339,13 +2338,13 @@ def sync_tracked_cells_arrays(
         fb_opts: FireBehaviorSettings,
         t: pyidx,
         tracked_cells: nbt.NarrowBandTracker,
-        n_tracked_cells: pyidx,
         tca_old: TrackedCellsArrays,
         tca_new: TrackedCellsArrays
         ) -> cy.void:
     """
     Mutates `tca_new` to contain the same cells as `tracked_cells`, 
     """
+    n_tracked_cells: pyidx = tracked_cells.n_tracked_cells
     tca_new.reset_size(n_tracked_cells)
     cell_new: coord_yx
     i_old: pyidx = 0
@@ -2390,7 +2389,7 @@ def runge_kutta_pass1(
     Returns the resolved `dt` and mutates `tca.pass1outputs`.
     Reads only `tca.ell_info`.
     """
-    ell_info: cy.pointer[EllipticalInfo] = tca.ell_info # FIXME
+    ell_info: cy.pointer[EllipticalInfo] = tca.ell_info
     pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
     (dx, dy) = spatial_resolution
     # The following will be useful to compute dt based on the CFL constraint.
@@ -2402,7 +2401,7 @@ def runge_kutta_pass1(
     # Now looping over tracked cells:
     for i in range(tca.n_tracked_cells):
         ell_i: EllipticalInfo = ell_info[i]
-        cell_index: coord_yx = ell_i.cell_index # FIXME
+        cell_index: coord_yx = ell_i.cell_index
         y: pyidx = cell_index[0]
         x: pyidx = cell_index[1]
         dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
@@ -2448,7 +2447,6 @@ def runge_kutta_pass1(
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def update_phi_star(
-        n_tracked_cells: pyidx, 
         tca: TrackedCellsArrays,
         dt: cy.float, 
         phi: cy.float[:,:], 
@@ -2459,7 +2457,7 @@ def update_phi_star(
     To be called between Runge-Kutta passes.
     """
     pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
-    for i in range(n_tracked_cells):
+    for i in range(tca.n_tracked_cells):
         pass1out: Pass1CellOutput = pass1outputs[i]
         cell_index: coord_yx = pass1out.cell_index
         y, x = cell_index
@@ -2509,9 +2507,7 @@ def runge_kutta_pass2(
     """
     2nd Runge-Kutta loop, which:
     1. Updates the phi matrix
-    2. Stores the old phi value
-    3. Identifies cells that have just burned and returns them in a list.
-
+    2. Identifies cells that have just burned and returns them in a list.
     Reads from `tca` and `phs`, and mutates `phi`.
     """
     (dx, dy) = spatial_resolution
@@ -2544,7 +2540,7 @@ def runge_kutta_pass2(
         i_just_burned: cy.bint = (phi_old * phi_new) < 0 # Phi can only ever decrease, therefore if these are of opposite signs, the cell has just burned.
         if i_just_burned:
             spread_burned_cells.append(new_BurnedCellInfo(
-                cell_index, 
+                cell_index,
                 toa = start_time + dt * phi_old / (phi_old - phi_new),
                 dphi = pass1outputs[i].dphi, # Using the 1st-pass phi gradient. FIXME to be consistent with the toa, we might want to average this with the dphi from the 2nd pass.
                 from_spotting=False))
@@ -2588,7 +2584,7 @@ def process_spread_burned_cells(
         time_of_arrival_matrix[y,x]    = toa
 
         # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
-        if fb_opts.spot_config: # FIXME
+        if fb_opts.spot_config:
             spot_from_burned_cell(
                 fb_opts.spot_config,
                 # FIXME simplify this function now that we have these new props:
@@ -2605,79 +2601,161 @@ def process_spread_burned_cells(
                 spot_ignitions)
 
 
+@cy.ccall
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def reset_phi_star_2(
+        spread_burned_cells: list[BurnedCellInfo],
+        spot_ignited: list[BurnedCellInfo],
+        phi_star_matrix: cy.float[:,:],
+        phi_matrix: cy.float[:,:]
+    ) -> cy.void:
+    y: pyidx
+    x: pyidx
+    tcb: BurnedCellInfo
+    for tcb in spread_burned_cells:
+        y, x = tcb.cell_index
+        phi_star_matrix[y,x] = phi_matrix[y,x]
+    for tcb in spot_ignited:
+        y, x = tcb.cell_index
+        phi_star_matrix[y,x] = phi_matrix[y,x]
 
-# @cy.ccall
-# @cy.cdivision(True)
-# def spread_once_timestep(
-#         sim_state: dict,
-#         stc: SpreadInputs,
-#         fb_opts: FireBehaviorSettings,
-#         max_timestep: cy.float,
-#     ) -> dict:
-#     output_matrices: dict = sim_state["output_matrices"]
-#     spot_ignitions: object = sim_state["spot_ignitions"]
-#     random_generator: BufferedRandGen = sim_state["random_generator"]
-#     phi: cy.float[:,:] = output_matrices["phi"]
-#     phs: cy.float[:,:] = output_matrices["phi_star"]
 
-#     band_duration: cy.float = stc.band_duration
-#     (dx, dy) = stc.spatial_resolution
-#     # FIXME resolve
-#     n_tracked_cells: pyidx
+@cy.ccall
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def ignite_from_spotting_2(spot_ignitions: sortc.SortedDict, output_matrices, stop_time: cy.float) -> list[BurnedCellInfo]:
+    """
+    Resolves the cells to be ignited by spotting in the current time step,
+    returning them as a list of (y, x) tuples,
+    and mutates `output_matrices` accordingly.
+    """
+    ignited: list = []
+    if len(spot_ignitions) > 0:
+        phi_matrix               : cy.float[:,:] = output_matrices["phi"]
+        time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
+        ignition_time: cy.float
+        # https://grantjenks.com/docs/sortedcontainers/sorteddict.html
+        n: pyidx = spot_ignitions.bisect_left(stop_time) # number of ignition_time values smaller than stop_time.
+        _i: pyidx
+        for _i in range(n):
+            ignition_time, ignited_cells = spot_ignitions.popitem(index=0) # remove and return smallest ignition_time.
+            for cell_index in ignited_cells:
+                y: pyidx = cell_index[0]
+                x: pyidx = cell_index[1]
+                if phi_matrix[y,x] > 0.0: # Not burned yet
+                    phi_matrix[y,x]             = -1.0
+                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
+                    ignited.append(new_BurnedCellInfo(
+                        cell_index,
+                        toa = ignition_time,
+                        dphi = (0.0, 0.0),
+                        from_spotting = True
+                    ))
+                    # FIXME: I need to calculate and store the fire_behavior values for these cells
+    return ignited
 
-#     i: pyidx # Index of tracked cells over 1D arrays
-#     # Insert missing tracked cells.
-#     tracked_cells: nbt.NarrowBandTracker = sim_state["tracked_cells"]
-#     tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
-#     tca: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
-#     start_time: cy.float = sim_state["simulation_time"]
-#     t0: pyidx = int(start_time // band_duration)
-#     t_load: pyidx = t0
-#     sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, n_tracked_cells, tca_old, tca)
+
+@cy.profile(True)
+@cy.ccall
+def identify_tracked_frontier_cells_2(
+        phi_matrix: cy.float[:,:], 
+        spread_burned_cells: list[BurnedCellInfo], 
+        spot_ignited: list[BurnedCellInfo], 
+        rows: pyidx, 
+        cols: pyidx
+        ) -> set:
+    """
+    Resolves the set of frontier cells, returning a set of (y, x) coordinates.
     
-#     needs_recompute: cy.bint = False
-#     # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
+    `fire_behavior_list` and `spot_ignited` are lists that cover the set of potential frontier cells.
+    """
+    frontier_cells: set = set()
+    tcb: BurnedCellInfo
+    y: pyidx
+    x: pyidx
+    cell_index: object
+    for tcb in spread_burned_cells:
+        # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
+        y, x = tcb.cell_index
+        if is_frontier_cell(rows, cols, phi_matrix, y, x):
+            cell_index = (y, x)
+            frontier_cells.add(cell_index)
+    for tcb in spot_ignited:
+        y, x = tcb.cell_index
+        if is_frontier_cell(rows, cols, phi_matrix, y, x):
+            cell_index = (y, x)
+            frontier_cells.add(cell_index)
+    return frontier_cells
 
-#     # OPTIM: if fuel moistures haven't changed, don't recomute the no-wind/no-slope behavior.
-#     # This makes sense if the wind field is refreshed more frequently than fuel moistures.
+@cy.ccall
+@cy.cdivision(True)
+def spread_one_timestep(
+        sim_state: dict,
+        stc: SpreadInputs,
+        fb_opts: FireBehaviorSettings,
+        max_timestep: cy.float,
+    ) -> dict:
+    output_matrices: dict = sim_state["output_matrices"]
+    spot_ignitions: object = sim_state["spot_ignitions"]
+    random_generator: BufferedRandGen = sim_state["random_generator"]
+    phi: cy.float[:,:] = output_matrices["phi"]
+    phs: cy.float[:,:] = output_matrices["phi_star"]
+
+    band_duration: cy.float = stc.band_duration
+
+    # Insert missing tracked cells.
+    tracked_cells: nbt.NarrowBandTracker = sim_state["tracked_cells"]
+    tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
+    tca: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
+    start_time: cy.float = sim_state["simulation_time"]
+    t0: pyidx = int(start_time // band_duration)
+    t_load: pyidx = t0
+    sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, tca_old, tca)
     
-#     # Re-compute elliptical dimensions if needed. FIXME
+    needs_refresh: cy.bint = False
+    # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
+
+    # OPTIM: if fuel moistures haven't changed, don't recomute the no-wind/no-slope behavior.
+    # This makes sense if the wind field is refreshed more frequently than fuel moistures.
     
-#     dt = runge_kutta_pass1(fb_opts, stc.spatial_resolution, max_timestep, phi, tca)
-
-#     # Now that dt is known, update phi_star_matrix.
-#     update_phi_star(n_tracked_cells, tca, dt, phi, phs)
-#     stop_time: cy.float = start_time + dt
+    # Re-compute elliptical dimensions if needed. FIXME
     
-#     spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi, phs)
+    dt = runge_kutta_pass1(fb_opts, stc.spatial_resolution, max_timestep, phi, tca)
+
+    # Now that dt is known, update phi_star_matrix.
+    update_phi_star(tca, dt, phi, phs)
+    stop_time: cy.float = start_time + dt
     
-#     # Side-effects of the burned cells (outputs etc.).
-#     process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
+    spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi, phs)
     
+    # Side-effects of the burned cells (outputs etc.).
+    process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
+    # TODO REVIEW It is a questionable choice to call this function AFTER process_spread_burned_cells;
+    # it may be more sensible to ignite the spotting cells first and then to process them all.
+    spot_ignited: list[BurnedCellInfo] = ignite_from_spotting_2(spot_ignitions, output_matrices, stop_time)
 
-#     spot_ignited: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, output_matrices, stop_time) # FIXME re-implement to produce BurnedCellInfo
+    # Save the new phi_matrix values in phi_star_matrix
+    reset_phi_star_2(spread_burned_cells, spot_ignited, phs, phi)
 
-#     # Save the new phi_matrix values in phi_star_matrix
-#     reset_phi_star(spread_burned_cells, phs, phi, spot_ignited) # FIXME
+    # Update the sets of frontier cells and tracked cells based on the updated phi matrix
+    frontier_cells_new: set  = identify_tracked_frontier_cells_2(phi, spread_burned_cells, spot_ignited, stc.rows, stc.cols)
+    frontier_cells_old: set  = sim_state["frontier_cells"]
+    tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, stc.buffer_width)
 
-#     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
-#     frontier_cells_new: set  = identify_tracked_frontier_cells(phi_matrix, fire_behavior_list, spot_ignited, rows, cols)
-#     tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells, frontier_cells_new, buffer_width)
-
-
-#     # Return the updated world state
-#     sim_state_new = {
-#         "simulation_time" : stop_time,
-#         "output_matrices" : output_matrices,
-#         "frontier_cells"  : frontier_cells_new,
-#         "tracked_cells"   : tracked_cells_new,
-#         # Purposefully swapping the tracked_cells_arrays
-#         "_tracked_cells_arrays": tca_old,
-#         "_tracked_cells_arrays_old": tca,
-#         "spot_ignitions"  : spot_ignitions,
-#         "random_generator": random_generator,
-#     }
-#     return sim_state_new
+    # Return the updated world state
+    sim_state_new = {
+        "simulation_time" : stop_time,
+        "output_matrices" : output_matrices,
+        "frontier_cells"  : frontier_cells_new,
+        "tracked_cells"   : tracked_cells_new,
+        # Purposefully swapping the tracked_cells_arrays
+        "_tracked_cells_arrays": tca_old,
+        "_tracked_cells_arrays_old": tca,
+        "spot_ignitions"  : spot_ignitions,
+        "random_generator": random_generator,
+    }
+    return sim_state_new
 
 
 
