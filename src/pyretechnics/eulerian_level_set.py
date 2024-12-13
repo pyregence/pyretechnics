@@ -2401,14 +2401,19 @@ def runge_kutta_pass1(
         dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
         dphi_dx: cy.float = dphi[0]
         dphi_dy: cy.float = dphi[1]
-        dphi_flim: vec_xy = calc_phi_gradient(phi, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
-        dphi_norm2: cy.float =(dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
-        dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
-        dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME implement
+        dphi_norm2: cy.float = (dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+        dphi_dt_flim: cy.float
+        if dphi_norm2 > 0: # Most common case.
+            dphi_flim: vec_xy = calc_phi_gradient(phi, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
+            dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi)
+            dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+            dphi_dt_flim = (dphi_dt * dphi_dt_correction)
+        else:
+            dphi_dt_flim = 0.0
         pass1outputs[i] = Pass1CellOutput( # INTRO
             cell_index = cell_index,
             dphi = dphi,
-            dphi_dt_0 = (dphi_dt * dphi_dt_correction)
+            dphi_dt_0 = dphi_dt_flim
             )
         dt = dt # FIXME update dt, using some notion of min_ux
     return dt
@@ -2492,17 +2497,21 @@ def runge_kutta_pass2(
     i: pyidx
     for i in range(n_tracked_cells):
         ell_i: EllipticalInfo = ell[i]
-        cell_index: coord_yx = ell_i.cell_index # FIXME
+        cell_index: coord_yx = ell_i.cell_index
         y: pyidx = cell_index[0]
         x: pyidx = cell_index[1]
         dphi: vec_xy = calc_phi_gradient_approx(phs, dx, dy, x, y)
         dphi_dx: cy.float = dphi[0]
         dphi_dy: cy.float = dphi[1]
-        dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
         dphi_norm2: cy.float = (dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
-        dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
-        dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME
-        dphi_dt_1i: cy.float = (dphi_dt * dphi_dt_correction)
+        dphi_dt_1i: cy.float
+        if dphi_norm2 > 0: # Most common case.
+            dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
+            dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+            dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi)
+            dphi_dt_1i = (dphi_dt * dphi_dt_correction)
+        else:
+            dphi_dt_1i = 0.0
         dphi_dt_0i: cy.float = pass1outputs[i].dphi_dt_0
         phi_old: cy.float = phi[y, x] # NOTE could be inferred from phi_star.
         phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
@@ -2512,7 +2521,7 @@ def runge_kutta_pass2(
             spread_burned_cells.append(new_BurnedCellInfo(
                 cell_index, 
                 toa = start_time + dt * phi_old / (phi_old - phi_new),
-                dphi = pass1outputs[i].dphi, # FIXME to be consistent with the toa, we might want to average this with the dphi from the 2nd pass.
+                dphi = pass1outputs[i].dphi, # Using the 1st-pass phi gradient. FIXME to be consistent with the toa, we might want to average this with the dphi from the 2nd pass.
                 from_spotting=False))
     return spread_burned_cells
 
