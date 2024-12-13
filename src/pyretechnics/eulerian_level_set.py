@@ -398,7 +398,7 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
 @cy.profile(True)
 @cy.ccall
-def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz) -> SpreadBehavior:
+def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz, debug: cy.bint = False) -> SpreadBehavior:
     """
     Given these inputs:
     - fire_behavior_max  :: dictionary of max surface or crown fire behavior values
@@ -516,6 +516,20 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
         #========================================================================================
 
         sd: vec_xyz = (normal_direction[0], normal_direction[1], normal_direction[2])
+
+        # if debug:
+        #     print(f"ewc_A: {- A}")
+        #     print(f"ewc_B: {- C}")
+        #     print(f"ewc_C: {(length_to_width_ratio ** 2.0 - 1.0)}")
+        #     print(f"Vh: {heading_spread_rate}")
+        #     print(f"Vh_3d: {heading_spread_vector}")
+        #     print(f"dphi_st_3d: {phi_gradient}")
+        #     print(f"st_dphi_2: {phi_magnitude ** 2.0}")
+        #     print(f"heading_spread_vector: {heading_spread_vector}")
+        #     print(f"Delta: {B}")
+        #     print(f"dphi_dt: {dphi_dt}")
+
+
         return SpreadBehavior(
             dphi_dt            = dphi_dt,                   # phi/min
             fire_type          = normal_fire_type,          # surface, passive_crown, or active_crown
@@ -866,7 +880,7 @@ class SpreadInputs:
         (_bands, rows, cols) = slope.shape
         self.rows = rows
         self.cols = cols
-        self.spatial_resolution = (rows, cols)
+        self.spatial_resolution = (cube_resolution[2], cube_resolution[1])
 
         self.slope = slope
         self.aspect = aspect
@@ -1106,6 +1120,8 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
 
     inputs: SpreadInputs = space_time_cubes
     cell_inputs: CellInputs = lookup_cell_inputs(inputs, tyx)
+    # if (y, x) == (501, 500):
+    #     print(f"cell_inputs: {cell_inputs}")
     # Topography, Fuel Model, and Vegetation
     slope               : cy.float = cell_inputs.slope               # rise/run
     aspect              : cy.float = cell_inputs.aspect              # degrees clockwise from North
@@ -1214,12 +1230,15 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
                                                              aspect,
                                                              use_wind_limit,
                                                              surface_lw_ratio_model)
-
+        # if (y, x) == (501, 500):
+        #     print(f"surface_fire_max: {surface_fire_max}")
         #============================================================================================
         # Calculate surface fire behavior normal to the fire perimeter
         #============================================================================================
 
         sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, phi_gradient)
+        # if (y, x) == (501, 500):
+        #     print(f"sfn: {sfn}")
 
         #============================================================================================
         # Determine whether the surface fire transitions to a crown fire
@@ -1239,19 +1258,25 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
                                                              slope, aspect, crown_max_lw_ratio)
-
+            # if (y, x) == (501, 500):
+            #     print(f"crown_fire_max: {crown_fire_max}")
             #========================================================================================
             # Calculate crown fire behavior normal to the fire perimeter
             #========================================================================================
 
-            cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)
-
+            #debug: cy.bint = (y, x) == (501, 500)
+            cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)#, debug)
+            # if debug:
+            #     print(f"dphi: {phi_gradient_xy}")
+            #     print(f"cfn: {cfn}")
+            #     print(f"slp_dz: {elevation_gradient}")
             #========================================================================================
             # Calculate combined fire behavior normal to the fire perimeter
             #========================================================================================
 
             combined_fire_normal = cf.calc_combined_fire_behavior(sfn, cfn)
-            
+            # if (y, x) == (501, 500):
+            #     print(f"combined_fire_normal: {combined_fire_normal}")
             #========================================================================================
             # Return the combined fire behavior normal to the fire perimeter
             #========================================================================================
@@ -1581,7 +1606,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
     band_duration: cy.float = cube_resolution[0]
     cell_height  : cy.float = cube_resolution[1]
     cell_width   : cy.float = cube_resolution[2]
-    spatial_resolution: vec_xy = (cell_height, cell_width)
+    spatial_resolution: vec_xy = (cell_height, cell_width) # FIXME looks like an error, should be (cell_width, cell_height)
 
     # Initialize max spread rates in the x and y dimensions to 0.0
     max_spread_rate_x: cy.float = 0.0
@@ -1635,6 +1660,9 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
             max_spread_rate_x : cy.float = max(max_spread_rate_x, abs(spread_rate_x))
             max_spread_rate_y : cy.float = max(max_spread_rate_y, abs(spread_rate_y))
 
+            # if cell_index == (501, 500):
+            #     print(f"U = {-dphi_dt / phi_magnitude_xy}")
+
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
             phi_gradient_xy_limited: vec_xy = calc_phi_gradient(phi_matrix,
                                                                 dphi_dx,
@@ -1662,7 +1690,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         else:
             dt = min(max_timestep, max_cells_per_timestep * min(cell_width / max_spread_rate_x,
                                                                 cell_height / max_spread_rate_y))
-
+    # print(f"dt: {dt}")
     # Calculate the stop_time using this timestep
     stop_time: cy.float = start_time + dt
 
@@ -1727,12 +1755,18 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         fb: SpreadBehavior = tcb.spread_behavior # NOTE we will use the fire behavior at the first Runge-Kutta iteration as output.
         dphi_dt_estimate1: cy.float = fb.dphi_dt
         dphi_dt_estimate2: cy.float = fire_behavior_star.dphi_dt
+        # if (y, x) == (501, 500):
+        #     print(f"dphi_dt_estimate1: {dphi_dt_estimate1}")
+        #     print(f"dphi_dt_estimate2: {dphi_dt_estimate2}")
+        #     print(f"dphi_dt_star_correction: {dphi_dt_star_correction}")
         # FIXME * 0.5
         dphi_dt_average  : cy.float = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
         if dphi_dt_average != 0.0: # FIXME why are we doing this unlikely check?
             phi     : cy.float = phi_matrix[y,x]
             phi_next: cy.float = phi + dphi_dt_average * dt
-
+            # if (y, x) == (501, 500):
+            #     print(f"phi_old: {phi}")
+            #     print(f"phi_next: {phi_next}")
             # Update the tracked cell values in phi_matrix
             phi_matrix[y,x] = phi_next
 
@@ -1830,7 +1864,7 @@ def prepare_partialed_wavelet(
     """
     Vh: cy.float = vector_magnitude_3d(Vh_3d)
     Vh_inv: cy.float = (1.0/Vh) if Vh > 0 else 0.0
-    LoW: cy.float = 0.5*(Vh + Vb)*Vh_inv # Length/Width ratio
+    LoW: cy.float = 0.5*(Vh + Vb)/Vf if Vf > 0 else 1.0 # Length/Width ratio
     return PartialedEllWavelet(
         # NOTE if Vh = 0, all of the following will be 0, as they should.
         Vh_3d = Vh_3d, 
@@ -1870,7 +1904,8 @@ def pw_from_FireBehaviorMax(fb_max: sf.FireBehaviorMax) -> PartialedEllWavelet:
 def dphi_dt_from_partialed_wavelet(
         pw: PartialedEllWavelet,
         dphi: vec_xy, # 2D horizontal gradient of phi.
-        st_dphi_2: cy.float # INTRO Squared norm (_2) of slope-tangential (st_) phi gradient (dphi)
+        st_dphi_2: cy.float, # INTRO Squared norm (_2) of slope-tangential (st_) phi gradient (dphi)
+        debug: cy.bint = False
         ) -> cy.float:
     """
     Computes the dphi/dt (phi/min, <= 0) of one elliptical wavelet based on the spatial gradient of phi.
@@ -1879,6 +1914,12 @@ def dphi_dt_from_partialed_wavelet(
     Vh2 = (Vx*Vx + Vy*Vy + Vz*Vz) # Note: this could have been pre-computed too, but it's not clear that it would make things faster.
     dphi_dx, dphi_dy = dphi
     Delta: cy.float = (Vx*dphi_dx + Vy*dphi_dy) # Nontrivially, this is the dot-product (hence 'Delta') between the 3D heading spread rate vector and the 3D slope-tangential gradient of phi.
+    # if debug:
+    #     print(f"dphi: {dphi}")
+    #     print(f"Vh_3d: {pw.Vh_3d}")
+    #     print(f"Vh: {Vh2 ** 0.5}")
+    #     print(f"Delta: {Delta}")
+    #     print(f"st_dphi_2: {st_dphi_2}")
     dphi_dt: cy.float = (
         pw.ewc_A * Delta +
         pw.ewc_B * sqrt(
@@ -1915,8 +1956,14 @@ def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # 
     csr: cy.float = ell_i.crowning_spread_rate
     csr_2: cy.float = csr * csr
     does_crown: cy.bint = (surfc_dphi_dt * surfc_dphi_dt) > csr_2 * st_dphi_2 # Logically equivalent to: (surface_spread_rate > crowning_spread_rate), but faster to compute and robust to zero phi gradient.
+    # if (ell_i.cell_index == (501, 500)):
+    #     print(f"surfc_dphi_dt: {surfc_dphi_dt}")
+    #     print(f"csr_2: {csr_2}")
+    #     print(f"st_dphi_2: {st_dphi_2}")
+    #     print(f"does_crown: {does_crown}")
     if does_crown:
-        crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.crown_wavelet, dphi, st_dphi_2)
+        #debug: cy.bint = (ell_i.cell_index == (501, 500))
+        crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.crown_wavelet, dphi, st_dphi_2)#, debug)
         return min(surfc_dphi_dt, crown_dphi_dt) # Note that dphi_dt <= 0
     else:
         return surfc_dphi_dt
@@ -1950,7 +1997,8 @@ class TrackedCellsArrays:
     def __cinit__(self, _arrays_length: pyidx = 256):
         self._arrays_length = _arrays_length
         self.n_tracked_cells = 0
-        self.float_inputs = cvarray(shape=(self._arrays_length, p_CellInputs), itemsize=cy.sizeof(cy.float), allocate_buffer=True, format='i')
+        #self.float_inputs = cvarray(shape=(self._arrays_length, p_CellInputs), itemsize=cy.sizeof(cy.float), allocate_buffer=True, format='f')
+        self.float_inputs = np.zeros((self._arrays_length, p_CellInputs), dtype=np.float32)
         self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
         self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
         if not self.ell_info:
@@ -1967,18 +2015,19 @@ class TrackedCellsArrays:
         self.n_tracked_cells = n_tracked_cells
         while self.n_tracked_cells > self._arrays_length:
             self._arrays_length *= 2
-        PyMem_Free(self.ell_info)
-        self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
-        if not self.ell_info:
-            raise MemoryError()
-        self.float_inputs = cvarray(shape=(self._arrays_length, p_CellInputs), itemsize=cy.sizeof(cy.float), allocate_buffer=True, format='i')
-        self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
-        if not self.pass1outputs:
-            raise MemoryError()
+            PyMem_Free(self.ell_info)
+            self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
+            if not self.ell_info:
+                raise MemoryError()
+            self.float_inputs = np.zeros((self._arrays_length, p_CellInputs), dtype=np.float32)
+            PyMem_Free(self.pass1outputs)
+            self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
+            if not self.pass1outputs:
+                raise MemoryError()
 
     def __dealloc__(self):
         PyMem_Free(self.ell_info)
-
+        PyMem_Free(self.pass1outputs)
 
 @cy.ccall
 @cy.inline
@@ -2006,7 +2055,7 @@ def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
 def copy_tracked_cell_data(i_old: pyidx, tca_old: TrackedCellsArrays, i_new: pyidx, tca_new: TrackedCellsArrays) -> cy.void:
     for k in range(p_CellInputs): # OPTIM maybe we should unroll that loop, or use a native array copy function?
         tca_new.float_inputs[i_new, k] = tca_old.float_inputs[i_old, k]
-    tca_new.ell_info[i_new] = tca_new.ell_info[i_old]
+    tca_new.ell_info[i_new] = tca_old.ell_info[i_old]
     # NOTE tca_old.pass1outputs does not need to be copied over given how it will get used.
 
 
@@ -2202,11 +2251,13 @@ def resolve_crown_max_behavior(
         elevation_gradient: vec_xy,
         ) -> sf.FireBehaviorMax:
     heat_of_combustion: cy.float = Btu_lb_to_kJ_kg(fm_struct.h[0]) # kJ/kg
+    estimated_fine_fuel_moisture: cy.float = ci.fuel_moisture_dead_1hr
     return cf.calc_crown_fire_behavior_max(
         ci.canopy_height, 
         ci.canopy_base_height,
         ci.canopy_bulk_density, 
         heat_of_combustion,
+        estimated_fine_fuel_moisture,
         ci.wind_speed_10m, 
         ci.upwind_direction,
         ci.slope, 
@@ -2216,7 +2267,7 @@ def resolve_crown_max_behavior(
 
 @cy.ccall
 @cy.cdivision(True)
-def crown_critical_spread_rate( # FIXME maybe move to spot_fire module.
+def crown_critical_spread_rate( # FIXME maybe move to spot_fire module. # FIXME disambiguate: this is the spread rate from surface to crown, not from passive to active crown.
         ci: CellInputs,
         surface_fire_max: sf.FireBehaviorMax,
         ) -> cy.float:
@@ -2242,6 +2293,8 @@ def resolve_cell_elliptical_info(
     
     cell_index: coord_yx = (tyx[1], tyx[2])
     ci: CellInputs = load_saved_CellInputs(float_inputs, i)
+    # if cell_index == (501, 500):
+    #     print(f"ci: {ci}")
     elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
 
     # Load the fuel model
@@ -2261,6 +2314,10 @@ def resolve_cell_elliptical_info(
         surfc_pw = pw_from_FireBehaviorMax(surface_fire_max)
         crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
         crown_fire_max: sf.FireBehaviorMax = resolve_crown_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
+        # if cell_index == (500, 501):
+        #     print(f"slp_dz: {elevation_gradient}")
+        #     print(f"surface_fire_max: {surface_fire_max}")
+        #     print(f"crown_fire_max: {crown_fire_max}")
         crown_pw = pw_from_FireBehaviorMax(crown_fire_max)
         
         
@@ -2350,7 +2407,7 @@ def sync_tracked_cells_arrays(
     i_old: pyidx = 0
     i_new: pyidx = 0
     cell_old: coord_yx = (0, 0)
-    exhausted_old: cy.bint = i_old < tca_old.n_tracked_cells
+    exhausted_old: cy.bint = i_old >= tca_old.n_tracked_cells
     if not(exhausted_old):
         cell_old = tca_old.ell_info[i_old].cell_index
     # This loop uses the fact that both tca_old and new_cells_itr are sorted consistently with compare_cell_indexes().
@@ -2359,7 +2416,7 @@ def sync_tracked_cells_arrays(
         cell_new = new_cells_itr.next_cell()
         while not(exhausted_old) and compare_cell_indexes(cell_old, cell_new) < 0: # cell_old is no longer tracked; just move forward.
             i_old += 1
-            exhausted_old = i_old < tca_old.n_tracked_cells
+            exhausted_old = i_old >= tca_old.n_tracked_cells
             if not(exhausted_old):
                 cell_old = tca_old.ell_info[i_old].cell_index
         if not(exhausted_old) and (compare_cell_indexes(cell_old, cell_new) == 0): # cell_new was already tracked: copy the data.
@@ -2400,8 +2457,12 @@ def runge_kutta_pass1(
     C_dy: cy.float = fb_opts.max_cells_per_timestep * dy
     # Now looping over tracked cells:
     for i in range(tca.n_tracked_cells):
+        #print(f"i: {i}", flush=True)
         ell_i: EllipticalInfo = ell_info[i]
+        #print(f"done reading ell_i: {ell_i}", flush=True)
         cell_index: coord_yx = ell_i.cell_index
+        # if cell_index == (500, 500):
+        #     print(f"ell_i: {ell_i}")
         y: pyidx = cell_index[0]
         x: pyidx = cell_index[1]
         dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
@@ -2525,17 +2586,26 @@ def runge_kutta_pass2(
         dphi_dx: cy.float = dphi[0]
         dphi_dy: cy.float = dphi[1]
         dphi_norm2: cy.float = (dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+        dphi_dt: cy.float
         dphi_dt_1i: cy.float
         if dphi_norm2 > 0: # Most common case.
             dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
             dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
-            dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi)
+            dphi_dt = dphi_dt_from_elliptical(ell_i, dphi)
             dphi_dt_1i = (dphi_dt * dphi_dt_correction)
         else:
             dphi_dt_1i = 0.0
         dphi_dt_0i: cy.float = pass1outputs[i].dphi_dt_0
         phi_old: cy.float = phi[y, x] # NOTE could be inferred from phi_star.
         phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
+        # if cell_index == (501, 500):
+        #     print(f"U = {- dphi_dt / sqrt(dphi_norm2)} m/min")
+        #     print(f"pass1outputs[i]: {pass1outputs[i]}")
+        #     print(f"dphi = {dphi}")
+        #     print(f"dphi_dt_0i = {dphi_dt_0i}")
+        #     print(f"dphi_dt_1i = {dphi_dt_1i}")
+        #     print(f"")
+        #     print(f"phi_old = {phi_old}, phi_new = {phi_new}")
         phi[y, x] = phi_new
         i_just_burned: cy.bint = (phi_old * phi_new) < 0 # Phi can only ever decrease, therefore if these are of opposite signs, the cell has just burned.
         if i_just_burned:
@@ -2605,17 +2675,17 @@ def process_spread_burned_cells(
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def reset_phi_star_2(
-        spread_burned_cells: list[BurnedCellInfo],
+        tca: TrackedCellsArrays,
         spot_ignited: list[BurnedCellInfo],
         phi_star_matrix: cy.float[:,:],
         phi_matrix: cy.float[:,:]
     ) -> cy.void:
     y: pyidx
     x: pyidx
-    tcb: BurnedCellInfo
-    for tcb in spread_burned_cells:
-        y, x = tcb.cell_index
+    for i in range(tca.n_tracked_cells):
+        y, x = tca.pass1outputs[i].cell_index
         phi_star_matrix[y,x] = phi_matrix[y,x]
+    tcb: BurnedCellInfo
     for tcb in spot_ignited:
         y, x = tcb.cell_index
         phi_star_matrix[y,x] = phi_matrix[y,x]
@@ -2660,7 +2730,7 @@ def ignite_from_spotting_2(spot_ignitions: sortc.SortedDict, output_matrices, st
 @cy.ccall
 def identify_tracked_frontier_cells_2(
         phi_matrix: cy.float[:,:], 
-        spread_burned_cells: list[BurnedCellInfo], 
+        tca: TrackedCellsArrays, 
         spot_ignited: list[BurnedCellInfo], 
         rows: pyidx, 
         cols: pyidx
@@ -2668,16 +2738,17 @@ def identify_tracked_frontier_cells_2(
     """
     Resolves the set of frontier cells, returning a set of (y, x) coordinates.
     
-    `fire_behavior_list` and `spot_ignited` are lists that cover the set of potential frontier cells.
+    `tca` and `spot_ignited` are colections that cover the set of potential frontier cells.
     """
     frontier_cells: set = set()
     tcb: BurnedCellInfo
     y: pyidx
     x: pyidx
     cell_index: object
-    for tcb in spread_burned_cells:
+    tracked_arr: cy.pointer[Pass1CellOutput] = tca.pass1outputs
+    for i in range(tca.n_tracked_cells):
         # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-        y, x = tcb.cell_index
+        y, x = tracked_arr[i].cell_index
         if is_frontier_cell(rows, cols, phi_matrix, y, x):
             cell_index = (y, x)
             frontier_cells.add(cell_index)
@@ -2712,6 +2783,8 @@ def spread_one_timestep(
     t0: pyidx = int(start_time // band_duration)
     t_load: pyidx = t0
     sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, tca_old, tca)
+
+    #print(f"tca.float_inputs: {np.array(tca.float_inputs[0:10,:])}")
     
     needs_refresh: cy.bint = False
     # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
@@ -2722,26 +2795,31 @@ def spread_one_timestep(
     # Re-compute elliptical dimensions if needed. FIXME
     
     dt = runge_kutta_pass1(fb_opts, stc.spatial_resolution, max_timestep, phi, tca)
+    # print(f"dt: {dt} min")
+
+    #print(f"tca.pass1outputs: {[tca.pass1outputs[i] for i in range(100)]}")
 
     # Now that dt is known, update phi_star_matrix.
     update_phi_star(tca, dt, phi, phs)
     stop_time: cy.float = start_time + dt
     
     spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi, phs)
+    #print(f"spread_burned_cells: {[cell.cell_index for cell in spread_burned_cells]}")
     
     # Side-effects of the burned cells (outputs etc.).
     process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
     # TODO REVIEW It is a questionable choice to call this function AFTER process_spread_burned_cells;
     # it may be more sensible to ignite the spotting cells first and then to process them all.
     spot_ignited: list[BurnedCellInfo] = ignite_from_spotting_2(spot_ignitions, output_matrices, stop_time)
+    # FIXME there seems to be small differrences related to spotting (behavior is otherwise identical). Investigate.
 
     # Save the new phi_matrix values in phi_star_matrix
-    reset_phi_star_2(spread_burned_cells, spot_ignited, phs, phi)
+    reset_phi_star_2(tca, spot_ignited, phs, phi)
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
-    frontier_cells_new: set  = identify_tracked_frontier_cells_2(phi, spread_burned_cells, spot_ignited, stc.rows, stc.cols)
+    frontier_cells_new: set  = identify_tracked_frontier_cells_2(phi, tca, spot_ignited, stc.rows, stc.cols)
     frontier_cells_old: set  = sim_state["frontier_cells"]
-    tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, stc.buffer_width)
+    tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, fb_opts.buffer_width)
 
     # Return the updated world state
     sim_state_new = {
@@ -2879,28 +2957,55 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     # Ensure that spot_ignitions is initialized as a SortedDict
     spot_igns = sortc.SortedDict(spot_ignitions)
 
+    sim_state = {
+        "simulation_time" : start_time,
+        "output_matrices" : output_matrices,
+        "frontier_cells"  : frontier_cells,
+        "tracked_cells"   : tracked_cells,
+        # Purposefully swapping the tracked_cells_arrays
+        "_tracked_cells_arrays": TrackedCellsArrays(), # It's OK not to be in sync - spread_one_timestep will solve this.
+        "_tracked_cells_arrays_old": TrackedCellsArrays(),
+        "spot_ignitions"  : spot_igns,
+        "random_generator": random_generator,
+    }
+
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
-    simulation_time = start_time
+    #simulation_time = start_time
+    simulation_time: cy.float = sim_state["simulation_time"]
+
+    # print(f"simulation_time: {simulation_time}")
+    # print(f"frontier cells: {sim_state['frontier_cells']}")
+    # print(f"n_tracked_cells: {sim_state['tracked_cells'].n_tracked_cells}")
+
     while(simulation_time < max_stop_time and (nbt.nonempty_tracked_cells(tracked_cells) or len(spot_ignitions) > 0)):
         # Compute max_timestep based on the remaining time in the temporal band and simulation
         remaining_time_in_band       = band_duration - simulation_time % band_duration
         remaining_time_in_simulation = max_stop_time - simulation_time
         max_timestep                 = min(remaining_time_in_band, remaining_time_in_simulation)
-
         # Spread fire one timestep
-        results = spread_fire_one_timestep(stc, output_matrices, frontier_cells, tracked_cells,
-                                           cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
-                                           use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
-                                           buffer_width, spot_igns, spot_config, random_generator)
+        # sim_state = spread_fire_one_timestep(stc, output_matrices, frontier_cells, tracked_cells,
+        #                                    cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
+        #                                    use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
+        #                                    buffer_width, spot_igns, spot_config, random_generator)
+        sim_state = spread_one_timestep(sim_state, stc, fb_opts, max_timestep)
 
         # Reset spread inputs
-        simulation_time  = results["simulation_time"]
-        output_matrices  = results["output_matrices"]
-        frontier_cells   = results["frontier_cells"]
-        tracked_cells    = results["tracked_cells"]
-        spot_ignitions   = results["spot_ignitions"]
-        random_generator = results["random_generator"]
+        simulation_time  = sim_state["simulation_time"]
+        output_matrices  = sim_state["output_matrices"]
+        frontier_cells   = sim_state["frontier_cells"]
+        tracked_cells    = sim_state["tracked_cells"]
+        spot_ignitions   = sim_state["spot_ignitions"]
+
+
+
+        # print(f"simulation_time: {simulation_time}")
+        # print(f"frontier cells: {sim_state['frontier_cells']}")
+        # print(f"n_tracked_cells: {sim_state['tracked_cells'].n_tracked_cells}")
+
+
+        #r = 1 / 0
+        #random_generator = sim_state["random_generator"]
 
     # Remove the temporary copy of the phi matrix from output_matrices
     output_matrices.pop("phi_star")
@@ -2915,3 +3020,93 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "random_generator": random_generator,
     } if spot_config else {})}
 # spread-phi-field ends here
+
+# surface_fire_max: {'max_fire_type': -1, 'max_spread_rate': 2.452946424484253, 'max_spread_direction': (0.5332155227661133, 0.5707114338874817, 0.6244754195213318), 'max_fireline_intensity': 194.66970825195312, 'max_flame_length': 0.8754133582115173, 'length_to_width_ratio': 2.445854902267456, 'eccentricity': 0.9125993847846985, 'critical_spread_rate': -1.0}
+# surface_fire_max: {'max_fire_type': -1, 'max_spread_rate': 2.452946424484253, 'max_spread_direction': (0.5332155227661133, 0.5707114338874817, 0.6244754195213318), 'max_fireline_intensity': 194.66970825195312, 'max_flame_length': 0.8754133582115173, 'length_to_width_ratio': 2.445854902267456, 'eccentricity': 0.9125993847846985, 'critical_spread_rate': -1.0}
+
+# crown_fire_max: {'max_fire_type': 3, 'max_spread_rate': 47.380836486816406, 'max_spread_direction': (0.0, 0.8703882694244385, 0.49236592650413513), 'max_fireline_intensity': 41878.9765625, 'max_flame_length': -1.0, 'length_to_width_ratio': 1.89237642288208, 'eccentricity': 0.8489730954170227, 'critical_spread_rate': 10.0}
+# crown_fire_max: {'max_fire_type': 3, 'max_spread_rate': 47.380836486816406, 'max_spread_direction': (0.0, 0.8703882694244385, 0.49236592650413513), 'max_fireline_intensity': 41878.9765625, 'max_flame_length': -1.0, 'length_to_width_ratio': 1.89237642288208, 'eccentricity': 0.8489730954170227, 'critical_spread_rate': 10.0}
+
+# ci: {'slope': 0.800000011920929, 'aspect': 225.0, 'fuel_model_number': 185.0, 'canopy_cover': 0.699999988079071, 'canopy_height': 10.0, 'canopy_base_height': 0.5, 'canopy_bulk_density': 0.30000001192092896, 'wind_speed_10m': 10.0, 'upwind_direction': 180.0, 'fuel_moisture_dead_1hr': 0.029999999329447746, 'fuel_moisture_dead_10hr': 0.03999999910593033, 'fuel_moisture_dead_100hr': 0.05000000074505806, 'fuel_moisture_live_herbaceous': 0.8999999761581421, 'fuel_moisture_live_woody': 0.6000000238418579, 'foliar_moisture': 0.699999988079071, 'fuel_spread_adjustment': 1.0, 'weather_spread_adjustment': 1.0}
+# ci: {'slope': 0.800000011920929, 'aspect': 225.0, 'fuel_model_number': 185.0, 'canopy_cover': 0.699999988079071, 'canopy_height': 10.0, 'canopy_base_height': 0.5, 'canopy_bulk_density': 0.30000001192092896, 'wind_speed_10m': 10.0, 'upwind_direction': 180.0, 'fuel_moisture_dead_1hr': 0.029999999329447746, 'fuel_moisture_dead_10hr': 0.03999999910593033, 'fuel_moisture_dead_100hr': 0.05000000074505806, 'fuel_moisture_live_herbaceous': 0.8999999761581421, 'fuel_moisture_live_woody': 0.6000000238418579, 'foliar_moisture': 0.699999988079071, 'fuel_spread_adjustment': 1.0, 'weather_spread_adjustment': 1.0}
+
+# sfn: {'dphi_dt': -0.04949941858649254, 'fire_type': 1, 'spread_rate': 1.6552220582962036, 'spread_direction': (-0.21749088168144226, 0.8971499800682068, 0.38447314500808716), 'fireline_intensity': 131.3610382080078, 'flame_length': 0.7305173873901367}
+
+
+# crown_fire_max: {'max_fire_type': 3, 'max_spread_rate': 47.380836486816406, 'max_spread_direction': (0.0, 0.8703882694244385, 0.49236592650413513), 'max_fireline_intensity': 41878.9765625, 'max_flame_length': -1.0, 'length_to_width_ratio': 1.89237642288208, 'eccentricity': 0.8489730954170227, 'critical_spread_rate': 10.0}
+
+
+# cfn: {'dphi_dt': -1.3811109066009521, 'fire_type': 3, 'spread_rate': 46.18327713012695, 'spread_direction': (-0.21749088168144226, 0.8971499800682068, 0.38447314500808716), 'fireline_intensity': 40820.4765625, 'flame_length': 10.236225128173828}
+
+
+# combined_fire_normal: {'dphi_dt': -1.3811109066009521, 'fire_type': 3, 'spread_rate': 46.18327713012695, 'spread_direction': (-0.21749088168144226, 0.8971499800682068, 0.38447314500808716), 'fireline_intensity': 44485.65625, 'flame_length': 10.649203300476074}
+
+
+
+# NEW ell_i: {'cell_index': (500, 500), 'slp_dz': (0.5656854510307312, 0.5656853914260864), 'surfc_wavelet': {'Vh_3d': (1.3079490661621094, 1.3999245166778564, 1.5318048000335693), 'ewc_A': -0.47715136408805847, 'ewc_B': -0.21376930177211761, 'ewc_C': 4.982204914093018}, 'crowning_spread_rate': 0.48500579595565796, 'crown_wavelet': {'Vh_3d': (0.0, 41.239723205566406, 23.32870864868164), 'ewc_A': -0.459159255027771, 'ewc_B': -0.2857997715473175, 'ewc_C': 2.581088066101074}}
+
+
+
+# dt: 0.2896219491958618
+# dt: 9.654064178466797 min
+
+# U = 41.433326721191406
+# U = 41.43332459709812 m/min
+
+
+# NEW dphi = (0.0, 0.0010000000474974513)
+
+
+# dphi_dt_0i = -0.08286665380001068
+# dphi_dt_estimate1: -2.7622218132019043
+
+
+# dphi_dt_1i = -0.07457998394966125
+# dphi_dt_estimate2: -2.485999345779419
+
+
+# phi_old: 1.0
+
+
+# phi_next: 0.2399999499320984
+
+
+
+# dphi_dt_star_correction: 1.7999998331069946
+
+
+# NEW
+# csr_2: 0.23523062467575073
+# st_dphi_2: 8.048781978686748e-07
+# does_crown: True
+# Vh_3d: (0.0, 41.239723205566406, 23.32870864868164)
+# Vh: 47.38083324905759
+# Delta: 0.041239723563194275
+# st_dphi_2: 8.048781978686748e-07
+# dt: 9.654064178466797 min
+# surfc_dphi_dt: -0.0014849824365228415
+# csr_2: 0.23523062467575073
+# st_dphi_2: 8.048781978686748e-07
+# does_crown: True
+# Vh_3d: (0.0, 41.239723205566406, 23.32870864868164)
+# Vh: 47.38083324905759
+# Delta: 0.041239723563194275
+# st_dphi_2: 8.048781978686748e-07
+# U = 41.43332459709812 m/min
+# slp_dz: (0.5656854510307312, 0.5656853914260864)
+# dphi: (0.0, 0.0010000000474974513)
+
+
+# OLD
+# ewc_A: -0.459159255027771
+# ewc_B: -0.2857997417449951
+# ewc_C: 2.581088525879977
+# Vh: 47.380836486816406
+# Vh_3d: (0.0, 41.239723205566406, 23.32870864868164)
+# dphi: (0.0, 0.03333333507180214)
+# dphi_st_3d: (-0.00650406489148736, 0.026829270645976067, 0.011497669853270054)
+# st_dphi_2: 0.0008943090669595068
+# heading_spread_vector: (0.0, 41.239723205566406, 23.32870864868164)
+# Delta: 1.3746575117111206
+# dphi_dt: -1.3811109066009521
+# slp_dz: (0.5656854510307312, 0.5656853914260864)
