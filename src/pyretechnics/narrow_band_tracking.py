@@ -78,6 +78,8 @@ class NarrowBandTracker:
     Logically, this class acts a sorted dict from (y, x) -> n,
     in which n is the number of frontier cells which buffer contains (y, x).
     """
+    n_tracked_cells: pyidx
+
     y_high: pyidx
     x_high: pyidx
     # INVARIANT for all (y, x) in the keys, ys_offset <= y < ys_offset + len(ys_list)
@@ -95,6 +97,7 @@ class NarrowBandTracker:
 @cy.ccall
 def new_NarrowBandTracker(y_high: pyidx, x_high: pyidx) -> NarrowBandTracker:
     ret: NarrowBandTracker = NarrowBandTracker()
+    ret.n_tracked_cells = 0
     ret.y_high = y_high
     ret.x_high = x_high
     return ret
@@ -132,6 +135,7 @@ def incr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
         tracked_cells._rows_count += 1
     xk: cy.int = (x_start // 16) - 1
     segm: object = None
+    n_added: pyidx = 0
     i: cy.int
     for i in range(segm_length):
         if (x_start + i)//16 != xk:
@@ -142,7 +146,10 @@ def incr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
                 s[xk] = segm
         segment: CellsCountSegment = segm
         k: pyidx = (x_start + i) % 16
-        segment.counts[k] += 1
+        old_count: cy.ushort = segment.counts[k]
+        segment.counts[k] = old_count + 1
+        n_added += (old_count == 0)
+    tracked_cells.n_tracked_cells += n_added
 
 @cy.ccall
 def decr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int, segm_length: cy.int):
@@ -154,11 +161,14 @@ def decr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
     segm: cy.Optional[CellsCountSegment] = s.get(xk)
     if segm is None:
         raise ValueError("No Segment found!")
+    n_removed: pyidx = 0
     i: cy.int
     for i in range(segm_length):
         k: cy.int = (x_start + i) % 16
         segment: CellsCountSegment = segm
-        segment.counts[k] -= 1
+        old_count: cy.ushort = segment.counts[k]
+        segment.counts[k] = old_count - 1
+        n_removed += (old_count == 1)
         if segment.is_empty():
             del s[xk]
         if (x_start + i + 1)//16 != xk: # we're about to change segment
@@ -167,7 +177,7 @@ def decr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
     if len(s) == 0:
         tracked_cells.ys_list[y_idx] = None
         tracked_cells._rows_count -= 1
-
+    tracked_cells.n_tracked_cells -= n_removed
 
 @cy.ccall
 @cy.exceptval(check=False)
@@ -253,7 +263,7 @@ class TrackedCellsIterator:
         
 
     @cy.ccall
-    def has_next(self) -> cy.bint:
+    def has_next(self) -> cy.bint: # OPTIM it may be faster to maintain an iteration index and compare it to n_tracked_cells.
         return (self.segm_iter is not None)
 
     @cy.ccall
