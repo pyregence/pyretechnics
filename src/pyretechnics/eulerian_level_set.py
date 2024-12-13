@@ -2372,6 +2372,7 @@ def sync_tracked_cells_arrays(
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.cdivision(True)
 def runge_kutta_pass1(
         fb_opts: FireBehaviorSettings, 
         spatial_resolution: vec_xy,
@@ -2389,8 +2390,14 @@ def runge_kutta_pass1(
     """
     ell_info: cy.pointer[EllipticalInfo] = tca.ell_info # FIXME
     pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
-    dt: cy.float = max_timestep
     (dx, dy) = spatial_resolution
+    # The following will be useful to compute dt based on the CFL constraint.
+    # It is more convenient to first compute dt_inv, the reciprocal of dt;
+    # dt_inv = 0 represents an infinite dt. We will later enforce that dt <= max_timestep.
+    dt_inv: cy.float = 0.0 
+    C_dx: cy.float = fb_opts.max_cells_per_timestep * dx
+    C_dy: cy.float = fb_opts.max_cells_per_timestep * dy
+    # Now looping over tracked cells:
     for i in range(tca.n_tracked_cells):
         ell_i: EllipticalInfo = ell_info[i]
         cell_index: coord_yx = ell_i.cell_index # FIXME
@@ -2406,6 +2413,23 @@ def runge_kutta_pass1(
             dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi)
             dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
             dphi_dt_flim = (dphi_dt * dphi_dt_correction)
+            # Checking the CFL condition and updating dt_inv if needed (which will be rare).
+            # The code is written in this way to be fast, but it's not trivial that it's correct; proof below.
+            # The CFL constraint is defined as the requirement that |Ux*dt| <= C*dx and |Uy*dt| <= C*dy,
+            # in which U := (Ux, Uy) is the front-normal spread rate vector in the horizontal plane,
+            # and C := max_cells_per_timestep.
+            # Recall that we could express U as follows: U: vec_xy = scale_2d(-dphi_dt/dphi_norm2, dphi),
+            # which follows from the facts that dphi_dt = - dot2d(U, dphi) and that U is by definition positively proportional to dphi.
+            # In particular, Ux = - dphi_dx * dphi_dt / dphi_norm2.
+            # Our contraint (from Ux) thus becomes:
+            # |dt* dphi_dx * dphi_dt / dphi_norm2| <= C * dx
+            # Recalling that dt_inv := 1/dt and rearranging yields:
+            # dt_inv * (C * dx) * dphi_norm2 >= |dphi_dx * dphi_dt|
+            if (dt_inv * (dphi_norm2 * C_dx) < abs(dphi_dt * dphi_dx)): # dt is too large given Ux.
+                dt_inv = abs(dphi_dt * dphi_dx) / (dphi_norm2 * C_dx)
+            # And similarly for Uy:
+            if (dt_inv * (dphi_norm2 * C_dy) < abs(dphi_dt * dphi_dy)): # dt is too large given Uy.
+                dt_inv = abs(dphi_dt * dphi_dy) / (dphi_norm2 * C_dy)
         else:
             dphi_dt_flim = 0.0
         pass1outputs[i] = Pass1CellOutput( # INTRO
@@ -2413,7 +2437,8 @@ def runge_kutta_pass1(
             dphi = dphi,
             dphi_dt_0 = dphi_dt_flim
             )
-        dt = dt # FIXME update dt, using some notion of min_ux
+    dt_inv = max(dt_inv, 1.0/max_timestep) # (dt <= max_timestep) iff (dt_inv >= 1/max_timestep).
+    dt: cy.float = 1.0/dt_inv
     return dt
 
 
