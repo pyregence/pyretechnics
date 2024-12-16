@@ -37,16 +37,26 @@ class CellsCountSegment:
     x0: cy.int
     counts: cy.ushort[16]
 
-    @cy.ccall
-    def is_pos_at(self, k: pyidx) -> cy.bint:
-        return (self.counts[k] > 0)
-    
-    @cy.ccall
-    def is_empty(self) -> cy.bint:
-        for k in range(16):
-            if self.counts[k] > 0:
-                return False
-        return True
+
+@cy.cfunc
+@cy.exceptval(check=False)
+@cy.boundscheck(False)
+@cy.wraparound(False)
+@cy.inline
+def segm_is_empty(segm: CellsCountSegment) -> cy.bint:
+    for k in range(16):
+        if segm.counts[k] > 0:
+            return False
+    return True
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+@cy.boundscheck(False)
+@cy.wraparound(False)
+@cy.inline
+def segm_is_pos_at(segm: CellsCountSegment, k: pyidx) -> cy.bint:
+    return (segm.counts[k] > 0)
 
 
 @cy.ccall
@@ -65,7 +75,7 @@ def make_CellsCountSegment(y: cy.int, x0: cy.int) -> CellsCountSegment:
 def _find_first_k(segm: CellsCountSegment) -> cy.int:
     k: cy.int
     for k in range(16):
-        if segm.is_pos_at(k):
+        if segm_is_pos_at(segm, k):
             return k
     raise ValueError("Segment is empty!")
 
@@ -124,6 +134,11 @@ def _ensure_y(tracked_cells: NarrowBandTracker, y: cy.int):
         n = 2*n
 
 
+
+# OPTIM list and dict lookup operations require us to allocate tons of boxed integers on the heap.
+# We can maybe make this faster by caching those integers in a native array.
+# That said, I expect Python to keep doing reference-counting mutations during function calls...
+
 @cy.ccall
 def incr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int, segm_length: cy.int):
     _ensure_y(tracked_cells, y)
@@ -169,7 +184,7 @@ def decr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
         old_count: cy.ushort = segment.counts[k]
         segment.counts[k] = old_count - 1
         n_removed += (old_count == 1)
-        if segment.is_empty():
+        if segm_is_empty(segment):
             del s[xk]
         if (x_start + i + 1)//16 != xk: # we're about to change segment
             xk = (x_start + i + 1)//16
@@ -224,7 +239,7 @@ def decr_square_around(tracked_cells: NarrowBandTracker, y: cy.int, x: cy.int, b
 
 @cy.ccall
 def nonempty_tracked_cells(tracked_cells: NarrowBandTracker) -> cy.bint:
-    return tracked_cells._rows_count > 0
+    return tracked_cells.n_tracked_cells > 0
 
 
 # Iterating over cells
@@ -284,7 +299,7 @@ def _resolve_next(tcitr: TrackedCellsIterator) -> cy.bint:
     current_segm: CellsCountSegment = tcitr.current_segm
     k: cy.int = tcitr.current_k + 1
     while k < 16:
-        if current_segm.is_pos_at(k):
+        if segm_is_pos_at(current_segm, k):
             tcitr.current_k = k
             return False
         k += 1
@@ -301,4 +316,3 @@ def _resolve_next(tcitr: TrackedCellsIterator) -> cy.bint:
 @cy.ccall
 def tracked_cells_iterator(tracked_cells: NarrowBandTracker) -> TrackedCellsIterator:
     return TrackedCellsIterator(iterate_segments(tracked_cells))
-
