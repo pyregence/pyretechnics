@@ -1330,7 +1330,7 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
                 opposite_phi_signs(phi_matrix, y, x, south_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, y, east_x) or
                 opposite_phi_signs(phi_matrix, y, x, y, west_x)):
-                frontier_cells.add((y, x))
+                frontier_cells.add(encode_cell_index(y, x))
     return frontier_cells
 
 @cy.ccall
@@ -1384,9 +1384,12 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     TODO: Add docstring
     """
     tracked_cells: object = nbt.new_NarrowBandTracker(cols, rows)
-    cell         : tuple
+    cell         : object
+    y: pyidx
+    x: pyidx
     for cell in frontier_cells:
-        nbt.incr_square_around(tracked_cells, cell[0], cell[1], buffer_width)
+        y, x = decode_cell_index(cell)
+        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
     return tracked_cells
 
 
@@ -1400,13 +1403,17 @@ def update_tracked_cells(tracked_cells: object, frontier_cells_old: set, frontie
     # Determine which frontier cells have been added or dropped
     frontier_cells_added  : set = frontier_cells_new.difference(frontier_cells_old)
     frontier_cells_dropped: set = frontier_cells_old.difference(frontier_cells_new)
-    cell                  : tuple
+    cell                  : object
     # Increment reference counters for all cells within buffer_width of the added frontier cells
+    y: pyidx
+    x: pyidx
     for cell in frontier_cells_added:
-        nbt.incr_square_around(tracked_cells, cell[0], cell[1], buffer_width)
+        y, x = decode_cell_index(cell)
+        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
     # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
     for cell in frontier_cells_dropped:
-        nbt.decr_square_around(tracked_cells, cell[0], cell[1], buffer_width)
+        y, x = decode_cell_index(cell)
+        nbt.decr_square_around(tracked_cells, y, x, buffer_width)
     # Return updated tracked cells
     return tracked_cells
 # phi-field-perimeter-tracking ends here
@@ -2761,6 +2768,25 @@ def ignite_from_spotting_2(spot_ignitions: sortc.SortedDict, output_matrices, st
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
     return ignited
 
+@cy.ccall
+@cy.exceptval(check=False)
+@cy.inline
+def encode_cell_index(y: pyidx, x: pyidx) -> object:
+    """
+    Encodes a (y, x) tuple into a single Python integer object.
+    This enables a more efficient memory layout than a tuple of Python integers.
+    """
+    return ((cy.cast(cy.ulong, y) << 32) + cy.cast(cy.ulong, x))
+
+@cy.ccall
+@cy.exceptval(check=False)
+@cy.inline
+def decode_cell_index(cell_index: object) -> coord_yx:
+    ci: cy.ulong = cell_index
+    y: pyidx = ci >> 32
+    x: pyidx = cy.cast(cy.uint, ci) # NOTE I would prefer writing this as (ci & 0xFFFFFFFF), but Cython compilation makes it slower.
+    return (y, x)
+
 
 @cy.profile(True)
 @cy.ccall
@@ -2786,12 +2812,12 @@ def identify_tracked_frontier_cells_2(
         # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
         y, x = tracked_arr[i].cell_index
         if is_frontier_cell(rows, cols, phi_matrix, y, x):
-            cell_index = (y, x)
+            cell_index = encode_cell_index(y, x)
             frontier_cells.add(cell_index)
     for tcb in spot_ignited:
         y, x = tcb.cell_index
         if is_frontier_cell(rows, cols, phi_matrix, y, x):
-            cell_index = (y, x)
+            cell_index = encode_cell_index(y, x)
             frontier_cells.add(cell_index)
     return frontier_cells
 
