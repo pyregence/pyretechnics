@@ -450,7 +450,8 @@ def cast_firebrand(rng: BufferedRandGen,
             if uniform_sample <= flight_survival_probability * ignition_probability:
                 # Firebrand ignited the target cell, so return its coordinates for later processing
                 return (target_y, target_x)
-        return (source_y, source_x) # For efficiency, the source cell is used as a sentinel value for a failed spot ignition.
+    # This code is only reached if the spotting ignition fails.
+    return (source_y, source_x) # For efficiency, the source cell is used as a sentinel value for a failed spot ignition.
 
 @cy.ccall
 def spread_firebrands(
