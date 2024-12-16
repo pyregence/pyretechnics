@@ -5,8 +5,6 @@ cdef class CellsCountSegment:
     cdef int x0
     cdef unsigned short[16] counts
 
-    cpdef bint is_pos_at(self, pyidx k)
-    cpdef bint is_empty(self)
 
 
 cdef class NarrowBandTracker:

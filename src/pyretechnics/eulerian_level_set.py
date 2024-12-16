@@ -166,6 +166,7 @@ def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.floa
         return 0.0
     else:
         r: cy.float = dphi_up / dphi_loc
+        # NOTE replacing this with fminf and fmaxf yielded no measurable performance improvement.
         return max(0.0,
                    min(2.0 * r, 1.0),
                    min(r, 2.0))
@@ -2058,8 +2059,25 @@ def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
 @cy.boundscheck(False)
 @cy.wraparound(False)
 def copy_tracked_cell_data(i_old: pyidx, tca_old: TrackedCellsArrays, i_new: pyidx, tca_new: TrackedCellsArrays) -> cy.void:
-    for k in range(p_CellInputs): # OPTIM maybe we should unroll that loop, or use a native array copy function?
-        tca_new.float_inputs[i_new, k] = tca_old.float_inputs[i_old, k]
+    # OPTIM maybe we want to use a native array directly instead of a MemoryView.
+    # NOTE unrolling this loop made the code 2x faster.
+    tca_new.float_inputs[i_new, 0] = tca_old.float_inputs[i_old, 0]
+    tca_new.float_inputs[i_new, 1] = tca_old.float_inputs[i_old, 1]
+    tca_new.float_inputs[i_new, 2] = tca_old.float_inputs[i_old, 2]
+    tca_new.float_inputs[i_new, 3] = tca_old.float_inputs[i_old, 3]
+    tca_new.float_inputs[i_new, 4] = tca_old.float_inputs[i_old, 4]
+    tca_new.float_inputs[i_new, 5] = tca_old.float_inputs[i_old, 5]
+    tca_new.float_inputs[i_new, 6] = tca_old.float_inputs[i_old, 6]
+    tca_new.float_inputs[i_new, 7] = tca_old.float_inputs[i_old, 7]
+    tca_new.float_inputs[i_new, 8] = tca_old.float_inputs[i_old, 8]
+    tca_new.float_inputs[i_new, 9] = tca_old.float_inputs[i_old, 9]
+    tca_new.float_inputs[i_new, 10] = tca_old.float_inputs[i_old, 10]
+    tca_new.float_inputs[i_new, 11] = tca_old.float_inputs[i_old, 11]
+    tca_new.float_inputs[i_new, 12] = tca_old.float_inputs[i_old, 12]
+    tca_new.float_inputs[i_new, 13] = tca_old.float_inputs[i_old, 13]
+    tca_new.float_inputs[i_new, 14] = tca_old.float_inputs[i_old, 14]
+    tca_new.float_inputs[i_new, 15] = tca_old.float_inputs[i_old, 15]
+    tca_new.float_inputs[i_new, 16] = tca_old.float_inputs[i_old, 16]
     tca_new.ell_info[i_new] = tca_old.ell_info[i_old]
     # NOTE tca_old.pass1outputs does not need to be copied over given how it will get used.
 
@@ -2416,20 +2434,33 @@ def sync_tracked_cells_arrays(
     if not(exhausted_old):
         cell_old = tca_old.ell_info[i_old].cell_index
     # This loop uses the fact that both tca_old and new_cells_itr are sorted consistently with compare_cell_indexes().
-    new_cells_itr: nbt.TrackedCellsIterator = nbt.tracked_cells_iterator(tracked_cells)
-    while new_cells_itr.has_next(): # OPTIM if needed, make the iteration even faster by avoiding the use of the iterator, which will make the code a bit more ugly and coupled.
-        cell_new = new_cells_itr.next_cell()
-        while not(exhausted_old) and compare_cell_indexes(cell_old, cell_new) < 0: # cell_old is no longer tracked; just move forward.
-            i_old += 1
-            exhausted_old = i_old >= tca_old.n_tracked_cells
-            if not(exhausted_old):
-                cell_old = tca_old.ell_info[i_old].cell_index
-        if not(exhausted_old) and (compare_cell_indexes(cell_old, cell_new) == 0): # cell_new was already tracked: copy the data.
-            copy_tracked_cell_data(i_old, tca_old, i_new, tca_new)
-        else: # cell_new was not in tca_old
-            tyx: coord_tyx = (t, cell_new[0], cell_new[1])
-            load_tracked_cell_data(stc, fb_opts, tyx, tca_new, i_new)
-        i_new += 1
+    #new_cells_itr: nbt.TrackedCellsIterator = nbt.tracked_cells_iterator(tracked_cells)
+    ys_list: list = tracked_cells.ys_list
+    if ys_list is not None:
+        for s in ys_list:
+            if s is not None:
+                segm: nbt.CellsCountSegment
+                for segm in s.values():
+                    k: pyidx
+                    y: pyidx = segm.y
+                    segm_counts: cy.ushort[16] = segm.counts
+                    for k in range(16):
+                        if (segm_counts[k] > 0):
+                            # NOTE all of the above for and if are essentially just looping over the tracked cells.
+                            # This is ugly, but faster than using an Iterator pattern.
+                            x: pyidx = segm.x0 + k
+                            cell_new: coord_yx = (y, x)
+                            while not(exhausted_old) and compare_cell_indexes(cell_old, cell_new) < 0: # cell_old is no longer tracked; just move forward.
+                                i_old += 1
+                                exhausted_old = i_old >= tca_old.n_tracked_cells
+                                if not(exhausted_old):
+                                    cell_old = tca_old.ell_info[i_old].cell_index
+                            if not(exhausted_old) and (compare_cell_indexes(cell_old, cell_new) == 0): # cell_new was already tracked: copy the data.
+                                copy_tracked_cell_data(i_old, tca_old, i_new, tca_new)
+                            else: # cell_new was not in tca_old
+                                tyx: coord_tyx = (t, cell_new[0], cell_new[1])
+                                load_tracked_cell_data(stc, fb_opts, tyx, tca_new, i_new)
+                            i_new += 1
 
 
 @cy.ccall
