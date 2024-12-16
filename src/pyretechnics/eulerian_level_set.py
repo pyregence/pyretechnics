@@ -155,7 +155,9 @@ def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
+@cy.cdivision(True)
+@cy.inline
 def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
     """
     TODO: Add docstring
@@ -171,7 +173,8 @@ def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.floa
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
+@cy.cdivision(True)
 def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
@@ -190,7 +193,8 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: p
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
+@cy.cdivision(True)
 def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
@@ -210,13 +214,13 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
 # TODO: Handle exception values from child functions
 @cy.profile(False)
 @cy.ccall
+@cy.exceptval(check=False)
 def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.float, dy: cy.float,
                       x: pyidx, y: pyidx) -> vec_xy:
     """
-    Calculate the spatial gradient of the phi raster at grid cell (x,y) given:
+    Calculates the flux-limited spatial gradient of the phi raster at grid cell (x,y) given:
     - phi :: 2D float array of values in [-1,1]
-    - u_x :: m/min
-    - u_y :: m/min
+    - (u_x, u_y): some front-normal vector, typically the phi gradient.
     - dx  :: meters
     - dy  :: meters
     - x   :: integer column index in phi
@@ -231,7 +235,7 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -239,7 +243,7 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
-    - u_x  :: m/min
+    - u_x  :: x coordinate of a front-normal vector
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
@@ -261,7 +265,7 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
@@ -269,7 +273,7 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
     Calculate the spatial gradient of the phi raster in the -x (east->west)
     direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
-    - u_x  :: m/min
+    - u_x  :: x coordinate of a front-normal vector
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
@@ -291,7 +295,7 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -299,7 +303,7 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
-    - u_y  :: m/min
+    - u_y  :: y coordinate of a front-normal vector
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
@@ -321,7 +325,7 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
@@ -329,7 +333,7 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
     Calculate the spatial gradient of the phi raster in the -y (north->south)
     direction at grid cell (x,y) given:
     - phi  :: 2D float array of values in [-1,1]
-    - u_y  :: m/min
+    - u_y  :: y coordinate of a front-normal vector
     - x    :: integer column index in phi
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
@@ -1901,11 +1905,12 @@ def pw_from_FireBehaviorMax(fb_max: sf.FireBehaviorMax) -> PartialedEllWavelet:
 
 @cy.ccall
 @cy.exceptval(check=False)
+@cy.inline
 def dphi_dt_from_partialed_wavelet(
         pw: PartialedEllWavelet,
         dphi: vec_xy, # 2D horizontal gradient of phi.
         st_dphi_2: cy.float, # INTRO Squared norm (_2) of slope-tangential (st_) phi gradient (dphi)
-        debug: cy.bint = False
+        #debug: cy.bint = False
         ) -> cy.float:
     """
     Computes the dphi/dt (phi/min, <= 0) of one elliptical wavelet based on the spatial gradient of phi.
@@ -1988,7 +1993,7 @@ class TrackedCellsArrays:
 
 
     # FIXME timestamps that say when the data was last updated for each data column.
-
+    
     # These are arrays
     float_inputs: cy.float[:, :] # Shape: (n_tracked_cells, p)
     ell_info: cy.pointer(EllipticalInfo) # Array of structs (needs to be iterated over very efficiently).
