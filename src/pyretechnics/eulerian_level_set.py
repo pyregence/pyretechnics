@@ -403,7 +403,7 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
 @cy.profile(True)
 @cy.ccall
-def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz, debug: cy.bint = False) -> SpreadBehavior:
+def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz) -> SpreadBehavior:
     """
     Given these inputs:
     - fire_behavior_max  :: dictionary of max surface or crown fire behavior values
@@ -521,18 +521,6 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
         #========================================================================================
 
         sd: vec_xyz = (normal_direction[0], normal_direction[1], normal_direction[2])
-
-        # if debug:
-        #     print(f"ewc_A: {- A}")
-        #     print(f"ewc_B: {- C}")
-        #     print(f"ewc_C: {(length_to_width_ratio ** 2.0 - 1.0)}")
-        #     print(f"Vh: {heading_spread_rate}")
-        #     print(f"Vh_3d: {heading_spread_vector}")
-        #     print(f"dphi_st_3d: {phi_gradient}")
-        #     print(f"st_dphi_2: {phi_magnitude ** 2.0}")
-        #     print(f"heading_spread_vector: {heading_spread_vector}")
-        #     print(f"Delta: {B}")
-        #     print(f"dphi_dt: {dphi_dt}")
 
 
         return SpreadBehavior(
@@ -910,8 +898,6 @@ class SpreadInputs:
 
     @cy.ccall
     def _init_fuel_models(self):
-        # fm_arr = cvarray(shape=(300,), itemsize=cython.sizeof(FuelModel), format="i")
-        # fuel_models_arr = cython.declare(FuelModel[:], fm_arr)
         self.fuel_models_arr = cy.cast(
             cy.pointer(FuelModel), 
             PyMem_Malloc(300 * cython.sizeof(FuelModel)))
@@ -1125,8 +1111,6 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
 
     inputs: SpreadInputs = space_time_cubes
     cell_inputs: CellInputs = lookup_cell_inputs(inputs, tyx)
-    # if (y, x) == (501, 500):
-    #     print(f"cell_inputs: {cell_inputs}")
     # Topography, Fuel Model, and Vegetation
     slope               : cy.float = cell_inputs.slope               # rise/run
     aspect              : cy.float = cell_inputs.aspect              # degrees clockwise from North
@@ -1209,7 +1193,6 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
         wind_speed_20ft_m_min: cy.float = km_hr_to_m_min(wind_speed_20ft) # m/min
 
         # Convert from 20ft wind speed to midflame wind speed in m/min
-        # FIXME this is getting called as a Python function
         midflame_wind_speed: cy.float = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,  # m/min
                                                                     fuel_bed_depth,         # ft
                                                                     m_to_ft(canopy_height), # ft
@@ -1220,7 +1203,6 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
         #============================================================================================
 
         # Apply fuel moisture to fuel model
-        #moisturized_fuel_model0 = fm.moisturize(fuel_model, fuel_moisture) # FIXME clean
         mfm: FuelModel = moisturize(fm_struct, M_f)
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
@@ -1235,15 +1217,11 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
                                                              aspect,
                                                              use_wind_limit,
                                                              surface_lw_ratio_model)
-        # if (y, x) == (501, 500):
-        #     print(f"surface_fire_max: {surface_fire_max}")
         #============================================================================================
         # Calculate surface fire behavior normal to the fire perimeter
         #============================================================================================
 
         sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, phi_gradient)
-        # if (y, x) == (501, 500):
-        #     print(f"sfn: {sfn}")
 
         #============================================================================================
         # Determine whether the surface fire transitions to a crown fire
@@ -1263,25 +1241,16 @@ def burn_cell_toward_phi_gradient(space_time_cubes: object,
                                                              estimated_fine_fuel_moisture,
                                                              wind_speed_10m, upwind_direction,
                                                              slope, aspect, crown_max_lw_ratio)
-            # if (y, x) == (501, 500):
-            #     print(f"crown_fire_max: {crown_fire_max}")
             #========================================================================================
             # Calculate crown fire behavior normal to the fire perimeter
             #========================================================================================
 
-            #debug: cy.bint = (y, x) == (501, 500)
-            cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)#, debug)
-            # if debug:
-            #     print(f"dphi: {phi_gradient_xy}")
-            #     print(f"cfn: {cfn}")
-            #     print(f"slp_dz: {elevation_gradient}")
+            cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)
             #========================================================================================
             # Calculate combined fire behavior normal to the fire perimeter
             #========================================================================================
 
             combined_fire_normal = cf.calc_combined_fire_behavior(sfn, cfn)
-            # if (y, x) == (501, 500):
-            #     print(f"combined_fire_normal: {combined_fire_normal}")
             #========================================================================================
             # Return the combined fire behavior normal to the fire perimeter
             #========================================================================================
@@ -1672,9 +1641,6 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
             max_spread_rate_x : cy.float = max(max_spread_rate_x, abs(spread_rate_x))
             max_spread_rate_y : cy.float = max(max_spread_rate_y, abs(spread_rate_y))
 
-            # if cell_index == (501, 500):
-            #     print(f"U = {-dphi_dt / phi_magnitude_xy}")
-
             # Integrate the Superbee flux limited phi gradient to make dphi_dt numerically stable
             phi_gradient_xy_limited: vec_xy = calc_phi_gradient(phi_matrix,
                                                                 dphi_dx,
@@ -1702,7 +1668,6 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         else:
             dt = min(max_timestep, max_cells_per_timestep * min(cell_width / max_spread_rate_x,
                                                                 cell_height / max_spread_rate_y))
-    # print(f"dt: {dt}")
     # Calculate the stop_time using this timestep
     stop_time: cy.float = start_time + dt
 
@@ -1767,18 +1732,11 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         fb: SpreadBehavior = tcb.spread_behavior # NOTE we will use the fire behavior at the first Runge-Kutta iteration as output.
         dphi_dt_estimate1: cy.float = fb.dphi_dt
         dphi_dt_estimate2: cy.float = fire_behavior_star.dphi_dt
-        # if (y, x) == (501, 500):
-        #     print(f"dphi_dt_estimate1: {dphi_dt_estimate1}")
-        #     print(f"dphi_dt_estimate2: {dphi_dt_estimate2}")
-        #     print(f"dphi_dt_star_correction: {dphi_dt_star_correction}")
         # FIXME * 0.5
         dphi_dt_average  : cy.float = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
         if dphi_dt_average != 0.0: # FIXME why are we doing this unlikely check?
             phi     : cy.float = phi_matrix[y,x]
             phi_next: cy.float = phi + dphi_dt_average * dt
-            # if (y, x) == (501, 500):
-            #     print(f"phi_old: {phi}")
-            #     print(f"phi_next: {phi_next}")
             # Update the tracked cell values in phi_matrix
             phi_matrix[y,x] = phi_next
 
@@ -1918,7 +1876,6 @@ def dphi_dt_from_partialed_wavelet(
         pw: PartialedEllWavelet,
         dphi: vec_xy, # 2D horizontal gradient of phi.
         st_dphi_2: cy.float, # INTRO Squared norm (_2) of slope-tangential (st_) phi gradient (dphi)
-        #debug: cy.bint = False
         ) -> cy.float:
     """
     Computes the dphi/dt (phi/min, <= 0) of one elliptical wavelet based on the spatial gradient of phi.
@@ -1927,12 +1884,6 @@ def dphi_dt_from_partialed_wavelet(
     Vh2 = (Vx*Vx + Vy*Vy + Vz*Vz) # Note: this could have been pre-computed too, but it's not clear that it would make things faster.
     dphi_dx, dphi_dy = dphi
     Delta: cy.float = (Vx*dphi_dx + Vy*dphi_dy) # Nontrivially, this is the dot-product (hence 'Delta') between the 3D heading spread rate vector and the 3D slope-tangential gradient of phi.
-    # if debug:
-    #     print(f"dphi: {dphi}")
-    #     print(f"Vh_3d: {pw.Vh_3d}")
-    #     print(f"Vh: {Vh2 ** 0.5}")
-    #     print(f"Delta: {Delta}")
-    #     print(f"st_dphi_2: {st_dphi_2}")
     dphi_dt: cy.float = (
         pw.ewc_A * Delta +
         pw.ewc_B * sqrt(
@@ -1969,27 +1920,19 @@ def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # 
     csr: cy.float = ell_i.crowning_spread_rate
     csr_2: cy.float = csr * csr
     does_crown: cy.bint = (surfc_dphi_dt * surfc_dphi_dt) > csr_2 * st_dphi_2 # Logically equivalent to: (surface_spread_rate > crowning_spread_rate), but faster to compute and robust to zero phi gradient.
-    # if (ell_i.cell_index == (501, 500)):
-    #     print(f"surfc_dphi_dt: {surfc_dphi_dt}")
-    #     print(f"csr_2: {csr_2}")
-    #     print(f"st_dphi_2: {st_dphi_2}")
-    #     print(f"does_crown: {does_crown}")
     if does_crown:
-        #debug: cy.bint = (ell_i.cell_index == (501, 500))
-        crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.crown_wavelet, dphi, st_dphi_2)#, debug)
+        crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.crown_wavelet, dphi, st_dphi_2)
         return min(surfc_dphi_dt, crown_dphi_dt) # Note that dphi_dt <= 0
     else:
         return surfc_dphi_dt
 
-p_CellInputs = cy.declare(pyidx, 17) # FIXME move
-
-from cython.cimports.cython.view import array as cvarray # FIXME move
-
 Pass1CellOutput = cy.struct( # INTRO some data saved during the 1st Runge-Kutta pass.
     cell_index = coord_yx,
     dphi = vec_xy,
-    dphi_dt_0 = cy.float, # FIXME rename and be explicit about flux-limiting
+    dphi_dt_flim = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
     )
+
+p_CellInputs = cy.declare(pyidx, 17) # The number of input columns.
 
 @cy.cclass
 class TrackedCellsArrays:
@@ -2002,15 +1945,17 @@ class TrackedCellsArrays:
 
     # FIXME timestamps that say when the data was last updated for each data column.
     
-    # These are arrays
-    float_inputs: cy.float[:, :] # Shape: (n_tracked_cells, p)
+    # These arrays provide an efficient memory layout for the data involved in the Runge-Kutta passes.
+    # These arrays should be read only up to the number of tracked cells;
+    # they have a greater length in order to implement dynamic resizing.
+    float_inputs: cy.float[:, :] # Shape: (n_tracked_cells, p_CellInputs)
+    # NOTE the motivation for float_inputs being an array of floats and not of structs is to enable more generic processing when reading inputs.
     ell_info: cy.pointer(EllipticalInfo) # Array of structs (needs to be iterated over very efficiently).
     pass1outputs: cy.pointer(Pass1CellOutput) # Per-cell data produced by the 1st Runge-Kutta pass.
 
     def __cinit__(self, _arrays_length: pyidx = 256):
         self._arrays_length = _arrays_length
         self.n_tracked_cells = 0
-        #self.float_inputs = cvarray(shape=(self._arrays_length, p_CellInputs), itemsize=cy.sizeof(cy.float), allocate_buffer=True, format='f')
         self.float_inputs = np.zeros((self._arrays_length, p_CellInputs), dtype=np.float32)
         self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
         self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
@@ -2026,7 +1971,7 @@ class TrackedCellsArrays:
         This can erase any data present in this object: callers must make sure this information is no longer needed.
         """
         self.n_tracked_cells = n_tracked_cells
-        while self.n_tracked_cells > self._arrays_length:
+        while self.n_tracked_cells > self._arrays_length: # dynamic resizing
             self._arrays_length *= 2
             PyMem_Free(self.ell_info)
             self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
@@ -2255,7 +2200,6 @@ def resolve_surface_max_behavior(
     wind_speed_20ft_m_min: cy.float = km_hr_to_m_min(wind_speed_20ft) # m/min
 
     # Convert from 20ft wind speed to midflame wind speed in m/min
-    # FIXME this is getting called as a Python function
     midflame_wind_speed: cy.float = sf.calc_midflame_wind_speed(
                                         wind_speed_20ft_m_min,  # m/min
                                         fuel_bed_depth,         # ft
@@ -2278,7 +2222,7 @@ def resolve_crown_max_behavior(
         fb_opts: FireBehaviorSettings,
         ci: CellInputs,
         fm_struct: FuelModel,
-        elevation_gradient: vec_xy,
+        elevation_gradient: vec_xy, # NOTE not currently used but it could save some polar-to-cartesian conversion to use it.
         ) -> sf.FireBehaviorMax:
     heat_of_combustion: cy.float = Btu_lb_to_kJ_kg(fm_struct.h[0]) # kJ/kg
     estimated_fine_fuel_moisture: cy.float = ci.fuel_moisture_dead_1hr
@@ -2323,13 +2267,10 @@ def resolve_cell_elliptical_info(
     
     cell_index: coord_yx = (tyx[1], tyx[2])
     ci: CellInputs = load_saved_CellInputs(float_inputs, i)
-    # if cell_index == (501, 500):
-    #     print(f"ci: {ci}")
     elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
 
     # Load the fuel model
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
-    #fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
     fm_struct: FuelModel = stc.get_fm_struct(fm_number)
 
     surfc_pw: PartialedEllWavelet
@@ -2344,10 +2285,6 @@ def resolve_cell_elliptical_info(
         surfc_pw = pw_from_FireBehaviorMax(surface_fire_max)
         crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
         crown_fire_max: sf.FireBehaviorMax = resolve_crown_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
-        # if cell_index == (500, 501):
-        #     print(f"slp_dz: {elevation_gradient}")
-        #     print(f"surface_fire_max: {surface_fire_max}")
-        #     print(f"crown_fire_max: {crown_fire_max}")
         crown_pw = pw_from_FireBehaviorMax(crown_fire_max)
         
         
@@ -2381,7 +2318,6 @@ def resolve_combined_spread_behavior(
     phi_magnitude: cy.float = vector_magnitude_3d(dphi_st)
     # Load the fuel model
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
-    #fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
     fm_struct: FuelModel = stc.get_fm_struct(fm_number)
     if phi_magnitude == 0.0 or not fm_struct.burnable:
         return unburned_SpreadBehavior(elevation_gradient, dphi_st)
@@ -2475,7 +2411,7 @@ def sync_tracked_cells_arrays(
 @cy.boundscheck(False)
 @cy.cdivision(True)
 def runge_kutta_pass1(
-        fb_opts: FireBehaviorSettings, 
+        max_cells_per_timestep: cy.float, 
         spatial_resolution: vec_xy,
         max_timestep: cy.float,
         phi: cy.float[:, :],
@@ -2496,16 +2432,12 @@ def runge_kutta_pass1(
     # It is more convenient to first compute dt_inv, the reciprocal of dt;
     # dt_inv = 0 represents an infinite dt. We will later enforce that dt <= max_timestep.
     dt_inv: cy.float = 0.0 
-    C_dx: cy.float = fb_opts.max_cells_per_timestep * dx
-    C_dy: cy.float = fb_opts.max_cells_per_timestep * dy
+    C_dx: cy.float = max_cells_per_timestep * dx
+    C_dy: cy.float = max_cells_per_timestep * dy
     # Now looping over tracked cells:
     for i in range(tca.n_tracked_cells):
-        #print(f"i: {i}", flush=True)
         ell_i: EllipticalInfo = ell_info[i]
-        #print(f"done reading ell_i: {ell_i}", flush=True)
         cell_index: coord_yx = ell_i.cell_index
-        # if cell_index == (500, 500):
-        #     print(f"ell_i: {ell_i}")
         y: pyidx = cell_index[0]
         x: pyidx = cell_index[1]
         dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
@@ -2540,7 +2472,7 @@ def runge_kutta_pass1(
         pass1outputs[i] = Pass1CellOutput( # INTRO
             cell_index = cell_index,
             dphi = dphi,
-            dphi_dt_0 = dphi_dt_flim
+            dphi_dt_flim = dphi_dt_flim
             )
     dt_inv = max(dt_inv, 1.0/max_timestep) # (dt <= max_timestep) iff (dt_inv >= 1/max_timestep).
     dt: cy.float = 1.0/dt_inv
@@ -2565,7 +2497,7 @@ def update_phi_star(
         pass1out: Pass1CellOutput = pass1outputs[i]
         cell_index: coord_yx = pass1out.cell_index
         y, x = cell_index
-        dphi_dt_0i: cy.float = pass1out.dphi_dt_0
+        dphi_dt_0i: cy.float = pass1out.dphi_dt_flim
         phs[y, x] = phi[y, x] + (dt * dphi_dt_0i)
 
 
@@ -2638,17 +2570,9 @@ def runge_kutta_pass2(
             dphi_dt_1i = (dphi_dt * dphi_dt_correction)
         else:
             dphi_dt_1i = 0.0
-        dphi_dt_0i: cy.float = pass1outputs[i].dphi_dt_0
+        dphi_dt_0i: cy.float = pass1outputs[i].dphi_dt_flim
         phi_old: cy.float = phi[y, x] # NOTE could be inferred from phi_star.
         phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
-        # if cell_index == (501, 500):
-        #     print(f"U = {- dphi_dt / sqrt(dphi_norm2)} m/min")
-        #     print(f"pass1outputs[i]: {pass1outputs[i]}")
-        #     print(f"dphi = {dphi}")
-        #     print(f"dphi_dt_0i = {dphi_dt_0i}")
-        #     print(f"dphi_dt_1i = {dphi_dt_1i}")
-        #     print(f"")
-        #     print(f"phi_old = {phi_old}, phi_new = {phi_new}")
         phi[y, x] = phi_new
         i_just_burned: cy.bint = (phi_old * phi_new) < 0 # Phi can only ever decrease, therefore if these are of opposite signs, the cell has just burned.
         if i_just_burned:
@@ -2846,8 +2770,6 @@ def spread_one_timestep(
     t_load: pyidx = t0
     sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, tca_old, tca)
 
-    #print(f"tca.float_inputs: {np.array(tca.float_inputs[0:10,:])}")
-    
     needs_refresh: cy.bint = False
     # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
 
@@ -2856,24 +2778,19 @@ def spread_one_timestep(
     
     # Re-compute elliptical dimensions if needed. FIXME
     
-    dt = runge_kutta_pass1(fb_opts, stc.spatial_resolution, max_timestep, phi, tca)
-    # print(f"dt: {dt} min")
-
-    #print(f"tca.pass1outputs: {[tca.pass1outputs[i] for i in range(100)]}")
+    dt = runge_kutta_pass1(fb_opts.max_cells_per_timestep, stc.spatial_resolution, max_timestep, phi, tca)
 
     # Now that dt is known, update phi_star_matrix.
     update_phi_star(tca, dt, phi, phs)
     stop_time: cy.float = start_time + dt
     
     spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi, phs)
-    #print(f"spread_burned_cells: {[cell.cell_index for cell in spread_burned_cells]}")
     
     # Side-effects of the burned cells (outputs etc.).
     process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
     # TODO REVIEW It is a questionable choice to call this function AFTER process_spread_burned_cells;
     # it may be more sensible to ignite the spotting cells first and then to process them all.
     spot_ignited: list[BurnedCellInfo] = ignite_from_spotting_2(spot_ignitions, output_matrices, stop_time)
-    # FIXME there seems to be small differrences related to spotting (behavior is otherwise identical). Investigate.
 
     # Save the new phi_matrix values in phi_star_matrix
     reset_phi_star_2(tca, spot_ignited, phs, phi)
@@ -2892,6 +2809,7 @@ def spread_one_timestep(
         # Purposefully swapping the tracked_cells_arrays
         "_tracked_cells_arrays": tca_old,
         "_tracked_cells_arrays_old": tca,
+        
         "spot_ignitions"  : spot_ignitions,
         "random_generator": random_generator,
     }
@@ -3033,12 +2951,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
 
     # Spread the fire until an exit condition is reached
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
-    #simulation_time = start_time
     simulation_time: cy.float = sim_state["simulation_time"]
-
-    # print(f"simulation_time: {simulation_time}")
-    # print(f"frontier cells: {sim_state['frontier_cells']}")
-    # print(f"n_tracked_cells: {sim_state['tracked_cells'].n_tracked_cells}")
 
     while(simulation_time < max_stop_time and (nbt.nonempty_tracked_cells(tracked_cells) or len(spot_ignitions) > 0)):
         # Compute max_timestep based on the remaining time in the temporal band and simulation
@@ -3046,10 +2959,6 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         remaining_time_in_simulation = max_stop_time - simulation_time
         max_timestep                 = min(remaining_time_in_band, remaining_time_in_simulation)
         # Spread fire one timestep
-        # sim_state = spread_fire_one_timestep(stc, output_matrices, frontier_cells, tracked_cells,
-        #                                    cube_resolution, simulation_time, max_timestep, max_cells_per_timestep,
-        #                                    use_wind_limit, surface_lw_ratio_model, crown_max_lw_ratio,
-        #                                    buffer_width, spot_igns, spot_config, random_generator)
         sim_state = spread_one_timestep(sim_state, stc, fb_opts, max_timestep)
 
         # Reset spread inputs
@@ -3058,16 +2967,6 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         frontier_cells   = sim_state["frontier_cells"]
         tracked_cells    = sim_state["tracked_cells"]
         spot_ignitions   = sim_state["spot_ignitions"]
-
-
-
-        # print(f"simulation_time: {simulation_time}")
-        # print(f"frontier cells: {sim_state['frontier_cells']}")
-        # print(f"n_tracked_cells: {sim_state['tracked_cells'].n_tracked_cells}")
-
-
-        #r = 1 / 0
-        #random_generator = sim_state["random_generator"]
 
     # Remove the temporary copy of the phi matrix from output_matrices
     output_matrices.pop("phi_star")
@@ -3082,93 +2981,3 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         "random_generator": random_generator,
     } if spot_config else {})}
 # spread-phi-field ends here
-
-# surface_fire_max: {'max_fire_type': -1, 'max_spread_rate': 2.452946424484253, 'max_spread_direction': (0.5332155227661133, 0.5707114338874817, 0.6244754195213318), 'max_fireline_intensity': 194.66970825195312, 'max_flame_length': 0.8754133582115173, 'length_to_width_ratio': 2.445854902267456, 'eccentricity': 0.9125993847846985, 'critical_spread_rate': -1.0}
-# surface_fire_max: {'max_fire_type': -1, 'max_spread_rate': 2.452946424484253, 'max_spread_direction': (0.5332155227661133, 0.5707114338874817, 0.6244754195213318), 'max_fireline_intensity': 194.66970825195312, 'max_flame_length': 0.8754133582115173, 'length_to_width_ratio': 2.445854902267456, 'eccentricity': 0.9125993847846985, 'critical_spread_rate': -1.0}
-
-# crown_fire_max: {'max_fire_type': 3, 'max_spread_rate': 47.380836486816406, 'max_spread_direction': (0.0, 0.8703882694244385, 0.49236592650413513), 'max_fireline_intensity': 41878.9765625, 'max_flame_length': -1.0, 'length_to_width_ratio': 1.89237642288208, 'eccentricity': 0.8489730954170227, 'critical_spread_rate': 10.0}
-# crown_fire_max: {'max_fire_type': 3, 'max_spread_rate': 47.380836486816406, 'max_spread_direction': (0.0, 0.8703882694244385, 0.49236592650413513), 'max_fireline_intensity': 41878.9765625, 'max_flame_length': -1.0, 'length_to_width_ratio': 1.89237642288208, 'eccentricity': 0.8489730954170227, 'critical_spread_rate': 10.0}
-
-# ci: {'slope': 0.800000011920929, 'aspect': 225.0, 'fuel_model_number': 185.0, 'canopy_cover': 0.699999988079071, 'canopy_height': 10.0, 'canopy_base_height': 0.5, 'canopy_bulk_density': 0.30000001192092896, 'wind_speed_10m': 10.0, 'upwind_direction': 180.0, 'fuel_moisture_dead_1hr': 0.029999999329447746, 'fuel_moisture_dead_10hr': 0.03999999910593033, 'fuel_moisture_dead_100hr': 0.05000000074505806, 'fuel_moisture_live_herbaceous': 0.8999999761581421, 'fuel_moisture_live_woody': 0.6000000238418579, 'foliar_moisture': 0.699999988079071, 'fuel_spread_adjustment': 1.0, 'weather_spread_adjustment': 1.0}
-# ci: {'slope': 0.800000011920929, 'aspect': 225.0, 'fuel_model_number': 185.0, 'canopy_cover': 0.699999988079071, 'canopy_height': 10.0, 'canopy_base_height': 0.5, 'canopy_bulk_density': 0.30000001192092896, 'wind_speed_10m': 10.0, 'upwind_direction': 180.0, 'fuel_moisture_dead_1hr': 0.029999999329447746, 'fuel_moisture_dead_10hr': 0.03999999910593033, 'fuel_moisture_dead_100hr': 0.05000000074505806, 'fuel_moisture_live_herbaceous': 0.8999999761581421, 'fuel_moisture_live_woody': 0.6000000238418579, 'foliar_moisture': 0.699999988079071, 'fuel_spread_adjustment': 1.0, 'weather_spread_adjustment': 1.0}
-
-# sfn: {'dphi_dt': -0.04949941858649254, 'fire_type': 1, 'spread_rate': 1.6552220582962036, 'spread_direction': (-0.21749088168144226, 0.8971499800682068, 0.38447314500808716), 'fireline_intensity': 131.3610382080078, 'flame_length': 0.7305173873901367}
-
-
-# crown_fire_max: {'max_fire_type': 3, 'max_spread_rate': 47.380836486816406, 'max_spread_direction': (0.0, 0.8703882694244385, 0.49236592650413513), 'max_fireline_intensity': 41878.9765625, 'max_flame_length': -1.0, 'length_to_width_ratio': 1.89237642288208, 'eccentricity': 0.8489730954170227, 'critical_spread_rate': 10.0}
-
-
-# cfn: {'dphi_dt': -1.3811109066009521, 'fire_type': 3, 'spread_rate': 46.18327713012695, 'spread_direction': (-0.21749088168144226, 0.8971499800682068, 0.38447314500808716), 'fireline_intensity': 40820.4765625, 'flame_length': 10.236225128173828}
-
-
-# combined_fire_normal: {'dphi_dt': -1.3811109066009521, 'fire_type': 3, 'spread_rate': 46.18327713012695, 'spread_direction': (-0.21749088168144226, 0.8971499800682068, 0.38447314500808716), 'fireline_intensity': 44485.65625, 'flame_length': 10.649203300476074}
-
-
-
-# NEW ell_i: {'cell_index': (500, 500), 'slp_dz': (0.5656854510307312, 0.5656853914260864), 'surfc_wavelet': {'Vh_3d': (1.3079490661621094, 1.3999245166778564, 1.5318048000335693), 'ewc_A': -0.47715136408805847, 'ewc_B': -0.21376930177211761, 'ewc_C': 4.982204914093018}, 'crowning_spread_rate': 0.48500579595565796, 'crown_wavelet': {'Vh_3d': (0.0, 41.239723205566406, 23.32870864868164), 'ewc_A': -0.459159255027771, 'ewc_B': -0.2857997715473175, 'ewc_C': 2.581088066101074}}
-
-
-
-# dt: 0.2896219491958618
-# dt: 9.654064178466797 min
-
-# U = 41.433326721191406
-# U = 41.43332459709812 m/min
-
-
-# NEW dphi = (0.0, 0.0010000000474974513)
-
-
-# dphi_dt_0i = -0.08286665380001068
-# dphi_dt_estimate1: -2.7622218132019043
-
-
-# dphi_dt_1i = -0.07457998394966125
-# dphi_dt_estimate2: -2.485999345779419
-
-
-# phi_old: 1.0
-
-
-# phi_next: 0.2399999499320984
-
-
-
-# dphi_dt_star_correction: 1.7999998331069946
-
-
-# NEW
-# csr_2: 0.23523062467575073
-# st_dphi_2: 8.048781978686748e-07
-# does_crown: True
-# Vh_3d: (0.0, 41.239723205566406, 23.32870864868164)
-# Vh: 47.38083324905759
-# Delta: 0.041239723563194275
-# st_dphi_2: 8.048781978686748e-07
-# dt: 9.654064178466797 min
-# surfc_dphi_dt: -0.0014849824365228415
-# csr_2: 0.23523062467575073
-# st_dphi_2: 8.048781978686748e-07
-# does_crown: True
-# Vh_3d: (0.0, 41.239723205566406, 23.32870864868164)
-# Vh: 47.38083324905759
-# Delta: 0.041239723563194275
-# st_dphi_2: 8.048781978686748e-07
-# U = 41.43332459709812 m/min
-# slp_dz: (0.5656854510307312, 0.5656853914260864)
-# dphi: (0.0, 0.0010000000474974513)
-
-
-# OLD
-# ewc_A: -0.459159255027771
-# ewc_B: -0.2857997417449951
-# ewc_C: 2.581088525879977
-# Vh: 47.380836486816406
-# Vh_3d: (0.0, 41.239723205566406, 23.32870864868164)
-# dphi: (0.0, 0.03333333507180214)
-# dphi_st_3d: (-0.00650406489148736, 0.026829270645976067, 0.011497669853270054)
-# st_dphi_2: 0.0008943090669595068
-# heading_spread_vector: (0.0, 41.239723205566406, 23.32870864868164)
-# Delta: 1.3746575117111206
-# dphi_dt: -1.3811109066009521
-# slp_dz: (0.5656854510307312, 0.5656853914260864)
