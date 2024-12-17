@@ -1351,6 +1351,15 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
         nbt.incr_square_around(tracked_cells, y, x, buffer_width)
     return tracked_cells
 
+@cy.ccall
+@cy.exceptval(check=False)
+def get_frontier_cells_added(frontier_cells_old: set, frontier_cells_new: set) -> set:
+    return frontier_cells_new.difference(frontier_cells_old)
+
+@cy.ccall
+@cy.exceptval(check=False)
+def get_frontier_cells_dropped(frontier_cells_old: set, frontier_cells_new: set) -> set:
+    return frontier_cells_old.difference(frontier_cells_new)
 
 @cy.profile(True)
 @cy.ccall
@@ -1360,8 +1369,10 @@ def update_tracked_cells(tracked_cells: object, frontier_cells_old: set, frontie
     TODO: Add docstring
     """
     # Determine which frontier cells have been added or dropped
-    frontier_cells_added  : set = frontier_cells_new.difference(frontier_cells_old)
-    frontier_cells_dropped: set = frontier_cells_old.difference(frontier_cells_new)
+    # OPTIM these set differences are 75% of the runtime of this function.
+    # We might be able to resolve additions and drops in a faster way by iterating over burned cells.
+    frontier_cells_added  : set = get_frontier_cells_added(frontier_cells_old, frontier_cells_new)
+    frontier_cells_dropped: set = get_frontier_cells_dropped(frontier_cells_old, frontier_cells_new)
     cell                  : object
     # Increment reference counters for all cells within buffer_width of the added frontier cells
     y: pyidx
