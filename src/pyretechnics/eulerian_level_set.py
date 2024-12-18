@@ -2918,6 +2918,92 @@ def identify_tracked_frontier_cells_2(
     return frontier_cells
 
 @cy.ccall
+def route_cell_to_diff(
+        rows: pyidx, 
+        cols: pyidx,
+        frontier_cells_old: set,
+        phi: cy.float[:, :],
+        frontier_additions: set,
+        frontier_removals: set,
+        y: pyidx,
+        x: pyidx,
+        ) -> cy.void:
+    set_elem: object = encode_cell_index(y, x)
+    if is_frontier_cell(rows, cols, phi, y, x):
+        if not (set_elem in frontier_cells_old):
+            frontier_additions.add(set_elem)
+    else:
+        if (set_elem in frontier_cells_old):
+            frontier_removals.add(set_elem)
+
+
+@cy.ccall
+def diff_frontier_cells(
+        frontier_cells_old: set,
+        phi: cy.float[:, :],
+        spread_ignited: list[BurnedCellInfo],
+        spot_ignited: list[BurnedCellInfo], 
+        rows: pyidx, 
+        cols: pyidx
+    ) -> object:
+    frontier_additions: set = set()
+    frontier_removals: set = set()
+    l: list[BurnedCellInfo]
+    for l in [spread_ignited, spot_ignited]:
+        ci: BurnedCellInfo
+        y: pyidx
+        x: pyidx
+        for ci in l:
+            y, x = ci.cell_index
+            # NOTE only in the neighborhood of a burned cell can there be changes to frontier cells membership.
+            route_cell_to_diff(rows, cols, frontier_cells_old, phi, frontier_additions, frontier_removals, y, x)
+            route_cell_to_diff(rows, cols, frontier_cells_old, phi, frontier_additions, frontier_removals, y-1, x)
+            route_cell_to_diff(rows, cols, frontier_cells_old, phi, frontier_additions, frontier_removals, y+1, x)
+            route_cell_to_diff(rows, cols, frontier_cells_old, phi, frontier_additions, frontier_removals, y, x-1)
+            route_cell_to_diff(rows, cols, frontier_cells_old, phi, frontier_additions, frontier_removals, y, x+1)
+    return (frontier_additions, frontier_removals)
+
+
+@cy.ccall
+def apply_frontier_diff(frontier_cells_old: set, frontier_additions: set, frontier_removals: set) -> set:
+    frontier_cells_new: set = frontier_cells_old.copy()
+    for set_elem in frontier_additions:
+        frontier_cells_new.add(set_elem)
+    for set_elem in frontier_removals:
+        frontier_cells_new.discard(set_elem)
+    return frontier_cells_new
+
+
+@cy.profile(True)
+@cy.ccall
+def update_tracked_cells_with_frontier_diff(
+        tracked_cells: object,
+        frontier_cells_added: set,
+        frontier_cells_dropped: set,
+        buffer_width: pyidx
+    ) -> object:
+    """
+    TODO: Add docstring
+    """
+    # Determine which frontier cells have been added or dropped
+    # OPTIM these set differences are 75% of the runtime of this function.
+    # We might be able to resolve additions and drops in a faster way by iterating over burned cells.
+    cell                  : object
+    # Increment reference counters for all cells within buffer_width of the added frontier cells
+    y: pyidx
+    x: pyidx
+    for cell in frontier_cells_added:
+        y, x = decode_cell_index(cell)
+        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
+    # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
+    for cell in frontier_cells_dropped:
+        y, x = decode_cell_index(cell)
+        nbt.decr_square_around(tracked_cells, y, x, buffer_width)
+    # Return updated tracked cells
+    return tracked_cells
+
+
+@cy.ccall
 @cy.cdivision(True)
 def spread_one_timestep(
         sim_state: dict,
@@ -2963,9 +3049,17 @@ def spread_one_timestep(
     reset_phi_star_2(tca, spot_ignited, phs, phi)
 
     # Update the sets of frontier cells and tracked cells based on the updated phi matrix
-    frontier_cells_new: set  = identify_tracked_frontier_cells_2(phi, tca, spot_ignited, stc.rows, stc.cols)
-    frontier_cells_old: set  = sim_state["frontier_cells"]
-    tracked_cells_new : object = update_tracked_cells(tracked_cells, frontier_cells_old, frontier_cells_new, fb_opts.buffer_width)
+    frontier_cells_old: set  = sim_state["frontier_cells"] # OPTIM maybe it would be more efficient to use a binary array here.
+    frontier_additions, frontier_removals = diff_frontier_cells(
+        frontier_cells_old,
+        phi,
+        spread_burned_cells,
+        spot_ignited,
+        stc.rows,
+        stc.cols
+    )
+    frontier_cells_new: set = apply_frontier_diff(frontier_cells_old, frontier_additions, frontier_removals)
+    tracked_cells_new : object = update_tracked_cells_with_frontier_diff(tracked_cells, frontier_additions, frontier_removals, fb_opts.buffer_width)
 
     # Return the updated world state
     sim_state_new = {
