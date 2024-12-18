@@ -2,7 +2,7 @@
 import cython
 if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Realloc, PyMem_Free
-    from cython.cimports.pyretechnics.math import sqrt, atan
+    from cython.cimports.pyretechnics.math import sqrt, atan, floor
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     import cython.cimports.pyretechnics.crown_fire as cf
     from cython.cimports.pyretechnics.conversion import \
@@ -17,7 +17,7 @@ if cython.compiled:
         vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
-    from math import sqrt, atan
+    from math import sqrt, atan, floor
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
@@ -211,6 +211,7 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
     phi_south: cy.float = calc_phi_south(phi, u_y, x, y, rows)
     return (phi_north - phi_south) / dy
 
+# NOTE I have seen no significant performance gains from implementing a function that computes both the phi gradient and the flux-limited phi gradient in one fell swoop.
 # TODO: Pass rows and cols
 # TODO: Handle exception values from child functions
 @cy.profile(False)
@@ -239,6 +240,7 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
 @cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.inline
 def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
@@ -269,6 +271,7 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
 @cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.inline
 def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the -x (east->west)
@@ -299,6 +302,7 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
 @cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.inline
 def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
@@ -329,6 +333,7 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
 @cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
+@cy.inline
 def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the -y (north->south)
@@ -1926,6 +1931,7 @@ def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # 
     nothing else is needed in the front-propagating tight loop
     that iterates over tracked cells.
     """
+    # NOTE changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.
     st_dphi_2: cy.float = compute_st_dphi_2(ell_i.slp_dz, dphi)
     surfc_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.surfc_wavelet, dphi, st_dphi_2)
     csr: cy.float = ell_i.crowning_spread_rate
