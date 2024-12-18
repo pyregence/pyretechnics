@@ -59,6 +59,17 @@ space_time_cubes = {
     "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, arr3d(1.0)),   # float >= 0.0 (Optional: defaults to 1.0)
 }
 
+inputs_refresh_freqs = {
+    "wind_speed_10m"               : 1.0 / 15.0,
+    "upwind_direction"             : 1.0 / 15.0,
+    
+    "fuel_moisture_dead_1hr"       : 1.0 / 30.0,
+    
+    "temperature"                  : 1.0 / 30.0,
+    "fuel_spread_adjustment"       : 0.0,
+    "weather_spread_adjustment"    : 1.0 / 30.0,
+}
+
 #============================================================================================
 # Create an output dictionary of 2D Numpy arrays
 #============================================================================================
@@ -105,6 +116,7 @@ spot_config = {
 runtime_start       = time.perf_counter()
 fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
                                                      start_time, max_duration,
+                                                     inputs_refresh_freqs=inputs_refresh_freqs,
                                                      spot_config=spot_config
                                                      )
 runtime_stop        = time.perf_counter()
