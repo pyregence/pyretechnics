@@ -71,7 +71,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     value or array to the caller.
     """
     ndim: cy.int
-    size: cy.int
+    size: cy.ulong
     shape: object
     base: object
     t_repetitions: cy.int

@@ -7,7 +7,7 @@ cdef class ISpaceTimeCube:
 
 cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
-    cdef public int size
+    cdef public unsigned long size
     cdef public tuple shape
     cdef public object base
     cdef public int t_repetitions

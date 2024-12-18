@@ -2925,19 +2925,14 @@ def spread_one_timestep(
     phi: cy.float[:,:] = output_matrices["phi"]
     phs: cy.float[:,:] = output_matrices["phi_star"]
 
-    band_duration: cy.float = stc.band_duration
-
     # Insert missing tracked cells.
     tracked_cells: nbt.NarrowBandTracker = sim_state["tracked_cells"]
     tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
     tca: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
     start_time: cy.float = sim_state["simulation_time"]
-    t0: pyidx = int(start_time // band_duration)
-    t_load: pyidx = t0
-    sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, tca_old, tca)
+    sync_tracked_cells_arrays(stc, fb_opts, tracked_cells, tca_old, tca)
 
-    needs_refresh: cy.bint = False
-    # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
+    refresh_ell_info_if_needed(stc, fb_opts, tca, start_time)
 
     # OPTIM: if fuel moistures haven't changed, don't recomute the no-wind/no-slope behavior.
     # This makes sense if the wind field is refreshed more frequently than fuel moistures.
