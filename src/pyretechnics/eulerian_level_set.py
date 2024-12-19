@@ -2731,9 +2731,8 @@ def runge_kutta_pass1(
         if dphi_norm2 > 0: # Most common case.
             dphi_dx_flim: cy.float = calc_dphi_flim_x(phi_values[i, 0], phi_values[i, 1], phi_values[i, 2], phi_values[i, 3], phi_values[i, 4]) * dx_inv
             dphi_dy_flim: cy.float = calc_dphi_flim_y(phi_values[i, 0], phi_values[i, 5], phi_values[i, 6], phi_values[i, 7], phi_values[i, 8]) * dy_inv
-            dphi_flim: vec_xy = (dphi_dx_flim, dphi_dy_flim) # Flux-limited 2D gradient.
             dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi)
-            dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+            dphi_dt_correction: cy.float = (dphi_dx * dphi_dx_flim + dphi_dy * dphi_dy_flim) / dphi_norm2
             dphi_dt_flim = (dphi_dt * dphi_dt_correction)
             # Checking the CFL condition and updating dt_inv if needed (which will be rare).
             # The code is written in this way to be fast, but it's not trivial that it's correct; proof below.
@@ -2778,6 +2777,7 @@ def update_phi_star(
     To be called between Runge-Kutta passes.
     """
     pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
+    i: pyidx
     for i in range(tca.n_tracked_cells):
         pass1out: Pass1CellOutput = pass1outputs[i]
         cell_index: coord_yx = pass1out.cell_index
@@ -2854,8 +2854,7 @@ def runge_kutta_pass2(
         if dphi_norm2 > 0: # Most common case.
             dphi_dx_flim: cy.float = calc_dphi_flim_x(phs_values[i, 0], phs_values[i, 1], phs_values[i, 2], phs_values[i, 3], phs_values[i, 4]) * dx_inv
             dphi_dy_flim: cy.float = calc_dphi_flim_y(phs_values[i, 0], phs_values[i, 5], phs_values[i, 6], phs_values[i, 7], phs_values[i, 8]) * dy_inv
-            dphi_flim: vec_xy = (dphi_dx_flim, dphi_dy_flim) # Flux-limited 2D gradient.
-            dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+            dphi_dt_correction: cy.float = (dphi_dx * dphi_dx_flim + dphi_dy * dphi_dy_flim) / dphi_norm2
             dphi_dt = dphi_dt_from_elliptical(ell_i, dphi)
             dphi_dt_1i = (dphi_dt * dphi_dt_correction)
         else:
@@ -2939,6 +2938,7 @@ def reset_phi_star_2(
     ) -> cy.void:
     y: pyidx
     x: pyidx
+    i: pyidx
     for i in range(tca.n_tracked_cells):
         y, x = tca.pass1outputs[i].cell_index
         phi_star_matrix[y,x] = phi_matrix[y,x]
