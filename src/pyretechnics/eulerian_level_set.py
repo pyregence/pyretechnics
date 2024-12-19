@@ -167,6 +167,26 @@ def calc_superbee_flux_limiter(dphi_up: cy.float, dphi_loc: cy.float) -> cy.floa
         return max(0.0,
                    min(2.0 * r, 1.0),
                    min(r, 2.0))
+
+
+@cy.profile(False)
+@cy.cfunc
+@cy.exceptval(check=False)
+@cy.inline
+def half_superbee_dphi_up(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
+    """
+    Logically like calc_superbee_flux_limiter(), but returns a result multiplied by (0.5 * dphi_loc).
+    """
+    # NOTE this is more numerically stable than calc_superbee_flux_limiter().
+    s_loc: cy.float = 1.0 if dphi_loc >= 0.0 else -1.0
+    are_opposite_signs: cy.bint = (s_loc * dphi_up) <= 0.0
+    if are_opposite_signs:
+        return 0.0
+    a_up: cy.float = abs(dphi_up)
+    a_loc: cy.float = abs(dphi_loc)
+    return s_loc * max(
+        min(a_up / 2, a_loc),
+        min(a_up, a_loc / 2))
 # superbee-flux-limiter ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients][phi-field-spatial-gradients]]
 @cy.cfunc
@@ -199,23 +219,19 @@ def calc_dphi_flim_x(p00: cy.float, pw2: cy.float, pw1: cy.float, pe1: cy.float,
     dphi_loc = pe1 - p00
     if pe1 >= pw1:
         dphi_up: cy.float = p00 - pw1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_east = p00 + 0.5 * B * dphi_loc
+        phi_east = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
     else:
         dphi_up: cy.float = pe2 - pe1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_east = pe1 - 0.5 * B * dphi_loc
+        phi_east = pe1 - half_superbee_dphi_up(dphi_up, dphi_loc)
 
     phi_west: cy.float
     dphi_loc = pw1 - p00
     if pe1 >= pw1:
         dphi_up: cy.float = pw2 - pw1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_west = pw1 - 0.5 * B * dphi_loc
+        phi_west = pw1 - half_superbee_dphi_up(dphi_up, dphi_loc)
     else:
         dphi_up: cy.float = p00 - pe1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_west = p00 + 0.5 * B * dphi_loc
+        phi_west = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
     return (phi_east - phi_west)
 
 
@@ -231,23 +247,19 @@ def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float,
     dphi_loc = pn1 - p00
     if pn1 >= ps1:
         dphi_up: cy.float = p00 - ps1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_north = p00 + 0.5 * B * dphi_loc
+        phi_north = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
     else:
         dphi_up: cy.float = pn2 - pn1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_north = pn1 - 0.5 * B * dphi_loc
+        phi_north = pn1 - half_superbee_dphi_up(dphi_up, dphi_loc)
 
     phi_south: cy.float
     dphi_loc = ps1 - p00
     if pn1 >= ps1:
         dphi_up: cy.float = ps2 - ps1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_south = ps1 - 0.5 * B * dphi_loc
+        phi_south = ps1 - half_superbee_dphi_up(dphi_up, dphi_loc)
     else:
         dphi_up: cy.float = p00 - pn1
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        phi_south = p00 + 0.5 * B * dphi_loc
+        phi_south = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
     
     return (phi_north - phi_south)
 
