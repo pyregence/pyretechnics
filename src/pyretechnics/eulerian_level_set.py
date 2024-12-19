@@ -45,50 +45,36 @@ PI = cy.declare(cy.double, 3.14159265358979323846)
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
 @cy.wraparound(False)
+@cy.cdivision(True)
 @cy.boundscheck(False)
-def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
+@cy.inline
+def calc_dphi_dx_approx(phi: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given the cell width dx.
     """
     east_x: pyidx = x + 1
     west_x: pyidx = x - 1
-    if east_x < cols:
-        if west_x >= 0:
-            return (phi[y][east_x] - phi[y][west_x]) / (2.0 * dx)
-        else:
-            return (phi[y][east_x] - phi[y][x]) / dx
-    else:
-        if west_x >= 0:
-            return (phi[y][x] - phi[y][west_x]) / dx
-        else:
-            return 0.0
+    return (phi[2+y][2+east_x] - phi[2+y][2+west_x]) / (2.0 * dx)
 
 
 @cy.profile(False)
 @cy.cfunc
-@cy.exceptval(65504.0)
+@cy.exceptval(check=False)
 @cy.wraparound(False)
+@cy.cdivision(True)
 @cy.boundscheck(False)
-def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
+@cy.inline
+def calc_dphi_dy_approx(phi: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given the cell height dy.
     """
     north_y: pyidx = y + 1
     south_y: pyidx = y - 1
-    if north_y < rows:
-        if south_y >= 0:
-            return (phi[north_y][x] - phi[south_y][x]) / (2.0 * dy)
-        else:
-            return (phi[north_y][x] - phi[y][x]) / dy
-    else:
-        if south_y >= 0:
-            return (phi[y][x] - phi[south_y][x]) / dy
-        else:
-            return 0.0
+    return (phi[2+north_y][2+x] - phi[2+south_y][2+x]) / (2.0 * dy)
 
 
 # TODO: Pass rows and cols
@@ -100,10 +86,8 @@ def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: 
     Calculate the spatial gradient of the phi raster at grid cell (x,y)
     given the cell width dx and the cell height dy.
     """
-    rows   : pyidx    = phi.shape[0]
-    cols   : pyidx    = phi.shape[1]
-    dphi_dx: cy.float = calc_dphi_dx_approx(phi, dx, x, y, cols)
-    dphi_dy: cy.float = calc_dphi_dy_approx(phi, dy, x, y, rows)
+    dphi_dx: cy.float = calc_dphi_dx_approx(phi, dx, x, y)
+    dphi_dy: cy.float = calc_dphi_dy_approx(phi, dy, x, y)
     return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
@@ -196,7 +180,7 @@ def half_superbee_dphi_up(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.cdivision(True)
-def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
+def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given:
@@ -207,8 +191,8 @@ def calc_dphi_dx(phi: cy.float[:,:], u_x: cy.float, dx: cy.float, x: pyidx, y: p
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    phi_east: cy.float = calc_phi_east(phi, u_x, x, y, cols)
-    phi_west: cy.float = calc_phi_west(phi, u_x, x, y, cols)
+    phi_east: cy.float = calc_phi_east(phi, u_x, x, y)
+    phi_west: cy.float = calc_phi_west(phi, u_x, x, y)
     return (phi_east - phi_west) / dx
 
 @cy.profile(False)
@@ -272,7 +256,7 @@ def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float,
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.cdivision(True)
-def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
+def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given:
@@ -283,8 +267,8 @@ def calc_dphi_dy(phi: cy.float[:,:], u_y: cy.float, dy: cy.float, x: pyidx, y: p
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    phi_north: cy.float = calc_phi_north(phi, u_y, x, y, rows)
-    phi_south: cy.float = calc_phi_south(phi, u_y, x, y, rows)
+    phi_north: cy.float = calc_phi_north(phi, u_y, x, y)
+    phi_south: cy.float = calc_phi_south(phi, u_y, x, y)
     return (phi_north - phi_south) / dy
 
 # NOTE I have seen no significant performance gains from implementing a function that computes both the phi gradient and the flux-limited phi gradient in one fell swoop.
@@ -304,10 +288,8 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
     - x   :: integer column index in phi
     - y   :: integer row index in phi
     """
-    rows   : pyidx    = phi.shape[0]
-    cols   : pyidx    = phi.shape[1]
-    dphi_dx: cy.float = calc_dphi_dx(phi, u_x, dx, x, y, cols)
-    dphi_dy: cy.float = calc_dphi_dy(phi, u_y, dy, x, y, rows)
+    dphi_dx: cy.float = calc_dphi_dx(phi, u_x, dx, x, y)
+    dphi_dy: cy.float = calc_dphi_dy(phi, u_y, dy, x, y)
     return (dphi_dx, dphi_dy)
 # phi-field-spatial-gradients ends here
 # [[file:../../org/pyretechnics.org::phi-east][phi-east]]
@@ -315,9 +297,9 @@ def calc_phi_gradient(phi: cy.float[:,:], u_x: cy.float, u_y: cy.float, dx: cy.f
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.wraparound(False)
-@cy.boundscheck(False)
 @cy.inline
-def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
+@cy.boundscheck(False)
+def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the x (west->east)
     direction at grid cell (x,y) given:
@@ -327,28 +309,20 @@ def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    very_east_x: pyidx = min(x+2, cols-1)
-    east_x     : pyidx = min(x+1, cols-1)
-    west_x     : pyidx = max(x-1, 0)
-
-    dphi_loc: cy.float = phi[y][east_x] - phi[y][x] # FIXME bad array lookup notation I think?
-    if u_x >= 0.0:
-        dphi_up: cy.float = phi[y][x] - phi[y][west_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[y][very_east_x] - phi[y][east_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][east_x] - 0.5 * B * dphi_loc
+    dphi_loc: cy.float = phi[2+y][2+x+1] - phi[2+y][2+x]
+    incr: pyidx = cy.cast(pyidx, (u_x < 0.0))
+    dphi_up: cy.float = phi[2+y][2+x + 2*incr] - phi[2+y][2+x + 2*incr - 1]
+    B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    return phi[2+y][2+x + incr] + (0.5 - incr) * B * dphi_loc
 # phi-east ends here
 # [[file:../../org/pyretechnics.org::phi-west][phi-west]]
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.wraparound(False)
-@cy.boundscheck(False)
 @cy.inline
-def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
+@cy.boundscheck(False)
+def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the -x (east->west)
     direction at grid cell (x,y) given:
@@ -358,28 +332,20 @@ def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: p
     - y    :: integer row index in phi
     - cols :: integer number of columns in the phi matrix
     """
-    east_x     : pyidx = min(x+1, cols-1)
-    west_x     : pyidx = max(x-1, 0)
-    very_west_x: pyidx = max(x-2, 0)
-
-    dphi_loc: cy.float = phi[y][west_x] - phi[y][x]
-    if u_x >= 0.0:
-        dphi_up: cy.float = phi[y][very_west_x] - phi[y][west_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][west_x] - 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[y][x] - phi[y][east_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
+    dphi_loc: cy.float = phi[2+y][2+x - 1] - phi[2+y][2+x]
+    incr: pyidx = cy.cast(pyidx, (u_x >= 0.0))
+    dphi_up: cy.float = phi[2+y][2+x - 2*incr] - phi[2+y][2+x - 2*incr + 1]
+    B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    return phi[2+y][2+x - incr] + (0.5 - incr) * B * dphi_loc
 # phi-west ends here
 # [[file:../../org/pyretechnics.org::phi-north][phi-north]]
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.wraparound(False)
-@cy.boundscheck(False)
 @cy.inline
-def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
+@cy.boundscheck(False)
+def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the y (south->north)
     direction at grid cell (x,y) given:
@@ -389,28 +355,20 @@ def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    very_north_y: pyidx = min(y+2, rows-1)
-    north_y     : pyidx = min(y+1, rows-1)
-    south_y     : pyidx = max(y-1, 0)
-
-    dphi_loc: cy.float = phi[north_y][x] - phi[y][x]
-    if u_y >= 0.0:
-        dphi_up: cy.float = phi[y][x] - phi[south_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[very_north_y][x] - phi[north_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[north_y][x] - 0.5 * B * dphi_loc
+    dphi_loc: cy.float = phi[2+y + 1][2+x] - phi[2+y][2+x]
+    incr: pyidx = cy.cast(pyidx, (u_y < 0.0))
+    dphi_up: cy.float = phi[2+y + 2*incr][2+x] - phi[2+y + 2*incr - 1][2+x]
+    B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    return phi[2+y + incr][2+x] + (0.5 - incr) * B * dphi_loc
 # phi-north ends here
 # [[file:../../org/pyretechnics.org::phi-south][phi-south]]
 @cy.profile(False)
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.wraparound(False)
-@cy.boundscheck(False)
 @cy.inline
-def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
+@cy.boundscheck(False)
+def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of the phi raster in the -y (north->south)
     direction at grid cell (x,y) given:
@@ -420,19 +378,11 @@ def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: 
     - y    :: integer row index in phi
     - rows :: integer number of rows in the phi matrix
     """
-    north_y     : pyidx = min(y+1, rows-1)
-    south_y     : pyidx = max(y-1, 0)
-    very_south_y: pyidx = max(y-2, 0)
-
-    dphi_loc: cy.float = phi[south_y][x] - phi[y][x]
-    if u_y >= 0.0:
-        dphi_up: cy.float = phi[very_south_y][x] - phi[south_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[south_y][x] - 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[y][x] - phi[north_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
+    dphi_loc: cy.float = phi[2+y - 1][2+x] - phi[2+y][2+x]
+    incr: pyidx = cy.cast(pyidx, (u_y >= 0.0))
+    dphi_up: cy.float = phi[2+y - 2*incr][2+x] - phi[2+y - 2*incr + 1][2+x]
+    B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
+    return phi[2+y - incr][2+x] + (0.5 - incr) * B * dphi_loc
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
@@ -1355,7 +1305,7 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
     """
     Return True if the phi values at cells (x1,y1) and (x2,y2) have opposite signs.
     """
-    return phi_matrix[y1, x1] * phi_matrix[y2, x2] < 0.0
+    return phi_matrix[2+y1, 2+x1] * phi_matrix[2+y2, 2+x2] < 0.0
 
 
 # TODO: Is it faster to build up a list or a set?
@@ -1372,10 +1322,10 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
     for y in range(rows):
         for x in range(cols):
             # Compare (north, south, east, west) neighboring cell pairs for opposite phi signs
-            north_y: pyidx = min(y+1, rows-1)
-            south_y: pyidx = max(y-1, 0)
-            east_x : pyidx = min(x+1, cols-1)
-            west_x : pyidx = max(x-1, 0)
+            north_y: pyidx = y+1
+            south_y: pyidx = y-1
+            east_x : pyidx = x+1
+            west_x : pyidx = x-1
             if (opposite_phi_signs(phi_matrix, y, x, north_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, south_y, x) or
                 opposite_phi_signs(phi_matrix, y, x, y, east_x) or
@@ -1385,10 +1335,10 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
 
 @cy.ccall
 def is_frontier_cell(rows: pyidx, cols: pyidx, phi_matrix: cy.float[:,:], y: pyidx, x: pyidx) -> cy.bint:
-    north_y: pyidx = min(y+1, rows-1)
-    south_y: pyidx = max(y-1, 0)
-    east_x : pyidx = min(x+1, cols-1)
-    west_x : pyidx = max(x-1, 0)
+    north_y: pyidx = y+1
+    south_y: pyidx = y-1
+    east_x : pyidx = x+1
+    west_x : pyidx = x-1
     return (
         opposite_phi_signs(phi_matrix, y, x, north_y, x) or
         opposite_phi_signs(phi_matrix, y, x, south_y, x) or
@@ -1530,9 +1480,9 @@ def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop
             for cell_index in ignited_cells:
                 y: pyidx = cell_index[0]
                 x: pyidx = cell_index[1]
-                if phi_matrix[y,x] > 0.0: # Not burned yet
-                    phi_matrix[y,x]             = -1.0
-                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
+                if phi_matrix[2+y, 2+x] > 0.0: # Not burned yet
+                    phi_matrix[2+y, 2+x]             = -1.0
+                    time_of_arrival_matrix[y, x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
                     ignited.append(cell_index)
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
     return ignited
@@ -1550,11 +1500,11 @@ def reset_phi_star(
         tcb: TrackedCellBehavior = t
         y = tcb.y
         x = tcb.x
-        phi_star_matrix[y,x] = phi_matrix[y,x]
+        phi_star_matrix[2+y, 2+x] = phi_matrix[2+y, 2+x]
     for cell_index in spot_ignited:
         y = cell_index[0]
         x = cell_index[1]
-        phi_star_matrix[y,x] = phi_matrix[y,x]
+        phi_star_matrix[2+y, 2+x] = phi_matrix[2+y, 2+x]
 
 @cy.ccall
 def spot_from_burned_cell(
@@ -1672,8 +1622,8 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
     time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
 
     # Extract simulation dimensions
-    rows: pyidx = phi_matrix.shape[0]
-    cols: pyidx = phi_matrix.shape[1]
+    rows: pyidx = fire_type_matrix.shape[0]
+    cols: pyidx = fire_type_matrix.shape[1]
 
     # Extract simulation resolution
     band_duration: cy.float = cube_resolution[0]
@@ -1770,7 +1720,7 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         fb: SpreadBehavior = tcb.spread_behavior
         dphi_dt = fb.dphi_dt
         if dphi_dt != 0.0:
-            phi_star_matrix[tcb.y,tcb.x] += dphi_dt * dt
+            phi_star_matrix[2+tcb.y,2+tcb.x] += dphi_dt * dt
 
     # Compute fire behavior values at stop_time and update the output_matrices
     t1           : pyidx = int(stop_time // band_duration)
@@ -1827,10 +1777,10 @@ def spread_fire_one_timestep(stc: SpreadInputs, output_matrices: dict, frontier_
         # FIXME * 0.5
         dphi_dt_average  : cy.float = (dphi_dt_estimate1 + dphi_dt_estimate2) / 2.0
         if dphi_dt_average != 0.0: # FIXME why are we doing this unlikely check?
-            phi     : cy.float = phi_matrix[y,x]
+            phi     : cy.float = phi_matrix[2+y,2+x]
             phi_next: cy.float = phi + dphi_dt_average * dt
             # Update the tracked cell values in phi_matrix
-            phi_matrix[y,x] = phi_next
+            phi_matrix[2+y,2+x] = phi_next
 
             # Record fire behavior values in the output_matrices for cells that are burned in this timestep
             # NOTE: This records the fire behavior values at start_time and not at the time of arrival.
@@ -2136,15 +2086,15 @@ def collect_phi_values(phi: cy.float[:, :], tca: TrackedCellsArrays) -> cy.void:
     for i in range(tca.n_tracked_cells):
         cell_index: coord_yx = ell_info[i].cell_index
         y, x = cell_index
-        phi_values[i, 0] = phi[y, x]
-        phi_values[i, 1] = phi[y, x-2]
-        phi_values[i, 2] = phi[y, x-1]
-        phi_values[i, 3] = phi[y, x+1]
-        phi_values[i, 4] = phi[y, x+2]
-        phi_values[i, 5] = phi[y-2, x]
-        phi_values[i, 6] = phi[y-1, x]
-        phi_values[i, 7] = phi[y+1, x]
-        phi_values[i, 8] = phi[y+2, x]
+        phi_values[i, 0] = phi[2+y, 2+x]
+        phi_values[i, 1] = phi[2+y, 2+x-2]
+        phi_values[i, 2] = phi[2+y, 2+x-1]
+        phi_values[i, 3] = phi[2+y, 2+x+1]
+        phi_values[i, 4] = phi[2+y, 2+x+2]
+        phi_values[i, 5] = phi[2+y-2, 2+x]
+        phi_values[i, 6] = phi[2+y-1, 2+x]
+        phi_values[i, 7] = phi[2+y+1, 2+x]
+        phi_values[i, 8] = phi[2+y+2, 2+x]
 
         
 
@@ -2781,10 +2731,10 @@ def update_phi_star(
     for i in range(tca.n_tracked_cells):
         pass1out: Pass1CellOutput = pass1outputs[i]
         cell_index: coord_yx = pass1out.cell_index
-        y, x = cell_index
+        y: pyidx = cell_index[0]
+        x: pyidx = cell_index[1]
         dphi_dt_0i: cy.float = pass1out.dphi_dt_flim
-        phs[y, x] = pass1out.phi_old + (dt * dphi_dt_0i)
-
+        phs[2+y, 2+x] = pass1out.phi_old + (dt * dphi_dt_0i)
 
 @cy.cclass
 class BurnedCellInfo: # Using an Extension Type instead of a struct because it's convenient to store in Python data structures like lists and dicts.
@@ -2862,7 +2812,7 @@ def runge_kutta_pass2(
         dphi_dt_0i: cy.float = pass1outputs[i].dphi_dt_flim
         phi_old: cy.float = pass1outputs[i].phi_old
         phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
-        phi[y, x] = phi_new
+        phi[2+y, 2+x] = phi_new
         i_just_burned: cy.bint = (phi_old * phi_new) < 0 # Phi can only ever decrease, therefore if these are of opposite signs, the cell has just burned.
         if i_just_burned:
             spread_burned_cells.append(new_BurnedCellInfo(
@@ -2941,11 +2891,11 @@ def reset_phi_star_2(
     i: pyidx
     for i in range(tca.n_tracked_cells):
         y, x = tca.pass1outputs[i].cell_index
-        phi_star_matrix[y,x] = phi_matrix[y,x]
+        phi_star_matrix[2+y, 2+x] = phi_matrix[2+y, 2+x]
     tcb: BurnedCellInfo
     for tcb in spot_ignited:
         y, x = tcb.cell_index
-        phi_star_matrix[y,x] = phi_matrix[y,x]
+        phi_star_matrix[2+y, 2+x] = phi_matrix[2+y, 2+x]
 
 
 @cy.ccall
@@ -2970,8 +2920,8 @@ def ignite_from_spotting_2(spot_ignitions: sortc.SortedDict, output_matrices, st
             for cell_index in ignited_cells:
                 y: pyidx = cell_index[0]
                 x: pyidx = cell_index[1]
-                if phi_matrix[y,x] > 0.0: # Not burned yet
-                    phi_matrix[y,x]             = -1.0
+                if phi_matrix[2+y, 2+x] > 0.0: # Not burned yet
+                    phi_matrix[2+y, 2+x]             = -1.0
                     time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
                     ignited.append(new_BurnedCellInfo(
                         cell_index,
@@ -3291,9 +3241,13 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         )
 
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
-    for layer in output_matrices.values():
-        if layer.shape != (rows, cols):
-            raise ValueError("The space_time_cubes and output_matrices must share the same spatial resolution.")
+    for k, layer in output_matrices.items():
+        if k == 'phi':
+            if layer.shape != (rows + 4, cols + 4):
+                raise ValueError("The phi matrix must be padded by 2 rows and 2 columns compared to simulation dimensions.")
+        else:
+            if layer.shape != (rows, cols):
+                raise ValueError("The space_time_cubes and output_matrices must share the same spatial resolution.")
 
     # Calculate the max stop time
     max_stop_time = start_time + max_duration if max_duration else cube_duration
