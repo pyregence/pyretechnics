@@ -12,6 +12,12 @@ cpdef float van_wagner_critical_fireline_intensity(
     float foliar_moisture
     )
 
+cpdef float van_wagner_crowning_spread_rate_threshold(
+    FireBehaviorMax surface_fire_max,
+    float canopy_base_height,
+    float foliar_moisture,
+    )
+
 cpdef FireBehaviorMax calc_crown_fire_behavior_max(
         float canopy_height, 
         float canopy_base_height, 

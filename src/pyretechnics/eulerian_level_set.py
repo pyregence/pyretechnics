@@ -1138,7 +1138,7 @@ EllipticalInfo = cy.struct( # Pre-computed information required to compute dphi/
     cell_index = coord_yx,
     slp_dz = vec_xy, # Elevation gradient
     surfc_wavelet = PartialedEllWavelet,
-    crowning_spread_rate = cy.float, # INTRO pre-computed critical threshold in surface spread rate at which crowning occurs.
+    crowning_spread_rate_threshold = cy.float, # INTRO pre-computed critical threshold in surface spread rate at which crowning occurs.
     crown_wavelet = PartialedEllWavelet,
 )
 # NOTE a significant benefit of this architecture is that it's Rothermel-agnostic:
@@ -1158,9 +1158,9 @@ def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # 
     # NOTE changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.
     st_dphi_2: cy.float = compute_st_dphi_2(ell_i.slp_dz, dphi)
     surfc_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.surfc_wavelet, dphi, st_dphi_2)
-    csr: cy.float = ell_i.crowning_spread_rate
+    csr: cy.float = ell_i.crowning_spread_rate_threshold
     csr_2: cy.float = csr * csr
-    does_crown: cy.bint = (surfc_dphi_dt * surfc_dphi_dt) > csr_2 * st_dphi_2 # Logically equivalent to: (surface_spread_rate > crowning_spread_rate), but faster to compute and robust to zero phi gradient.
+    does_crown: cy.bint = (surfc_dphi_dt * surfc_dphi_dt) > csr_2 * st_dphi_2 # Logically equivalent to: (surface_spread_rate > crowning_spread_rate_threshold), but faster to compute and robust to zero phi gradient.
     if does_crown:
         crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ell_i.crown_wavelet, dphi, st_dphi_2)
         return min(surfc_dphi_dt, crown_dphi_dt) # Note that dphi_dt <= 0
@@ -1406,7 +1406,7 @@ def load_float_inputs_for_cell(
         cell_index: coord_yx,
         # Where to write the data to:
         tca: TrackedCellsArrays,
-        i: pyidx) -> cy.void: # FIXME maybe return the CellInputs struct instead?
+        i: pyidx) -> cy.void: # NOTE maybe return the CellInputs struct instead?
     """
     Reads variables from input SpaceTimeCubes and saves them by mutating `tca.float_inputs`.
     """
@@ -1707,16 +1707,14 @@ def resolve_crown_max_behavior(
 
 @cy.ccall
 @cy.cdivision(True)
-def crown_critical_spread_rate( # FIXME maybe move to spot_fire module. # FIXME disambiguate: this is the spread rate from surface to crown, not from passive to active crown.
+def resolve_crowning_spread_rate_threshold(
         ci: CellInputs,
         surface_fire_max: sf.FireBehaviorMax,
         ) -> cy.float:
-    surfc_max_fli: cy.float = surface_fire_max.max_fireline_intensity
-    crown_fli: cy.float = cf.van_wagner_critical_fireline_intensity(ci.canopy_base_height, ci.foliar_moisture)
-    crown_spread_rate: cy.float = (surface_fire_max.max_spread_rate * crown_fli / surfc_max_fli # NOTE this uses the fact that fireline intensity is proportional to spread rate.
-                                   if surfc_max_fli > 0
-                                   else 0)
-    return crown_spread_rate
+    """
+    Computes the surface spread rate at which crown fire occurs.
+    """
+    return cf.van_wagner_crowning_spread_rate_threshold(surface_fire_max, ci.canopy_base_height, ci.foliar_moisture)
 
 
 @cy.ccall
@@ -1747,7 +1745,7 @@ def resolve_cell_elliptical_info(
     else:
         surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(fb_opts, ci, fm_struct, surface_fire_min, elevation_gradient)
         surfc_pw = pw_from_FireBehaviorMax(surface_fire_max)
-        crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
+        crown_spread_rate: cy.float = resolve_crowning_spread_rate_threshold(ci, surface_fire_max)
         crown_fire_max: sf.FireBehaviorMax = resolve_crown_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
         crown_pw = pw_from_FireBehaviorMax(crown_fire_max)
         
@@ -1760,7 +1758,7 @@ def resolve_cell_elliptical_info(
         cell_index = cell_index,
         slp_dz = elevation_gradient,
         surfc_wavelet = surfc_pw,
-        crowning_spread_rate = crown_spread_rate,
+        crowning_spread_rate_threshold = crown_spread_rate,
         crown_wavelet = crown_pw
     )
     return ell_i
@@ -1820,7 +1818,7 @@ def resolve_combined_spread_behavior(
     else:
         surface_fire_min: sf.FireBehaviorMin = resolve_surface_nwns_behavior(ci, fm_struct)
         surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(fb_opts, ci, fm_struct, surface_fire_min, elevation_gradient)
-        crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
+        crown_spread_rate: cy.float = resolve_crowning_spread_rate_threshold(ci, surface_fire_max)
         sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, dphi_st)
         doesnt_crown: cy.bint = (sfn.spread_rate <= crown_spread_rate)
         if doesnt_crown:
