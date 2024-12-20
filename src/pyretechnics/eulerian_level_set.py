@@ -773,7 +773,7 @@ class SpreadInputs:
 
 @cy.ccall
 def make_SpreadInputs(cube_resolution, space_time_cubes: dict) -> SpreadInputs:
-    stc: SpreadInputs = SpreadInputs(cube_resolution,
+    sinputs: SpreadInputs = SpreadInputs(cube_resolution,
         space_time_cubes["slope"],
         space_time_cubes["aspect"],
         space_time_cubes["fuel_model"],
@@ -793,7 +793,7 @@ def make_SpreadInputs(cube_resolution, space_time_cubes: dict) -> SpreadInputs:
         space_time_cubes.get("fuel_spread_adjustment"),
         space_time_cubes.get("weather_spread_adjustment")
     )
-    return stc
+    return sinputs
 
 
 @cy.profile(False)
@@ -981,7 +981,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
 @cy.ccall
 def spot_from_burned_cell(
         spot_config, # OPTIM accept something more efficient that a dict.
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         random_generator: BufferedRandGen,
         y: pyidx,
         x: pyidx,
@@ -993,11 +993,11 @@ def spot_from_burned_cell(
     Schedules the future spot ignitions following from burning the given cell.
     Mutates `spot_ignitions` (and `random_generator`).
     """
-    cell_horizontal_area_m2 : cy.float = stc.spatial_resolution[0] * stc.spatial_resolution[1]
-    t_cast                  : pyidx    = int(toa // stc.band_duration)
+    cell_horizontal_area_m2 : cy.float = sinputs.spatial_resolution[0] * sinputs.spatial_resolution[1]
+    t_cast                  : pyidx    = int(toa // sinputs.band_duration)
     space_time_coordinate   : coord_tyx = (t_cast, y, x)
-    slope                   : cy.float = lookup_space_time_cube_float32(stc.slope, space_time_coordinate)
-    aspect                  : cy.float = lookup_space_time_cube_float32(stc.aspect, space_time_coordinate)
+    slope                   : cy.float = lookup_space_time_cube_float32(sinputs.slope, space_time_coordinate)
+    aspect                  : cy.float = lookup_space_time_cube_float32(sinputs.aspect, space_time_coordinate)
     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
     firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
     expected_firebrand_count: cy.float = spot.expected_firebrand_production(fb,
@@ -1007,13 +1007,13 @@ def spot_from_burned_cell(
     num_firebrands: pyidx = random_generator.next_poisson(expected_firebrand_count)
     if num_firebrands > 0:
         # OPTIM we might want to hold to the SpreadInputs and look these up in there.
-        wind_speed_10m: cy.float = lookup_space_time_cube_float32(stc.wind_speed_10m, space_time_coordinate)
-        upwind_direction: cy.float = lookup_space_time_cube_float32(stc.upwind_direction, space_time_coordinate)
-        new_ignitions: tuple[float, set]|None = spot.spread_firebrands(stc.fuel_model,
-                                                                        stc.temperature,
-                                                                        stc.fuel_moisture_dead_1hr,
-                                                                        (stc.rows, stc.cols),
-                                                                        stc.spatial_resolution,
+        wind_speed_10m: cy.float = lookup_space_time_cube_float32(sinputs.wind_speed_10m, space_time_coordinate)
+        upwind_direction: cy.float = lookup_space_time_cube_float32(sinputs.upwind_direction, space_time_coordinate)
+        new_ignitions: tuple[float, set]|None = spot.spread_firebrands(sinputs.fuel_model,
+                                                                        sinputs.temperature,
+                                                                        sinputs.fuel_moisture_dead_1hr,
+                                                                        (sinputs.rows, sinputs.cols),
+                                                                        sinputs.spatial_resolution,
                                                                         space_time_coordinate,
                                                                         upwind_direction,
                                                                         wind_speed_10m,
@@ -1409,7 +1409,7 @@ class FireBehaviorSettings:
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def load_float_inputs_for_cell(
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         cell_index: coord_yx,
         # Where to write the data to:
         tca: TrackedCellsArrays,
@@ -1420,60 +1420,60 @@ def load_float_inputs_for_cell(
     tr: pyidx[17] = tca.t_refreshed
     y, x = cell_index
     float_inputs: cy.float[:,:] = tca.float_inputs
-    float_inputs[i,0] = lookup_space_time_cube_float32(stc.slope, (tr[0], y, x))               # rise/run
-    float_inputs[i,1] = lookup_space_time_cube_float32(stc.aspect, (tr[1], y, x))              # degrees clockwise from North
+    float_inputs[i,0] = lookup_space_time_cube_float32(sinputs.slope, (tr[0], y, x))               # rise/run
+    float_inputs[i,1] = lookup_space_time_cube_float32(sinputs.aspect, (tr[1], y, x))              # degrees clockwise from North
     
-    float_inputs[i,2] = lookup_space_time_cube_float32(stc.fuel_model, (tr[2], y, x))          # integer index in fm.fuel_model_table
+    float_inputs[i,2] = lookup_space_time_cube_float32(sinputs.fuel_model, (tr[2], y, x))          # integer index in fm.fuel_model_table
     
-    float_inputs[i,3] = lookup_space_time_cube_float32(stc.canopy_cover, (tr[3], y, x))        # 0-1
-    float_inputs[i,4] = lookup_space_time_cube_float32(stc.canopy_height, (tr[4], y, x))       # m
-    float_inputs[i,5] = lookup_space_time_cube_float32(stc.canopy_base_height, (tr[5], y, x))  # m
-    float_inputs[i,6] = lookup_space_time_cube_float32(stc.canopy_bulk_density, (tr[6], y, x)) # kg/m^3
+    float_inputs[i,3] = lookup_space_time_cube_float32(sinputs.canopy_cover, (tr[3], y, x))        # 0-1
+    float_inputs[i,4] = lookup_space_time_cube_float32(sinputs.canopy_height, (tr[4], y, x))       # m
+    float_inputs[i,5] = lookup_space_time_cube_float32(sinputs.canopy_base_height, (tr[5], y, x))  # m
+    float_inputs[i,6] = lookup_space_time_cube_float32(sinputs.canopy_bulk_density, (tr[6], y, x)) # kg/m^3
     
-    float_inputs[i,7] = lookup_space_time_cube_float32(stc.wind_speed_10m, (tr[7], y, x))                # km/hr
-    float_inputs[i,8] = lookup_space_time_cube_float32(stc.upwind_direction, (tr[8], y, x))              # degrees clockwise from North
+    float_inputs[i,7] = lookup_space_time_cube_float32(sinputs.wind_speed_10m, (tr[7], y, x))                # km/hr
+    float_inputs[i,8] = lookup_space_time_cube_float32(sinputs.upwind_direction, (tr[8], y, x))              # degrees clockwise from North
     
-    float_inputs[i,9] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_1hr, (tr[9], y, x))        # kg moisture/kg ovendry weight
-    float_inputs[i,10] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_10hr, (tr[10], y, x))       # kg moisture/kg ovendry weight
-    float_inputs[i,11] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_100hr, (tr[11], y, x))      # kg moisture/kg ovendry weight
-    float_inputs[i,12] = lookup_space_time_cube_float32(stc.fuel_moisture_live_herbaceous, (tr[12], y, x)) # kg moisture/kg ovendry weight
-    float_inputs[i,13] = lookup_space_time_cube_float32(stc.fuel_moisture_live_woody, (tr[13], y, x))      # kg moisture/kg ovendry weight
-    float_inputs[i,14] = lookup_space_time_cube_float32(stc.foliar_moisture, (tr[14], y, x))               # kg moisture/kg ovendry weight
+    float_inputs[i,9] = lookup_space_time_cube_float32(sinputs.fuel_moisture_dead_1hr, (tr[9], y, x))        # kg moisture/kg ovendry weight
+    float_inputs[i,10] = lookup_space_time_cube_float32(sinputs.fuel_moisture_dead_10hr, (tr[10], y, x))       # kg moisture/kg ovendry weight
+    float_inputs[i,11] = lookup_space_time_cube_float32(sinputs.fuel_moisture_dead_100hr, (tr[11], y, x))      # kg moisture/kg ovendry weight
+    float_inputs[i,12] = lookup_space_time_cube_float32(sinputs.fuel_moisture_live_herbaceous, (tr[12], y, x)) # kg moisture/kg ovendry weight
+    float_inputs[i,13] = lookup_space_time_cube_float32(sinputs.fuel_moisture_live_woody, (tr[13], y, x))      # kg moisture/kg ovendry weight
+    float_inputs[i,14] = lookup_space_time_cube_float32(sinputs.foliar_moisture, (tr[14], y, x))               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    float_inputs[i,15] = (lookup_space_time_cube_float32(stc.fuel_spread_adjustment, (tr[15], y, x)) 
-                                 if stc.fuel_spread_adjustment is not None
+    float_inputs[i,15] = (lookup_space_time_cube_float32(sinputs.fuel_spread_adjustment, (tr[15], y, x)) 
+                                 if sinputs.fuel_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
-    float_inputs[i,16] = (lookup_space_time_cube_float32(stc.weather_spread_adjustment, (tr[16], y, x)) 
-                                 if stc.weather_spread_adjustment is not None
+    float_inputs[i,16] = (lookup_space_time_cube_float32(sinputs.weather_spread_adjustment, (tr[16], y, x)) 
+                                 if sinputs.weather_spread_adjustment is not None
                                  else 1.0)       
 
 
 @cy.ccall
-def list_float_inputs_cubes(stc: SpreadInputs) -> list[ISpaceTimeCube]:
+def list_float_inputs_cubes(sinputs: SpreadInputs) -> list[ISpaceTimeCube]:
     return [
-        stc.slope,
-        stc.aspect,
+        sinputs.slope,
+        sinputs.aspect,
 
-        stc.fuel_model,
+        sinputs.fuel_model,
 
-        stc.canopy_cover,
-        stc.canopy_height,
-        stc.canopy_base_height,
-        stc.canopy_bulk_density,
+        sinputs.canopy_cover,
+        sinputs.canopy_height,
+        sinputs.canopy_base_height,
+        sinputs.canopy_bulk_density,
 
-        stc.wind_speed_10m,
-        stc.upwind_direction,
+        sinputs.wind_speed_10m,
+        sinputs.upwind_direction,
 
-        stc.fuel_moisture_dead_1hr,
-        stc.fuel_moisture_dead_10hr,
-        stc.fuel_moisture_dead_100hr,
-        stc.fuel_moisture_live_herbaceous,
-        stc.fuel_moisture_live_woody,
-        stc.foliar_moisture,
+        sinputs.fuel_moisture_dead_1hr,
+        sinputs.fuel_moisture_dead_10hr,
+        sinputs.fuel_moisture_dead_100hr,
+        sinputs.fuel_moisture_live_herbaceous,
+        sinputs.fuel_moisture_live_woody,
+        sinputs.foliar_moisture,
 
-        stc.fuel_spread_adjustment,
-        stc.weather_spread_adjustment,
+        sinputs.fuel_spread_adjustment,
+        sinputs.weather_spread_adjustment,
     ]
 
 @cy.ccall
@@ -1538,7 +1538,7 @@ def recompute_level_for_input(input_k: pyidx) -> cy.uint:
 @cy.ccall
 @cy.cdivision(True)
 def refresh_inputs_if_needed(
-        stc: SpreadInputs, 
+        sinputs: SpreadInputs, 
         fb_opts: FireBehaviorSettings,
         tca: TrackedCellsArrays, 
         present_time: cy.float,
@@ -1555,11 +1555,11 @@ def refresh_inputs_if_needed(
         needs_refresh: cy.bint = (fb_opts.refresh_frequency[k] * (present_time - tca.time_refreshed[k]) > 1.0)
         if needs_refresh:
             recompute_level = max(recompute_level, recompute_level_for_input(k))
-            stc_list = list_float_inputs_cubes(stc) if (stc_list is None) else stc_list
+            stc_list = list_float_inputs_cubes(sinputs) if (stc_list is None) else stc_list
             space_time_cube: ISpaceTimeCube = stc_list[k]
             refresh_intvl: cy.float = 1.0 / fb_opts.refresh_frequency[k]
             time_refreshed_new: cy.float = (present_time // refresh_intvl) * refresh_intvl # NOTE REVIEW for consistency and ease of reasoning, the refresh time is always an integer multiple of the refresh interval. We might want to change this. The refresh_frequency=0 case is worth considering.
-            t_refreshed_new: pyidx = int(floor(time_refreshed_new / stc.band_duration))
+            t_refreshed_new: pyidx = int(floor(time_refreshed_new / sinputs.band_duration))
             float_inputs: cy.float[:,:] = tca.float_inputs
             y: pyidx
             x: pyidx
@@ -1733,7 +1733,7 @@ def crown_critical_spread_rate( # FIXME maybe move to spot_fire module. # FIXME 
 def resolve_cell_elliptical_info(
         fb_opts: FireBehaviorSettings,
         cell_index: coord_yx,
-        stc: SpreadInputs, # NOTE only used to call stc.get_fm_struct(fm_number). We're not really reading the rasters here.
+        sinputs: SpreadInputs, # NOTE only used to call stc.get_fm_struct(fm_number). We're not really reading the rasters here.
         ci: CellInputs,
         surface_fire_min: sf.FireBehaviorMin,
         ) -> EllipticalInfo:
@@ -1742,7 +1742,7 @@ def resolve_cell_elliptical_info(
 
     # Load the fuel model
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
-    fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+    fm_struct: FuelModel = sinputs.get_fm_struct(fm_number)
 
     surfc_pw: PartialedEllWavelet
     crown_pw: PartialedEllWavelet
@@ -1777,7 +1777,7 @@ def resolve_cell_elliptical_info(
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def refresh_caches_from_inputs_if_needed(
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         tca: TrackedCellsArrays,
         present_time: cy.float,
@@ -1787,14 +1787,14 @@ def refresh_caches_from_inputs_if_needed(
     such as the elliptical info and the surface no-wind/no-slope fire behavior.
     Mutates `tca`.
     """
-    recompute_level: cy.uint = refresh_inputs_if_needed(stc, fb_opts, tca, present_time)
+    recompute_level: cy.uint = refresh_inputs_if_needed(sinputs, fb_opts, tca, present_time)
     i: pyidx
     float_inputs: cy.float[:,:] = tca.float_inputs
     if recompute_level >= 100:
         for i in range(tca.n_tracked_cells):
             ci: CellInputs = load_saved_CellInputs(float_inputs, i)
             fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
-            fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+            fm_struct: FuelModel = sinputs.get_fm_struct(fm_number)
             cell_index: coord_yx = tca.ell_info[i].cell_index
             tca.sfmin_arr[i] = resolve_surface_nwns_behavior(ci, fm_struct)
     if recompute_level >= 10:
@@ -1802,12 +1802,12 @@ def refresh_caches_from_inputs_if_needed(
             cell_index: coord_yx = tca.ell_info[i].cell_index
             ci: CellInputs = load_saved_CellInputs(float_inputs, i)
             sfmin: sf.FireBehaviorMin = tca.sfmin_arr[i]
-            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, stc, ci, sfmin)
+            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, sfmin)
 
 
 @cy.ccall
 def resolve_combined_spread_behavior(
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         tyx: coord_tyx,
         dphi: vec_xy,
@@ -1815,13 +1815,13 @@ def resolve_combined_spread_behavior(
     """
     Similar to resolve_cell_elliptical_info, but does a more exhaustive computation and returns the SpreadBehavior struct.
     """
-    ci: CellInputs = lookup_cell_inputs(stc, tyx)
+    ci: CellInputs = lookup_cell_inputs(sinputs, tyx)
     elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
     dphi_st: vec_xyz = calc_phi_gradient_on_slope(dphi, elevation_gradient)
     phi_magnitude: cy.float = vector_magnitude_3d(dphi_st)
     # Load the fuel model
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
-    fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+    fm_struct: FuelModel = sinputs.get_fm_struct(fm_number)
     if phi_magnitude == 0.0 or not fm_struct.burnable:
         return unburned_SpreadBehavior(elevation_gradient, dphi_st)
     else:
@@ -1844,20 +1844,20 @@ def resolve_combined_spread_behavior(
 @cy.ccall
 def load_tracked_cell_data(
         # How to resolve inputs:
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         cell_index: coord_yx,
         # Where to write the data to:
         tca: TrackedCellsArrays,
         i: pyidx
         ) -> cy.void:
-    load_float_inputs_for_cell(stc, cell_index, tca, i)
+    load_float_inputs_for_cell(sinputs, cell_index, tca, i)
     ci: CellInputs = load_saved_CellInputs(tca.float_inputs, i)
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
-    fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+    fm_struct: FuelModel = sinputs.get_fm_struct(fm_number)
     sfmin: sf.FireBehaviorMin = resolve_surface_nwns_behavior(ci, fm_struct)
     tca.sfmin_arr[i] = sfmin
-    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, stc, ci, sfmin)
+    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, sfmin)
     tca.ell_info[i] = ell_i
 
 
@@ -1866,7 +1866,7 @@ def load_tracked_cell_data(
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def sync_tracked_cells_arrays(
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         tracked_cells: nbt.NarrowBandTracker,
         tca_old: TrackedCellsArrays,
@@ -1913,7 +1913,7 @@ def sync_tracked_cells_arrays(
                             if not(exhausted_old) and (compare_cell_indexes(cell_old, cell_new) == 0): # cell_new was already tracked: copy the data.
                                 copy_tracked_cell_data(i_old, tca_old, i_new, tca_new)
                             else: # cell_new was not in tca_old
-                                load_tracked_cell_data(stc, fb_opts, cell_new, tca_new, i_new)
+                                load_tracked_cell_data(sinputs, fb_opts, cell_new, tca_new, i_new)
                             i_new += 1
 
 
@@ -2109,7 +2109,7 @@ def runge_kutta_pass2(
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def process_spread_burned_cells(
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         output_matrices: dict,
         spot_ignitions: object,
@@ -2126,12 +2126,12 @@ def process_spread_burned_cells(
     burned_cell: BurnedCellInfo
     for burned_cell in spread_burned_cells:
         toa: cy.float = burned_cell.toa
-        t: pyidx = int(toa // stc.band_duration)
+        t: pyidx = int(toa // sinputs.band_duration)
         cell_index: coord_yx = burned_cell.cell_index
         y, x = cell_index
         tyx: coord_tyx = (t, y, x)
         # Re-compute the spread behavior. It's OK to re-compute it because a cell burning is a relatively rare event.
-        fb: SpreadBehavior = resolve_combined_spread_behavior(stc, fb_opts, tyx, burned_cell.dphi)
+        fb: SpreadBehavior = resolve_combined_spread_behavior(sinputs, fb_opts, tyx, burned_cell.dphi)
         # Write to outputs
         fire_type_matrix[y,x]          = fb.fire_type
         spread_rate_matrix[y,x]        = fb.spread_rate
@@ -2144,7 +2144,7 @@ def process_spread_burned_cells(
         if fb_opts.spot_config:
             spot_from_burned_cell(
                 fb_opts.spot_config,
-                stc,
+                sinputs,
                 random_generator,
                 y,
                 x,
@@ -2329,7 +2329,7 @@ def update_tracked_cells_with_frontier_diff(
 @cy.cdivision(True)
 def spread_one_timestep(
         sim_state: dict,
-        stc: SpreadInputs,
+        sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         max_timestep: cy.float,
     ) -> dict:
@@ -2348,22 +2348,22 @@ def spread_one_timestep(
     tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
     tca: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
     start_time: cy.float = sim_state["simulation_time"]
-    sync_tracked_cells_arrays(stc, fb_opts, tracked_cells, tca_old, tca)
+    sync_tracked_cells_arrays(sinputs, fb_opts, tracked_cells, tca_old, tca)
 
-    refresh_caches_from_inputs_if_needed(stc, fb_opts, tca, start_time)
+    refresh_caches_from_inputs_if_needed(sinputs, fb_opts, tca, start_time)
 
     collect_phi_values(phi, tca)
-    dt = runge_kutta_pass1(fb_opts.max_cells_per_timestep, stc.spatial_resolution, max_timestep, tca)
+    dt = runge_kutta_pass1(fb_opts.max_cells_per_timestep, sinputs.spatial_resolution, max_timestep, tca)
 
     # Now that dt is known, update phi_star_matrix.
     update_phi_star(tca, dt, phs)
     stop_time: cy.float = start_time + dt
     
     collect_phi_values(phs, tca)
-    spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi)
+    spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, sinputs.spatial_resolution, start_time, dt, tca, phi)
     
     # Side-effects of the burned cells (outputs etc.).
-    process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
+    process_spread_burned_cells(sinputs, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
     # TODO REVIEW It is a questionable choice to call this function AFTER process_spread_burned_cells;
     # it may be more sensible to ignite the spotting cells first and then to process them all.
     spot_ignited: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
@@ -2378,8 +2378,8 @@ def spread_one_timestep(
         phi,
         spread_burned_cells,
         spot_ignited,
-        stc.rows,
-        stc.cols
+        sinputs.rows,
+        sinputs.cols
     )
     frontier_cells_new: set = apply_frontier_diff(frontier_cells_old, frontier_additions, frontier_removals)
     tracked_cells_new : object = update_tracked_cells_with_frontier_diff(tracked_cells, frontier_additions, frontier_removals, fb_opts.buffer_width)
@@ -2483,7 +2483,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
     for cube in space_time_cubes.values():
         if cube.shape != (bands, rows, cols):
             raise ValueError("The space_time_cubes must all share the same spatial resolution.")
-    stc: SpreadInputs = make_SpreadInputs(cube_resolution, space_time_cubes)
+    sinputs: SpreadInputs = make_SpreadInputs(cube_resolution, space_time_cubes)
     fb_opts: FireBehaviorSettings = FireBehaviorSettings(
         max_cells_per_timestep=max_cells_per_timestep,
         use_wind_limit = use_wind_limit,
@@ -2551,7 +2551,7 @@ def spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolutio
         remaining_time_in_simulation = max_stop_time - simulation_time
         max_timestep                 = min(remaining_time_in_band, remaining_time_in_simulation)
         # Spread fire one timestep
-        sim_state = spread_one_timestep(sim_state, stc, fb_opts, max_timestep)
+        sim_state = spread_one_timestep(sim_state, sinputs, fb_opts, max_timestep)
 
         # Reset spread inputs
         simulation_time  = sim_state["simulation_time"]
