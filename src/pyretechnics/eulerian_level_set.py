@@ -1222,6 +1222,7 @@ class TrackedCellsArrays:
     # they have a greater length in order to implement dynamic resizing.
     float_inputs: cy.float[:, :] # Shape: (n_tracked_cells, p_CellInputs)
     # NOTE the motivation for float_inputs being an array of floats and not of structs is to enable more generic processing when reading inputs.
+    sfmin_arr: cy.pointer(sf.FireBehaviorMin) # Array of structs, caching the FireBehaviorMin for each tracked cell.
     ell_info: cy.pointer(EllipticalInfo) # Array of structs (needs to be iterated over very efficiently).
     pass1outputs: cy.pointer(Pass1CellOutput) # Per-cell data produced by the 1st Runge-Kutta pass.
 
@@ -1234,13 +1235,16 @@ class TrackedCellsArrays:
         self._arrays_length = _arrays_length
         self.n_tracked_cells = 0
         self.float_inputs = np.zeros((self._arrays_length, p_CellInputs), dtype=np.float32)
+        self.sfmin_arr = cy.cast(cy.pointer(sf.FireBehaviorMin), PyMem_Malloc(self._arrays_length * cy.sizeof(sf.FireBehaviorMin)))
+        if not self.sfmin_arr:
+            raise MemoryError()
         self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
+        if not self.ell_info:
+            raise MemoryError()
         self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
         for k in range(17):
             self.time_refreshed[k] = time_refreshed_init
             self.t_refreshed[k] = t_refreshed_init
-        if not self.ell_info:
-            raise MemoryError()
         self.phi_values = np.zeros((self._arrays_length, 9), dtype=np.float32)
 
 
@@ -1255,6 +1259,9 @@ class TrackedCellsArrays:
         while self.n_tracked_cells > self._arrays_length: # dynamic resizing
             self._arrays_length *= 2
             PyMem_Free(self.ell_info)
+            self.sfmin_arr = cy.cast(cy.pointer(sf.FireBehaviorMin), PyMem_Malloc(self._arrays_length * cy.sizeof(sf.FireBehaviorMin)))
+            if not self.sfmin_arr:
+                raise MemoryError()
             self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
             if not self.ell_info:
                 raise MemoryError()
@@ -1345,6 +1352,7 @@ def copy_tracked_cell_data(i_old: pyidx, tca_old: TrackedCellsArrays, i_new: pyi
     tca_new.float_inputs[i_new, 14] = tca_old.float_inputs[i_old, 14]
     tca_new.float_inputs[i_new, 15] = tca_old.float_inputs[i_old, 15]
     tca_new.float_inputs[i_new, 16] = tca_old.float_inputs[i_old, 16]
+    tca_new.sfmin_arr[i_new] = tca_old.sfmin_arr[i_old]
     tca_new.ell_info[i_new] = tca_old.ell_info[i_old]
     # NOTE tca_old.pass1outputs does not need to be copied over given how it will get used.
 
@@ -1490,30 +1498,60 @@ def default_refresh_frequency(band_duration: cy.float) -> dict:
         'weather_spread_adjustment': 1.0 / band_duration,
     }
 
+recompute_levels_list: list = [
+    100,
+    100,
+
+    100,
+    
+    100,
+    100,
+    100,
+    100,
+
+    10, # wind_speed_10m
+    10, # upwind_direction
+
+    100,
+    100,
+    100,
+    100,
+    100,
+    100,
+
+    100,
+    100
+]
+
+@cy.ccall
+def recompute_level_for_input(input_k: pyidx) -> cy.uint:
+    return recompute_levels_list[input_k]
+
+
 @cy.ccall
 @cy.cdivision(True)
 def refresh_inputs_if_needed(
         stc: SpreadInputs, 
         fb_opts: FireBehaviorSettings,
         tca: TrackedCellsArrays, 
-        start_time: cy.float,
-        ) -> cy.bint:
+        present_time: cy.float,
+        ) -> cy.uint:
     """
     Refreshes the data input columns and refresh timestamps if needed.
 
-    Mutates `tca` and returns a boolean indicating whether a recompute is needed.
+    Mutates `tca` and returns an integer indicating which downstream computations need to be recomputed.
     """
-    needs_recompute: cy.bint = False
+    recompute_level: cy.uint = 0
     stc_list: list[ISpaceTimeCube]|None = None
     k: pyidx
     for k in range(p_CellInputs):
-        needs_refresh: cy.bint = (fb_opts.refresh_frequency[k] * (start_time - tca.time_refreshed[k]) > 1.0)
+        needs_refresh: cy.bint = (fb_opts.refresh_frequency[k] * (present_time - tca.time_refreshed[k]) > 1.0)
         if needs_refresh:
-            needs_recompute = True
+            recompute_level = max(recompute_level, recompute_level_for_input(k))
             stc_list = list_float_inputs_cubes(stc) if (stc_list is None) else stc_list
             space_time_cube: ISpaceTimeCube = stc_list[k]
             refresh_intvl: cy.float = 1.0 / fb_opts.refresh_frequency[k]
-            time_refreshed_new: cy.float = (start_time // refresh_intvl) * refresh_intvl
+            time_refreshed_new: cy.float = (present_time // refresh_intvl) * refresh_intvl # NOTE REVIEW for consistency and ease of reasoning, the refresh time is always an integer multiple of the refresh interval. We might want to change this. The refresh_frequency=0 case is worth considering.
             t_refreshed_new: pyidx = int(floor(time_refreshed_new / stc.band_duration))
             float_inputs: cy.float[:,:] = tca.float_inputs
             y: pyidx
@@ -1525,7 +1563,7 @@ def refresh_inputs_if_needed(
                 float_inputs[i][k] = lookup_space_time_cube_float32(space_time_cube, (t_refreshed_new, y, x))
             tca.time_refreshed[k] = time_refreshed_new
             tca.t_refreshed[k] = t_refreshed_new
-    return needs_recompute
+    return recompute_level
 
 
 
@@ -1584,12 +1622,13 @@ def load_saved_CellInputs(float_inputs: cy.float[:,:], i: pyidx) -> CellInputs:
 
 
 @cy.ccall
-def resolve_surface_max_behavior(
-        fb_opts: FireBehaviorSettings,
+def resolve_surface_nwns_behavior(
         ci: CellInputs,
         fm_struct: FuelModel,
-        elevation_gradient: vec_xy,
-        ) -> sf.FireBehaviorMax:
+        ) -> sf.FireBehaviorMin:
+    """
+    Computes the surface no-wind/no-slope fire behavior for a single cell.
+    """
     spread_rate_adjustment    : cy.float = ci.fuel_spread_adjustment * ci.weather_spread_adjustment # float >= 0.0
     
     #============================================================================================
@@ -1603,15 +1642,22 @@ def resolve_surface_max_behavior(
         0.0, # fuel_moisture_dead_herbaceous
         ci.fuel_moisture_live_herbaceous,
         ci.fuel_moisture_live_woody)
-    # FIXME factor this out into a function for reusability.
-    fuel_bed_depth               : cy.float = fm_struct.delta                     # ft
     # Apply fuel moisture to fuel model
     mfm: FuelModel = moisturize(fm_struct, M_f)
     surface_fire_min: sf.FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
+    return surface_fire_min
 
-    #============================================================================================
-    # Max surface fire behavior
-    #============================================================================================
+
+
+@cy.ccall
+def resolve_surface_max_behavior(
+        fb_opts: FireBehaviorSettings,
+        ci: CellInputs,
+        fm_struct: FuelModel,
+        surface_fire_min: sf.FireBehaviorMin,
+        elevation_gradient: vec_xy,
+        ) -> sf.FireBehaviorMax:
+    fuel_bed_depth : cy.float = fm_struct.delta                     # ft
 
     # Convert from 10m wind speed to 20ft wind speed
     wind_speed_20ft: cy.float = wind_speed_10m_to_wind_speed_20ft(ci.wind_speed_10m) # km/hr
@@ -1681,11 +1727,10 @@ def resolve_cell_elliptical_info(
         fb_opts: FireBehaviorSettings,
         cell_index: coord_yx,
         stc: SpreadInputs, # NOTE only used to call stc.get_fm_struct(fm_number). We're not really reading the rasters here.
-        float_inputs: cy.float[:,:],
-        i: pyidx, 
+        ci: CellInputs,
+        surface_fire_min: sf.FireBehaviorMin,
         ) -> EllipticalInfo:
     
-    ci: CellInputs = load_saved_CellInputs(float_inputs, i)
     elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
 
     # Load the fuel model
@@ -1700,7 +1745,7 @@ def resolve_cell_elliptical_info(
         crown_spread_rate = 1234.5 # arbitrary positive value - this threshold will never be reached.
         crown_pw = zero_partialed_wavelet()
     else:
-        surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
+        surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(fb_opts, ci, fm_struct, surface_fire_min, elevation_gradient)
         surfc_pw = pw_from_FireBehaviorMax(surface_fire_max)
         crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
         crown_fire_max: sf.FireBehaviorMax = resolve_crown_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
@@ -1721,22 +1766,36 @@ def resolve_cell_elliptical_info(
     return ell_i
 
 @cy.ccall
-def refresh_ell_info_if_needed(
+@cy.initializedcheck(False)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def refresh_caches_from_inputs_if_needed(
         stc: SpreadInputs,
         fb_opts: FireBehaviorSettings,
         tca: TrackedCellsArrays,
-        start_time: cy.float,
+        present_time: cy.float,
         ) -> cy.void:
     """
-    If required by the refresh frequencies, refreshes inputs and recomputes the elliptical info for each tracked cell.
+    If required by the refresh frequencies, refreshes inputs and recomputes the necessary downstream calcs for each tracked cell,
+    such as the elliptical info and the surface no-wind/no-slope fire behavior.
     Mutates `tca`.
     """
-    needs_recompute: cy.bint = refresh_inputs_if_needed(stc, fb_opts, tca, start_time)
-    if needs_recompute:
-        i: pyidx
+    recompute_level: cy.uint = refresh_inputs_if_needed(stc, fb_opts, tca, present_time)
+    i: pyidx
+    float_inputs: cy.float[:,:] = tca.float_inputs
+    if recompute_level >= 100:
+        for i in range(tca.n_tracked_cells):
+            ci: CellInputs = load_saved_CellInputs(float_inputs, i)
+            fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
+            fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+            cell_index: coord_yx = tca.ell_info[i].cell_index
+            tca.sfmin_arr[i] = resolve_surface_nwns_behavior(ci, fm_struct)
+    if recompute_level >= 10:
         for i in range(tca.n_tracked_cells):
             cell_index: coord_yx = tca.ell_info[i].cell_index
-            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, stc, tca.float_inputs, i)
+            ci: CellInputs = load_saved_CellInputs(float_inputs, i)
+            sfmin: sf.FireBehaviorMin = tca.sfmin_arr[i]
+            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, stc, ci, sfmin)
 
 
 @cy.ccall
@@ -1759,7 +1818,8 @@ def resolve_combined_spread_behavior(
     if phi_magnitude == 0.0 or not fm_struct.burnable:
         return unburned_SpreadBehavior(elevation_gradient, dphi_st)
     else:
-        surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
+        surface_fire_min: sf.FireBehaviorMin = resolve_surface_nwns_behavior(ci, fm_struct)
+        surface_fire_max: sf.FireBehaviorMax = resolve_surface_max_behavior(fb_opts, ci, fm_struct, surface_fire_min, elevation_gradient)
         crown_spread_rate: cy.float = crown_critical_spread_rate(ci, surface_fire_max)
         sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, dphi_st)
         doesnt_crown: cy.bint = (sfn.spread_rate <= crown_spread_rate)
@@ -1785,7 +1845,12 @@ def load_tracked_cell_data(
         i: pyidx
         ) -> cy.void:
     load_float_inputs_for_cell(stc, cell_index, tca, i)
-    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, stc, tca.float_inputs, i)
+    ci: CellInputs = load_saved_CellInputs(tca.float_inputs, i)
+    fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
+    fm_struct: FuelModel = stc.get_fm_struct(fm_number)
+    sfmin: sf.FireBehaviorMin = resolve_surface_nwns_behavior(ci, fm_struct)
+    tca.sfmin_arr[i] = sfmin
+    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, stc, ci, sfmin)
     tca.ell_info[i] = ell_i
 
 
@@ -2262,6 +2327,10 @@ def spread_one_timestep(
         fb_opts: FireBehaviorSettings,
         max_timestep: cy.float,
     ) -> dict:
+    """
+    Spreads the fire for one iteration using the level-set method, returning an updated `sim_state`.
+
+    """
     output_matrices: dict = sim_state["output_matrices"]
     spot_ignitions: object = sim_state["spot_ignitions"]
     random_generator: BufferedRandGen = sim_state["random_generator"]
@@ -2275,11 +2344,8 @@ def spread_one_timestep(
     start_time: cy.float = sim_state["simulation_time"]
     sync_tracked_cells_arrays(stc, fb_opts, tracked_cells, tca_old, tca)
 
-    refresh_ell_info_if_needed(stc, fb_opts, tca, start_time)
+    refresh_caches_from_inputs_if_needed(stc, fb_opts, tca, start_time)
 
-    # OPTIM: if fuel moistures haven't changed, don't recomPute the no-wind/no-slope behavior.
-    # This makes sense if the wind field is refreshed more frequently than fuel moistures.
-    
     collect_phi_values(phi, tca)
     dt = runge_kutta_pass1(fb_opts.max_cells_per_timestep, stc.spatial_resolution, max_timestep, tca)
 
