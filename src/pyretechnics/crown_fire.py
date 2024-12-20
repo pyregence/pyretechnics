@@ -24,6 +24,31 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
     return v * sqrt(v) # NOTE the original implementation did pow(v, 1.5). Refactored to use sqrt because it's faster.
 # van-wagner-critical-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
+import cython
+if cython.compiled:
+    import cython.cimports.pyretechnics.cy_types as py_types
+else:
+    import pyretechnics.py_types as py_types
+import cython as cy
+
+@cy.ccall
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def van_wagner_crowning_spread_rate_threshold(
+        surface_fire_max: py_types.FireBehaviorMax,
+        canopy_base_height: cy.float,
+        foliar_moisture: cy.float,
+        ) -> cy.float:
+    """
+    Computes the surface spread rate above which crown fire occurs.
+    """
+    surfc_max_fli: cy.float = surface_fire_max.max_fireline_intensity
+    crown_fli: cy.float = van_wagner_critical_fireline_intensity(canopy_base_height, foliar_moisture)
+    crowning_spread_rate_threshold: cy.float = (surface_fire_max.max_spread_rate * crown_fli / surfc_max_fli # NOTE this uses the fact that fireline intensity is proportional to spread rate.
+                                                if surfc_max_fli > 0
+                                                else 0)
+    return crowning_spread_rate_threshold
+
 @cy.ccall
 def van_wagner_crown_fire_initiation(
         surface_fireline_intensity: cy.float, 
