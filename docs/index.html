@@ -394,7 +394,7 @@ org_html_manager.setup();  // activate after the parameters are set
 </li>
 </ul>
 </li>
-<li><a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9. Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)</a>
+<li><a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9. Fire Spread Algorithm (ELMFIRE): Eulerian Level Set Method (pyretechnics.eulerian_level_set)</a>
 <ul>
 <li><a href="#for-developers-fire-spread">9.1. For Developers</a>
 <ul>
@@ -3888,7 +3888,8 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 <h4 id="how-to-calculate-the-surface-fire-behavior-in-any-direction"><span class="section-number-4">5.2.4.</span> How to Calculate the Surface Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-surface-fire-behavior-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="compute-surface-fire-behavior-in-direction"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
+<pre class="src src-python" id="compute-surface-fire-behavior-in-direction"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
 <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 <span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
@@ -3923,8 +3924,11 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior for the heading, flanking, and backing fires</span>
 <span class="org-variable-name">heading_fire_direction</span>  <span class="org-operator">=</span> surface_fire_max[<span class="org-string">"max_spread_direction"</span>]
-<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> vu.rotate_on_sloped_plane(heading_fire_direction, 90.0, slope, aspect)
-<span class="org-variable-name">backing_fire_direction</span>  <span class="org-operator">=</span> <span class="org-operator">-</span>heading_fire_direction
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Change upstream functions to return max_spread_direction as type vec_xyz</span>
+<span class="org-comment-delimiter">#        </span><span class="org-comment">and change downstream functions to accept spread_direction as type vec_xyz</span>
+(<span class="org-variable-name">dx</span>, <span class="org-variable-name">dy</span>, <span class="org-variable-name">dz</span>)            <span class="org-operator">=</span> heading_fire_direction
+<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 90.0, slope, aspect))
+<span class="org-variable-name">backing_fire_direction</span>  <span class="org-operator">=</span> np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 180.0, slope, aspect))
 
 <span class="org-variable-name">heading_fire_behavior</span>  <span class="org-operator">=</span> sf.calc_surface_fire_behavior_in_direction(surface_fire_max, heading_fire_direction)
 <span class="org-variable-name">flanking_fire_behavior</span> <span class="org-operator">=</span> sf.calc_surface_fire_behavior_in_direction(surface_fire_max, flanking_fire_direction)
@@ -3957,17 +3961,17 @@ Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 
 
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 4.251119815561932,
- 'flame_length': 0.15074657845399453,
- 'spread_direction': array([ 0.79419768, -0.58653219,  0.15883955]),
- 'spread_rate': 0.3001255826250815}
+ 'fireline_intensity': 4.251119786484406,
+ 'flame_length': 0.15074657797968766,
+ 'spread_direction': array([ 0.79419774, -0.58653224,  0.15883955]),
+ 'spread_rate': 0.30012558057223193}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
 {'fire_type': 'surface',
- 'fireline_intensity': 2.2741655445924582,
- 'flame_length': 0.11305091436966075,
- 'spread_direction': array([-0.57514209, -0.80992591, -0.11502841]),
- 'spread_rate': 0.16055422774915998}
+ 'fireline_intensity': 2.274165557579764,
+ 'flame_length': 0.1130509146666419,
+ 'spread_direction': array([-0.57514215, -0.80992585, -0.11502843]),
+ 'spread_rate': 0.16055422866605315}
 </pre>
 </div>
 </div>
@@ -5029,7 +5033,8 @@ Outputs:
 <h4 id="how-to-calculate-the-crown-fire-behavior-in-any-direction"><span class="section-number-4">6.2.3.</span> How to Calculate the Crown Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-crown-fire-behavior-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="compute-crown-fire-behavior-in-direction"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
+<pre class="src src-python" id="compute-crown-fire-behavior-in-direction"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
 <span class="org-keyword">import</span> pyretechnics.crown_fire <span class="org-keyword">as</span> cf
 <span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
 
@@ -5059,8 +5064,11 @@ Outputs:
 <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
 <span class="org-variable-name">heading_fire_direction</span>  <span class="org-operator">=</span> crown_fire_max[<span class="org-string">"max_spread_direction"</span>]
-<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> vu.rotate_on_sloped_plane(heading_fire_direction, 90.0, slope, aspect)
-<span class="org-variable-name">backing_fire_direction</span>  <span class="org-operator">=</span> <span class="org-operator">-</span>heading_fire_direction
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Change upstream functions to return max_spread_direction as type vec_xyz</span>
+<span class="org-comment-delimiter">#        </span><span class="org-comment">and change downstream functions to accept spread_direction as type vec_xyz</span>
+(<span class="org-variable-name">dx</span>, <span class="org-variable-name">dy</span>, <span class="org-variable-name">dz</span>)            <span class="org-operator">=</span> heading_fire_direction
+<span class="org-variable-name">flanking_fire_direction</span> <span class="org-operator">=</span> np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 90.0, slope, aspect))
+<span class="org-variable-name">backing_fire_direction</span>  <span class="org-operator">=</span> np.asarray(vu.rotate_on_sloped_plane((dx, dy, dz), 180.0, slope, aspect))
 
 <span class="org-variable-name">heading_fire_behavior</span>  <span class="org-operator">=</span> cf.calc_crown_fire_behavior_in_direction(crown_fire_max, heading_fire_direction)
 <span class="org-variable-name">flanking_fire_behavior</span> <span class="org-operator">=</span> cf.calc_crown_fire_behavior_in_direction(crown_fire_max, flanking_fire_direction)
@@ -5091,16 +5099,16 @@ Heading Fire Behavior
 Flanking Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204692934614,
- 'spread_direction': array([ 0.94868329, -0.1054093 ,  0.29814238]),
- 'spread_rate': 3.264617919639856}
+ 'fireline_intensity': 14756.204747877806,
+ 'spread_direction': array([ 0.94868332, -0.1054093 ,  0.2981424 ]),
+ 'spread_rate': 3.2646179246550817}
 
 Backing Fire Behavior
 ============================================================
 {'fire_type': 'passive_crown',
- 'fireline_intensity': 8139.876447202802,
- 'spread_direction': array([-0.        , -0.94280905, -0.33333334]),
- 'spread_rate': 2.343474267882084}
+ 'fireline_intensity': 8139.876410946037,
+ 'spread_direction': array([-8.29365305e-08, -9.42809045e-01, -3.33333373e-01]),
+ 'spread_rate': 2.3434742608260732}
 </pre>
 </div>
 </div>
@@ -6124,10 +6132,10 @@ length is 1.17m (100x smaller than \(z_\text{max}\)), \(t_v\) is about
 Once the locations, ignition probabilities, and times of ignition have
 been calculated for each of the firebrands, a tuple of
 <b>(spot_ignition_time, ignition_locations)</b> are returned, to be
-processed in the fire spread algorithm (see section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9</a>), where <b>spot_ignition_time</b> is the
-ignition time of the spot fire in minutes, and <b>ignition_locations</b> is
-a list of <b>(y,x)</b> grid coordinates in which spot fires will be
-ignited.
+processed in the fire spread algorithm (see section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">9</a>), where <b>spot_ignition_time</b> is
+the ignition time of the spot fire in minutes, and
+<b>ignition_locations</b> is a list of <b>(y,x)</b> grid coordinates in which
+spot fires will be ignited.
 </p>
 
 
@@ -7485,7 +7493,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 </div>
 </div>
 <div id="outline-container-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)" class="outline-2">
-<h2 id="fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)"><span class="section-number-2">9.</span> Fire Spread Algorithm: Eulerian Level Set Method (ELMFIRE) (pyretechnics.eulerian_level_set)</h2>
+<h2 id="fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)"><span class="section-number-2">9.</span> Fire Spread Algorithm (ELMFIRE): Eulerian Level Set Method (pyretechnics.eulerian_level_set)</h2>
 <div class="outline-text-2" id="text-fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">
 </div>
 <div id="outline-container-for-developers-fire-spread" class="outline-3">
@@ -8949,7 +8957,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
             <span class="org-keyword">if</span> phi <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">and</span> phi_next <span class="org-operator">&lt;=</span> 0.0:
                 <span class="org-variable-name">fire_type_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]          <span class="org-operator">=</span> fire_type_codes[fire_behavior[<span class="org-string">"fire_type"</span>]]
                 <span class="org-variable-name">spread_rate_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]        <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_rate"</span>]
-                <span class="org-variable-name">spread_direction_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]   <span class="org-operator">=</span> spread_direction_vector_to_angle(fire_behavior[<span class="org-string">"spread_direction"</span>])
+                <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Change upstream functions to return spread_direction as type vec_xyz</span>
+                (<span class="org-variable-name">dx</span>, <span class="org-variable-name">dy</span>, <span class="org-variable-name">dz</span>)                   <span class="org-operator">=</span> fire_behavior[<span class="org-string">"spread_direction"</span>]
+                <span class="org-variable-name">spread_direction_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]   <span class="org-operator">=</span> spread_direction_vector_to_angle((dx, dy, dz))
                 <span class="org-variable-name">fireline_intensity_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> fire_behavior[<span class="org-string">"fireline_intensity"</span>]
                 <span class="org-variable-name">flame_length_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]       <span class="org-operator">=</span> fire_behavior[<span class="org-string">"flame_length"</span>]
                 <span class="org-variable-name">time_of_arrival_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]    <span class="org-operator">=</span> start_time <span class="org-operator">+</span> dt <span class="org-operator">*</span> phi <span class="org-operator">/</span> (phi <span class="org-operator">-</span> phi_next)
@@ -11011,17 +11021,13 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
 <div class="org-src-container">
 <pre class="src src-python" id="vector-utilities"><span class="org-comment-delimiter"># </span><span class="org-comment">cython: profile=False</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix "result uninitialized" warnings</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Fix cimport of numpy</span>
 <span class="org-keyword">import</span> cython
 <span class="org-keyword">if</span> cython.compiled:
-    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> add, multiply, cross
-    <span class="org-comment-delimiter"># </span><span class="org-comment">from cython.cimports.numpy import add, multiply, cross</span>
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">import</span> \
         opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
 <span class="org-keyword">else</span>:
-    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> add, multiply, cross
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, sin, cos
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz
     <span class="org-keyword">from</span> pyretechnics.conversion <span class="org-keyword">import</span> \
@@ -11090,15 +11096,12 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
     <span class="org-keyword">return</span> (vector_3d[0], vector_3d[1])
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Replace input numpy array with vec_xyz</span>
 <span class="org-type">@cy.ccall</span>
-<span class="org-type">@cy.wraparound</span>(<span class="org-constant">False</span>)
-<span class="org-type">@cy.boundscheck</span>(<span class="org-constant">False</span>)
-<span class="org-keyword">def</span> <span class="org-function-name">spread_direction_vector_to_angle</span>(vector_3d: cy.double[:]) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
-    <span class="org-variable-name">x</span>        : cy.double <span class="org-operator">=</span> vector_3d[0]
-    <span class="org-variable-name">y</span>        : cy.double <span class="org-operator">=</span> vector_3d[1]
-    <span class="org-variable-name">az_coords</span>: vec_xy    <span class="org-operator">=</span> cartesian_to_azimuthal(x, y)
-    <span class="org-variable-name">azimuth</span>  : cy.<span class="org-builtin">float</span>  <span class="org-operator">=</span> az_coords[1]
+<span class="org-keyword">def</span> <span class="org-function-name">spread_direction_vector_to_angle</span>(vector_3d: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+    <span class="org-variable-name">x</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_3d[0]
+    <span class="org-variable-name">y</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_3d[1]
+    <span class="org-variable-name">az_coords</span>: vec_xy   <span class="org-operator">=</span> cartesian_to_azimuthal(x, y)
+    <span class="org-variable-name">azimuth</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> az_coords[1]
     <span class="org-keyword">return</span> azimuth
 
 
@@ -11109,22 +11112,46 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
     <span class="org-keyword">return</span> as_unit_vector_3d(slope_normal_vector)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Eliminate need for numpy</span>
 <span class="org-type">@cy.ccall</span>
-<span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: cy.double[:], theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.double[:]:
+<span class="org-keyword">def</span> <span class="org-function-name">cross_3d</span>(vector1: vec_xyz, vector2: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
+    (<span class="org-variable-name">a</span>, <span class="org-variable-name">b</span>, <span class="org-variable-name">c</span>) <span class="org-operator">=</span> vector1
+    (<span class="org-variable-name">d</span>, <span class="org-variable-name">e</span>, <span class="org-variable-name">f</span>) <span class="org-operator">=</span> vector2
+    <span class="org-keyword">return</span> (
+        b <span class="org-operator">*</span> f <span class="org-operator">-</span> e <span class="org-operator">*</span> c,
+        <span class="org-operator">-</span>a <span class="org-operator">*</span> f <span class="org-operator">+</span> d <span class="org-operator">*</span> c,
+        a <span class="org-operator">*</span> e <span class="org-operator">-</span> d <span class="org-operator">*</span> b,
+    )
+
+
+<span class="org-type">@cy.ccall</span>
+<span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: vec_xyz, theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Rotate a 3D vector &lt;x,y,z&gt; theta degrees clockwise on the plane defined by the slope and aspect.</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the slope normal vector from the slope and aspect</span>
     <span class="org-variable-name">elevation_gradient</span> : vec_xy  <span class="org-operator">=</span> azimuthal_to_cartesian(slope, opposite_direction(aspect))
     <span class="org-variable-name">slope_normal_vector</span>: vec_xyz <span class="org-operator">=</span> get_slope_normal_vector(elevation_gradient)
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate sine and cosine of theta</span>
     <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> deg_to_rad(theta)
-    <span class="org-keyword">return</span> add(multiply(cos(theta_rad),
-                        vector),
-               cross(multiply(sin(theta_rad),
-                              vector),
-                    slope_normal_vector))
+    <span class="org-variable-name">cos_theta</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> cos(theta_rad)
+    <span class="org-variable-name">sin_theta</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sin(theta_rad)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Rotate theta degrees clockwise around the slope_normal_vector</span>
+    <span class="org-variable-name">vector_i</span>: vec_xyz <span class="org-operator">=</span> (
+        cos_theta <span class="org-operator">*</span> vector[0],
+        cos_theta <span class="org-operator">*</span> vector[1],
+        cos_theta <span class="org-operator">*</span> vector[2],
+    )
+    <span class="org-variable-name">vector_j</span>: vec_xyz <span class="org-operator">=</span> (
+        sin_theta <span class="org-operator">*</span> vector[0],
+        sin_theta <span class="org-operator">*</span> vector[1],
+        sin_theta <span class="org-operator">*</span> vector[2],
+    )
+    <span class="org-variable-name">vector_k</span>: vec_xyz <span class="org-operator">=</span> cross_3d(vector_j, slope_normal_vector)
+    <span class="org-keyword">return</span> (
+        vector_i[0] <span class="org-operator">+</span> vector_k[0],
+        vector_i[1] <span class="org-operator">+</span> vector_k[1],
+        vector_i[2] <span class="org-operator">+</span> vector_k[2],
+    )
 </pre>
 </div>
 
@@ -11144,9 +11171,10 @@ cpdef vec_xy as_unit_vector_2d(vec_xy vector)
 cpdef vec_xyz as_unit_vector_3d(vec_xyz vector)
 cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient)
 cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d)
-cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(double[:] vector_3d)
+cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(vec_xyz vector_3d)
 cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient)
-cpdef double[:] rotate_on_sloped_plane(double[:] vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect)
+cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2)
+cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect)
 </pre>
 </div>
 
