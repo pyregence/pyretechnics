@@ -20,7 +20,7 @@
 
 10. Use the `pyidx` type (from `pyretechnics.cy_types` or `pyretechnics.py_types`) for integer indexes into arrays as well as row and column counts.
 
-11. Use `for i in range(n):` to create C `for` loops. Avoid `range(start, stop, step)` calls if possible. Similarly, use `for` loops with accumulator variables over list comprehensions for speed.
+11. Use `for i in range(n):` to create C `for` loops. Avoid `range(start, stop, step)` calls if possible. Similarly, use `for` loops with accumulator variables instead of Python list comprehensions for speed.
 
 12. Remember to add the function signatures (in Cython syntax) for any public module functions to a file called `mymodule.pxd` when they are implemented in a module called `mymodule.py`. Use `cdef` for C functions and `cpdef` for your `@ccall` decorated functions.
 

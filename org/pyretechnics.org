@@ -1,5 +1,5 @@
 #+TITLE: The Pyretechnics Fire Behavior Library
-#+SUBTITLE: Copyright © 2023-2024 Spatial Informatics Group, LLC
+#+SUBTITLE: Copyright © 2023-2025 Spatial Informatics Group, LLC
 #+AUTHOR: Gary W. Johnson, Valentin Waeselynck, Chris Lautenberger, David Saah
 
 * Document Settings :noexport:

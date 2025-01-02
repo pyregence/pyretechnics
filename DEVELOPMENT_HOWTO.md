@@ -67,9 +67,9 @@ If you typically work outside of Emacs, your workflow is going to look like this
 
 6. Explore the profiling results in your web browser to determine what you want to work on next.
 
-7. Run `./make.sh org-eval` to rerun all the example scripts inside `org/pyretechnics.org`. Then check your `git status` to see if anything changed in that file or the binary image files that it generates. If so, you broke something (unless it's just a tiny change in floating point values due to changing floating point functions or variable precisions).
+7. Run `./make.sh detangle` to copy your changes to the `*.py` and `*.pxd` files back into `org/pyretechnics.org`.
 
-8. Run `./make.sh detangle` to copy your changes to the `*.py` and `*.pxd` files back into `org/pyretechnics.org`.
+8. Run `./make.sh org-eval` to rerun all the example scripts inside `org/pyretechnics.org`. Then check your `git status` to see if anything changed in that file or the binary image files that it generates. If so, you broke something (unless it's just a tiny change in floating point values due to changing floating point functions or variable precisions).
 
 9. Run `./make.sh weave` to regenerate the woven documentation in `org/index.html`.
 
@@ -95,6 +95,6 @@ If you typically work in Emacs, you can either use the workflow above or make yo
 
 8. Save the file and run `C-c C-v C-t` (`org-babel-tangle`) to regenerate the `*.py` and `*.pxd` files in `src/`, `test/`, and `prof/`.
 
-9. Use the same steps 2-10 from the "Without Emacs" section above (skipping step 8, of course).
+9. Use the same steps 2-10 from the "Without Emacs" section above (skipping step 7 [detangle], of course).
 
 Happy hacking!
