@@ -16,8 +16,8 @@ PI = cy.declare(cy.double, 3.14159265358979323846)
 
 
 @cy.ccall
-@cy.cdivision(True)
 @cy.inline
+@cy.cdivision(True)
 def rad_to_deg(radians: cy.float) -> cy.float:
     """Convert radians to degrees."""
     return radians * 180.0 / PI
@@ -289,7 +289,6 @@ def hour_to_min(hours: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.inline
-@cy.cdivision(True)
 def min_to_hour(minutes: cy.float) -> cy.float:
     """Converts minutes to hours."""
     return minutes / 60.0
@@ -304,7 +303,6 @@ def day_to_min(days: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.inline
-@cy.cdivision(True)
 def min_to_day(minutes: cy.float) -> cy.float:
     """Convert minutes to days."""
     return minutes / 1440.0
@@ -328,7 +326,6 @@ def polar_to_cartesian(r: cy.float, theta: cy.float) -> vec_xy:
     return (x, y)
 
 
-@cy.exceptval(check=False)
 @cy.ccall
 def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy: # TODO it's numerically correct but conceptually misleading to type this as vec_xy since it's not cartesian coordinates.
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
@@ -348,6 +345,7 @@ def azimuthal_to_cartesian(r: cy.float, azimuth: cy.float) -> vec_xy:
 
 
 @cy.ccall
+@cy.inline
 def opposite_direction(theta: cy.float) -> cy.float:
     """Convert theta to theta + 180 degrees."""
     return (theta + 180.0) % 360.0
@@ -357,13 +355,12 @@ def opposite_direction(theta: cy.float) -> cy.float:
 @cy.inline
 def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m: cy.float) -> cy.float:
     """Convert wind speed at 10m to wind speed at 20ft."""
-    return 0.87 * wind_speed_10m # FIXME only 2 significant digits??? Add more!
+    return wind_speed_10m / 1.15
 
 
 @cy.ccall
 @cy.inline
-@cy.cdivision(True)
 def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft: cy.float) -> cy.float:
     """Convert wind speed at 20ft to wind speed at 10m."""
-    return wind_speed_20ft / 0.87 # FIXME only 2 significant digits??? Add more!
+    return wind_speed_20ft * 1.15
 # units-conversion ends here
