@@ -8,7 +8,7 @@
   #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-hatchling))
-  #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio python-matplotlib python-twine))
+  #:use-module ((gnu packages python-xyz)      #:select (python-numpy python-rasterio python-matplotlib python-sortedcontainers python-twine))
   #:use-module ((gnu packages ssh)             #:select (openssh))
   #:use-module ((gnu packages version-control) #:select (git))
   #:use-module ((guix build-system pyproject)  #:select (pyproject-build-system))
@@ -62,6 +62,7 @@
                        python-numpy
                        python-rasterio
                        python-matplotlib
+                       python-sortedcontainers
                        python-cython-3))
    (synopsis "A Python library for simulating fire behavior in a variety of ways.")
    (description "A Python library for simulating fire behavior in a variety of ways.")
