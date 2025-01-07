@@ -2006,7 +2006,7 @@ class TrackedCellsArrays:
     ell_info: cy.pointer(EllipticalInfo) # Array of structs (needs to be iterated over very efficiently).
     pass1outputs: cy.pointer(Pass1CellOutput) # Per-cell data produced by the 1st Runge-Kutta pass.
 
-    phi_values: cy.float[:,:] # Shape: (self._arrays_length, 9)
+    phi_values: cy.float[:,:] # Shape: (self._arrays_length, 4). Each row is: [phi, dphi_dx, dphi_dy, flim_factor].
 
     def __cinit__(self, 
             time_refreshed_init: cy.float, 
@@ -2022,7 +2022,7 @@ class TrackedCellsArrays:
             self.t_refreshed[k] = t_refreshed_init
         if not self.ell_info:
             raise MemoryError()
-        self.phi_values = np.zeros((self._arrays_length, 9), dtype=np.float32)
+        self.phi_values = np.zeros((self._arrays_length, 4), dtype=np.float32)
 
 
     @cy.ccall
@@ -2044,7 +2044,7 @@ class TrackedCellsArrays:
             self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
             if not self.pass1outputs:
                 raise MemoryError()
-            self.phi_values = np.zeros((self._arrays_length, 9), dtype=np.float32)  
+            self.phi_values = np.zeros((self._arrays_length, 4), dtype=np.float32)  
 
     def __dealloc__(self):
         PyMem_Free(self.ell_info)
@@ -2056,25 +2056,48 @@ class TrackedCellsArrays:
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.initializedcheck(False)
-def collect_phi_values(phi: cy.float[:, :], tca: TrackedCellsArrays) -> cy.void:
+def collect_phi_values(
+        phi: cy.float[:, :],
+        tca: TrackedCellsArrays, 
+        spatial_resolution: vec_xy
+        ) -> cy.void:
+    """
+    Scans the phi raster for each tracked cell,
+    and populates the `tca.phi_values` array with required values.
+    Each row of `tca.phi_values` is: [phi, dphi_dx, dphi_dy, flim_factor].
+    """
     phi_values: cy.float[:,:] = tca.phi_values
     ell_info: cy.pointer(EllipticalInfo) = tca.ell_info
+    dx, dy = spatial_resolution
+    dx_inv: cy.float = 1.0 / dx
+    dy_inv: cy.float = 1.0 / dy
     i: pyidx
     y: pyidx
     x: pyidx
     for i in range(tca.n_tracked_cells):
         cell_index: coord_yx = ell_info[i].cell_index
         y, x = cell_index
-        phi_values[i, 0] = phi[y, x]
-        phi_values[i, 1] = phi[y, x-2]
-        phi_values[i, 2] = phi[y, x-1]
-        phi_values[i, 3] = phi[y, x+1]
-        phi_values[i, 4] = phi[y, x+2]
-        phi_values[i, 5] = phi[y-2, x]
-        phi_values[i, 6] = phi[y-1, x]
-        phi_values[i, 7] = phi[y+1, x]
-        phi_values[i, 8] = phi[y+2, x]
-
+        p00: cy.float = phi[2+y, 2+x]
+        pw2: cy.float = phi[2+y, 2+x-2]
+        pw1: cy.float = phi[2+y, 2+x-1]
+        pe1: cy.float = phi[2+y, 2+x+1]
+        pe2: cy.float = phi[2+y, 2+x+2]
+        ps2: cy.float = phi[2+y-2, 2+x]
+        ps1: cy.float = phi[2+y-1, 2+x]
+        pn1: cy.float = phi[2+y+1, 2+x]
+        pn2: cy.float = phi[2+y+2, 2+x]
+        dphi_dx: cy.float = (pe1 - pw1) * dx_inv / 2.0
+        dphi_dy: cy.float = (pn1 - ps1) * dy_inv / 2.0
+        dphi_norm2: cy.float = (dphi_dx*dphi_dx + dphi_dy*dphi_dy)
+        flim_factor: cy.float = 0.0
+        if dphi_norm2 > 0:
+            dphi_dx_flim: cy.float = calc_dphi_flim_x(p00, pw2, pw1, pe1, pe2) * dx_inv
+            dphi_dy_flim: cy.float = calc_dphi_flim_y(p00, ps2, ps1, pn1, pn2) * dy_inv
+            flim_factor: cy.float = (dphi_dx_flim*dphi_dx + dphi_dy_flim*dphi_dy) / dphi_norm2
+        phi_values[i, 0] = p00
+        phi_values[i, 1] = dphi_dx
+        phi_values[i, 2] = dphi_dy
+        phi_values[i, 3] = flim_factor
         
 
 @cy.ccall
@@ -2621,7 +2644,7 @@ def sync_tracked_cells_arrays(
 @cy.cdivision(True)
 def runge_kutta_pass1(
         max_cells_per_timestep: cy.float,
-        stc: SpreadInputs,
+        spatial_resolution: vec_xy,
         max_timestep: cy.float,
         tca: TrackedCellsArrays
         ) -> cy.float:
@@ -2635,9 +2658,7 @@ def runge_kutta_pass1(
     """
     ell_info: cy.pointer[EllipticalInfo] = tca.ell_info
     pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
-    (dx, dy) = stc.spatial_resolution
-    rows = stc.rows
-    cols = stc.cols
+    (dx, dy) = spatial_resolution
     # The following will be useful to compute dt based on the CFL constraint.
     # It is more convenient to first compute dt_inv, the reciprocal of dt;
     # dt_inv = 0 represents an infinite dt. We will later enforce that dt <= max_timestep.
@@ -2646,25 +2667,20 @@ def runge_kutta_pass1(
     C_dy: cy.float = max_cells_per_timestep * dy
     # Now looping over tracked cells:
     phi_values: cy.float[:,:] = tca.phi_values
-    dx_inv: cy.float = 1.0 / dx
-    dy_inv: cy.float = 1.0 / dy
     for i in range(tca.n_tracked_cells):
         ell_i: EllipticalInfo = ell_info[i]
         cell_index: coord_yx = ell_i.cell_index
         # y: pyidx = cell_index[0]
         # x: pyidx = cell_index[1]
         # dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
-        dphi_dx: cy.float = (phi_values[i, 3] - phi_values[i, 2]) * dx_inv / 2.0
-        dphi_dy: cy.float = (phi_values[i, 7] - phi_values[i, 6]) * dy_inv / 2.0
+        dphi_dx: cy.float = phi_values[i, 1]
+        dphi_dy: cy.float = phi_values[i, 2]
         dphi: vec_xy = (dphi_dx, dphi_dy)
+        dphi_dt_correction: cy.float = phi_values[i, 3]
         dphi_norm2: cy.float = (dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
         dphi_dt_flim: cy.float
         if dphi_norm2 > 0: # Most common case.
-            # dphi_flim: vec_xy = calc_phi_gradient(phi, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
-            dphi_dx_flim: cy.float = calc_dphi_flim_x(phi_values[i, 0], phi_values[i, 1], phi_values[i, 2], phi_values[i, 3], phi_values[i, 4]) * dx_inv
-            dphi_dy_flim: cy.float = calc_dphi_flim_y(phi_values[i, 0], phi_values[i, 5], phi_values[i, 6], phi_values[i, 7], phi_values[i, 8]) * dy_inv
             dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi)
-            dphi_dt_correction: cy.float = (dphi_dx * dphi_dx_flim + dphi_dy * dphi_dy_flim) / dphi_norm2
             dphi_dt_flim = (dphi_dt * dphi_dt_correction)
             # Checking the CFL condition and updating dt_inv if needed (which will be rare).
             # The code is written in this way to be fast, but it's not trivial that it's correct; proof below.
@@ -2751,7 +2767,7 @@ def new_BurnedCellInfo( # Fast constructor function
 @cy.boundscheck(False)
 def runge_kutta_pass2(
         fb_opts: FireBehaviorSettings,
-        stc: SpreadInputs,
+        spatial_resolution: vec_xy,
         start_time: cy.float,
         dt: cy.float,
         tca: TrackedCellsArrays,
@@ -2763,34 +2779,27 @@ def runge_kutta_pass2(
     2. Identifies cells that have just burned and returns them in a list.
     Reads from `tca` and `phs`, and mutates `phi`.
     """
-    (dx, dy) = stc.spatial_resolution
-    rows = stc.rows
-    cols = stc.cols
+    (dx, dy) = spatial_resolution
     n_tracked_cells: pyidx = tca.n_tracked_cells
     ell: cy.pointer[EllipticalInfo] = tca.ell_info
     pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
     spread_burned_cells: list[BurnedCellInfo] = []
     i: pyidx
     phs_values: cy.float[:,:] = tca.phi_values
-    dx_inv: cy.float = 1.0 / dx
-    dy_inv: cy.float = 1.0 / dy
     for i in range(n_tracked_cells):
         ell_i: EllipticalInfo = ell[i]
         cell_index: coord_yx = ell_i.cell_index
         y: pyidx = cell_index[0]
         x: pyidx = cell_index[1]
-        # dphi: vec_xy = calc_phi_gradient_approx(phs, dx, dy, x, y)
-        dphi_dx: cy.float = (phs_values[i, 3] - phs_values[i, 2]) * dx_inv / 2
-        dphi_dy: cy.float = (phs_values[i, 7] - phs_values[i, 6]) * dy_inv / 2
+        #dphi: vec_xy = calc_phi_gradient_approx(phs, dx, dy, x, y)
+        dphi_dx: cy.float = phs_values[i, 1]
+        dphi_dy: cy.float = phs_values[i, 2]
         dphi: vec_xy = (dphi_dx, dphi_dy)
         dphi_norm2: cy.float = (dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+        dphi_dt_correction: cy.float = phs_values[i, 3]
         dphi_dt: cy.float
         dphi_dt_1i: cy.float
         if dphi_norm2 > 0: # Most common case.
-            # dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
-            dphi_dx_flim: cy.float = calc_dphi_flim_x(phs_values[i, 0], phs_values[i, 1], phs_values[i, 2], phs_values[i, 3], phs_values[i, 4]) * dx_inv
-            dphi_dy_flim: cy.float = calc_dphi_flim_y(phs_values[i, 0], phs_values[i, 5], phs_values[i, 6], phs_values[i, 7], phs_values[i, 8]) * dy_inv
-            dphi_dt_correction: cy.float = (dphi_dx * dphi_dx_flim + dphi_dy * dphi_dy_flim) / dphi_norm2
             dphi_dt = dphi_dt_from_elliptical(ell_i, dphi)
             dphi_dt_1i = (dphi_dt * dphi_dt_correction)
         else:
@@ -3084,15 +3093,15 @@ def spread_one_timestep(
     # This makes sense if the wind field is refreshed more frequently than fuel moistures.
     
     # Re-compute elliptical dimensions if needed. FIXME
-    collect_phi_values(phi, tca)
-    dt = runge_kutta_pass1(fb_opts.max_cells_per_timestep, stc, max_timestep, tca)
+    collect_phi_values(phi, tca, stc.spatial_resolution)
+    dt = runge_kutta_pass1(fb_opts.max_cells_per_timestep, stc.spatial_resolution, max_timestep, tca)
 
     # Now that dt is known, update phi_star_matrix.
     update_phi_star(tca, dt, phs)
     stop_time: cy.float = start_time + dt
     
-    collect_phi_values(phs, tca)
-    spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc, start_time, dt, tca, phi)
+    collect_phi_values(phs, tca, stc.spatial_resolution)
+    spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi)
     
     # Side-effects of the burned cells (outputs etc.).
     process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
