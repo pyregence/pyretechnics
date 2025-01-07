@@ -1,4 +1,6 @@
 # [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
+import cython as cy
+
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
 #
 # The fields have the following meanings:
@@ -109,6 +111,7 @@ def expand_compact_fuel_model(fuel_model_number):
 
 
 fuel_model_table = {k: expand_compact_fuel_model(k) for k in fuel_model_compact_table.keys()}
+
 # expand-compact-fuel-model-table ends here
 # [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
 def map_category(f):
@@ -169,12 +172,12 @@ def add_weighting_factors(fuel_model):
     A_ij                        = map_size_class(msc_Aij)
     def scs_A_ij(i):
         return A_ij[i]
-    A_i                         = size_class_sum(msc_Aij)
+    A_i                         = size_class_sum(scs_A_ij)
     def scs_A_i(i):
         return A_i[i]
     A_T                         = category_sum(scs_A_i)
     def msc_fij(i):
-        A = A_i[i//4]
+        A = A_i[i//4] # FIXME clever but unclear
         return (A_ij[i] / A) if (A > 0.0) else 0.0
     f_ij                        = map_size_class(msc_fij)
     def msc_f_i(i):

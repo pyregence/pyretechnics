@@ -84,13 +84,13 @@ def cruz_crown_fire_spread_info(wind_speed_10m, canopy_bulk_density, estimated_f
     critical_spread_rate = van_wagner_critical_spread_rate(canopy_bulk_density) # m/min
     if (active_spread_rate > critical_spread_rate):
         return {
-            "fire_type"           : "active_crown",
+            "fire_type"           : 3, # FIXME NAMED CONSTANT
             "spread_rate"         : active_spread_rate,
             "critical_spread_rate": critical_spread_rate,
         }
     else:
         return {
-            "fire_type"           : "passive_crown",
+            "fire_type"           : 2, # FIXME NAMED CONSTANT
             "spread_rate"         : cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate),
             "critical_spread_rate": critical_spread_rate,
         }
@@ -144,15 +144,23 @@ def crown_fire_eccentricity(length_to_width_ratio):
     return sqrt(length_to_width_ratio ** 2.0 - 1.0) / length_to_width_ratio
 # crown-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-max][crown-fire-behavior-max]]
+import cython
+if cython.compiled:
+    import cython.cimports.pyretechnics.cy_types as py_types
+    import cython.cimports.pyretechnics.vector_utils as vu
+else:
+    import pyretechnics.py_types as py_types
+    import pyretechnics.vector_utils as vu
 import numpy as np
 import pyretechnics.conversion as conv
 import pyretechnics.surface_fire as sf
-import pyretechnics.vector_utils as vu
+import cython as cy
 
-
+@cy.profile(False)
+@cy.ccall
 def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_density, heat_of_combustion,
                                  estimated_fine_fuel_moisture, wind_speed_10m, upwind_direction,
-                                 slope, aspect, crown_max_lw_ratio=None):
+                                 slope, aspect, crown_max_lw_ratio=None) -> py_types.FireBehaviorMax:
     """
     Given these inputs:
     - canopy_height                                    :: m
@@ -184,11 +192,13 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
     slope_vector_3d = vectors["slope_vector_3d"] # rise/run
     # Determine the max spread direction
     wind_speed_10m_3d    = vu.vector_magnitude_3d(wind_vector_3d)      # km/hr
-    max_spread_direction = (vu.as_unit_vector_3d(wind_vector_3d)       # unit vector in the 3D downwind direction
-                            if wind_speed_10m_3d > 0.0
-                            else vu.as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
-                            if slope > 0.0
-                            else (0.0,1.0,0.0))                        # default: North
+    max_spread_direction: py_types.vec_xyz
+    if wind_speed_10m_3d > 0.0:
+        max_spread_direction = vu.as_unit_vector_3d(wind_vector_3d)       # unit vector in the 3D downwind direction
+    elif slope > 0.0:
+        max_spread_direction = vu.as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
+    else:
+        max_spread_direction = (0.0,1.0,0.0) # default: North
     # Calculate the crown fire behavior in the max spread direction
     spread_info           = cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density,
                                                         estimated_fine_fuel_moisture)
@@ -197,15 +207,15 @@ def calc_crown_fire_behavior_max(canopy_height, canopy_base_height, canopy_bulk_
                                                           canopy_base_height, heat_of_combustion) # kW/m
     length_to_width_ratio = crown_length_to_width_ratio(wind_speed_10m_3d, crown_max_lw_ratio) # unitless
     eccentricity          = crown_fire_eccentricity(length_to_width_ratio) # unitless
-    return {
-        "max_fire_type"         : spread_info["fire_type"],
-        "max_spread_rate"       : spread_rate,
-        "max_spread_direction"  : np.asarray(max_spread_direction), # unit vector
-        "max_fireline_intensity": fireline_intensity,
-        "length_to_width_ratio" : length_to_width_ratio,
-        "eccentricity"          : eccentricity,
-        "critical_spread_rate"  : spread_info["critical_spread_rate"],
-    }
+    return py_types.FireBehaviorMax(
+        spread_info["fire_type"],
+        spread_rate,
+        max_spread_direction, # unit vector
+        fireline_intensity,
+        length_to_width_ratio,
+        eccentricity,
+        spread_info["critical_spread_rate"],
+    )
 # crown-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-in-direction][crown-fire-behavior-in-direction]]
 import numpy as np

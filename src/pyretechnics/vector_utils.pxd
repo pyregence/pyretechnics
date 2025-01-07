@@ -8,6 +8,10 @@ from pyretechnics.cy_types cimport vec_xy, vec_xyz
 
 cpdef float dot_2d(vec_xy vector1, vec_xy vector2)
 cpdef float dot_3d(vec_xyz vector1, vec_xyz vector2)
+cpdef vec_xy scale_2d(float scalar, vec_xy vector)
+cpdef vec_xyz scale_3d(float scalar, vec_xyz vector)
+cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2)
+cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2)
 cpdef float vector_magnitude_2d(vec_xy vector)
 cpdef float vector_magnitude_3d(vec_xyz vector)
 cpdef vec_xy as_unit_vector_2d(vec_xy vector)

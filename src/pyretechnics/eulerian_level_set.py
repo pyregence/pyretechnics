@@ -3,21 +3,23 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, atan
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     from cython.cimports.pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
+    import cython.cimports.pyretechnics.surface_fire as sf
     from cython.cimports.pyretechnics.vector_utils import \
-        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 else:
     from math import sqrt, atan
-    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
+    import pyretechnics.surface_fire as sf
     from pyretechnics.vector_utils import \
-        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
 
 
@@ -28,8 +30,8 @@ import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 from pyretechnics.space_time_cube import SpaceTimeCube, LazySpaceTimeCube
 import pyretechnics.spot_fire as spot
-import pyretechnics.surface_fire as sf
-
+import pyretechnics.surface_fire as sf0
+    
 
 PI = cy.declare(cy.double, 3.14159265358979323846)
 
@@ -337,6 +339,29 @@ def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
     return azimuthal_to_cartesian(slope, opposite_direction(aspect))
 
+# NOTE it would be better to use a cython enum here, but that's not supported in pure python syntax...
+fire_type_unburned      = cy.declare(cy.int, 0)
+fire_type_surface       = cy.declare(cy.int, 1)
+fire_type_crown_passive = cy.declare(cy.int, 2)
+fire_type_crown_active  = cy.declare(cy.int, 3)
+
+def stringify_fire_type(fire_type: integer) -> string: # TODO only here for backwards compatibility
+    return ("unburned" if fire_type == fire_type_unburned
+            else "surface" if fire_type == fire_type_surface
+            else "passive_crown" if fire_type == fire_type_crown_passive
+            else "active_crown")
+
+SpreadBehavior = cy.struct(
+    dphi_dt            = cy.float,
+    fire_type          = cy.int,
+    spread_rate        = cy.float,
+    spread_direction   = vec_xyz,
+    fireline_intensity = cy.float,
+    flame_length       = cy.float,
+)
+
+
+
 
 @cy.ccall
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
@@ -361,7 +386,8 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
 @cy.profile(True)
-def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
+@cy.ccall
+def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz) -> SpreadBehavior:
     """
     Given these inputs:
     - fire_behavior_max  :: dictionary of max surface or crown fire behavior values
@@ -395,7 +421,7 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
     # Check whether cell is on the fire perimeter and burning
     #================================================================================================
 
-    if (phi_magnitude == 0.0 or fire_behavior_max["max_spread_rate"] == 0.0):
+    if (phi_magnitude == 0.0 or fire_behavior_max.max_spread_rate == 0.0):
         # This location is not on the fire perimeter and/or is not burning
 
         #================================================================================================
@@ -403,20 +429,22 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
         #================================================================================================
 
         spread_direction = (np.asarray(phi_gradient) / phi_magnitude if phi_magnitude > 0.0
-                            else fire_behavior_max["max_spread_direction"])
+                            else fire_behavior_max.max_spread_direction)
+        
 
         #============================================================================================
         # Return zero surface/crown fire behavior
         #============================================================================================
 
-        return {
-            "dphi_dt"           : 0.0,
-            "fire_type"         : "unburned",
-            "spread_rate"       : 0.0,
-            "spread_direction"  : spread_direction,
-            "fireline_intensity": 0.0,
-            "flame_length"      : 0.0,
-        }
+        sd: vec_xyz = (spread_direction[0], spread_direction[1], spread_direction[2])
+        return SpreadBehavior(
+            dphi_dt            = 0.0,
+            fire_type          = fire_type_unburned,
+            spread_rate        = 0.0,
+            spread_direction   = sd,
+            fireline_intensity = 0.0,
+            flame_length       = 0.0
+        )
 
     else:
         # This location is on the fire perimeter and is burning
@@ -425,63 +453,116 @@ def calc_fireline_normal_behavior(fire_behavior_max, phi_gradient):
         # Unpack the fire_behavior_max dictionary
         #============================================================================================
 
-        heading_fire_type          = fire_behavior_max.get("max_fire_type", "surface")
-        heading_spread_rate        = fire_behavior_max["max_spread_rate"]               # m/min
-        heading_spread_direction   = fire_behavior_max["max_spread_direction"]          # (x,y,z) unit vector
-        heading_spread_vector      = heading_spread_rate * heading_spread_direction     # (x,y,z) m/min vector
-        heading_fireline_intensity = fire_behavior_max["max_fireline_intensity"]        # kW/m
-        length_to_width_ratio      = fire_behavior_max["length_to_width_ratio"]         # unitless
-        eccentricity               = fire_behavior_max["eccentricity"]                  # unitless
-        critical_spread_rate       = fire_behavior_max.get("critical_spread_rate", 0.0) # m/min
+        heading_fire_type: cy.int = fire_behavior_max.max_fire_type # FIXME .get("max_fire_type", "surface")
+        if heading_fire_type < 0:
+            heading_fire_type = fire_type_surface
+        heading_spread_rate: cy.float        = fire_behavior_max.max_spread_rate               # m/min
+        heading_spread_direction: vec_xyz    = fire_behavior_max.max_spread_direction          # (x,y,z) unit vector
+        heading_spread_vector: vec_xyz       = scale_3d(heading_spread_rate, heading_spread_direction)     # (x,y,z) m/min vector
+        heading_fireline_intensity: cy.float = fire_behavior_max.max_fireline_intensity        # kW/m
+        length_to_width_ratio: cy.float      = fire_behavior_max.length_to_width_ratio         # unitless
+        eccentricity: cy.float               = fire_behavior_max.eccentricity                  # unitless
+        critical_spread_rate: cy.float       = fire_behavior_max.critical_spread_rate          # m/min
+        if critical_spread_rate < 0.0:
+            critical_spread_rate = 0.0
 
         #============================================================================================
         # Calculate the backing and flanking fire spread rates
         #============================================================================================
 
-        backing_adjustment   = (1.0 - eccentricity) / (1.0 + eccentricity)                                 # unitless
-        backing_spread_rate  = heading_spread_rate * backing_adjustment                                    # m/min
-        flanking_spread_rate = (heading_spread_rate + backing_spread_rate) / (2.0 * length_to_width_ratio) # m/min
+        backing_adjustment: cy.float   = (1.0 - eccentricity) / (1.0 + eccentricity)                                 # unitless
+        backing_spread_rate: cy.float  = heading_spread_rate * backing_adjustment                                    # m/min
+        flanking_spread_rate: cy.float = (heading_spread_rate + backing_spread_rate) / (2.0 * length_to_width_ratio) # m/min
 
         #============================================================================================
         # Calculate dphi/dt
         #============================================================================================
 
-        A       = (heading_spread_rate - backing_spread_rate) / (2 * heading_spread_rate) # unitless
-        B       = np.dot(heading_spread_vector, phi_gradient)                             # phi/min
-        C       = flanking_spread_rate / heading_spread_rate                              # unitless
-        D       = (heading_spread_rate * phi_magnitude) ** 2.0                            # (phi/min)^2
-        E       = (length_to_width_ratio ** 2.0 - 1.0) * (B ** 2.0)                       # (phi/min)^2
-        dphi_dt = -(A * B + C * sqrt(D + E))                                              # phi/min
+        A: cy.float = (heading_spread_rate - backing_spread_rate) / (2 * heading_spread_rate) # unitless
+
+        B: cy.float = dot_3d(heading_spread_vector, phi_gradient)                             # phi/min
+        C: cy.float = flanking_spread_rate / heading_spread_rate                              # unitless
+        D: cy.float = (heading_spread_rate * phi_magnitude) ** 2.0                            # (phi/min)^2
+        E: cy.float = (length_to_width_ratio ** 2.0 - 1.0) * (B ** 2.0)                       # (phi/min)^2
+        dphi_dt: cy.float = -(A * B + C * sqrt(D + E))                                              # phi/min
 
         #============================================================================================
         # Calculate fire behavior normal to the fire perimeter
         #============================================================================================
 
-        normal_spread_rate        = -dphi_dt / phi_magnitude                        # m/min
-        normal_direction          = np.asarray(phi_gradient) / phi_magnitude        # (x,y,z) unit vector
-        normal_adjustment         = normal_spread_rate / heading_spread_rate        # unitless
-        normal_fireline_intensity = heading_fireline_intensity * normal_adjustment  # kW/m
-        normal_flame_length       = sf.calc_flame_length(normal_fireline_intensity) # m
-        normal_fire_type          = ("surface" if heading_fire_type == "surface"
-                                     else "active_crown" if normal_spread_rate > critical_spread_rate
-                                     else "passive_crown")
+        normal_spread_rate: cy.float        = -dphi_dt / phi_magnitude                        # m/min
+        normal_direction: vec_xyz           = as_unit_vector_3d(phi_gradient)                 # (x,y,z) unit vector
+        normal_adjustment: cy.float         = normal_spread_rate / heading_spread_rate        # unitless
+        normal_fireline_intensity: cy.float = heading_fireline_intensity * normal_adjustment  # kW/m
+        normal_flame_length: cy.float = sf.calc_flame_length(normal_fireline_intensity) # m
+        normal_fire_type: cy.int = (
+            fire_type_surface if heading_fire_type == fire_type_surface
+            else fire_type_crown_active if normal_spread_rate > critical_spread_rate
+            else fire_type_crown_passive)
 
         #========================================================================================
         # Return the surface/crown fire behavior normal to the fire perimeter
         #========================================================================================
 
-        return {
-            "dphi_dt"           : dphi_dt,                   # phi/min
-            "fire_type"         : normal_fire_type,          # surface, passive_crown, or active_crown
-            "spread_rate"       : normal_spread_rate,        # m/min
-            "spread_direction"  : normal_direction,          # (x,y,z) unit vector
-            "fireline_intensity": normal_fireline_intensity, # kW/m
-            "flame_length"      : normal_flame_length,       # m
-        }
+        sd: vec_xyz = (normal_direction[0], normal_direction[1], normal_direction[2])
+        return SpreadBehavior(
+            dphi_dt            = dphi_dt,                   # phi/min
+            fire_type          = normal_fire_type,          # surface, passive_crown, or active_crown
+            spread_rate        = normal_spread_rate,        # m/min
+            spread_direction   = sd,          # (x,y,z) unit vector
+            fireline_intensity = normal_fireline_intensity, # kW/m
+            flame_length       = normal_flame_length        # m
+        )
 # calc-fireline-normal-behavior ends here
 # [[file:../../org/pyretechnics.org::burn-cell-toward-phi-gradient][burn-cell-toward-phi-gradient]]
 # TODO: Create a version of this function that runs efficiently over a space_time_region
+
+
+
+FuelModel = cy.struct(
+    # name    = cy.string,
+    number   = cy.int,
+    delta    = cy.float,
+    M_x      = cy.float[6],
+    # FIXME let's use cy.float for everything
+    w_o      = cy.double[6],
+    sigma    = cy.double[6],
+    h        = cy.double[6],
+    rho_p    = cy.double[6],
+    S_T      = cy.double[6],
+    S_e      = cy.double[6],
+    dynamic  = cy.bint,
+    burnable = cy.bint
+)
+
+@cy.profile(False)
+@cy.ccall
+def fm_struct(fm: dict) -> FuelModel:
+    return FuelModel(
+        number   = fm["number"],
+        delta    = fm["delta"],
+        M_x      = fm["M_x"],
+        w_o      = fm["w_o"],
+        sigma    = fm["sigma"],
+        h        = fm["h"],
+        rho_p    = fm["rho_p"],
+        S_T      = fm["S_T"],
+        S_e      = fm["S_e"],
+        dynamic  = fm["dynamic"],
+        burnable = fm["burnable"],
+    )
+
+
+def fm_structs() -> dict[int, FuelModel]:
+    return {f["number"]: fm_struct(f) for f in fm.fuel_model_table.values()}
+
+
+fuel_model_structs = fm_structs()
+
+
+
 @cy.profile(True)
+@cy.ccall
 def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_gradient_xy, use_wind_limit=True,
                                   surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
     """
@@ -579,8 +660,10 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
     #================================================================================================
 
     fuel_model = fm.fuel_model_table.get(fuel_model_number)
+    fm_struct: FuelModel = fuel_model_structs[fuel_model_number]
+    
 
-    if not (phi_magnitude > 0.0 and fuel_model and fuel_model["burnable"]):
+    if not (phi_magnitude > 0.0 and fm_struct.burnable):
         # Cell is not on the fire perimeter and/or contains an unknown or non-burnable fuel model
 
         #================================================================================================
@@ -621,8 +704,8 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
                                         0.0, # fuel_moisture_dead_herbaceous
                                         fuel_moisture_live_herbaceous,
                                         fuel_moisture_live_woody]          # kg moisture/kg ovendry weight
-        fuel_bed_depth               = fuel_model["delta"]                 # ft
-        heat_of_combustion           = Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
+        fuel_bed_depth               = fm_struct.delta                     # ft
+        heat_of_combustion           = Btu_lb_to_kJ_kg(fm_struct.h[0])     # kJ/kg
         estimated_fine_fuel_moisture = fuel_moisture_dead_1hr              # kg moisture/kg ovendry weight
 
         #============================================================================================
@@ -636,6 +719,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
         wind_speed_20ft_m_min = km_hr_to_m_min(wind_speed_20ft) # m/min
 
         # Convert from 20ft wind speed to midflame wind speed in m/min
+        # FIXME this is getting called as a Python function
         midflame_wind_speed = sf.calc_midflame_wind_speed(wind_speed_20ft_m_min,  # m/min
                                                           fuel_bed_depth,         # ft
                                                           m_to_ft(canopy_height), # ft
@@ -650,7 +734,7 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior
-        surface_fire_min = sf.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model,
+        surface_fire_min = sf0.calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model,
                                                                           spread_rate_adjustment)
 
         # Calculate surface fire behavior in the direction of maximum spread
@@ -666,7 +750,15 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
         # Calculate surface fire behavior normal to the fire perimeter
         #============================================================================================
 
-        surface_fire_normal = calc_fireline_normal_behavior(surface_fire_max, phi_gradient)
+        sfn: SpreadBehavior = calc_fireline_normal_behavior(surface_fire_max, phi_gradient)
+        surface_fire_normal = {
+            "dphi_dt"           : sfn.dphi_dt,
+            "fire_type"         : stringify_fire_type(sfn.fire_type),
+            "spread_rate"       : sfn.spread_rate,
+            "spread_direction"  : np.array(sfn.spread_direction),
+            "fireline_intensity": sfn.fireline_intensity,
+            "flame_length"      : sfn.flame_length,
+        }
 
         #============================================================================================
         # Determine whether the surface fire transitions to a crown fire
@@ -691,7 +783,15 @@ def burn_cell_toward_phi_gradient(space_time_cubes, space_time_coordinate, phi_g
             # Calculate crown fire behavior normal to the fire perimeter
             #========================================================================================
 
-            crown_fire_normal = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)
+            cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, phi_gradient)
+            crown_fire_normal = {
+                "dphi_dt"           : cfn.dphi_dt,
+                "fire_type"         : stringify_fire_type(cfn.fire_type),
+                "spread_rate"       : cfn.spread_rate,
+                "spread_direction"  : np.array(cfn.spread_direction),
+                "fireline_intensity": cfn.fireline_intensity,
+                "flame_length"      : cfn.flame_length,
+            }
 
             #========================================================================================
             # Calculate combined fire behavior normal to the fire perimeter
