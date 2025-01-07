@@ -9,9 +9,9 @@ import time
 #============================================================================================
 
 cube_shape = (
-    240, # bands: 10 days @ 1 hour/band
-    500, # rows:  3 km @ 30 meters/row
-    500, # cols:  3 km @ 30 meters/col
+    75, # bands: 10 days @ 1 hour/band
+    5000, # rows:  3 km @ 30 meters/row
+    5000, # cols:  3 km @ 30 meters/col
 )
 
 grid_shape = cube_shape[1:]
@@ -75,7 +75,7 @@ inputs_refresh_freqs = {
 #============================================================================================
 
 output_matrices = {
-    "phi"               : np.ones(grid_shape, dtype="float32"),       # 2D float array of values in [-1,1]
+    "phi"               : np.ones((grid_shape[0] + 4, grid_shape[1] + 4), dtype="float32"),       # 2D float array of values in [-1,1] # FIXME NOTE padding the phi raster to avoid the cost of checking bounds.
     "fire_type"         : np.zeros(grid_shape, dtype="uint8"),        # 2D byte array (0-3)
     "spread_rate"       : np.zeros(grid_shape, dtype="float32"),      # 2D float array (m/min)
     "spread_direction"  : np.zeros(grid_shape, dtype="float32"),      # 2D float array (degrees clockwise from North)
@@ -89,14 +89,14 @@ output_matrices = {
 #============================================================================================
 
 # Day 2 @ 10:30am
-start_time = 2070  # minutes
+start_time = 0# 2070  # minutes
 
 # 8 hours
-#max_duration = 480 # minutes
-max_duration = 60*2 # minutes
+max_duration = 480 # minutes
+max_duration = 60*24*2 # minutes
 
 # Burn initially ignited cell into the phi matrix by setting it to -1.0
-output_matrices["phi"][50,50] = -1.0
+output_matrices["phi"][2+500,2+500] = -1.0
 
 #============================================================================================
 # Spread fire from the start time for the max duration
@@ -104,7 +104,7 @@ output_matrices["phi"][50,50] = -1.0
 
 spot_config = {
     "random_seed"                 : 1234567890,
-    "firebrands_per_unit_heat"    : 1e-6,       # firebrands/kJ
+    "firebrands_per_unit_heat"    : 0e-8,       # firebrands/kJ
     "downwind_distance_mean"      : 10.0,       # meters
     "fireline_intensity_exponent" : 0.3,        # downwind_distance_mean multiplier [I^fireline_intensity_exponent]
     "wind_speed_exponent"         : 0.55,       # downwind_distance_mean multiplier [U^wind_speed_exponent]
@@ -112,6 +112,7 @@ spot_config = {
     "crosswind_distance_stdev"    : 100.0,      # meters
     "decay_distance"              : 200.0,      # meters
 }
+
 
 runtime_start       = time.perf_counter()
 fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
