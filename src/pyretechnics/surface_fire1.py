@@ -551,9 +551,8 @@ def calc_midflame_wind_speed(wind_speed_20ft: cy.float, fuel_bed_depth: cy.float
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
-import numpy as np # FIXME
 from pyretechnics.conversion import azimuthal_to_cartesian
-from pyretechnics.vector_utils import vector_magnitude, as_unit_vector_3d, to_slope_plane
+from pyretechnics.vector_utils import as_unit_vector_3d, to_slope_plane
 
 
 
