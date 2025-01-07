@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
+# cython: profile=False
 # Fix cimport of numpy
 import cython
 if cython.compiled:
@@ -18,10 +19,8 @@ else:
 
 import cython as cy
 
+
 # TODO try inlining with @cy.inline (might require an inline directive in the .pxd file)
-
-
-@cy.profile(False)
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -36,14 +35,12 @@ def vector_magnitude(vector: cy.double[:]) -> cy.double:
 
 
 # TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 @cy.inline
 def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1]
 
 
-@cy.profile(False)
 @cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
@@ -51,18 +48,16 @@ def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
 
 
-@cy.profile(False)
 @cy.ccall
 def scale_2d(scalar: cy.float, vector: vec_xy) -> vec_xy:
     return (scalar * vector[0], scalar * vector[1])
 
 
-@cy.profile(False)
 @cy.ccall
 def scale_3d(scalar: cy.float, vector: vec_xyz) -> vec_xyz:
     return (scalar * vector[0], scalar * vector[1], scalar * vector[2])
 
-@cy.profile(False)
+
 @cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
@@ -70,7 +65,6 @@ def add_2d(vector1: vec_xy, vector2: vec_xy) -> vec_xy:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1])
 
 
-@cy.profile(False)
 @cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
@@ -79,7 +73,6 @@ def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
 
 
 # TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
@@ -87,7 +80,6 @@ def vector_magnitude_2d(vector: vec_xy) -> cy.float:
     return sqrt(dot_2d(vector, vector))
 
 
-@cy.profile(False)
 @cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
@@ -96,7 +88,6 @@ def vector_magnitude_3d(vector: vec_xyz) -> cy.float:
 
 
 # TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
     magnitude: cy.float = vector_magnitude_2d(vector)
@@ -105,7 +96,6 @@ def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
     return (ux, uy)
 
 
-@cy.profile(False)
 @cy.ccall
 def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
     magnitude: cy.float = vector_magnitude_3d(vector)
@@ -116,7 +106,6 @@ def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
 
 
 # TODO: result uninitialized warning
-@cy.profile(False)
 @cy.ccall
 def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     return (
@@ -127,7 +116,6 @@ def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
 
 
 # TODO: Replace numpy arrays with vec_xyz and vec_xy
-@cy.profile(False)
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -136,19 +124,17 @@ def to_horizontal_plane(vector_3d: cy.double[:]) -> cy.double[:]:
 
 
 # TODO: Replace numpy arrays with vec_xyz and vec_xy
-@cy.profile(False)
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
-    x        : cy.double    = vector_3d[0]
-    y        : cy.double    = vector_3d[1]
-    az_coords: vec_xy       = cartesian_to_azimuthal(x, y)
-    azimuth  : cy.float     = az_coords[1]
+    x        : cy.float = vector_3d[0]
+    y        : cy.float = vector_3d[1]
+    az_coords: vec_xy   = cartesian_to_azimuthal(x, y)
+    azimuth  : cy.float = az_coords[1]
     return azimuth
 
 
-@cy.profile(False)
 @cy.ccall
 def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     (dz_dx, dz_dy)               = elevation_gradient
@@ -157,7 +143,6 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
 
 
 # TODO: Eliminate need for numpy
-@cy.profile(False)
 @cy.ccall
 def rotate_on_sloped_plane(vector: cy.double[:], theta: cy.float, slope: cy.float, aspect: cy.float) -> cy.double[:]:
     """
