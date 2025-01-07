@@ -308,6 +308,7 @@ def min_to_day(minutes: cy.float) -> cy.float:
     return minutes / 1440.0
 
 
+# TODO Return vec_rt
 @cy.ccall
 def cartesian_to_polar(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
@@ -326,8 +327,9 @@ def polar_to_cartesian(r: cy.float, theta: cy.float) -> vec_xy:
     return (x, y)
 
 
+# TODO Return vec_ra
 @cy.ccall
-def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy: # TODO it's numerically correct but conceptually misleading to type this as vec_xy since it's not cartesian coordinates.
+def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
     r          : cy.float = sqrt(x * x + y * y)
     azimuth_rad: cy.float = atan2(x, y)
