@@ -2372,6 +2372,49 @@ def sync_tracked_cells_arrays(
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
+def runge_kutta_pass1(
+        fb_opts: FireBehaviorSettings, 
+        spatial_resolution: vec_xy,
+        max_timestep: cy.float,
+        phi: cy.float[:, :],
+        tca: TrackedCellsArrays
+        ) -> cy.float:
+    """
+    1st Runge-Kutta loop over elliptical dimensions, which:
+    1. Resolves dt from the CFL condition
+    2. Saves a Pass1CellOutput struct for each cell.
+
+    Returns the resolved `dt` and mutates `tca.pass1outputs`.
+    Reads only `tca.ell_info`.
+    """
+    ell_info: cy.pointer[EllipticalInfo] = tca.ell_info # FIXME
+    pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
+    dt: cy.float = max_timestep
+    (dx, dy) = spatial_resolution
+    for i in range(tca.n_tracked_cells):
+        ell_i: EllipticalInfo = ell_info[i]
+        cell_index: coord_yx = ell_i.cell_index # FIXME
+        y: pyidx = cell_index[0]
+        x: pyidx = cell_index[1]
+        dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
+        dphi_dx: cy.float = dphi[0]
+        dphi_dy: cy.float = dphi[1]
+        dphi_flim: vec_xy = calc_phi_gradient(phi, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
+        dphi_norm2: cy.float =(dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+        dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+        dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME implement
+        pass1outputs[i] = Pass1CellOutput( # INTRO
+            cell_index = cell_index,
+            dphi = dphi,
+            dphi_dt_0 = (dphi_dt * dphi_dt_correction)
+            )
+        dt = dt # FIXME update dt, using some notion of min_ux
+    return dt
+
+
+@cy.ccall
+@cy.wraparound(False)
+@cy.boundscheck(False)
 def update_phi_star(
         n_tracked_cells: pyidx, 
         tca: TrackedCellsArrays,
@@ -2403,6 +2446,7 @@ class BurnedCellInfo: # Using an Extension Type instead of a struct because it's
     from_spotting: cy.bint # Whether spotting is what caused the cell to ignite.
 
 
+@cy.ccall
 def new_BurnedCellInfo( # Fast constructor function
         cell_index: coord_yx,
         toa: cy.float, # Time Of Arrival
@@ -2417,6 +2461,64 @@ def new_BurnedCellInfo( # Fast constructor function
     return ret
 
 
+@cy.ccall
+@cy.cdivision(True)
+@cy.wraparound(False)
+@cy.boundscheck(False)
+def runge_kutta_pass2(
+        fb_opts: FireBehaviorSettings,
+        spatial_resolution: vec_xy,
+        start_time: cy.float,
+        dt: cy.float,
+        tca: TrackedCellsArrays,
+        phi: cy.float[:, :],
+        phs: cy.float[:, :]
+        ) -> list[BurnedCellInfo]:
+    """
+    2nd Runge-Kutta loop, which:
+    1. Updates the phi matrix
+    2. Stores the old phi value
+    3. Identifies cells that have just burned and returns them in a list.
+
+    Reads from `tca` and `phs`, and mutates `phi`.
+    """
+    (dx, dy) = spatial_resolution
+    n_tracked_cells: pyidx = tca.n_tracked_cells
+    ell: cy.pointer[EllipticalInfo] = tca.ell_info
+    pass1outputs: cy.pointer[Pass1CellOutput] = tca.pass1outputs
+    spread_burned_cells: list[BurnedCellInfo] = []
+    i: pyidx
+    for i in range(n_tracked_cells):
+        ell_i: EllipticalInfo = ell[i]
+        cell_index: coord_yx = ell_i.cell_index # FIXME
+        y: pyidx = cell_index[0]
+        x: pyidx = cell_index[1]
+        dphi: vec_xy = calc_phi_gradient_approx(phs, dx, dy, x, y)
+        dphi_dx: cy.float = dphi[0]
+        dphi_dy: cy.float = dphi[1]
+        dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
+        dphi_norm2: cy.float = (dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
+        dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
+        dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME
+        dphi_dt_1i: cy.float = (dphi_dt * dphi_dt_correction)
+        dphi_dt_0i: cy.float = pass1outputs[i].dphi_dt_0
+        phi_old: cy.float = phi[y, x] # NOTE could be inferred from phi_star.
+        phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
+        phi[y, x] = phi_new
+        i_just_burned: cy.bint = (phi_old * phi_new) < 0 # Phi can only ever decrease, therefore if these are of opposite signs, the cell has just burned.
+        if i_just_burned:
+            spread_burned_cells.append(new_BurnedCellInfo(
+                cell_index, 
+                toa = start_time + dt * phi_old / (phi_old - phi_new),
+                dphi = pass1outputs[i].dphi, # FIXME to be consistent with the toa, we might want to average this with the dphi from the 2nd pass.
+                from_spotting=False))
+    return spread_burned_cells
+
+
+@cy.ccall
+@cy.cdivision(True)
+@cy.wraparound(False)
+@cy.boundscheck(False)
 def process_spread_burned_cells(
         stc: SpreadInputs,
         fb_opts: FireBehaviorSettings,
@@ -2474,7 +2576,7 @@ def process_spread_burned_cells(
 #         sim_state: dict,
 #         stc: SpreadInputs,
 #         fb_opts: FireBehaviorSettings,
-#         max_timestep: cy.float
+#         max_timestep: cy.float,
 #     ) -> dict:
 #     output_matrices: dict = sim_state["output_matrices"]
 #     spot_ignitions: object = sim_state["spot_ignitions"]
@@ -2491,11 +2593,11 @@ def process_spread_burned_cells(
 #     # Insert missing tracked cells.
 #     tracked_cells: nbt.NarrowBandTracker = sim_state["tracked_cells"]
 #     tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
-#     tca_new: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
+#     tca: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
 #     start_time: cy.float = sim_state["simulation_time"]
 #     t0: pyidx = int(start_time // band_duration)
 #     t_load: pyidx = t0
-#     sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, n_tracked_cells, tca_old, tca_new)
+#     sync_tracked_cells_arrays(stc, fb_opts, t_load, tracked_cells, n_tracked_cells, tca_old, tca)
     
 #     needs_recompute: cy.bint = False
 #     # Refresh inputs if needed. FIXME "last_load_time" for each inputs.
@@ -2505,65 +2607,13 @@ def process_spread_burned_cells(
     
 #     # Re-compute elliptical dimensions if needed. FIXME
     
-#     # 1st Runge-Kutta loop over elliptical dimensions, which:
-#     #   1. helps resolve dt from the CFL condition
-#     #   2. Saves a Pass1CellOutput struct for each cell
-#     # FIXME factor out to function.
-#     ell: cy.pointer[EllipticalInfo] = tca_new.ell_info # FIXME
-#     pass1outputs: cy.pointer[Pass1CellOutput] = tca_new.pass1outputs
-#     dt: cy.float = fb_opts.max_timestep
-#     for i in range(n_tracked_cells):
-#         ell_i: EllipticalInfo = ell[i]
-#         cell_index: coord_yx = ell_i.cell_index # FIXME
-#         y: pyidx = cell_index[0]
-#         x: pyidx = cell_index[1]
-#         dphi: vec_xy = calc_phi_gradient_approx(phi, dx, dy, x, y)
-#         dphi_dx: cy.float = dphi[0]
-#         dphi_dy: cy.float = dphi[1]
-#         dphi_flim: vec_xy = calc_phi_gradient(phi, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
-#         dphi_norm2: cy.float =(dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
-#         dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
-#         dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME implement
-#         pass1outputs[i] = Pass1CellOutput( # INTRO
-#             dphi = dphi,
-#             dphi_dt_0 = (dphi_dt * dphi_dt_correction)
-#             )
-#         dt = dt # FIXME update dt, using some notion of min_ux
+#     dt = runge_kutta_pass1(fb_opts, stc.spatial_resolution, max_timestep, phi, tca)
 
 #     # Now that dt is known, update phi_star_matrix.
-#     update_phi_star(n_tracked_cells, tca_new, dt, phi, phs)
+#     update_phi_star(n_tracked_cells, tca, dt, phi, phs)
 #     stop_time: cy.float = start_time + dt
     
-
-#     # 2nd Runge-Kutta loop, which:
-#     #   1. Updates the phi matrix
-#     #   2. Stores the old phi value (I guess)
-#     # FIXME factor out to function.
-#     spread_burned_cells: list[BurnedCellInfo] = []
-#     for i in range(n_tracked_cells):
-#         ell_i: EllipticalInfo = ell[i]
-#         cell_index: coord_yx = ell_i.cell_index # FIXME
-#         y: pyidx = cell_index[0]
-#         x: pyidx = cell_index[1]
-#         dphi: vec_xy = calc_phi_gradient_approx(phs, dx, dy, x, y)
-#         dphi_dx: cy.float = dphi[0]
-#         dphi_dy: cy.float = dphi[1]
-#         dphi_flim: vec_xy = calc_phi_gradient(phs, dphi_dx, dphi_dy, dx, dy, x, y) # Flux-limited 2D gradient.
-#         dphi_norm2: cy.float =(dphi_dx * dphi_dx) + (dphi_dy * dphi_dy)
-#         dphi_dt_correction: cy.float = dot_2d(dphi, dphi_flim) / dphi_norm2
-#         dphi_dt: cy.float = dphi_dt_from_elliptical(ell_i, dphi) # FIXME
-#         dphi_dt_1i: cy.float = (dphi_dt * dphi_dt_correction)
-#         dphi_dt_0i: cy.float = dphi_dt_0[i] # NOTE we could also infer it from phi_star, phi_old and dt.
-#         phi_old: cy.float = phi[y, x] # NOTE could be inferred from phi_star.
-#         phi_new: cy.float = phi_old + 0.5 * dt * (dphi_dt_0i + dphi_dt_1i)
-#         phi[y, x] = phi_new
-#         i_just_burned: cy.bint = (phi_old * phi_new) < 0
-#         if i_just_burned:
-#             spread_burned_cells.append(new_BurnedCellInfo(
-#                 cell_index, 
-#                 toa = start_time + dt * phi_old / (phi_old - phi_new),
-#                 dphi = pass1outputs[i].dphi, # FIXME to be consistent with the toa, we might want to average this with the dphi from the 2nd pass.
-#                 from_spotting=False))
+#     spread_burned_cells: list[BurnedCellInfo] = runge_kutta_pass2(fb_opts, stc.spatial_resolution, start_time, dt, tca, phi, phs)
     
 #     # Side-effects of the burned cells (outputs etc.).
 #     process_spread_burned_cells(stc, fb_opts, output_matrices, spot_ignitions, random_generator, spread_burned_cells)
@@ -2587,7 +2637,7 @@ def process_spread_burned_cells(
 #         "tracked_cells"   : tracked_cells_new,
 #         # Purposefully swapping the tracked_cells_arrays
 #         "_tracked_cells_arrays": tca_old,
-#         "_tracked_cells_arrays_old": tca_new,
+#         "_tracked_cells_arrays_old": tca,
 #         "spot_ignitions"  : spot_ignitions,
 #         "random_generator": random_generator,
 #     }
