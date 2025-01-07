@@ -54,6 +54,7 @@ space_time_cubes = {
     "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, arr3d(0.90)),  # kg moisture/kg ovendry weight
     "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, arr3d(0.60)),  # kg moisture/kg ovendry weight
     "foliar_moisture"              : SpaceTimeCube(cube_shape, arr3d(0.70)),  # kg moisture/kg ovendry weight
+    "temperature"                  : SpaceTimeCube(cube_shape, 30.0),  # degrees Celsius
     "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, arr2d(1.0)),   # float >= 0.0 (Optional: defaults to 1.0)
     "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, arr3d(1.0)),   # float >= 0.0 (Optional: defaults to 1.0)
 }
@@ -90,9 +91,22 @@ output_matrices["phi"][50,50] = -1.0
 # Spread fire from the start time for the max duration
 #============================================================================================
 
+spot_config = {
+    "random_seed"                 : 1234567890,
+    "firebrands_per_unit_heat"    : 1e-6,       # firebrands/kJ
+    "downwind_distance_mean"      : 10.0,       # meters
+    "fireline_intensity_exponent" : 0.3,        # downwind_distance_mean multiplier [I^fireline_intensity_exponent]
+    "wind_speed_exponent"         : 0.55,       # downwind_distance_mean multiplier [U^wind_speed_exponent]
+    "downwind_variance_mean_ratio": 425.0,      # meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
+    "crosswind_distance_stdev"    : 100.0,      # meters
+    "decay_distance"              : 200.0,      # meters
+}
+
 runtime_start       = time.perf_counter()
 fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
-                                                     start_time, max_duration)
+                                                     start_time, max_duration,
+                                                     spot_config=spot_config
+                                                     )
 runtime_stop        = time.perf_counter()
 
 stop_time       = fire_spread_results["stop_time"]       # minutes
