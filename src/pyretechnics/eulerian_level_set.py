@@ -1943,6 +1943,33 @@ Pass1CellOutput = cy.struct( # INTRO some data saved during the 1st Runge-Kutta 
 
 p_CellInputs = cy.declare(pyidx, 17) # The number of input columns.
 
+@cy.ccall
+def inputs_name_list() -> list[str]:
+    return [
+        'slope',
+        'aspect',
+        
+        'fuel_model',
+        
+        'canopy_cover',
+        'canopy_height',
+        'canopy_base_height',
+        'canopy_bulk_density',
+        
+        'wind_speed_10m',
+        'upwind_direction',
+
+        'fuel_moisture_dead_1hr',
+        'fuel_moisture_dead_10hr',
+        'fuel_moisture_dead_100hr',
+        'fuel_moisture_live_herbaceous',
+        'fuel_moisture_live_woody',
+        'foliar_moisture',
+
+        'fuel_spread_adjustment',
+        'weather_spread_adjustment',
+    ]
+
 @cy.cclass
 class TrackedCellsArrays:
     """
@@ -1952,8 +1979,11 @@ class TrackedCellsArrays:
     n_tracked_cells: pyidx
 
 
-    # FIXME timestamps that say when the data was last updated for each data column.
-    
+    # These timestamps say when the data was last updated for each data column.
+    time_refreshed: cy.float[17] # This one is an exact instant in minutes.
+    t_refreshed: pyidx[17] # This one is an rounded index into the inputs datacubes.
+    # REVIEW The t_ vs time_ naming is embarassingly confusion-prone, but I don't know how to help that - this confusion is already all over the place in the codebase.
+
     # These arrays provide an efficient memory layout for the data involved in the Runge-Kutta passes.
     # These arrays should be read only up to the number of tracked cells;
     # they have a greater length in order to implement dynamic resizing.
@@ -1962,12 +1992,18 @@ class TrackedCellsArrays:
     ell_info: cy.pointer(EllipticalInfo) # Array of structs (needs to be iterated over very efficiently).
     pass1outputs: cy.pointer(Pass1CellOutput) # Per-cell data produced by the 1st Runge-Kutta pass.
 
-    def __cinit__(self, _arrays_length: pyidx = 256):
+    def __cinit__(self, 
+            time_refreshed_init: cy.float, 
+            t_refreshed_init: pyidx, 
+            _arrays_length: pyidx = 256):
         self._arrays_length = _arrays_length
         self.n_tracked_cells = 0
         self.float_inputs = np.zeros((self._arrays_length, p_CellInputs), dtype=np.float32)
         self.ell_info = cy.cast(cy.pointer(EllipticalInfo), PyMem_Malloc(self._arrays_length * cy.sizeof(EllipticalInfo)))
         self.pass1outputs = cy.cast(cy.pointer(Pass1CellOutput), PyMem_Malloc(self._arrays_length * cy.sizeof(Pass1CellOutput)))
+        for k in range(17):
+            self.time_refreshed[k] = time_refreshed_init
+            self.t_refreshed[k] = t_refreshed_init
         if not self.ell_info:
             raise MemoryError()
 
@@ -2019,6 +2055,7 @@ def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
 @cy.exceptval(check=False)
 @cy.boundscheck(False)
 @cy.wraparound(False)
+@cy.initializedcheck(False)
 def copy_tracked_cell_data(i_old: pyidx, tca_old: TrackedCellsArrays, i_new: pyidx, tca_new: TrackedCellsArrays) -> cy.void:
     # OPTIM maybe we want to use a native array directly instead of a MemoryView.
     # NOTE unrolling this loop made the code 2x faster.
@@ -2058,12 +2095,15 @@ class FireBehaviorSettings:
     
     spot_config: object
 
+    refresh_frequency: cy.float[17] # (min^-1) the frequency at which each input column needs to be refreshed.
+
 
     def __init__(self, 
                 max_cells_per_timestep: cy.float, 
                 use_wind_limit: bool|None = True,
                 surface_lw_ratio_model: str|None = "rothermel", 
                 crown_max_lw_ratio: float|None = None,
+                inputs_refresh_freqs: dict = {},
                 buffer_width: int|None = 3, 
                 spot_config: dict|None = None) -> dict:
         self.buffer_width = (buffer_width if buffer_width is not None else 3)
@@ -2075,47 +2115,149 @@ class FireBehaviorSettings:
         
         self.spot_config = spot_config
 
+        inputs_names: list = inputs_name_list()
+        for k in range(17):
+            self.refresh_frequency[k] = inputs_refresh_freqs[inputs_names[k]]
+
+
 
 @cy.ccall
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def load_float_inputs_for_cell(
         stc: SpreadInputs,
-        tyx: coord_tyx,
+        cell_index: coord_yx,
         # Where to write the data to:
         tca: TrackedCellsArrays,
         i: pyidx) -> cy.void: # FIXME maybe return the CellInputs struct instead?
     """
     Reads variables from input SpaceTimeCubes and saves them by mutating `tca.float_inputs`.
     """
+    tr: pyidx[17] = tca.t_refreshed
+    y, x = cell_index
     float_inputs: cy.float[:,:] = tca.float_inputs
-    float_inputs[i,0] = lookup_space_time_cube_float32(stc.slope, tyx)               # rise/run
-    float_inputs[i,1] = lookup_space_time_cube_float32(stc.aspect, tyx)              # degrees clockwise from North
+    float_inputs[i,0] = lookup_space_time_cube_float32(stc.slope, (tr[0], y, x))               # rise/run
+    float_inputs[i,1] = lookup_space_time_cube_float32(stc.aspect, (tr[1], y, x))              # degrees clockwise from North
     
-    float_inputs[i,2] = lookup_space_time_cube_float32(stc.fuel_model, tyx)          # integer index in fm.fuel_model_table
+    float_inputs[i,2] = lookup_space_time_cube_float32(stc.fuel_model, (tr[2], y, x))          # integer index in fm.fuel_model_table
     
-    float_inputs[i,3] = lookup_space_time_cube_float32(stc.canopy_cover, tyx)        # 0-1
-    float_inputs[i,4] = lookup_space_time_cube_float32(stc.canopy_height, tyx)       # m
-    float_inputs[i,5] = lookup_space_time_cube_float32(stc.canopy_base_height, tyx)  # m
-    float_inputs[i,6] = lookup_space_time_cube_float32(stc.canopy_bulk_density, tyx) # kg/m^3
+    float_inputs[i,3] = lookup_space_time_cube_float32(stc.canopy_cover, (tr[3], y, x))        # 0-1
+    float_inputs[i,4] = lookup_space_time_cube_float32(stc.canopy_height, (tr[4], y, x))       # m
+    float_inputs[i,5] = lookup_space_time_cube_float32(stc.canopy_base_height, (tr[5], y, x))  # m
+    float_inputs[i,6] = lookup_space_time_cube_float32(stc.canopy_bulk_density, (tr[6], y, x)) # kg/m^3
     
-    float_inputs[i,7] = lookup_space_time_cube_float32(stc.wind_speed_10m, tyx)                # km/hr
-    float_inputs[i,8] = lookup_space_time_cube_float32(stc.upwind_direction, tyx)              # degrees clockwise from North
+    float_inputs[i,7] = lookup_space_time_cube_float32(stc.wind_speed_10m, (tr[7], y, x))                # km/hr
+    float_inputs[i,8] = lookup_space_time_cube_float32(stc.upwind_direction, (tr[8], y, x))              # degrees clockwise from North
     
-    float_inputs[i,9] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_1hr, tyx)        # kg moisture/kg ovendry weight
-    float_inputs[i,10] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_10hr, tyx)       # kg moisture/kg ovendry weight
-    float_inputs[i,11] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_100hr, tyx)      # kg moisture/kg ovendry weight
-    float_inputs[i,12] = lookup_space_time_cube_float32(stc.fuel_moisture_live_herbaceous, tyx) # kg moisture/kg ovendry weight
-    float_inputs[i,13] = lookup_space_time_cube_float32(stc.fuel_moisture_live_woody, tyx)      # kg moisture/kg ovendry weight
-    float_inputs[i,14] = lookup_space_time_cube_float32(stc.foliar_moisture, tyx)               # kg moisture/kg ovendry weight
+    float_inputs[i,9] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_1hr, (tr[9], y, x))        # kg moisture/kg ovendry weight
+    float_inputs[i,10] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_10hr, (tr[10], y, x))       # kg moisture/kg ovendry weight
+    float_inputs[i,11] = lookup_space_time_cube_float32(stc.fuel_moisture_dead_100hr, (tr[11], y, x))      # kg moisture/kg ovendry weight
+    float_inputs[i,12] = lookup_space_time_cube_float32(stc.fuel_moisture_live_herbaceous, (tr[12], y, x)) # kg moisture/kg ovendry weight
+    float_inputs[i,13] = lookup_space_time_cube_float32(stc.fuel_moisture_live_woody, (tr[13], y, x))      # kg moisture/kg ovendry weight
+    float_inputs[i,14] = lookup_space_time_cube_float32(stc.foliar_moisture, (tr[14], y, x))               # kg moisture/kg ovendry weight
 
     # Spread Rate Adjustments (Optional)
-    float_inputs[i,15] = (lookup_space_time_cube_float32(stc.fuel_spread_adjustment, tyx) 
+    float_inputs[i,15] = (lookup_space_time_cube_float32(stc.fuel_spread_adjustment, (tr[15], y, x)) 
                                  if stc.fuel_spread_adjustment is not None
                                  else 1.0)                                         # float >= 0.0
-    float_inputs[i,16] = (lookup_space_time_cube_float32(stc.weather_spread_adjustment, tyx) 
+    float_inputs[i,16] = (lookup_space_time_cube_float32(stc.weather_spread_adjustment, (tr[16], y, x)) 
                                  if stc.weather_spread_adjustment is not None
                                  else 1.0)       
+
+
+@cy.ccall
+def list_float_inputs_cubes(stc: SpreadInputs) -> list[ISpaceTimeCube]:
+    return [
+        stc.slope,
+        stc.aspect,
+
+        stc.fuel_model,
+
+        stc.canopy_cover,
+        stc.canopy_height,
+        stc.canopy_base_height,
+        stc.canopy_bulk_density,
+
+        stc.wind_speed_10m,
+        stc.upwind_direction,
+
+        stc.fuel_moisture_dead_1hr,
+        stc.fuel_moisture_dead_10hr,
+        stc.fuel_moisture_dead_100hr,
+        stc.fuel_moisture_live_herbaceous,
+        stc.fuel_moisture_live_woody,
+        stc.foliar_moisture,
+
+        stc.fuel_spread_adjustment,
+        stc.weather_spread_adjustment,
+    ]
+
+@cy.ccall
+def default_refresh_frequency(band_duration: cy.float) -> dict:
+    return {
+        # Non-weather inputs default to a refresh frequency of 0.0 (never refreshed).
+        'slope': 0.0,
+        'aspect': 0.0,
+
+        'fuel_model': 0.0,
+
+        'canopy_cover': 0.0,
+        'canopy_height': 0.0,
+        'canopy_base_height': 0.0,
+        'canopy_bulk_density': 0.0,
+        
+        # Weather inputs default to have the same refresh frequency as the base resolution of inputs.
+        'wind_speed_10m': 1.0 / band_duration,
+        'upwind_direction': 1.0 / band_duration,
+
+        'fuel_moisture_dead_1hr': 1.0 / band_duration,
+        'fuel_moisture_dead_10hr': 1.0 / band_duration,
+        'fuel_moisture_dead_100hr': 1.0 / band_duration,
+        'fuel_moisture_live_herbaceous': 1.0 / band_duration,
+        'fuel_moisture_live_woody': 1.0 / band_duration,
+        'foliar_moisture': 1.0 / band_duration,
+
+        'fuel_spread_adjustment': 1.0 / band_duration,
+        'weather_spread_adjustment': 1.0 / band_duration,
+    }
+
+@cy.ccall
+@cy.cdivision(True)
+def refresh_inputs_if_needed(
+        stc: SpreadInputs, 
+        fb_opts: FireBehaviorSettings,
+        tca: TrackedCellsArrays, 
+        start_time: cy.float,
+        ) -> cy.bint:
+    """
+    Refreshes the data input columns and refresh timestamps if needed.
+
+    Mutates `tca` and returns a boolean indicating whether a recompute is needed.
+    """
+    needs_recompute: cy.bint = False
+    stc_list: list[ISpaceTimeCube]|None = None
+    k: pyidx
+    for k in range(p_CellInputs):
+        needs_refresh: cy.bint = (fb_opts.refresh_frequency[k] * (start_time - tca.time_refreshed[k]) > 1.0)
+        if needs_refresh:
+            needs_recompute = True
+            stc_list = list_float_inputs_cubes(stc) if (stc_list is None) else stc_list
+            space_time_cube: ISpaceTimeCube = stc_list[k]
+            refresh_intvl: cy.float = 1.0 / fb_opts.refresh_frequency[k]
+            time_refreshed_new: cy.float = (start_time // refresh_intvl) * refresh_intvl
+            t_refreshed_new: pyidx = int(floor(time_refreshed_new / stc.band_duration))
+            float_inputs: cy.float[:,:] = tca.float_inputs
+            y: pyidx
+            x: pyidx
+            i: pyidx
+            for i in range(tca.n_tracked_cells):
+                cell_index: coord_yx = tca.ell_info[i].cell_index
+                y, x = cell_index
+                float_inputs[i][k] = lookup_space_time_cube_float32(space_time_cube, (t_refreshed_new, y, x))
+            tca.time_refreshed[k] = time_refreshed_new
+            tca.t_refreshed[k] = t_refreshed_new
+    return needs_recompute
+
 
 
 @cy.ccall
@@ -2268,13 +2410,12 @@ def crown_critical_spread_rate( # FIXME maybe move to spot_fire module. # FIXME 
 @cy.boundscheck(False)
 def resolve_cell_elliptical_info(
         fb_opts: FireBehaviorSettings,
-        tyx: coord_tyx,
+        cell_index: coord_yx,
         stc: SpreadInputs, # NOTE only used to call stc.get_fm_struct(fm_number). We're not really reading the rasters here.
         float_inputs: cy.float[:,:],
         i: pyidx, 
         ) -> EllipticalInfo:
     
-    cell_index: coord_yx = (tyx[1], tyx[2])
     ci: CellInputs = load_saved_CellInputs(float_inputs, i)
     elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
 
@@ -2309,6 +2450,20 @@ def resolve_cell_elliptical_info(
         crown_wavelet = crown_pw
     )
     return ell_i
+
+@cy.ccall
+def refresh_ell_info_if_needed(
+        stc: SpreadInputs,
+        fb_opts: FireBehaviorSettings,
+        tca: TrackedCellsArrays,
+        start_time: cy.float,
+        ) -> cy.void:
+    needs_recompute: cy.bint = refresh_inputs_if_needed(stc, fb_opts, tca, start_time)
+    if needs_recompute:
+        i: pyidx
+        for i in range(tca.n_tracked_cells):
+            cell_index: coord_yx = tca.ell_info[i].cell_index
+            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, stc, tca.float_inputs, i)
 
 
 @cy.ccall
@@ -2351,13 +2506,13 @@ def load_tracked_cell_data(
         # How to resolve inputs:
         stc: SpreadInputs,
         fb_opts: FireBehaviorSettings,
-        tyx: coord_tyx,
+        cell_index: coord_yx,
         # Where to write the data to:
         tca: TrackedCellsArrays,
         i: pyidx
         ) -> cy.void:
-    load_float_inputs_for_cell(stc, tyx, tca, i)
-    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, tyx, stc, tca.float_inputs, i)
+    load_float_inputs_for_cell(stc, cell_index, tca, i)
+    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, stc, tca.float_inputs, i)
     tca.ell_info[i] = ell_i
 
 
@@ -2368,7 +2523,6 @@ def load_tracked_cell_data(
 def sync_tracked_cells_arrays(
         stc: SpreadInputs,
         fb_opts: FireBehaviorSettings,
-        t: pyidx,
         tracked_cells: nbt.NarrowBandTracker,
         tca_old: TrackedCellsArrays,
         tca_new: TrackedCellsArrays
@@ -2378,6 +2532,8 @@ def sync_tracked_cells_arrays(
     """
     n_tracked_cells: pyidx = tracked_cells.n_tracked_cells
     tca_new.reset_size(n_tracked_cells)
+    tca_new.time_refreshed = tca_old.time_refreshed
+    tca_new.t_refreshed = tca_old.t_refreshed
     cell_new: coord_yx
     i_old: pyidx = 0
     i_new: pyidx = 0
@@ -2410,8 +2566,7 @@ def sync_tracked_cells_arrays(
                             if not(exhausted_old) and (compare_cell_indexes(cell_old, cell_new) == 0): # cell_new was already tracked: copy the data.
                                 copy_tracked_cell_data(i_old, tca_old, i_new, tca_new)
                             else: # cell_new was not in tca_old
-                                tyx: coord_tyx = (t, cell_new[0], cell_new[1])
-                                load_tracked_cell_data(stc, fb_opts, tyx, tca_new, i_new)
+                                load_tracked_cell_data(stc, fb_opts, cell_new, tca_new, i_new)
                             i_new += 1
 
 
@@ -2835,8 +2990,8 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
                                start_time: float, max_duration: float|None = None,
                                max_cells_per_timestep: float|None = 0.4, buffer_width: int|None = 3,
                                use_wind_limit: bool|None = True, surface_lw_ratio_model: str|None = "rothermel",
-                               crown_max_lw_ratio: float|None = None, spot_ignitions: dict|None = {},
-                               spot_config: dict|None = None):
+                               crown_max_lw_ratio: float|None = None, inputs_refresh_freqs: dict|None = {},
+                               spot_ignitions: dict|None = {}, spot_config: dict|None = None):
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -2878,6 +3033,9 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     - use_wind_limit               :: boolean (Optional)
     - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
+    - inputs_refresh_freqs         :: dictionary from input name to refresh frequency in 1/min (Optional).
+                                      0 means never refresh. Weather inputs default to 1/band_duration,
+                                      whereas non-weather inputs default to 0.
     - spot_ignitions               :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config                  :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: seed for a numpy.random.Generator object
@@ -2985,13 +3143,14 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
         if cube.shape != (bands, rows, cols):
             raise ValueError("The space_time_cubes must all share the same spatial resolution.")
     stc: SpreadInputs = make_SpreadInputs(cube_resolution, space_time_cubes)
-    fb_opts: FireBehaviorSettings = FireBehaviorSettings( # FIXME pass to functions
+    fb_opts: FireBehaviorSettings = FireBehaviorSettings(
         max_cells_per_timestep=max_cells_per_timestep,
         use_wind_limit = use_wind_limit,
         surface_lw_ratio_model = surface_lw_ratio_model,
         crown_max_lw_ratio = crown_max_lw_ratio,
         buffer_width = buffer_width,
         spot_config = spot_config,
+        inputs_refresh_freqs = {**default_refresh_frequency(band_duration), **inputs_refresh_freqs},
         )
 
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
@@ -3031,14 +3190,15 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     # Ensure that spot_ignitions is initialized as a SortedDict
     spot_igns = sortc.SortedDict(spot_ignitions)
 
+    start_t: pyidx = start_time // band_duration
     sim_state = {
         "simulation_time" : start_time,
         "output_matrices" : output_matrices,
         "frontier_cells"  : frontier_cells,
         "tracked_cells"   : tracked_cells,
         # Purposefully swapping the tracked_cells_arrays
-        "_tracked_cells_arrays": TrackedCellsArrays(), # It's OK not to be in sync - spread_one_timestep will solve this.
-        "_tracked_cells_arrays_old": TrackedCellsArrays(),
+        "_tracked_cells_arrays": TrackedCellsArrays(start_time, start_t), # It's OK not to be in sync - spread_one_timestep will solve this.
+        "_tracked_cells_arrays_old": TrackedCellsArrays(start_time, start_t),
         "spot_ignitions"  : spot_igns,
         "random_generator": random_generator,
     }
