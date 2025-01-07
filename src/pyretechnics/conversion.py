@@ -328,8 +328,9 @@ def polar_to_cartesian(r: cy.float, theta: cy.float) -> vec_xy:
     return (x, y)
 
 
+@cy.exceptval(check=False)
 @cy.ccall
-def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
+def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy: # TODO it's numerically correct but conceptually misleading to type this as vec_xy since it's not cartesian coordinates.
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
     r          : cy.float = sqrt(x * x + y * y)
     azimuth_rad: cy.float = atan2(x, y)
