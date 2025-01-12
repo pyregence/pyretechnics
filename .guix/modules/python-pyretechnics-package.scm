@@ -52,6 +52,7 @@
                    emacs-minimal
                    emacs-htmlize
                    python-hatchling
+                   python-cython-3
                    python-pytest
                    python-twine
                    python-snakeviz))
@@ -62,8 +63,7 @@
                        python-numpy
                        python-rasterio
                        python-matplotlib
-                       python-sortedcontainers
-                       python-cython-3))
+                       python-sortedcontainers))
    (synopsis "A Python library for simulating fire behavior in a variety of ways.")
    (description "A Python library for simulating fire behavior in a variety of ways.")
    (home-page "https://github.com/pyregence/pyretechnics/")
