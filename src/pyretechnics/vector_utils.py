@@ -19,6 +19,7 @@ import cython as cy
 
 @cy.ccall
 @cy.inline
+@cy.exceptval(check=False)
 def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1]
 
@@ -31,25 +32,25 @@ def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
 
 
 @cy.ccall
+@cy.inline
 def scale_2d(scalar: cy.float, vector: vec_xy) -> vec_xy:
     return (scalar * vector[0], scalar * vector[1])
 
 
 @cy.ccall
+@cy.inline
 def scale_3d(scalar: cy.float, vector: vec_xyz) -> vec_xyz:
     return (scalar * vector[0], scalar * vector[1], scalar * vector[2])
 
 
 @cy.ccall
 @cy.inline
-@cy.exceptval(check=False)
 def add_2d(vector1: vec_xy, vector2: vec_xy) -> vec_xy:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1])
 
 
 @cy.ccall
 @cy.inline
-@cy.exceptval(check=False)
 def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2])
 
@@ -82,6 +83,7 @@ def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
 
 @cy.ccall
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
     magnitude: cy.float = vector_magnitude_3d(vector)
     if magnitude == 0.0:
@@ -94,6 +96,7 @@ def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
 
 
 @cy.ccall
+@cy.inline
 def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     return (
         vector_2d[0],
@@ -103,6 +106,7 @@ def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
 
 
 @cy.ccall
+@cy.inline
 def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
     return (vector_3d[0], vector_3d[1])
 
@@ -117,6 +121,7 @@ def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
 
 
 @cy.ccall
+@cy.exceptval(check=False)
 def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     (dz_dx, dz_dy)               = elevation_gradient
     slope_normal_vector: vec_xyz = (-dz_dx, -dz_dy, 1.0)
@@ -124,6 +129,7 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
 
 
 @cy.ccall
+@cy.exceptval(check=False)
 def cross_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     (a, b, c) = vector1
     (d, e, f) = vector2

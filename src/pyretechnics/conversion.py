@@ -18,6 +18,7 @@ PI = cy.declare(cy.double, 3.14159265358979323846)
 @cy.ccall
 @cy.inline
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def rad_to_deg(radians: cy.float) -> cy.float:
     """Convert radians to degrees."""
     return radians * 180.0 / PI
@@ -25,18 +26,21 @@ def rad_to_deg(radians: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.inline
+@cy.exceptval(check=False)
 def deg_to_rad(degrees: cy.float) -> cy.float:
     """Convert degrees to radians."""
     return degrees * PI / 180.0
 
 
 @cy.ccall
+@cy.inline
 def deg_to_ratio(degrees: cy.float) -> cy.float:
     """Convert degrees to ratio."""
     return tan(deg_to_rad(degrees))
 
 
 @cy.ccall
+@cy.inline
 def ratio_to_deg(ratio: cy.float) -> cy.float:
     """Convert ratio to degrees."""
     return rad_to_deg(atan(ratio))
