@@ -196,7 +196,7 @@ def decr_y_segment(tracked_cells: NarrowBandTracker, y: cy.int, x_start: cy.int,
 
 @cy.ccall
 @cy.exceptval(check=False)
-def resolve_truncated_x_segment(tracked_cells: NarrowBandTracker, x: cy.int, buffer_width: cy.int) -> cy.tuple[cy.int, cy.int]:
+def resolve_truncated_x_segment(tracked_cells: NarrowBandTracker, x: cy.int, buffer_width: cy.int) -> tuple[cy.int, cy.int]:
     x_start: cy.int = max(0, x - buffer_width)
     x_end: cy.int = min(tracked_cells.x_high - 1, x + buffer_width)
     width_truncated: cy.int = x_end - x_start

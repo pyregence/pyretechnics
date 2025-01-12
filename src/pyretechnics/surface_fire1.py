@@ -644,7 +644,7 @@ from pyretechnics.vector_utils import vector_magnitude_3d
 
 @cy.ccall
 @cy.profile(False)
-def maybe_limit_wind_speed(use_wind_limit: cy.bint, max_wind_speed: cy.float, sfmin: FireBehaviorMin, phi_E_magnitude: cy.float) -> cy.tuple[cy.float, cy.float]:
+def maybe_limit_wind_speed(use_wind_limit: cy.bint, max_wind_speed: cy.float, sfmin: FireBehaviorMin, phi_E_magnitude: cy.float) -> tuple[cy.float, cy.float]:
     """
     Given these inputs:
     - use_wind_limit  :: boolean
