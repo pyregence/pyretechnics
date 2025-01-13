@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
+# cython: profile=True
 import cython as cy
 
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.

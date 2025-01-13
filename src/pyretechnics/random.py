@@ -1,3 +1,4 @@
+# cython: profile=True
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import log

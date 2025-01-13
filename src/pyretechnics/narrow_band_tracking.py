@@ -1,3 +1,4 @@
+# cython: profile=True
 """
 Custom data structures for keeping track of cells in the narrow band.
 

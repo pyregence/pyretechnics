@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::space-time-cube-imports][space-time-cube-imports]]
+# cython: profile=True
 from functools import reduce
 import numpy as np
 # space-time-cube-imports ends here

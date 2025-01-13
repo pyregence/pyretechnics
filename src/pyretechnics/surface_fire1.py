@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::surface-fire-imports][surface-fire-imports]]
+# cython: profile=True
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp, log, sqrt, pow

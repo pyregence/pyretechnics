@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
+# cython: profile=True
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt

@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::fire-spread-functions][fire-spread-functions]]
+# cython: profile=True
 # TODO: Compare this with numpy.random (is there a generator object that I can use here?)
 import random
 import numpy as np

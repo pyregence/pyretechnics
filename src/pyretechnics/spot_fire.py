@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
+# cython: profile=True
 import cython
 if cython.compiled:
     import cython.cimports.pyretechnics.conversion as conv

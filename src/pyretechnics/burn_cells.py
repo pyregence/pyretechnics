@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
+# cython: profile=True
 import numpy as np
 import pyretechnics.conversion as conv
 import pyretechnics.crown_fire as cf

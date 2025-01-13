@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::load-raster][load-raster]]
+# cython: profile=True
 import rasterio
 
 
