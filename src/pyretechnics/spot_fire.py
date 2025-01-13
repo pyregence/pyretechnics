@@ -7,16 +7,14 @@ if cython.compiled:
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.surface_fire1 as sf
-    from cython.cimports.pyretechnics.math import exp, sqrt, log, sin, cos, pow
-    import cython.cimports.pyretechnics.math as math
+    from cython.cimports.pyretechnics.math import exp, sqrt, log, sin, cos, pow, round
 else:
     import pyretechnics.conversion as conv
     import pyretechnics.py_types as py_types
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.surface_fire1 as sf
-    from math import exp, sqrt, log, sin, cos, pow
-    import math
+    from math import exp, sqrt, log, sin, cos, pow, round
 import numpy as np
 import cython as cy
 
@@ -109,7 +107,7 @@ def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.float:
     """
     Converts a delta expressed as a signed distance to one expressed as a number of grid cells.
     """
-    return math.round(distance / cell_size)
+    return round(distance / cell_size)
 # convert-deltas ends here
 # [[file:../../org/pyretechnics.org::resolve-spotting-lognormal-elmfire][resolve-spotting-lognormal-elmfire]]
 
