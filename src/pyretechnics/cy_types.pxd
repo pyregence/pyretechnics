@@ -1,6 +1,6 @@
 # [[file:../../org/pyretechnics.org::cy-types-pxd][cy-types-pxd]]
 #==================================================
-# Type aliases
+# Compile-time-defined type aliases
 #==================================================
 
 ctypedef Py_ssize_t pyidx
@@ -8,21 +8,20 @@ ctypedef (float, float) vec_xy
 ctypedef (float, float, float) vec_xyz
 ctypedef (pyidx, pyidx) coord_yx
 ctypedef (pyidx, pyidx, pyidx) coord_tyx
-
-ctypedef (float, float, float, float, float, float) fclaarr
 ctypedef (float, float) fcatarr
+ctypedef (float, float, float, float, float, float) fclaarr
 
 cdef struct FuelModel:
     int number
     float delta
-    fclaarr M_x   
-    fclaarr M_f   
-    fclaarr w_o   
-    fclaarr sigma 
-    fclaarr h     
-    fclaarr rho_p 
-    fclaarr S_T   
-    fclaarr S_e   
+    fclaarr M_x
+    fclaarr M_f
+    fclaarr w_o
+    fclaarr sigma
+    fclaarr h
+    fclaarr rho_p
+    fclaarr S_T
+    fclaarr S_e
     bint dynamic
     bint burnable
     fclaarr exp_A_sigma
@@ -30,7 +29,6 @@ cdef struct FuelModel:
     fclaarr f_ij
     fcatarr f_i
     fclaarr g_ij
-
 
 cdef struct FireBehaviorMax:
     int max_fire_type
