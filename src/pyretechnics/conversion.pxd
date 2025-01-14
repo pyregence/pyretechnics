@@ -7,7 +7,7 @@ from pyretechnics.cy_types cimport vec_xy
 #==================================================
 
 cdef float rad_to_deg(float radians)
-cdef float deg_to_rad(float degrees)
+cdef float deg_to_rad(float degrees) noexcept
 cdef float deg_to_ratio(float degrees)
 cdef float ratio_to_deg(float ratio)
 cdef float F_to_K(float degrees)
@@ -50,9 +50,9 @@ cdef float day_to_min(float days)
 cdef float min_to_day(float minutes)
 cdef vec_xy cartesian_to_polar(float x, float y)
 cdef vec_xy polar_to_cartesian(float r, float theta)
-cdef vec_xy cartesian_to_azimuthal(float x, float y)
-cdef vec_xy azimuthal_to_cartesian(float r, float azimuth)
-cdef float opposite_direction(float theta)
+cdef vec_xy cartesian_to_azimuthal(float x, float y) noexcept
+cdef vec_xy azimuthal_to_cartesian(float r, float azimuth) noexcept
+cdef float opposite_direction(float theta) noexcept
 cdef float wind_speed_10m_to_wind_speed_20ft(float wind_speed_10m)
 cdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft)
 # conversion-pxd ends here
