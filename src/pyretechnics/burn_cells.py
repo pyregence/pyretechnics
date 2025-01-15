@@ -1,11 +1,13 @@
 # [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
 # cython: profile=True
+import cython as cy
 import numpy as np
 import pyretechnics.conversion as conv
 import pyretechnics.crown_fire as cf
 import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
 import pyretechnics.vector_utils as vu
+from pyretechnics.py_types import vec_xy, vec_xyz
 
 
 # TODO: Create a version of this function that runs efficiently over a space_time_region
@@ -94,10 +96,10 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
         # Create a 3D unit vector pointing upslope on the slope-tangential plane
         #================================================================================================
 
-        upslope_direction = conv.opposite_direction(aspect)
-        slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
-        slope_vector_3d   = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        spread_direction  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else (0.0,1.0,0.0) # default: North
+        upslope_direction: cy.float = conv.opposite_direction(aspect)
+        slope_vector_2d  : vec_xy   = conv.azimuthal_to_cartesian(slope, upslope_direction)
+        slope_vector_3d  : vec_xyz  = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
+        spread_direction : vec_xyz  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else (0.0,1.0,0.0) # default: North
 
         #============================================================================================
         # Return zero surface fire behavior
@@ -106,7 +108,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
         return {
             "fire_type"         : "unburned",
             "spread_rate"       : 0.0,
-            "spread_direction"  : np.asarray(spread_direction),
+            "spread_direction"  : spread_direction,
             "fireline_intensity": 0.0,
             "flame_length"      : 0.0,
         }
@@ -191,7 +193,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
 
             # Simplify the crown fire behavior fields for future comparison/combination with the surface fire behavior values
             crown_fire_max_simple = cf.calc_crown_fire_behavior_in_direction(crown_fire_max,
-                                                                             crown_fire_max["max_spread_direction"])
+                                                                             crown_fire_max.max_spread_direction)
 
             #========================================================================================
             # Calculate combined fire behavior in the direction of maximum spread
@@ -299,10 +301,10 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
     # Project a 2D unit vector pointing toward the azimuth onto the slope-tangential plane
     #================================================================================================
 
-    upslope_direction = conv.opposite_direction(aspect)
-    slope_vector_2d   = conv.azimuthal_to_cartesian(slope, upslope_direction)
-    azimuth_vector_2d = conv.azimuthal_to_cartesian(1.0, azimuth)
-    spread_direction  = vu.as_unit_vector_3d(vu.to_slope_plane(azimuth_vector_2d, slope_vector_2d))
+    upslope_direction: cy.float = conv.opposite_direction(aspect)
+    slope_vector_2d  : vec_xy   = conv.azimuthal_to_cartesian(slope, upslope_direction)
+    azimuth_vector_2d: vec_xy   = conv.azimuthal_to_cartesian(1.0, azimuth)
+    spread_direction : vec_xyz  = vu.as_unit_vector_3d(vu.to_slope_plane(azimuth_vector_2d, slope_vector_2d))
 
     #================================================================================================
     # Check whether cell is burnable
@@ -320,7 +322,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
         return {
             "fire_type"         : "unburned",
             "spread_rate"       : 0.0,
-            "spread_direction"  : np.asarray(spread_direction),
+            "spread_direction"  : spread_direction,
             "fireline_intensity": 0.0,
             "flame_length"      : 0.0,
         }
