@@ -27,20 +27,20 @@ cdef float cruz_active_crown_fire_spread_rate(
     float wind_speed_10m,
     float canopy_bulk_density,
     float estimated_fine_fuel_moisture,
-    )
+    ) noexcept
 
-cdef float van_wagner_critical_spread_rate(float canopy_bulk_density)
+cdef float van_wagner_critical_spread_rate(float canopy_bulk_density) noexcept
 
 cdef float cruz_passive_crown_fire_spread_rate(
     float active_spread_rate,
     float critical_spread_rate,
-    )
+    ) noexcept
 
 cdef CrownSpreadInfo cruz_crown_fire_spread_info(
     float wind_speed_10m,
     float canopy_bulk_density,
     float estimated_fine_fuel_moisture,
-    )
+    ) noexcept
 
 cdef float calc_crown_fireline_intensity(
     float crown_spread_rate,
@@ -48,14 +48,14 @@ cdef float calc_crown_fireline_intensity(
     float canopy_height,
     float canopy_base_height,
     float heat_of_combustion,
-    )
+    ) noexcept
 
 cdef float crown_length_to_width_ratio(
     float wind_speed_10m,
     float max_length_to_width_ratio=?,
-    )
+    ) noexcept
 
-cdef float crown_fire_eccentricity(float length_to_width_ratio)
+cdef float crown_fire_eccentricity(float length_to_width_ratio) noexcept
 
 cdef FireBehaviorMax calc_crown_fire_behavior_max(
     float canopy_height,
