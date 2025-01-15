@@ -1,28 +1,27 @@
 # [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
-# cython: profile=True
+# cython: profile=False
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, exp, pow
     from cython.cimports.pyretechnics.cy_types import vec_xyz, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.conversion import km_hr_to_mph, opposite_direction
-    from cython.cimports.pyretechnics.vector_utils import vector_magnitude_3d, as_unit_vector_3d
+    from cython.cimports.pyretechnics.vector_utils import dot_3d, vector_magnitude_3d, as_unit_vector_3d
     from cython.cimports.pyretechnics.surface_fire1 import \
         ProjectedVectors, project_wind_and_slope_vectors_3d, calc_flame_length
 else:
     from math import sqrt, exp, pow
     from pyretechnics.py_types import vec_xyz, FireBehaviorMax, SpreadBehavior
     from pyretechnics.conversion import km_hr_to_mph, opposite_direction
-    from pyretechnics.vector_utils import vector_magnitude_3d, as_unit_vector_3d
+    from pyretechnics.vector_utils import dot_3d, vector_magnitude_3d, as_unit_vector_3d
     from pyretechnics.surface_fire1 import \
         ProjectedVectors, project_wind_and_slope_vectors_3d, calc_flame_length
 
 
 import cython as cy
-import numpy as np
 
 
 @cy.cfunc
-@cy.profile(False)
+@cy.exceptval(check=False)
 def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_moisture: cy.float) -> cy.float:
     """
     Returns the critical fireline intensity (kW/m) given:
@@ -40,7 +39,6 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
 # [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
 @cy.cfunc
 @cy.cdivision(True)
-@cy.exceptval(check=False)
 def van_wagner_crowning_spread_rate_threshold(
         surface_fire_max: FireBehaviorMax,
         canopy_base_height: cy.float,
@@ -57,6 +55,7 @@ def van_wagner_crowning_spread_rate_threshold(
     return crowning_spread_rate_threshold
 
 @cy.cfunc
+@cy.inline
 def van_wagner_crown_fire_initiation(
         surface_fireline_intensity: cy.float,
         canopy_cover: cy.float,
@@ -80,6 +79,7 @@ def van_wagner_crown_fire_initiation(
 # van-wagner-crown-fire-initiation ends here
 # [[file:../../org/pyretechnics.org::cruz-active-crown-fire-spread-rate][cruz-active-crown-fire-spread-rate]]
 @cy.cfunc
+@cy.inline
 @cy.exceptval(check=False)
 def cruz_active_crown_fire_spread_rate(wind_speed_10m: cy.float, canopy_bulk_density: cy.float, estimated_fine_fuel_moisture: cy.float) -> cy.float:
     """
@@ -95,8 +95,9 @@ def cruz_active_crown_fire_spread_rate(wind_speed_10m: cy.float, canopy_bulk_den
 # cruz-active-crown-fire-spread-rate ends here
 # [[file:../../org/pyretechnics.org::van-wagner-critical-spread-rate][van-wagner-critical-spread-rate]]
 @cy.cfunc
-@cy.cdivision(True)
 @cy.inline
+@cy.cdivision(True)
+@cy.exceptval(check=False)
 def van_wagner_critical_spread_rate(canopy_bulk_density: cy.float) -> cy.float:
     """
     Returns the critical spread rate (m/min) given:
@@ -106,8 +107,9 @@ def van_wagner_critical_spread_rate(canopy_bulk_density: cy.float) -> cy.float:
 # van-wagner-critical-spread-rate ends here
 # [[file:../../org/pyretechnics.org::cruz-passive-crown-fire-spread-rate][cruz-passive-crown-fire-spread-rate]]
 @cy.cfunc
+@cy.inline
 @cy.cdivision(True)
-@cy.exceptval(-1)
+@cy.exceptval(check=False)
 def cruz_passive_crown_fire_spread_rate(active_spread_rate: cy.float, critical_spread_rate: cy.float) -> cy.float:
     """
     Returns the passive crown fire spread rate (m/min) given:
@@ -124,6 +126,7 @@ CrownSpreadInfo = cy.struct(
 )
 
 @cy.cfunc
+@cy.exceptval(check=False)
 def cruz_crown_fire_spread_info(
         wind_speed_10m: cy.float,
         canopy_bulk_density: cy.float,
@@ -162,7 +165,6 @@ def cruz_crown_fire_spread_info(
 # NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb
 @cy.cfunc
 @cy.exceptval(check=False)
-@cy.inline
 def calc_crown_fireline_intensity(
         crown_spread_rate: cy.float,
         canopy_bulk_density: cy.float,
@@ -194,7 +196,6 @@ assert LoW_slope_per_km_hr == km_hr_to_mph(0.125) # The original formula used wi
 
 @cy.cfunc
 @cy.exceptval(check=False)
-@cy.inline
 def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ratio: cy.float=1e10) -> cy.float:
     """
     Calculate the length_to_width_ratio of the crown fire front using eq. 9 from
@@ -209,6 +210,7 @@ def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ra
 
 @cy.cfunc
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     """
     Calculate the eccentricity (E) of the crown fire front using eq. 8 from
@@ -219,7 +221,6 @@ def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     return sqrt(LoW2 - 1.0) / length_to_width_ratio
 # crown-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-max][crown-fire-behavior-max]]
-@cy.profile(False)
 @cy.cfunc
 def calc_crown_fire_behavior_max(
         canopy_height: cy.float,
@@ -291,7 +292,10 @@ def calc_crown_fire_behavior_max(
     )
 # crown-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-in-direction][crown-fire-behavior-in-direction]]
-def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
+@cy.cfunc
+@cy.cdivision(True)
+def calc_crown_fire_behavior_in_direction(crown_fire_max: FireBehaviorMax,
+                                          spread_direction: vec_xyz) -> SpreadBehavior:
     """
     Given these inputs:
     - crown_fire_max     :: dictionary of max crown fire behavior values
@@ -311,47 +315,52 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max, spread_direction):
     - fireline_intensity :: kW/m
     """
     # Unpack max crown fire behavior values
-    max_fire_type          = crown_fire_max["max_fire_type"]
-    max_spread_rate        = crown_fire_max["max_spread_rate"]
-    max_spread_direction   = crown_fire_max["max_spread_direction"]
-    max_fireline_intensity = crown_fire_max["max_fireline_intensity"]
-    eccentricity           = crown_fire_max["eccentricity"]
-    critical_spread_rate   = crown_fire_max["critical_spread_rate"]
+    max_fire_type         : cy.int   = crown_fire_max.max_fire_type
+    max_spread_rate       : cy.float = crown_fire_max.max_spread_rate
+    max_spread_direction  : vec_xyz  = crown_fire_max.max_spread_direction
+    max_fireline_intensity: cy.float = crown_fire_max.max_fireline_intensity
+    eccentricity          : cy.float = crown_fire_max.eccentricity
+    critical_spread_rate  : cy.float = crown_fire_max.critical_spread_rate
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
-    cos_w = np.dot(max_spread_direction, spread_direction)
+    cos_w: cy.float = dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    adjustment: cy.float = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     # Adjust the spread rate (possibly switching from an active to passive crown fire)
-    spread_rate = max_spread_rate * adjustment
+    spread_rate: cy.float = max_spread_rate * adjustment
     if spread_rate > critical_spread_rate:
         # Max spread rate was active and directional spread rate remains active
-        return {
-            "fire_type"         : "active_crown",
-            "spread_rate"       : spread_rate,
-            "spread_direction"  : np.asarray(spread_direction),
-            "fireline_intensity": max_fireline_intensity * adjustment,
-        }
-    elif max_fire_type == "passive_crown":
+        return SpreadBehavior(
+            dphi_dt            = 0.0,
+            fire_type          = 3, # active_crown
+            spread_rate        = spread_rate,
+            spread_direction   = spread_direction,
+            fireline_intensity = max_fireline_intensity * adjustment,
+            flame_length       = 0.0,
+        )
+    elif max_fire_type == 2: # passive_crown
         # Max spread rate was passive and directional spread rate remains passive
-        return {
-            "fire_type"         : "passive_crown",
-            "spread_rate"       : spread_rate,
-            "spread_direction"  : np.asarray(spread_direction),
-            "fireline_intensity": max_fireline_intensity * adjustment,
-        }
+        return SpreadBehavior(
+            dphi_dt            = 0.0,
+            fire_type          = 2, # passive_crown
+            spread_rate        = spread_rate,
+            spread_direction   = spread_direction,
+            fireline_intensity = max_fireline_intensity * adjustment,
+            flame_length       = 0.0,
+        )
     else:
         # Max spread rate was active and directional spread rate has become passive
-        return {
-            "fire_type"         : "passive_crown",
-            "spread_rate"       : cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
-            "spread_direction"  : np.asarray(spread_direction),
-            "fireline_intensity": max_fireline_intensity * adjustment,
-        }
+        return SpreadBehavior(
+            dphi_dt            = 0.0,
+            fire_type          = 2, # passive_crown
+            spread_rate        = cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
+            spread_direction   = spread_direction,
+            fireline_intensity = max_fireline_intensity * adjustment,
+            flame_length       = 0.0,
+        )
 # crown-fire-behavior-in-direction ends here
 # [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
-
-
 @cy.cfunc
+@cy.cdivision(True)
 def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior, crown_fire_behavior: SpreadBehavior) -> SpreadBehavior:
     """
     Given these inputs:

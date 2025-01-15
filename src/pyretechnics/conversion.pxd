@@ -23,7 +23,7 @@ cdef float mps_to_mph(float mps)
 cdef float km_hr_to_mps(float km_hr)
 cdef float mps_to_km_hr(float mps)
 cdef float mph_to_km_hr(float mph)
-cdef float km_hr_to_mph(float km_hr)
+cdef float km_hr_to_mph(float km_hr) noexcept
 cdef float m_min_to_km_hr(float m_min)
 cdef float km_hr_to_m_min(float km_hr)
 cdef float m_min_to_mph(float m_min)

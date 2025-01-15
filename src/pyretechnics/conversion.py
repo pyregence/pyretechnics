@@ -139,6 +139,7 @@ def mph_to_km_hr(mph: cy.float) -> cy.float:
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def km_hr_to_mph(km_hr: cy.float) -> cy.float:
     """Convert kilometers per hour to miles per hour."""
     return km_hr * 0.621371192237334

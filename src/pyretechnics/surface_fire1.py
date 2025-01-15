@@ -332,6 +332,7 @@ def calc_fireline_intensity(reaction_intensity: cy.float, flame_depth: cy.float)
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def calc_flame_length(fireline_intensity: cy.float) -> cy.float:
     """
     Returns the average flame length (m) given:
@@ -564,6 +565,7 @@ ProjectedVectors = cy.struct(
 
 @cy.ccall
 @cy.profile(False)
+@cy.exceptval(check=False)
 def project_wind_and_slope_vectors_3d(
     wind_speed: cy.float, downwind_direction: cy.float, 
     slope: cy.float, upslope_direction: cy.float
