@@ -189,10 +189,8 @@ def calc_crown_fireline_intensity(
 # crown-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::crown-fire-eccentricity][crown-fire-eccentricity]]
 # Parameters for the linear model that computes LoW from wind speed.
-LoW_intercept = cy.declare(cy.float, 1.0)
-LoW_slope_per_km_hr = cy.declare(cy.float, 0.07767140120267868)
-assert LoW_slope_per_km_hr == km_hr_to_mph(0.125) # The original formula used wind speeds in mph
-
+LoW_intercept       = cy.declare(cy.float, 1.0)
+LoW_slope_per_km_hr = cy.declare(cy.float, km_hr_to_mph(0.125)) # The original formula used wind speeds in mph
 
 @cy.cfunc
 @cy.exceptval(check=False)
