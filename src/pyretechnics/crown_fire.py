@@ -143,15 +143,15 @@ def cruz_crown_fire_spread_info(
     critical_spread_rate = van_wagner_critical_spread_rate(canopy_bulk_density) # m/min
     if (active_spread_rate > critical_spread_rate):
         return CrownSpreadInfo(
-            fire_type = 3,  # FIXME NAMED CONSTANT
-            spread_rate = active_spread_rate,
-            critical_spread_rate = critical_spread_rate
+            fire_type            = 3, # FIXME NAMED CONSTANT
+            spread_rate          = active_spread_rate,
+            critical_spread_rate = critical_spread_rate,
         )
     else:
         return CrownSpreadInfo(
-            fire_type = 2,  # FIXME NAMED CONSTANT
-            spread_rate = cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate),
-            critical_spread_rate = critical_spread_rate
+            fire_type            = 2, # FIXME NAMED CONSTANT
+            spread_rate          = cruz_passive_crown_fire_spread_rate(active_spread_rate, critical_spread_rate),
+            critical_spread_rate = critical_spread_rate,
         )
 # cruz-crown-fire-spread-info ends here
 # [[file:../../org/pyretechnics.org::crown-fireline-intensity][crown-fireline-intensity]]
@@ -257,14 +257,14 @@ def calc_crown_fire_behavior_max(
     wind_vector_3d: vec_xyz  = vectors.wind_vector_3d  # km/hr
     slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
     # Determine the max spread direction
-    wind_speed_10m_3d: cy.float = vector_magnitude_3d(wind_vector_3d)      # km/hr
+    wind_speed_10m_3d: cy.float = vector_magnitude_3d(wind_vector_3d) # km/hr
     max_spread_direction: vec_xyz
     if wind_speed_10m_3d > 0.0:
-        max_spread_direction = as_unit_vector_3d(wind_vector_3d)       # unit vector in the 3D downwind direction
+        max_spread_direction = as_unit_vector_3d(wind_vector_3d)  # unit vector in the 3D downwind direction
     elif slope > 0.0:
         max_spread_direction = as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
     else:
-        max_spread_direction = (0.0,1.0,0.0) # default: North
+        max_spread_direction = (0.0,1.0,0.0)                      # default: North
     # Calculate the crown fire behavior in the max spread direction
     spread_info: CrownSpreadInfo    = cruz_crown_fire_spread_info(wind_speed_10m_3d, canopy_bulk_density, estimated_fine_fuel_moisture)
     spread_rate: cy.float           = spread_info.spread_rate # m/min
@@ -273,14 +273,14 @@ def calc_crown_fire_behavior_max(
     length_to_width_ratio: cy.float = crown_length_to_width_ratio(wind_speed_10m_3d, crown_max_lw_ratio) # unitless
     eccentricity: cy.float          = crown_fire_eccentricity(length_to_width_ratio) # unitless
     return FireBehaviorMax(
-        spread_info.fire_type,
-        spread_rate,
-        max_spread_direction, # unit vector
-        fireline_intensity,
-        -1.0, # NOTE max_flame_length is not provided, as in the original unoptimized code.
-        length_to_width_ratio,
-        eccentricity,
-        spread_info.critical_spread_rate,
+        max_fire_type          = spread_info.fire_type,
+        max_spread_rate        = spread_rate,
+        max_spread_direction   = max_spread_direction, # unit vector
+        max_fireline_intensity = fireline_intensity,
+        max_flame_length       = -1.0, # NOTE max_flame_length is not provided, as in the original unoptimized code.
+        length_to_width_ratio  = length_to_width_ratio,
+        eccentricity           = eccentricity,
+        critical_spread_rate   = spread_info.critical_spread_rate,
     )
 # crown-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-in-direction][crown-fire-behavior-in-direction]]
@@ -405,23 +405,23 @@ def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior, crown_fir
         combined_fireline_intensity = (surface_fireline_intensity
                                        + crown_fireline_intensity * surface_spread_rate / crown_spread_rate)
         return SpreadBehavior(
-            dphi_dt,
-            crown_fire_type,
-            surface_spread_rate,
-            surface_spread_direction,
-            combined_fireline_intensity,
-            calc_flame_length(combined_fireline_intensity),
+            dphi_dt            = dphi_dt,
+            fire_type          = crown_fire_type,
+            spread_rate        = surface_spread_rate,
+            spread_direction   = surface_spread_direction,
+            fireline_intensity = combined_fireline_intensity,
+            flame_length       = calc_flame_length(combined_fireline_intensity),
         )
     else:
         # Crown fire spreads faster
         combined_fireline_intensity = (surface_fireline_intensity * crown_spread_rate / surface_spread_rate
                                        + crown_fireline_intensity)
         return SpreadBehavior(
-            dphi_dt,
-            crown_fire_type,
-            crown_spread_rate,
-            crown_spread_direction,
-            combined_fireline_intensity,
-            calc_flame_length(combined_fireline_intensity),
+            dphi_dt            = dphi_dt,
+            fire_type          = crown_fire_type,
+            spread_rate        = crown_spread_rate,
+            spread_direction   = crown_spread_direction,
+            fireline_intensity = combined_fireline_intensity,
+            flame_length       = calc_flame_length(combined_fireline_intensity),
         )
 # combined-fire-behavior ends here
