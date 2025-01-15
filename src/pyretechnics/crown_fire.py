@@ -3,14 +3,14 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, exp, pow
-    from cython.cimports.pyretechnics.cy_types import vec_xyz, FireBehaviorMax, SpreadBehavior
+    from cython.cimports.pyretechnics.cy_types import vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.conversion import km_hr_to_mph, opposite_direction
     from cython.cimports.pyretechnics.vector_utils import dot_3d, vector_magnitude_3d, as_unit_vector_3d
     from cython.cimports.pyretechnics.surface_fire1 import \
         ProjectedVectors, project_wind_and_slope_vectors_3d, calc_flame_length
 else:
     from math import sqrt, exp, pow
-    from pyretechnics.py_types import vec_xyz, FireBehaviorMax, SpreadBehavior
+    from pyretechnics.py_types import vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
     from pyretechnics.conversion import km_hr_to_mph, opposite_direction
     from pyretechnics.vector_utils import dot_3d, vector_magnitude_3d, as_unit_vector_3d
     from pyretechnics.surface_fire1 import \
@@ -119,12 +119,6 @@ def cruz_passive_crown_fire_spread_rate(active_spread_rate: cy.float, critical_s
     return active_spread_rate * exp(-active_spread_rate / critical_spread_rate)
 # cruz-passive-crown-fire-spread-rate ends here
 # [[file:../../org/pyretechnics.org::cruz-crown-fire-spread-info][cruz-crown-fire-spread-info]]
-CrownSpreadInfo = cy.struct(
-    fire_type = cy.int,
-    spread_rate = cy.float,
-    critical_spread_rate = cy.float # INTRO the spread rate separating passive and active crowning.
-)
-
 @cy.cfunc
 @cy.exceptval(check=False)
 def cruz_crown_fire_spread_info(

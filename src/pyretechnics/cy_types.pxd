@@ -30,6 +30,11 @@ cdef struct FuelModel:
     fcatarr f_i
     fclaarr g_ij
 
+cdef struct CrownSpreadInfo:
+    int fire_type
+    float spread_rate
+    float critical_spread_rate
+
 cdef struct FireBehaviorMax:
     int max_fire_type
     float max_spread_rate

@@ -33,6 +33,12 @@ FuelModel = cy.struct(
     g_ij                 = fclaarr,
 )
 
+CrownSpreadInfo = cy.struct(
+    fire_type            = cy.int,
+    spread_rate          = cy.float,
+    critical_spread_rate = cy.float,
+)
+
 FireBehaviorMax = cy.struct(
     max_fire_type          = cy.int,
     max_spread_rate        = cy.float,
