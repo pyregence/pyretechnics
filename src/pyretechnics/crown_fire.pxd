@@ -1,5 +1,5 @@
 cimport pyretechnics.cy_types
-from pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior
+from pyretechnics.cy_types cimport vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
 
 #==================================================
 # Cython functions to cimport into other modules
@@ -22,6 +22,40 @@ cdef bint van_wagner_crown_fire_initiation(
     float canopy_base_height,
     float foliar_moisture,
     )
+
+cdef float cruz_active_crown_fire_spread_rate(
+    float wind_speed_10m,
+    float canopy_bulk_density,
+    float estimated_fine_fuel_moisture,
+    )
+
+cdef float van_wagner_critical_spread_rate(float canopy_bulk_density)
+
+cdef float cruz_passive_crown_fire_spread_rate(
+    float active_spread_rate,
+    float critical_spread_rate,
+    )
+
+cdef CrownSpreadInfo cruz_crown_fire_spread_info(
+    float wind_speed_10m,
+    float canopy_bulk_density,
+    float estimated_fine_fuel_moisture,
+    )
+
+cdef float calc_crown_fireline_intensity(
+    float crown_spread_rate,
+    float canopy_bulk_density,
+    float canopy_height,
+    float canopy_base_height,
+    float heat_of_combustion,
+    )
+
+cdef float crown_length_to_width_ratio(
+    float wind_speed_10m,
+    float max_length_to_width_ratio=?,
+    )
+
+cdef float crown_fire_eccentricity(float length_to_width_ratio)
 
 cdef FireBehaviorMax calc_crown_fire_behavior_max(
     float canopy_height,
