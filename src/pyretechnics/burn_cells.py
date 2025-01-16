@@ -216,13 +216,6 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
             return surface_fire_max_simple
 # burn-cell-as-head-fire ends here
 # [[file:../../org/pyretechnics.org::burn-cell-toward-azimuth][burn-cell-toward-azimuth]]
-import pyretechnics.conversion as conv
-import pyretechnics.crown_fire as cf
-import pyretechnics.fuel_models as fm
-import pyretechnics.surface_fire as sf
-import pyretechnics.vector_utils as vu
-
-
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, use_wind_limit=True,
                              surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
