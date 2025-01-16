@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
-# cython: profile=True
+# cython: profile=False
 import cython
 if cython.compiled:
     import cython.cimports.pyretechnics.conversion as conv
@@ -15,17 +15,16 @@ else:
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.surface_fire1 as sf
     from math import exp, sqrt, log, sin, cos, pow, round
-import numpy as np
+
+
 import cython as cy
-
-
 
 
 @cy.ccall
 @cy.exceptval(-1)
 def expected_firebrand_production(
         fire_behavior: py_types.SpreadBehavior,
-        elevation_gradient: py_types.vec_xy, 
+        elevation_gradient: py_types.vec_xy,
         cell_horizontal_area_m2: cy.float,
         firebrands_per_unit_heat: cy.float=1e-6
         ) -> cy.float:
@@ -227,7 +226,7 @@ class JumpDistribution:
     mu_x: cy.float # dimensionless (log-space)
     sigma_x: cy.float # dimensionless (log-space)
     # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
-    
+
     # Cross-wind normal params
     sigma_y: cy.float # meters
     # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
@@ -360,7 +359,6 @@ def spot_ignition_time(time_of_arrival: cy.float, flame_length: cy.float) -> cy.
     return time_of_arrival + 2.0 * t_max + t_steady_state
 # firebrands-time-of-ignition ends here
 # [[file:../../org/pyretechnics.org::spread-firebrands][spread-firebrands]]
-import numpy as np
 import pyretechnics.fuel_models as fm
 
 
