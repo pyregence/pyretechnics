@@ -33,7 +33,7 @@ def _dotp_in_category(x_ij: fclaarr, y_ij: fclaarr) -> fcatarr:
             (x_ij[1] * y_ij[1]) +
             (x_ij[2] * y_ij[2]) +
             (x_ij[3] * y_ij[3])
-        ), 
+        ),
         (
             (x_ij[4] * y_ij[4]) +
             (x_ij[5] * y_ij[5])
@@ -376,28 +376,28 @@ def make_surface_fire_min(
         base_spread_rate: cy.float,
         base_fireline_intensity: cy.float,
         max_effective_wind_speed: cy.float,
-        B: cy.float, 
-        C: cy.float, 
-        F: cy.float, 
+        B: cy.float,
+        C: cy.float,
+        F: cy.float,
         beta: cy.float
         ) -> FireBehaviorMin:
     _phiS_G: cy.float = 0
     if (beta > 0.0):
         _phiS_G = 5.275 * pow(beta, -0.3)
-    
+
     _phiW_scalr: cy.float = 0
     _phiW_expnt: cy.float = 0
     if (F > 0.0):
         _phiW_scalr = (C / F) * pow(m_to_ft(1.), B)
         _phiW_expnt = B
-    
+
     _ws_scalr: cy.float = 0
     _ws_expnt: cy.float = 0
     if (B > 0.0):
         B_inverse: cy.float = 1.0 / B
         _ws_scalr = ft_to_m(pow((F / C), B_inverse))
         _ws_expnt = B_inverse
-    
+
     return FireBehaviorMin(
         base_spread_rate,
         base_fireline_intensity,
@@ -407,14 +407,14 @@ def make_surface_fire_min(
         _phiW_expnt,
         _ws_scalr,
         _ws_expnt)
-    
+
 
 
 
 @cy.cfunc
 @cy.cdivision(True)
 def calc_surface_fire_behavior_no_wind_no_slope(
-        moisturized_fuel_model: FuelModel, 
+        moisturized_fuel_model: FuelModel,
         spread_rate_adjustment: cy.float#=1.0
         ) -> FireBehaviorMin:
     """
@@ -480,9 +480,9 @@ def calc_surface_fire_behavior_no_wind_no_slope(
         base_spread_rate,
         base_fireline_intensity,
         max_effective_wind_speed,
-        B, 
-        C, 
-        F, 
+        B,
+        C,
+        F,
         beta)
 # surface-fire-behavior-no-wind-no-slope ends here
 # [[file:../../org/pyretechnics.org::midflame-wind-speed][midflame-wind-speed]]
@@ -531,7 +531,7 @@ ProjectedVectors = cy.struct(
 @cy.ccall
 @cy.exceptval(check=False)
 def project_wind_and_slope_vectors_3d(
-    wind_speed: cy.float, downwind_direction: cy.float, 
+    wind_speed: cy.float, downwind_direction: cy.float,
     slope: cy.float, upslope_direction: cy.float
     ) -> ProjectedVectors:
     """
@@ -633,7 +633,7 @@ def maybe_limit_wind_speed(use_wind_limit: cy.bint, max_wind_speed: cy.float, sf
 # NOTE: No longer takes ellipse_adjustment_factor parameter
 @cy.ccall
 def calc_surface_fire_behavior_max(sfmin: FireBehaviorMin, midflame_wind_speed: cy.float, upwind_direction: cy.float,
-                                   slope: cy.float, aspect: cy.float, 
+                                   slope: cy.float, aspect: cy.float,
                                    use_wind_limit: cy.bint,# = True, # FIXME optional can't seem to work in Cython, getting puzzling errors unexplained by documentation.
                                    surface_lw_ratio_model: object# = "rothermel"
                                    ) -> FireBehaviorMax:
