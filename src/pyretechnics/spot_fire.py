@@ -2,19 +2,21 @@
 # cython: profile=False
 import cython
 if cython.compiled:
+    from cython.cimports.pyretechnics.math import exp, sqrt, log, sin, cos, pow, round
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior
     import cython.cimports.pyretechnics.conversion as conv
-    import cython.cimports.pyretechnics.cy_types as py_types
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
-    import cython.cimports.pyretechnics.surface_fire1 as sf
-    from cython.cimports.pyretechnics.math import exp, sqrt, log, sin, cos, pow, round
+    from cython.cimports.pyretechnics.fuel_models import fuel_model_table
+    from cython.cimports.pyretechnics.surface_fire1 import calc_areal_heat_output
 else:
+    from math import exp, sqrt, log, sin, cos, pow, round
+    from pyretechnics.py_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior
     import pyretechnics.conversion as conv
-    import pyretechnics.py_types as py_types
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
-    import pyretechnics.surface_fire1 as sf
-    from math import exp, sqrt, log, sin, cos, pow, round
+    from pyretechnics.fuel_models import fuel_model_table
+    from pyretechnics.surface_fire1 import calc_areal_heat_output
 
 
 import cython as cy
@@ -23,8 +25,8 @@ import cython as cy
 @cy.ccall
 @cy.exceptval(-1)
 def expected_firebrand_production(
-        fire_behavior: py_types.SpreadBehavior,
-        elevation_gradient: py_types.vec_xy,
+        fire_behavior: SpreadBehavior,
+        elevation_gradient: vec_xy,
         cell_horizontal_area_m2: cy.float,
         firebrands_per_unit_heat: cy.float=1e-6
         ) -> cy.float:
@@ -54,7 +56,7 @@ def expected_firebrand_production(
 
         spread_rate: cy.float          = fire_behavior.spread_rate                               # m/min
         fireline_intensity: cy.float   = fire_behavior.fireline_intensity                        # kW/m
-        heat_output_per_area: cy.float = sf.calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
+        heat_output_per_area: cy.float = calc_areal_heat_output(spread_rate, fireline_intensity) # kJ/m^2
 
         #================================================================================================
         # Calculate the slope-adjusted cell area
@@ -359,24 +361,21 @@ def spot_ignition_time(time_of_arrival: cy.float, flame_length: cy.float) -> cy.
     return time_of_arrival + 2.0 * t_max + t_steady_state
 # firebrands-time-of-ignition ends here
 # [[file:../../org/pyretechnics.org::spread-firebrands][spread-firebrands]]
-import pyretechnics.fuel_models as fm
-
-
 @cy.ccall
 @cy.inline
-def is_in_bounds(y: cy.int, x: cy.int, rows: py_types.pyidx, cols: py_types.pyidx) -> cy.bint:
+def is_in_bounds(y: cy.int, x: cy.int, rows: pyidx, cols: pyidx) -> cy.bint:
     """
     Returns True if the grid coordinate (y,x) lies within the bounds [0,rows) by [0,cols).
     """
     return (y >= 0) and (x >= 0) and (y < rows) and (x < cols)
 
 @cy.ccall
-def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: py_types.pyidx, y: py_types.pyidx, x: py_types.pyidx) -> cy.bint:
+def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx) -> cy.bint:
     """
     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
     """
-    fuel_model_number: py_types.pyidx = cy.cast(py_types.pyidx, fuel_model_cube.get_float(t,y,x))
-    fm_table: dict = fm.fuel_model_table
+    fuel_model_number: pyidx = cy.cast(pyidx, fuel_model_cube.get_float(t,y,x))
+    fm_table: dict = fuel_model_table
     fuel_model     = fm_table.get(fuel_model_number)  # FIXME INSANELY slow
     return fuel_model and fuel_model["burnable"]
 
@@ -387,18 +386,18 @@ def cast_firebrand(rng: BufferedRandGen,
                    temperature_cube: ISpaceTimeCube,
                    fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
                    firebrand_count_matrix, # NOTE: May be None
-                   rows: py_types.pyidx,
-                   cols: py_types.pyidx,
+                   rows: pyidx,
+                   cols: pyidx,
                    cell_height: cy.float,
                    cell_width: cy.float,
-                   source_t: py_types.pyidx,
-                   source_y: py_types.pyidx,
-                   source_x: py_types.pyidx,
+                   source_t: pyidx,
+                   source_y: pyidx,
+                   source_x: pyidx,
                    decay_distance: cy.float,
                    cos_wdir: cy.float,
                    sin_wdir: cy.float,
                    jd: JumpDistribution
-                   ) -> py_types.coord_yx:
+                   ) -> coord_yx:
     """
     TODO: Add docstring
     Draws a random [ΔX, ΔY] pair of signed distances (in meters) from
@@ -417,7 +416,7 @@ def cast_firebrand(rng: BufferedRandGen,
     delta_x: cy.float  = sample_downwind_jump(jd, rng)                     # meters
     grid_dy: cy.float  = delta_to_grid_dy(cos_wdir, sin_wdir, delta_x, delta_y) # meters
     grid_dx: cy.float  = delta_to_grid_dx(cos_wdir, sin_wdir, delta_x, delta_y) # meters
-    # NOTE it would cause a bug to type the following as py_types.pyidx.
+    # NOTE it would cause a bug to type the following as pyidx.
     target_y: cy.int = source_y + cy.cast(cy.int, distance_to_n_cells(grid_dy, cell_height))
     target_x: cy.int = source_x + cy.cast(cy.int, distance_to_n_cells(grid_dx, cell_width))
 
@@ -455,21 +454,21 @@ def spread_firebrands(
         fuel_model_cube: ISpaceTimeCube,
         temperature_cube: ISpaceTimeCube,
         fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
-        sim_area_bounds: py_types.coord_yx,
-        spatial_resolution: py_types.vec_xy,
-        space_time_coordinate: py_types.coord_tyx,
+        sim_area_bounds: coord_yx,
+        spatial_resolution: vec_xy,
+        space_time_coordinate: coord_tyx,
         upwind_direction: cy.float, # degrees
         wind_speed_10m: cy.float, # km/hr (for shame!)
         fireline_intensity: cy.float,
         flame_length: cy.float,
         time_of_arrival: cy.float,
         random_generator,
-        num_firebrands: py_types.pyidx,
+        num_firebrands: pyidx,
         spot_config):
     """
     Given these inputs:
     - space_time_cubes          :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
-      - fuel_model                    :: integer index in fm.fuel_model_table
+      - fuel_model                    :: integer index in fuel_model_table
       - temperature                   :: degrees Celsius
       - wind_speed_10m                :: km/hr
       - upwind_direction              :: degrees clockwise from North
