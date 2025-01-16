@@ -2,10 +2,6 @@
 cimport pyretechnics.cy_types
 from pyretechnics.cy_types cimport vec_xy
 
-#==================================================
-# Cython functions to cimport into other modules
-#==================================================
-
 cdef float rad_to_deg(float radians) noexcept
 cdef float deg_to_rad(float degrees) noexcept
 cdef float deg_to_ratio(float degrees) noexcept

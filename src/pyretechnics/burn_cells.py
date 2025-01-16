@@ -6,14 +6,14 @@ if cython.compiled:
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
-    import cython.cimports.pyretechnics.surface_fire as sf
+    import cython.cimports.pyretechnics.surface_fire1 as sf
     import cython.cimports.pyretechnics.crown_fire as cf
 else:
     from pyretechnics.py_types import vec_xy, vec_xyz
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
-    import pyretechnics.surface_fire as sf
+    import pyretechnics.surface_fire1 as sf
     import pyretechnics.crown_fire as cf
 
 
@@ -109,7 +109,8 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
         upslope_direction: cy.float = conv.opposite_direction(aspect)
         slope_vector_2d  : vec_xy   = conv.azimuthal_to_cartesian(slope, upslope_direction)
         slope_vector_3d  : vec_xyz  = vu.to_slope_plane(slope_vector_2d, slope_vector_2d)
-        spread_direction : vec_xyz  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else (0.0,1.0,0.0) # default: North
+        default_direction: vec_xyz  = (0.0, 1.0, 0.0) # default: North
+        spread_direction : vec_xyz  = vu.as_unit_vector_3d(slope_vector_3d) if slope > 0.0 else default_direction
 
         #============================================================================================
         # Return zero surface fire behavior
@@ -179,13 +180,13 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
 
         # Simplify the surface fire behavior fields for future comparison/combination with the crown fire behavior values
         surface_fire_max_simple = sf.calc_surface_fire_behavior_in_direction(surface_fire_max,
-                                                                             surface_fire_max["max_spread_direction"])
+                                                                             surface_fire_max.max_spread_direction)
 
         #============================================================================================
         # Determine whether the surface fire transitions to a crown fire
         #============================================================================================
 
-        if cf.van_wagner_crown_fire_initiation(surface_fire_max_simple["fireline_intensity"],
+        if cf.van_wagner_crown_fire_initiation(surface_fire_max_simple.fireline_intensity,
                                                canopy_cover,
                                                canopy_base_height,
                                                foliar_moisture):

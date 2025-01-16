@@ -36,4 +36,9 @@ cpdef FireBehaviorMax calc_surface_fire_behavior_max(
     object surface_lw_ratio_model
     )
 
+cpdef dict calc_surface_fire_behavior_in_direction(
+    dict surface_fire_max,
+    vec_xyz spread_direction,
+    )
+
 cpdef float calc_areal_heat_output(float spread_rate, float fireline_intensity)

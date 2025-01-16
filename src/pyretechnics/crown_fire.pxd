@@ -1,10 +1,6 @@
 cimport pyretechnics.cy_types
 from pyretechnics.cy_types cimport vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
 
-#==================================================
-# Cython functions to cimport into other modules
-#==================================================
-
 cdef float van_wagner_critical_fireline_intensity(
     float canopy_base_height,
     float foliar_moisture,
