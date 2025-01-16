@@ -32,24 +32,28 @@ def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def scale_2d(scalar: cy.float, vector: vec_xy) -> vec_xy:
     return (scalar * vector[0], scalar * vector[1])
 
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def scale_3d(scalar: cy.float, vector: vec_xyz) -> vec_xyz:
     return (scalar * vector[0], scalar * vector[1], scalar * vector[2])
 
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def add_2d(vector1: vec_xy, vector2: vec_xy) -> vec_xy:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1])
 
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2])
 
@@ -70,6 +74,7 @@ def vector_magnitude_3d(vector: vec_xyz) -> cy.float:
 
 @cy.cfunc
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
     magnitude: cy.float = vector_magnitude_2d(vector)
     if magnitude == 0.0:
@@ -96,6 +101,7 @@ def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     return (
         vector_2d[0],
@@ -106,11 +112,13 @@ def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
 
 @cy.cfunc
 @cy.inline
+@cy.exceptval(check=False)
 def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
     return (vector_3d[0], vector_3d[1])
 
 
 @cy.cfunc
+@cy.exceptval(check=False)
 def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
     x        : cy.float = vector_3d[0]
     y        : cy.float = vector_3d[1]
@@ -140,6 +148,7 @@ def cross_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
 
 
 @cy.cfunc
+@cy.exceptval(check=False)
 def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, aspect: cy.float) -> vec_xyz:
     """
     Rotate a 3D vector <x,y,z> theta degrees clockwise on the plane defined by the slope and aspect.
