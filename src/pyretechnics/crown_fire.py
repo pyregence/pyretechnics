@@ -3,18 +3,18 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, exp, pow
-    from cython.cimports.pyretechnics.cy_types import vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
-    from cython.cimports.pyretechnics.conversion import km_hr_to_mph, opposite_direction
-    from cython.cimports.pyretechnics.vector_utils import dot_3d, vector_magnitude_3d, as_unit_vector_3d
-    from cython.cimports.pyretechnics.surface_fire1 import \
-        ProjectedVectors, project_wind_and_slope_vectors_3d, calc_flame_length
+    from cython.cimports.pyretechnics.cy_types import \
+        vec_xyz, ProjectedVectors, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.vector_utils as vu
+    import cython.cimports.pyretechnics.surface_fire1 as sf
 else:
     from math import sqrt, exp, pow
-    from pyretechnics.py_types import vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
-    from pyretechnics.conversion import km_hr_to_mph, opposite_direction
-    from pyretechnics.vector_utils import dot_3d, vector_magnitude_3d, as_unit_vector_3d
-    from pyretechnics.surface_fire1 import \
-        ProjectedVectors, project_wind_and_slope_vectors_3d, calc_flame_length
+    from pyretechnics.py_types import \
+        vec_xyz, ProjectedVectors, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
+    import pyretechnics.conversion as conv
+    import pyretechnics.vector_utils as vu
+    import pyretechnics.surface_fire1 as sf
 
 
 import cython as cy
@@ -184,7 +184,7 @@ def calc_crown_fireline_intensity(
 # [[file:../../org/pyretechnics.org::crown-fire-eccentricity][crown-fire-eccentricity]]
 # Parameters for the linear model that computes LoW from wind speed.
 LoW_intercept       = cy.declare(cy.float, 1.0)
-LoW_slope_per_km_hr = cy.declare(cy.float, km_hr_to_mph(0.125)) # The original formula used wind speeds in mph
+LoW_slope_per_km_hr = cy.declare(cy.float, conv.km_hr_to_mph(0.125)) # The original formula used wind speeds in mph
 
 @cy.cfunc
 @cy.exceptval(check=False)
@@ -249,20 +249,20 @@ def calc_crown_fire_behavior_max(
     - critical_spread_rate   :: m/min
     """
     # Reverse the provided wind and slope directions
-    downwind_direction = opposite_direction(upwind_direction)
-    upslope_direction  = opposite_direction(aspect)
+    downwind_direction = conv.opposite_direction(upwind_direction)
+    upslope_direction  = conv.opposite_direction(aspect)
     # Project wind and slope vectors onto the slope-tangential plane
     # FIXME let's just have these vectors as arguments to the function instead of re-computing them.
-    vectors: ProjectedVectors      = project_wind_and_slope_vectors_3d(wind_speed_10m, downwind_direction, slope, upslope_direction)
-    wind_vector_3d: vec_xyz  = vectors.wind_vector_3d  # km/hr
-    slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
+    vectors: ProjectedVectors = sf.project_wind_and_slope_vectors_3d(wind_speed_10m, downwind_direction, slope, upslope_direction)
+    wind_vector_3d: vec_xyz   = vectors.wind_vector_3d  # km/hr
+    slope_vector_3d: vec_xyz  = vectors.slope_vector_3d # rise/run
     # Determine the max spread direction
-    wind_speed_10m_3d: cy.float = vector_magnitude_3d(wind_vector_3d) # km/hr
+    wind_speed_10m_3d: cy.float = vu.vector_magnitude_3d(wind_vector_3d) # km/hr
     max_spread_direction: vec_xyz
     if wind_speed_10m_3d > 0.0:
-        max_spread_direction = as_unit_vector_3d(wind_vector_3d)  # unit vector in the 3D downwind direction
+        max_spread_direction = vu.as_unit_vector_3d(wind_vector_3d)  # unit vector in the 3D downwind direction
     elif slope > 0.0:
-        max_spread_direction = as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
+        max_spread_direction = vu.as_unit_vector_3d(slope_vector_3d) # unit vector in the 3D upslope direction
     else:
         max_spread_direction = (0.0,1.0,0.0)                      # default: North
     # Calculate the crown fire behavior in the max spread direction
@@ -314,7 +314,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max: FireBehaviorMax,
     eccentricity          : cy.float = crown_fire_max.eccentricity
     critical_spread_rate  : cy.float = crown_fire_max.critical_spread_rate
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
-    cos_w: cy.float = dot_3d(max_spread_direction, spread_direction)
+    cos_w: cy.float = vu.dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
     adjustment: cy.float = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     # Adjust the spread rate (possibly switching from an active to passive crown fire)
@@ -410,7 +410,7 @@ def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior, crown_fir
             spread_rate        = surface_spread_rate,
             spread_direction   = surface_spread_direction,
             fireline_intensity = combined_fireline_intensity,
-            flame_length       = calc_flame_length(combined_fireline_intensity),
+            flame_length       = sf.calc_flame_length(combined_fireline_intensity),
         )
     else:
         # Crown fire spreads faster
@@ -422,6 +422,6 @@ def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior, crown_fir
             spread_rate        = crown_spread_rate,
             spread_direction   = crown_spread_direction,
             fireline_intensity = combined_fireline_intensity,
-            flame_length       = calc_flame_length(combined_fireline_intensity),
+            flame_length       = sf.calc_flame_length(combined_fireline_intensity),
         )
 # combined-fire-behavior ends here
