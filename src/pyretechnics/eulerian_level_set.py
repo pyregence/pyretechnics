@@ -2598,7 +2598,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     # Ensure that spot_ignitions is initialized as a SortedDict
     spot_igns = sortc.SortedDict(spot_ignitions)
 
-    start_t: pyidx = start_time // band_duration
+    start_t: pyidx = int(start_time // band_duration)
     sim_state = {
         "simulation_time" : start_time,
         "output_matrices" : output_matrices,
