@@ -2,39 +2,51 @@
 # cython: profile=False
 import cython
 if cython.compiled:
-    from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Realloc, PyMem_Free # Unique to Compiled Cython
+    from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
     from cython.cimports.pyretechnics.math import sqrt, atan, floor, exp
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
+    from cython.cimports.pyretechnics.cy_types import \
+        pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
-    from cython.cimports.pyretechnics.crown_fire import van_wagner_crowning_spread_rate_threshold, calc_crown_fire_behavior_max, calc_combined_fire_behavior
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube, LazySpaceTimeCube
-    from cython.cimports.pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
-    from cython.cimports.pyretechnics.narrow_band_tracking import new_NarrowBandTracker, NarrowBandTracker, CellsCountSegment, incr_square_around, decr_square_around, nonempty_tracked_cells
-    from cython.cimports.pyretechnics.surface_fire1 import calc_flame_length, FireBehaviorMin, FireBehaviorMax, calc_surface_fire_behavior_no_wind_no_slope, calc_midflame_wind_speed, calc_surface_fire_behavior_max
-    from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.vector_utils import \
-        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_3d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
+    from cython.cimports.pyretechnics.random import BufferedRandGen
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube, LazySpaceTimeCube
     from cython.cimports.pyretechnics.fuel_models import fuel_model_table
-
+    from cython.cimports.pyretechnics.surface_fire1 import \
+        calc_flame_length, FireBehaviorMin, calc_surface_fire_behavior_no_wind_no_slope, \
+        calc_midflame_wind_speed, calc_surface_fire_behavior_max
+    from cython.cimports.pyretechnics.crown_fire import \
+        van_wagner_crowning_spread_rate_threshold, calc_crown_fire_behavior_max, calc_combined_fire_behavior
+    from cython.cimports.pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
+    from cython.cimports.pyretechnics.narrow_band_tracking import \
+        new_NarrowBandTracker, NarrowBandTracker, CellsCountSegment, incr_square_around, \
+        decr_square_around, nonempty_tracked_cells
 else:
+    # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
     from math import sqrt, atan, floor, exp
-    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
+    from pyretechnics.py_types import \
+        pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from pyretechnics.conversion import \
         rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
         Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
-    from pyretechnics.crown_fire import van_wagner_crowning_spread_rate_threshold, calc_crown_fire_behavior_max, calc_combined_fire_behavior
-    from pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube, LazySpaceTimeCube
-    from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
-    from pyretechnics.narrow_band_tracking import new_NarrowBandTracker, NarrowBandTracker, CellsCountSegment, incr_square_around, decr_square_around, nonempty_tracked_cells
-    from pyretechnics.surface_fire1 import calc_flame_length, FireBehaviorMin, FireBehaviorMax, calc_surface_fire_behavior_no_wind_no_slope, calc_midflame_wind_speed, calc_surface_fire_behavior_max
-    from pyretechnics.random import BufferedRandGen
     from pyretechnics.vector_utils import \
-        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_2d, dot_3d, scale_2d, scale_3d, \
+        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_3d, scale_3d, \
         get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
+    from pyretechnics.random import BufferedRandGen
+    from pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube, LazySpaceTimeCube
     from pyretechnics.fuel_models import fuel_model_table
+    from pyretechnics.surface_fire1 import \
+        calc_flame_length, FireBehaviorMin, calc_surface_fire_behavior_no_wind_no_slope, \
+        calc_midflame_wind_speed, calc_surface_fire_behavior_max
+    from pyretechnics.crown_fire import \
+        van_wagner_crowning_spread_rate_threshold, calc_crown_fire_behavior_max, calc_combined_fire_behavior
+    from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
+    from pyretechnics.narrow_band_tracking import \
+        new_NarrowBandTracker, NarrowBandTracker, CellsCountSegment, incr_square_around, \
+        decr_square_around, nonempty_tracked_cells
 
 
 import cython as cy
@@ -914,7 +926,7 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 
 
 # TODO: Is it faster to build up a list or a set?
-# TODO: Should we store each frontier_cells entry as a coord_xy?
+# TODO: Should we store each frontier_cells entry as a coord_yx?
 @cy.profile(True)
 @cy.ccall
 def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
