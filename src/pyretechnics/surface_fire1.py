@@ -3,14 +3,16 @@
 import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp, log, sqrt, pow
-    from cython.cimports.pyretechnics.cy_types import vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, FireBehaviorMax
+    from cython.cimports.pyretechnics.cy_types import \
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMax
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, m_to_ft, ft_to_m, Btu_ft_s_to_kW_m, m_min_to_mph
     from cython.cimports.pyretechnics.vector_utils import \
         scale_3d, add_3d, vector_magnitude_3d, as_unit_vector_3d, to_slope_plane
 else:
     from math import exp, log, sqrt, pow
-    from pyretechnics.py_types import vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, FireBehaviorMax
+    from pyretechnics.py_types import \
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMax
     from pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, m_to_ft, ft_to_m, Btu_ft_s_to_kW_m, m_min_to_mph
     from pyretechnics.vector_utils import \
@@ -523,11 +525,6 @@ def calc_midflame_wind_speed(wind_speed_20ft: cy.float, fuel_bed_depth: cy.float
     return wind_speed_20ft * wind_adj_factor
 # midflame-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-combine-wind-and-slope-vectors][surface-fire-combine-wind-and-slope-vectors]]
-ProjectedVectors = cy.struct(
-    wind_vector_3d = vec_xyz,
-    slope_vector_3d = vec_xyz
-)
-
 @cy.ccall
 @cy.exceptval(check=False)
 def project_wind_and_slope_vectors_3d(

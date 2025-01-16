@@ -33,6 +33,11 @@ FuelModel = cy.struct(
     g_ij                 = fclaarr,
 )
 
+ProjectedVectors = cy.struct(
+    wind_vector_3d  = vec_xyz,
+    slope_vector_3d = vec_xyz,
+)
+
 CrownSpreadInfo = cy.struct(
     fire_type            = cy.int,
     spread_rate          = cy.float,

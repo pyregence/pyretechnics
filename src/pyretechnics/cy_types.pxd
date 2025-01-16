@@ -30,6 +30,10 @@ cdef struct FuelModel:
     fcatarr f_i
     fclaarr g_ij
 
+cdef struct ProjectedVectors:
+    vec_xyz wind_vector_3d
+    vec_xyz slope_vector_3d
+
 cdef struct CrownSpreadInfo:
     int fire_type
     float spread_rate
