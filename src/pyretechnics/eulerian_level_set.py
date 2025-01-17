@@ -84,7 +84,7 @@ def calc_phi_gradient_approx(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: 
 # phi-field-spatial-gradients-approx ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
 # TODO: Remove unused function
-@cy.ccall
+@cy.cfunc
 def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
     Calculate the phi field normal vector in the x and y dimensions.
@@ -100,7 +100,7 @@ def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: py
 # phi-field-normal-vector ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
 # TODO: Remove unused function
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
     """
@@ -207,7 +207,7 @@ def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float,
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
 @cy.profile(True)
-@cy.ccall
+@cy.cfunc
 def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
     Returns the elevation gradient (dz_dx: rise/run, dz_dy: rise/run) given:
@@ -225,7 +225,7 @@ fire_type_crown_active  = cy.declare(cy.int, 3)
 
 
 @cy.profile(True)
-@cy.ccall
+@cy.cfunc
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
     Return the gradient of phi projected onto the slope-tangential plane as a 3D (x,y,z) vector (in phi/m) given:
@@ -248,7 +248,7 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
 @cy.profile(True)
-@cy.ccall
+@cy.cfunc
 def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz) -> SpreadBehavior:
     """
     Given these inputs:
@@ -416,7 +416,7 @@ def firemod_size_class(sigma_i: cy.float) -> cy.float:
     )
 
 @cy.profile(False)
-@cy.ccall
+@cy.cfunc
 def fm_struct(fm: dict) -> FuelModel:
     sigma: fclaarr = fclaarr_from_list(fm["sigma"])
     return FuelModel(
@@ -737,7 +737,7 @@ class SpreadInputs:
         self._init_fuel_models()
 
 
-    @cy.ccall
+    @cy.cfunc
     def _init_fuel_models(self):
         self.fuel_models_arr = cy.cast(
             cy.pointer(FuelModel), 
@@ -749,7 +749,7 @@ class SpreadInputs:
             fuel_model: FuelModel = fm_struct(f)
             self.fuel_models_arr[fm_number] = fuel_model
         
-    @cy.ccall
+    @cy.cfunc
     def get_fm_struct(self, fm_number: pyidx) -> FuelModel:
         fuel_models_arr: cy.pointer(FuelModel) = self.fuel_models_arr
         fuel_model: FuelModel = fuel_models_arr[fm_number]
@@ -759,7 +759,7 @@ class SpreadInputs:
     def __dealloc__(self):
         PyMem_Free(self.fuel_models_arr)  # no-op if self.data is NULL
 
-@cy.ccall
+@cy.cfunc
 def make_SpreadInputs(cube_resolution, space_time_cubes: dict) -> SpreadInputs:
     sinputs: SpreadInputs = SpreadInputs(cube_resolution,
         space_time_cubes["slope"],
@@ -870,7 +870,7 @@ def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellIn
         weather_spread_adjustment      = weather_spread_adjustment
     )
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 @cy.exceptval(check=False)
 def unburned_SpreadBehavior(elevation_gradient: vec_xy, dphi_st: vec_xyz) -> SpreadBehavior:
@@ -910,7 +910,7 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_yx?
 @cy.profile(True)
-@cy.ccall
+@cy.cfunc
 def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
     """
     TODO: Add docstring
@@ -932,7 +932,7 @@ def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: py
                 frontier_cells.add(encode_cell_index(y, x))
     return frontier_cells
 
-@cy.ccall
+@cy.cfunc
 def is_frontier_cell(phi_matrix: cy.float[:,:], y: pyidx, x: pyidx) -> cy.bint:
     north_y: pyidx = y+1
     south_y: pyidx = y-1
@@ -947,7 +947,7 @@ def is_frontier_cell(phi_matrix: cy.float[:,:], y: pyidx, x: pyidx) -> cy.bint:
 
 
 @cy.profile(True)
-@cy.ccall
+@cy.cfunc
 def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> object:
     """
     TODO: Add docstring
@@ -964,7 +964,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
 
 # phi-field-perimeter-tracking ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
-@cy.ccall
+@cy.cfunc
 def spot_from_burned_cell(
         spot_config, # OPTIM accept something more efficient that a dict.
         sinputs: SpreadInputs,
@@ -1019,7 +1019,7 @@ def spot_from_burned_cell(
                 spot_ignitions[ignition_time] = ignited_cells
 
 
-@cy.ccall
+@cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
 @cy.cdivision(True)
@@ -1047,7 +1047,7 @@ PartialedEllWavelet = cy.struct( # INTRO Pre-computed coefficients to apply elli
 )
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.cdivision(True)
 def prepare_partialed_wavelet(
@@ -1074,14 +1074,14 @@ def prepare_partialed_wavelet(
         )
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 def zero_partialed_wavelet() -> PartialedEllWavelet:
     Vh_3d: vec_xyz = (0, 0, 0)
     return prepare_partialed_wavelet(Vh_3d, 0, 0)
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 @cy.exceptval(check=False)
 def pw_from_FireBehaviorMax(fb_max: FireBehaviorMax) -> PartialedEllWavelet:
@@ -1099,7 +1099,7 @@ def pw_from_FireBehaviorMax(fb_max: FireBehaviorMax) -> PartialedEllWavelet:
 
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.inline
 def dphi_dt_from_partialed_wavelet(
@@ -1135,7 +1135,7 @@ EllipticalInfo = cy.struct( # Pre-computed information required to compute dphi/
 # EllipticalInfo could conceivably be implemented using variants of the Rothermel model.
 # This can be valuable to give flexibility to users.
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # NOTE this code has to be very fast!
     """
@@ -1166,7 +1166,7 @@ Pass1CellOutput = cy.struct( # INTRO some data saved during the 1st Runge-Kutta 
 
 p_CellInputs = cy.declare(pyidx, 17) # The number of input columns.
 
-@cy.ccall
+@cy.cfunc
 def inputs_name_list() -> list[str]:
     return [
         'slope',
@@ -1238,7 +1238,7 @@ class TrackedCellsArrays:
         self.phi_values = np.zeros((self._arrays_length, 9), dtype=np.float32)
 
 
-    @cy.ccall
+    @cy.cfunc
     def reset_size(self, n_tracked_cells: pyidx) -> cy.void:
         """
         Ensures that this can hold at least `n_tracked_cells`, resizing the internal arrays if necessary.
@@ -1267,7 +1267,7 @@ class TrackedCellsArrays:
         PyMem_Free(self.pass1outputs)
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.boundscheck(False)
 @cy.wraparound(False)
@@ -1298,7 +1298,7 @@ def collect_phi_values(phi: cy.float[:, :], tca: TrackedCellsArrays) -> cy.void:
         phi_values[i, 8] = phi[2+y+2, 2+x]
 
 
-@cy.ccall
+@cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
 def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
@@ -1317,7 +1317,7 @@ def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
     return 0
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.boundscheck(False)
 @cy.wraparound(False)
@@ -1388,7 +1388,7 @@ class FireBehaviorSettings:
 
 
 
-@cy.ccall
+@cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def load_float_inputs_for_cell(
@@ -1432,7 +1432,7 @@ def load_float_inputs_for_cell(
                                  else 1.0)       
 
 
-@cy.ccall
+@cy.cfunc
 def list_float_inputs_cubes(sinputs: SpreadInputs) -> list[ISpaceTimeCube]:
     return [
         sinputs.slope,
@@ -1459,7 +1459,7 @@ def list_float_inputs_cubes(sinputs: SpreadInputs) -> list[ISpaceTimeCube]:
         sinputs.weather_spread_adjustment,
     ]
 
-@cy.ccall
+@cy.cfunc
 def default_refresh_frequency(band_duration: cy.float) -> dict:
     return {
         # Non-weather inputs default to a refresh frequency of 0.0 (never refreshed).
@@ -1513,12 +1513,12 @@ recompute_levels_list: list = [
     100
 ]
 
-@cy.ccall
+@cy.cfunc
 def recompute_level_for_input(input_k: pyidx) -> cy.uint:
     return recompute_levels_list[input_k]
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 def refresh_inputs_if_needed(
         sinputs: SpreadInputs, 
@@ -1557,7 +1557,7 @@ def refresh_inputs_if_needed(
 
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -1611,7 +1611,7 @@ def load_saved_CellInputs(float_inputs: cy.float[:,:], i: pyidx) -> CellInputs:
     return cell_inputs
 
 
-@cy.ccall
+@cy.cfunc
 def resolve_surface_nwns_behavior(
         ci: CellInputs,
         fm_struct: FuelModel,
@@ -1639,7 +1639,7 @@ def resolve_surface_nwns_behavior(
 
 
 
-@cy.ccall
+@cy.cfunc
 def resolve_surface_max_behavior(
         fb_opts: FireBehaviorSettings,
         ci: CellInputs,
@@ -1673,7 +1673,7 @@ def resolve_surface_max_behavior(
                                                 fb_opts.surface_lw_ratio_model)
     return surface_fire_max
 
-@cy.ccall
+@cy.cfunc
 def resolve_crown_max_behavior(
         fb_opts: FireBehaviorSettings,
         ci: CellInputs,
@@ -1695,7 +1695,7 @@ def resolve_crown_max_behavior(
         fb_opts.crown_max_lw_ratio)
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 def resolve_crowning_spread_rate_threshold(
         ci: CellInputs,
@@ -1707,7 +1707,7 @@ def resolve_crowning_spread_rate_threshold(
     return cf.van_wagner_crowning_spread_rate_threshold(surface_fire_max, ci.canopy_base_height, ci.foliar_moisture)
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -1753,7 +1753,7 @@ def resolve_cell_elliptical_info(
     )
     return ell_i
 
-@cy.ccall
+@cy.cfunc
 @cy.initializedcheck(False)
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -1786,7 +1786,7 @@ def refresh_caches_from_inputs_if_needed(
             tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, sfmin)
 
 
-@cy.ccall
+@cy.cfunc
 def resolve_combined_spread_behavior(
         sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
@@ -1822,7 +1822,7 @@ def resolve_combined_spread_behavior(
 
 
 
-@cy.ccall
+@cy.cfunc
 def load_tracked_cell_data(
         # How to resolve inputs:
         sinputs: SpreadInputs,
@@ -1843,7 +1843,7 @@ def load_tracked_cell_data(
 
 
 
-@cy.ccall
+@cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def sync_tracked_cells_arrays(
@@ -1898,7 +1898,7 @@ def sync_tracked_cells_arrays(
                             i_new += 1
 
 
-@cy.ccall
+@cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
 @cy.cdivision(True)
@@ -1976,7 +1976,7 @@ def runge_kutta_pass1(
     return dt
 
 
-@cy.ccall
+@cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def update_phi_star(
@@ -2010,7 +2010,7 @@ class BurnedCellInfo: # Using an Extension Type instead of a struct because it's
     from_spotting: cy.bint # Whether spotting is what caused the cell to ignite.
 
 
-@cy.ccall
+@cy.cfunc
 def new_BurnedCellInfo( # Fast constructor function
         cell_index: coord_yx,
         toa: cy.float, # Time Of Arrival
@@ -2025,7 +2025,7 @@ def new_BurnedCellInfo( # Fast constructor function
     return ret
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -2086,7 +2086,7 @@ def runge_kutta_pass2(
     return spread_burned_cells
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 @cy.wraparound(False)
 @cy.boundscheck(False)
@@ -2135,7 +2135,7 @@ def process_spread_burned_cells(
                 spot_ignitions)
 
 
-@cy.ccall
+@cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def reset_phi_star(
@@ -2161,7 +2161,7 @@ def reset_phi_star(
         phi_star_matrix[2+y, 2+x] = phi_matrix[2+y, 2+x]
 
 
-@cy.ccall
+@cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
 def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop_time: cy.float) -> list[BurnedCellInfo]:
@@ -2195,7 +2195,7 @@ def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop
                     # FIXME: I need to calculate and store the fire_behavior values for these cells
     return ignited
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.inline
 def encode_cell_index(y: pyidx, x: pyidx) -> object:
@@ -2205,7 +2205,7 @@ def encode_cell_index(y: pyidx, x: pyidx) -> object:
     """
     return ((cy.cast(cy.ulong, y) << 32) + cy.cast(cy.ulong, x))
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 @cy.inline
 def decode_cell_index(cell_index: object) -> coord_yx:
@@ -2214,7 +2214,7 @@ def decode_cell_index(cell_index: object) -> coord_yx:
     x: pyidx = cy.cast(cy.uint, ci) # NOTE I would prefer writing this as (ci & 0xFFFFFFFF), but Cython compilation makes it slower.
     return (y, x)
 
-@cy.ccall
+@cy.cfunc
 def route_cell_to_diff(
         frontier_cells_old: set,
         phi: cy.float[:, :],
@@ -2237,7 +2237,7 @@ def route_cell_to_diff(
             frontier_removals.add(set_elem)
 
 
-@cy.ccall
+@cy.cfunc
 def diff_frontier_cells(
         frontier_cells_old: set,
         phi: cy.float[:, :],
@@ -2268,7 +2268,7 @@ def diff_frontier_cells(
     return (frontier_additions, frontier_removals)
 
 
-@cy.ccall
+@cy.cfunc
 def apply_frontier_diff(frontier_cells_old: set, frontier_additions: set, frontier_removals: set) -> set:
     frontier_cells_new: set = frontier_cells_old.copy()
     for set_elem in frontier_additions:
@@ -2279,7 +2279,7 @@ def apply_frontier_diff(frontier_cells_old: set, frontier_additions: set, fronti
 
 
 @cy.profile(True)
-@cy.ccall
+@cy.cfunc
 def update_tracked_cells_with_frontier_diff(
         tracked_cells: object,
         frontier_cells_added: set,
@@ -2307,7 +2307,7 @@ def update_tracked_cells_with_frontier_diff(
     return tracked_cells
 
 
-@cy.ccall
+@cy.cfunc
 @cy.cdivision(True)
 def spread_one_timestep(
         sim_state: dict,
