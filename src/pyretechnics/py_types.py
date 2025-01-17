@@ -44,6 +44,17 @@ CrownSpreadInfo = cy.struct(
     critical_spread_rate = cy.float,
 )
 
+FireBehaviorMin = cy.struct(
+    base_spread_rate         = cy.float,
+    base_fireline_intensity  = cy.float,
+    max_effective_wind_speed = cy.float,
+    _phiS_G                  = cy.float,
+    _phiW_scalr              = cy.float,
+    _phiW_expnt              = cy.float,
+    _ws_scalr                = cy.float,
+    _ws_expnt                = cy.float,
+)
+
 FireBehaviorMax = cy.struct(
     max_fire_type          = cy.int,
     max_spread_rate        = cy.float,

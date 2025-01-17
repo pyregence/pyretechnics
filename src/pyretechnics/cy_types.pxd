@@ -39,6 +39,16 @@ cdef struct CrownSpreadInfo:
     float spread_rate
     float critical_spread_rate
 
+cdef struct FireBehaviorMin:
+    float base_spread_rate
+    float base_fireline_intensity
+    float max_effective_wind_speed
+    float _phiS_G
+    float _phiW_scalr
+    float _phiW_expnt
+    float _ws_scalr
+    float _ws_expnt
+
 cdef struct FireBehaviorMax:
     int max_fire_type
     float max_spread_rate

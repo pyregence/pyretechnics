@@ -4,7 +4,7 @@ import cython
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp, log, sqrt, pow
     from cython.cimports.pyretechnics.cy_types import \
-        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMax
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax
     from cython.cimports.pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, m_to_ft, ft_to_m, Btu_ft_s_to_kW_m, m_min_to_mph
     from cython.cimports.pyretechnics.vector_utils import \
@@ -12,7 +12,7 @@ if cython.compiled:
 else:
     from math import exp, log, sqrt, pow
     from pyretechnics.py_types import \
-        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMax
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax
     from pyretechnics.conversion import \
         opposite_direction, azimuthal_to_cartesian, m_to_ft, ft_to_m, Btu_ft_s_to_kW_m, m_min_to_mph
     from pyretechnics.vector_utils import \
@@ -340,19 +340,6 @@ def calc_max_effective_wind_speed(reaction_intensity: cy.float) -> cy.float:
 # [[file:../../org/pyretechnics.org::surface-fire-slope-factor-function][surface-fire-slope-factor-function]]
 # surface-fire-wind-speed-function ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
-
-
-FireBehaviorMin = cy.struct(
-    base_spread_rate = cy.float,
-    base_fireline_intensity = cy.float,
-    max_effective_wind_speed = cy.float,
-    _phiS_G = cy.float,
-    _phiW_scalr = cy.float,
-    _phiW_expnt = cy.float,
-    _ws_scalr = cy.float,
-    _ws_expnt = cy.float,
-)
-
 @cy.ccall
 @cy.inline
 @cy.exceptval(check=False)

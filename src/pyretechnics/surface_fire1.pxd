@@ -1,5 +1,5 @@
 cimport pyretechnics.cy_types
-from pyretechnics.cy_types cimport vec_xy, vec_xyz, FuelModel, ProjectedVectors, FireBehaviorMax
+from pyretechnics.cy_types cimport vec_xy, vec_xyz, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax
 
 cpdef float calc_flame_length(float fireline_intensity) noexcept
 
@@ -11,16 +11,6 @@ cpdef ProjectedVectors project_wind_and_slope_vectors_3d(
         float slope,
         float upslope_direction
     ) noexcept
-
-cdef struct FireBehaviorMin:
-    float base_spread_rate
-    float base_fireline_intensity
-    float max_effective_wind_speed
-    float _phiS_G
-    float _phiW_scalr
-    float _phiW_expnt
-    float _ws_scalr
-    float _ws_expnt
 
 cdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
     FuelModel moisturized_fuel_model, 
