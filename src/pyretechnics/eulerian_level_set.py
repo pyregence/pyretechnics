@@ -4,49 +4,31 @@ import cython
 if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
     from cython.cimports.pyretechnics.math import sqrt, atan, floor, exp
-    from cython.cimports.pyretechnics.cy_types import \
-        pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
-    from cython.cimports.pyretechnics.conversion import \
-        rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
-        Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
-    from cython.cimports.pyretechnics.vector_utils import \
-        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_3d, scale_3d, \
-        get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
+        fcatarr, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.random import BufferedRandGen
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube, LazySpaceTimeCube
-    from cython.cimports.pyretechnics.fuel_models import fuel_model_table
-    from cython.cimports.pyretechnics.surface_fire1 import \
-        calc_flame_length, FireBehaviorMin, calc_surface_fire_behavior_no_wind_no_slope, \
-        calc_midflame_wind_speed, calc_surface_fire_behavior_max
-    from cython.cimports.pyretechnics.crown_fire import \
-        van_wagner_crowning_spread_rate_threshold, calc_crown_fire_behavior_max, calc_combined_fire_behavior
-    from cython.cimports.pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
-    from cython.cimports.pyretechnics.narrow_band_tracking import \
-        new_NarrowBandTracker, NarrowBandTracker, CellsCountSegment, incr_square_around, \
-        decr_square_around, nonempty_tracked_cells
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.vector_utils as vu
+    import cython.cimports.pyretechnics.fuel_models as fm
+    import cython.cimports.pyretechnics.surface_fire1 as sf
+    import cython.cimports.pyretechnics.crown_fire as cf
+    import cython.cimports.pyretechnics.spot_fire as spot
+    import cython.cimports.pyretechnics.narrow_band_tracking as nbt
 else:
     # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
     from math import sqrt, atan, floor, exp
-    from pyretechnics.py_types import \
-        pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
-    from pyretechnics.conversion import \
-        rad_to_deg, opposite_direction, azimuthal_to_cartesian, wind_speed_10m_to_wind_speed_20ft, \
-        Btu_lb_to_kJ_kg, km_hr_to_m_min, m_to_ft
-    from pyretechnics.vector_utils import \
-        vector_magnitude_2d, vector_magnitude_3d, as_unit_vector_2d, as_unit_vector_3d, dot_3d, scale_3d, \
-        get_slope_normal_vector, to_slope_plane, spread_direction_vector_to_angle
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
+        fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
     from pyretechnics.random import BufferedRandGen
-    from pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube, LazySpaceTimeCube
-    from pyretechnics.fuel_models import fuel_model_table
-    from pyretechnics.surface_fire1 import \
-        calc_flame_length, FireBehaviorMin, calc_surface_fire_behavior_no_wind_no_slope, \
-        calc_midflame_wind_speed, calc_surface_fire_behavior_max
-    from pyretechnics.crown_fire import \
-        van_wagner_crowning_spread_rate_threshold, calc_crown_fire_behavior_max, calc_combined_fire_behavior
-    from pyretechnics.spot_fire import expected_firebrand_production, spread_firebrands
-    from pyretechnics.narrow_band_tracking import \
-        new_NarrowBandTracker, NarrowBandTracker, CellsCountSegment, incr_square_around, \
-        decr_square_around, nonempty_tracked_cells
+    from pyretechnics.space_time_cube import ISpaceTimeCube
+    import pyretechnics.conversion as conv
+    import pyretechnics.vector_utils as vu
+    import pyretechnics.fuel_models as fm
+    import pyretechnics.surface_fire1 as sf
+    import pyretechnics.crown_fire as cf
+    import pyretechnics.spot_fire as spot
+    import pyretechnics.narrow_band_tracking as nbt
 
 
 import cython as cy
@@ -114,7 +96,7 @@ def calc_phi_normal_vector(phi: cy.float[:,:], dx: cy.float, dy: cy.float, x: py
     if phi_gradient[0] == 0.0 and phi_gradient[1] == 0.0:
         return phi_gradient # (n_x, n_y)
     else:
-        return as_unit_vector_2d(phi_gradient) # (n_x, n_y)
+        return vu.as_unit_vector_2d(phi_gradient) # (n_x, n_y)
 # phi-field-normal-vector ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
 # TODO: Remove unused function
@@ -142,7 +124,7 @@ def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
             angle = 0.0
         elif n_y < 0.0:
             angle = PI
-    return rad_to_deg(angle)
+    return conv.rad_to_deg(angle)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
 @cy.cfunc
@@ -232,7 +214,7 @@ def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     - slope  :: rise/run
     - aspect :: degrees clockwise from North
     """
-    return azimuthal_to_cartesian(slope, opposite_direction(aspect))
+    return conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
 
 
 # NOTE it would be better to use a cython enum here, but that's not supported in pure python syntax...
@@ -252,11 +234,11 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
     """
     (dphi_dx, dphi_dy)        = phi_gradient_xy
     phi_gradient_xyz: vec_xyz = (dphi_dx, dphi_dy, 0.0)
-    if vector_magnitude_2d(elevation_gradient) == 0.0:
+    if vu.vector_magnitude_2d(elevation_gradient) == 0.0:
         return phi_gradient_xyz
     else:
-        slope_normal_vector: vec_xyz  = get_slope_normal_vector(elevation_gradient) # (x,y,z) unit vector
-        phi_slope_agreement: cy.float = dot_3d(phi_gradient_xyz, slope_normal_vector)
+        slope_normal_vector: vec_xyz  = vu.get_slope_normal_vector(elevation_gradient) # (x,y,z) unit vector
+        phi_slope_agreement: cy.float = vu.dot_3d(phi_gradient_xyz, slope_normal_vector)
         dphi_dx_on_slope   : cy.float = phi_gradient_xyz[0] - phi_slope_agreement * slope_normal_vector[0]
         dphi_dy_on_slope   : cy.float = phi_gradient_xyz[1] - phi_slope_agreement * slope_normal_vector[1]
         dphi_dz_on_slope   : cy.float = phi_gradient_xyz[2] - phi_slope_agreement * slope_normal_vector[2]
@@ -295,7 +277,7 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vector_magnitude_3d(phi_gradient) # phi/m
+    phi_magnitude = vu.vector_magnitude_3d(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burning
@@ -338,7 +320,7 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
             heading_fire_type = fire_type_surface
         heading_spread_rate: cy.float        = fire_behavior_max.max_spread_rate               # m/min
         heading_spread_direction: vec_xyz    = fire_behavior_max.max_spread_direction          # (x,y,z) unit vector
-        heading_spread_vector: vec_xyz       = scale_3d(heading_spread_rate, heading_spread_direction)     # (x,y,z) m/min vector
+        heading_spread_vector: vec_xyz       = vu.scale_3d(heading_spread_rate, heading_spread_direction)     # (x,y,z) m/min vector
         heading_fireline_intensity: cy.float = fire_behavior_max.max_fireline_intensity        # kW/m
         length_to_width_ratio: cy.float      = fire_behavior_max.length_to_width_ratio         # unitless
         eccentricity: cy.float               = fire_behavior_max.eccentricity                  # unitless
@@ -360,7 +342,7 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
 
         A: cy.float = (heading_spread_rate - backing_spread_rate) / (2 * heading_spread_rate) # unitless
 
-        B: cy.float = dot_3d(heading_spread_vector, phi_gradient)                             # phi/min
+        B: cy.float = vu.dot_3d(heading_spread_vector, phi_gradient)                             # phi/min
         C: cy.float = flanking_spread_rate / heading_spread_rate                              # unitless
         D: cy.float = (heading_spread_rate * phi_magnitude) ** 2.0                            # (phi/min)^2
         E: cy.float = (length_to_width_ratio ** 2.0 - 1.0) * (B ** 2.0)                       # (phi/min)^2
@@ -371,10 +353,10 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
         #============================================================================================
 
         normal_spread_rate: cy.float        = -dphi_dt / phi_magnitude                        # m/min
-        normal_direction: vec_xyz           = as_unit_vector_3d(phi_gradient)                 # (x,y,z) unit vector
+        normal_direction: vec_xyz           = vu.as_unit_vector_3d(phi_gradient)                 # (x,y,z) unit vector
         normal_adjustment: cy.float         = normal_spread_rate / heading_spread_rate        # unitless
         normal_fireline_intensity: cy.float = heading_fireline_intensity * normal_adjustment  # kW/m
-        normal_flame_length: cy.float = calc_flame_length(normal_fireline_intensity) # m
+        normal_flame_length: cy.float = sf.calc_flame_length(normal_fireline_intensity) # m
         normal_fire_type: cy.int = (
             fire_type_surface if heading_fire_type == fire_type_surface
             else fire_type_crown_active if normal_spread_rate > critical_spread_rate
@@ -669,7 +651,7 @@ def moisturize(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
 # moisturize ends here
 
 def fm_structs() -> dict[int, FuelModel]:
-    return {f["number"]: fm_struct(f) for f in fuel_model_table.values()}
+    return {f["number"]: fm_struct(f) for f in fm.fuel_model_table.values()}
 
 
 fuel_model_structs = fm_structs()
@@ -762,7 +744,7 @@ class SpreadInputs:
             PyMem_Malloc(300 * cython.sizeof(FuelModel)))
         if not self.fuel_models_arr:
             raise MemoryError()
-        for f in fuel_model_table.values():
+        for f in fm.fuel_model_table.values():
             fm_number: pyidx = f["number"]
             fuel_model: FuelModel = fm_struct(f)
             self.fuel_models_arr[fm_number] = fuel_model
@@ -842,7 +824,7 @@ def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellIn
     # Topography, Fuel Model, and Vegetation
     slope               : cy.float = lookup_space_time_cube_float32(inputs.slope, tyx)               # rise/run
     aspect              : cy.float = lookup_space_time_cube_float32(inputs.aspect, tyx)              # degrees clockwise from North
-    fuel_model_number   : cy.float = lookup_space_time_cube_float32(inputs.fuel_model, tyx)          # integer index in fuel_model_table
+    fuel_model_number   : cy.float = lookup_space_time_cube_float32(inputs.fuel_model, tyx)          # integer index in fm.fuel_model_table
     canopy_cover        : cy.float = lookup_space_time_cube_float32(inputs.canopy_cover, tyx)        # 0-1
     canopy_height       : cy.float = lookup_space_time_cube_float32(inputs.canopy_height, tyx)       # m
     canopy_base_height  : cy.float = lookup_space_time_cube_float32(inputs.canopy_base_height, tyx)  # m
@@ -896,10 +878,10 @@ def unburned_SpreadBehavior(elevation_gradient: vec_xy, dphi_st: vec_xyz) -> Spr
     # IMPROVEMENT We wouldn't have to go through this trouble if we simply returned a Cartesian speed vector instead, which would play more nicely with the rest of the code.
     spread_direction: vec_xyz
     if dphi_st != (0, 0, 0): # IMPROVEMENT numerical stability
-        spread_direction = scale_3d(1./ vector_magnitude_3d(dphi_st), dphi_st)
+        spread_direction = vu.scale_3d(1./ vu.vector_magnitude_3d(dphi_st), dphi_st)
     elif elevation_gradient != (0, 0): # IMPROVEMENT numerical stability
-        slope_vector_3d: vec_xyz = to_slope_plane(elevation_gradient, elevation_gradient)
-        spread_direction = as_unit_vector_3d(slope_vector_3d)
+        slope_vector_3d: vec_xyz = vu.to_slope_plane(elevation_gradient, elevation_gradient)
+        spread_direction = vu.as_unit_vector_3d(slope_vector_3d)
     else:
         spread_direction = (0., 1., 0.) # default: North
     #============================================================================================
@@ -970,13 +952,13 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     """
     TODO: Add docstring
     """
-    tracked_cells: object = new_NarrowBandTracker(cols, rows)
+    tracked_cells: object = nbt.new_NarrowBandTracker(cols, rows)
     cell         : object
     y: pyidx
     x: pyidx
     for cell in frontier_cells:
         y, x = decode_cell_index(cell)
-        incr_square_around(tracked_cells, y, x, buffer_width)
+        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
     return tracked_cells
 
 
@@ -1004,7 +986,7 @@ def spot_from_burned_cell(
     aspect                  : cy.float = lookup_space_time_cube_float32(sinputs.aspect, space_time_coordinate)
     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
     firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
-    expected_firebrand_count: cy.float = expected_firebrand_production(fb,
+    expected_firebrand_count: cy.float = spot.expected_firebrand_production(fb,
                                                                             elevation_gradient,
                                                                             cell_horizontal_area_m2,
                                                                             firebrands_per_unit_heat)
@@ -1013,7 +995,7 @@ def spot_from_burned_cell(
         # OPTIM we might want to hold to the SpreadInputs and look these up in there.
         wind_speed_10m: cy.float = lookup_space_time_cube_float32(sinputs.wind_speed_10m, space_time_coordinate)
         upwind_direction: cy.float = lookup_space_time_cube_float32(sinputs.upwind_direction, space_time_coordinate)
-        new_ignitions: tuple[float, set]|None = spread_firebrands(sinputs.fuel_model,
+        new_ignitions: tuple[float, set]|None = spot.spread_firebrands(sinputs.fuel_model,
                                                                         sinputs.temperature,
                                                                         sinputs.fuel_moisture_dead_1hr,
                                                                         (sinputs.rows, sinputs.cols),
@@ -1080,7 +1062,7 @@ def prepare_partialed_wavelet(
     Prepares ('partials') the elliptical wavelet calculation based on the given elliptical dimensions.
     The returned data is meant to be passed to function `dphi_dt_from_partialed_wavelet()`.
     """
-    Vh: cy.float = vector_magnitude_3d(Vh_3d)
+    Vh: cy.float = vu.vector_magnitude_3d(Vh_3d)
     Vh_inv: cy.float = (1.0/Vh) if Vh > 0 else 0.0
     LoW: cy.float = 0.5*(Vh + Vb)/Vf if Vf > 0 else 1.0 # Length/Width ratio
     return PartialedEllWavelet(
@@ -1104,7 +1086,7 @@ def zero_partialed_wavelet() -> PartialedEllWavelet:
 @cy.exceptval(check=False)
 def pw_from_FireBehaviorMax(fb_max: FireBehaviorMax) -> PartialedEllWavelet:
     Vh: cy.float = fb_max.max_spread_rate
-    Vh_3d: vec_xyz = scale_3d(Vh, fb_max.max_spread_direction)
+    Vh_3d: vec_xyz = vu.scale_3d(Vh, fb_max.max_spread_direction)
     if Vh > 0:
         LoW: cy.float = fb_max.length_to_width_ratio
         ecc: cy.float = fb_max.eccentricity
@@ -1424,7 +1406,7 @@ def load_float_inputs_for_cell(
     float_inputs[i,0] = lookup_space_time_cube_float32(sinputs.slope, (tr[0], y, x))               # rise/run
     float_inputs[i,1] = lookup_space_time_cube_float32(sinputs.aspect, (tr[1], y, x))              # degrees clockwise from North
     
-    float_inputs[i,2] = lookup_space_time_cube_float32(sinputs.fuel_model, (tr[2], y, x))          # integer index in fuel_model_table
+    float_inputs[i,2] = lookup_space_time_cube_float32(sinputs.fuel_model, (tr[2], y, x))          # integer index in fm.fuel_model_table
     
     float_inputs[i,3] = lookup_space_time_cube_float32(sinputs.canopy_cover, (tr[3], y, x))        # 0-1
     float_inputs[i,4] = lookup_space_time_cube_float32(sinputs.canopy_height, (tr[4], y, x))       # m
@@ -1586,7 +1568,7 @@ def load_saved_CellInputs(float_inputs: cy.float[:,:], i: pyidx) -> CellInputs:
     slope               : cy.float = float_inputs[i, 0]               # rise/run
     aspect              : cy.float = float_inputs[i, 1]              # degrees clockwise from North
     
-    fuel_model_number   : cy.float = float_inputs[i, 2]   # integer index in fuel_model_table
+    fuel_model_number   : cy.float = float_inputs[i, 2]   # integer index in fm.fuel_model_table
     
     canopy_cover        : cy.float = float_inputs[i, 3]        # 0-1
     canopy_height       : cy.float = float_inputs[i, 4]       # m
@@ -1652,7 +1634,7 @@ def resolve_surface_nwns_behavior(
         ci.fuel_moisture_live_woody)
     # Apply fuel moisture to fuel model
     mfm: FuelModel = moisturize(fm_struct, M_f)
-    surface_fire_min: FireBehaviorMin = calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
+    surface_fire_min: FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
     return surface_fire_min
 
 
@@ -1668,20 +1650,20 @@ def resolve_surface_max_behavior(
     fuel_bed_depth : cy.float = fm_struct.delta                     # ft
 
     # Convert from 10m wind speed to 20ft wind speed
-    wind_speed_20ft: cy.float = wind_speed_10m_to_wind_speed_20ft(ci.wind_speed_10m) # km/hr
+    wind_speed_20ft: cy.float = conv.wind_speed_10m_to_wind_speed_20ft(ci.wind_speed_10m) # km/hr
 
     # Convert 20ft wind speed from km/hr to m/min
-    wind_speed_20ft_m_min: cy.float = km_hr_to_m_min(wind_speed_20ft) # m/min
+    wind_speed_20ft_m_min: cy.float = conv.km_hr_to_m_min(wind_speed_20ft) # m/min
 
     # Convert from 20ft wind speed to midflame wind speed in m/min
-    midflame_wind_speed: cy.float = calc_midflame_wind_speed(
+    midflame_wind_speed: cy.float = sf.calc_midflame_wind_speed(
                                         wind_speed_20ft_m_min,  # m/min
                                         fuel_bed_depth,         # ft
-                                        m_to_ft(ci.canopy_height), # ft
+                                        conv.m_to_ft(ci.canopy_height), # ft
                                         ci.canopy_cover)           # 0-1
     
     # Calculate surface fire behavior in the direction of maximum spread
-    surface_fire_max: FireBehaviorMax = calc_surface_fire_behavior_max(
+    surface_fire_max: FireBehaviorMax = sf.calc_surface_fire_behavior_max(
                                                 surface_fire_min,
                                                 midflame_wind_speed,
                                                 ci.upwind_direction,
@@ -1698,9 +1680,9 @@ def resolve_crown_max_behavior(
         fm_struct: FuelModel,
         elevation_gradient: vec_xy, # NOTE not currently used but it could save some polar-to-cartesian conversion to use it.
         ) -> FireBehaviorMax:
-    heat_of_combustion: cy.float = Btu_lb_to_kJ_kg(fm_struct.h[0]) # kJ/kg
+    heat_of_combustion: cy.float = conv.Btu_lb_to_kJ_kg(fm_struct.h[0]) # kJ/kg
     estimated_fine_fuel_moisture: cy.float = ci.fuel_moisture_dead_1hr
-    return calc_crown_fire_behavior_max(
+    return cf.calc_crown_fire_behavior_max(
         ci.canopy_height, 
         ci.canopy_base_height,
         ci.canopy_bulk_density, 
@@ -1722,7 +1704,7 @@ def resolve_crowning_spread_rate_threshold(
     """
     Computes the surface spread rate at which crown fire occurs.
     """
-    return van_wagner_crowning_spread_rate_threshold(surface_fire_max, ci.canopy_base_height, ci.foliar_moisture)
+    return cf.van_wagner_crowning_spread_rate_threshold(surface_fire_max, ci.canopy_base_height, ci.foliar_moisture)
 
 
 @cy.ccall
@@ -1817,7 +1799,7 @@ def resolve_combined_spread_behavior(
     ci: CellInputs = lookup_cell_inputs(sinputs, tyx)
     elevation_gradient: vec_xy = calc_elevation_gradient(ci.slope, ci.aspect)
     dphi_st: vec_xyz = calc_phi_gradient_on_slope(dphi, elevation_gradient)
-    phi_magnitude: cy.float = vector_magnitude_3d(dphi_st)
+    phi_magnitude: cy.float = vu.vector_magnitude_3d(dphi_st)
     # Load the fuel model
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
     fm_struct: FuelModel = sinputs.get_fm_struct(fm_number)
@@ -1834,7 +1816,7 @@ def resolve_combined_spread_behavior(
         else:
             crown_fire_max: FireBehaviorMax = resolve_crown_max_behavior(fb_opts, ci, fm_struct, elevation_gradient)
             cfn: SpreadBehavior = calc_fireline_normal_behavior(crown_fire_max, dphi_st)
-            combined_fire_normal: SpreadBehavior = calc_combined_fire_behavior(sfn, cfn)
+            combined_fire_normal: SpreadBehavior = cf.calc_combined_fire_behavior(sfn, cfn)
             return combined_fire_normal
         
 
@@ -1867,7 +1849,7 @@ def load_tracked_cell_data(
 def sync_tracked_cells_arrays(
         sinputs: SpreadInputs,
         fb_opts: FireBehaviorSettings,
-        tracked_cells: NarrowBandTracker,
+        tracked_cells: nbt.NarrowBandTracker,
         tca_old: TrackedCellsArrays,
         tca_new: TrackedCellsArrays
         ) -> cy.void:
@@ -1893,7 +1875,7 @@ def sync_tracked_cells_arrays(
     if ys_list is not None:
         for s in ys_list:
             if s is not None:
-                segm: CellsCountSegment
+                segm: nbt.CellsCountSegment
                 for segm in s.values():
                     k: pyidx
                     y: pyidx = segm.y
@@ -2135,7 +2117,7 @@ def process_spread_burned_cells(
         # Write to outputs
         fire_type_matrix[y,x]          = fb.fire_type
         spread_rate_matrix[y,x]        = fb.spread_rate
-        spread_direction_matrix[y,x]   = spread_direction_vector_to_angle(fb.spread_direction)
+        spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(fb.spread_direction)
         fireline_intensity_matrix[y,x] = fb.fireline_intensity
         flame_length_matrix[y,x]       = fb.flame_length
         time_of_arrival_matrix[y,x]    = toa
@@ -2316,11 +2298,11 @@ def update_tracked_cells_with_frontier_diff(
     x: pyidx
     for cell in frontier_cells_added:
         y, x = decode_cell_index(cell)
-        incr_square_around(tracked_cells, y, x, buffer_width)
+        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
     # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
     for cell in frontier_cells_dropped:
         y, x = decode_cell_index(cell)
-        decr_square_around(tracked_cells, y, x, buffer_width)
+        nbt.decr_square_around(tracked_cells, y, x, buffer_width)
     # Return updated tracked cells
     return tracked_cells
 
@@ -2344,7 +2326,7 @@ def spread_one_timestep(
     phs: cy.float[:,:] = output_matrices["phi_star"]
 
     # Insert missing tracked cells.
-    tracked_cells: NarrowBandTracker = sim_state["tracked_cells"]
+    tracked_cells: nbt.NarrowBandTracker = sim_state["tracked_cells"]
     tca_old: TrackedCellsArrays = sim_state["_tracked_cells_arrays_old"]
     tca: TrackedCellsArrays = sim_state["_tracked_cells_arrays"]
     start_time: cy.float = sim_state["simulation_time"]
@@ -2413,7 +2395,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
       - slope                         :: rise/run
       - aspect                        :: degrees clockwise from North
-      - fuel_model                    :: integer index in fuel_model_table
+      - fuel_model                    :: integer index in fm.fuel_model_table
       - canopy_cover                  :: 0-1
       - canopy_height                 :: m
       - canopy_base_height            :: m
@@ -2512,9 +2494,9 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
         raise ValueError("The space_time_cubes dictionary contains these unused keys: "
                          + str(provided_cubes.difference((required_cubes | optional_cubes))))
 
-    # Ensure that all space_time_cubes values are SpaceTimeCube objects
+    # Ensure that all space_time_cubes values are ISpaceTimeCube objects
     for cube in space_time_cubes.values():
-        if not(isinstance(cube, SpaceTimeCube) or isinstance(cube, LazySpaceTimeCube)):
+        if not(isinstance(cube, ISpaceTimeCube)):
             raise ValueError("All values in the space_time_cubes dictionary must be SpaceTimeCube or "
                              + "LazySpaceTimeCube objects. See pyretechnics.space_time_cube for more information.")
 
@@ -2627,7 +2609,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
     simulation_time: cy.float = sim_state["simulation_time"]
 
-    while(simulation_time < max_stop_time and (nonempty_tracked_cells(tracked_cells) or len(spot_ignitions) > 0)):
+    while(simulation_time < max_stop_time and (nbt.nonempty_tracked_cells(tracked_cells) or len(spot_ignitions) > 0)):
         # Compute max_timestep based on the remaining time in the temporal band and simulation
         remaining_time_in_band       = band_duration - simulation_time % band_duration
         remaining_time_in_simulation = max_stop_time - simulation_time
@@ -2648,7 +2630,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     # Return the final simulation results
     return {**{
         "stop_time"      : simulation_time,
-        "stop_condition" : "max duration reached" if nonempty_tracked_cells(tracked_cells) else "no burnable cells",
+        "stop_condition" : "max duration reached" if nbt.nonempty_tracked_cells(tracked_cells) else "no burnable cells",
         "output_matrices": output_matrices,
     }, **({ # FIXME restore | operator when done testing on older Python.
         "spot_ignitions"  : spot_igns,
