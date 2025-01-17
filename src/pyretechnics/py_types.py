@@ -74,4 +74,14 @@ SpreadBehavior = cy.struct(
     fireline_intensity = cy.float,
     flame_length       = cy.float,
 )
+
+# Pre-computed coefficients to apply elliptical wavelet math as fast as possible
+# once the phi gradient information is available.
+# See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.
+PartialedEllWavelet = cy.struct(
+    Vh_3d = vec_xyz,  # Heading spread rate vector (m/min)
+    ewc_A = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
+    ewc_B = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
+    ewc_C = cy.float, # Dimensionless elliptical wavelet coefficient (>= 0)
+)
 # py-types-py ends here

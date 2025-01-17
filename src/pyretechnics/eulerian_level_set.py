@@ -5,7 +5,7 @@ if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
     from cython.cimports.pyretechnics.math import sqrt, atan, floor, exp
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fcatarr, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
+        fcatarr, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, PartialedEllWavelet
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -19,7 +19,7 @@ else:
     # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
     from math import sqrt, atan, floor, exp
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior
+        fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior, PartialedEllWavelet
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -1035,16 +1035,6 @@ def compute_st_dphi_2(
     p_z: cy.float = dp0*dz0 + dp1*dz1
     st_dphi_2: cy.float = dp0*dp0 + dp1*dp1 - (p_z * p_z)/(1.0 + dz0*dz0 + dz1*dz1)
     return st_dphi_2
-
-
-PartialedEllWavelet = cy.struct( # INTRO Pre-computed coefficients to apply elliptical wavelet math as fast as possible (once the phi gradient information is available). See `dphi_dt_from_partialed_wavelet()``.
-    Vh_3d = vec_xyz, # Heading spread rate vector (m/min).
-    # The 'ewc_' prefix stands for 'elliptical wavelet coefficient', making the name easy to track for in the code.
-    # I deliberately didn't choose descriptive names for these - I find that short, collision-free synthetic names are more useful to programmers here.
-    ewc_A = cy.float, # Dimensionless coefficient (<= 0).
-    ewc_B = cy.float, # Dimensionless coefficient (<= 0).
-    ewc_C = cy.float, # Dimensionless coefficient (>= 0).
-)
 
 
 @cy.cfunc

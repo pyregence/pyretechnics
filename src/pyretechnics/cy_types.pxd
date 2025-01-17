@@ -66,4 +66,10 @@ cdef struct SpreadBehavior:
     vec_xyz spread_direction
     float fireline_intensity
     float flame_length
+
+cdef struct PartialedEllWavelet:
+    vec_xyz Vh_3d
+    float ewc_A
+    float ewc_B
+    float ewc_C
 # cy-types-pxd ends here
