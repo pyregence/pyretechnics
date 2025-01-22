@@ -379,6 +379,7 @@ def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior, crown_fir
     surface_spread_rate        = surface_fire_behavior.spread_rate        # m/min
     surface_spread_direction: vec_xyz = surface_fire_behavior.spread_direction   # (x, y, z) unit vector
     surface_fireline_intensity = surface_fire_behavior.fireline_intensity # kW/m
+    surface_flame_length = surface_fire_behavior.flame_length # m
     # Unpack the crown fire behavior values
     crown_fire_type          = crown_fire_behavior.fire_type          # "passive_crown" or "active_crown"
     crown_spread_rate        = crown_fire_behavior.spread_rate        # m/min
@@ -398,8 +399,19 @@ def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior, crown_fir
         # Independent crown fire (This is probably user error.)
         return crown_fire_behavior
     elif crown_spread_rate == 0.0:
-        # No crown fire
-        return surface_fire_behavior
+        if crown_fire_type:
+            # Passive crown fire
+            return SpreadBehavior(
+                dphi_dt            = dphi_dt,
+                fire_type          = crown_fire_type,
+                spread_rate        = surface_spread_rate,
+                spread_direction   = surface_spread_direction,
+                fireline_intensity = surface_fireline_intensity,
+                flame_length       = surface_flame_length,
+            )
+        else:
+            # No crown fire
+            return surface_fire_behavior
     elif surface_spread_rate > crown_spread_rate:
         # Surface fire spreads faster
         combined_fireline_intensity = (surface_fireline_intensity
