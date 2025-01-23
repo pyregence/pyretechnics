@@ -1,6 +1,12 @@
 # [[file:../../org/pyretechnics.org::load-raster][load-raster]]
-# cython: profile=True
+# cython: profile=False
+import cython
+import numpy as np
 import rasterio
+if cython.compiled:
+    from cython.cimports.pyretechnics.space_time_cube import SpaceTimeCube
+else:
+    from pyretechnics.space_time_cube import SpaceTimeCube
 
 
 def raster_metadata(raster):
@@ -55,9 +61,6 @@ def load_and_convert_landfire_rasters(landfire_file_paths):
     return landfire_rasters
 # load-and-convert-landfire-rasters ends here
 # [[file:../../org/pyretechnics.org::verify-raster-constraints][verify-raster-constraints]]
-import numpy as np
-
-
 def verify_cube_compatible_dimensions(cube_shape, rasters):
     cube_shape_ = np.asarray(cube_shape)
     for r in rasters:
@@ -87,9 +90,6 @@ def verify_raster_constraints(cube_shape, rasters):
     return verify_cube_compatible_dimensions(cube_shape, rasters) and verify_same_georeferences(rasters)
 # verify-raster-constraints ends here
 # [[file:../../org/pyretechnics.org::convert-rasters-to-space-time-cubes][convert-rasters-to-space-time-cubes]]
-from pyretechnics.space_time_cube import SpaceTimeCube
-
-
 def convert_rasters_to_space_time_cubes(cube_shape, raster_dict):
     fn_dict = {}
 
