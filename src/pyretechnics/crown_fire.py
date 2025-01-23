@@ -5,14 +5,14 @@ import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, exp, pow
     from cython.cimports.pyretechnics.cy_types import \
-        vec_xyz, ProjectedVectors, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
+        vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.surface_fire1 as sf
 else:
     from math import sqrt, exp, pow
     from pyretechnics.py_types import \
-        vec_xyz, ProjectedVectors, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
+        vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.surface_fire1 as sf

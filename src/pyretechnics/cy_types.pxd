@@ -34,11 +34,6 @@ cdef struct ProjectedVectors:
     vec_xyz wind_vector_3d
     vec_xyz slope_vector_3d
 
-cdef struct CrownSpreadInfo:
-    int fire_type
-    float spread_rate
-    float critical_spread_rate
-
 cdef struct FireBehaviorMin:
     float base_spread_rate
     float base_fireline_intensity
@@ -66,6 +61,11 @@ cdef struct SpreadBehavior:
     vec_xyz spread_direction
     float fireline_intensity
     float flame_length
+
+cdef struct CrownSpreadInfo:
+    int fire_type
+    float spread_rate
+    float critical_spread_rate
 
 cdef struct PartialedEllWavelet:
     vec_xyz Vh_3d

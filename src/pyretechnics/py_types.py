@@ -38,12 +38,6 @@ ProjectedVectors = cy.struct(
     slope_vector_3d = vec_xyz,
 )
 
-CrownSpreadInfo = cy.struct(
-    fire_type            = cy.int,
-    spread_rate          = cy.float,
-    critical_spread_rate = cy.float,
-)
-
 FireBehaviorMin = cy.struct(
     base_spread_rate         = cy.float,
     base_fireline_intensity  = cy.float,
@@ -73,6 +67,12 @@ SpreadBehavior = cy.struct(
     spread_direction   = vec_xyz,
     fireline_intensity = cy.float,
     flame_length       = cy.float,
+)
+
+CrownSpreadInfo = cy.struct(
+    fire_type            = cy.int,
+    spread_rate          = cy.float,
+    critical_spread_rate = cy.float,
 )
 
 # Pre-computed coefficients to apply elliptical wavelet math as fast as possible

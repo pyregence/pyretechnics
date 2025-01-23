@@ -1,4 +1,4 @@
-from pyretechnics.cy_types cimport vec_xyz, CrownSpreadInfo, FireBehaviorMax, SpreadBehavior
+from pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
 
 cdef float van_wagner_critical_fireline_intensity(
     float canopy_base_height,
