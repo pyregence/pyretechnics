@@ -1,6 +1,11 @@
 # [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
-# cython: profile=True
-import cython as cy
+# cython: profile=False
+import cython
+if cython.compiled:
+    from cython.cimports.pyretechnics.math import exp
+else:
+    from math import exp
+
 
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
 #
@@ -112,7 +117,6 @@ def expand_compact_fuel_model(fuel_model_number):
 
 
 fuel_model_table = {k: expand_compact_fuel_model(k) for k in fuel_model_compact_table.keys()}
-
 # expand-compact-fuel-model-table ends here
 # [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
 def map_category(f):
@@ -220,8 +224,6 @@ def add_weighting_factors(fuel_model):
     return weighted_fuel_model
 # add-weighting-factors ends here
 # [[file:../../org/pyretechnics.org::add-live-moisture-of-extinction][add-live-moisture-of-extinction]]
-from math import exp
-
 def add_live_moisture_of_extinction(fuel_model):
     """
     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
