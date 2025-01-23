@@ -1,6 +1,7 @@
 # [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
 # cython: profile=False
 import cython
+import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, exp, pow
     from cython.cimports.pyretechnics.cy_types import \
@@ -15,9 +16,6 @@ else:
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.surface_fire1 as sf
-
-
-import cython as cy
 
 
 @cy.cfunc

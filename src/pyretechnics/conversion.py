@@ -1,15 +1,13 @@
 # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
 # cython: profile=False
 import cython
+import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos, tan, atan, atan2
     from cython.cimports.pyretechnics.cy_types import vec_xy
 else:
     from math import sqrt, sin, cos, tan, atan, atan2
     from pyretechnics.py_types import vec_xy
-
-
-import cython as cy
 
 
 PI = cy.declare(cy.double, 3.14159265358979323846)

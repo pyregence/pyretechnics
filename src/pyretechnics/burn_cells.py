@@ -1,6 +1,7 @@
 # [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
 # cython: profile=False
 import cython
+import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.cy_types import vec_xy, vec_xyz
     import cython.cimports.pyretechnics.conversion as conv
@@ -15,9 +16,6 @@ else:
     import pyretechnics.fuel_models as fm
     import pyretechnics.surface_fire1 as sf
     import pyretechnics.crown_fire as cf
-
-
-import cython as cy
 
 
 # TODO: Create a version of this function that runs efficiently over a space_time_region
