@@ -146,7 +146,7 @@ def empirical_LoW(ftype):
     burned_yx = np.argwhere(ftype > 0)
     c = np.cov(burned_yx.astype(float), rowvar=False)
     eig = np.linalg.eig(c)
-    v1, v2 = eig.eigenvalues
+    v1, v2 = eig[0] # eigenvalues
     return np.sqrt(v1 / v2)
 
 
