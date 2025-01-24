@@ -958,7 +958,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
     x: pyidx
     for cell in frontier_cells:
         y, x = decode_cell_index(cell)
-        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
+        nbt.inc_square_around(tracked_cells, y, x, buffer_width)
     return tracked_cells
 
 
@@ -2288,11 +2288,11 @@ def update_tracked_cells_with_frontier_diff(
     x: pyidx
     for cell in frontier_cells_added:
         y, x = decode_cell_index(cell)
-        nbt.incr_square_around(tracked_cells, y, x, buffer_width)
+        nbt.inc_square_around(tracked_cells, y, x, buffer_width)
     # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
     for cell in frontier_cells_dropped:
         y, x = decode_cell_index(cell)
-        nbt.decr_square_around(tracked_cells, y, x, buffer_width)
+        nbt.dec_square_around(tracked_cells, y, x, buffer_width)
     # Return updated tracked cells
     return tracked_cells
 
