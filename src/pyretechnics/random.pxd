@@ -1,7 +1,7 @@
 from pyretechnics.cy_types cimport pyidx
 
 cdef class BufferedRandGen:
-    cdef object numpy_rand     # object -> Generator
+    cdef object numpy_rand     # TODO: object -> Generator
     cdef float[:] uniform_buf
     cdef pyidx uniform_pos
     cdef float[:] normal_buf

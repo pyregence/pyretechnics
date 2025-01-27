@@ -263,6 +263,7 @@ def dec_square_around(tracked_cells: NarrowBandTracker, y: pyidx, x: pyidx, buff
 
 
 @cy.cfunc
+@cy.inline
 @cy.exceptval(check=False)
 def nonempty_tracked_cells(tracked_cells: NarrowBandTracker) -> cy.bint:
     return tracked_cells.n_tracked_cells > 0
@@ -352,5 +353,6 @@ def __resolve_next(tc_iter: TrackedCellsIterator) -> cy.bint:
 
 
 @cy.cfunc
+@cy.inline
 def tracked_cells_iterator(tracked_cells: NarrowBandTracker) -> TrackedCellsIterator:
     return TrackedCellsIterator(iterate_segments(tracked_cells))
