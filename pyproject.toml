@@ -17,6 +17,7 @@ dependencies = [
         "rasterio",
         "matplotlib",
         "sortedcontainers",
+        "cython",
 ]
 classifiers = [
         "Programming Language :: Python :: 3",
