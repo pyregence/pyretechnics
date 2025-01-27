@@ -296,6 +296,7 @@ class TrackedCellsIterator:
     current_segment: CellsCountSegment # INVARIANT never None
     current_k      : pyidx # INVARIANT points to the index for the next cell to return.
 
+
     # NOTE: This implementation relies on the fact that a CellsCountSegment is never empty.
     def __cinit__(self, segment_iter):
         self.segment_iter = segment_iter
