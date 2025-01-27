@@ -1,10 +1,5 @@
 # [[file:../../org/pyretechnics.org::vector-utils-pxd][vector-utils-pxd]]
-cimport pyretechnics.cy_types
 from pyretechnics.cy_types cimport vec_xy, vec_xyz
-
-#==================================================
-# Cython functions to cimport into other modules
-#==================================================
 
 cdef float dot_2d(vec_xy vector1, vec_xy vector2) noexcept
 cdef float dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept

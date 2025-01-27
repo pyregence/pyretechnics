@@ -1,19 +1,15 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
 # cython: profile=False
 import cython
+import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
-    from cython.cimports.pyretechnics.conversion import \
-        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
+    import cython.cimports.pyretechnics.conversion as conv
 else:
     from math import sqrt, sin, cos
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz
-    from pyretechnics.conversion import \
-        opposite_direction, azimuthal_to_cartesian, cartesian_to_azimuthal, deg_to_rad
-
-
-import cython as cy
+    import pyretechnics.conversion as conv
 
 
 @cy.cfunc
@@ -122,7 +118,7 @@ def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
 def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
     x        : cy.float = vector_3d[0]
     y        : cy.float = vector_3d[1]
-    az_coords: vec_xy   = cartesian_to_azimuthal(x, y)
+    az_coords: vec_xy   = conv.cartesian_to_azimuthal(x, y)
     azimuth  : cy.float = az_coords[1]
     return azimuth
 
@@ -154,10 +150,10 @@ def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, as
     Rotate a 3D vector <x,y,z> theta degrees clockwise on the plane defined by the slope and aspect.
     """
     # Calculate the slope normal vector from the slope and aspect
-    elevation_gradient : vec_xy  = azimuthal_to_cartesian(slope, opposite_direction(aspect))
+    elevation_gradient : vec_xy  = conv.azimuthal_to_cartesian(slope, conv.opposite_direction(aspect))
     slope_normal_vector: vec_xyz = get_slope_normal_vector(elevation_gradient)
     # Calculate sine and cosine of theta
-    theta_rad: cy.float = deg_to_rad(theta)
+    theta_rad: cy.float = conv.deg_to_rad(theta)
     cos_theta: cy.float = cos(theta_rad)
     sin_theta: cy.float = sin(theta_rad)
     # Rotate theta degrees clockwise around the slope_normal_vector
