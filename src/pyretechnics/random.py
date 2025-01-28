@@ -38,7 +38,7 @@ class BufferedRandGen:
     @cy.boundscheck(False)
     @cy.wraparound(False)
     @cy.exceptval(check=False)
-    def next_poisson(self: BufferedRandGen, M: cy.double) -> pyidx:
+    def next_poisson(self: BufferedRandGen, M: cy.double) -> cy.long:
         """
         A method for efficiently drawing from a Poisson distribution of (very) small mean,
         doing fewer random draws than method calls.
@@ -46,7 +46,7 @@ class BufferedRandGen:
         Returns a random draw from a Poisson distribution of mean M.
         """
         if M > 0.0:
-            ret: pyidx = 0
+            ret: cy.long = 0
             # Theorem: A sum of independent Poisson variables is Poisson-distributed,
             #          and its mean is the sum of the means.
             # Draw repeatedly from Poisson(16)
@@ -59,7 +59,7 @@ class BufferedRandGen:
                 M   -= 1.0
             # Now we draw efficiently from a Poisson distribution of fractional mean.
             # This relies on using a sequence of arrival times distributed i.i.d. as Exponential(1).
-            ret_frac: pyidx     = 0
+            ret_frac: cy.long   = 0
             pos     : pyidx     = self.poisson_exp_pos
             next_Sk : cy.double = self.poisson_exp_buf[pos]
             while M >= next_Sk: # This will be rare.
@@ -128,11 +128,11 @@ def __reset_normal_buffer(self: BufferedRandGen) -> cy.void:
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
-def __next_poisson1(self: BufferedRandGen) -> pyidx:
+def __next_poisson1(self: BufferedRandGen) -> cy.long:
     if not(self.poisson1_pos < 1024):
         self.poisson1_buf = self.numpy_rand.poisson(lam=1.0, size=1024)
         self.poisson1_pos = 0
-    ret: pyidx         = self.poisson1_buf[self.poisson1_pos]
+    ret: cy.long       = self.poisson1_buf[self.poisson1_pos]
     self.poisson1_pos += 1
     return ret
 
@@ -141,10 +141,10 @@ def __next_poisson1(self: BufferedRandGen) -> pyidx:
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
-def __next_poisson16(self: BufferedRandGen) -> pyidx:
+def __next_poisson16(self: BufferedRandGen) -> cy.long:
     if not(self.poisson16_pos < 1024):
         self.poisson16_buf = self.numpy_rand.poisson(lam=16.0, size=1024)
         self.poisson16_pos = 0
-    ret: pyidx          = self.poisson16_buf[self.poisson16_pos]
+    ret: cy.long        = self.poisson16_buf[self.poisson16_pos]
     self.poisson16_pos += 1
     return ret

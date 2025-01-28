@@ -106,7 +106,6 @@ def grow_fire(world_state):
     #   max_crown_flame_length           :flame-length-matrix
     #   perimeter_flame_length           :directional-flame-length-matrix
     #   fire_type                        :fire-type-matrix
-    #   firebrand_count                  :firebrand-count-matrix
     #   firebrand_ignition               :spot-matrix
     #
     #   ======================== Internal 2D Arrays ========================
@@ -149,7 +148,6 @@ def grow_fire(world_state):
         "max_crown_flame_length"        : supply_layer(output_layer_dict, "max_crown_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
         "perimeter_flame_length"        : supply_layer(output_layer_dict, "perimeter_flame_length"        , layer_shape, "float16", np.nan, overwrite_outputs),
         "fire_type"                     : supply_layer(output_layer_dict, "fire_type"                     , layer_shape, "uint8"  ,      0, overwrite_outputs),
-        "firebrand_count"               : supply_layer(output_layer_dict, "firebrand_count"                   , layer_shape, "uint32" ,      0, overwrite_outputs),
         "firebrand_ignition"            : supply_layer(output_layer_dict, "firebrand_ignition"                , layer_shape, "bool8"  ,  False, overwrite_outputs),
     }
 

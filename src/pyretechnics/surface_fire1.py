@@ -322,6 +322,7 @@ def calc_flame_length(fireline_intensity: cy.float) -> cy.float:
 
 @cy.ccall
 @cy.cdivision(True)
+@cy.exceptval(check=False)
 def calc_areal_heat_output(spread_rate: cy.float, fireline_intensity: cy.float) -> cy.float:
     """
     Returns the heat per unit area (kJ/m^2) given:

@@ -12,6 +12,6 @@ cdef class BufferedRandGen:
     cdef pyidx poisson1_pos
     cdef double[:] poisson_exp_buf
     cdef pyidx poisson_exp_pos
-    cdef pyidx next_poisson(BufferedRandGen self, double M) noexcept
+    cdef long next_poisson(BufferedRandGen self, double M) noexcept
     cdef float next_uniform(BufferedRandGen self) noexcept
     cdef float next_normal(BufferedRandGen self) noexcept

@@ -968,6 +968,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
 def spot_from_burned_cell(
         spot_config, # OPTIM accept something more efficient that a dict.
         sinputs: SpreadInputs,
+        fire_type_matrix: cy.uchar[:,:],
         random_generator: BufferedRandGen,
         y: pyidx,
         x: pyidx,
@@ -990,25 +991,26 @@ def spot_from_burned_cell(
                                                                             elevation_gradient,
                                                                             cell_horizontal_area_m2,
                                                                             firebrands_per_unit_heat)
-    num_firebrands: pyidx = random_generator.next_poisson(expected_firebrand_count)
+    num_firebrands: cy.long = random_generator.next_poisson(expected_firebrand_count)
     if num_firebrands > 0:
         # OPTIM we might want to hold to the SpreadInputs and look these up in there.
         wind_speed_10m: cy.float = lookup_space_time_cube_float32(sinputs.wind_speed_10m, space_time_coordinate)
         upwind_direction: cy.float = lookup_space_time_cube_float32(sinputs.upwind_direction, space_time_coordinate)
         new_ignitions: tuple[float, set]|None = spot.spread_firebrands(sinputs.fuel_model,
-                                                                        sinputs.temperature,
-                                                                        sinputs.fuel_moisture_dead_1hr,
-                                                                        (sinputs.rows, sinputs.cols),
-                                                                        sinputs.spatial_resolution,
-                                                                        space_time_coordinate,
-                                                                        upwind_direction,
-                                                                        wind_speed_10m,
-                                                                        fb.fireline_intensity,
-                                                                        fb.flame_length,
-                                                                        toa,
-                                                                        random_generator,
-                                                                        num_firebrands,
-                                                                        spot_config)
+                                                                       sinputs.temperature,
+                                                                       sinputs.fuel_moisture_dead_1hr,
+                                                                       fire_type_matrix,
+                                                                       (sinputs.rows, sinputs.cols),
+                                                                       sinputs.spatial_resolution,
+                                                                       space_time_coordinate,
+                                                                       upwind_direction,
+                                                                       wind_speed_10m,
+                                                                       fb.fireline_intensity,
+                                                                       fb.flame_length,
+                                                                       toa,
+                                                                       random_generator,
+                                                                       num_firebrands,
+                                                                       spot_config)
         if new_ignitions:
             ignition_time                      = new_ignitions[0]
             ignited_cells                      = new_ignitions[1]
@@ -2112,11 +2114,12 @@ def process_spread_burned_cells(
         flame_length_matrix[y,x]       = fb.flame_length
         time_of_arrival_matrix[y,x]    = toa
 
-        # Cast firebrands, update firebrand_count_matrix, and update spot_ignitions
+        # Cast firebrands and update spot_ignitions
         if fb_opts.spot_config:
             spot_from_burned_cell(
                 fb_opts.spot_config,
                 sinputs,
+                fire_type_matrix,
                 random_generator,
                 y,
                 x,
@@ -2409,7 +2412,6 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
       - fireline_intensity            :: 2D float array (kW/m)
       - flame_length                  :: 2D float array (m)
       - time_of_arrival               :: 2D float array (min)
-      - firebrand_count               :: 2D integer array (number of firebrands) (Optional)
     - cube_resolution              :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
@@ -2446,7 +2448,6 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
       - fireline_intensity    :: 2D float array (kW/m)
       - flame_length          :: 2D float array (m)
       - time_of_arrival       :: 2D float array (min)
-      - firebrand_count       :: 2D integer array (number of firebrands) (only included when provided as an input)
     - spot_ignitions       :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
     - random_generator     :: numpy.random.Generator object (only included when spotting is used)
     """
@@ -2501,9 +2502,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
         "flame_length",
         "time_of_arrival",
     }
-    optional_matrices = {
-        "firebrand_count",
-    }
+    optional_matrices = set() # NOTE: Leaving this here in case we add some later
 
     # Ensure that all required_matrices are present in output_matrices
     if not provided_matrices.issuperset(required_matrices):

@@ -31,4 +31,4 @@ cpdef dict calc_surface_fire_behavior_in_direction(
     vec_xyz spread_direction,
     )
 
-cpdef float calc_areal_heat_output(float spread_rate, float fireline_intensity)
+cpdef float calc_areal_heat_output(float spread_rate, float fireline_intensity) noexcept
