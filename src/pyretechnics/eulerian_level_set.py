@@ -1342,42 +1342,35 @@ def copy_tracked_cell_data(i_old: pyidx, tca_old: TrackedCellsArrays, i_new: pyi
 @cy.cclass
 class FireBehaviorSettings:
     """
-    A fast-access data structure for fire behavior parameters,
-    avoiding to pass lots of arguments around.
+    A fast-access data structure for fire behavior parameters
+    to reduce the number of arguments being passed around.
     """
-    buffer_width: pyidx
     max_cells_per_timestep: cy.float # CFL condition
-
-    use_wind_limit: cy.bint
-    surface_lw_ratio_model: object
-    crown_max_lw_ratio: cy.float
-    
-    spot_config: object
-
-    refresh_frequency: cy.float[17] # (min^-1) the frequency at which each input column needs to be refreshed.
+    buffer_width          : pyidx
+    use_wind_limit        : cy.bint
+    surface_lw_ratio_model: str
+    crown_max_lw_ratio    : cy.float
+    spot_config           : dict
+    refresh_frequency     : cy.float[17] # (min^-1) the frequency at which each input column needs to be refreshed.
 
 
-    def __init__(self, 
-                max_cells_per_timestep: cy.float, 
-                use_wind_limit: bool|None = True,
-                surface_lw_ratio_model: str|None = "rothermel", 
-                crown_max_lw_ratio: float|None = None,
-                inputs_refresh_freqs: dict = {},
-                buffer_width: int|None = 3, 
-                spot_config: dict|None = None) -> dict:
-        self.buffer_width = (buffer_width if buffer_width is not None else 3)
+    def __init__(self,
+                 max_cells_per_timestep: float|None = 0.4,
+                 buffer_width          : int|None   = 3,
+                 use_wind_limit        : bool|None  = True,
+                 surface_lw_ratio_model: str|None   = "rothermel",
+                 crown_max_lw_ratio    : float|None = 1e10,
+                 spot_config           : dict|None  = None,
+                 inputs_refresh_freqs  : dict|None  = {}) -> cy.void:
         self.max_cells_per_timestep = max_cells_per_timestep
-        
-        self.use_wind_limit = (use_wind_limit if use_wind_limit is not None else True)
-        self.surface_lw_ratio_model = (surface_lw_ratio_model if surface_lw_ratio_model is not None else "rothermel")
-        self.crown_max_lw_ratio = (crown_max_lw_ratio if crown_max_lw_ratio is not None else 1e10)
-        
-        self.spot_config = spot_config
-
+        self.buffer_width           = buffer_width
+        self.use_wind_limit         = use_wind_limit
+        self.surface_lw_ratio_model = surface_lw_ratio_model
+        self.crown_max_lw_ratio     = crown_max_lw_ratio
+        self.spot_config            = spot_config # FIXME: Convert spot_config to a struct here for fast access later in spot_fire.py
         inputs_names: list = inputs_name_list()
         for k in range(17):
             self.refresh_frequency[k] = inputs_refresh_freqs[inputs_names[k]]
-
 
 
 @cy.cfunc
@@ -2381,8 +2374,8 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
                                start_time: float, max_duration: float|None = None,
                                max_cells_per_timestep: float|None = 0.4, buffer_width: int|None = 3,
                                use_wind_limit: bool|None = True, surface_lw_ratio_model: str|None = "rothermel",
-                               crown_max_lw_ratio: float|None = None, inputs_refresh_freqs: dict|None = {},
-                               spot_ignitions: dict|None = {}, spot_config: dict|None = None):
+                               crown_max_lw_ratio: float|None = 1e10, spot_ignitions: dict|None = {},
+                               spot_config: dict|None = None, inputs_refresh_freqs: dict|None = {}):
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -2423,9 +2416,6 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     - use_wind_limit               :: boolean (Optional)
     - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
-    - inputs_refresh_freqs         :: dictionary from input name to refresh frequency in 1/min (Optional).
-                                      0 means never refresh. Weather inputs default to 1/band_duration,
-                                      whereas non-weather inputs default to 0.
     - spot_ignitions               :: dictionary of (ignition_time -> ignited_cells) (Optional: needed for spotting)
     - spot_config                  :: dictionary of spotting parameters (Optional: needed for spotting)
       - random_seed                   :: seed for a numpy.random.Generator object
@@ -2436,6 +2426,9 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
       - downwind_variance_mean_ratio  :: meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]
       - crosswind_distance_stdev      :: meters
       - decay_distance                :: meters
+    - inputs_refresh_freqs         :: dictionary from input name to refresh frequency in 1/min (Optional).
+                                      0 means never refresh. Weather inputs default to 1/band_duration,
+                                      whereas non-weather inputs default to 0.
 
     return a dictionary with these keys:
     - stop_time            :: minutes
@@ -2529,16 +2522,17 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     for cube in space_time_cubes.values():
         if cube.shape != (bands, rows, cols):
             raise ValueError("The space_time_cubes must all share the same spatial resolution.")
+
     sinputs: SpreadInputs = make_SpreadInputs(cube_resolution, space_time_cubes)
     fb_opts: FireBehaviorSettings = FireBehaviorSettings(
-        max_cells_per_timestep=max_cells_per_timestep,
-        use_wind_limit = use_wind_limit,
+        max_cells_per_timestep = max_cells_per_timestep,
+        buffer_width           = buffer_width,
+        use_wind_limit         = use_wind_limit,
         surface_lw_ratio_model = surface_lw_ratio_model,
-        crown_max_lw_ratio = crown_max_lw_ratio,
-        buffer_width = buffer_width,
-        spot_config = spot_config,
-        inputs_refresh_freqs = {**default_refresh_frequency(band_duration), **inputs_refresh_freqs},
-        )
+        crown_max_lw_ratio     = crown_max_lw_ratio,
+        spot_config            = spot_config,
+        inputs_refresh_freqs   = {**default_refresh_frequency(band_duration), **inputs_refresh_freqs},
+    )
 
     # Ensure that space_time_cubes and output_matrices have the same spatial resolution
     for (label, matrix) in output_matrices.items():
