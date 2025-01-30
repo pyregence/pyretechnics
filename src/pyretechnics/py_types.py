@@ -75,6 +75,17 @@ CrownSpreadInfo = cy.struct(
     critical_spread_rate = cy.float,
 )
 
+SpotConfig = cy.struct(
+    random_seed                  = cy.long,
+    firebrands_per_unit_heat     = cy.float,
+    downwind_distance_mean       = cy.float,
+    fireline_intensity_exponent  = cy.float,
+    wind_speed_exponent          = cy.float,
+    downwind_variance_mean_ratio = cy.float,
+    crosswind_distance_stdev     = cy.float,
+    decay_distance               = cy.float,
+)
+
 # Pre-computed coefficients to apply elliptical wavelet math as fast as possible
 # once the phi gradient information is available.
 # See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.

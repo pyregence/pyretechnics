@@ -5,7 +5,7 @@ if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
     from cython.cimports.pyretechnics.math import sqrt, atan, floor, exp
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fcatarr, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, PartialedEllWavelet
+        fcatarr, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -19,7 +19,7 @@ else:
     # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
     from math import sqrt, atan, floor, exp
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior, PartialedEllWavelet
+        fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -966,7 +966,7 @@ def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 @cy.cfunc
 def spot_from_burned_cell(
-        spot_config, # OPTIM accept something more efficient that a dict.
+        spot_config: SpotConfig,
         sinputs: SpreadInputs,
         fire_type_matrix: cy.uchar[:,:],
         random_generator: BufferedRandGen,
@@ -986,7 +986,7 @@ def spot_from_burned_cell(
     slope                   : cy.float = lookup_space_time_cube_float32(sinputs.slope, space_time_coordinate)
     aspect                  : cy.float = lookup_space_time_cube_float32(sinputs.aspect, space_time_coordinate)
     elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
-    firebrands_per_unit_heat: cy.float = spot_config["firebrands_per_unit_heat"]
+    firebrands_per_unit_heat: cy.float = spot_config.firebrands_per_unit_heat
     expected_firebrand_count: cy.float = spot.expected_firebrand_production(fb,
                                                                             elevation_gradient,
                                                                             cell_horizontal_area_m2,
@@ -1350,7 +1350,7 @@ class FireBehaviorSettings:
     use_wind_limit        : cy.bint
     surface_lw_ratio_model: str
     crown_max_lw_ratio    : cy.float
-    spot_config           : dict
+    spot_config           : object
     refresh_frequency     : cy.float[17] # (min^-1) the frequency at which each input column needs to be refreshed.
 
 
@@ -1367,7 +1367,18 @@ class FireBehaviorSettings:
         self.use_wind_limit         = use_wind_limit
         self.surface_lw_ratio_model = surface_lw_ratio_model
         self.crown_max_lw_ratio     = crown_max_lw_ratio
-        self.spot_config            = spot_config # FIXME: Convert spot_config to a struct here for fast access later in spot_fire.py
+        if spot_config:
+            # FIXME: Set default values in the .get() calls
+            self.spot_config = SpotConfig(
+                random_seed                  = spot_config.get("random_seed"),
+                firebrands_per_unit_heat     = spot_config.get("firebrands_per_unit_heat"),
+                downwind_distance_mean       = spot_config.get("downwind_distance_mean"),
+                fireline_intensity_exponent  = spot_config.get("fireline_intensity_exponent"),
+                wind_speed_exponent          = spot_config.get("wind_speed_exponent"),
+                downwind_variance_mean_ratio = spot_config.get("downwind_variance_mean_ratio"),
+                crosswind_distance_stdev     = spot_config.get("crosswind_distance_stdev"),
+                decay_distance               = spot_config.get("decay_distance"),
+            )
         inputs_names: list = inputs_name_list()
         for k in range(17):
             self.refresh_frequency[k] = inputs_refresh_freqs[inputs_names[k]]

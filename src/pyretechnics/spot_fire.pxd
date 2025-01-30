@@ -1,4 +1,4 @@
-from pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior
+from pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig
 from pyretechnics.random cimport BufferedRandGen
 from pyretechnics.space_time_cube cimport ISpaceTimeCube
 
@@ -14,14 +14,14 @@ cdef float delta_to_grid_dy(float cos_wdir, float sin_wdir, float delta_x, float
 
 cdef int distance_to_n_cells(float distance, float cell_size) noexcept
 
-cdef float resolve_exp_delta_x(dict spot_config, float fireline_intensity, float wind_speed_20ft) noexcept
-cdef float resolve_var_delta_x(dict spot_config, float exp_delta_x) noexcept
+cdef float resolve_exp_delta_x(SpotConfig spot_config, float fireline_intensity, float wind_speed_20ft) noexcept
+cdef float resolve_var_delta_x(SpotConfig spot_config, float exp_delta_x) noexcept
 
 cdef float lognormal_mu_from_moments(float mean, float variance) noexcept
 cdef float lognormal_sigma_from_moments(float mean, float variance) noexcept
 
 cdef (float, float) resolve_lognormal_params(
-    dict spot_config,
+    SpotConfig spot_config,
     float fireline_intensity,
     float wind_speed_20ft
     ) noexcept
@@ -32,16 +32,24 @@ cdef float sample_lognormal(BufferedRandGen rng, float mu, float sd) noexcept
 cdef double sigma_y_scalar_m = 0.92 * 0.47 / (0.88 * 0.88)
 
 cdef float himoto_resolve_default_sigma_y_from_lognormal_params(float mu_x, float sigma_x) noexcept
-cdef float himoto_resolve_default_sigma_y(dict spot_config, float fireline_intensity, float wind_speed_20ft) noexcept
+cdef float himoto_resolve_default_sigma_y(
+    SpotConfig spot_config,
+    float fireline_intensity,
+    float wind_speed_20ft
+    ) noexcept
 
-cdef float resolve_crosswind_distance_stdev(dict spot_config, float fireline_intensity, float wind_speed_20ft) noexcept
+cdef float resolve_crosswind_distance_stdev(
+    SpotConfig spot_config,
+    float fireline_intensity,
+    float wind_speed_20ft
+    ) noexcept
 
 cdef class JumpDistribution:
     cdef float mu_x
     cdef float sigma_x
     cdef float sigma_y
 
-cdef JumpDistribution resolve_JumpDistribution(dict spot_config, float fireline_intensity, float wind_speed_20ft)
+cdef JumpDistribution resolve_JumpDistribution(SpotConfig spot_config, float fireline_intensity, float wind_speed_20ft)
 
 cdef float sample_downwind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
 cdef float sample_crosswind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
@@ -91,5 +99,5 @@ cdef object spread_firebrands(
     float time_of_arrival,
     BufferedRandGen random_generator,
     long num_firebrands,
-    dict spot_config,
+    SpotConfig spot_config,
     )

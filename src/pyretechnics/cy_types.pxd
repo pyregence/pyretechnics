@@ -67,6 +67,16 @@ cdef struct CrownSpreadInfo:
     float spread_rate
     float critical_spread_rate
 
+cdef struct SpotConfig:
+    long random_seed
+    float firebrands_per_unit_heat
+    float downwind_distance_mean
+    float fireline_intensity_exponent
+    float wind_speed_exponent
+    float downwind_variance_mean_ratio
+    float crosswind_distance_stdev
+    float decay_distance
+
 cdef struct PartialedEllWavelet:
     vec_xyz Vh_3d
     float ewc_A

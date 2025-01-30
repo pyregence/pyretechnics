@@ -4,7 +4,7 @@ import cython
 import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import round, sqrt, pow, log, exp, sin, cos
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -12,7 +12,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.surface_fire1 as sf
 else:
     from math import round, sqrt, pow, log, exp, sin, cos
-    from pyretechnics.py_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior
+    from pyretechnics.py_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -112,10 +112,10 @@ def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.int:
 # [[file:../../org/pyretechnics.org::resolve-spotting-lognormal-elmfire][resolve-spotting-lognormal-elmfire]]
 @cy.cfunc
 @cy.exceptval(check=False)
-def resolve_exp_delta_x(spot_config: dict, fireline_intensity: cy.float, wind_speed_20ft: cy.float) -> cy.float:
+def resolve_exp_delta_x(spot_config: SpotConfig, fireline_intensity: cy.float, wind_speed_20ft: cy.float) -> cy.float:
     """
     Computes the expected value E[ΔX] (in meters) of the downwind spotting distance ΔX given:
-    - spot_config        :: a dictionary of spotting parameters
+    - spot_config        :: a SpotConfig struct of spotting parameters
       - random_seed                  :: seed for a numpy.random.Generator object
       - firebrands_per_unit_heat     :: firebrands/kJ
       - downwind_distance_mean       :: meters
@@ -127,9 +127,9 @@ def resolve_exp_delta_x(spot_config: dict, fireline_intensity: cy.float, wind_sp
     - fireline_intensity :: kW/m
     - wind_speed_20ft    :: m/s
     """
-    downwind_distance_mean     : cy.float = spot_config["downwind_distance_mean"]
-    fireline_intensity_exponent: cy.float = spot_config["fireline_intensity_exponent"]
-    wind_speed_exponent        : cy.float = spot_config["wind_speed_exponent"]
+    downwind_distance_mean     : cy.float = spot_config.downwind_distance_mean
+    fireline_intensity_exponent: cy.float = spot_config.fireline_intensity_exponent
+    wind_speed_exponent        : cy.float = spot_config.wind_speed_exponent
     return (downwind_distance_mean
             * pow(fireline_intensity, fireline_intensity_exponent)
             * pow(wind_speed_20ft, wind_speed_exponent))
@@ -137,10 +137,10 @@ def resolve_exp_delta_x(spot_config: dict, fireline_intensity: cy.float, wind_sp
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def resolve_var_delta_x(spot_config: dict, exp_delta_x: cy.float) -> cy.float:
+def resolve_var_delta_x(spot_config: SpotConfig, exp_delta_x: cy.float) -> cy.float:
     """
     Computes the variance Var[ΔX] (in m^2) of the downwind spotting distance ΔX given:
-    - spot_config :: a dictionary of spotting parameters
+    - spot_config :: a SpotConfig struct of spotting parameters
       - random_seed                  :: seed for a numpy.random.Generator object
       - firebrands_per_unit_heat     :: firebrands/kJ
       - downwind_distance_mean       :: meters
@@ -151,7 +151,7 @@ def resolve_var_delta_x(spot_config: dict, exp_delta_x: cy.float) -> cy.float:
       - decay_distance               :: meters
     - exp_delta_x :: meters (E[ΔX])
     """
-    downwind_variance_mean_ratio: cy.float = spot_config["downwind_variance_mean_ratio"]
+    downwind_variance_mean_ratio: cy.float = spot_config.downwind_variance_mean_ratio
     return downwind_variance_mean_ratio * exp_delta_x
 
 
@@ -179,7 +179,7 @@ def lognormal_sigma_from_moments(mean: cy.float, variance: cy.float) -> cy.float
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def resolve_lognormal_params(spot_config       : dict,
+def resolve_lognormal_params(spot_config       : SpotConfig,
                              fireline_intensity: cy.float,
                              wind_speed_20ft   : cy.float) -> tuple[cy.float, cy.float]:
     """
@@ -232,7 +232,7 @@ def himoto_resolve_default_sigma_y_from_lognormal_params(mu_x: cy.float, sigma_x
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def himoto_resolve_default_sigma_y(spot_config       : dict,
+def himoto_resolve_default_sigma_y(spot_config       : SpotConfig,
                                    fireline_intensity: cy.float,
                                    wind_speed_20ft   : cy.float) -> cy.float:
     ln_params: tuple[cy.float, cy.float] = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
@@ -243,11 +243,11 @@ def himoto_resolve_default_sigma_y(spot_config       : dict,
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def resolve_crosswind_distance_stdev(spot_config       : dict,
+def resolve_crosswind_distance_stdev(spot_config       : SpotConfig,
                                      fireline_intensity: cy.float,
                                      wind_speed_20ft   : cy.float) -> cy.float:
-    crosswind_distance_stdev: cy.float = spot_config.get("crosswind_distance_stdev")
-    if crosswind_distance_stdev != None: # FIXME: Can't compare a cy.float with None
+    crosswind_distance_stdev: cy.float = spot_config.crosswind_distance_stdev
+    if crosswind_distance_stdev != 0.0:
         return crosswind_distance_stdev # meters
     else:
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
@@ -264,7 +264,7 @@ class JumpDistribution:
     sigma_y: cy.float # meters
 
 @cy.cfunc
-def resolve_JumpDistribution(spot_config       : dict,
+def resolve_JumpDistribution(spot_config       : SpotConfig,
                              fireline_intensity: cy.float,
                              wind_speed_20ft   : cy.float) -> JumpDistribution:
     ln_params: tuple[cy.float, cy.float] = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
@@ -507,7 +507,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       time_of_arrival            : cy.float,
                       random_generator           : BufferedRandGen,
                       num_firebrands             : cy.long,
-                      spot_config                : dict) -> object: # tuple[float, set]|None
+                      spot_config                : SpotConfig) -> object: # tuple[float, set]|None
     """
     Given these inputs:
     - fuel_model_cube             :: (Lazy)SpaceTimeCube (integer index in fm.fuel_model_table)
@@ -528,7 +528,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
     - time_of_arrival             :: min
     - random_generator            :: BufferedRandGen
     - num_firebrands              :: number of firebrands to emit from the space_time_coordinate
-    - spot_config                 :: dictionary of spotting parameters
+    - spot_config                 :: SpotConfig struct of spotting parameters
       - downwind_distance_mean       :: meters
       - fireline_intensity_exponent  :: downwind_distance_mean multiplier [I^fireline_intensity_exponent]
       - wind_speed_exponent          :: downwind_distance_mean multiplier [U^wind_speed_exponent]
@@ -563,7 +563,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
             (rows, cols)                          = sim_area_bounds
             (cell_height, cell_width)             = spatial_resolution
             (t, y, x)                             = space_time_coordinate
-            decay_distance     : cy.float         = spot_config["decay_distance"]
+            decay_distance     : cy.float         = spot_config.decay_distance
             downwind_direction : cy.float         = conv.deg_to_rad(conv.opposite_direction(upwind_direction))
             cos_wdir           : cy.float         = cos(downwind_direction)
             sin_wdir           : cy.float         = sin(downwind_direction)
