@@ -2,17 +2,18 @@
 # cython: profile=False
 import cython
 import cython as cy
-import numpy as np
 if cython.compiled:
     from cython.cimports.pyretechnics.math import sqrt, pow, log, exp
     from cython.cimports.pyretechnics.cy_types import \
-        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
+        FireBehaviorMax, SpreadBehavior
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
 else:
     from math import sqrt, pow, log, exp
     from pyretechnics.py_types import \
-        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
+        FireBehaviorMax, SpreadBehavior
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
 # surface-fire-imports ends here
@@ -686,41 +687,49 @@ def calc_surface_fire_behavior_max(sfmin: FireBehaviorMin, midflame_wind_speed: 
     )
 # surface-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
-def calc_surface_fire_behavior_in_direction(surface_fire_max, spread_direction):
+@cy.cfunc
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
+                                            spread_direction: vec_xyz) -> SpreadBehavior:
     """
     Given these inputs:
-    - surface_fire_max     :: dictionary of max surface fire behavior values
+    - surface_fire_max     :: a FireBehaviorMax struct of max surface fire behavior values
+      - max_fire_type          :: 1 (surface)
       - max_spread_rate        :: m/min
       - max_spread_direction   :: (x, y, z) unit vector
       - max_fireline_intensity :: kW/m
       - max_flame_length       :: m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
+      - critical_spread_rate   :: m/min
     - spread_direction     :: 3D unit vector on the slope-tangential plane
 
-    return a dictionary containing these keys:
-    - fire_type          :: "surface"
+    return a SpreadBehavior struct containing these keys:
+    - dphi_dt            :: phi/min
+    - fire_type          :: 1 (surface)
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector
     - fireline_intensity :: kW/m
     - flame_length       :: m
     """
     # Unpack max surface fire behavior values
-    max_spread_rate        = surface_fire_max["max_spread_rate"]
-    max_spread_direction   = surface_fire_max["max_spread_direction"]
-    max_fireline_intensity = surface_fire_max["max_fireline_intensity"]
-    eccentricity           = surface_fire_max["eccentricity"]
+    max_spread_rate       : cy.float = surface_fire_max.max_spread_rate
+    max_spread_direction  : vec_xyz  = surface_fire_max.max_spread_direction
+    max_fireline_intensity: cy.float = surface_fire_max.max_fireline_intensity
+    eccentricity          : cy.float = surface_fire_max.eccentricity
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
-    cos_w = np.dot(max_spread_direction, spread_direction)
+    cos_w: cy.float = vu.dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    adjustment: cy.float = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
     # Update surface fire behavior values by the adjustment value
-    fireline_intensity = max_fireline_intensity * adjustment
-    return {
-        "fire_type"         : "surface",
-        "spread_rate"       : max_spread_rate * adjustment,
-        "spread_direction"  : np.asarray(spread_direction),
-        "fireline_intensity": fireline_intensity,
-        "flame_length"      : calc_flame_length(fireline_intensity),
-    }
+    fireline_intensity: cy.float = max_fireline_intensity * adjustment
+    return SpreadBehavior(
+        dphi_dt            = 0.0,
+        fire_type          = 1, # surface
+        spread_rate        = max_spread_rate * adjustment,
+        spread_direction   = spread_direction,
+        fireline_intensity = fireline_intensity,
+        flame_length       = calc_flame_length(fireline_intensity),
+    )
 # surface-fire-behavior-in-direction ends here

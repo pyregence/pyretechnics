@@ -1,4 +1,4 @@
-from pyretechnics.cy_types cimport vec_xyz, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax
+from pyretechnics.cy_types cimport vec_xyz, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
 
 cdef float calc_flame_length(float fireline_intensity) noexcept
 
@@ -31,9 +31,9 @@ cdef FireBehaviorMax calc_surface_fire_behavior_max(
     object surface_lw_ratio_model,
     )
 
-cdef dict calc_surface_fire_behavior_in_direction(
-    dict surface_fire_max,
+cdef SpreadBehavior calc_surface_fire_behavior_in_direction(
+    FireBehaviorMax surface_fire_max,
     vec_xyz spread_direction,
-    )
+    ) noexcept
 
 cdef float calc_areal_heat_output(float spread_rate, float fireline_intensity) noexcept
