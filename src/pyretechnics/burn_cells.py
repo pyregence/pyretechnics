@@ -393,7 +393,7 @@ def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, u
         # Determine whether the surface fire transitions to a crown fire
         #============================================================================================
 
-        if cf.van_wagner_crown_fire_initiation(surface_fire_azimuth["fireline_intensity"],
+        if cf.van_wagner_crown_fire_initiation(surface_fire_azimuth.fireline_intensity,
                                                canopy_cover,
                                                canopy_base_height,
                                                foliar_moisture):
