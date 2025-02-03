@@ -20,7 +20,7 @@ else:
 
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_limit=True,
-                           surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
+                           surface_lw_ratio_model="behave", crown_max_lw_ratio=None):
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -227,7 +227,7 @@ def burn_cell_as_head_fire(space_time_cubes, space_time_coordinate, use_wind_lim
 # [[file:../../org/pyretechnics.org::burn-cell-toward-azimuth][burn-cell-toward-azimuth]]
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 def burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, azimuth, use_wind_limit=True,
-                             surface_lw_ratio_model="rothermel", crown_max_lw_ratio=None):
+                             surface_lw_ratio_model="behave", crown_max_lw_ratio=None):
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types

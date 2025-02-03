@@ -406,7 +406,7 @@ def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float
 from pyretechnics.conversion import m_min_to_mph
 
 
-def surface_length_to_width_ratio(effective_wind_speed, model="rothermel"):
+def surface_length_to_width_ratio(effective_wind_speed, model="behave"):
     """
     Calculate the length_to_width_ratio of the surface fire front given:
     - effective_wind_speed :: m/min (aligned with the slope-tangential plane)
@@ -475,7 +475,7 @@ def maybe_limit_wind_speed(use_wind_limit, max_wind_speed, get_phi_W, get_wind_s
 def calc_surface_fire_behavior_max(surface_fire_min: object, midflame_wind_speed: cy.float, upwind_direction: cy.float,
                                    slope: cy.float, aspect: cy.float,
                                    use_wind_limit: cy.bint,# = True, # FIXME optional can't seem to work in Cython, getting puzzling errors unexplained by documentation.
-                                   surface_lw_ratio_model: object# = "rothermel"
+                                   surface_lw_ratio_model: object# = "behave"
                                    ) -> FireBehaviorMax:
     """
     Given these inputs:

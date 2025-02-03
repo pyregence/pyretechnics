@@ -1358,7 +1358,7 @@ class FireBehaviorSettings:
                  max_cells_per_timestep: float|None = 0.4,
                  buffer_width          : int|None   = 3,
                  use_wind_limit        : bool|None  = True,
-                 surface_lw_ratio_model: str|None   = "rothermel",
+                 surface_lw_ratio_model: str|None   = "behave",
                  crown_max_lw_ratio    : float|None = 1e10,
                  spot_config           : dict|None  = None,
                  inputs_refresh_freqs  : dict|None  = {}) -> cy.void:
@@ -2384,7 +2384,7 @@ def spread_one_timestep(
 def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cube_resolution: tuple,
                                start_time: float, max_duration: float|None = None,
                                max_cells_per_timestep: float|None = 0.4, buffer_width: int|None = 3,
-                               use_wind_limit: bool|None = True, surface_lw_ratio_model: str|None = "rothermel",
+                               use_wind_limit: bool|None = True, surface_lw_ratio_model: str|None = "behave",
                                crown_max_lw_ratio: float|None = 1e10, spot_ignitions: dict|None = {},
                                spot_config: dict|None = None, inputs_refresh_freqs: dict|None = {}):
     """
