@@ -1,4 +1,5 @@
-from pyretechnics.cy_types cimport vec_xyz, FuelModel, ProjectedVectors, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
+from pyretechnics.cy_types cimport vec_xyz, FuelModel, ProjectedVectors, \
+     FireBehaviorMin, FireBehaviorMax, SpreadBehavior
 
 cdef float calc_flame_length(float fireline_intensity) noexcept
 
@@ -7,7 +8,7 @@ cdef float calc_midflame_wind_speed(
     float fuel_bed_depth,
     float canopy_height,
     float canopy_cover,
-    )
+    ) noexcept
 
 cdef ProjectedVectors project_wind_and_slope_vectors_3d(
     float wind_speed,
@@ -19,7 +20,7 @@ cdef ProjectedVectors project_wind_and_slope_vectors_3d(
 cdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
     FuelModel moisturized_fuel_model,
     float spread_rate_adjustment,
-    )
+    ) noexcept
 
 cdef FireBehaviorMax calc_surface_fire_behavior_max(
     FireBehaviorMin surface_fire_min,
@@ -27,9 +28,9 @@ cdef FireBehaviorMax calc_surface_fire_behavior_max(
     float upwind_direction,
     float slope,
     float aspect,
-    bint use_wind_limit,
-    object surface_lw_ratio_model,
-    )
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    ) noexcept
 
 cdef SpreadBehavior calc_surface_fire_behavior_in_direction(
     FireBehaviorMax surface_fire_max,
