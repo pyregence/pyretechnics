@@ -1,7 +1,13 @@
 # [[file:../../org/pyretechnics.org::space-time-cube-imports][space-time-cube-imports]]
-# cython: profile=True
+# cython: profile=False
+import cython
+import cython as cy
 from functools import reduce
 import numpy as np
+if cython.compiled:
+    from cython.cimports.pyretechnics.cy_types import pyidx # FIXME: unused
+else:
+    from pyretechnics.py_types import pyidx # FIXME: unused
 # space-time-cube-imports ends here
 # [[file:../../org/pyretechnics.org::space-time-cube-utilities][space-time-cube-utilities]]
 def is_pos_int(x):
@@ -9,11 +15,14 @@ def is_pos_int(x):
 
 
 def divide_evenly(dividend, divisor):
-    (quotient, remainder) = divmod(dividend, divisor)
-    if remainder == 0:
-        return quotient
+    if divisor == 0:
+        raise ValueError(str(divisor) + " may not be zero.")
     else:
-        raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
+        (quotient, remainder) = divmod(dividend, divisor)
+        if remainder == 0:
+            return quotient
+        else:
+            raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
 def to_positive_index_range(index_range, axis_length):
@@ -48,13 +57,6 @@ def maybe_repeat_array(array, axis_repetitions):
             return np.repeat(array, repetitions, axis)
 # space-time-cube-utilities ends here
 # [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
-import cython
-if cython.compiled:
-    from cython.cimports.pyretechnics.cy_types import pyidx
-else:
-    from pyretechnics.py_types import pyidx
-import cython as cy
-
 class ISpaceTimeCube:
     def get(self, t, x, y):
         pass
