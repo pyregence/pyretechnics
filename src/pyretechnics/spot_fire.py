@@ -417,7 +417,7 @@ def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyi
     """
     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
     """
-    fuel_model_number: pyidx = cy.cast(pyidx, fuel_model_cube.get_float(t,y,x)) # FIXME: Use .get() and avoid the cast
+    fuel_model_number: pyidx = cy.cast(pyidx, fuel_model_cube.get(t,y,x))
     fuel_model       : dict  = fm.fuel_model_table.get(fuel_model_number)       # FIXME: INSANELY slow
     return fuel_model and fuel_model["burnable"]
 
@@ -480,8 +480,8 @@ def cast_firebrand(rng                        : BufferedRandGen,
         if (uniform_sample <= flight_survival_probability
             and is_burnable_cell(fuel_model_cube, source_t, target_y, target_x)):
             # Firebrand landed in a cell with a burnable fuel model, so calculate its ignition probability
-            temperature         : cy.float = temperature_cube.get_float(source_t, target_y, target_x) # degrees Celsius
-            fine_fuel_moisture  : cy.float = fuel_moisture_dead_1hr_cube.get_float(source_t, target_y, target_x) # %
+            temperature         : cy.float = temperature_cube.get(source_t, target_y, target_x) # degrees Celsius
+            fine_fuel_moisture  : cy.float = fuel_moisture_dead_1hr_cube.get(source_t, target_y, target_x) # %
             ignition_probability: cy.float = schroeder_ignition_probability(temperature, fine_fuel_moisture)
 
             if uniform_sample <= flight_survival_probability * ignition_probability:

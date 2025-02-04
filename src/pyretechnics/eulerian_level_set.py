@@ -790,7 +790,7 @@ def lookup_space_time_cube_float32(space_time_cube: ISpaceTimeCube, space_time_c
     t: pyidx = space_time_coordinate[0]
     y: pyidx = space_time_coordinate[1]
     x: pyidx = space_time_coordinate[2]
-    return space_time_cube.get_float(t, y, x)
+    return space_time_cube.get(t, y, x)
 
 
 CellInputs = cy.struct(

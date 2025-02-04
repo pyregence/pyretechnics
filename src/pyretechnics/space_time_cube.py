@@ -5,20 +5,27 @@ import cython as cy
 from functools import reduce
 import numpy as np
 if cython.compiled:
-    from cython.cimports.pyretechnics.cy_types import pyidx # FIXME: unused
+    from cython.cimports.pyretechnics.cy_types import pyidx
 else:
-    from pyretechnics.py_types import pyidx # FIXME: unused
+    from pyretechnics.py_types import pyidx
 # space-time-cube-imports ends here
 # [[file:../../org/pyretechnics.org::space-time-cube-utilities][space-time-cube-utilities]]
-def is_pos_int(x):
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def is_pos_int(x: object) -> cy.bint:
     return isinstance(x, int) and x > 0
 
 
-def divide_evenly(dividend, divisor):
+@cy.cfunc
+@cy.cdivision(True)
+@cy.exceptval(-1)
+def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
     if divisor == 0:
         raise ValueError(str(divisor) + " may not be zero.")
     else:
-        (quotient, remainder) = divmod(dividend, divisor)
+        quotient : cy.int = dividend // divisor
+        remainder: cy.int = dividend % divisor
         if remainder == 0:
             return quotient
         else:
@@ -57,11 +64,13 @@ def maybe_repeat_array(array, axis_repetitions):
             return np.repeat(array, repetitions, axis)
 # space-time-cube-utilities ends here
 # [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
+@cy.cclass
 class ISpaceTimeCube:
-    def get(self, t, x, y):
+    @cy.cfunc
+    @cy.exceptval(check=False)
+    def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         pass
-    def get_float(self, t, x, y):
-        pass
+
 
 @cy.cclass
 class SpaceTimeCube(ISpaceTimeCube):
@@ -73,79 +82,98 @@ class SpaceTimeCube(ISpaceTimeCube):
     expand them (if necessary) back into the cube_shape resolution, and return the resulting scalar
     value or array to the caller.
     """
-    ndim: cy.int
-    size: cy.ulong
-    shape: object
-    base: object
+    ndim         : cy.int
+    size         : cy.ulong
+    shape        : tuple[cy.int, cy.int, cy.int]
+    base         : object
     t_repetitions: cy.int
     y_repetitions: cy.int
     x_repetitions: cy.int
-    data: cy.float[:,:,:]
+    data         : cy.float[:,:,:] # FIXME: Restore polymorphism for the underlying Numpy arrays
 
-    def __init__(self, cube_shape, base):
+
+    def __init__(self, cube_shape: tuple[int, int, int], base: object) -> cy.void:
         """
         NOTE: The resolutions in cube_shape must be exact multiples of any existing dimensions
               in the base data.
         """
         # Ensure that cube_shape contains 3 values or throw an error
-        (cube_bands, cube_rows, cube_cols) = cube_shape
+        if len(cube_shape) != 3:
+            raise ValueError("The cube_shape must contain exactly three values.")
+
+        # Unpack the cube_shape values without type-checking
+        cube_bands_: object = cube_shape[0]
+        cube_rows_ : object = cube_shape[1]
+        cube_cols_ : object = cube_shape[2]
 
         # Ensure that cube_shape only contains positive integers or throw an error
-        if not(all(map(is_pos_int, cube_shape))):
-            raise ValueError("The cube_shape must only contain positive integers.")
+        if not(is_pos_int(cube_bands_) and is_pos_int(cube_rows_) and is_pos_int(cube_cols_)):
+            raise ValueError("The cube_shape must contain only positive integers.")
 
-
-        base = np.asarray(base, dtype=np.float32)
+        # Cast the cube_shape values as primitive ints
+        cube_bands: cy.int = cube_bands_
+        cube_rows : cy.int = cube_rows_
+        cube_cols : cy.int = cube_cols_
 
         # Store the cube metadata for later
         self.ndim  = 3
         self.size  = cube_bands * cube_rows * cube_cols
-        self.shape = cube_shape
+        self.shape = (cube_bands, cube_rows, cube_cols)
         self.base  = base
 
         # Store the base data as a 3D array along with its axis repetitions
-        base_dimensions = np.ndim(base)
+        base_dimensions: cy.int = np.ndim(base)
 
-        data: cy.float[:,:,:]
         if base_dimensions == 0:
             # 0D: Constant Input
             self.t_repetitions = cube_bands
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
-            data =  np.asarray([[[base]]])
+            self.data          = np.asarray([[[base]]], dtype=np.float32)
 
         elif base_dimensions == 1:
             # 1D: Time-Series Input
-            base_bands = len(base)
+            base_bands: cy.int = len(base)
             self.t_repetitions = divide_evenly(cube_bands, base_bands)
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
             # Expand (base_bands) -> (base_bands,1,1)
-            data = np.expand_dims(base, axis=(1,2))
+            self.data = np.expand_dims(np.asarray(base, dtype=np.float32), axis=(1,2))
 
         elif base_dimensions == 2:
             # 2D: Spatial Input
-            (base_rows, base_cols) = np.shape(base)
+            base_shape: tuple  = np.shape(base)
+            base_rows : cy.int = base_shape[0]
+            base_cols : cy.int = base_shape[1]
             self.t_repetitions = cube_bands
             self.y_repetitions = divide_evenly(cube_rows, base_rows)
             self.x_repetitions = divide_evenly(cube_cols, base_cols)
             # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
-            data = np.expand_dims(base, axis=0)
+            self.data = np.expand_dims(np.asarray(base, dtype=np.float32), axis=0)
 
         elif base_dimensions == 3:
             # 3D: Spatio-Temporal Input
-            (base_bands, base_rows, base_cols) = np.shape(base)
+            base_shape: tuple  = np.shape(base)
+            base_bands: cy.int = base_shape[0]
+            base_rows : cy.int = base_shape[1]
+            base_cols : cy.int = base_shape[2]
             self.t_repetitions = divide_evenly(cube_bands, base_bands)
             self.y_repetitions = divide_evenly(cube_rows, base_rows)
             self.x_repetitions = divide_evenly(cube_cols, base_cols)
-            data = np.asarray(base)
+            self.data          = np.asarray(base, dtype=np.float32)
 
         else:
             # 4D+: Invalid Input
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
-        self.data = data
 
-    def get(self, t, y, x):
+
+    @cy.cfunc
+    @cy.inline
+    @cy.cdivision(True)
+    @cy.boundscheck(False)
+    @cy.wraparound(False)
+    @cy.exceptval(check=False)
+    def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
         Return the scalar value at index (t,y,x) by translating these cube coordinates
         to base coordinates and looking up the value within the base data.
@@ -156,18 +184,6 @@ class SpaceTimeCube(ISpaceTimeCube):
         return self.data[t // self.t_repetitions,
                          y // self.y_repetitions,
                          x // self.x_repetitions]
-
-    @cy.profile(False)
-    @cy.cdivision(True)
-    #@cy.nogil
-    @cy.exceptval(check=False)
-    @cy.boundscheck(False)
-    def get_float(self, t, y, x):
-        return self.data[
-            t // self.t_repetitions,
-            y // self.y_repetitions,
-            x // self.x_repetitions
-            ]
 
 
     def getTimeSeries(self, t_range, y, x):
@@ -358,7 +374,8 @@ class SpaceTimeCube(ISpaceTimeCube):
             delattr(self, "cube")
 # space-time-cube-class ends here
 # [[file:../../org/pyretechnics.org::lazy-space-time-cube-class][lazy-space-time-cube-class]]
-class LazySpaceTimeCube:
+@cy.cclass
+class LazySpaceTimeCube(ISpaceTimeCube):
     """
     Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.
     Internally, data is stored as an initially empty 3D array of SpaceTimeCube objects.
@@ -368,40 +385,81 @@ class LazySpaceTimeCube:
     these SpaceTimeCubes, combine them together if necessary, and return the resulting scalar
     value or array to the caller.
     """
-    def __init__(self, cube_shape, subcube_shape, load_subcube):
+    ndim         : cy.int
+    size         : cy.ulong
+    shape        : tuple[cy.int, cy.int, cy.int]
+    subcube_shape: tuple[cy.int, cy.int, cy.int]
+    cache_shape  : tuple[cy.int, cy.int, cy.int]
+    cache        : object[:,:,:]
+    load_subcube : object
+
+
+    def __init__(self,
+                 cube_shape   : tuple[int, int, int],
+                 subcube_shape: tuple[int, int, int],
+                 load_subcube : object) -> cy.void:
         """
         NOTE: The resolutions in cube_shape must be exact multiples of those in subcube_shape.
         """
         # Ensure that cube_shape and subcube_shape both contain 3 values or throw an error
-        (cube_bands, cube_rows, cube_cols) = cube_shape
-        (subcube_bands, subcube_rows, subcube_cols) = subcube_shape
+        if len(cube_shape) != 3:
+            raise ValueError("The cube_shape must contain exactly three values.")
+
+        if len(subcube_shape) != 3:
+            raise ValueError("The subcube_shape must contain exactly three values.")
+
+        # Unpack the cube_shape values without type-checking
+        cube_bands_: object = cube_shape[0]
+        cube_rows_ : object = cube_shape[1]
+        cube_cols_ : object = cube_shape[2]
+
+        # Unpack the subcube_shape values without type-checking
+        subcube_bands_: object = subcube_shape[0]
+        subcube_rows_ : object = subcube_shape[1]
+        subcube_cols_ : object = subcube_shape[2]
 
         # Ensure that cube_shape and subcube_shape only contain positive integers or throw an error
-        if not(all(map(is_pos_int, cube_shape + subcube_shape))):
-            raise ValueError("The cube_shape and subcube_shape must only contain positive integers.")
+        if not(is_pos_int(cube_bands_) and is_pos_int(cube_rows_) and is_pos_int(cube_cols_)):
+            raise ValueError("The cube_shape must contain only positive integers.")
+
+        if not(is_pos_int(subcube_bands_) and is_pos_int(subcube_rows_) and is_pos_int(subcube_cols_)):
+            raise ValueError("The subcube_shape must contain only positive integers.")
+
+        # Cast the cube_shape values as primitive ints
+        cube_bands: cy.int = cube_bands_
+        cube_rows : cy.int = cube_rows_
+        cube_cols : cy.int = cube_cols_
+
+        # Cast the subcube_shape values as primitive ints
+        subcube_bands: cy.int = subcube_bands_
+        subcube_rows : cy.int = subcube_rows_
+        subcube_cols : cy.int = subcube_cols_
 
         # Ensure that cube_shape is divided evenly by subcube_shape or throw an error
-        cache_bands = divide_evenly(cube_bands, subcube_bands)
-        cache_rows  = divide_evenly(cube_rows, subcube_rows)
-        cache_cols  = divide_evenly(cube_cols, subcube_cols)
+        cache_bands: cy.int = divide_evenly(cube_bands, subcube_bands)
+        cache_rows : cy.int = divide_evenly(cube_rows, subcube_rows)
+        cache_cols : cy.int = divide_evenly(cube_cols, subcube_cols)
 
         # Store the cube metadata, subcube_shape, cache_shape, cache, and load_subcube functions for later
         self.ndim          = 3
         self.size          = cube_bands * cube_rows * cube_cols
-        self.shape         = cube_shape
-        self.subcube_shape = subcube_shape
+        self.shape         = (cube_bands, cube_rows, cube_cols)
+        self.subcube_shape = (subcube_bands, subcube_rows, subcube_cols)
         self.cache_shape   = (cache_bands, cache_rows, cache_cols)
         self.cache         = np.empty(self.cache_shape, dtype=object)
         self.load_subcube  = load_subcube
 
 
-    def __getOrLoadSubcube(self, cache_t, cache_y, cache_x):
+    @cy.cfunc
+    @cy.boundscheck(False)
+    @cy.wraparound(False)
+    def __getOrLoadSubcube(self, cache_t: pyidx, cache_y: pyidx, cache_x: pyidx) -> SpaceTimeCube:
         """
         Return the SpaceTimeCube stored at self.cache[cache_t, cache_y, cache_x] if it
         has already been loaded. Otherwise, call self.load_subcube to load it, store
         it in self.cache, and return it.
         """
-        subcube = self.cache[cache_t, cache_y, cache_x]
+        subcube: SpaceTimeCube = self.cache[cache_t, cache_y, cache_x]
         if subcube:
             return subcube
         else:
@@ -410,7 +468,10 @@ class LazySpaceTimeCube:
             return subcube
 
 
-    def get(self, t, y, x):
+    @cy.cfunc
+    @cy.cdivision(True)
+    @cy.exceptval(check=False)
+    def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
         Return the scalar value at index (t,y,x) by translating these cube coordinates
         to cache and subcube coordinates, loading the matching subcube into the cache grid
@@ -419,11 +480,28 @@ class LazySpaceTimeCube:
         NOTE: Indices may be negative provided that your load_subcube function can handle
               negative indices in its cache_index argument.
         """
-        (subcube_bands, subcube_rows, subcube_cols) = self.subcube_shape
-        (cache_t, subcube_t) = divmod(t, subcube_bands)
-        (cache_y, subcube_y) = divmod(y, subcube_rows)
-        (cache_x, subcube_x) = divmod(x, subcube_cols)
-        subcube = self.__getOrLoadSubcube(cache_t, cache_y, cache_x)
+        # Grab the subcube_shape tuple
+        subcube_shape: tuple[cy.int, cy.int, cy.int] = self.subcube_shape
+
+        # Unpack the subcube_shape values
+        subcube_bands: cy.int = subcube_shape[0]
+        subcube_rows : cy.int = subcube_shape[1]
+        subcube_cols : cy.int = subcube_shape[2]
+
+        # Calculate the cache index
+        cache_t: pyidx = t // subcube_bands
+        cache_y: pyidx = y // subcube_rows
+        cache_x: pyidx = x // subcube_cols
+
+        # Calculate the subcube index
+        subcube_t: pyidx = t % subcube_bands
+        subcube_y: pyidx = y % subcube_rows
+        subcube_x: pyidx = x % subcube_cols
+
+        # Fetch the subcube from the cache
+        subcube: SpaceTimeCube = self.__getOrLoadSubcube(cache_t, cache_y, cache_x)
+
+        # Look up the scalar value in the subcube at the subcube index
         return subcube.get(subcube_t, subcube_y, subcube_x)
 
 

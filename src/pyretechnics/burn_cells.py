@@ -74,29 +74,29 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    slope              : cy.float = space_time_cubes["slope"].get_float(t,y,x)               # rise/run
-    aspect             : cy.float = space_time_cubes["aspect"].get_float(t,y,x)              # degrees clockwise from North
-    fuel_model_number  : cy.int   = cy.cast(cy.int, space_time_cubes["fuel_model"].get_float(t,y,x))          # integer index in fm.fuel_model_table
-    canopy_cover       : cy.float = space_time_cubes["canopy_cover"].get_float(t,y,x)        # 0-1
-    canopy_height      : cy.float = space_time_cubes["canopy_height"].get_float(t,y,x)       # m
-    canopy_base_height : cy.float = space_time_cubes["canopy_base_height"].get_float(t,y,x)  # m
-    canopy_bulk_density: cy.float = space_time_cubes["canopy_bulk_density"].get_float(t,y,x) # kg/m^3
+    slope              : cy.float = space_time_cubes["slope"].get(t,y,x)
+    aspect             : cy.float = space_time_cubes["aspect"].get(t,y,x)
+    fuel_model_number  : cy.int   = cy.cast(cy.int, space_time_cubes["fuel_model"].get(t,y,x))
+    canopy_cover       : cy.float = space_time_cubes["canopy_cover"].get(t,y,x)
+    canopy_height      : cy.float = space_time_cubes["canopy_height"].get(t,y,x)
+    canopy_base_height : cy.float = space_time_cubes["canopy_base_height"].get(t,y,x)
+    canopy_bulk_density: cy.float = space_time_cubes["canopy_bulk_density"].get(t,y,x)
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m               : cy.float = space_time_cubes["wind_speed_10m"].get_float(t,y,x)                # km/hr
-    upwind_direction             : cy.float = space_time_cubes["upwind_direction"].get_float(t,y,x)              # degrees clockwise from North
-    fuel_moisture_dead_1hr       : cy.float = space_time_cubes["fuel_moisture_dead_1hr"].get_float(t,y,x)        # kg moisture/kg ovendry weight
-    fuel_moisture_dead_10hr      : cy.float = space_time_cubes["fuel_moisture_dead_10hr"].get_float(t,y,x)       # kg moisture/kg ovendry weight
-    fuel_moisture_dead_100hr     : cy.float = space_time_cubes["fuel_moisture_dead_100hr"].get_float(t,y,x)      # kg moisture/kg ovendry weight
-    fuel_moisture_live_herbaceous: cy.float = space_time_cubes["fuel_moisture_live_herbaceous"].get_float(t,y,x) # kg moisture/kg ovendry weight
-    fuel_moisture_live_woody     : cy.float = space_time_cubes["fuel_moisture_live_woody"].get_float(t,y,x)      # kg moisture/kg ovendry weight
-    foliar_moisture              : cy.float = space_time_cubes["foliar_moisture"].get_float(t,y,x)               # kg moisture/kg ovendry weight
+    wind_speed_10m               : cy.float = space_time_cubes["wind_speed_10m"].get(t,y,x)
+    upwind_direction             : cy.float = space_time_cubes["upwind_direction"].get(t,y,x)
+    fuel_moisture_dead_1hr       : cy.float = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)
+    fuel_moisture_dead_10hr      : cy.float = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)
+    fuel_moisture_dead_100hr     : cy.float = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)
+    fuel_moisture_live_herbaceous: cy.float = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x)
+    fuel_moisture_live_woody     : cy.float = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)
+    foliar_moisture              : cy.float = space_time_cubes["foliar_moisture"].get(t,y,x)
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment   : cy.float = (space_time_cubes["fuel_spread_adjustment"].get_float(t,y,x)
+    fuel_spread_adjustment   : cy.float = (space_time_cubes["fuel_spread_adjustment"].get(t,y,x)
                                            if "fuel_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment: cy.float = (space_time_cubes["weather_spread_adjustment"].get_float(t,y,x)
+    weather_spread_adjustment: cy.float = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
                                            if "weather_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
     spread_rate_adjustment   : cy.float = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
@@ -295,29 +295,29 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    slope              : cy.float = space_time_cubes["slope"].get_float(t,y,x)               # rise/run
-    aspect             : cy.float = space_time_cubes["aspect"].get_float(t,y,x)              # degrees clockwise from North
-    fuel_model_number  : cy.int   = cy.cast(cy.int, space_time_cubes["fuel_model"].get_float(t,y,x))          # integer index in fm.fuel_model_table
-    canopy_cover       : cy.float = space_time_cubes["canopy_cover"].get_float(t,y,x)        # 0-1
-    canopy_height      : cy.float = space_time_cubes["canopy_height"].get_float(t,y,x)       # m
-    canopy_base_height : cy.float = space_time_cubes["canopy_base_height"].get_float(t,y,x)  # m
-    canopy_bulk_density: cy.float = space_time_cubes["canopy_bulk_density"].get_float(t,y,x) # kg/m^3
+    slope              : cy.float = space_time_cubes["slope"].get(t,y,x)
+    aspect             : cy.float = space_time_cubes["aspect"].get(t,y,x)
+    fuel_model_number  : cy.int   = cy.cast(cy.int, space_time_cubes["fuel_model"].get(t,y,x))
+    canopy_cover       : cy.float = space_time_cubes["canopy_cover"].get(t,y,x)
+    canopy_height      : cy.float = space_time_cubes["canopy_height"].get(t,y,x)
+    canopy_base_height : cy.float = space_time_cubes["canopy_base_height"].get(t,y,x)
+    canopy_bulk_density: cy.float = space_time_cubes["canopy_bulk_density"].get(t,y,x)
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m               : cy.float = space_time_cubes["wind_speed_10m"].get_float(t,y,x)                # km/hr
-    upwind_direction             : cy.float = space_time_cubes["upwind_direction"].get_float(t,y,x)              # degrees clockwise from North
-    fuel_moisture_dead_1hr       : cy.float = space_time_cubes["fuel_moisture_dead_1hr"].get_float(t,y,x)        # kg moisture/kg ovendry weight
-    fuel_moisture_dead_10hr      : cy.float = space_time_cubes["fuel_moisture_dead_10hr"].get_float(t,y,x)       # kg moisture/kg ovendry weight
-    fuel_moisture_dead_100hr     : cy.float = space_time_cubes["fuel_moisture_dead_100hr"].get_float(t,y,x)      # kg moisture/kg ovendry weight
-    fuel_moisture_live_herbaceous: cy.float = space_time_cubes["fuel_moisture_live_herbaceous"].get_float(t,y,x) # kg moisture/kg ovendry weight
-    fuel_moisture_live_woody     : cy.float = space_time_cubes["fuel_moisture_live_woody"].get_float(t,y,x)      # kg moisture/kg ovendry weight
-    foliar_moisture              : cy.float = space_time_cubes["foliar_moisture"].get_float(t,y,x)               # kg moisture/kg ovendry weight
+    wind_speed_10m               : cy.float = space_time_cubes["wind_speed_10m"].get(t,y,x)
+    upwind_direction             : cy.float = space_time_cubes["upwind_direction"].get(t,y,x)
+    fuel_moisture_dead_1hr       : cy.float = space_time_cubes["fuel_moisture_dead_1hr"].get(t,y,x)
+    fuel_moisture_dead_10hr      : cy.float = space_time_cubes["fuel_moisture_dead_10hr"].get(t,y,x)
+    fuel_moisture_dead_100hr     : cy.float = space_time_cubes["fuel_moisture_dead_100hr"].get(t,y,x)
+    fuel_moisture_live_herbaceous: cy.float = space_time_cubes["fuel_moisture_live_herbaceous"].get(t,y,x)
+    fuel_moisture_live_woody     : cy.float = space_time_cubes["fuel_moisture_live_woody"].get(t,y,x)
+    foliar_moisture              : cy.float = space_time_cubes["foliar_moisture"].get(t,y,x)
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment   : cy.float = (space_time_cubes["fuel_spread_adjustment"].get_float(t,y,x)
+    fuel_spread_adjustment   : cy.float = (space_time_cubes["fuel_spread_adjustment"].get(t,y,x)
                                            if "fuel_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment: cy.float = (space_time_cubes["weather_spread_adjustment"].get_float(t,y,x)
+    weather_spread_adjustment: cy.float = (space_time_cubes["weather_spread_adjustment"].get(t,y,x)
                                            if "weather_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
     spread_rate_adjustment   : cy.float = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
@@ -366,9 +366,9 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
                                                      0.0, # fuel_moisture_dead_herbaceous
                                                      fuel_moisture_live_herbaceous,
                                                      fuel_moisture_live_woody] # kg moisture/kg ovendry weight
-        fuel_bed_depth              : cy.float    = fuel_model["delta"]                      # ft
+        fuel_bed_depth              : cy.float    = fuel_model["delta"] # ft
         heat_of_combustion          : cy.float    = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
-        estimated_fine_fuel_moisture: cy.float    = fuel_moisture_dead_1hr                   # kg moisture/kg ovendry weight
+        estimated_fine_fuel_moisture: cy.float    = fuel_moisture_dead_1hr # kg moisture/kg ovendry weight
 
         #============================================================================================
         # Calculate midflame wind speed
