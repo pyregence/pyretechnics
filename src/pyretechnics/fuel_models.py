@@ -1,10 +1,13 @@
 # [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
 # cython: profile=False
 import cython
+import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp
+    from cython.cimports.pyretechnics.cy_types import fcatarr, fclaarr, FuelModel
 else:
     from math import exp
+    from pyretechnics.py_types import fcatarr, fclaarr, FuelModel
 
 
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
@@ -266,9 +269,51 @@ def add_live_moisture_of_extinction(fuel_model):
 # [[file:../../org/pyretechnics.org::moisturize][moisturize]]
 # TODO: If these functions aren't called anywhere else, create a copy
 #       of the fuel model here and mutate it in the called functions.
-def moisturize(fuel_model, fuel_moisture):
-    dynamic_fuel_model     = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
-    weighted_fuel_model    = add_weighting_factors(dynamic_fuel_model)
-    moisturized_fuel_model = add_live_moisture_of_extinction(weighted_fuel_model)
-    return moisturized_fuel_model
+@cy.cfunc
+@cy.exceptval(check=False)
+def fclaarr_from_list(l: list) -> fclaarr:
+    l0: cy.float = l[0]
+    l1: cy.float = l[1]
+    l2: cy.float = l[2]
+    l3: cy.float = l[3]
+    l4: cy.float = l[4]
+    l5: cy.float = l[5]
+    ret: fclaarr = (l0, l1, l2, l3, l4, l5)
+    return ret
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def fcatarr_from_list(l: list) -> fcatarr:
+    l0: cy.float = l[0]
+    l1: cy.float = l[1]
+    ret: fcatarr = (l0, l1)
+    return ret
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def moisturize(fuel_model: dict, fuel_moisture: list[float]) -> FuelModel:
+    dynamic_fuel_model    : dict = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
+    weighted_fuel_model   : dict = add_weighting_factors(dynamic_fuel_model)
+    moisturized_fuel_model: dict = add_live_moisture_of_extinction(weighted_fuel_model)
+    return FuelModel(
+        number               = moisturized_fuel_model["number"],
+        delta                = moisturized_fuel_model["delta"],
+        M_x                  = fclaarr_from_list(moisturized_fuel_model["M_x"]),
+        M_f                  = fclaarr_from_list(moisturized_fuel_model["M_f"]),
+        w_o                  = fclaarr_from_list(moisturized_fuel_model["w_o"]),
+        sigma                = fclaarr_from_list(moisturized_fuel_model["sigma"]),
+        h                    = fclaarr_from_list(moisturized_fuel_model["h"]),
+        rho_p                = fclaarr_from_list(moisturized_fuel_model["rho_p"]),
+        S_T                  = fclaarr_from_list(moisturized_fuel_model["S_T"]),
+        S_e                  = fclaarr_from_list(moisturized_fuel_model["S_e"]),
+        dynamic              = moisturized_fuel_model["dynamic"],
+        burnable             = moisturized_fuel_model["burnable"],
+        exp_A_sigma          = fclaarr_from_list([0.0] * 6),
+        firemod_size_classes = fclaarr_from_list([0.0] * 6),
+        f_ij                 = fclaarr_from_list(moisturized_fuel_model["f_ij"]),
+        f_i                  = fcatarr_from_list(moisturized_fuel_model["f_i"]),
+        g_ij                 = fclaarr_from_list(moisturized_fuel_model["g_ij"]),
+    )
 # moisturize ends here

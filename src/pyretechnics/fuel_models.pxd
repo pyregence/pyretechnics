@@ -1,2 +1,5 @@
+from pyretechnics.cy_types cimport FuelModel
+
 cdef dict fuel_model_table
-cdef dict moisturize(dict fuel_model, list fuel_moisture)
+
+cdef FuelModel moisturize(dict fuel_model, list fuel_moisture) noexcept
