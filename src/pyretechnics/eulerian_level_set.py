@@ -1368,16 +1368,15 @@ class FireBehaviorSettings:
         self.surface_lw_ratio_model = surface_lw_ratio_model
         self.crown_max_lw_ratio     = crown_max_lw_ratio
         if spot_config:
-            # FIXME: Set default values in the .get() calls
             self.spot_config = SpotConfig(
                 random_seed                  = spot_config.get("random_seed"),
-                firebrands_per_unit_heat     = spot_config.get("firebrands_per_unit_heat"),
-                downwind_distance_mean       = spot_config.get("downwind_distance_mean"),
+                firebrands_per_unit_heat     = spot_config.get("firebrands_per_unit_heat", 5e-11),
+                downwind_distance_mean       = spot_config.get("downwind_distance_mean", 11.7),
                 fireline_intensity_exponent  = spot_config.get("fireline_intensity_exponent"),
                 wind_speed_exponent          = spot_config.get("wind_speed_exponent"),
                 downwind_variance_mean_ratio = spot_config.get("downwind_variance_mean_ratio"),
-                crosswind_distance_stdev     = spot_config.get("crosswind_distance_stdev"),
-                decay_distance               = spot_config.get("decay_distance"),
+                crosswind_distance_stdev     = spot_config.get("crosswind_distance_stdev", 10.0),
+                decay_distance               = spot_config.get("decay_distance", 500.0),
             )
         inputs_names: list = inputs_name_list()
         for k in range(17):
