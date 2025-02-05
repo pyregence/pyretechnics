@@ -253,27 +253,29 @@ def resolve_crosswind_distance_stdev(spot_config       : SpotConfig,
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
 
 
-@cy.cclass
-class JumpDistribution:
+JumpDistribution = cy.struct(
     # Downwind LogNormal params
     # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
-    mu_x   : cy.float # dimensionless (log-space)
-    sigma_x: cy.float # dimensionless (log-space)
+    mu_x    = cy.float, # dimensionless (log-space)
+    sigma_x = cy.float, # dimensionless (log-space)
     # Crosswind normal params
     # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
-    sigma_y: cy.float # meters
+    sigma_y = cy.float, # meters
+)
+
 
 @cy.cfunc
+@cy.exceptval(check=False)
 def resolve_JumpDistribution(spot_config       : SpotConfig,
                              fireline_intensity: cy.float,
                              wind_speed_20ft   : cy.float) -> JumpDistribution:
     ln_params: tuple[cy.float, cy.float] = resolve_lognormal_params(spot_config, fireline_intensity, wind_speed_20ft)
     # Initialize a new JumpDistribution
-    ret: JumpDistribution = JumpDistribution()
-    ret.mu_x              = ln_params[0] # dimensionless (log-space)
-    ret.sigma_x           = ln_params[1] # dimensionless (log-space)
-    ret.sigma_y           = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft) # meters
-    return ret
+    return JumpDistribution(
+        mu_x    = ln_params[0], # dimensionless (log-space)
+        sigma_x = ln_params[1], # dimensionless (log-space)
+        sigma_y = resolve_crosswind_distance_stdev(spot_config, fireline_intensity, wind_speed_20ft), # meters
+    )
 
 
 @cy.cfunc
