@@ -1,6 +1,7 @@
 # [[file:../../org/pyretechnics.org::surface-fire-imports][surface-fire-imports]]
-# cython: profile=True
+# cython: profile=False
 import cython
+import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp, log, sqrt
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
@@ -9,12 +10,23 @@ else:
     from math import exp, log, sqrt
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, FireBehaviorMax
     import pyretechnics.vector_utils as vu
-
-
-import cython as cy
-
-from pyretechnics.fuel_models import map_category, map_size_class, category_sum, size_class_sum
 # surface-fire-imports ends here
+# [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
+def map_category(f):
+    return [f(0), f(1)]
+
+
+def map_size_class(f):
+    return [f(0), f(1), f(2), f(3), f(4), f(5)]
+
+
+def category_sum(f):
+    return f(0) + f(1)
+
+
+def size_class_sum(f):
+    return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
+# fuel-category-and-size-class-functions ends here
 # [[file:../../org/pyretechnics.org::surface-fire-common-intermediate-calculations][surface-fire-common-intermediate-calculations]]
 def calc_surface_area_to_volume_ratio(f_i, f_ij, sigma):
     sigma_prime_i = size_class_sum(lambda i: f_ij[i] * sigma[i])

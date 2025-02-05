@@ -1820,7 +1820,7 @@ functions that will later be used in both the fuel moisture and
 surface fire equations.
 
 #+NAME: fuel-category-and-size-class-functions
-#+begin_src python
+#+begin_src python :tangle ../src/pyretechnics/surface_fire.py
 def map_category(f):
     return [f(0), f(1)]
 

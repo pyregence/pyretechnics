@@ -467,7 +467,7 @@ class SpreadInputs:
         if not self.fuel_models_arr:
             raise MemoryError()
         f: FuelModel
-        for f in fm.fuel_model_structs.values():
+        for f in fm.fuel_model_table.values():
             self.fuel_models_arr[f.number] = f
 
     @cy.cfunc
@@ -1349,7 +1349,7 @@ def resolve_surface_nwns_behavior(
         ci.fuel_moisture_live_herbaceous,
         ci.fuel_moisture_live_woody)
     # Apply fuel moisture to fuel model
-    mfm: FuelModel = fm.moisturize_val(fm_struct, M_f)
+    mfm: FuelModel = fm.moisturize(fm_struct, M_f)
     surface_fire_min: FireBehaviorMin = sf.calc_surface_fire_behavior_no_wind_no_slope(mfm, spread_rate_adjustment)
     return surface_fire_min
 

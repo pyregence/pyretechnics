@@ -4,266 +4,357 @@ import cython
 import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import exp
-    from cython.cimports.pyretechnics.cy_types import fcatarr, fclaarr, FuelModel
+    from cython.cimports.pyretechnics.cy_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
 else:
     from math import exp
-    from pyretechnics.py_types import fcatarr, fclaarr, FuelModel
+    from pyretechnics.py_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
 
 
+# FIXME: Replace this dictionary with something more efficient
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
 #
 # The fields have the following meanings:
-#   {fuel-model-number : [name, delta, M_x-dead, h, w_o, sigma]}
-#
-# where:
-#   w_o   = [  w_o-dead-1hr,   w_o-dead-10hr,   w_o-dead-100hr,   w_o-live-herbaceous,   w_o-live-woody]
-#   sigma = [sigma-dead-1hr, sigma-dead-10hr, sigma-dead-100hr, sigma-live-herbaceous, sigma-live-woody]
-fuel_model_compact_table = {
+#   {
+#     fuel_model_number: (delta,
+#                         M_x_dead,
+#                         h,
+#                         w_o_dead_1hr,
+#                         w_o_dead_10hr,
+#                         w_o_dead_100hr,
+#                         w_o_live_herbaceous,
+#                         w_o_live_woody,
+#                         sigma_dead_1hr,
+#                         sigma_dead_10hr,
+#                         sigma_dead_100hr,
+#                         sigma_live_herbaceous,
+#                         sigma_live_woody), # name
+#   }
+compact_fuel_model_table = cy.declare(dict[int, CompactFuelModel], {
     # Anderson 13:
     # Grass and Grass-dominated (short-grass,timber-grass-and-understory,tall-grass)
-    1   : ["R01", 1.0, 12, 8, [0.0340, 0.0000, 0.0000, 0.0000, 0.0000], [3500.0,   0.0,  0.0,    0.0,    0.0]],
-    2   : ["R02", 1.0, 15, 8, [0.0920, 0.0460, 0.0230, 0.0230, 0.0000], [3000.0, 109.0, 30.0, 1500.0,    0.0]],
-    3   : ["R03", 2.5, 25, 8, [0.1380, 0.0000, 0.0000, 0.0000, 0.0000], [1500.0,   0.0,  0.0,    0.0,    0.0]],
+    1  : (1.0, 12.0, 8.0, 0.0340, 0.0000, 0.0000, 0.0000, 0.0000, 3500.0,   0.0,  0.0,    0.0,    0.0), # R01
+    2  : (1.0, 15.0, 8.0, 0.0920, 0.0460, 0.0230, 0.0230, 0.0000, 3000.0, 109.0, 30.0, 1500.0,    0.0), # R02
+    3  : (2.5, 25.0, 8.0, 0.1380, 0.0000, 0.0000, 0.0000, 0.0000, 1500.0,   0.0,  0.0,    0.0,    0.0), # R03
     # Chaparral and Shrubfields (chaparral,brush,dormant-brush-hardwood-slash,southern-rough)
-    4   : ["R04", 6.0, 20, 8, [0.2300, 0.1840, 0.0920, 0.2300, 0.0000], [2000.0, 109.0, 30.0, 1500.0,    0.0]],
-    5   : ["R05", 2.0, 20, 8, [0.0460, 0.0230, 0.0000, 0.0920, 0.0000], [2000.0, 109.0,  0.0, 1500.0,    0.0]],
-    6   : ["R06", 2.5, 25, 8, [0.0690, 0.1150, 0.0920, 0.0000, 0.0000], [1750.0, 109.0, 30.0,    0.0,    0.0]],
-    7   : ["R07", 2.5, 40, 8, [0.0520, 0.0860, 0.0690, 0.0170, 0.0000], [1750.0, 109.0, 30.0, 1550.0,    0.0]],
+    4  : (6.0, 20.0, 8.0, 0.2300, 0.1840, 0.0920, 0.2300, 0.0000, 2000.0, 109.0, 30.0, 1500.0,    0.0), # R04
+    5  : (2.0, 20.0, 8.0, 0.0460, 0.0230, 0.0000, 0.0920, 0.0000, 2000.0, 109.0,  0.0, 1500.0,    0.0), # R05
+    6  : (2.5, 25.0, 8.0, 0.0690, 0.1150, 0.0920, 0.0000, 0.0000, 1750.0, 109.0, 30.0,    0.0,    0.0), # R06
+    7  : (2.5, 40.0, 8.0, 0.0520, 0.0860, 0.0690, 0.0170, 0.0000, 1750.0, 109.0, 30.0, 1550.0,    0.0), # R07
     # Timber Litter (closed-timber-litter,hardwood-litter,timber-litter-and-understory)
-    8   : ["R08", 0.2, 30, 8, [0.0690, 0.0460, 0.1150, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    9   : ["R09", 0.2, 25, 8, [0.1340, 0.0190, 0.0070, 0.0000, 0.0000], [2500.0, 109.0, 30.0,    0.0,    0.0]],
-    10  : ["R10", 1.0, 25, 8, [0.1380, 0.0920, 0.2300, 0.0920, 0.0000], [2000.0, 109.0, 30.0, 1500.0,    0.0]],
+    8  : (0.2, 30.0, 8.0, 0.0690, 0.0460, 0.1150, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # R08
+    9  : (0.2, 25.0, 8.0, 0.1340, 0.0190, 0.0070, 0.0000, 0.0000, 2500.0, 109.0, 30.0,    0.0,    0.0), # R09
+    10 : (1.0, 25.0, 8.0, 0.1380, 0.0920, 0.2300, 0.0920, 0.0000, 2000.0, 109.0, 30.0, 1500.0,    0.0), # R10
     # Logging Slash (light-logging-slash,medium-logging-slash,heavy-logging-slash)
-    11  : ["R11", 1.0, 15, 8, [0.0690, 0.2070, 0.2530, 0.0000, 0.0000], [1500.0, 109.0, 30.0,    0.0,    0.0]],
-    12  : ["R12", 2.3, 20, 8, [0.1840, 0.6440, 0.7590, 0.0000, 0.0000], [1500.0, 109.0, 30.0,    0.0,    0.0]],
-    13  : ["R13", 3.0, 25, 8, [0.3220, 1.0580, 1.2880, 0.0000, 0.0000], [1500.0, 109.0, 30.0,    0.0,    0.0]],
+    11 : (1.0, 15.0, 8.0, 0.0690, 0.2070, 0.2530, 0.0000, 0.0000, 1500.0, 109.0, 30.0,    0.0,    0.0), # R11
+    12 : (2.3, 20.0, 8.0, 0.1840, 0.6440, 0.7590, 0.0000, 0.0000, 1500.0, 109.0, 30.0,    0.0,    0.0), # R12
+    13 : (3.0, 25.0, 8.0, 0.3220, 1.0580, 1.2880, 0.0000, 0.0000, 1500.0, 109.0, 30.0,    0.0,    0.0), # R13
     # Nonburnable (NB)
-    91  : ["NB1", 0.0,  0, 0, [0.0000, 0.0000, 0.0000, 0.0000, 0.0000], [   0.0,   0.0,  0.0,    0.0,    0.0]],
-    92  : ["NB2", 0.0,  0, 0, [0.0000, 0.0000, 0.0000, 0.0000, 0.0000], [   0.0,   0.0,  0.0,    0.0,    0.0]],
-    93  : ["NB3", 0.0,  0, 0, [0.0000, 0.0000, 0.0000, 0.0000, 0.0000], [   0.0,   0.0,  0.0,    0.0,    0.0]],
-    98  : ["NB4", 0.0,  0, 0, [0.0000, 0.0000, 0.0000, 0.0000, 0.0000], [   0.0,   0.0,  0.0,    0.0,    0.0]],
-    99  : ["NB5", 0.0,  0, 0, [0.0000, 0.0000, 0.0000, 0.0000, 0.0000], [   0.0,   0.0,  0.0,    0.0,    0.0]],
+    91 : (0.0,  0.0, 0.0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,    0.0,   0.0,  0.0,    0.0,    0.0), # NB1
+    92 : (0.0,  0.0, 0.0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,    0.0,   0.0,  0.0,    0.0,    0.0), # NB2
+    93 : (0.0,  0.0, 0.0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,    0.0,   0.0,  0.0,    0.0,    0.0), # NB3
+    98 : (0.0,  0.0, 0.0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,    0.0,   0.0,  0.0,    0.0,    0.0), # NB4
+    99 : (0.0,  0.0, 0.0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,    0.0,   0.0,  0.0,    0.0,    0.0), # NB5
     # Scott & Burgan 40:
     # Grass (GR)
-    101 : ["GR1", 0.4, 15, 8, [0.0046, 0.0000, 0.0000, 0.0138, 0.0000], [2200.0, 109.0, 30.0, 2000.0,    0.0]],
-    102 : ["GR2", 1.0, 15, 8, [0.0046, 0.0000, 0.0000, 0.0459, 0.0000], [2000.0, 109.0, 30.0, 1800.0,    0.0]],
-    103 : ["GR3", 2.0, 30, 8, [0.0046, 0.0184, 0.0000, 0.0689, 0.0000], [1500.0, 109.0, 30.0, 1300.0,    0.0]],
-    104 : ["GR4", 2.0, 15, 8, [0.0115, 0.0000, 0.0000, 0.0872, 0.0000], [2000.0, 109.0, 30.0, 1800.0,    0.0]],
-    105 : ["GR5", 1.5, 40, 8, [0.0184, 0.0000, 0.0000, 0.1148, 0.0000], [1800.0, 109.0, 30.0, 1600.0,    0.0]],
-    106 : ["GR6", 1.5, 40, 9, [0.0046, 0.0000, 0.0000, 0.1561, 0.0000], [2200.0, 109.0, 30.0, 2000.0,    0.0]],
-    107 : ["GR7", 3.0, 15, 8, [0.0459, 0.0000, 0.0000, 0.2479, 0.0000], [2000.0, 109.0, 30.0, 1800.0,    0.0]],
-    108 : ["GR8", 4.0, 30, 8, [0.0230, 0.0459, 0.0000, 0.3352, 0.0000], [1500.0, 109.0, 30.0, 1300.0,    0.0]],
-    109 : ["GR9", 5.0, 40, 8, [0.0459, 0.0459, 0.0000, 0.4132, 0.0000], [1800.0, 109.0, 30.0, 1600.0,    0.0]],
+    101: (0.4, 15.0, 8.0, 0.0046, 0.0000, 0.0000, 0.0138, 0.0000, 2200.0, 109.0, 30.0, 2000.0,    0.0), # GR1
+    102: (1.0, 15.0, 8.0, 0.0046, 0.0000, 0.0000, 0.0459, 0.0000, 2000.0, 109.0, 30.0, 1800.0,    0.0), # GR2
+    103: (2.0, 30.0, 8.0, 0.0046, 0.0184, 0.0000, 0.0689, 0.0000, 1500.0, 109.0, 30.0, 1300.0,    0.0), # GR3
+    104: (2.0, 15.0, 8.0, 0.0115, 0.0000, 0.0000, 0.0872, 0.0000, 2000.0, 109.0, 30.0, 1800.0,    0.0), # GR4
+    105: (1.5, 40.0, 8.0, 0.0184, 0.0000, 0.0000, 0.1148, 0.0000, 1800.0, 109.0, 30.0, 1600.0,    0.0), # GR5
+    106: (1.5, 40.0, 9.0, 0.0046, 0.0000, 0.0000, 0.1561, 0.0000, 2200.0, 109.0, 30.0, 2000.0,    0.0), # GR6
+    107: (3.0, 15.0, 8.0, 0.0459, 0.0000, 0.0000, 0.2479, 0.0000, 2000.0, 109.0, 30.0, 1800.0,    0.0), # GR7
+    108: (4.0, 30.0, 8.0, 0.0230, 0.0459, 0.0000, 0.3352, 0.0000, 1500.0, 109.0, 30.0, 1300.0,    0.0), # GR8
+    109: (5.0, 40.0, 8.0, 0.0459, 0.0459, 0.0000, 0.4132, 0.0000, 1800.0, 109.0, 30.0, 1600.0,    0.0), # GR9
     # Grass-Shrub (GS)
-    121 : ["GS1", 0.9, 15, 8, [0.0092, 0.0000, 0.0000, 0.0230, 0.0298], [2000.0, 109.0, 30.0, 1800.0, 1800.0]],
-    122 : ["GS2", 1.5, 15, 8, [0.0230, 0.0230, 0.0000, 0.0275, 0.0459], [2000.0, 109.0, 30.0, 1800.0, 1800.0]],
-    123 : ["GS3", 1.8, 40, 8, [0.0138, 0.0115, 0.0000, 0.0666, 0.0574], [1800.0, 109.0, 30.0, 1600.0, 1600.0]],
-    124 : ["GS4", 2.1, 40, 8, [0.0872, 0.0138, 0.0046, 0.1561, 0.3260], [1800.0, 109.0, 30.0, 1600.0, 1600.0]],
+    121: (0.9, 15.0, 8.0, 0.0092, 0.0000, 0.0000, 0.0230, 0.0298, 2000.0, 109.0, 30.0, 1800.0, 1800.0), # GS1
+    122: (1.5, 15.0, 8.0, 0.0230, 0.0230, 0.0000, 0.0275, 0.0459, 2000.0, 109.0, 30.0, 1800.0, 1800.0), # GS2
+    123: (1.8, 40.0, 8.0, 0.0138, 0.0115, 0.0000, 0.0666, 0.0574, 1800.0, 109.0, 30.0, 1600.0, 1600.0), # GS3
+    124: (2.1, 40.0, 8.0, 0.0872, 0.0138, 0.0046, 0.1561, 0.3260, 1800.0, 109.0, 30.0, 1600.0, 1600.0), # GS4
     # Shrub (SH)
-    141 : ["SH1", 1.0, 15, 8, [0.0115, 0.0115, 0.0000, 0.0069, 0.0597], [2000.0, 109.0, 30.0, 1800.0, 1600.0]],
-    142 : ["SH2", 1.0, 15, 8, [0.0620, 0.1102, 0.0344, 0.0000, 0.1768], [2000.0, 109.0, 30.0,    0.0, 1600.0]],
-    143 : ["SH3", 2.4, 40, 8, [0.0207, 0.1377, 0.0000, 0.0000, 0.2847], [1600.0, 109.0, 30.0,    0.0, 1400.0]],
-    144 : ["SH4", 3.0, 30, 8, [0.0390, 0.0528, 0.0092, 0.0000, 0.1171], [2000.0, 109.0, 30.0, 1800.0, 1600.0]],
-    145 : ["SH5", 6.0, 15, 8, [0.1653, 0.0964, 0.0000, 0.0000, 0.1331], [ 750.0, 109.0, 30.0,    0.0, 1600.0]],
-    146 : ["SH6", 2.0, 30, 8, [0.1331, 0.0666, 0.0000, 0.0000, 0.0643], [ 750.0, 109.0, 30.0,    0.0, 1600.0]],
-    147 : ["SH7", 6.0, 15, 8, [0.1607, 0.2433, 0.1010, 0.0000, 0.1561], [ 750.0, 109.0, 30.0,    0.0, 1600.0]],
-    148 : ["SH8", 3.0, 40, 8, [0.0941, 0.1561, 0.0390, 0.0000, 0.1997], [ 750.0, 109.0, 30.0,    0.0, 1600.0]],
-    149 : ["SH9", 4.4, 40, 8, [0.2066, 0.1125, 0.0000, 0.0712, 0.3214], [ 750.0, 109.0, 30.0, 1800.0, 1500.0]],
+    141: (1.0, 15.0, 8.0, 0.0115, 0.0115, 0.0000, 0.0069, 0.0597, 2000.0, 109.0, 30.0, 1800.0, 1600.0), # SH1
+    142: (1.0, 15.0, 8.0, 0.0620, 0.1102, 0.0344, 0.0000, 0.1768, 2000.0, 109.0, 30.0,    0.0, 1600.0), # SH2
+    143: (2.4, 40.0, 8.0, 0.0207, 0.1377, 0.0000, 0.0000, 0.2847, 1600.0, 109.0, 30.0,    0.0, 1400.0), # SH3
+    144: (3.0, 30.0, 8.0, 0.0390, 0.0528, 0.0092, 0.0000, 0.1171, 2000.0, 109.0, 30.0, 1800.0, 1600.0), # SH4
+    145: (6.0, 15.0, 8.0, 0.1653, 0.0964, 0.0000, 0.0000, 0.1331,  750.0, 109.0, 30.0,    0.0, 1600.0), # SH5
+    146: (2.0, 30.0, 8.0, 0.1331, 0.0666, 0.0000, 0.0000, 0.0643,  750.0, 109.0, 30.0,    0.0, 1600.0), # SH6
+    147: (6.0, 15.0, 8.0, 0.1607, 0.2433, 0.1010, 0.0000, 0.1561,  750.0, 109.0, 30.0,    0.0, 1600.0), # SH7
+    148: (3.0, 40.0, 8.0, 0.0941, 0.1561, 0.0390, 0.0000, 0.1997,  750.0, 109.0, 30.0,    0.0, 1600.0), # SH8
+    149: (4.4, 40.0, 8.0, 0.2066, 0.1125, 0.0000, 0.0712, 0.3214,  750.0, 109.0, 30.0, 1800.0, 1500.0), # SH9
     # Timber-Understory (TU)
-    161 : ["TU1", 0.6, 20, 8, [0.0092, 0.0413, 0.0689, 0.0092, 0.0413], [2000.0, 109.0, 30.0, 1800.0, 1600.0]],
-    162 : ["TU2", 1.0, 30, 8, [0.0436, 0.0826, 0.0574, 0.0000, 0.0092], [2000.0, 109.0, 30.0,    0.0, 1600.0]],
-    163 : ["TU3", 1.3, 30, 8, [0.0505, 0.0069, 0.0115, 0.0298, 0.0505], [1800.0, 109.0, 30.0, 1600.0, 1400.0]],
-    164 : ["TU4", 0.5, 12, 8, [0.2066, 0.0000, 0.0000, 0.0000, 0.0918], [2300.0, 109.0, 30.0,    0.0, 2000.0]],
-    165 : ["TU5", 1.0, 25, 8, [0.1837, 0.1837, 0.1377, 0.0000, 0.1377], [1500.0, 109.0, 30.0,    0.0,  750.0]],
+    161: (0.6, 20.0, 8.0, 0.0092, 0.0413, 0.0689, 0.0092, 0.0413, 2000.0, 109.0, 30.0, 1800.0, 1600.0), # TU1
+    162: (1.0, 30.0, 8.0, 0.0436, 0.0826, 0.0574, 0.0000, 0.0092, 2000.0, 109.0, 30.0,    0.0, 1600.0), # TU2
+    163: (1.3, 30.0, 8.0, 0.0505, 0.0069, 0.0115, 0.0298, 0.0505, 1800.0, 109.0, 30.0, 1600.0, 1400.0), # TU3
+    164: (0.5, 12.0, 8.0, 0.2066, 0.0000, 0.0000, 0.0000, 0.0918, 2300.0, 109.0, 30.0,    0.0, 2000.0), # TU4
+    165: (1.0, 25.0, 8.0, 0.1837, 0.1837, 0.1377, 0.0000, 0.1377, 1500.0, 109.0, 30.0,    0.0,  750.0), # TU5
     # Timber Litter (TL)
-    181 : ["TL1", 0.2, 30, 8, [0.0459, 0.1010, 0.1653, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    182 : ["TL2", 0.2, 25, 8, [0.0643, 0.1056, 0.1010, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    183 : ["TL3", 0.3, 20, 8, [0.0230, 0.1010, 0.1286, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    184 : ["TL4", 0.4, 25, 8, [0.0230, 0.0689, 0.1928, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    185 : ["TL5", 0.6, 25, 8, [0.0528, 0.1148, 0.2020, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0, 1600.0]],
-    186 : ["TL6", 0.3, 25, 8, [0.1102, 0.0551, 0.0551, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    187 : ["TL7", 0.4, 25, 8, [0.0138, 0.0643, 0.3719, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    188 : ["TL8", 0.3, 35, 8, [0.2663, 0.0643, 0.0505, 0.0000, 0.0000], [1800.0, 109.0, 30.0,    0.0,    0.0]],
-    189 : ["TL9", 0.6, 35, 8, [0.3053, 0.1515, 0.1905, 0.0000, 0.0000], [1800.0, 109.0, 30.0,    0.0, 1600.0]],
+    181: (0.2, 30.0, 8.0, 0.0459, 0.1010, 0.1653, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # TL1
+    182: (0.2, 25.0, 8.0, 0.0643, 0.1056, 0.1010, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # TL2
+    183: (0.3, 20.0, 8.0, 0.0230, 0.1010, 0.1286, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # TL3
+    184: (0.4, 25.0, 8.0, 0.0230, 0.0689, 0.1928, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # TL4
+    185: (0.6, 25.0, 8.0, 0.0528, 0.1148, 0.2020, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0, 1600.0), # TL5
+    186: (0.3, 25.0, 8.0, 0.1102, 0.0551, 0.0551, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # TL6
+    187: (0.4, 25.0, 8.0, 0.0138, 0.0643, 0.3719, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # TL7
+    188: (0.3, 35.0, 8.0, 0.2663, 0.0643, 0.0505, 0.0000, 0.0000, 1800.0, 109.0, 30.0,    0.0,    0.0), # TL8
+    189: (0.6, 35.0, 8.0, 0.3053, 0.1515, 0.1905, 0.0000, 0.0000, 1800.0, 109.0, 30.0,    0.0, 1600.0), # TL9
     # Slash-Blowdown (SB)
-    201 : ["SB1", 1.0, 25, 8, [0.0689, 0.1377, 0.5051, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    202 : ["SB2", 1.0, 25, 8, [0.2066, 0.1951, 0.1837, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    203 : ["SB3", 1.2, 25, 8, [0.2525, 0.1263, 0.1377, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-    204 : ["SB4", 2.7, 25, 8, [0.2410, 0.1607, 0.2410, 0.0000, 0.0000], [2000.0, 109.0, 30.0,    0.0,    0.0]],
-}
+    201: (1.0, 25.0, 8.0, 0.0689, 0.1377, 0.5051, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # SB1
+    202: (1.0, 25.0, 8.0, 0.2066, 0.1951, 0.1837, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # SB2
+    203: (1.2, 25.0, 8.0, 0.2525, 0.1263, 0.1377, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # SB3
+    204: (2.7, 25.0, 8.0, 0.2410, 0.1607, 0.2410, 0.0000, 0.0000, 2000.0, 109.0, 30.0,    0.0,    0.0), # SB4
+})
 # fuel-model-compact-table ends here
 # [[file:../../org/pyretechnics.org::expand-compact-fuel-model-table][expand-compact-fuel-model-table]]
-def expand_compact_fuel_model(fuel_model_number):
-    [name, delta, M_x_dead, h, w_o, sigma] = fuel_model_compact_table[fuel_model_number]
-    [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, w_o_live_herbaceous, w_o_live_woody] = w_o
-    [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, sigma_live_herbaceous, sigma_live_woody] = sigma
-    M_x_dead = M_x_dead * 0.01
-    h        = h * 1000.0
-    # Conditionally set dead_herbaceous values
-    dynamic               = fuel_model_number > 100 and w_o_live_herbaceous > 0.0
-    M_x_dead_herbaceous   = M_x_dead              if dynamic else 0.0
-    sigma_dead_herbaceous = sigma_live_herbaceous if dynamic else 0.0
-    return {
-        "name"    : name,
-        "number"  : fuel_model_number,
-        "delta"   : delta,
-        "M_x"     : [M_x_dead, M_x_dead, M_x_dead, M_x_dead_herbaceous, 0.0, 0.0],
-        "w_o"     : [w_o_dead_1hr, w_o_dead_10hr, w_o_dead_100hr, 0.0, w_o_live_herbaceous, w_o_live_woody],
-        "sigma"   : [sigma_dead_1hr, sigma_dead_10hr, sigma_dead_100hr, sigma_dead_herbaceous, sigma_live_herbaceous, sigma_live_woody],
-        "h"       : 6 * [h],
-        "rho_p"   : 6 * [32.0],
-        "S_T"     : 6 * [0.0555],
-        "S_e"     : 6 * [0.01],
-        "dynamic" : dynamic,
-        "burnable": not (91 <= fuel_model_number <= 99),
-    }
+@cy.cfunc
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def compute_exp_A_sigma(A: cy.float, sigma_ij: cy.float) -> cy.float:
+    if sigma_ij > 0.0:
+        return exp(A / sigma_ij)
+    else:
+        return 0.0
 
 
-fuel_model_table = {k: expand_compact_fuel_model(k) for k in fuel_model_compact_table.keys()}
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def compute_firemod_size_class(sigma_i: cy.float) -> cy.float:
+    return (
+        1.0 if (sigma_i >= 1200.0)
+        else 2.0 if (sigma_i >= 192.0)
+        else 3.0 if (sigma_i >= 96.0)
+        else 4.0 if (sigma_i >= 48.0)
+        else 5.0 if (sigma_i >= 16.0)
+        else 6.0
+    )
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
+    # Look up the CompactFuelModel by fuel_model_number
+    cfm: CompactFuelModel = compact_fuel_model_table[fuel_model_number]
+    # Unpack the CompactFuelModel values
+    delta                : cy.float = cfm[0]
+    M_x_dead             : cy.float = cfm[1]
+    h                    : cy.float = cfm[2]
+    w_o_dead_1hr         : cy.float = cfm[3]
+    w_o_dead_10hr        : cy.float = cfm[4]
+    w_o_dead_100hr       : cy.float = cfm[5]
+    w_o_live_herbaceous  : cy.float = cfm[6]
+    w_o_live_woody       : cy.float = cfm[7]
+    sigma_dead_1hr       : cy.float = cfm[8]
+    sigma_dead_10hr      : cy.float = cfm[9]
+    sigma_dead_100hr     : cy.float = cfm[10]
+    sigma_live_herbaceous: cy.float = cfm[11]
+    sigma_live_woody     : cy.float = cfm[12]
+    # Expand compressed values
+    M_x_dead: cy.float = M_x_dead * 0.01
+    h       : cy.float = h * 1000.0
+    # Pre-compute some dynamic fuel model values
+    dynamic              : cy.bint  = fuel_model_number > 100 and w_o_live_herbaceous > 0.0
+    M_x_dead_herbaceous  : cy.float = M_x_dead              if dynamic else 0.0
+    sigma_dead_herbaceous: cy.float = sigma_live_herbaceous if dynamic else 0.0
+    # Re-pack everything into a FuelModel struct
+    return FuelModel(
+        number               = fuel_model_number,
+        delta                = delta,
+        M_x                  = (M_x_dead,
+                                M_x_dead,
+                                M_x_dead,
+                                M_x_dead_herbaceous,
+                                0.0,
+                                0.0),
+        M_f                  = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        w_o                  = (w_o_dead_1hr,
+                                w_o_dead_10hr,
+                                w_o_dead_100hr,
+                                0.0,
+                                w_o_live_herbaceous,
+                                w_o_live_woody),
+        sigma                = (sigma_dead_1hr,
+                                sigma_dead_10hr,
+                                sigma_dead_100hr,
+                                sigma_dead_herbaceous,
+                                sigma_live_herbaceous,
+                                sigma_live_woody),
+        h                    = (h, h, h, h, h, h),
+        rho_p                = (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+        S_T                  = (0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555),
+        S_e                  = (0.01, 0.01, 0.01, 0.01, 0.01, 0.01),
+        dynamic              = dynamic,
+        burnable             = not (91 <= fuel_model_number <= 99),
+        exp_A_sigma          = (compute_exp_A_sigma(-138.0, sigma_dead_1hr),
+                                compute_exp_A_sigma(-138.0, sigma_dead_10hr),
+                                compute_exp_A_sigma(-138.0, sigma_dead_100hr),
+                                compute_exp_A_sigma(-138.0, sigma_dead_herbaceous),
+                                compute_exp_A_sigma(-500.0, sigma_live_herbaceous),
+                                compute_exp_A_sigma(-500.0, sigma_live_woody)),
+        firemod_size_classes = (compute_firemod_size_class(sigma_dead_1hr),
+                                compute_firemod_size_class(sigma_dead_10hr),
+                                compute_firemod_size_class(sigma_dead_100hr),
+                                compute_firemod_size_class(sigma_dead_herbaceous),
+                                compute_firemod_size_class(sigma_live_herbaceous),
+                                compute_firemod_size_class(sigma_live_woody)),
+        f_ij                 = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        f_i                  = (0.0, 0.0),
+        g_ij                 = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    )
+
+
+# FIXME: Replace this dictionary with something more efficient
+fuel_model_table = cy.declare(dict[int, FuelModel], {
+    k: expand_compact_fuel_model(k) for k in compact_fuel_model_table.keys()
+})
 # expand-compact-fuel-model-table ends here
-# [[file:../../org/pyretechnics.org::fuel-category-and-size-class-functions][fuel-category-and-size-class-functions]]
-def map_category(f):
-    return [f(0), f(1)]
-
-
-def map_size_class(f):
-    return [f(0), f(1), f(2), f(3), f(4), f(5)]
-
-
-def category_sum(f):
-    return f(0) + f(1)
-
-
-def size_class_sum(f):
-    return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
-# fuel-category-and-size-class-functions ends here
 # [[file:../../org/pyretechnics.org::add-dynamic-fuel-loading][add-dynamic-fuel-loading]]
-def add_dynamic_fuel_loading(fuel_model, M_f):
+@cy.cfunc
+@cy.exceptval(check=False)
+def add_dynamic_fuel_loading(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
     """
     Updates M_f and w_o.
     """
-    if fuel_model["dynamic"]:
+    if fuel_model.dynamic:
         # dynamic fuel model
-        w_o                       = fuel_model["w_o"]
-        live_herbaceous_load      = w_o[4]
-        live_herbaceous_moisture  = M_f[4]
-        fraction_green            = max(0.0, min(1.0, (live_herbaceous_moisture / 0.9) - 0.3333333333333333))
-        fraction_cured            = 1.0 - fraction_green
-        dynamic_fuel_model        = fuel_model.copy() # shallow copy
-        dynamic_fuel_model["M_f"] = [
-            M_f[0],
-            M_f[1],
-            M_f[2],
-            M_f[0], # set dead_herbaceous to dead_1hr
-            M_f[4],
-            M_f[5],
-        ]
-        dynamic_fuel_model["w_o"] = [
-            w_o[0],
-            w_o[1],
-            w_o[2],
-            live_herbaceous_load * fraction_cured, # dead_herbaceous
-            live_herbaceous_load * fraction_green, # live_herbaceous
-            w_o[5],
-        ]
+        w_o                     : fclaarr   = fuel_model.w_o
+        live_herbaceous_load    : cy.float  = w_o[4]
+        live_herbaceous_moisture: cy.float  = M_f[4]
+        fraction_green          : cy.float  = max(0.0, min(1.0, (live_herbaceous_moisture / 0.9) - 0.3333333333333333))
+        fraction_cured          : cy.float  = 1.0 - fraction_green
+        dynamic_fuel_model      : FuelModel = fuel_model  # FIXME: Restore Python compatibility
+        M_f_copy                : fclaarr   = M_f         # FIXME: Restore Python compatibility
+        M_f_copy[3]                         = M_f_copy[0] # set dead_herbaceous to dead_1hr
+        dynamic_fuel_model.M_f              = M_f_copy
+        w_o_copy                : fclaarr   = w_o
+        w_o_copy[3]                         = live_herbaceous_load * fraction_cured # dead_herbaceous
+        w_o_copy[4]                         = live_herbaceous_load * fraction_green # live_herbaceous
+        dynamic_fuel_model.w_o              = w_o_copy
         return dynamic_fuel_model
     else:
         # static fuel model
-        static_fuel_model = fuel_model.copy() # shallow copy
-        static_fuel_model["M_f"] = M_f
+        static_fuel_model: FuelModel = fuel_model # FIXME: Restore Python compatibility
+        static_fuel_model.M_f        = M_f
         return static_fuel_model
 # add-dynamic-fuel-loading ends here
 # [[file:../../org/pyretechnics.org::add-weighting-factors][add-weighting-factors]]
-def add_weighting_factors(fuel_model):
+# TODO: OPTIM pre-compute this conditional branching since it's fully determined by sigma.
+#       This information might be represented efficiently in bit flags.
+@cy.cfunc
+@cy.exceptval(check=False)
+def compute_gij(firemod_size_classes : fclaarr,
+                f_ij                 : fclaarr,
+                firemod_size_class_ij: cy.float,
+                is_dead              : cy.bint) -> cy.float:
     """
-    Assigns f_ij, f_i and g_ij.
+    Sums the f_ij of the same category (dead/live) as i, and having the same firemod_size_class.
+
+    NOTE: There may be repetitions in firemod_size_classes, which is why this expression is not
+          trivially equal to f_ij[i].
     """
-    w_o                         = fuel_model["w_o"]
-    sigma                       = fuel_model["sigma"]
-    rho_p                       = fuel_model["rho_p"]
-    def msc_Aij(i):
-        return (sigma[i] * w_o[i]) / rho_p[i]
-    A_ij                        = map_size_class(msc_Aij)
-    def scs_A_ij(i):
-        return A_ij[i]
-    A_i                         = size_class_sum(scs_A_ij)
-    def scs_A_i(i):
-        return A_i[i]
-    A_T                         = category_sum(scs_A_i)
-    def msc_fij(i):
-        A = A_i[i//4] # FIXME clever but unclear
-        return (A_ij[i] / A) if (A > 0.0) else 0.0
-    f_ij                        = map_size_class(msc_fij)
-    def msc_f_i(i):
-        return (A_i[i] / A_T) if A_T > 0.0 else 0.0
-    f_i                         = map_category(msc_f_i)
-    def msc_firemod_size_class(i):
-        s = sigma[i]
-        return (
-            1 if (s >= 1200.0)
-            else 2 if (s >= 192.0)
-            else 3 if (s >= 96.0)
-            else 4 if (s >= 48.0)
-            else 5 if (s >= 16.0)
-            else 6
-        )
-    firemod_size_classes        = map_size_class(msc_firemod_size_class)
-    def msc_gij(i):
-        c = firemod_size_classes[i]
-        return ((
-            (f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
-            + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
-                + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
-                + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
-            if (i < 4) else
-            ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
-                + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0)))
-            
-    g_ij                        = map_size_class(msc_gij)
-    weighted_fuel_model         = fuel_model.copy() # shallow copy
-    weighted_fuel_model["f_ij"] = f_ij
-    weighted_fuel_model["f_i"]  = f_i
-    weighted_fuel_model["g_ij"] = g_ij
+    if is_dead:
+        f_ij_0: cy.float = (f_ij[0] if (firemod_size_class_ij == firemod_size_classes[0]) else 0.0)
+        f_ij_1: cy.float = (f_ij[1] if (firemod_size_class_ij == firemod_size_classes[1]) else 0.0)
+        f_ij_2: cy.float = (f_ij[2] if (firemod_size_class_ij == firemod_size_classes[2]) else 0.0)
+        f_ij_3: cy.float = (f_ij[3] if (firemod_size_class_ij == firemod_size_classes[3]) else 0.0)
+        return f_ij_0 + f_ij_1 + f_ij_2 + f_ij_3
+    else:
+        f_ij_4: cy.float = (f_ij[4] if (firemod_size_class_ij == firemod_size_classes[4]) else 0.0)
+        f_ij_5: cy.float = (f_ij[5] if (firemod_size_class_ij == firemod_size_classes[5]) else 0.0)
+        return f_ij_4 + f_ij_5
+
+
+@cy.cfunc
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
+    """
+    Assigns f_ij, f_i, and g_ij.
+    """
+    w_o  : fclaarr  = fuel_model.w_o
+    sigma: fclaarr  = fuel_model.sigma
+    rho_p: fclaarr  = fuel_model.rho_p
+    A_ij : fclaarr  = ((sigma[0] * w_o[0]) / rho_p[0],
+                       (sigma[1] * w_o[1]) / rho_p[1],
+                       (sigma[2] * w_o[2]) / rho_p[2],
+                       (sigma[3] * w_o[3]) / rho_p[3],
+                       (sigma[4] * w_o[4]) / rho_p[4],
+                       (sigma[5] * w_o[5]) / rho_p[5]) # TODO: OPTIM pre-compute sigma/rho_p
+    A_0  : cy.float = A_ij[0] + A_ij[1] + A_ij[2] + A_ij[3]
+    A_1  : cy.float = A_ij[4] + A_ij[5]
+    A_i  : fcatarr  = (A_0, A_1)
+    A_T  : cy.float = A_0 + A_1
+    f_ij : fclaarr  = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    f_i  : fcatarr  = (0.0, 0.0)
+    if A_0 > 0.0:
+        A_0_inv: cy.float = 1.0 / A_0
+        f_ij[0] = A_ij[0] * A_0_inv
+        f_ij[1] = A_ij[1] * A_0_inv
+        f_ij[2] = A_ij[2] * A_0_inv
+        f_ij[3] = A_ij[3] * A_0_inv
+    if A_1 > 0.0:
+        A_1_inv: cy.float = 1.0 / A_1
+        f_ij[4] = A_ij[4] * A_1_inv
+        f_ij[5] = A_ij[5] * A_1_inv
+    if A_T > 0.0:
+        A_T_inv: cy.float = 1.0 / A_T
+        f_i[0] = A_0 * A_T_inv
+        f_i[1] = A_1 * A_T_inv
+    firemod_size_classes: fclaarr   = fuel_model.firemod_size_classes
+    g_ij                : fclaarr   = (compute_gij(firemod_size_classes, f_ij, firemod_size_classes[0], True),
+                                       compute_gij(firemod_size_classes, f_ij, firemod_size_classes[1], True),
+                                       compute_gij(firemod_size_classes, f_ij, firemod_size_classes[2], True),
+                                       compute_gij(firemod_size_classes, f_ij, firemod_size_classes[3], True),
+                                       compute_gij(firemod_size_classes, f_ij, firemod_size_classes[4], False),
+                                       compute_gij(firemod_size_classes, f_ij, firemod_size_classes[5], False))
+    weighted_fuel_model : FuelModel = fuel_model # FIXME: Restore Python compatibility
+    weighted_fuel_model.f_ij = f_ij
+    weighted_fuel_model.f_i  = f_i
+    weighted_fuel_model.g_ij = g_ij
     return weighted_fuel_model
 # add-weighting-factors ends here
 # [[file:../../org/pyretechnics.org::add-live-moisture-of-extinction][add-live-moisture-of-extinction]]
-def add_live_moisture_of_extinction(fuel_model):
+@cy.cfunc
+@cy.cdivision(True)
+@cy.exceptval(check=False)
+def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
     """
     Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
 
-    Assigns M_x.
+    Updates M_x.
     """
-    w_o                       = fuel_model["w_o"]
-    sigma                     = fuel_model["sigma"]
-    M_f                       = fuel_model["M_f"]
-    M_x                       = fuel_model["M_x"]
-    def msc_loading_factor(i):
-        sigma_ij = sigma[i]
-        A = -138.0 if (i < 4) else -500.0
-        return w_o[i] * exp(A / sigma_ij) if (sigma_ij > 0.0) else 0.0
-    loading_factors           = map_size_class(msc_loading_factor)
-    def scs_loading_factor(i):
-        return loading_factors[i]
-    [dead_loading_factor,
-     live_loading_factor]     = size_class_sum(scs_loading_factor)
-    def scs_dead_moisture_factor(i):
-        return M_f[i] * loading_factors[i]
-    [dead_moisture_factor, _] = size_class_sum(scs_dead_moisture_factor)
-    dead_to_live_ratio        = (dead_loading_factor / live_loading_factor) if (live_loading_factor > 0.0) else None
-    dead_fuel_moisture        = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
-    M_x_dead                  = M_x[0]
-    M_x_live                  = max(M_x_dead,
-                                    (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226
-                                    ) if (live_loading_factor > 0.0) else M_x_dead
-    moisturized_fuel_model    = fuel_model.copy() # shallow copy
-    moisturized_fuel_model["M_x"] = [
-        M_x[0],
-        M_x[1],
-        M_x[2],
-        M_x[3],
-        M_x_live,
-        M_x_live,
-    ]
+    w_o                 : fclaarr  = fuel_model.w_o
+    sigma               : fclaarr  = fuel_model.sigma
+    M_f                 : fclaarr  = fuel_model.M_f
+    M_x                 : fclaarr  = fuel_model.M_x
+    exp_A_sigma         : fclaarr  = fuel_model.exp_A_sigma
+    loading_factors     : fclaarr  = (w_o[0] * exp_A_sigma[0],
+                                      w_o[1] * exp_A_sigma[1],
+                                      w_o[2] * exp_A_sigma[2],
+                                      w_o[3] * exp_A_sigma[3],
+                                      w_o[4] * exp_A_sigma[4],
+                                      w_o[5] * exp_A_sigma[5])
+    dead_loading_factor : cy.float = loading_factors[0] + loading_factors[1] + loading_factors[2] + loading_factors[3]
+    live_loading_factor : cy.float = loading_factors[4] + loading_factors[5]
+    dead_moisture_factor: cy.float = (M_f[0] * loading_factors[0] +
+                                      M_f[1] * loading_factors[1] +
+                                      M_f[2] * loading_factors[2] +
+                                      M_f[3] * loading_factors[3])
+    dead_fuel_moisture  : cy.float = ((dead_moisture_factor / dead_loading_factor)
+                                      if (dead_loading_factor > 0.0) else 0.0)
+    M_x_dead            : cy.float = M_x[0]
+    M_x_live            : cy.float
+    if (live_loading_factor > 0.0):
+        dead_to_live_ratio: cy.float = dead_loading_factor / live_loading_factor
+        M_x_live = max(M_x_dead, (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226)
+    else:
+        M_x_live = M_x_dead
+    moisturized_fuel_model: FuelModel = fuel_model # FIXME: Restore Python compatibility
+    M_x_new               : fclaarr   = (M_x[0],
+                                         M_x[1],
+                                         M_x[2],
+                                         M_x[3],
+                                         M_x_live,
+                                         M_x_live)
+    moisturized_fuel_model.M_x = M_x_new
     return moisturized_fuel_model
 # add-live-moisture-of-extinction ends here
 # [[file:../../org/pyretechnics.org::moisturize][moisturize]]
@@ -271,315 +362,12 @@ def add_live_moisture_of_extinction(fuel_model):
 #       of the fuel model here and mutate it in the called functions.
 @cy.cfunc
 @cy.exceptval(check=False)
-def fclaarr_from_list(l: list) -> fclaarr:
-    l0: cy.float = l[0]
-    l1: cy.float = l[1]
-    l2: cy.float = l[2]
-    l3: cy.float = l[3]
-    l4: cy.float = l[4]
-    l5: cy.float = l[5]
-    ret: fclaarr = (l0, l1, l2, l3, l4, l5)
-    return ret
-
-
-@cy.cfunc
-@cy.exceptval(check=False)
-def fcatarr_from_list(l: list) -> fcatarr:
-    l0: cy.float = l[0]
-    l1: cy.float = l[1]
-    ret: fcatarr = (l0, l1)
-    return ret
-
-
-@cy.cfunc
-@cy.exceptval(check=False)
-def moisturize(fuel_model: dict, fuel_moisture: list[float]) -> FuelModel:
-    dynamic_fuel_model    : dict = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
-    weighted_fuel_model   : dict = add_weighting_factors(dynamic_fuel_model)
-    moisturized_fuel_model: dict = add_live_moisture_of_extinction(weighted_fuel_model)
-    return FuelModel(
-        number               = moisturized_fuel_model["number"],
-        delta                = moisturized_fuel_model["delta"],
-        M_x                  = fclaarr_from_list(moisturized_fuel_model["M_x"]),
-        M_f                  = fclaarr_from_list(moisturized_fuel_model["M_f"]),
-        w_o                  = fclaarr_from_list(moisturized_fuel_model["w_o"]),
-        sigma                = fclaarr_from_list(moisturized_fuel_model["sigma"]),
-        h                    = fclaarr_from_list(moisturized_fuel_model["h"]),
-        rho_p                = fclaarr_from_list(moisturized_fuel_model["rho_p"]),
-        S_T                  = fclaarr_from_list(moisturized_fuel_model["S_T"]),
-        S_e                  = fclaarr_from_list(moisturized_fuel_model["S_e"]),
-        dynamic              = moisturized_fuel_model["dynamic"],
-        burnable             = moisturized_fuel_model["burnable"],
-        exp_A_sigma          = fclaarr_from_list([0.0] * 6),
-        firemod_size_classes = fclaarr_from_list([0.0] * 6),
-        f_ij                 = fclaarr_from_list(moisturized_fuel_model["f_ij"]),
-        f_i                  = fcatarr_from_list(moisturized_fuel_model["f_i"]),
-        g_ij                 = fclaarr_from_list(moisturized_fuel_model["g_ij"]),
-    )
+def moisturize(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
+    """
+    Updates w_o, M_f, and M_x and assigns f_ij, f_i, and g_ij.
+    """
+    dynamic_fuel_model    : FuelModel = add_dynamic_fuel_loading(fuel_model, fuel_moisture)
+    weighted_fuel_model   : FuelModel = add_weighting_factors(dynamic_fuel_model)
+    moisturized_fuel_model: FuelModel = add_live_moisture_of_extinction(weighted_fuel_model)
+    return moisturized_fuel_model
 # moisturize ends here
-@cy.cfunc
-@cy.cdivision(True)
-def compute_f_A_sigma(A: cy.float, sigma_ij: cy.float) -> cy.float:
-    if sigma_ij > 0:
-        return exp(A / sigma_ij)
-    else:
-        return 0
-
-
-@cy.cfunc
-@cy.profile(False)
-@cy.exceptval(check=False)
-def firemod_size_class(sigma_i: cy.float) -> cy.float:
-    s: cy.float = sigma_i
-    return (
-        1 if (s >= 1200.0)
-        else 2 if (s >= 192.0)
-        else 3 if (s >= 96.0)
-        else 4 if (s >= 48.0)
-        else 5 if (s >= 16.0)
-        else 6
-    )
-
-
-@cy.profile(False)
-@cy.cfunc
-def fm_struct(fm: dict) -> FuelModel:
-    sigma: fclaarr = fclaarr_from_list(fm["sigma"])
-    return FuelModel(
-        number   = fm["number"],
-        delta    = fm["delta"],
-        M_x      = fclaarr_from_list(fm["M_x"]),
-        M_f      = fclaarr_from_list(fm["M_x"]),
-        w_o      = fclaarr_from_list(fm["w_o"]),
-        sigma    = sigma,
-        h        = fclaarr_from_list(fm["h"]),
-        rho_p    = fclaarr_from_list(fm["rho_p"]),
-        S_T      = fclaarr_from_list(fm["S_T"]),
-        S_e      = fclaarr_from_list(fm["S_e"]),
-        dynamic  = fm["dynamic"],
-        burnable = fm["burnable"],
-        exp_A_sigma = (
-            compute_f_A_sigma(-138.0, sigma[0]),
-            compute_f_A_sigma(-138.0, sigma[1]),
-            compute_f_A_sigma(-138.0, sigma[2]),
-            compute_f_A_sigma(-138.0, sigma[3]),
-            compute_f_A_sigma(-500.0, sigma[4]),
-            compute_f_A_sigma(-500.0, sigma[5])
-        ),
-        firemod_size_classes = (
-            firemod_size_class(sigma[0]),
-            firemod_size_class(sigma[1]),
-            firemod_size_class(sigma[2]),
-            firemod_size_class(sigma[3]),
-            firemod_size_class(sigma[4]),
-            firemod_size_class(sigma[5]),
-        ),
-        f_ij    = (0.,0.,0.,0.,0.,0.),
-        f_i = (0.,0.),
-        g_ij = (0.,0.,0.,0.,0.,0.)
-    )
-
-
-@cy.cfunc
-@cy.profile(False)
-#@cy.inline
-def add_dynamic_fuel_loading_val(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
-    """
-    Updates M_f and w_o.
-    """
-    if fuel_model.dynamic:
-        # dynamic fuel model
-        w_o: fclaarr              = fuel_model.w_o
-        live_herbaceous_load: cy.float      = w_o[4]
-        live_herbaceous_moisture: cy.float  = M_f[4]
-        fraction_green: cy.float            = max(0.0, min(1.0, (live_herbaceous_moisture / 0.9) - 0.3333333333333333))
-        fraction_cured: cy.float            = 1.0 - fraction_green
-        dynamic_fuel_model        = fuel_model
-        M_f1: fclaarr = M_f
-        M_f1[3] = M_f1[0] # set dead_herbaceous to dead_1hr
-        dynamic_fuel_model.M_f = M_f1
-        w_o1: fclaarr = w_o
-        w_o1[3] = live_herbaceous_load * fraction_cured # dead_herbaceous
-        w_o1[4] = live_herbaceous_load * fraction_green # live_herbaceous
-        dynamic_fuel_model.w_o = w_o1
-        return dynamic_fuel_model
-    else:
-        # static fuel model
-        static_fuel_model = fuel_model
-        static_fuel_model.M_f = M_f
-        return static_fuel_model
-
-
-@cy.cfunc
-@cy.profile(False)
-@cy.inline
-@cy.exceptval(check=False)
-@cy.cdivision(True)
-def _compute_f_ij(A_ij: cy.float, A: cy.float) -> cy.float:
-    return (A_ij / A) if A > 0.0 else 0.0
-
-
-@cy.cfunc
-@cy.profile(False)
-@cy.exceptval(check=False)
-def gij_i(firemod_size_classes: fclaarr, f_ij: fclaarr, firemod_size_class_i: cy.float, is_dead: cy.bint) -> cy.float:
-    """
-    Sums the f_ij of the same category (dead/live) as i, and having the same firemod_size_class.
-    """
-    c: cy.float = firemod_size_class_i
-    # NOTE there may be repetitions in firemod_size_classes, this is why this expression is not trivially equal to f_ij[i]:
-    return (( # TODO OPTIM pre-compute this conditional branching (it's fully determined by sigma). Might be represented efficienty in bit flags.
-        (f_ij[0] if (c == firemod_size_classes[0]) else 0.0)
-        + (f_ij[1] if (c == firemod_size_classes[1]) else 0.0)
-            + (f_ij[2] if (c == firemod_size_classes[2]) else 0.0)
-            + (f_ij[3] if (c == firemod_size_classes[3]) else 0.0))
-        if is_dead else
-        ((f_ij[4] if (c == firemod_size_classes[4]) else 0.0)
-            + (f_ij[5] if (c == firemod_size_classes[5]) else 0.0)))
-
-
-@cy.cfunc
-@cy.cdivision(True)
-#@cy.inline
-@cy.profile(False)
-def add_weighting_factors_val(fuel_model: FuelModel) -> FuelModel:
-    """
-    Assigns f_ij, f_i and g_ij.
-
-    """
-    w_o: fclaarr                         = fuel_model.w_o
-    sigma: fclaarr                       = fuel_model.sigma
-    rho_p: fclaarr                       = fuel_model.rho_p
-    A_ij: fclaarr = ( # TODO OPTIM pre-compute sigma/rho_p
-        (sigma[0] * w_o[0]) / rho_p[0],
-        (sigma[1] * w_o[1]) / rho_p[1],
-        (sigma[2] * w_o[2]) / rho_p[2],
-        (sigma[3] * w_o[3]) / rho_p[3],
-        (sigma[4] * w_o[4]) / rho_p[4],
-        (sigma[5] * w_o[5]) / rho_p[5]
-    )
-    A_i: fcatarr = (
-        A_ij[0] + A_ij[1] + A_ij[2] + A_ij[3],
-        A_ij[4] + A_ij[5]
-    )
-    A_0, A_1 = A_i
-    f_ij: fclaarr = (0, 0, 0, 0, 0, 0)
-    if A_0 > 0:
-        A0_inv: cy.float = 1. / A_0
-        f_ij[0] = A_ij[0] * A0_inv
-        f_ij[1] = A_ij[1] * A0_inv
-        f_ij[2] = A_ij[2] * A0_inv
-        f_ij[3] = A_ij[3] * A0_inv
-    if A_1 > 0:
-        A1_inv: cy.float = 1. / A_1
-        f_ij[4] = A_ij[4] * A1_inv
-        f_ij[5] = A_ij[5] * A1_inv
-    A_T: cy.float = A_0 + A_1
-    f_i: fcatarr = (0, 0)
-    if A_T > 0.0:
-        A_T_inv: cy.float = 1. / A_T
-        f_i[0] = A_0 * A_T_inv
-        f_i[1] = A_1 * A_T_inv
-    firemod_size_classes: fclaarr = fuel_model.firemod_size_classes
-    g_ij: fclaarr = (
-        gij_i(firemod_size_classes, f_ij, firemod_size_classes[0], True),
-        gij_i(firemod_size_classes, f_ij, firemod_size_classes[1], True),
-        gij_i(firemod_size_classes, f_ij, firemod_size_classes[2], True),
-        gij_i(firemod_size_classes, f_ij, firemod_size_classes[3], True),
-        gij_i(firemod_size_classes, f_ij, firemod_size_classes[4], False),
-        gij_i(firemod_size_classes, f_ij, firemod_size_classes[5], False)
-    )
-    weighted_fuel_model      = fuel_model
-    weighted_fuel_model.f_ij = f_ij
-    weighted_fuel_model.f_i  = f_i
-    weighted_fuel_model.g_ij = g_ij
-    return weighted_fuel_model
-
-
-@cy.profile(False)
-@cy.cdivision(True)
-@cy.cfunc
-#@cy.inline
-@cy.exceptval(check=False)
-def _lf(sigma_ij: cy.float, i: cy.int, w_o_i: cy.float) -> cy.float:
-    A: cy.float = -138.0 if (i < 4) else -500.0
-    lfi: cy.float
-    if (sigma_ij > 0.0):
-        lfi = w_o_i * exp(A / sigma_ij) # TODO OPTIM pre-compute the exponential.
-    else:
-        lfi = 0.0
-    return lfi
-
-
-@cy.cfunc
-@cy.cdivision(True)
-#@cy.inline
-@cy.profile(False)
-def add_live_moisture_of_extinction_val(fuel_model: FuelModel) -> FuelModel:
-    """
-    Equation 88 from Rothermel 1972 adjusted by Albini 1976 Appendix III.
-
-    Updates M_x.
-    """
-    w_o: fclaarr                       = fuel_model.w_o
-    sigma: fclaarr                     = fuel_model.sigma
-    M_f: fclaarr                       = fuel_model.M_f
-    M_x: fclaarr                       = fuel_model.M_x
-    exp_A_sigma: fclaarr               = fuel_model.exp_A_sigma
-    loading_factors: fclaarr = (
-        w_o[0] * exp_A_sigma[0],
-        w_o[1] * exp_A_sigma[1],
-        w_o[2] * exp_A_sigma[2],
-        w_o[3] * exp_A_sigma[3],
-        w_o[4] * exp_A_sigma[4],
-        w_o[5] * exp_A_sigma[5]
-    )
-    lf: fclaarr = loading_factors
-    dead_loading_factor: cy.float = lf[0] + lf[1] + lf[2] + lf[3]
-    live_loading_factor: cy.float = lf[4] + lf[5]
-    dead_moisture_factor: cy.float = (
-        M_f[0] * loading_factors[0] +
-        M_f[1] * loading_factors[1] +
-        M_f[2] * loading_factors[2] +
-        M_f[3] * loading_factors[3]
-    )
-    dead_fuel_moisture: cy.float        = (dead_moisture_factor / dead_loading_factor) if (dead_loading_factor > 0.0) else 0.0
-    M_x_dead: cy.float = M_x[0]
-    M_x_live: cy.float
-    if (live_loading_factor > 0.0):
-        dead_to_live_ratio: cy.float = (dead_loading_factor / live_loading_factor)
-        M_x_live = max(
-            M_x_dead,
-            (2.9 * dead_to_live_ratio * (1.0 - (dead_fuel_moisture / M_x_dead))) - 0.226)
-    else:
-        M_x_live = M_x_dead
-    moisturized_fuel_model    = fuel_model
-    M_x1: fclaarr = (
-        M_x[0],
-        M_x[1],
-        M_x[2],
-        M_x[3],
-        M_x_live,
-        M_x_live,
-    )
-    moisturized_fuel_model.M_x = M_x1
-    return moisturized_fuel_model
-
-
-@cy.cfunc
-@cy.exceptval(check=False)
-def moisturize_val(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
-    """
-    Updates w_o and M_f, and assigns M_x, f_ij, f_i and g_ij.
-    """
-    dynamic_fuel_model     = add_dynamic_fuel_loading_val(fuel_model, fuel_moisture)
-    weighted_fuel_model    = add_weighting_factors_val(dynamic_fuel_model)
-    moisturized_fuel_model = add_live_moisture_of_extinction_val(weighted_fuel_model)
-    return moisturized_fuel_model
-
-
-def fm_structs() -> dict[int, FuelModel]:
-    return {f["number"]: fm_struct(f) for f in fuel_model_table.values()}
-
-
-fuel_model_structs = fm_structs()

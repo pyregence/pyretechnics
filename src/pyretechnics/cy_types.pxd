@@ -10,6 +10,7 @@ ctypedef (pyidx, pyidx) coord_yx
 ctypedef (pyidx, pyidx, pyidx) coord_tyx
 ctypedef (float, float) fcatarr
 ctypedef (float, float, float, float, float, float) fclaarr
+ctypedef (float, float, float, float, float, float, float, float, float, float, float, float, float) CompactFuelModel
 
 cdef struct FuelModel:
     int number

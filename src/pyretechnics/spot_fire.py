@@ -411,7 +411,7 @@ def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyi
     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
     """
     fuel_model_number: pyidx     = cy.cast(pyidx, fuel_model_cube.get(t,y,x))
-    fuel_model       : FuelModel = fm.fuel_model_structs.get(fuel_model_number)       # FIXME: INSANELY slow
+    fuel_model       : FuelModel = fm.fuel_model_table.get(fuel_model_number)       # FIXME: INSANELY slow
     return fuel_model != None and fuel_model.burnable
 
 

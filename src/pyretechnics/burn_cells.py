@@ -105,7 +105,7 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
     # Check whether cell is burnable
     #================================================================================================
 
-    fuel_model: FuelModel = fm.fuel_model_structs.get(fuel_model_number)
+    fuel_model: FuelModel = fm.fuel_model_table.get(fuel_model_number)
 
     if not (fuel_model != None and fuel_model.burnable):
         # Encountered unknown or non-burnable fuel model
@@ -171,7 +171,7 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
         #============================================================================================
 
         # Apply fuel moisture to fuel model
-        moisturized_fuel_model: FuelModel = fm.moisturize_val(fuel_model, fuel_moisture)
+        moisturized_fuel_model: FuelModel = fm.moisturize(fuel_model, fuel_moisture)
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior
@@ -335,7 +335,7 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
     # Check whether cell is burnable
     #================================================================================================
 
-    fuel_model: FuelModel = fm.fuel_model_structs.get(fuel_model_number)
+    fuel_model: FuelModel = fm.fuel_model_table.get(fuel_model_number)
 
     if not (fuel_model != None and fuel_model.burnable):
         # Encountered unknown or non-burnable fuel model
@@ -391,7 +391,7 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
         #============================================================================================
 
         # Apply fuel moisture to fuel model
-        moisturized_fuel_model: FuelModel = fm.moisturize_val(fuel_model, fuel_moisture)
+        moisturized_fuel_model: FuelModel = fm.moisturize(fuel_model, fuel_moisture)
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior

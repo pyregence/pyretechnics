@@ -5,13 +5,15 @@
 
 import cython as cy
 
-pyidx     = cy.typedef(cy.Py_ssize_t)
-vec_xy    = cy.typedef(tuple[cy.float, cy.float])
-vec_xyz   = cy.typedef(tuple[cy.float, cy.float, cy.float])
-coord_yx  = cy.typedef(tuple[pyidx, pyidx])
-coord_tyx = cy.typedef(tuple[pyidx, pyidx, pyidx])
-fcatarr   = cy.typedef(tuple[cy.float, cy.float])
-fclaarr   = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
+pyidx            = cy.typedef(cy.Py_ssize_t)
+vec_xy           = cy.typedef(tuple[cy.float, cy.float])
+vec_xyz          = cy.typedef(tuple[cy.float, cy.float, cy.float])
+coord_yx         = cy.typedef(tuple[pyidx, pyidx])
+coord_tyx        = cy.typedef(tuple[pyidx, pyidx, pyidx])
+fcatarr          = cy.typedef(tuple[cy.float, cy.float])
+fclaarr          = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
+CompactFuelModel = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float,
+                                    cy.float, cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
 
 FuelModel = cy.struct(
     number               = cy.int,
