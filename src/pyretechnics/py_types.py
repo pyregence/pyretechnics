@@ -86,6 +86,16 @@ SpotConfig = cy.struct(
     decay_distance               = cy.float,
 )
 
+JumpDistribution = cy.struct(
+    # Downwind LogNormal params
+    # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
+    mu_x    = cy.float, # dimensionless (log-space)
+    sigma_x = cy.float, # dimensionless (log-space)
+    # Crosswind normal params
+    # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
+    sigma_y = cy.float, # meters
+)
+
 # Pre-computed coefficients to apply elliptical wavelet math as fast as possible
 # once the phi gradient information is available.
 # See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.

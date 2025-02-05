@@ -4,7 +4,8 @@ import cython
 import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import round, sqrt, pow, log, exp, sin, cos
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig
+    from cython.cimports.pyretechnics.cy_types import \
+        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -12,7 +13,8 @@ if cython.compiled:
     import cython.cimports.pyretechnics.surface_fire1 as sf
 else:
     from math import round, sqrt, pow, log, exp, sin, cos
-    from pyretechnics.py_types import pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig
+    from pyretechnics.py_types import \
+        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -251,17 +253,6 @@ def resolve_crosswind_distance_stdev(spot_config       : SpotConfig,
         return crosswind_distance_stdev # meters
     else:
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
-
-
-JumpDistribution = cy.struct(
-    # Downwind LogNormal params
-    # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
-    mu_x    = cy.float, # dimensionless (log-space)
-    sigma_x = cy.float, # dimensionless (log-space)
-    # Crosswind normal params
-    # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
-    sigma_y = cy.float, # meters
-)
 
 
 @cy.cfunc

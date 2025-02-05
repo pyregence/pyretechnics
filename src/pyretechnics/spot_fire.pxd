@@ -1,4 +1,4 @@
-from pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig
+from pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
 from pyretechnics.random cimport BufferedRandGen
 from pyretechnics.space_time_cube cimport ISpaceTimeCube
 
@@ -43,11 +43,6 @@ cdef float resolve_crosswind_distance_stdev(
     float fireline_intensity,
     float wind_speed_20ft
     ) noexcept
-
-cdef struct JumpDistribution:
-    float mu_x
-    float sigma_x
-    float sigma_y
 
 cdef JumpDistribution resolve_JumpDistribution(SpotConfig spot_config, float fireline_intensity, float wind_speed_20ft)
 

@@ -77,6 +77,11 @@ cdef struct SpotConfig:
     float crosswind_distance_stdev
     float decay_distance
 
+cdef struct JumpDistribution:
+    float mu_x
+    float sigma_x
+    float sigma_y
+
 cdef struct PartialedEllWavelet:
     vec_xyz Vh_3d
     float ewc_A
