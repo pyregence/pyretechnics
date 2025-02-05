@@ -5,7 +5,7 @@ import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.math import round, sqrt, pow, log, exp, sin, cos
     from cython.cimports.pyretechnics.cy_types import \
-        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+        pyidx, vec_xy, coord_yx, coord_tyx, FuelModel, SpreadBehavior, SpotConfig, JumpDistribution
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -14,7 +14,7 @@ if cython.compiled:
 else:
     from math import round, sqrt, pow, log, exp, sin, cos
     from pyretechnics.py_types import \
-        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+        pyidx, vec_xy, coord_yx, coord_tyx, FuelModel, SpreadBehavior, SpotConfig, JumpDistribution
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -410,9 +410,9 @@ def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyi
     """
     Returns True if the space-time coordinate (t,y,x) contains a burnable fuel model.
     """
-    fuel_model_number: pyidx = cy.cast(pyidx, fuel_model_cube.get(t,y,x))
-    fuel_model       : dict  = fm.fuel_model_table.get(fuel_model_number)       # FIXME: INSANELY slow
-    return fuel_model and fuel_model["burnable"]
+    fuel_model_number: pyidx     = cy.cast(pyidx, fuel_model_cube.get(t,y,x))
+    fuel_model       : FuelModel = fm.fuel_model_structs.get(fuel_model_number)       # FIXME: INSANELY slow
+    return fuel_model != None and fuel_model.burnable
 
 
 @cy.cfunc

@@ -4,7 +4,7 @@ import cython
 import cython as cy
 if cython.compiled:
     from cython.cimports.pyretechnics.cy_types import \
-        vec_xy, vec_xyz, coord_tyx, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
+        vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
@@ -12,7 +12,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.crown_fire as cf
 else:
     from pyretechnics.py_types import \
-        vec_xy, vec_xyz, coord_tyx, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
+        vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
@@ -105,9 +105,9 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
     # Check whether cell is burnable
     #================================================================================================
 
-    fuel_model: dict = fm.fuel_model_table.get(fuel_model_number)
+    fuel_model: FuelModel = fm.fuel_model_structs.get(fuel_model_number)
 
-    if not (fuel_model and fuel_model["burnable"]):
+    if not (fuel_model != None and fuel_model.burnable):
         # Encountered unknown or non-burnable fuel model
 
         #================================================================================================
@@ -140,15 +140,15 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
         # Compute derived parameters
         #============================================================================================
 
-        fuel_moisture               : list[float] = [fuel_moisture_dead_1hr,
-                                                     fuel_moisture_dead_10hr,
-                                                     fuel_moisture_dead_100hr,
-                                                     0.0, # fuel_moisture_dead_herbaceous
-                                                     fuel_moisture_live_herbaceous,
-                                                     fuel_moisture_live_woody] # kg moisture/kg ovendry weight
-        fuel_bed_depth              : cy.float    = fuel_model["delta"]                      # ft
-        heat_of_combustion          : cy.float    = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
-        estimated_fine_fuel_moisture: cy.float    = fuel_moisture_dead_1hr                   # kg moisture/kg ovendry weight
+        fuel_moisture               : fclaarr  = (fuel_moisture_dead_1hr,
+                                                  fuel_moisture_dead_10hr,
+                                                  fuel_moisture_dead_100hr,
+                                                  0.0, # fuel_moisture_dead_herbaceous
+                                                  fuel_moisture_live_herbaceous,
+                                                  fuel_moisture_live_woody) # kg moisture/kg ovendry weight
+        fuel_bed_depth              : cy.float = fuel_model.delta                      # ft
+        heat_of_combustion          : cy.float = conv.Btu_lb_to_kJ_kg(fuel_model.h[0]) # kJ/kg
+        estimated_fine_fuel_moisture: cy.float = fuel_moisture_dead_1hr                # kg moisture/kg ovendry weight
 
         #============================================================================================
         # Calculate midflame wind speed
@@ -171,7 +171,7 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
         #============================================================================================
 
         # Apply fuel moisture to fuel model
-        moisturized_fuel_model: FuelModel = fm.moisturize(fuel_model, fuel_moisture)
+        moisturized_fuel_model: FuelModel = fm.moisturize_val(fuel_model, fuel_moisture)
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior
@@ -335,9 +335,9 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
     # Check whether cell is burnable
     #================================================================================================
 
-    fuel_model: dict = fm.fuel_model_table.get(fuel_model_number)
+    fuel_model: FuelModel = fm.fuel_model_structs.get(fuel_model_number)
 
-    if not (fuel_model and fuel_model["burnable"]):
+    if not (fuel_model != None and fuel_model.burnable):
         # Encountered unknown or non-burnable fuel model
 
         #============================================================================================
@@ -360,15 +360,15 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
         # Compute derived parameters
         #============================================================================================
 
-        fuel_moisture               : list[float] = [fuel_moisture_dead_1hr,
-                                                     fuel_moisture_dead_10hr,
-                                                     fuel_moisture_dead_100hr,
-                                                     0.0, # fuel_moisture_dead_herbaceous
-                                                     fuel_moisture_live_herbaceous,
-                                                     fuel_moisture_live_woody] # kg moisture/kg ovendry weight
-        fuel_bed_depth              : cy.float    = fuel_model["delta"] # ft
-        heat_of_combustion          : cy.float    = conv.Btu_lb_to_kJ_kg(fuel_model["h"][0]) # kJ/kg
-        estimated_fine_fuel_moisture: cy.float    = fuel_moisture_dead_1hr # kg moisture/kg ovendry weight
+        fuel_moisture               : fclaarr  = (fuel_moisture_dead_1hr,
+                                                  fuel_moisture_dead_10hr,
+                                                  fuel_moisture_dead_100hr,
+                                                  0.0, # fuel_moisture_dead_herbaceous
+                                                  fuel_moisture_live_herbaceous,
+                                                  fuel_moisture_live_woody) # kg moisture/kg ovendry weight
+        fuel_bed_depth              : cy.float = fuel_model.delta                      # ft
+        heat_of_combustion          : cy.float = conv.Btu_lb_to_kJ_kg(fuel_model.h[0]) # kJ/kg
+        estimated_fine_fuel_moisture: cy.float = fuel_moisture_dead_1hr                # kg moisture/kg ovendry weight
 
         #============================================================================================
         # Calculate midflame wind speed
@@ -391,7 +391,7 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
         #============================================================================================
 
         # Apply fuel moisture to fuel model
-        moisturized_fuel_model: FuelModel = fm.moisturize(fuel_model, fuel_moisture)
+        moisturized_fuel_model: FuelModel = fm.moisturize_val(fuel_model, fuel_moisture)
 
         # TODO: Memoize calc_surface_fire_behavior_no_wind_no_slope
         # Calculate no-wind-no-slope surface fire behavior

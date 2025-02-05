@@ -466,10 +466,9 @@ class SpreadInputs:
             PyMem_Malloc(300 * cython.sizeof(FuelModel)))
         if not self.fuel_models_arr:
             raise MemoryError()
-        for f in fm.fuel_model_table.values():
-            fm_number: pyidx = f["number"]
-            fuel_model: FuelModel = fm.fm_struct(f)
-            self.fuel_models_arr[fm_number] = fuel_model
+        f: FuelModel
+        for f in fm.fuel_model_structs.values():
+            self.fuel_models_arr[f.number] = f
 
     @cy.cfunc
     def get_fm_struct(self, fm_number: pyidx) -> FuelModel:
