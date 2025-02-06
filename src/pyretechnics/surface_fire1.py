@@ -361,22 +361,22 @@ def calc_max_effective_wind_speed(reaction_intensity: cy.float) -> cy.float:
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
-def get_phi_S(sfmin: FireBehaviorMin, slope: cy.float) -> cy.float:
-    return sfmin._phiS_G * (slope * slope)
+def get_phi_S(surface_fire_min: FireBehaviorMin, slope: cy.float) -> cy.float:
+    return surface_fire_min._phiS_G * (slope * slope)
 
 
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
-def get_phi_W(sfmin: FireBehaviorMin, midflame_wind_speed: cy.float) -> cy.float:
-    return sfmin._phiW_scalr * pow(midflame_wind_speed, sfmin._phiW_expnt)
+def get_phi_W(surface_fire_min: FireBehaviorMin, midflame_wind_speed: cy.float) -> cy.float:
+    return surface_fire_min._phiW_scalr * pow(midflame_wind_speed, surface_fire_min._phiW_expnt)
 
 
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
-def get_wind_speed(sfmin: FireBehaviorMin, phi_W: cy.float) -> cy.float:
-    return sfmin._ws_scalr * pow(phi_W, sfmin._ws_expnt)
+def get_wind_speed(surface_fire_min: FireBehaviorMin, phi_W: cy.float) -> cy.float:
+    return surface_fire_min._ws_scalr * pow(phi_W, surface_fire_min._ws_expnt)
 
 
 @cy.cfunc
@@ -615,15 +615,15 @@ def surface_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-max][surface-fire-behavior-max]]
 @cy.cfunc
 @cy.exceptval(check=False)
-def maybe_limit_wind_speed(use_wind_limit : cy.bint,
-                           max_wind_speed : cy.float,
-                           sfmin          : FireBehaviorMin,
-                           phi_E_magnitude: cy.float) -> tuple[cy.float, cy.float]:
+def maybe_limit_wind_speed(use_wind_limit  : cy.bint,
+                           max_wind_speed  : cy.float,
+                           surface_fire_min: FireBehaviorMin,
+                           phi_E_magnitude : cy.float) -> tuple[cy.float, cy.float]:
     """
     Given these inputs:
-    - use_wind_limit  :: boolean
-    - max_wind_speed  :: m/min
-    - sfmin           :: FireBehaviorMin struct of no-wind-no-slope surface fire behavior values
+    - use_wind_limit   :: boolean
+    - max_wind_speed   :: m/min
+    - surface_fire_min :: FireBehaviorMin struct of no-wind-no-slope surface fire behavior values
       - base_spread_rate         :: m/min
       - base_fireline_intensity  :: kW/m
       - max_effective_wind_speed :: m/min
@@ -632,17 +632,17 @@ def maybe_limit_wind_speed(use_wind_limit : cy.bint,
       - _phiW_expnt              :: intermediate value for computing phi_W (unitless)
       - _ws_scalr                :: intermediate value for computing effective_wind_speed (m/min)
       - _ws_expnt                :: intermediate value for computing effective_wind_speed (unitless)
-    - phi_E_magnitude :: unitless
+    - phi_E_magnitude  :: unitless
 
     return a tuple with these fields:
     - limited_wind_speed :: m/min
     - limited_phi_E      :: unitless
     """
-    effective_wind_speed: cy.float = get_wind_speed(sfmin, phi_E_magnitude)
+    effective_wind_speed: cy.float = get_wind_speed(surface_fire_min, phi_E_magnitude)
     if (use_wind_limit and effective_wind_speed > max_wind_speed):
         return (
             max_wind_speed,
-            get_phi_W(sfmin, max_wind_speed),
+            get_phi_W(surface_fire_min, max_wind_speed),
         )
     else:
         return (
@@ -653,7 +653,7 @@ def maybe_limit_wind_speed(use_wind_limit : cy.bint,
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def calc_surface_fire_behavior_max(sfmin                 : FireBehaviorMin,
+def calc_surface_fire_behavior_max(surface_fire_min      : FireBehaviorMin,
                                    midflame_wind_speed   : cy.float,
                                    upwind_direction      : cy.float,
                                    slope                 : cy.float,
@@ -662,7 +662,7 @@ def calc_surface_fire_behavior_max(sfmin                 : FireBehaviorMin,
                                    surface_lw_ratio_model: str = "behave") -> FireBehaviorMax:
     """
     Given these inputs:
-    - sfmin                  :: FireBehaviorMin struct of no-wind-no-slope surface fire behavior values
+    - surface_fire_min       :: FireBehaviorMin struct of no-wind-no-slope surface fire behavior values
       - base_spread_rate         :: m/min
       - base_fireline_intensity  :: kW/m
       - max_effective_wind_speed :: m/min
@@ -689,9 +689,9 @@ def calc_surface_fire_behavior_max(sfmin                 : FireBehaviorMin,
     - critical_spread_rate   :: m/min
     """
     # Unpack no-wind-no-slope surface fire behavior values
-    spread_rate       : cy.float = sfmin.base_spread_rate
-    fireline_intensity: cy.float = sfmin.base_fireline_intensity
-    max_wind_speed    : cy.float = sfmin.max_effective_wind_speed
+    spread_rate       : cy.float = surface_fire_min.base_spread_rate
+    fireline_intensity: cy.float = surface_fire_min.base_fireline_intensity
+    max_wind_speed    : cy.float = surface_fire_min.max_effective_wind_speed
     # Reverse the provided wind and slope directions
     downwind_direction: cy.float = conv.opposite_direction(upwind_direction)
     upslope_direction : cy.float = conv.opposite_direction(aspect)
@@ -704,8 +704,8 @@ def calc_surface_fire_behavior_max(sfmin                 : FireBehaviorMin,
     slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
     # Calculate phi_W and phi_S
     # NOTE: |wind_vector_3d| = slope-aligned midflame wind speed
-    phi_W: cy.float = get_phi_W(sfmin, vu.vector_magnitude_3d(wind_vector_3d))
-    phi_S: cy.float = get_phi_S(sfmin, slope)
+    phi_W: cy.float = get_phi_W(surface_fire_min, vu.vector_magnitude_3d(wind_vector_3d))
+    phi_S: cy.float = get_phi_S(surface_fire_min, slope)
     # Calculate phi_E and the max_spread_direction
     phi_E_3d: vec_xyz  = get_phi_E(wind_vector_3d, slope_vector_3d, phi_W, phi_S)
     phi_E   : cy.float = vu.vector_magnitude_3d(phi_E_3d)
@@ -717,7 +717,10 @@ def calc_surface_fire_behavior_max(sfmin                 : FireBehaviorMin,
     else:
         max_spread_direction = (0.0, 1.0, 0.0) # default: North
     # Limit effective wind speed to max wind speed if use_wind_limit == True
-    (limited_wind_speed, limited_phi_E) = maybe_limit_wind_speed(use_wind_limit, max_wind_speed, sfmin, phi_E)
+    (limited_wind_speed, limited_phi_E) = maybe_limit_wind_speed(use_wind_limit,
+                                                                 max_wind_speed,
+                                                                 surface_fire_min,
+                                                                 phi_E)
     # Calculate and return max surface fire behavior values
     max_spread_rate       : cy.float = spread_rate * (1.0 + limited_phi_E)
     max_fireline_intensity: cy.float = fireline_intensity * (1.0 + limited_phi_E)

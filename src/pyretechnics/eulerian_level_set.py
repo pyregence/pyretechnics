@@ -1498,8 +1498,8 @@ def refresh_caches_from_inputs_if_needed(
         for i in range(tca.n_tracked_cells):
             cell_index: coord_yx = tca.ell_info[i].cell_index
             ci: CellInputs = load_saved_CellInputs(float_inputs, i)
-            sfmin: FireBehaviorMin = tca.sfmin_arr[i]
-            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, sfmin)
+            surface_fire_min: FireBehaviorMin = tca.sfmin_arr[i]
+            tca.ell_info[i] = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, surface_fire_min)
 
 
 @cy.cfunc
@@ -1552,9 +1552,9 @@ def load_tracked_cell_data(
     ci: CellInputs = load_saved_CellInputs(tca.float_inputs, i)
     fm_number: pyidx = cy.cast(pyidx, ci.fuel_model_number)
     fm_struct: FuelModel = sinputs.get_fm_struct(fm_number)
-    sfmin: FireBehaviorMin = resolve_surface_nwns_behavior(ci, fm_struct)
-    tca.sfmin_arr[i] = sfmin
-    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, sfmin)
+    surface_fire_min: FireBehaviorMin = resolve_surface_nwns_behavior(ci, fm_struct)
+    tca.sfmin_arr[i] = surface_fire_min
+    ell_i: EllipticalInfo = resolve_cell_elliptical_info(fb_opts, cell_index, sinputs, ci, surface_fire_min)
     tca.ell_info[i] = ell_i
 
 
