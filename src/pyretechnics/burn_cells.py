@@ -22,7 +22,6 @@ else:
 
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 # TODO: Replace space_time_cubes dict with struct
-# TODO: Optimize fuel_model.py and replace dicts with FuelModel structs in fuel_model_table and moisturize
 @cy.ccall
 @cy.exceptval(check=False)
 def burn_cell_as_head_fire(space_time_cubes      : dict,
@@ -241,7 +240,6 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
 # [[file:../../org/pyretechnics.org::burn-cell-toward-azimuth][burn-cell-toward-azimuth]]
 # TODO: Create a version of this function that runs efficiently over a space_time_region
 # TODO: Replace space_time_cubes dict with struct
-# TODO: Optimize fuel_model.py and replace dicts with FuelModel structs in fuel_model_table and moisturize
 @cy.ccall
 @cy.exceptval(check=False)
 def burn_cell_toward_azimuth(space_time_cubes      : dict,
