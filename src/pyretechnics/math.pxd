@@ -3,6 +3,8 @@
 # C functions to cimport into other modules
 #==================================================
 
+cdef double pi = 3.141592653589793
+
 cdef extern from "math.h":
      cdef double floor(double x)
      cdef double round(double x)

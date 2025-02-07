@@ -6,7 +6,7 @@ import numpy as np
 from sortedcontainers import SortedDict
 if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
-    from cython.cimports.pyretechnics.math import floor, sqrt, atan
+    from cython.cimports.pyretechnics.math import pi, floor, sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from cython.cimports.pyretechnics.random import BufferedRandGen
@@ -20,7 +20,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.narrow_band_tracking as nbt
 else:
     # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
-    from math import floor, sqrt, atan
+    from math import pi, floor, sqrt, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from pyretechnics.random import BufferedRandGen
@@ -32,9 +32,6 @@ else:
     import pyretechnics.crown_fire as cf
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
-
-
-PI = cy.declare(cy.double, 3.14159265358979323846)
 
 
 @cy.cfunc
@@ -108,19 +105,19 @@ def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
     angle: cy.float
     if n_x > 0.0:
         if n_y >= 0.0:
-            angle = 0.5 * PI - atan(n_y / n_x)
+            angle = 0.5 * pi - atan(n_y / n_x)
         elif n_y < 0.0:
-            angle = 0.5 * PI + atan(abs(n_y) / n_x)
+            angle = 0.5 * pi + atan(abs(n_y) / n_x)
     elif n_x < 0.0:
         if n_y >= 0.0:
-            angle = 1.5 * PI + atan(n_y / abs(n_x))
+            angle = 1.5 * pi + atan(n_y / abs(n_x))
         elif n_y < 0.0:
-            angle = 1.5 * PI - atan(n_y / n_x)
+            angle = 1.5 * pi - atan(n_y / n_x)
     else:
         if n_y >= 0.0:
             angle = 0.0
         elif n_y < 0.0:
-            angle = PI
+            angle = pi
     return conv.rad_to_deg(angle)
 # phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
