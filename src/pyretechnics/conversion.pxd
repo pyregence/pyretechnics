@@ -1,7 +1,6 @@
 # [[file:../../org/pyretechnics.org::conversion-pxd][conversion-pxd]]
 from pyretechnics.cy_types cimport vec_xy
 
-cdef double PI = 3.14159265358979323846
 cdef float rad_to_deg(float radians) noexcept
 cdef float deg_to_rad(float degrees) noexcept
 cdef float deg_to_ratio(float degrees) noexcept

@@ -3,14 +3,11 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.libc.math import sqrt, sin, cos, tan, atan, atan2
+    from cython.cimports.libc.math import pi, sqrt, sin, cos, tan, atan, atan2
     from cython.cimports.pyretechnics.cy_types import vec_xy
 else:
-    from math import sqrt, sin, cos, tan, atan, atan2
+    from math import pi, sqrt, sin, cos, tan, atan, atan2
     from pyretechnics.py_types import vec_xy
-
-
-PI = cy.declare(cy.double, 3.14159265358979323846)
 
 
 @cy.cfunc
@@ -19,7 +16,7 @@ PI = cy.declare(cy.double, 3.14159265358979323846)
 @cy.exceptval(check=False)
 def rad_to_deg(radians: cy.float) -> cy.float:
     """Convert radians to degrees."""
-    return radians * 180.0 / PI
+    return radians * 180.0 / pi
 
 
 @cy.cfunc
@@ -27,7 +24,7 @@ def rad_to_deg(radians: cy.float) -> cy.float:
 @cy.exceptval(check=False)
 def deg_to_rad(degrees: cy.float) -> cy.float:
     """Convert degrees to radians."""
-    return degrees * PI / 180.0
+    return degrees * pi / 180.0
 
 
 @cy.cfunc
