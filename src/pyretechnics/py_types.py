@@ -107,4 +107,50 @@ PartialedEllWavelet = cy.struct(
     ewc_B = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
     ewc_C = cy.float, # Dimensionless elliptical wavelet coefficient (>= 0)
 )
+
+CellInputs = cy.struct(
+    slope                         = cy.float,
+    aspect                        = cy.float,
+    fuel_model_number             = cy.float,
+    canopy_cover                  = cy.float,
+    canopy_height                 = cy.float,
+    canopy_base_height            = cy.float,
+    canopy_bulk_density           = cy.float,
+    wind_speed_10m                = cy.float,
+    upwind_direction              = cy.float,
+    fuel_moisture_dead_1hr        = cy.float,
+    fuel_moisture_dead_10hr       = cy.float,
+    fuel_moisture_dead_100hr      = cy.float,
+    fuel_moisture_live_herbaceous = cy.float,
+    fuel_moisture_live_woody      = cy.float,
+    foliar_moisture               = cy.float,
+    fuel_spread_adjustment        = cy.float,
+    weather_spread_adjustment     = cy.float,
+)
+
+# Pre-computed information required to compute dphi/dt once the phi
+# gradient is known. Derived from the surface and crown wavelets.
+#
+# NOTE: The reason to make this a small struct stored in an array is
+#       efficiency - we want the CPU to have a low cache miss rate.
+#
+# NOTE: A significant benefit of this architecture is that it's
+#       Rothermel-agnostic. EllipticalInfo could conceivably be
+#       implemented using variants of the Rothermel model. This can be
+#       valuable to give flexibility to users.
+EllipticalInfo = cy.struct(
+    cell_index                     = coord_yx,
+    slp_dz                         = vec_xy, # Elevation gradient
+    surfc_wavelet                  = PartialedEllWavelet,
+    crown_wavelet                  = PartialedEllWavelet,
+    crowning_spread_rate_threshold = cy.float, # Surface spread rate threshold at which crowning occurs
+)
+
+# Some data saved during the 1st Runge-Kutta pass.
+Pass1CellOutput = cy.struct(
+    cell_index   = coord_yx,
+    dphi         = vec_xy,
+    dphi_dt_flim = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
+    phi_old      = cy.float,
+)
 # py-types-py ends here

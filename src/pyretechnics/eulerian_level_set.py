@@ -8,7 +8,8 @@ if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
     from cython.cimports.libc.math import pi, floor, sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
+        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
+        PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -22,7 +23,8 @@ else:
     # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
     from math import pi, floor, sqrt, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
+        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
+        PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -504,27 +506,6 @@ def lookup_space_time_cube_float32(space_time_cube: ISpaceTimeCube, space_time_c
     return space_time_cube.get(t, y, x)
 
 
-CellInputs = cy.struct(
-    slope                         = cy.float,
-    aspect                        = cy.float,
-    fuel_model_number             = cy.float,
-    canopy_cover                  = cy.float,
-    canopy_height                 = cy.float,
-    canopy_base_height            = cy.float,
-    canopy_bulk_density           = cy.float,
-    wind_speed_10m                = cy.float,
-    upwind_direction              = cy.float,
-    fuel_moisture_dead_1hr        = cy.float,
-    fuel_moisture_dead_10hr       = cy.float,
-    fuel_moisture_dead_100hr      = cy.float,
-    fuel_moisture_live_herbaceous = cy.float,
-    fuel_moisture_live_woody      = cy.float,
-    foliar_moisture               = cy.float,
-    fuel_spread_adjustment        = cy.float,
-    weather_spread_adjustment     = cy.float
-)
-
-
 @cy.cfunc
 def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellInputs:
     """
@@ -798,7 +779,6 @@ def pw_from_FireBehaviorMax(fb_max: FireBehaviorMax) -> PartialedEllWavelet:
         return zero_partialed_wavelet()
 
 
-
 @cy.cfunc
 @cy.exceptval(check=False)
 @cy.inline
@@ -823,17 +803,6 @@ def dphi_dt_from_partialed_wavelet(
         )
     return dphi_dt
 
-EllipticalInfo = cy.struct( # Pre-computed information required to compute dphi/dt, once the phi gradient is known. Derived from the surface and crowning wavelets.
-    # NOTE the reason to make this a small struct stored in an array is efficiency - we want the CPU to have a low cache miss rate.
-    cell_index = coord_yx,
-    slp_dz = vec_xy, # Elevation gradient
-    surfc_wavelet = PartialedEllWavelet,
-    crowning_spread_rate_threshold = cy.float, # INTRO pre-computed critical threshold in surface spread rate at which crowning occurs.
-    crown_wavelet = PartialedEllWavelet,
-)
-# NOTE a significant benefit of this architecture is that it's Rothermel-agnostic:
-# EllipticalInfo could conceivably be implemented using variants of the Rothermel model.
-# This can be valuable to give flexibility to users.
 
 @cy.cfunc
 @cy.exceptval(check=False)
@@ -857,14 +826,9 @@ def dphi_dt_from_elliptical(ell_i: EllipticalInfo, dphi: vec_xy) -> cy.float: # 
     else:
         return surfc_dphi_dt
 
-Pass1CellOutput = cy.struct( # INTRO some data saved during the 1st Runge-Kutta pass.
-    cell_index = coord_yx,
-    dphi = vec_xy,
-    dphi_dt_flim = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
-    phi_old = cy.float
-    )
 
 p_CellInputs = cy.declare(pyidx, 17) # The number of input columns.
+
 
 @cy.cfunc
 def inputs_name_list() -> list[str]:

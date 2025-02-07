@@ -88,4 +88,36 @@ cdef struct PartialedEllWavelet:
     float ewc_A
     float ewc_B
     float ewc_C
+
+cdef struct CellInputs:
+    float slope
+    float aspect
+    float fuel_model_number
+    float canopy_cover
+    float canopy_height
+    float canopy_base_height
+    float canopy_bulk_density
+    float wind_speed_10m
+    float upwind_direction
+    float fuel_moisture_dead_1hr
+    float fuel_moisture_dead_10hr
+    float fuel_moisture_dead_100hr
+    float fuel_moisture_live_herbaceous
+    float fuel_moisture_live_woody
+    float foliar_moisture
+    float fuel_spread_adjustment
+    float weather_spread_adjustment
+
+cdef struct EllipticalInfo:
+    coord_yx cell_index
+    vec_xy slp_dz
+    PartialedEllWavelet surfc_wavelet
+    PartialedEllWavelet crown_wavelet
+    float crowning_spread_rate_threshold
+
+cdef struct Pass1CellOutput:
+    coord_yx cell_index
+    vec_xy dphi
+    float dphi_dt_flim
+    float phi_old
 # cy-types-pxd ends here
