@@ -1,4 +1,5 @@
 from pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
+cimport pyretechnics.conversion as conv
 
 cdef float van_wagner_critical_fireline_intensity(
     float canopy_base_height,
@@ -44,6 +45,10 @@ cdef float calc_crown_fireline_intensity(
     float canopy_base_height,
     float heat_of_combustion,
     ) noexcept
+
+cdef float LoW_intercept = 1.0
+
+cdef float LoW_slope_per_km_hr = conv.km_hr_to_mph(0.125)
 
 cdef float crown_length_to_width_ratio(
     float wind_speed_10m,

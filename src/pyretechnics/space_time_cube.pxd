@@ -1,5 +1,11 @@
 from pyretechnics.cy_types cimport pyidx
 
+cdef bint is_pos_int(object x) noexcept
+cdef int divide_evenly(int dividend, int divisor)
+
+# def to_positive_index_range(index_range, axis_length)
+# def maybe_repeat_array(array, axis_repetitions)
+
 cdef class ISpaceTimeCube:
     cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
 
@@ -13,6 +19,10 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int x_repetitions
     cdef public float[:,:,:] data
     cdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    # def getTimeSeries(self, t_range, y, x)
+    # def getSpatialPlane(self, t, y_range, x_range)
+    # def getSubcube(self, t_range, y_range, x_range)
+    # def getFullyRealizedCube(self, cache=False)
 
 cdef class LazySpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
@@ -29,3 +39,8 @@ cdef class LazySpaceTimeCube(ISpaceTimeCube):
         pyidx cache_x,
         )
     cdef float get(LazySpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    # def getTimeSeries(self, t_range, y, x)
+    # def getSpatialPlane(self, t, y_range, x_range)
+    # def getSubcube(self, t_range, y_range, x_range)
+    # def getFullyRealizedCube(self, cache=False)
+    # def releaseFullyRealizedCube(self)
