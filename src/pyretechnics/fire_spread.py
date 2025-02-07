@@ -4,6 +4,7 @@
 import random
 import numpy as np
 
+
 def supply_layer(layer_dict, layer_name, layer_shape, layer_type, initial_value, overwrite_layers):
     layer = layer_dict.get(layer_name)
     if layer:

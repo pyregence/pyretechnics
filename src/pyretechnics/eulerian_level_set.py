@@ -1,11 +1,14 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
 # cython: profile=False
 import cython
+import cython as cy
+import numpy as np
+from sortedcontainers import SortedDict
 if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
-    from cython.cimports.pyretechnics.math import sqrt, atan, floor, exp
+    from cython.cimports.pyretechnics.math import floor, sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fcatarr, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
+        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
@@ -17,9 +20,9 @@ if cython.compiled:
     import cython.cimports.pyretechnics.narrow_band_tracking as nbt
 else:
     # TODO: Create equivalent Python functions for PyMem_Malloc, PyMem_Free
-    from math import sqrt, atan, floor, exp
+    from math import floor, sqrt, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fcatarr, fclaarr, FuelModel, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
+        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
@@ -29,12 +32,6 @@ else:
     import pyretechnics.crown_fire as cf
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
-
-
-import cython as cy
-# TODO: cimport all of the modules below
-import numpy as np
-import sortedcontainers as sortc
 
 
 PI = cy.declare(cy.double, 3.14159265358979323846)
@@ -206,7 +203,6 @@ def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float,
 # phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move this to pyretechnics.vector_utils and use throughout the literate program
-@cy.profile(True)
 @cy.cfunc
 def calc_elevation_gradient(slope: cy.float, aspect: cy.float) -> vec_xy:
     """
@@ -224,7 +220,6 @@ fire_type_crown_passive = cy.declare(cy.int, 2)
 fire_type_crown_active  = cy.declare(cy.int, 3)
 
 
-@cy.profile(True)
 @cy.cfunc
 def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     """
@@ -247,7 +242,6 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
-@cy.profile(True)
 @cy.cfunc
 def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz) -> SpreadBehavior:
     """
@@ -505,7 +499,6 @@ def make_SpreadInputs(cube_resolution, space_time_cubes: dict) -> SpreadInputs:
     return sinputs
 
 
-@cy.profile(False)
 @cy.cfunc
 def lookup_space_time_cube_float32(space_time_cube: ISpaceTimeCube, space_time_coordinate: coord_tyx) -> cy.float:
     t: pyidx = space_time_coordinate[0]
@@ -536,7 +529,6 @@ CellInputs = cy.struct(
 
 
 @cy.cfunc
-@cy.profile(True)
 def lookup_cell_inputs(space_time_cubes: SpreadInputs, tyx: coord_tyx) -> CellInputs:
     """
     Reads the inputs for a given cell from the space-time cubes, returning a `CellInputs` struct.
@@ -630,7 +622,6 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 
 # TODO: Is it faster to build up a list or a set?
 # TODO: Should we store each frontier_cells entry as a coord_yx?
-@cy.profile(True)
 @cy.cfunc
 def identify_all_frontier_cells(phi_matrix: cy.float[:,:], rows: pyidx, cols: pyidx) -> set:
     """
@@ -667,7 +658,6 @@ def is_frontier_cell(phi_matrix: cy.float[:,:], y: pyidx, x: pyidx) -> cy.bint:
         )
 
 
-@cy.profile(True)
 @cy.cfunc
 def identify_tracked_cells(frontier_cells: set, buffer_width: pyidx, rows: pyidx, cols: pyidx) -> object:
     """
@@ -1881,7 +1871,7 @@ def reset_phi_star(
 @cy.cfunc
 @cy.wraparound(False)
 @cy.boundscheck(False)
-def ignite_from_spotting(spot_ignitions: sortc.SortedDict, output_matrices, stop_time: cy.float) -> list[BurnedCellInfo]:
+def ignite_from_spotting(spot_ignitions: SortedDict, output_matrices, stop_time: cy.float) -> list[BurnedCellInfo]:
     """
     Resolves the cells to be ignited by spotting in the current time step,
     returning them as a list of (y, x) tuples,
@@ -1995,7 +1985,6 @@ def apply_frontier_diff(frontier_cells_old: set, frontier_additions: set, fronti
     return frontier_cells_new
 
 
-@cy.profile(True)
 @cy.cfunc
 def update_tracked_cells_with_frontier_diff(
         tracked_cells: object,
@@ -2100,7 +2089,6 @@ def spread_one_timestep(
 
 
 
-@cy.profile(True)
 def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cube_resolution: tuple,
                                start_time: float, max_duration: float|None = None,
                                max_cells_per_timestep: float|None = 0.4, buffer_width: int|None = 3,
@@ -2304,7 +2292,7 @@ def spread_fire_with_phi_field(space_time_cubes: dict, output_matrices: dict, cu
     random_generator = BufferedRandGen(np.random.default_rng(seed=spot_config["random_seed"])) if spot_config else None
 
     # Ensure that spot_ignitions is initialized as a SortedDict
-    spot_igns = sortc.SortedDict(spot_ignitions)
+    spot_igns = SortedDict(spot_ignitions)
 
     start_t: pyidx = int(start_time // band_duration)
     sim_state = {
