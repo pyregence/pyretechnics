@@ -6,7 +6,7 @@ import numpy as np
 from sortedcontainers import SortedDict
 if cython.compiled:
     from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Free # Unique to Compiled Cython
-    from cython.cimports.pyretechnics.math import pi, floor, sqrt, atan
+    from cython.cimports.libc.math import pi, floor, sqrt, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, PartialedEllWavelet
     from cython.cimports.pyretechnics.random import BufferedRandGen

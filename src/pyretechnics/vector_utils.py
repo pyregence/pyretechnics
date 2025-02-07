@@ -3,7 +3,7 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.pyretechnics.math import sqrt, sin, cos
+    from cython.cimports.libc.math import sqrt, sin, cos
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz
     import cython.cimports.pyretechnics.conversion as conv
 else:

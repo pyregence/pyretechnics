@@ -3,7 +3,7 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.pyretechnics.math import exp
+    from cython.cimports.libc.math import exp
     from cython.cimports.pyretechnics.cy_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
 else:
     from math import exp

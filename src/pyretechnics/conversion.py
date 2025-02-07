@@ -3,7 +3,7 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.pyretechnics.math import sqrt, sin, cos, tan, atan, atan2
+    from cython.cimports.libc.math import sqrt, sin, cos, tan, atan, atan2
     from cython.cimports.pyretechnics.cy_types import vec_xy
 else:
     from math import sqrt, sin, cos, tan, atan, atan2

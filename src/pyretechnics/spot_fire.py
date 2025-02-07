@@ -3,7 +3,7 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.pyretechnics.math import round, sqrt, pow, log, exp, sin, cos
+    from cython.cimports.libc.math import round, sqrt, pow, log, exp, sin, cos
     from cython.cimports.pyretechnics.cy_types import \
         pyidx, vec_xy, coord_yx, coord_tyx, FuelModel, SpreadBehavior, SpotConfig, JumpDistribution
     from cython.cimports.pyretechnics.random import BufferedRandGen

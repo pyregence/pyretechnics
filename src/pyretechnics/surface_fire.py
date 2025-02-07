@@ -3,7 +3,7 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.pyretechnics.math import sqrt, pow, log, exp
+    from cython.cimports.libc.math import sqrt, pow, log, exp
     from cython.cimports.pyretechnics.cy_types import \
         vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
         FireBehaviorMax, SpreadBehavior
