@@ -6,7 +6,7 @@ cdef float van_wagner_critical_fireline_intensity(
     float foliar_moisture,
     ) noexcept
 
-cdef float van_wagner_crowning_spread_rate_threshold(
+cdef float van_wagner_crowning_spread_rate(
     FireBehaviorMax surface_fire_max,
     float canopy_base_height,
     float foliar_moisture,

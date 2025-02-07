@@ -493,8 +493,8 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       sim_area_bounds            : coord_yx,
                       spatial_resolution         : vec_xy,
                       space_time_coordinate      : coord_tyx,
-                      upwind_direction           : cy.float, # degrees
                       wind_speed_10m             : cy.float, # km/hr (for shame!)
+                      upwind_direction           : cy.float, # degrees
                       fireline_intensity         : cy.float,
                       flame_length               : cy.float,
                       time_of_arrival            : cy.float,

@@ -110,14 +110,14 @@ cdef struct CellInputs:
 
 cdef struct EllipticalInfo:
     coord_yx cell_index
-    vec_xy slp_dz
-    PartialedEllWavelet surfc_wavelet
+    vec_xy elevation_gradient
+    PartialedEllWavelet surface_wavelet
     PartialedEllWavelet crown_wavelet
-    float crowning_spread_rate_threshold
+    float crowning_spread_rate
 
 cdef struct Pass1CellOutput:
     coord_yx cell_index
-    vec_xy dphi
+    vec_xy phi_gradient_xy
     float dphi_dt_flim
     float phi_old
 # cy-types-pxd ends here

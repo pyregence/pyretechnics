@@ -731,7 +731,7 @@ def calc_surface_fire_behavior_max(surface_fire_min      : FireBehaviorMin,
         max_flame_length       = calc_flame_length(max_fireline_intensity),
         length_to_width_ratio  = length_to_width_ratio,
         eccentricity           = surface_fire_eccentricity(length_to_width_ratio),
-        critical_spread_rate   = -1.0,
+        critical_spread_rate   = 0.0,
     )
 # surface-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]

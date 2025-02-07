@@ -139,18 +139,18 @@ CellInputs = cy.struct(
 #       implemented using variants of the Rothermel model. This can be
 #       valuable to give flexibility to users.
 EllipticalInfo = cy.struct(
-    cell_index                     = coord_yx,
-    slp_dz                         = vec_xy, # Elevation gradient
-    surfc_wavelet                  = PartialedEllWavelet,
-    crown_wavelet                  = PartialedEllWavelet,
-    crowning_spread_rate_threshold = cy.float, # Surface spread rate threshold at which crowning occurs
+    cell_index           = coord_yx,
+    elevation_gradient   = vec_xy,
+    surface_wavelet      = PartialedEllWavelet,
+    crown_wavelet        = PartialedEllWavelet,
+    crowning_spread_rate = cy.float, # Surface spread rate at which crowning occurs
 )
 
 # Some data saved during the 1st Runge-Kutta pass.
 Pass1CellOutput = cy.struct(
-    cell_index   = coord_yx,
-    dphi         = vec_xy,
-    dphi_dt_flim = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
-    phi_old      = cy.float,
+    cell_index      = coord_yx,
+    phi_gradient_xy = vec_xy,
+    dphi_dt_flim    = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
+    phi_old         = cy.float,
 )
 # py-types-py ends here

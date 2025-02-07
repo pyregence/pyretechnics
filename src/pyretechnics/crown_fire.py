@@ -38,9 +38,9 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
 @cy.cfunc
 @cy.cdivision(True)
 @cy.exceptval(check=False)
-def van_wagner_crowning_spread_rate_threshold(surface_fire_max  : FireBehaviorMax,
-                                              canopy_base_height: cy.float,
-                                              foliar_moisture   : cy.float) -> cy.float:
+def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
+                                    canopy_base_height: cy.float,
+                                    foliar_moisture   : cy.float) -> cy.float:
     """
     Returns the surface spread rate above which crown fire occurs (m/min) given:
     - surface_fire_max   :: FireBehaviorMax struct
