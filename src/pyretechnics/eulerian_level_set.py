@@ -268,7 +268,7 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
     # Calculate the magnitude of the phi gradient
     #================================================================================================
 
-    phi_magnitude = vu.vector_magnitude_3d(phi_gradient) # phi/m
+    phi_magnitude: cy.float = vu.vector_magnitude_3d(phi_gradient) # phi/m
 
     #================================================================================================
     # Check whether cell is on the fire perimeter and burning
@@ -281,9 +281,9 @@ def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradie
         # Set the spread direction to the phi gradient direction, max spread direction, upslope, or North
         #================================================================================================
 
-        spread_direction = (np.asarray(phi_gradient) / phi_magnitude if phi_magnitude > 0.0
+        spread_direction = (vu.scale_3d(1.0 / phi_magnitude, phi_gradient)
+                            if phi_magnitude > 0.0
                             else fire_behavior_max.max_spread_direction)
-
 
         #============================================================================================
         # Return zero surface/crown fire behavior
