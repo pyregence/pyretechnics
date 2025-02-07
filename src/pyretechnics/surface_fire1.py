@@ -61,7 +61,7 @@ def calc_surface_area_to_volume_ratio(f_i: fcatarr, f_ij: fclaarr, sigma: fclaar
 @cy.exceptval(check=False)
 def calc_packing_ratio(w_o: fclaarr, rho_p: fclaarr, delta: cy.float) -> cy.float:
     if (delta > 0.0):
-        rho_p_inv: fclaarr = ( # TODO OPTIM pre-compute
+        rho_p_inv: fclaarr = ( # TODO: OPTIM pre-compute
             1.0/rho_p[0],
             1.0/rho_p[1],
             1.0/rho_p[2],
@@ -356,29 +356,27 @@ def calc_max_effective_wind_speed(reaction_intensity: cy.float) -> cy.float:
     return 0.9 * reaction_intensity
 # surface-fire-max-effective-wind-speed ends here
 # [[file:../../org/pyretechnics.org::surface-fire-slope-factor-function][surface-fire-slope-factor-function]]
-# surface-fire-wind-speed-function ends here
-# [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
 def get_phi_S(surface_fire_min: FireBehaviorMin, slope: cy.float) -> cy.float:
     return surface_fire_min._phiS_G * (slope * slope)
-
-
+# surface-fire-slope-factor-function ends here
+# [[file:../../org/pyretechnics.org::surface-fire-wind-factor-function][surface-fire-wind-factor-function]]
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
 def get_phi_W(surface_fire_min: FireBehaviorMin, midflame_wind_speed: cy.float) -> cy.float:
     return surface_fire_min._phiW_scalr * pow(midflame_wind_speed, surface_fire_min._phiW_expnt)
-
-
+# surface-fire-wind-factor-function ends here
+# [[file:../../org/pyretechnics.org::surface-fire-wind-speed-function][surface-fire-wind-speed-function]]
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
 def get_wind_speed(surface_fire_min: FireBehaviorMin, phi_W: cy.float) -> cy.float:
     return surface_fire_min._ws_scalr * pow(phi_W, surface_fire_min._ws_expnt)
-
-
+# surface-fire-wind-speed-function ends here
+# [[file:../../org/pyretechnics.org::surface-fire-behavior-no-wind-no-slope][surface-fire-behavior-no-wind-no-slope]]
 @cy.cfunc
 @cy.cdivision(True)
 @cy.exceptval(check=False)
@@ -421,7 +419,7 @@ def make_surface_fire_min(base_spread_rate        : cy.float,
 @cy.cdivision(True)
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model: FuelModel,
-                                                spread_rate_adjustment: cy.float) -> FireBehaviorMin:
+                                                spread_rate_adjustment: cy.float = 1.0) -> FireBehaviorMin:
     """
     Given these inputs:
     - moisturized_fuel_model :: FuelModel struct of fuel model and fuel moisture properties

@@ -70,7 +70,7 @@ cdef FireBehaviorMin make_surface_fire_min(
 
 cdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
     FuelModel moisturized_fuel_model,
-    float spread_rate_adjustment,
+    float spread_rate_adjustment=?,
     ) noexcept
 
 cdef float calc_wind_adjustment_factor(float fuel_bed_depth, float canopy_height, float canopy_cover) noexcept
