@@ -10,7 +10,7 @@ if cython.compiled:
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.fuel_models as fm
-    import cython.cimports.pyretechnics.surface_fire1 as sf
+    import cython.cimports.pyretechnics.surface_fire as sf
 else:
     from math import round, sqrt, pow, log, exp, sin, cos
     from pyretechnics.py_types import \
@@ -19,7 +19,7 @@ else:
     from pyretechnics.space_time_cube import ISpaceTimeCube
     import pyretechnics.conversion as conv
     import pyretechnics.fuel_models as fm
-    import pyretechnics.surface_fire1 as sf
+    import pyretechnics.surface_fire as sf
 
 
 @cy.cfunc

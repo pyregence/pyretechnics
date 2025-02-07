@@ -11,7 +11,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
-    import cython.cimports.pyretechnics.surface_fire1 as sf
+    import cython.cimports.pyretechnics.surface_fire as sf
     import cython.cimports.pyretechnics.crown_fire as cf
     import cython.cimports.pyretechnics.spot_fire as spot
     import cython.cimports.pyretechnics.narrow_band_tracking as nbt
@@ -25,7 +25,7 @@ else:
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
-    import pyretechnics.surface_fire1 as sf
+    import pyretechnics.surface_fire as sf
     import pyretechnics.crown_fire as cf
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt

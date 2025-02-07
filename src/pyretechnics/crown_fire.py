@@ -8,14 +8,14 @@ if cython.compiled:
         vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
-    import cython.cimports.pyretechnics.surface_fire1 as sf
+    import cython.cimports.pyretechnics.surface_fire as sf
 else:
     from math import sqrt, exp, pow
     from pyretechnics.py_types import \
         vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
-    import pyretechnics.surface_fire1 as sf
+    import pyretechnics.surface_fire as sf
 
 
 @cy.cfunc
