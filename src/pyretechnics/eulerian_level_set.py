@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
-# cython: profile=False, initializedcheck = False, cdivision = True
+# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 import numpy as np
@@ -38,8 +38,6 @@ else:
 
 # NOTE: No longer used in tight loops.
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def calc_dphi_dx_approx(phi_matrix: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
@@ -53,8 +51,6 @@ def calc_dphi_dx_approx(phi_matrix: cy.float[:,:], dx: cy.float, x: pyidx, y: py
 
 # NOTE: No longer used in tight loops.
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def calc_dphi_dy_approx(phi_matrix: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
@@ -450,8 +446,6 @@ class SpreadInputs:
 
     # TODO: Move this code to fuel_models.py
     @cy.cfunc
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     def __init_fuel_models(self: SpreadInputs) -> cy.void:
         # Allocate an empty FuelModel array in memory
         fuel_models_arr: cy.pointer(FuelModel) = cy.cast(cy.pointer(FuelModel),
@@ -472,8 +466,6 @@ class SpreadInputs:
     # TODO: Inline this code at its call sites
     @cy.cfunc
     @cy.inline
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     @cy.exceptval(check=False)
     def get_fm_struct(self: SpreadInputs, fm_number: pyidx) -> FuelModel:
         return self.fuel_models_arr[fm_number]
@@ -623,8 +615,6 @@ def decode_cell_index(encoded_cell_index: object) -> coord_yx:
 
 @cy.cfunc
 @cy.inline
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyidx, x2: pyidx) -> cy.bint:
     """
@@ -987,8 +977,6 @@ class TrackedCellsArrays:
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def collect_phi_values(phi_matrix: cy.float[:,:], tca: TrackedCellsArrays) -> cy.void:
     """
@@ -1038,8 +1026,6 @@ def compare_cell_indexes(c0: coord_yx, c1: coord_yx) -> cy.int:
 
 # TODO: OPTIM Maybe we want to use a native array directly instead of a MemoryView.
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def copy_tracked_cell_data(i_old  : pyidx,
                            tca_old: TrackedCellsArrays,
@@ -1140,8 +1126,6 @@ class FireBehaviorSettings:
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def load_float_inputs_for_cell(space_time_cubes: SpreadInputs,
                                cell_index      : coord_yx,
@@ -1262,8 +1246,6 @@ def recompute_level_for_input(input_k: pyidx) -> cy.uint:
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def refresh_inputs_if_needed(space_time_cubes: SpreadInputs,
                              fb_opts         : FireBehaviorSettings,
@@ -1307,8 +1289,6 @@ def refresh_inputs_if_needed(space_time_cubes: SpreadInputs,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def load_saved_CellInputs(float_inputs: cy.float[:,:], i: pyidx) -> CellInputs:
     """
@@ -1484,8 +1464,6 @@ def resolve_cell_elliptical_info(fb_opts         : FireBehaviorSettings,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def refresh_caches_from_inputs_if_needed(space_time_cubes: SpreadInputs,
                                          fb_opts         : FireBehaviorSettings,
@@ -1563,8 +1541,6 @@ def resolve_combined_spread_behavior(space_time_cubes     : SpreadInputs,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def load_tracked_cell_data(space_time_cubes: SpreadInputs,
                            fb_opts         : FireBehaviorSettings,
@@ -1586,8 +1562,6 @@ def load_tracked_cell_data(space_time_cubes: SpreadInputs,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def sync_tracked_cells_arrays(space_time_cubes: SpreadInputs,
                               fb_opts         : FireBehaviorSettings,
@@ -1643,8 +1617,6 @@ def sync_tracked_cells_arrays(space_time_cubes: SpreadInputs,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def runge_kutta_pass1(max_cells_per_timestep: cy.float,
                       spatial_resolution    : vec_xy,
@@ -1730,8 +1702,6 @@ def runge_kutta_pass1(max_cells_per_timestep: cy.float,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def update_phi_star(tca            : TrackedCellsArrays,
                     dt             : cy.float,
@@ -1777,8 +1747,6 @@ def new_BurnedCellInfo(cell_index     : coord_yx,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 def runge_kutta_pass2(spatial_resolution: vec_xy,
                       start_time        : cy.float,
                       dt                : cy.float,
@@ -1851,8 +1819,6 @@ def runge_kutta_pass2(spatial_resolution: vec_xy,
 
 # TODO: Pass output_matrices as a struct
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def process_burned_cells(space_time_cubes: SpreadInputs,
                          fb_opts         : FireBehaviorSettings,
@@ -1904,8 +1870,6 @@ def process_burned_cells(space_time_cubes: SpreadInputs,
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def reset_phi_star(tca               : TrackedCellsArrays,
                    spot_ignited_cells: list[BurnedCellInfo],
@@ -1932,8 +1896,6 @@ def reset_phi_star(tca               : TrackedCellsArrays,
 
 # TODO: Pass output_matrices as a struct
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 def ignite_from_spotting(spot_ignitions : SortedDict[float, set],
                          output_matrices: dict,
                          stop_time      : cy.float) -> list[BurnedCellInfo]:

@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
-# cython: profile=False, initializedcheck = False, cdivision = True
+# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 if cython.compiled:

@@ -1,4 +1,4 @@
-# cython: profile=False, initializedcheck = False, cdivision = True
+# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 import numpy as np
@@ -35,8 +35,6 @@ class BufferedRandGen:
 
 
     @cy.cfunc
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     @cy.exceptval(check=False)
     def next_poisson(self: BufferedRandGen, M: cy.double) -> cy.long:
         """
@@ -80,8 +78,6 @@ class BufferedRandGen:
 
 
     @cy.cfunc
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     @cy.exceptval(check=False)
     def next_uniform(self: BufferedRandGen) -> cy.float:
         if not(self.uniform_pos < 1024):
@@ -92,8 +88,6 @@ class BufferedRandGen:
 
 
     @cy.cfunc
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     @cy.exceptval(check=False)
     def next_normal(self: BufferedRandGen) -> cy.float:
         if not(self.normal_pos < 1024):
@@ -125,8 +119,6 @@ def __reset_normal_buffer(self: BufferedRandGen) -> cy.void:
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def __next_poisson1(self: BufferedRandGen) -> cy.long:
     if not(self.poisson1_pos < 1024):
@@ -138,8 +130,6 @@ def __next_poisson1(self: BufferedRandGen) -> cy.long:
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def __next_poisson16(self: BufferedRandGen) -> cy.long:
     if not(self.poisson16_pos < 1024):

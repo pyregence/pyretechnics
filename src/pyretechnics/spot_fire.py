@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
-# cython: profile=False, initializedcheck = False, cdivision = True
+# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 if cython.compiled:
@@ -411,8 +411,6 @@ def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyi
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def cast_firebrand(rng                        : BufferedRandGen,
                    fuel_model_cube            : ISpaceTimeCube,

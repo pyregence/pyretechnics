@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::space-time-cube-imports][space-time-cube-imports]]
-# cython: profile=False, initializedcheck = False, cdivision = True
+# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 from functools import reduce
@@ -168,8 +168,6 @@ class SpaceTimeCube(ISpaceTimeCube):
 
     @cy.cfunc
     @cy.inline
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
@@ -450,8 +448,6 @@ class LazySpaceTimeCube(ISpaceTimeCube):
 
     # TODO: Make self.cache into a 1D array of cy.pointer(SpaceTimeCube)
     @cy.cfunc
-    @cy.boundscheck(False)
-    @cy.wraparound(False)
     def __getOrLoadSubcube(self, cache_t: pyidx, cache_y: pyidx, cache_x: pyidx) -> SpaceTimeCube:
         """
         Return the SpaceTimeCube stored at self.cache[cache_t, cache_y, cache_x] if it

@@ -1,4 +1,4 @@
-# cython: profile=False, initializedcheck = False, cdivision = True
+# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 """
 Custom data structures for keeping track of cells in the narrow band.
 
@@ -41,8 +41,6 @@ class CellsCountSegment:
 
 
 @cy.cfunc
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def segment_is_empty(segment: CellsCountSegment) -> cy.bint:
     counts: cy.ushort[16] = segment.counts
@@ -55,8 +53,6 @@ def segment_is_empty(segment: CellsCountSegment) -> cy.bint:
 
 @cy.cfunc
 @cy.inline
-@cy.boundscheck(False)
-@cy.wraparound(False)
 @cy.exceptval(check=False)
 def segment_is_pos_at(segment: CellsCountSegment, k: pyidx) -> cy.bint:
     return segment.counts[k] > 0
