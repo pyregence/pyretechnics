@@ -2101,7 +2101,7 @@ def spread_one_timestep(sim_state       : dict,
 
 
 @cy.cfunc
-def check_space_time_cubes(space_time_cubes: dict, spot_config: dict|None) -> cy.void:
+def check_space_time_cubes(space_time_cubes: dict, spot_config: dict|None = None) -> cy.void:
     # Define the provided, required, and optional keys for space_time_cubes
     provided_cubes: set = set(space_time_cubes.keys())
     required_cubes: set = {
@@ -2211,9 +2211,9 @@ def check_dimensions_and_resolutions(space_time_cubes   : dict,
 
 @cy.cfunc
 def check_start_and_stop_times(start_time   : cy.float,
-                               max_duration : float|None,
+                               max_stop_time: cy.float,
                                cube_duration: cy.float,
-                               max_stop_time: cy.float) -> cy.void:
+                               max_duration : float|None = None) -> cy.void:
     # Ensure that start_time exists within the temporal bounds of the space_time_cubes
     if not(0.0 <= start_time < cube_duration):
         raise ValueError("The start_time falls outside of the temporal bounds of the space_time_cubes.")
@@ -2233,14 +2233,14 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
                                cube_resolution       : tuple[cy.float, cy.float, cy.float],
                                start_time            : cy.float,
                                max_duration          : float|None             = None,
-                               max_cells_per_timestep: float|None             = 0.4,
-                               buffer_width          : int|None               = 3,
-                               use_wind_limit        : bool|None              = True,
-                               surface_lw_ratio_model: str|None               = "behave",
-                               crown_max_lw_ratio    : float|None             = 1e10,
-                               spot_ignitions        : dict[float, set]|None  = {},
+                               max_cells_per_timestep: cy.float               = 0.4,
+                               buffer_width          : pyidx                  = 3,
+                               use_wind_limit        : cy.bint                = True,
+                               surface_lw_ratio_model: str                    = "behave",
+                               crown_max_lw_ratio    : cy.float               = 1e10,
+                               spot_ignitions        : dict[float, set]       = {},
                                spot_config           : dict[str, object]|None = None,
-                               cube_refresh_rates    : dict[str, float]|None  = {}) -> dict[str, object]:
+                               cube_refresh_rates    : dict[str, float]       = {}) -> dict[str, object]:
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of ISpaceTimeCube objects with these cell types
@@ -2342,7 +2342,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
     max_stop_time: cy.float = start_time + max_duration if max_duration else cube_duration
 
     # Verify simulation start and stop times
-    check_start_and_stop_times(start_time, max_duration, cube_duration, max_stop_time)
+    check_start_and_stop_times(start_time, max_stop_time, cube_duration, max_duration)
 
     # Identify the sets of frontier cells and tracked cells based on the phi matrix
     phi_matrix    : cy.float[:,:]         = output_matrices["phi"]
