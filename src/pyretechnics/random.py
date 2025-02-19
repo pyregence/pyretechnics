@@ -1,4 +1,4 @@
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 import numpy as np

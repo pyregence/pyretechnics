@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 if cython.compiled:
@@ -105,7 +105,6 @@ compact_fuel_model_table = cy.declare(dict[int, CompactFuelModel], {
 # fuel-model-compact-table ends here
 # [[file:../../org/pyretechnics.org::expand-compact-fuel-model-table][expand-compact-fuel-model-table]]
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def compute_exp_A_sigma(A: cy.float, sigma_ij: cy.float) -> cy.float:
     if sigma_ij > 0.0:
@@ -263,7 +262,6 @@ def compute_gij(firemod_size_classes : fclaarr,
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
     """
@@ -313,7 +311,6 @@ def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
 # add-weighting-factors ends here
 # [[file:../../org/pyretechnics.org::add-live-moisture-of-extinction][add-live-moisture-of-extinction]]
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
     """

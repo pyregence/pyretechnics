@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 if cython.compiled:
@@ -36,7 +36,6 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
 # van-wagner-critical-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
                                     canopy_base_height: cy.float,
@@ -100,7 +99,6 @@ def cruz_active_crown_fire_spread_rate(wind_speed_10m              : cy.float,
 # [[file:../../org/pyretechnics.org::van-wagner-critical-spread-rate][van-wagner-critical-spread-rate]]
 @cy.cfunc
 @cy.inline
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def van_wagner_critical_spread_rate(canopy_bulk_density: cy.float) -> cy.float:
     """
@@ -112,7 +110,6 @@ def van_wagner_critical_spread_rate(canopy_bulk_density: cy.float) -> cy.float:
 # [[file:../../org/pyretechnics.org::cruz-passive-crown-fire-spread-rate][cruz-passive-crown-fire-spread-rate]]
 @cy.cfunc
 @cy.inline
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def cruz_passive_crown_fire_spread_rate(active_spread_rate: cy.float, critical_spread_rate: cy.float) -> cy.float:
     """
@@ -202,7 +199,6 @@ def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ra
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     """
@@ -293,7 +289,6 @@ def calc_crown_fire_behavior_max(canopy_height               : cy.float,
 # crown-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-in-direction][crown-fire-behavior-in-direction]]
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
                                           spread_direction: vec_xyz) -> SpreadBehavior:
@@ -364,7 +359,6 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
 # crown-fire-behavior-in-direction ends here
 # [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior,
                                 crown_fire_behavior  : SpreadBehavior) -> SpreadBehavior:

@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 if cython.compiled:
@@ -12,7 +12,6 @@ else:
 
 @cy.cfunc
 @cy.inline
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def rad_to_deg(radians: cy.float) -> cy.float:
     """Convert radians to degrees."""

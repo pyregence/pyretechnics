@@ -1,4 +1,5 @@
 # [[file:../../org/pyretechnics.org::py-types-py][py-types-py]]
+# cython: profile=False, initializedcheck = False, cdivision = True
 #==============================================================
 # Runtime-defined type aliases
 #==============================================================

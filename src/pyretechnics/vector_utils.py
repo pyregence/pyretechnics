@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::vector-utilities][vector-utilities]]
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 if cython.compiled:
@@ -69,7 +69,6 @@ def vector_magnitude_3d(vector: vec_xyz) -> cy.float:
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
     magnitude: cy.float = vector_magnitude_2d(vector)
@@ -82,7 +81,6 @@ def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
     magnitude: cy.float = vector_magnitude_3d(vector)

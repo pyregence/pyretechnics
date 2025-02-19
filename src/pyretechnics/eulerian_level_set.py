@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
-# cython: profile=False, initializedcheck = False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 import numpy as np
@@ -38,7 +38,6 @@ else:
 
 # NOTE: No longer used in tight loops.
 @cy.cfunc
-@cy.cdivision(True)
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
@@ -54,7 +53,6 @@ def calc_dphi_dx_approx(phi_matrix: cy.float[:,:], dx: cy.float, x: pyidx, y: py
 
 # NOTE: No longer used in tight loops.
 @cy.cfunc
-@cy.cdivision(True)
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
@@ -97,7 +95,6 @@ def calc_phi_normal_vector(phi_matrix: cy.float[:,:], dx: cy.float, dy: cy.float
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
 # TODO: Remove unused function
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
     """
@@ -251,7 +248,6 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
 # FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
 #        Did I do this correctly in calc_crown_fire_behavior_in_direction?
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient: vec_xyz) -> SpreadBehavior:
     """
@@ -580,7 +576,6 @@ def lookup_cell_inputs(space_time_cubes: SpreadInputs, space_time_coordinate: co
 # returned a Cartesian speed vector instead, which would play more
 # nicely with the rest of the code.
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def unburned_SpreadBehavior(elevation_gradient: vec_xy, phi_gradient_xyz: vec_xyz) -> SpreadBehavior:
     # Create a 3D unit vector pointing...
@@ -692,7 +687,6 @@ def identify_tracked_cells(frontier_cells: set,
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 # TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def spot_from_burned_cell(space_time_cubes: SpreadInputs,
                           fire_type_matrix: cy.uchar[:,:],
@@ -748,7 +742,6 @@ def spot_from_burned_cell(space_time_cubes: SpreadInputs,
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def calc_phi_magnitude_xyz_2(phi_gradient_xy   : vec_xy,
                              elevation_gradient: vec_xy) -> cy.float:
@@ -777,7 +770,6 @@ def zero_partialed_wavelet() -> PartialedEllWavelet:
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def prepare_partialed_wavelet(heading_spread_vector: vec_xyz,
                               flanking_spread_rate : cy.float,
@@ -809,7 +801,6 @@ def prepare_partialed_wavelet(heading_spread_vector: vec_xyz,
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def wavelet_from_FireBehaviorMax(fire_behavior_max: FireBehaviorMax) -> PartialedEllWavelet:
     heading_spread_rate: cy.float = fire_behavior_max.max_spread_rate # m/min
@@ -1216,7 +1207,6 @@ def list_float_input_cubes(space_time_cubes: SpreadInputs) -> list[ISpaceTimeCub
 
 
 @cy.cfunc
-@cy.cdivision(True)
 def default_cube_refresh_rates(band_duration: cy.float) -> dict:
     refresh_rate: cy.float = 1.0 / band_duration
     return {
@@ -1272,7 +1262,6 @@ def recompute_level_for_input(input_k: pyidx) -> cy.uint:
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
@@ -1654,7 +1643,6 @@ def sync_tracked_cells_arrays(space_time_cubes: SpreadInputs,
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
@@ -1789,7 +1777,6 @@ def new_BurnedCellInfo(cell_index     : coord_yx,
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.boundscheck(False)
 @cy.wraparound(False)
 def runge_kutta_pass2(spatial_resolution: vec_xy,
@@ -1864,7 +1851,6 @@ def runge_kutta_pass2(spatial_resolution: vec_xy,
 
 # TODO: Pass output_matrices as a struct
 @cy.cfunc
-@cy.cdivision(True)
 @cy.boundscheck(False)
 @cy.wraparound(False)
 @cy.exceptval(check=False)
@@ -2280,7 +2266,6 @@ def check_start_and_stop_times(start_time   : cy.float,
 
 
 @cy.ccall
-@cy.cdivision(True)
 def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube],
                                output_matrices       : dict[str, np.ndarray],
                                cube_resolution       : tuple[cy.float, cy.float, cy.float],

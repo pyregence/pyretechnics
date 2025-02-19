@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 if cython.compiled:
@@ -103,7 +103,6 @@ def delta_to_grid_dy(cos_wdir: cy.float, sin_wdir: cy.float, delta_x: cy.float, 
 
 @cy.cfunc
 @cy.inline
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.int:
     """
@@ -158,7 +157,6 @@ def resolve_var_delta_x(spot_config: SpotConfig, exp_delta_x: cy.float) -> cy.fl
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def lognormal_mu_from_moments(mean: cy.float, variance: cy.float) -> cy.float:
     """
@@ -170,7 +168,6 @@ def lognormal_mu_from_moments(mean: cy.float, variance: cy.float) -> cy.float:
 
 @cy.cfunc
 @cy.inline
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def lognormal_sigma_from_moments(mean: cy.float, variance: cy.float) -> cy.float:
     """
@@ -287,7 +284,6 @@ def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGe
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 @cy.cfunc
 @cy.inline
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
     """
@@ -349,7 +345,6 @@ def albini_firebrand_maximum_height(firebrand_diameter: cy.float) -> cy.float:
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(check=False)
 def albini_t_max(flame_length: cy.float) -> cy.float:
     """

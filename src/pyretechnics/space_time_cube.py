@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::space-time-cube-imports][space-time-cube-imports]]
-# cython: profile=False
+# cython: profile=False, initializedcheck = False, cdivision = True
 import cython
 import cython as cy
 from functools import reduce
@@ -18,7 +18,6 @@ def is_pos_int(x: object) -> cy.bint:
 
 
 @cy.cfunc
-@cy.cdivision(True)
 @cy.exceptval(-1)
 def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
     if divisor == 0:
@@ -169,7 +168,6 @@ class SpaceTimeCube(ISpaceTimeCube):
 
     @cy.cfunc
     @cy.inline
-    @cy.cdivision(True)
     @cy.boundscheck(False)
     @cy.wraparound(False)
     @cy.exceptval(check=False)
@@ -450,6 +448,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
         self.load_subcube  = load_subcube
 
 
+    # TODO: Make self.cache into a 1D array of cy.pointer(SpaceTimeCube)
     @cy.cfunc
     @cy.boundscheck(False)
     @cy.wraparound(False)
@@ -469,7 +468,6 @@ class LazySpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.cfunc
-    @cy.cdivision(True)
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
