@@ -20,15 +20,26 @@ else:
     import pyretechnics.crown_fire as cf
 
 
+@cy.cfunc
+@cy.inline
+def SpreadBehavior_to_dict(sb: SpreadBehavior) -> dict:
+    return {
+        "dphi_dt"           : sb.dphi_dt,
+        "fire_type"         : sb.fire_type,
+        "spread_rate"       : sb.spread_rate,
+        "spread_direction"  : sb.spread_direction,
+        "fireline_intensity": sb.fireline_intensity,
+        "flame_length"      : sb.flame_length,
+    }
+
+
 # TODO: Create a version of this function that runs efficiently over a space_time_region
-# TODO: Replace space_time_cubes dict with struct
 @cy.ccall
-@cy.exceptval(check=False)
 def burn_cell_as_head_fire(space_time_cubes      : dict,
                            space_time_coordinate : coord_tyx,
                            use_wind_limit        : cy.bint = True,
                            surface_lw_ratio_model: str = "behave",
-                           crown_max_lw_ratio    : cy.float = 1e10) -> SpreadBehavior:
+                           crown_max_lw_ratio    : cy.float = 1e10) -> dict:
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -54,7 +65,7 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
     - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
 
-    return a SpreadBehavior struct with these fire behavior values for the space-time coordinate (t,y,x):
+    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
     - dphi_dt            :: phi/min
     - fire_type          :: 0 (unburned), 1 (surface), 2 (passive_crown), or 3 (active_crown)
     - spread_rate        :: m/min
@@ -123,14 +134,14 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
         # Return zero surface fire behavior
         #============================================================================================
 
-        return SpreadBehavior(
-            dphi_dt            = 0.0,
-            fire_type          = 0, # unburned
-            spread_rate        = 0.0,
-            spread_direction   = spread_direction,
-            fireline_intensity = 0.0,
-            flame_length       = 0.0,
-        )
+        return {
+            "dphi_dt"           : 0.0,
+            "fire_type"         : 0, # unburned
+            "spread_rate"       : 0.0,
+            "spread_direction"  : spread_direction,
+            "fireline_intensity": 0.0,
+            "flame_length"      : 0.0,
+        }
 
     else:
         # Encountered burnable fuel model
@@ -227,7 +238,7 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
             # Return the combined fire behavior in the direction of maximum spread
             #========================================================================================
 
-            return combined_fire_max
+            return SpreadBehavior_to_dict(combined_fire_max)
 
         else:
 
@@ -235,19 +246,17 @@ def burn_cell_as_head_fire(space_time_cubes      : dict,
             # Return the surface fire behavior in the direction of maximum spread
             #========================================================================================
 
-            return surface_fire_max_simple
+            return SpreadBehavior_to_dict(surface_fire_max_simple)
 # burn-cell-as-head-fire ends here
 # [[file:../../org/pyretechnics.org::burn-cell-toward-azimuth][burn-cell-toward-azimuth]]
 # TODO: Create a version of this function that runs efficiently over a space_time_region
-# TODO: Replace space_time_cubes dict with struct
 @cy.ccall
-@cy.exceptval(check=False)
 def burn_cell_toward_azimuth(space_time_cubes      : dict,
                              space_time_coordinate : coord_tyx,
                              azimuth               : cy.float,
                              use_wind_limit        : cy.bint = True,
                              surface_lw_ratio_model: str = "behave",
-                             crown_max_lw_ratio    : cy.float = 1e10) -> SpreadBehavior:
+                             crown_max_lw_ratio    : cy.float = 1e10) -> dict:
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
@@ -274,7 +283,7 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
     - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
 
-    return a SpreadBehavior struct with these fire behavior values for the space-time coordinate (t,y,x):
+    return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
     - dphi_dt            :: phi/min
     - fire_type          :: 0 (unburned), 1 (surface), 2 (passive_crown), or 3 (active_crown)
     - spread_rate        :: m/min
@@ -342,14 +351,14 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
         # Return zero surface fire behavior in the direction of the azimuth vector
         #============================================================================================
 
-        return SpreadBehavior(
-            dphi_dt            = 0.0,
-            fire_type          = 0, # unburned
-            spread_rate        = 0.0,
-            spread_direction   = spread_direction,
-            fireline_intensity = 0.0,
-            flame_length       = 0.0,
-        )
+        return {
+            "dphi_dt"           : 0.0,
+            "fire_type"         : 0, # unburned
+            "spread_rate"       : 0.0,
+            "spread_direction"  : spread_direction,
+            "fireline_intensity": 0.0,
+            "flame_length"      : 0.0,
+        }
 
     else:
         # Encountered burnable fuel model
@@ -449,7 +458,7 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
             # Return the combined fire behavior in the direction of the azimuth vector
             #========================================================================================
 
-            return combined_fire_azimuth
+            return SpreadBehavior_to_dict(combined_fire_azimuth)
 
         else:
 
@@ -457,5 +466,5 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict,
             # Return the surface fire behavior in the direction of the azimuth vector
             #========================================================================================
 
-            return surface_fire_azimuth
+            return SpreadBehavior_to_dict(surface_fire_azimuth)
 # burn-cell-toward-azimuth ends here
