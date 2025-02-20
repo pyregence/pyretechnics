@@ -1,7 +1,7 @@
 # [[file:../../org/pyretechnics.org::add-landfire-layers-to-test-dataset][add-landfire-layers-to-test-dataset]]
 import os
-from pyretechnics.load_landfire import read_landfire_rasters_as_space_time_cubes
 from pyretechnics.space_time_cube import SpaceTimeCube
+from pyretechnics.load_landfire import read_landfire_rasters_as_space_time_cubes
 
 
 def get_project_root(current_dir=os.curdir):
@@ -34,11 +34,11 @@ landfire_file_paths = {
 cube_shape = (1, 613, 549) # Matches the resolution of the GeoTIFFs
 
 def test_read_landfire_rasters():
-    input_layer_dict = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
-    assert type(input_layer_dict) == dict
-    assert input_layer_dict.keys() == landfire_file_paths.keys()
-    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), input_layer_dict.values()))
-    return input_layer_dict
+    space_time_cubes = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
+    assert type(space_time_cubes) == dict
+    assert space_time_cubes.keys() == landfire_file_paths.keys()
+    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), space_time_cubes.values()))
+    return space_time_cubes
 # add-landfire-layers-to-test-dataset ends here
 # [[file:../../org/pyretechnics.org::add-constant-wind-and-moisture-to-test-dataset][add-constant-wind-and-moisture-to-test-dataset]]
 weather_cubes = {
@@ -54,70 +54,61 @@ weather_cubes = {
 
 
 def test_add_weather_cubes():
-    input_layer_dict = test_read_landfire_rasters()
-    input_layer_dict.update(weather_cubes)
-    assert type(input_layer_dict) == dict
-    assert set(input_layer_dict.keys()) == set(landfire_file_paths.keys()).union(set(weather_cubes.keys()))
-    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), input_layer_dict.values()))
-    return input_layer_dict
+    space_time_cubes = test_read_landfire_rasters()
+    space_time_cubes.update(weather_cubes)
+    assert type(space_time_cubes) == dict
+    assert set(space_time_cubes.keys()) == set(landfire_file_paths.keys()).union(set(weather_cubes.keys()))
+    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), space_time_cubes.values()))
+    return space_time_cubes
 # add-constant-wind-and-moisture-to-test-dataset ends here
 # [[file:../../org/pyretechnics.org::burn-single-cell-in-test-dataset][burn-single-cell-in-test-dataset]]
 from pyretechnics.burn_cells import burn_cell_as_head_fire
 
 
 def test_burn_cell_as_head_fire():
-    input_layer_dict           = test_add_weather_cubes()
-    space_time_coordinate      = (0, 100, 100) # (t,y,x)
-    result                     = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
-    result["spread_direction"] = list(result["spread_direction"])
-
-    assert result["fire_type"] == "surface"
-    assert result["spread_rate"]         - 0.32044995422500555 < 0.001
-    assert result["spread_direction"][0] - 0.644528432121562   < 0.001
-    assert result["spread_direction"][1] - 0.7414451458683358  < 0.001
-    assert result["spread_direction"][2] - 0.18666064356259804 < 0.001
-    assert result["fireline_intensity"]  - 26.66139842420774   < 0.001
-    assert result["flame_length"]        - 0.3507858529698898  < 0.001
-
-    return result
+    space_time_cubes      = test_add_weather_cubes()
+    space_time_coordinate = (0, 100, 100) # (t,y,x)
+    spread_behavior       = burn_cell_as_head_fire(space_time_cubes,
+                                                   space_time_coordinate,
+                                                   surface_lw_ratio_model="rothermel")
+    assert spread_behavior["fire_type"] == 1 # surface
+    assert spread_behavior["spread_rate"]         - 0.32044995422500555 < 0.001
+    assert spread_behavior["spread_direction"][0] - 0.644528432121562   < 0.001
+    assert spread_behavior["spread_direction"][1] - 0.7414451458683358  < 0.001
+    assert spread_behavior["spread_direction"][2] - 0.18666064356259804 < 0.001
+    assert spread_behavior["fireline_intensity"]  - 26.66139842420774   < 0.001
+    assert spread_behavior["flame_length"]        - 0.3507858529698898  < 0.001
+    return spread_behavior
 # burn-single-cell-in-test-dataset ends here
 # [[file:../../org/pyretechnics.org::burn-all-cells-in-test-dataset][burn-all-cells-in-test-dataset]]
 import numpy as np
-from pyretechnics.burn_cells import burn_cell_as_head_fire
 import pyretechnics.conversion as conv
 import pyretechnics.vector_utils as vu
-
-
-fire_type_codes = {
-    "unburned"      : 0,
-    "surface"       : 1,
-    "passive_crown" : 2,
-    "active_crown"  : 3,
-}
+from pyretechnics.burn_cells import burn_cell_as_head_fire
 
 
 def test_burn_all_cells_as_head_fire():
-    input_layer_dict     = test_add_weather_cubes()
-    (_bands, rows, cols) = input_layer_dict["elevation"].shape
-    output_layer_shape   = (rows, cols)
+    space_time_cubes     = test_add_weather_cubes()
+    (_bands, rows, cols) = space_time_cubes["elevation"].shape
+    grid_shape           = (rows, cols)
 
-    max_fire_type_matrix          = np.zeros(output_layer_shape, dtype="uint8")
-    max_spread_rate_matrix        = np.zeros(output_layer_shape, dtype="float32")
-    max_spread_direction_matrix   = np.zeros(output_layer_shape, dtype="float32")
-    max_fireline_intensity_matrix = np.zeros(output_layer_shape, dtype="float32")
-    max_flame_length_matrix       = np.zeros(output_layer_shape, dtype="float32")
+    max_fire_type_matrix          = np.zeros(grid_shape, dtype="uint8")
+    max_spread_rate_matrix        = np.zeros(grid_shape, dtype="float32")
+    max_spread_direction_matrix   = np.zeros(grid_shape, dtype="float32")
+    max_fireline_intensity_matrix = np.zeros(grid_shape, dtype="float32")
+    max_flame_length_matrix       = np.zeros(grid_shape, dtype="float32")
 
     for y in range(rows):
         for x in range(cols):
             space_time_coordinate              = (0, y, x) # (t,y,x)
-            results                            = burn_cell_as_head_fire(input_layer_dict, space_time_coordinate)
-            max_fire_type_matrix[y,x]          = fire_type_codes[results["fire_type"]]
-            max_spread_rate_matrix[y,x]        = results["spread_rate"]
-            # FIXME: Change upstream functions to return spread_direction as type vec_xyz
-            (dx, dy, dz)                       = results["spread_direction"]
-            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle((dx, dy, dz))
-            max_fireline_intensity_matrix[y,x] = results["fireline_intensity"]
-            max_flame_length_matrix[y,x]       = results["flame_length"]
+            spread_behavior                    = burn_cell_as_head_fire(space_time_cubes,
+                                                                        space_time_coordinate,
+                                                                        surface_lw_ratio_model="rothermel")
+            max_fire_type_matrix[y,x]          = spread_behavior["fire_type"]
+            max_spread_rate_matrix[y,x]        = spread_behavior["spread_rate"]
+            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(spread_behavior["spread_direction"])
+            max_fireline_intensity_matrix[y,x] = spread_behavior["fireline_intensity"]
+            max_flame_length_matrix[y,x]       = spread_behavior["flame_length"]
 
     return {
         "max_fire_type"         : max_fire_type_matrix,
