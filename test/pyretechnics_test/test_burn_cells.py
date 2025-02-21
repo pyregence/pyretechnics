@@ -31,14 +31,17 @@ landfire_file_paths = {
     "canopy_bulk_density": project_root + "/test/data/landfire_inputs/LF2022_CBD_230_CONUS/LC22_CBD_230.tif",
 }
 
+
 cube_shape = (1, 613, 549) # Matches the resolution of the GeoTIFFs
 
+
+landfire_cubes = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
+
+
 def test_read_landfire_rasters():
-    space_time_cubes = read_landfire_rasters_as_space_time_cubes(cube_shape, landfire_file_paths)
-    assert type(space_time_cubes) == dict
-    assert space_time_cubes.keys() == landfire_file_paths.keys()
-    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), space_time_cubes.values()))
-    return space_time_cubes
+    assert type(landfire_cubes) == dict
+    assert landfire_cubes.keys() == landfire_file_paths.keys()
+    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), landfire_cubes.values()))
 # add-landfire-layers-to-test-dataset ends here
 # [[file:../../org/pyretechnics.org::add-constant-wind-and-moisture-to-test-dataset][add-constant-wind-and-moisture-to-test-dataset]]
 weather_cubes = {
@@ -53,20 +56,19 @@ weather_cubes = {
 }
 
 
+space_time_cubes = landfire_cubes | weather_cubes
+
+
 def test_add_weather_cubes():
-    space_time_cubes = test_read_landfire_rasters()
-    space_time_cubes.update(weather_cubes)
     assert type(space_time_cubes) == dict
     assert set(space_time_cubes.keys()) == set(landfire_file_paths.keys()).union(set(weather_cubes.keys()))
     assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), space_time_cubes.values()))
-    return space_time_cubes
 # add-constant-wind-and-moisture-to-test-dataset ends here
 # [[file:../../org/pyretechnics.org::burn-single-cell-in-test-dataset][burn-single-cell-in-test-dataset]]
 from pyretechnics.burn_cells import burn_cell_as_head_fire
 
 
 def test_burn_cell_as_head_fire():
-    space_time_cubes      = test_add_weather_cubes()
     space_time_coordinate = (0, 100, 100) # (t,y,x)
     spread_behavior       = burn_cell_as_head_fire(space_time_cubes,
                                                    space_time_coordinate,
@@ -78,7 +80,6 @@ def test_burn_cell_as_head_fire():
     assert spread_behavior["spread_direction"][2] - 0.18666064356259804 < 0.001
     assert spread_behavior["fireline_intensity"]  - 26.66139842420774   < 0.001
     assert spread_behavior["flame_length"]        - 0.3507858529698898  < 0.001
-    return spread_behavior
 # burn-single-cell-in-test-dataset ends here
 # [[file:../../org/pyretechnics.org::burn-all-cells-in-test-dataset][burn-all-cells-in-test-dataset]]
 import numpy as np
@@ -87,8 +88,7 @@ import pyretechnics.vector_utils as vu
 from pyretechnics.burn_cells import burn_cell_as_head_fire
 
 
-def test_burn_all_cells_as_head_fire():
-    space_time_cubes     = test_add_weather_cubes()
+def burn_all_cells_as_head_fire():
     (_bands, rows, cols) = space_time_cubes["elevation"].shape
     grid_shape           = (rows, cols)
 
@@ -117,6 +117,11 @@ def test_burn_all_cells_as_head_fire():
         "max_fireline_intensity": max_fireline_intensity_matrix,
         "max_flame_length"      : max_flame_length_matrix,
     }
+
+
+def test_burn_all_cells_as_head_fire():
+    spread_behavior = burn_all_cells_as_head_fire()
+    assert all(map(lambda matrix: isinstance(matrix, np.ndarray), spread_behavior.values()))
 # burn-all-cells-in-test-dataset ends here
 # [[file:../../org/pyretechnics.org::load-flammap-outputs][load-flammap-outputs]]
 from math import pi
@@ -167,5 +172,6 @@ def read_flammap_outputs(flammap_file_paths):
 
 
 def test_read_flammap_outputs():
-    return read_flammap_outputs(flammap_file_paths)
+    flammap_outputs = read_flammap_outputs(flammap_file_paths)
+    assert all(map(lambda matrix: isinstance(matrix, np.ndarray), flammap_outputs.values()))
 # load-flammap-outputs ends here

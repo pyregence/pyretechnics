@@ -7,7 +7,7 @@ cdef int divide_evenly(int dividend, int divisor)
 # def maybe_repeat_array(array, axis_repetitions)
 
 cdef class ISpaceTimeCube:
-    cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
 
 cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
@@ -18,7 +18,7 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int y_repetitions
     cdef public int x_repetitions
     cdef public float[:,:,:] data
-    cdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
     # def getTimeSeries(self, t_range, y, x)
     # def getSpatialPlane(self, t, y_range, x_range)
     # def getSubcube(self, t_range, y_range, x_range)
@@ -38,7 +38,7 @@ cdef class LazySpaceTimeCube(ISpaceTimeCube):
         pyidx cache_y,
         pyidx cache_x,
         )
-    cdef float get(LazySpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef float get(LazySpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
     # def getTimeSeries(self, t_range, y, x)
     # def getSpatialPlane(self, t, y_range, x_range)
     # def getSubcube(self, t_range, y_range, x_range)

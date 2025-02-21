@@ -1,6 +1,6 @@
 # [[file:../../org/pyretechnics.org::test-space-time-cube][test-space-time-cube]]
 import numpy as np
-from pyretechnics.space_time_cube import SpaceTimeCube, LazySpaceTimeCube
+from pyretechnics.space_time_cube import SpaceTimeCube
 
 #==============================================================
 # Raw Data - Managed by the Caller
@@ -19,8 +19,8 @@ fuel_spread_adjustment_layer       = np.arange(0,1000000).reshape(1000,1000) # O
 suppression_difficulty_index_layer = np.arange(0,1000000).reshape(1000,1000) # Optional
 
 # 3D Arrays (e.g. 1hr x 300m x 300m resolution, 1day x 30km x 30km extent)
-temperature_layer                   = np.arange(240000).reshape(24,100,100)
-relative_humidity_layer             = np.arange(240000).reshape(24,100,100)
+temperature_layer                   = np.arange(240000).reshape(24,100,100) # Optional
+relative_humidity_layer             = np.arange(240000).reshape(24,100,100) # Optional
 wind_speed_10m_layer                = np.arange(240000).reshape(24,100,100)
 upwind_direction_layer              = np.arange(240000).reshape(24,100,100)
 fuel_moisture_dead_1hr_layer        = np.arange(240000).reshape(24,100,100)
@@ -45,8 +45,8 @@ cube_shape = (
 # Create the Dictionary of Layer Names to SpaceTimeCubes
 #==============================================================
 
-def test_make_layer_lookup():
-    layer_lookup = {
+def make_layer_lookup():
+    return {
         # 2D Arrays (e.g. 30m x 30m resolution, 30km x 30km extent)
         "elevation"                    : SpaceTimeCube(cube_shape, elevation_layer),
         "slope"                        : SpaceTimeCube(cube_shape, slope_layer),
@@ -72,15 +72,18 @@ def test_make_layer_lookup():
         "foliar_moisture"              : SpaceTimeCube(cube_shape, foliar_moisture_layer),
         "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, weather_spread_adjustment_layer),    # Optional
     }
-    assert all(map(lambda cube: isinstance(cube.data, np.ndarray), layer_lookup.values()))
-    return layer_lookup
+
+
+def test_make_layer_lookup():
+    layer_lookup = make_layer_lookup()
+    assert all(map(lambda cube: isinstance(cube, SpaceTimeCube), layer_lookup.values()))
 
 #==============================================================
 # Looking Up Values in the Layers
 #==============================================================
 
 def test_use_layer_lookup_2d():
-    layer_lookup = test_make_layer_lookup()
+    layer_lookup = make_layer_lookup()
     dem_100_100  = layer_lookup["elevation"].get(0,100,100)
     slp_100_100  = layer_lookup["slope"].get(0,100,100)
     asp_100_100  = layer_lookup["aspect"].get(0,100,100)
@@ -104,7 +107,7 @@ def test_use_layer_lookup_2d():
 
 
 def test_use_layer_lookup_3d():
-    layer_lookup     = test_make_layer_lookup()
+    layer_lookup     = make_layer_lookup()
     temp_12_100_100  = layer_lookup["temperature"].get(12,100,100)
     rh_12_100_100    = layer_lookup["relative_humidity"].get(12,100,100)
     wsp_12_100_100   = layer_lookup["wind_speed_10m"].get(12,100,100)
