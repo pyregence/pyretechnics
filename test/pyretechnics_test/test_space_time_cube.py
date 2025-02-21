@@ -1,6 +1,6 @@
 # [[file:../../org/pyretechnics.org::test-space-time-cube][test-space-time-cube]]
 import numpy as np
-from pyretechnics.space_time_cube import SpaceTimeCube
+from pyretechnics.space_time_cube import SpaceTimeCube, cube_get
 
 #==============================================================
 # Raw Data - Managed by the Caller
@@ -84,16 +84,16 @@ def test_make_layer_lookup():
 
 def test_use_layer_lookup_2d():
     layer_lookup = make_layer_lookup()
-    dem_100_100  = layer_lookup["elevation"].get(0,100,100)
-    slp_100_100  = layer_lookup["slope"].get(0,100,100)
-    asp_100_100  = layer_lookup["aspect"].get(0,100,100)
-    fbfm_100_100 = layer_lookup["fuel_model"].get(0,100,100)
-    cc_100_100   = layer_lookup["canopy_cover"].get(0,100,100)
-    ch_100_100   = layer_lookup["canopy_height"].get(0,100,100)
-    cbh_100_100  = layer_lookup["canopy_base_height"].get(0,100,100)
-    cbd_100_100  = layer_lookup["canopy_bulk_density"].get(0,100,100)
-    fsa_100_100  = layer_lookup["fuel_spread_adjustment"].get(0,100,100)           # Optional
-    sdi_100_100  = layer_lookup["suppression_difficulty_index"].get(0,100,100)     # Optional
+    dem_100_100  = cube_get(layer_lookup["elevation"], 0, 100, 100)
+    slp_100_100  = cube_get(layer_lookup["slope"], 0, 100, 100)
+    asp_100_100  = cube_get(layer_lookup["aspect"], 0, 100, 100)
+    fbfm_100_100 = cube_get(layer_lookup["fuel_model"], 0, 100, 100)
+    cc_100_100   = cube_get(layer_lookup["canopy_cover"], 0, 100, 100)
+    ch_100_100   = cube_get(layer_lookup["canopy_height"], 0, 100, 100)
+    cbh_100_100  = cube_get(layer_lookup["canopy_base_height"], 0, 100, 100)
+    cbd_100_100  = cube_get(layer_lookup["canopy_bulk_density"], 0, 100, 100)
+    fsa_100_100  = cube_get(layer_lookup["fuel_spread_adjustment"], 0, 100, 100)           # Optional
+    sdi_100_100  = cube_get(layer_lookup["suppression_difficulty_index"], 0, 100, 100)     # Optional
     assert dem_100_100  == 100100
     assert slp_100_100  == 100100
     assert asp_100_100  == 100100
@@ -108,17 +108,17 @@ def test_use_layer_lookup_2d():
 
 def test_use_layer_lookup_3d():
     layer_lookup     = make_layer_lookup()
-    temp_12_100_100  = layer_lookup["temperature"].get(12,100,100)
-    rh_12_100_100    = layer_lookup["relative_humidity"].get(12,100,100)
-    wsp_12_100_100   = layer_lookup["wind_speed_10m"].get(12,100,100)
-    wdir_12_100_100  = layer_lookup["upwind_direction"].get(12,100,100)
-    md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"].get(12,100,100)
-    md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"].get(12,100,100)
-    md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"].get(12,100,100)
-    mlh_12_100_100   = layer_lookup["fuel_moisture_live_herbaceous"].get(12,100,100)
-    mlw_12_100_100   = layer_lookup["fuel_moisture_live_woody"].get(12,100,100)
-    fm_12_100_100    = layer_lookup["foliar_moisture"].get(12,100,100)
-    wsa_12_100_100   = layer_lookup["weather_spread_adjustment"].get(12,100,100) # Optional
+    temp_12_100_100  = cube_get(layer_lookup["temperature"], 12, 100, 100)
+    rh_12_100_100    = cube_get(layer_lookup["relative_humidity"], 12, 100, 100)
+    wsp_12_100_100   = cube_get(layer_lookup["wind_speed_10m"], 12, 100, 100)
+    wdir_12_100_100  = cube_get(layer_lookup["upwind_direction"], 12, 100, 100)
+    md1_12_100_100   = cube_get(layer_lookup["fuel_moisture_dead_1hr"], 12, 100, 100)
+    md10_12_100_100  = cube_get(layer_lookup["fuel_moisture_dead_10hr"], 12, 100, 100)
+    md100_12_100_100 = cube_get(layer_lookup["fuel_moisture_dead_100hr"], 12, 100, 100)
+    mlh_12_100_100   = cube_get(layer_lookup["fuel_moisture_live_herbaceous"], 12, 100, 100)
+    mlw_12_100_100   = cube_get(layer_lookup["fuel_moisture_live_woody"], 12, 100, 100)
+    fm_12_100_100    = cube_get(layer_lookup["foliar_moisture"], 12, 100, 100)
+    wsa_12_100_100   = cube_get(layer_lookup["weather_spread_adjustment"], 12, 100, 100) # Optional
     assert temp_12_100_100  == 121010
     assert rh_12_100_100    == 121010
     assert wsp_12_100_100   == 121010

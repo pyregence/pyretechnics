@@ -74,6 +74,13 @@ class ISpaceTimeCube:
         pass
 
 
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def cube_get(space_time_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
+    return space_time_cube.get(t, y, x)
+
+
 @cy.cclass
 class SpaceTimeCube(ISpaceTimeCube):
     """

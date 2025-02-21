@@ -8,6 +8,8 @@ cdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_lengt
 cdef class ISpaceTimeCube:
     cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
 
+cpdef float cube_get(ISpaceTimeCube space_time_cube, pyidx t, pyidx y, pyidx x) noexcept
+
 cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
     cdef public unsigned long size
