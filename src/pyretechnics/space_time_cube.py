@@ -65,7 +65,7 @@ def maybe_repeat_array(array, axis_repetitions):
 # [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
 @cy.cclass
 class ISpaceTimeCube:
-    @cy.ccall
+    @cy.cfunc
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         pass
@@ -166,7 +166,7 @@ class SpaceTimeCube(ISpaceTimeCube):
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
 
-    @cy.ccall
+    @cy.cfunc
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
@@ -462,7 +462,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
             return subcube
 
 
-    @cy.ccall
+    @cy.cfunc
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """

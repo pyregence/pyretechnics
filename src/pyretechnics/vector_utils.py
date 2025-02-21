@@ -111,7 +111,7 @@ def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
     return (vector_3d[0], vector_3d[1])
 
 
-@cy.ccall
+@cy.cfunc
 @cy.exceptval(check=False)
 def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
     x        : cy.float = vector_3d[0]
