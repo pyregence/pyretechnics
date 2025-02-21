@@ -2389,27 +2389,18 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     # FIXME: I don't think the "no burnable cells" condition can ever be met currently.
     # Spread the fire until an exit condition is reached
-    start_of_timestep: cy.float = start_time
-    end_of_timestep  : cy.float = max_stop_time
-    while(start_of_timestep < max_stop_time
-          and start_of_timestep != end_of_timestep
-          and (nbt.nonempty_tracked_cells(sim_state["tracked_cells"])
-               or len(sim_state["spot_ignitions"]) > 0)):
-        # Compute max_timestep based on the remaining time in the temporal band and simulation
-        start_of_timestep                      = sim_state["simulation_time"]
-        remaining_time_in_band      : cy.float = band_duration - start_of_timestep % band_duration
-        remaining_time_in_simulation: cy.float = max_stop_time - start_of_timestep
-        max_timestep                : cy.float = min(remaining_time_in_band, remaining_time_in_simulation)
-
+    remaining_time_in_simulation: cy.float = max_stop_time - start_time
+    early_exit_threshold        : cy.float = 1.0 / 60.0 # 1 second
+    while((remaining_time_in_simulation > early_exit_threshold)       # 1. There is still time left in the simulation
+          and (nbt.nonempty_tracked_cells(sim_state["tracked_cells"]) # 2. There are burning cells on the grid
+               or len(sim_state["spot_ignitions"]) > 0)):             # 3. There are embers waiting to catch fire on the grid
         # Spread fire one timestep
-        sim_state       = spread_one_timestep(sim_state, sinputs, fb_opts, max_timestep)
-        end_of_timestep = sim_state["simulation_time"]
+        sim_state                    = spread_one_timestep(sim_state, sinputs, fb_opts, remaining_time_in_simulation)
+        remaining_time_in_simulation = max_stop_time - sim_state["simulation_time"]
 
     # Determine the stop_condition
     stop_condition: str = ("max duration reached"
-                           if start_of_timestep >= max_stop_time
-                           else "zero-length timestep"
-                           if start_of_timestep == end_of_timestep
+                           if remaining_time_in_simulation <= early_exit_threshold
                            else "no burnable cells")
 
     # FIXME: REVIEW Perhaps phi_star would be better off in sim_state
@@ -2418,7 +2409,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     # Return the final simulation results
     return {
-        "stop_time"      : end_of_timestep,
+        "stop_time"      : sim_state["simulation_time"],
         "stop_condition" : stop_condition,
         "output_matrices": sim_state["output_matrices"],
     } | ({
