@@ -83,44 +83,12 @@ def test_burn_cell_as_head_fire():
 # burn-single-cell-in-test-dataset ends here
 # [[file:../../org/pyretechnics.org::burn-all-cells-in-test-dataset][burn-all-cells-in-test-dataset]]
 import numpy as np
-import pyretechnics.conversion as conv
-import pyretechnics.vector_utils as vu
-from pyretechnics.burn_cells import burn_cell_as_head_fire
-
-
-def burn_all_cells_as_head_fire():
-    (_bands, rows, cols) = space_time_cubes["elevation"].shape
-    grid_shape           = (rows, cols)
-
-    max_fire_type_matrix          = np.zeros(grid_shape, dtype="uint8")
-    max_spread_rate_matrix        = np.zeros(grid_shape, dtype="float32")
-    max_spread_direction_matrix   = np.zeros(grid_shape, dtype="float32")
-    max_fireline_intensity_matrix = np.zeros(grid_shape, dtype="float32")
-    max_flame_length_matrix       = np.zeros(grid_shape, dtype="float32")
-
-    for y in range(rows):
-        for x in range(cols):
-            space_time_coordinate              = (0, y, x) # (t,y,x)
-            spread_behavior                    = burn_cell_as_head_fire(space_time_cubes,
-                                                                        space_time_coordinate,
-                                                                        surface_lw_ratio_model="rothermel")
-            max_fire_type_matrix[y,x]          = spread_behavior["fire_type"]
-            max_spread_rate_matrix[y,x]        = spread_behavior["spread_rate"]
-            max_spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(spread_behavior["spread_direction"])
-            max_fireline_intensity_matrix[y,x] = spread_behavior["fireline_intensity"]
-            max_flame_length_matrix[y,x]       = spread_behavior["flame_length"]
-
-    return {
-        "max_fire_type"         : max_fire_type_matrix,
-        "max_spread_rate"       : max_spread_rate_matrix,
-        "max_spread_direction"  : max_spread_direction_matrix,
-        "max_fireline_intensity": max_fireline_intensity_matrix,
-        "max_flame_length"      : max_flame_length_matrix,
-    }
-
+from pyretechnics.burn_cells import burn_all_cells_as_head_fire
 
 def test_burn_all_cells_as_head_fire():
-    spread_behavior = burn_all_cells_as_head_fire()
+    spread_behavior = burn_all_cells_as_head_fire(space_time_cubes,
+                                                  0,
+                                                  surface_lw_ratio_model="rothermel")
     assert all(map(lambda matrix: isinstance(matrix, np.ndarray), spread_behavior.values()))
 # burn-all-cells-in-test-dataset ends here
 # [[file:../../org/pyretechnics.org::load-flammap-outputs][load-flammap-outputs]]

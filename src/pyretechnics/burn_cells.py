@@ -2,10 +2,11 @@
 # cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
+import numpy as np
 if cython.compiled:
     from cython.cimports.pyretechnics.cy_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
@@ -14,7 +15,7 @@ if cython.compiled:
 else:
     from pyretechnics.py_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
-    from pyretechnics.space_time_cube import ISpaceTimeCube
+    from pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
@@ -26,7 +27,6 @@ else:
 @cy.inline
 def SpreadBehavior_to_dict(sb: SpreadBehavior) -> dict:
     return {
-        "dphi_dt"           : sb.dphi_dt,
         "fire_type"         : sb.fire_type,
         "spread_rate"       : sb.spread_rate,
         "spread_direction"  : sb.spread_direction,
@@ -42,7 +42,6 @@ def value_at_coord(space_time_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx
     return space_time_cube.get(t, y, x)
 
 
-# TODO: Create a version of this function that runs efficiently over a space_time_region
 @cy.ccall
 def burn_cell_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube],
                            space_time_coordinate : coord_tyx,
@@ -75,7 +74,6 @@ def burn_cell_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube],
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
-    - dphi_dt            :: phi/min
     - fire_type          :: 0 (unburned), 1 (surface), 2 (passive_crown), or 3 (active_crown)
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
@@ -148,7 +146,6 @@ def burn_cell_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube],
         #============================================================================================
 
         return {
-            "dphi_dt"           : 0.0,
             "fire_type"         : 0, # unburned
             "spread_rate"       : 0.0,
             "spread_direction"  : spread_direction,
@@ -260,9 +257,104 @@ def burn_cell_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube],
             #========================================================================================
 
             return SpreadBehavior_to_dict(surface_fire_max_simple)
+
+
+# TODO: Make a more efficient version that avoids space_time_cubes dictionary lookups for each cell
+@cy.ccall
+def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube],
+                                t                     : pyidx,
+                                y_range               : tuple[pyidx, pyidx]|None = None,
+                                x_range               : tuple[pyidx, pyidx]|None = None,
+                                use_wind_limit        : cy.bint = True,
+                                surface_lw_ratio_model: str = "behave",
+                                crown_max_lw_ratio    : cy.float = 1e10) -> dict:
+    """
+    Given these inputs:
+    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+      - slope                         :: rise/run
+      - aspect                        :: degrees clockwise from North
+      - fuel_model                    :: integer index in fm.fuel_model_table
+      - canopy_cover                  :: 0-1
+      - canopy_height                 :: m
+      - canopy_base_height            :: m
+      - canopy_bulk_density           :: kg/m^3
+      - wind_speed_10m                :: km/hr
+      - upwind_direction              :: degrees clockwise from North
+      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_10hr       :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_100hr      :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_herbaceous :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_woody      :: kg moisture/kg ovendry weight
+      - foliar_moisture               :: kg moisture/kg ovendry weight
+      - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
+      - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
+    - t                            :: temporal integer index into the ISpaceTimeCube objects
+    - y_range                      :: (min_y, max_y) spatial integer index into the ISpaceTimeCube objects (Optional)
+    - x_range                      :: (min_x, max_x) spatial integer index into the ISpaceTimeCube objects (Optional)
+    - use_wind_limit               :: boolean (Optional)
+    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
+    - crown_max_lw_ratio           :: float > 0.0 (Optional)
+
+    return a dictionary with these keys:
+    - fire_type          :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+    - spread_rate        :: 2D float array (m/min)
+    - spread_direction   :: 2D float array (degrees clockwise from North)
+    - fireline_intensity :: 2D float array (kW/m)
+    - flame_length       :: 2D float array (m)
+    """
+    slope_cube  : ISpaceTimeCube      = space_time_cubes["slope"]
+    bands       : pyidx               = slope_cube.shape[0]
+    rows        : pyidx               = slope_cube.shape[1]
+    cols        : pyidx               = slope_cube.shape[2]
+    grid_shape  : tuple[int, int]     = (rows, cols)
+    y_range_real: tuple[pyidx, pyidx] = to_positive_index_range(y_range, rows)
+    x_range_real: tuple[pyidx, pyidx] = to_positive_index_range(x_range, cols)
+    min_y       : pyidx               = y_range_real[0]
+    max_y       : pyidx               = y_range_real[1]
+    min_x       : pyidx               = x_range_real[0]
+    max_x       : pyidx               = x_range_real[1]
+
+    if not(0 <= t < bands):
+        raise ValueError("The t value is out of range of the space_time_cubes.")
+
+    if not(0 <= min_y < max_y <= rows):
+        raise ValueError("The y_range values are out of range of the space_time_cubes.")
+
+    if not(0 <= min_x < max_x <= rows):
+        raise ValueError("The x_range values are out of range of the space_time_cubes.")
+
+    fire_type_matrix         : cy.uchar[:,:] = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix       : cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix  : cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix: cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix      : cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+
+    y                    : pyidx
+    x                    : pyidx
+    space_time_coordinate: coord_tyx
+    for y in range(min_y, max_y):
+        for x in range(min_x, max_x):
+            space_time_coordinate          = (t, y, x)
+            spread_behavior                = burn_cell_as_head_fire(space_time_cubes,
+                                                                    space_time_coordinate,
+                                                                    use_wind_limit,
+                                                                    surface_lw_ratio_model,
+                                                                    crown_max_lw_ratio)
+            fire_type_matrix[y,x]          = spread_behavior["fire_type"]
+            spread_rate_matrix[y,x]        = spread_behavior["spread_rate"]
+            spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(spread_behavior["spread_direction"])
+            fireline_intensity_matrix[y,x] = spread_behavior["fireline_intensity"]
+            flame_length_matrix[y,x]       = spread_behavior["flame_length"]
+
+    return {
+        "fire_type"         : fire_type_matrix,
+        "spread_rate"       : spread_rate_matrix,
+        "spread_direction"  : spread_direction_matrix,
+        "fireline_intensity": fireline_intensity_matrix,
+        "flame_length"      : flame_length_matrix,
+    }
 # burn-cell-as-head-fire ends here
 # [[file:../../org/pyretechnics.org::burn-cell-toward-azimuth][burn-cell-toward-azimuth]]
-# TODO: Create a version of this function that runs efficiently over a space_time_region
 @cy.ccall
 def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
                              space_time_coordinate : coord_tyx,
@@ -297,7 +389,6 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
     - crown_max_lw_ratio           :: float > 0.0 (Optional)
 
     return a dictionary with these fire behavior values for the space-time coordinate (t,y,x):
-    - dphi_dt            :: phi/min
     - fire_type          :: 0 (unburned), 1 (surface), 2 (passive_crown), or 3 (active_crown)
     - spread_rate        :: m/min
     - spread_direction   :: (x, y, z) unit vector on the slope-tangential plane
@@ -369,7 +460,6 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
         #============================================================================================
 
         return {
-            "dphi_dt"           : 0.0,
             "fire_type"         : 0, # unburned
             "spread_rate"       : 0.0,
             "spread_direction"  : spread_direction,
@@ -484,4 +574,103 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
             #========================================================================================
 
             return SpreadBehavior_to_dict(surface_fire_azimuth)
+
+
+# TODO: Make a more efficient version that avoids space_time_cubes dictionary lookups for each cell
+@cy.ccall
+def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
+                                  azimuth               : cy.float,
+                                  t                     : pyidx,
+                                  y_range               : tuple[pyidx, pyidx]|None = None,
+                                  x_range               : tuple[pyidx, pyidx]|None = None,
+                                  use_wind_limit        : cy.bint = True,
+                                  surface_lw_ratio_model: str = "behave",
+                                  crown_max_lw_ratio    : cy.float = 1e10) -> dict:
+    """
+    Given these inputs:
+    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+      - slope                         :: rise/run
+      - aspect                        :: degrees clockwise from North
+      - fuel_model                    :: integer index in fm.fuel_model_table
+      - canopy_cover                  :: 0-1
+      - canopy_height                 :: m
+      - canopy_base_height            :: m
+      - canopy_bulk_density           :: kg/m^3
+      - wind_speed_10m                :: km/hr
+      - upwind_direction              :: degrees clockwise from North
+      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_10hr       :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_100hr      :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_herbaceous :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_woody      :: kg moisture/kg ovendry weight
+      - foliar_moisture               :: kg moisture/kg ovendry weight
+      - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
+      - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
+    - azimuth                      :: degrees clockwise from North on the horizontal plane
+    - t                            :: temporal integer index into the ISpaceTimeCube objects
+    - y_range                      :: (min_y, max_y) spatial integer index into the ISpaceTimeCube objects (Optional)
+    - x_range                      :: (min_x, max_x) spatial integer index into the ISpaceTimeCube objects (Optional)
+    - use_wind_limit               :: boolean (Optional)
+    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
+    - crown_max_lw_ratio           :: float > 0.0 (Optional)
+
+    return a dictionary with these keys:
+    - fire_type          :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+    - spread_rate        :: 2D float array (m/min)
+    - spread_direction   :: 2D float array (degrees clockwise from North)
+    - fireline_intensity :: 2D float array (kW/m)
+    - flame_length       :: 2D float array (m)
+    """
+    slope_cube  : ISpaceTimeCube      = space_time_cubes["slope"]
+    bands       : pyidx               = slope_cube.shape[0]
+    rows        : pyidx               = slope_cube.shape[1]
+    cols        : pyidx               = slope_cube.shape[2]
+    grid_shape  : tuple[int, int]     = (rows, cols)
+    y_range_real: tuple[pyidx, pyidx] = to_positive_index_range(y_range, rows)
+    x_range_real: tuple[pyidx, pyidx] = to_positive_index_range(x_range, cols)
+    min_y       : pyidx               = y_range_real[0]
+    max_y       : pyidx               = y_range_real[1]
+    min_x       : pyidx               = x_range_real[0]
+    max_x       : pyidx               = x_range_real[1]
+
+    if not(0 <= t < bands):
+        raise ValueError("The t value is out of range of the space_time_cubes.")
+
+    if not(0 <= min_y < max_y <= rows):
+        raise ValueError("The y_range values are out of range of the space_time_cubes.")
+
+    if not(0 <= min_x < max_x <= rows):
+        raise ValueError("The x_range values are out of range of the space_time_cubes.")
+
+    fire_type_matrix         : cy.uchar[:,:] = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix       : cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix  : cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix: cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix      : cy.float[:,:] = np.zeros(grid_shape, dtype="float32")
+
+    y                    : pyidx
+    x                    : pyidx
+    space_time_coordinate: coord_tyx
+    for y in range(min_y, max_y):
+        for x in range(min_x, max_x):
+            space_time_coordinate          = (t, y, x)
+            spread_behavior                = burn_cell_toward_azimuth(space_time_cubes,
+                                                                      space_time_coordinate,
+                                                                      azimuth,
+                                                                      use_wind_limit,
+                                                                      surface_lw_ratio_model,
+                                                                      crown_max_lw_ratio)
+            fire_type_matrix[y,x]          = spread_behavior["fire_type"]
+            spread_rate_matrix[y,x]        = spread_behavior["spread_rate"]
+            spread_direction_matrix[y,x]   = vu.spread_direction_vector_to_angle(spread_behavior["spread_direction"])
+            fireline_intensity_matrix[y,x] = spread_behavior["fireline_intensity"]
+            flame_length_matrix[y,x]       = spread_behavior["flame_length"]
+
+    return {
+        "fire_type"         : fire_type_matrix,
+        "spread_rate"       : spread_rate_matrix,
+        "spread_direction"  : spread_direction_matrix,
+        "fireline_intensity": fireline_intensity_matrix,
+        "flame_length"      : flame_length_matrix,
+    }
 # burn-cell-toward-azimuth ends here

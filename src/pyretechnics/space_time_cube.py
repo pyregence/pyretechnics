@@ -31,14 +31,17 @@ def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
             raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
-def to_positive_index_range(index_range, axis_length):
+@cy.cfunc
+@cy.exceptval(check=False)
+def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: pyidx) -> tuple[pyidx, pyidx]:
     """
     Translate None and negative indices to positive indices.
     """
     if index_range == None:
         return (0, axis_length)
     else:
-        (start, stop) = index_range
+        start: pyidx|None = index_range[0]
+        stop : pyidx|None = index_range[1]
         return (
             0 if start == None else axis_length + start if start < 0 else start,
             axis_length if stop == None else axis_length + stop if stop < 0 else stop
