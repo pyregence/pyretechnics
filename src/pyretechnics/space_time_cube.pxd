@@ -17,7 +17,8 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int t_repetitions
     cdef public int y_repetitions
     cdef public int x_repetitions
-    cdef public float[:,:,:] data
+    # NOTE we use const (read-only MemoryView) so that Cython will accept to use a read-only array, which is required for shared-memory parallelism.
+    cdef public const float[:,:,:] data
     cdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
     # def getTimeSeries(self, t_range, y, x)
     # def getSpatialPlane(self, t, y_range, x_range)
