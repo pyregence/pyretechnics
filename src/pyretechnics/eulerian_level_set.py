@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
-# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
+# cython: initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 import numpy as np

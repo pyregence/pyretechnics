@@ -12,6 +12,7 @@ Usage: $0 <command>
   - profile
   - snakeviz
   - build-cython
+  - build-cython-profiled
   - build-guix
   - build-dist
   - upload-testpypi
@@ -71,7 +72,11 @@ case $CMD in
         ;;
 
     "build-cython")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- cythonize -3 -i -a --exclude="src/pyretechnics/py_types.py" src/pyretechnics/*.py
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- cythonize -X profile=False -3 -i -a --exclude="src/pyretechnics/py_types.py" src/pyretechnics/*.py
+        ;;
+
+    "build-cython-profiled")
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- cythonize -X profile=True -3 -i -a --exclude="src/pyretechnics/py_types.py" src/pyretechnics/*.py
         ;;
 
     "build-guix")

@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::space-time-cube-imports][space-time-cube-imports]]
-# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
+# cython: initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 from functools import reduce

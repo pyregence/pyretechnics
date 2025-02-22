@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::load-raster][load-raster]]
-# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
+# cython: initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import numpy as np
 import rasterio

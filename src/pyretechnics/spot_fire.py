@@ -1,5 +1,5 @@
 # [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
-# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
+# cython: initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 if cython.compiled:

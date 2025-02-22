@@ -1,4 +1,4 @@
-# cython: profile=False, initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
+# cython: initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 """
 Custom data structures for keeping track of cells in the narrow band.
 
