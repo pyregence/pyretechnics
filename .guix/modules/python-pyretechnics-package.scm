@@ -96,14 +96,14 @@
                    python-hatchling
                    python-pytest
                    python-twine
-                   python-snakeviz))
+                   python-snakeviz
+                   python-matplotlib))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper
                        ;; Python dependency libraries
                        python-numpy
                        python-rasterio
-                       python-matplotlib
                        python-sortedcontainers
                        python-cython-3))
    (synopsis "A Python library for simulating fire behavior in a variety of ways.")
