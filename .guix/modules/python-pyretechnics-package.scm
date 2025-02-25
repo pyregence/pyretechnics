@@ -8,8 +8,7 @@
   #:use-module ((gnu packages geo)             #:select (gdal))
   #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
-  #:use-module ((gnu packages python-build)    #:select (python-hatchling
-                                                         python-setuptools
+  #:use-module ((gnu packages python-build)    #:select (python-setuptools
                                                          python-wheel))
   #:use-module ((gnu packages python-web)      #:select (python-tornado))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy
@@ -93,11 +92,11 @@
                    ;; Build tools
                    emacs-minimal
                    emacs-htmlize
-                   python-hatchling
                    python-pytest
                    python-twine
                    python-snakeviz
-                   python-matplotlib))
+                   python-matplotlib
+                   python-setuptools))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper

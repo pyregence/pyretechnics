@@ -16,7 +16,7 @@ dependencies = [
         "numpy",
         "rasterio",
         "sortedcontainers",
-        "cython",
+        "Cython",
 ]
 classifiers = [
         "Programming Language :: Python :: 3",
@@ -44,10 +44,11 @@ dev = [
 
 [build-system]
 requires = [
-        "hatchling",
-        "cython",
+        "setuptools",
+        "Cython",
+        "numpy",
 ]
-build-backend = "hatchling.build"
+build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]

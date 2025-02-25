@@ -1,5 +1,4 @@
 # [[file:../../org/pyretechnics.org::units-conversion][units-conversion]]
-# cython: initializedcheck=False, cdivision=True, wraparound=False, boundscheck=False
 import cython
 import cython as cy
 if cython.compiled:
