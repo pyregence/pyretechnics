@@ -7,3 +7,4 @@ rasterio == 1.3.7
 sortedcontainers == 2.4.0
 Cython == 3.0.11
 setuptools == 67.6.1
+wheel == 0.40.0
