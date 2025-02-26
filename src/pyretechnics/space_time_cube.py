@@ -4,6 +4,7 @@ import cython as cy
 from functools import reduce
 import numpy as np
 if cython.compiled:
+    import cython.cimports.numpy as np
     from cython.cimports.pyretechnics.cy_types import pyidx
 else:
     from pyretechnics.py_types import pyidx
@@ -394,7 +395,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
     shape        : tuple[cy.int, cy.int, cy.int]
     subcube_shape: tuple[cy.int, cy.int, cy.int]
     cache_shape  : tuple[cy.int, cy.int, cy.int]
-    cache        : object[:,:,:]
+    cache        : np.ndarray
     load_subcube : object
 
 
@@ -454,7 +455,6 @@ class LazySpaceTimeCube(ISpaceTimeCube):
         self.load_subcube  = load_subcube
 
 
-    # TODO: Make self.cache into a 1D array of cy.pointer(SpaceTimeCube)
     @cy.cfunc
     def __getOrLoadSubcube(self, cache_t: pyidx, cache_y: pyidx, cache_x: pyidx) -> SpaceTimeCube:
         """
@@ -462,7 +462,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
         has already been loaded. Otherwise, call self.load_subcube to load it, store
         it in self.cache, and return it.
         """
-        subcube: SpaceTimeCube = self.cache[cache_t, cache_y, cache_x]
+        subcube: SpaceTimeCube = cy.cast(SpaceTimeCube, self.cache[cache_t, cache_y, cache_x])
         if subcube:
             return subcube
         else:

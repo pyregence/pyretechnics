@@ -1,3 +1,4 @@
+cimport numpy as np
 from pyretechnics.cy_types cimport pyidx
 
 cdef bint is_pos_int(object x) noexcept
@@ -32,7 +33,7 @@ cdef class LazySpaceTimeCube(ISpaceTimeCube):
     cdef public (int, int, int) shape
     cdef public (int, int, int) subcube_shape
     cdef public (int, int, int) cache_shape
-    cdef public object[:,:,:] cache
+    cdef public np.ndarray cache
     cdef public object load_subcube
     cdef SpaceTimeCube __getOrLoadSubcube(
         LazySpaceTimeCube self,
