@@ -9,7 +9,6 @@
   #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-setuptools
-                                                         python-setuptools-scm
                                                          python-wheel))
   #:use-module ((gnu packages python-web)      #:select (python-tornado))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy
@@ -69,7 +68,7 @@
 (define-public python-pyretechnics
   (package
    (name "python-pyretechnics")
-   (version "2024.11.7")
+   (version "2025.2.26")
    (source (local-file "../.."
                        "pyretechnics-checkout"
                        #:recursive? #t
@@ -97,8 +96,7 @@
                    python-twine
                    python-snakeviz
                    python-matplotlib
-                   python-setuptools
-                   python-setuptools-scm))
+                   python-setuptools))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper

@@ -1,6 +1,6 @@
 [project]
 name = "pyretechnics"
-dynamic = ["version"]
+version = "2025.2.26"
 authors = [
         {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
         {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
@@ -44,8 +44,7 @@ dev = [
 
 [build-system]
 requires = [
-        "setuptools>=64",
-        "setuptools-scm>=8",
+        "setuptools",
         "Cython",
         "numpy",
 ]
@@ -54,5 +53,3 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 pythonpath = "src"
-
-[tool.setuptools_scm]
