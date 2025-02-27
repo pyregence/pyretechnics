@@ -104,6 +104,13 @@ compact_fuel_model_table = cy.declare(dict[int, CompactFuelModel], {
 # fuel-model-compact-table ends here
 # [[file:../../org/pyretechnics.org::expand-compact-fuel-model-table][expand-compact-fuel-model-table]]
 @cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def is_burnable_fuel_model_number(fuel_model_number: cy.int) -> cy.bint:
+    return not (91 <= fuel_model_number <= 99)
+
+
+@cy.cfunc
 @cy.exceptval(check=False)
 def compute_exp_A_sigma(A: cy.float, sigma_ij: cy.float) -> cy.float:
     if sigma_ij > 0.0:
@@ -180,7 +187,7 @@ def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
         S_T                  = (0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555),
         S_e                  = (0.01, 0.01, 0.01, 0.01, 0.01, 0.01),
         dynamic              = dynamic,
-        burnable             = not (91 <= fuel_model_number <= 99),
+        burnable             = is_burnable_fuel_model_number(fuel_model_number),
         exp_A_sigma          = (compute_exp_A_sigma(-138.0, sigma_dead_1hr),
                                 compute_exp_A_sigma(-138.0, sigma_dead_10hr),
                                 compute_exp_A_sigma(-138.0, sigma_dead_100hr),

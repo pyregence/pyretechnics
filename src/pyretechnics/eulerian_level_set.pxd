@@ -53,8 +53,20 @@
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
 # cdef bint opposite_phi_signs(float[:,:] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept
-# cdef bint is_frontier_cell(float[:,:] phi_matrix, pyidx y, pyidx x) noexcept
-# cdef set identify_all_frontier_cells(float[:,:] phi_matrix, pyidx rows, pyidx cols)
+# cdef bint is_frontier_cell(
+#     float[:,:] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
+#     pyidx y,
+#     pyidx x,
+#     ) noexcept
+# cdef set identify_all_frontier_cells(
+#     float[:,:] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
+#     pyidx rows,
+#     pyidx cols,
+#     )
 # cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)
 # cdef void spot_from_burned_cell(
 #     SpreadInputs space_time_cubes,
@@ -226,6 +238,8 @@
 #     set frontier_additions,
 #     set frontier_removals,
 #     float[:,:] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
 #     pyidx y,
 #     pyidx x,
 #     ) noexcept
@@ -234,6 +248,8 @@
 #     list[BurnedCellInfo] spread_ignited_cells,
 #     list[BurnedCellInfo] spot_ignited_cells,
 #     float[:,:] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
 #     )
 # cdef set apply_frontier_diff(set frontier_cells_old, set frontier_additions, set frontier_removals)
 # cdef NarrowBandTracker update_tracked_cells_with_frontier_diff(
