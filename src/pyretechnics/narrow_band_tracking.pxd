@@ -10,12 +10,12 @@ cdef bint segment_is_pos_at(CellsCountSegment segment, pyidx k) noexcept
 cdef CellsCountSegment make_CellsCountSegment(pyidx y, pyidx x0)
 
 cdef class NarrowBandTracker:
-    cdef public pyidx n_tracked_cells # TODO: Why is this marked public?
+    cdef public int n_tracked_cells
     cdef pyidx y_high
     cdef pyidx x_high
     cdef pyidx ys_offset
     cdef list ys_list
-    cdef pyidx _rows_count
+    cdef int _rows_count
 
 cdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
 cdef void inc_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept

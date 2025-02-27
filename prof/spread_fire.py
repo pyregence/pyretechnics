@@ -124,9 +124,10 @@ fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes,
                                                      cube_refresh_rates=cube_refresh_rates)
 runtime_stop        = time.perf_counter()
 
-stop_time       = fire_spread_results["stop_time"]       # minutes
-stop_condition  = fire_spread_results["stop_condition"]  # "max duration reached" or "no burnable cells"
-output_matrices = fire_spread_results["output_matrices"] # updated 2D arrays (mutated from inputs)
+stop_time           = fire_spread_results["stop_time"]         # minutes
+stop_condition      = fire_spread_results["stop_condition"]    # "max duration reached" or "no burnable cells"
+output_matrices     = fire_spread_results["output_matrices"]   # updated 2D arrays (mutated from inputs)
+num_tracked_cells   = fire_spread_results["num_tracked_cells"] # cell count
 
 #============================================================================================
 # Print out the acres burned, total runtime, and runtime per burned cell
@@ -154,13 +155,14 @@ def empirical_LoW(ftype):
 
 
 num_crowned = np.count_nonzero(ftype > 1)
-print(f"Crowning fraction: {num_crowned / num_burned_cells}")
-print(f"Empirical length/width ratio: {empirical_LoW(ftype)}")
+print(f"Tracked Cells: {num_tracked_cells}")
+print(f"Crowning Fraction: {num_crowned / num_burned_cells}")
+print(f"Empirical Length/Width Ratio: {empirical_LoW(ftype)}")
 
 print("Acres Burned: " + str(acres_burned))
 print("Total Runtime: " + str(simulation_runtime) + " seconds")
-print("Runtime per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
+print("Runtime Per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
 Mha_per_cell = 0.09e-6
 ms_per_hr = 3.6e6
-print(f"Areal throughput: {(ms_per_hr*Mha_per_cell/runtime_per_burned_cell):.2f} Mha/(CPU.hr)")
+print(f"Areal Throughput: {(ms_per_hr*Mha_per_cell/runtime_per_burned_cell):.2f} Mha/(CPU.hr)")
 # run-spread-fire-with-phi-field ends here
