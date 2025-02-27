@@ -11,16 +11,16 @@ else:
 @cy.cclass
 class BufferedRandGen:
     numpy_rand     : Generator
-    uniform_buf    : cy.float[:]
+    uniform_buf    : cy.float[::1]
     uniform_pos    : pyidx
-    normal_buf     : cy.float[:]
+    normal_buf     : cy.float[::1]
     normal_pos     : pyidx
-    poisson16_buf  : cy.long[:]   # An array of Poisson(16) draws.
+    poisson16_buf  : cy.long[::1]   # An array of Poisson(16) draws.
     poisson16_pos  : pyidx
-    poisson1_buf   : cy.long[:]   # An array of Poisson(1) draws.
+    poisson1_buf   : cy.long[::1]   # An array of Poisson(1) draws.
     poisson1_pos   : pyidx
-    poisson_exp_buf: cy.double[:] # An array of Exponential(1) draws, with the first value potentially modified.
-    poisson_exp_pos: pyidx        # Cursor in the above array
+    poisson_exp_buf: cy.double[::1] # An array of Exponential(1) draws, with the first value potentially modified.
+    poisson_exp_pos: pyidx          # Cursor in the above array
     # NOTE: INVARIANT poisson_exp_buf[poisson_exp_pos] is the distance to the next Poisson Process point.
 
 

@@ -97,7 +97,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     t_repetitions: cy.int
     y_repetitions: cy.int
     x_repetitions: cy.int
-    data         : cy.float[:,:,:] # FIXME: Restore polymorphism for the underlying Numpy arrays
+    data         : cy.float[:,:,::1] # FIXME: Restore polymorphism for the underlying Numpy arrays
 
 
     def __init__(self, cube_shape: tuple[int, int, int], base: object) -> cy.void:

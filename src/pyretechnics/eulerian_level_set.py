@@ -38,7 +38,7 @@ else:
 # NOTE: No longer used in tight loops.
 @cy.cfunc
 @cy.exceptval(check=False)
-def calc_dphi_dx_approx(phi_matrix: cy.float[:,:], dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
+def calc_dphi_dx_approx(phi_matrix: cy.float[:,::1], dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of `phi_matrix` in the x (west->east)
     direction at grid cell (x,y) given the cell width `dx`.
@@ -51,7 +51,7 @@ def calc_dphi_dx_approx(phi_matrix: cy.float[:,:], dx: cy.float, x: pyidx, y: py
 # NOTE: No longer used in tight loops.
 @cy.cfunc
 @cy.exceptval(check=False)
-def calc_dphi_dy_approx(phi_matrix: cy.float[:,:], dy: cy.float, x: pyidx, y: pyidx) -> cy.float:
+def calc_dphi_dy_approx(phi_matrix: cy.float[:,::1], dy: cy.float, x: pyidx, y: pyidx) -> cy.float:
     """
     Calculate the spatial gradient of `phi_matrix` in the y (south->north)
     direction at grid cell (x,y) given the cell height `dy`.
@@ -64,7 +64,7 @@ def calc_dphi_dy_approx(phi_matrix: cy.float[:,:], dy: cy.float, x: pyidx, y: py
 # NOTE: No longer used in tight loops.
 @cy.cfunc
 @cy.exceptval(check=False)
-def calc_phi_gradient_approx(phi_matrix: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
+def calc_phi_gradient_approx(phi_matrix: cy.float[:,::1], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
     Calculate the spatial gradient of `phi_matrix` at grid cell (x,y)
     given the cell width `dx` and the cell height `dy`.
@@ -78,7 +78,7 @@ def calc_phi_gradient_approx(phi_matrix: cy.float[:,:], dx: cy.float, dy: cy.flo
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
-def calc_phi_normal_vector(phi_matrix: cy.float[:,:], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
+def calc_phi_normal_vector(phi_matrix: cy.float[:,::1], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
     """
     Calculate the phi field normal vector in the x and y dimensions.
 
@@ -615,7 +615,7 @@ def decode_cell_index(encoded_cell_index: object) -> coord_yx:
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
-def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyidx, x2: pyidx) -> cy.bint:
+def opposite_phi_signs(phi_matrix: cy.float[:,::1], y1: pyidx, x1: pyidx, y2: pyidx, x2: pyidx) -> cy.bint:
     """
     Return True if the phi values at cells (x1,y1) and (x2,y2) have opposite signs.
 
@@ -627,7 +627,7 @@ def opposite_phi_signs(phi_matrix: cy.float[:,:], y1: pyidx, x1: pyidx, y2: pyid
 # TODO: Pass a 2D fuel_model_array instead for speed
 @cy.cfunc
 @cy.exceptval(check=False)
-def is_frontier_cell(phi_matrix     : cy.float[:,:],
+def is_frontier_cell(phi_matrix     : cy.float[:,::1],
                      fuel_model_cube: ISpaceTimeCube,
                      t              : pyidx,
                      y              : pyidx,
@@ -657,7 +657,7 @@ def is_frontier_cell(phi_matrix     : cy.float[:,:],
 
 # TODO: Is it faster to build up a list or a set?
 @cy.cfunc
-def identify_all_frontier_cells(phi_matrix     : cy.float[:,:],
+def identify_all_frontier_cells(phi_matrix     : cy.float[:,::1],
                                 fuel_model_cube: ISpaceTimeCube,
                                 t              : pyidx,
                                 rows           : pyidx,
@@ -697,7 +697,7 @@ def identify_tracked_cells(frontier_cells: set,
 @cy.cfunc
 @cy.exceptval(check=False)
 def spot_from_burned_cell(space_time_cubes: SpreadInputs,
-                          fire_type_matrix: cy.uchar[:,:],
+                          fire_type_matrix: cy.uchar[:,::1],
                           y               : pyidx,
                           x               : pyidx,
                           fire_behavior   : SpreadBehavior,
@@ -915,8 +915,8 @@ class TrackedCellsArrays:
     """
     _array_length  : pyidx                       # power of 2, doubles each time there is a dynamic resizing
     n_tracked_cells: pyidx
-    float_inputs   : cy.float[:,:]               # shape: (_array_length, p_CellInputs)
-    phi_values     : cy.float[:,:]               # shape: (_array_length, 9)
+    float_inputs   : cy.float[:,::1]             # shape: (_array_length, p_CellInputs)
+    phi_values     : cy.float[:,::1]             # shape: (_array_length, 9)
     sfmin_arr      : cy.pointer(FireBehaviorMin) # array of structs, caching the FireBehaviorMin for each tracked cell
     ell_info       : cy.pointer(EllipticalInfo)  # array of structs (needs to be iterated over very efficiently)
     pass1outputs   : cy.pointer(Pass1CellOutput) # per-cell data produced by the 1st Runge-Kutta pass
@@ -962,8 +962,8 @@ class TrackedCellsArrays:
             while n_tracked_cells > array_length:
                 array_length *= 2
             # Dynamically resize all internal arrays
-            float_inputs: cy.float[:,:]               = np.zeros((array_length, p_CellInputs), dtype=np.float32)
-            phi_values  : cy.float[:,:]               = np.zeros((array_length, 9), dtype=np.float32)
+            float_inputs: cy.float[:,::1]             = np.zeros((array_length, p_CellInputs), dtype=np.float32)
+            phi_values  : cy.float[:,::1]             = np.zeros((array_length, 9), dtype=np.float32)
             sfmin_arr   : cy.pointer(FireBehaviorMin) = cy.cast(cy.pointer(FireBehaviorMin),
                                                                 realloc(self.sfmin_arr,
                                                                         array_length * cy.sizeof(FireBehaviorMin)))
@@ -996,14 +996,14 @@ class TrackedCellsArrays:
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def collect_phi_values(phi_matrix: cy.float[:,:], tca: TrackedCellsArrays) -> cy.void:
+def collect_phi_values(phi_matrix: cy.float[:,::1], tca: TrackedCellsArrays) -> cy.void:
     """
     Iterates over the tracked cells and stores their phi values in a cache.
     For each tracked cell, stores a row of 9 values in `tca.phi_values`,
     corresponding to the 'cross' of cells required to compute flux-limited gradients.
     Reads from `phi_matrix` and mutates `tca.phi_values`.
     """
-    phi_values: cy.float[:,:]              = tca.phi_values
+    phi_values: cy.float[:,::1]            = tca.phi_values
     ell_info  : cy.pointer(EllipticalInfo) = tca.ell_info
     i         : pyidx
     y         : pyidx
@@ -1152,9 +1152,9 @@ def load_float_inputs_for_cell(space_time_cubes: SpreadInputs,
     """
     Reads variables from input ISpaceTimeCubes and saves them by mutating `tca.float_inputs`.
     """
-    (y, x)                      = cell_index
-    tr          : pyidx[17]     = tca.t_refreshed
-    float_inputs: cy.float[:,:] = tca.float_inputs
+    (y, x)                        = cell_index
+    tr          : pyidx[17]       = tca.t_refreshed
+    float_inputs: cy.float[:,::1] = tca.float_inputs
 
     # Topography, Fuel Model, and Vegetation
     float_inputs[i,  0] = space_time_cubes.slope.get(tr[0], y, x)               # rise/run
@@ -1294,7 +1294,7 @@ def refresh_inputs_if_needed(space_time_cubes: SpreadInputs,
             tca.time_refreshed[k]        = time_refreshed_new
             tca.t_refreshed[k]           = t_refreshed_new
             # Update the float_inputs array with the latest ISpaceTimeCube values for all tracked cells
-            float_inputs: cy.float[:,:] = tca.float_inputs
+            float_inputs: cy.float[:,::1] = tca.float_inputs
             i           : pyidx
             y           : pyidx
             x           : pyidx
@@ -1308,7 +1308,7 @@ def refresh_inputs_if_needed(space_time_cubes: SpreadInputs,
 
 @cy.cfunc
 @cy.exceptval(check=False)
-def load_saved_CellInputs(float_inputs: cy.float[:,:], i: pyidx) -> CellInputs:
+def load_saved_CellInputs(float_inputs: cy.float[:,::1], i: pyidx) -> CellInputs:
     """
     Loads the CellInputs struct by reading the data saved in the the float_inputs array.
     """
@@ -1493,8 +1493,8 @@ def refresh_caches_from_inputs_if_needed(space_time_cubes: SpreadInputs,
     Mutates `tca`.
     """
     # Update the cached cell inputs from the space_time_cubes
-    recompute_level  : cy.uint       = refresh_inputs_if_needed(space_time_cubes, fb_opts, tca, present_time)
-    float_inputs     : cy.float[:,:] = tca.float_inputs
+    recompute_level  : cy.uint         = refresh_inputs_if_needed(space_time_cubes, fb_opts, tca, present_time)
+    float_inputs     : cy.float[:,::1] = tca.float_inputs
     cell_inputs      : CellInputs
     fuel_model_number: pyidx
     fuel_model       : FuelModel
@@ -1658,9 +1658,9 @@ def runge_kutta_pass1(max_cells_per_timestep: cy.float,
     C_dx  : cy.float = max_cells_per_timestep * dx
     C_dy  : cy.float = max_cells_per_timestep * dy
     # Now looping over tracked cells:
-    phi_values: cy.float[:,:] = tca.phi_values
-    dx_inv    : cy.float      = 1.0 / dx
-    dy_inv    : cy.float      = 1.0 / dy
+    phi_values: cy.float[:,::1] = tca.phi_values
+    dx_inv    : cy.float        = 1.0 / dx
+    dy_inv    : cy.float        = 1.0 / dy
     for i in range(tca.n_tracked_cells):
         ellipses  : EllipticalInfo = ell_info[i]
         cell_index: coord_yx       = ellipses.cell_index
@@ -1723,7 +1723,7 @@ def runge_kutta_pass1(max_cells_per_timestep: cy.float,
 @cy.exceptval(check=False)
 def update_phi_star(tca            : TrackedCellsArrays,
                     dt             : cy.float,
-                    phi_star_matrix: cy.float[:,:]) -> cy.void:
+                    phi_star_matrix: cy.float[:,::1]) -> cy.void:
     """
     Mutates phi_star_matrix, by using the dt and dphi/dt computed in the 1st Runge-Kutta pass.
     To be called between Runge-Kutta passes.
@@ -1769,7 +1769,7 @@ def runge_kutta_pass2(spatial_resolution: vec_xy,
                       start_time        : cy.float,
                       dt                : cy.float,
                       tca               : TrackedCellsArrays,
-                      phi_matrix        : cy.float[:,:]) -> list[BurnedCellInfo]:
+                      phi_matrix        : cy.float[:,::1]) -> list[BurnedCellInfo]:
     """
     2nd Runge-Kutta loop, which:
     1. Updates phi_matrix
@@ -1781,7 +1781,7 @@ def runge_kutta_pass2(spatial_resolution: vec_xy,
     dy_inv         : cy.float                    = 1.0 / dy
     ell_info       : cy.pointer[EllipticalInfo]  = tca.ell_info
     pass1outputs   : cy.pointer[Pass1CellOutput] = tca.pass1outputs
-    phi_star_values: cy.float[:,:]               = tca.phi_values
+    phi_star_values: cy.float[:,::1]             = tca.phi_values
     burned_cells   : list[BurnedCellInfo]        = []
     i              : pyidx
     for i in range(tca.n_tracked_cells):
@@ -1845,12 +1845,12 @@ def process_burned_cells(space_time_cubes: SpreadInputs,
                          random_generator: BufferedRandGen,
                          burned_cells    : list[BurnedCellInfo]) -> cy.void:
     # Unpack output_matrices
-    fire_type_matrix         : cy.uchar[:,:] = output_matrices["fire_type"]
-    spread_rate_matrix       : cy.float[:,:] = output_matrices["spread_rate"]
-    spread_direction_matrix  : cy.float[:,:] = output_matrices["spread_direction"]
-    fireline_intensity_matrix: cy.float[:,:] = output_matrices["fireline_intensity"]
-    flame_length_matrix      : cy.float[:,:] = output_matrices["flame_length"]
-    time_of_arrival_matrix   : cy.float[:,:] = output_matrices["time_of_arrival"]
+    fire_type_matrix         : cy.uchar[:,::1] = output_matrices["fire_type"]
+    spread_rate_matrix       : cy.float[:,::1] = output_matrices["spread_rate"]
+    spread_direction_matrix  : cy.float[:,::1] = output_matrices["spread_direction"]
+    fireline_intensity_matrix: cy.float[:,::1] = output_matrices["fireline_intensity"]
+    flame_length_matrix      : cy.float[:,::1] = output_matrices["flame_length"]
+    time_of_arrival_matrix   : cy.float[:,::1] = output_matrices["time_of_arrival"]
 
     # Save the burned_cells fire behavior values in output_matrices
     burned_cell: BurnedCellInfo
@@ -1891,8 +1891,8 @@ def process_burned_cells(space_time_cubes: SpreadInputs,
 @cy.exceptval(check=False)
 def reset_phi_star(tca               : TrackedCellsArrays,
                    spot_ignited_cells: list[BurnedCellInfo],
-                   phi_star_matrix   : cy.float[:,:],
-                   phi_matrix        : cy.float[:,:]) -> cy.void:
+                   phi_star_matrix   : cy.float[:,::1],
+                   phi_matrix        : cy.float[:,::1]) -> cy.void:
     """
     Efficiently updates `phi_star_matrix` to match `phi_matrix`,
     by copying only the values of cells where phi has changed.
@@ -1923,8 +1923,8 @@ def ignite_from_spotting(spot_ignitions : SortedDict[float, set],
     """
     ignited_cells: list[BurnedCellInfo] = []
     if len(spot_ignitions) > 0:
-        phi_matrix            : cy.float[:,:] = output_matrices["phi"]
-        time_of_arrival_matrix: cy.float[:,:] = output_matrices["time_of_arrival"]
+        phi_matrix            : cy.float[:,::1] = output_matrices["phi"]
+        time_of_arrival_matrix: cy.float[:,::1] = output_matrices["time_of_arrival"]
         ignition_time         : cy.float
         maybe_ignited_cells   : set
         cell_index            : coord_yx
@@ -1955,7 +1955,7 @@ def ignite_from_spotting(spot_ignitions : SortedDict[float, set],
 def route_cell_to_diff(frontier_cells_old: set,
                        frontier_additions: set,
                        frontier_removals : set,
-                       phi_matrix        : cy.float[:,:],
+                       phi_matrix        : cy.float[:,::1],
                        fuel_model_cube   : ISpaceTimeCube,
                        t                 : pyidx,
                        y                 : pyidx,
@@ -1978,7 +1978,7 @@ def route_cell_to_diff(frontier_cells_old: set,
 def diff_frontier_cells(frontier_cells_old  : set,
                         spread_ignited_cells: list[BurnedCellInfo],
                         spot_ignited_cells  : list[BurnedCellInfo],
-                        phi_matrix          : cy.float[:,:],
+                        phi_matrix          : cy.float[:,::1],
                         fuel_model_cube     : ISpaceTimeCube,
                         t                   : pyidx) -> tuple[set, set]:
     """
@@ -2087,8 +2087,8 @@ def spread_one_timestep(sim_state       : dict,
     # Unpack sim_state
     start_time      : cy.float               = sim_state["simulation_time"]
     output_matrices : dict                   = sim_state["output_matrices"]
-    phi_matrix      : cy.float[:,:]          = output_matrices["phi"]
-    phi_star_matrix : cy.float[:,:]          = output_matrices["phi_star"]
+    phi_matrix      : cy.float[:,::1]        = output_matrices["phi"]
+    phi_star_matrix : cy.float[:,::1]        = output_matrices["phi_star"]
     frontier_cells  : set                    = sim_state["frontier_cells"] # TODO: OPTIM Use a binary array instead?
     tracked_cells   : nbt.NarrowBandTracker  = sim_state["tracked_cells"]
     tca             : TrackedCellsArrays     = sim_state["_tracked_cells_arrays"]
@@ -2405,7 +2405,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     # Identify the sets of frontier cells and tracked cells based on the phi matrix
     start_t       : pyidx                 = int(start_time // band_duration)
-    phi_matrix    : cy.float[:,:]         = output_matrices["phi"]
+    phi_matrix    : cy.float[:,::1]       = output_matrices["phi"]
     frontier_cells: set                   = identify_all_frontier_cells(phi_matrix,
                                                                         fuel_model_cube,
                                                                         start_t,

@@ -315,16 +315,16 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
     if not(0 <= min_x < max_x <= rows):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
-    fire_type_matrix          : np.ndarray    = np.zeros(grid_shape, dtype="uint8")
-    spread_rate_matrix        : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    fireline_intensity_matrix : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    flame_length_matrix       : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    fire_type_memview         : cy.uchar[:,:] = fire_type_matrix
-    spread_rate_memview       : cy.float[:,:] = spread_rate_matrix
-    spread_direction_memview  : cy.float[:,:] = spread_direction_matrix
-    fireline_intensity_memview: cy.float[:,:] = fireline_intensity_matrix
-    flame_length_memview      : cy.float[:,:] = flame_length_matrix
+    fire_type_matrix          : np.ndarray      = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
+    spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
+    spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix
+    fireline_intensity_memview: cy.float[:,::1] = fireline_intensity_matrix
+    flame_length_memview      : cy.float[:,::1] = flame_length_matrix
 
     y                    : pyidx
     x                    : pyidx
@@ -639,16 +639,16 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
     if not(0 <= min_x < max_x <= rows):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
-    fire_type_matrix          : np.ndarray    = np.zeros(grid_shape, dtype="uint8")
-    spread_rate_matrix        : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    fireline_intensity_matrix : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    flame_length_matrix       : np.ndarray    = np.zeros(grid_shape, dtype="float32")
-    fire_type_memview         : cy.uchar[:,:] = fire_type_matrix
-    spread_rate_memview       : cy.float[:,:] = spread_rate_matrix
-    spread_direction_memview  : cy.float[:,:] = spread_direction_matrix
-    fireline_intensity_memview: cy.float[:,:] = fireline_intensity_matrix
-    flame_length_memview      : cy.float[:,:] = flame_length_matrix
+    fire_type_matrix          : np.ndarray      = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
+    spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
+    spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix
+    fireline_intensity_memview: cy.float[:,::1] = fireline_intensity_matrix
+    flame_length_memview      : cy.float[:,::1] = flame_length_matrix
 
     y                    : pyidx
     x                    : pyidx

@@ -6,10 +6,10 @@
 # from pyretechnics.random cimport BufferedRandGen
 # cimport numpy as np
 #
-# cdef float calc_dphi_dx_approx(float[:,:] phi_matrix, float dx, pyidx x, pyidx y) noexcept
-# cdef float calc_dphi_dy_approx(float[:,:] phi_matrix, float dy, pyidx x, pyidx y) noexcept
-# cdef vec_xy calc_phi_gradient_approx(float[:,:] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
-# cdef vec_xy calc_phi_normal_vector(float[:,:] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
+# cdef float calc_dphi_dx_approx(float[:,::1] phi_matrix, float dx, pyidx x, pyidx y) noexcept
+# cdef float calc_dphi_dy_approx(float[:,::1] phi_matrix, float dy, pyidx x, pyidx y) noexcept
+# cdef vec_xy calc_phi_gradient_approx(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
+# cdef vec_xy calc_phi_normal_vector(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
 # cdef float calc_phi_normal_azimuth(vec_xy phi_normal_vector) noexcept
 # cdef float half_superbee_dphi_up(float dphi_up, float dphi_loc) noexcept
 # cdef float calc_dphi_flim_x(float p00, float pw2, float pw1, float pe1, float pe2) noexcept
@@ -52,16 +52,16 @@
 # cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
-# cdef bint opposite_phi_signs(float[:,:] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept
+# cdef bint opposite_phi_signs(float[:,::1] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept
 # cdef bint is_frontier_cell(
-#     float[:,:] phi_matrix,
+#     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
 #     pyidx t,
 #     pyidx y,
 #     pyidx x,
 #     ) noexcept
 # cdef set identify_all_frontier_cells(
-#     float[:,:] phi_matrix,
+#     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
 #     pyidx t,
 #     pyidx rows,
@@ -70,7 +70,7 @@
 # cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)
 # cdef void spot_from_burned_cell(
 #     SpreadInputs space_time_cubes,
-#     unsigned char[:,:] fire_type_matrix,
+#     unsigned char[:,::1] fire_type_matrix,
 #     pyidx y,
 #     pyidx x,
 #     SpreadBehavior fire_behavior,
@@ -102,15 +102,15 @@
 # cdef class TrackedCellsArrays:
 #     cdef pyidx _array_length
 #     cdef pyidx n_tracked_cells
-#     cdef float[:,:] float_inputs
-#     cdef float[:,:] phi_values
+#     cdef float[:,::1] float_inputs
+#     cdef float[:,::1] phi_values
 #     cdef FireBehaviorMin* sfmin_arr
 #     cdef EllipticalInfo* ell_info
 #     cdef Pass1CellOutput* pass1outputs
 #     cdef float[17] time_refreshed
 #     cdef pyidx[17] t_refreshed
 #     cdef void reset_size(TrackedCellsArrays self, pyidx n_tracked_cells)
-# cdef void collect_phi_values(float[:,:] phi_matrix, TrackedCellsArrays tca) noexcept
+# cdef void collect_phi_values(float[:,::1] phi_matrix, TrackedCellsArrays tca) noexcept
 # cdef int compare_cell_indexes(coord_yx c0, coord_yx c1) noexcept
 # cdef void copy_tracked_cell_data(
 #     pyidx i_old,
@@ -142,7 +142,7 @@
 #     TrackedCellsArrays tca,
 #     float present_time,
 #     ) noexcept
-# cdef CellInputs load_saved_CellInputs(float[:,:] float_inputs, pyidx i) noexcept
+# cdef CellInputs load_saved_CellInputs(float[:,::1] float_inputs, pyidx i) noexcept
 # cdef FireBehaviorMin resolve_surface_no_wind_no_slope_behavior(CellInputs cell_inputs, FuelModel fuel_model) noexcept
 # cdef FireBehaviorMax resolve_surface_max_behavior(
 #     FireBehaviorSettings fb_opts,
@@ -195,7 +195,7 @@
 #     float max_timestep,
 #     TrackedCellsArrays tca,
 #     ) noexcept
-# cdef void update_phi_star(TrackedCellsArrays tca, float dt, float[:,:] phi_star_matrix) noexcept
+# cdef void update_phi_star(TrackedCellsArrays tca, float dt, float[:,::1] phi_star_matrix) noexcept
 # cdef class BurnedCellInfo:
 #     cdef coord_yx cell_index
 #     cdef float time_of_arrival
@@ -212,7 +212,7 @@
 #     float start_time,
 #     float dt,
 #     TrackedCellsArrays tca,
-#     float[:,:] phi_matrix,
+#     float[:,::1] phi_matrix,
 #     )
 # cdef void process_burned_cells(
 #     SpreadInputs space_time_cubes,
@@ -225,8 +225,8 @@
 # cdef void reset_phi_star(
 #     TrackedCellsArrays tca,
 #     list[BurnedCellInfo] spot_ignited_cells,
-#     float[:,:] phi_star_matrix,
-#     float[:,:] phi_matrix,
+#     float[:,::1] phi_star_matrix,
+#     float[:,::1] phi_matrix,
 #     ) noexcept
 # cdef list[BurnedCellInfo] ignite_from_spotting(
 #     object spot_ignitions,
@@ -237,7 +237,7 @@
 #     set frontier_cells_old,
 #     set frontier_additions,
 #     set frontier_removals,
-#     float[:,:] phi_matrix,
+#     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
 #     pyidx t,
 #     pyidx y,
@@ -247,7 +247,7 @@
 #     set frontier_cells_old,
 #     list[BurnedCellInfo] spread_ignited_cells,
 #     list[BurnedCellInfo] spot_ignited_cells,
-#     float[:,:] phi_matrix,
+#     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
 #     pyidx t,
 #     )
