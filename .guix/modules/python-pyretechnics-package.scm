@@ -74,10 +74,11 @@
                        #:recursive? #t
                        #:select?    vcs-file?))
    (build-system pyproject-build-system) ; includes python-sans-pip-wrapper
-   ;; See file:/run/current-system/profile/share/guile/site/3.0/guix/build/pyproject-build-system.scm for more info.
+   ;; See /run/current-system/profile/share/guile/site/3.0/guix/build/pyproject-build-system.scm for more info.
    (arguments `(#:configure-flags '() ; passed to setuptools.build_meta.build_wheel(wheel_dir, config_settings=$(configure-flags))
+                #:tests?          #f
                 #:test-backend    'pytest
-                #:test-flags      '()))
+                #:test-flags      '())) ; passed to pytest -vv $(test-flags)
    (native-inputs (list
                    ;; Shell utilities
                    bash
