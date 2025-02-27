@@ -4,7 +4,7 @@
 # from pyretechnics.space_time_cube cimport ISpaceTimeCube
 # from pyretechnics.narrow_band_tracking cimport NarrowBandTracker
 # from pyretechnics.random cimport BufferedRandGen
-# import numpy as np
+# cimport numpy as np
 #
 # cdef float calc_dphi_dx_approx(float[:,:] phi_matrix, float dx, pyidx x, pyidx y) noexcept
 # cdef float calc_dphi_dy_approx(float[:,:] phi_matrix, float dy, pyidx x, pyidx y) noexcept

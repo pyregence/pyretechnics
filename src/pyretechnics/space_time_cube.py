@@ -4,7 +4,6 @@ import cython as cy
 from functools import reduce
 import numpy as np
 if cython.compiled:
-    import cython.cimports.numpy as np
     from cython.cimports.pyretechnics.cy_types import pyidx
 else:
     from pyretechnics.py_types import pyidx
