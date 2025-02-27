@@ -482,7 +482,8 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       fuel_moisture_dead_1hr_cube: ISpaceTimeCube,
                       fire_type_matrix           : cy.uchar[:,::1],
                       sim_area_bounds            : coord_yx,
-                      spatial_resolution         : vec_xy,
+                      cell_height                : cy.float,
+                      cell_width                 : cy.float,
                       space_time_coordinate      : coord_tyx,
                       wind_speed_10m             : cy.float, # km/hr (for shame!)
                       upwind_direction           : cy.float, # degrees
@@ -501,9 +502,8 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
     - sim_area_bounds             :: tuple with these fields
       - rows                         :: number of rows on the simulation grid
       - cols                         :: number of columns on the simulation grid
-    - spatial_resolution          :: tuple with these fields
-      - cell_height                  :: meters
-      - cell_width                   :: meters
+    - cell_height                 :: meters
+    - cell_width                  :: meters
     - space_time_coordinate       :: (t,y,x) coordinate in which the source cell burns
     - upwind_direction            :: degrees clockwise from North
     - wind_speed_10m              :: km/hr
@@ -545,7 +545,6 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
 
             # TODO: OPTIM Get rid of trigonometry here if possible by having callers pass vectors.
             (rows, cols)                          = sim_area_bounds
-            (cell_height, cell_width)             = spatial_resolution
             (t, y, x)                             = space_time_coordinate
             decay_distance     : cy.float         = spot_config.decay_distance
             downwind_direction : cy.float         = conv.deg_to_rad(conv.opposite_direction(upwind_direction))

@@ -20,12 +20,16 @@
 # cdef int fire_type_crown_active  = 3
 # cdef vec_xy calc_elevation_gradient(float slope, float aspect) noexcept
 # cdef vec_xyz calc_phi_gradient_on_slope(vec_xy phi_gradient_xy, vec_xy elevation_gradient) noexcept
-# cdef SpreadBehavior calc_fireline_normal_behavior(FireBehaviorMax fire_behavior_max, vec_xyz phi_gradient) noexcept
+# cdef SpreadBehavior calc_fireline_normal_behavior(
+#     FireBehaviorMax fire_behavior_max,
+#     vec_xyz phi_gradient_xyz,
+#     ) noexcept
 # cdef class SpreadInputs:
 #     cdef pyidx rows
 #     cdef pyidx cols
 #     cdef float band_duration
-#     cdef vec_xy spatial_resolution
+#     cdef float cell_height
+#     cdef float cell_width
 #     cdef ISpaceTimeCube slope
 #     cdef ISpaceTimeCube aspect
 #     cdef ISpaceTimeCube fuel_model
@@ -44,11 +48,11 @@
 #     cdef ISpaceTimeCube temperature
 #     cdef ISpaceTimeCube fuel_spread_adjustment
 #     cdef ISpaceTimeCube weather_spread_adjustment
-#     cdef FuelModel* fuel_models_arr
+#     cdef FuelModel* fuel_model_cache
 #     cdef void __init_fuel_models(SpreadInputs self)
 #     cdef FuelModel get_fm_struct(SpreadInputs self, pyidx fm_number) noexcept
 # cdef SpreadInputs make_SpreadInputs((float, float, float) cube_resolution, dict space_time_cubes)
-# cdef CellInputs lookup_cell_inputs(SpreadInputs space_time_cubes, coord_tyx space_time_coordinate) noexcept
+# cdef CellInputs lookup_cell_inputs(SpreadInputs spread_inputs, coord_tyx space_time_coordinate) noexcept
 # cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
@@ -69,7 +73,7 @@
 #     )
 # cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)
 # cdef void spot_from_burned_cell(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     unsigned char[:,::1] fire_type_matrix,
 #     pyidx y,
 #     pyidx x,
@@ -101,16 +105,16 @@
 # cdef pyidx p_CellInputs = 17
 # cdef class TrackedCellsArrays:
 #     cdef pyidx _array_length
-#     cdef pyidx n_tracked_cells
-#     cdef float[:,::1] float_inputs
-#     cdef float[:,::1] phi_values
-#     cdef FireBehaviorMin* sfmin_arr
-#     cdef EllipticalInfo* ell_info
-#     cdef Pass1CellOutput* pass1outputs
+#     cdef pyidx num_tracked_cells
+#     cdef float[:,::1] cube_cache
+#     cdef float[:,::1] phi_cache
+#     cdef FireBehaviorMin* sfmin_cache
+#     cdef EllipticalInfo* ellipse_cache
+#     cdef Pass1CellOutput* pass1_cache
 #     cdef float[17] time_refreshed
 #     cdef pyidx[17] t_refreshed
-#     cdef void reset_size(TrackedCellsArrays self, pyidx n_tracked_cells)
-# cdef void collect_phi_values(float[:,::1] phi_matrix, TrackedCellsArrays tca) noexcept
+#     cdef void reset_size(TrackedCellsArrays self, pyidx num_tracked_cells)
+# cdef void collect_phi_cache(float[:,::1] phi_matrix, TrackedCellsArrays tca) noexcept
 # cdef int compare_cell_indexes(coord_yx c0, coord_yx c1) noexcept
 # cdef void copy_tracked_cell_data(
 #     pyidx i_old,
@@ -127,22 +131,22 @@
 #     cdef float crown_max_lw_ratio
 #     cdef dict spot_config
 #     cdef float[17] cube_refresh_rates
-# cdef void load_float_inputs_for_cell(
-#     SpreadInputs space_time_cubes,
+# cdef void load_cube_cache_for_cell(
+#     SpreadInputs spread_inputs,
 #     coord_yx cell_index,
 #     TrackedCellsArrays tca,
 #     pyidx i,
 #     ) noexcept
-# cdef list[ISpaceTimeCube] list_float_input_cubes(SpreadInputs space_time_cubes)
+# cdef list[ISpaceTimeCube] list_float_input_cubes(SpreadInputs spread_inputs)
 # cdef dict default_cube_refresh_rates(float band_duration)
 # cdef unsigned int recompute_level_for_input(pyidx input_k) noexcept
 # cdef unsigned int refresh_inputs_if_needed(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     TrackedCellsArrays tca,
 #     float present_time,
 #     ) noexcept
-# cdef CellInputs load_saved_CellInputs(float[:,::1] float_inputs, pyidx i) noexcept
+# cdef CellInputs load_saved_CellInputs(float[:,::1] cube_cache, pyidx i) noexcept
 # cdef FireBehaviorMin resolve_surface_no_wind_no_slope_behavior(CellInputs cell_inputs, FuelModel fuel_model) noexcept
 # cdef FireBehaviorMax resolve_surface_max_behavior(
 #     FireBehaviorSettings fb_opts,
@@ -164,26 +168,26 @@
 #     FireBehaviorMin surface_fire_min,
 #     ) noexcept
 # cdef void refresh_caches_from_inputs_if_needed(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     TrackedCellsArrays tca,
 #     float present_time,
 #     ) noexcept
 # cdef SpreadBehavior resolve_combined_spread_behavior(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     coord_tyx space_time_coordinate,
 #     vec_xy phi_gradient_xy,
 #     ) noexcept
 # cdef void load_tracked_cell_data(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     coord_yx cell_index,
 #     TrackedCellsArrays tca,
 #     pyidx i,
 #     ) noexcept
 # cdef void sync_tracked_cells_arrays(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     NarrowBandTracker tracked_cells,
 #     TrackedCellsArrays tca_old,
@@ -191,7 +195,8 @@
 #     ) noexcept
 # cdef float runge_kutta_pass1(
 #     float max_cells_per_timestep,
-#     vec_xy spatial_resolution,
+#     float dy,
+#     float dx,
 #     float max_timestep,
 #     TrackedCellsArrays tca,
 #     ) noexcept
@@ -208,14 +213,15 @@
 #     bint from_spotting,
 #     )
 # cdef list[BurnedCellInfo] runge_kutta_pass2(
-#     vec_xy spatial_resolution,
+#     float dy,
+#     float dx,
 #     float start_time,
 #     float dt,
 #     TrackedCellsArrays tca,
 #     float[:,::1] phi_matrix,
 #     )
 # cdef void process_burned_cells(
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     dict output_matrices,
 #     object spot_ignitions,
@@ -260,7 +266,7 @@
 #     )
 # cdef dict spread_one_timestep(
 #     dict sim_state,
-#     SpreadInputs space_time_cubes,
+#     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
 #     float max_timestep,
 #     )

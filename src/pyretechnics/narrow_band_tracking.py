@@ -99,19 +99,19 @@ class NarrowBandTracker:
       i.e. one of the counts in segment.counts will be > 0
     - _rows_count is the number of entries in ys_list containing non-empty SortedDicts
     """
-    n_tracked_cells: cy.int
-    y_high         : pyidx
-    x_high         : pyidx
-    ys_offset      : pyidx
-    ys_list        : list
-    _rows_count    : cy.int
+    num_tracked_cells: cy.int
+    y_high           : pyidx
+    x_high           : pyidx
+    ys_offset        : pyidx
+    ys_list          : list
+    _rows_count      : cy.int
 
 
 # FIXME: Why isn't this a class __init__ constructor? (Val: ensuring private functions, simplifying pxd declarations)
 @cy.cfunc
 def new_NarrowBandTracker(y_high: pyidx, x_high: pyidx) -> NarrowBandTracker:
     ret: NarrowBandTracker = NarrowBandTracker()
-    ret.n_tracked_cells    = 0
+    ret.num_tracked_cells  = 0
     ret.y_high             = y_high
     ret.x_high             = x_high
     return ret
@@ -174,7 +174,7 @@ def inc_y_segment(tracked_cells: NarrowBandTracker, y: pyidx, x_start: pyidx, se
         old_count          = segment.counts[k]
         segment.counts[k]  = old_count + 1
         n_added           += (old_count == 0)
-    tracked_cells.n_tracked_cells += n_added
+    tracked_cells.num_tracked_cells += n_added
 
 
 @cy.cfunc
@@ -207,7 +207,7 @@ def dec_y_segment(tracked_cells: NarrowBandTracker, y: pyidx, x_start: pyidx, se
     if len(s) == 0:
         tracked_cells.ys_list[y_idx]  = None
         tracked_cells._rows_count    -= 1
-    tracked_cells.n_tracked_cells    -= n_removed
+    tracked_cells.num_tracked_cells  -= n_removed
 
 
 @cy.cfunc
@@ -261,7 +261,7 @@ def dec_square_around(tracked_cells: NarrowBandTracker, y: pyidx, x: pyidx, buff
 @cy.inline
 @cy.exceptval(check=False)
 def nonempty_tracked_cells(tracked_cells: NarrowBandTracker) -> cy.bint:
-    return tracked_cells.n_tracked_cells > 0
+    return tracked_cells.num_tracked_cells > 0
 
 
 # Iterating over cells
@@ -305,7 +305,7 @@ class TrackedCellsIterator:
             self.current_k       = 0
 
 
-    # TODO: OPTIM It may be faster to maintain an iteration index and compare it to n_tracked_cells.
+    # TODO: OPTIM It may be faster to maintain an iteration index and compare it to num_tracked_cells.
     @cy.cfunc
     @cy.exceptval(check=False)
     def has_next(self: TrackedCellsIterator) -> cy.bint:
