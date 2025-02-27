@@ -637,10 +637,7 @@ def is_frontier_cell(phi_matrix     : cy.float[:,:],
     south_y: pyidx = y-1
     east_x : pyidx = x+1
     west_x : pyidx = x-1
-    return (
-        # Is this cell burnable?
-        spot.is_burnable_cell(fuel_model_cube, t, y, x)
-    ) and ((
+    return ((
         # Check north
         opposite_phi_signs(phi_matrix, y, x, north_y, x) and spot.is_burnable_cell(fuel_model_cube, t, north_y, x)
     ) or (
@@ -652,7 +649,10 @@ def is_frontier_cell(phi_matrix     : cy.float[:,:],
     ) or (
         # Check west
         opposite_phi_signs(phi_matrix, y, x, y, west_x) and spot.is_burnable_cell(fuel_model_cube, t, y, west_x)
-    ))
+    )) and (
+        # Is this cell burnable?
+        spot.is_burnable_cell(fuel_model_cube, t, y, x)
+    )
 
 
 # TODO: Is it faster to build up a list or a set?
