@@ -9,7 +9,8 @@
   #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-setuptools
-                                                         python-wheel))
+                                                         python-wheel
+                                                         python-pypa-build))
   #:use-module ((gnu packages python-web)      #:select (python-tornado))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy
                                                          python-rasterio
@@ -98,7 +99,8 @@
                    python-snakeviz
                    python-matplotlib
                    python-setuptools
-                   python-wheel))
+                   python-wheel
+                   python-pypa-build))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper
