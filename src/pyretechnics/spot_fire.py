@@ -278,8 +278,6 @@ def sample_downwind_jump(jd: JumpDistribution, random_generator: BufferedRandGen
 def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGen) -> cy.float:
     return sample_normal(random_generator, 0.0, jd.sigma_y)
 # sardoy-firebrand-dispersal ends here
-# [[file:../../org/pyretechnics.org::sample-number-of-firebrands][sample-number-of-firebrands]]
-# sample-number-of-firebrands ends here
 # [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
 @cy.cfunc
 @cy.inline

@@ -189,14 +189,6 @@ def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float,
 
     return (phi_north - phi_south)
 # phi-field-spatial-gradients ends here
-# [[file:../../org/pyretechnics.org::phi-east][phi-east]]
-# phi-east ends here
-# [[file:../../org/pyretechnics.org::phi-west][phi-west]]
-# phi-west ends here
-# [[file:../../org/pyretechnics.org::phi-north][phi-north]]
-# phi-north ends here
-# [[file:../../org/pyretechnics.org::phi-south][phi-south]]
-# phi-south ends here
 # [[file:../../org/pyretechnics.org::calc-fireline-normal-behavior][calc-fireline-normal-behavior]]
 # TODO: Move these to a shared module and use throughout the literate program
 # NOTE: It would be better to use a cython enum here, but that's not supported in pure python syntax.
