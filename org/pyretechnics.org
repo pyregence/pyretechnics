@@ -2041,24 +2041,6 @@ categories and size classes, we define a collection of utility
 functions that will later be used in both the fuel moisture and
 surface fire equations.
 
-#+NAME: fuel-category-and-size-class-functions
-#+begin_src python
-def map_category(f):
-    return [f(0), f(1)]
-
-
-def map_size_class(f):
-    return [f(0), f(1), f(2), f(3), f(4), f(5)]
-
-
-def category_sum(f):
-    return f(0) + f(1)
-
-
-def size_class_sum(f):
-    return [f(0) + f(1) + f(2) + f(3), f(4) + f(5)]
-#+end_src
-
 *** Dynamic Fuel Loading
     :PROPERTIES:
     :CUSTOM_ID: dynamic-fuel-loading
@@ -5844,19 +5826,6 @@ exceeds a certain threshold (configured with
 *critical_fireline_intensity*). Both that threshold and the spotting
 probability can be configured per fuel model.
 
-#+NAME: sample-number-of-firebrands
-#+begin_src python
-def sample_poisson(random_generator, mu):
-    """
-    Returns sample from poisson distribution given mu.
-    """
-    return random_generator.poisson(mu)
-
-
-def sample_number_of_firebrands(random_generator, expected_firebrand_count):
-    return sample_poisson(random_generator, expected_firebrand_count)
-#+end_src
-
 If spotting occurs at a cell, the number of firebrands is randomly
 drawn from a Poisson distribution, the mean of which is configured
 with key *num_firebrands*. As such, non-integer values are allowed for
@@ -7959,37 +7928,6 @@ For the east face:
                         \end{cases}
 \end{align}
 
-#+NAME: phi-east
-#+begin_src python
-@cy.cfunc
-@cy.exceptval(65504.0)
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def calc_phi_east(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
-    """
-    Calculate the spatial gradient of the phi raster in the x (west->east)
-    direction at grid cell (x,y) given:
-    - phi  :: 2D float array of values in [-1,1]
-    - u_x  :: m/min
-    - x    :: integer column index in phi
-    - y    :: integer row index in phi
-    - cols :: integer number of columns in the phi matrix
-    """
-    very_east_x: pyidx = min(x+2, cols-1)
-    east_x     : pyidx = min(x+1, cols-1)
-    west_x     : pyidx = max(x-1, 0)
-
-    dphi_loc: cy.float = phi[y][east_x] - phi[y][x]
-    if u_x >= 0.0:
-        dphi_up: cy.float = phi[y][x] - phi[y][west_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[y][very_east_x] - phi[y][east_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][east_x] - 0.5 * B * dphi_loc
-#+end_src
-
 For the west face:
 
 \begin{align}
@@ -8005,37 +7943,6 @@ For the west face:
                           \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{x,i,j} < 0
                         \end{cases}
 \end{align}
-
-#+NAME: phi-west
-#+begin_src python
-@cy.cfunc
-@cy.exceptval(65504.0)
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def calc_phi_west(phi: cy.float[:,:], u_x: cy.float, x: pyidx, y: pyidx, cols: pyidx) -> cy.float:
-    """
-    Calculate the spatial gradient of the phi raster in the -x (east->west)
-    direction at grid cell (x,y) given:
-    - phi  :: 2D float array of values in [-1,1]
-    - u_x  :: m/min
-    - x    :: integer column index in phi
-    - y    :: integer row index in phi
-    - cols :: integer number of columns in the phi matrix
-    """
-    east_x     : pyidx = min(x+1, cols-1)
-    west_x     : pyidx = max(x-1, 0)
-    very_west_x: pyidx = max(x-2, 0)
-
-    dphi_loc: cy.float = phi[y][west_x] - phi[y][x]
-    if u_x >= 0.0:
-        dphi_up: cy.float = phi[y][very_west_x] - phi[y][west_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][west_x] - 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[y][x] - phi[y][east_x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-#+end_src
 
 For the north face:
 
@@ -8053,37 +7960,6 @@ For the north face:
                          \end{cases}
 \end{align}
 
-#+NAME: phi-north
-#+begin_src python
-@cy.cfunc
-@cy.exceptval(65504.0)
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def calc_phi_north(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
-    """
-    Calculate the spatial gradient of the phi raster in the y (south->north)
-    direction at grid cell (x,y) given:
-    - phi  :: 2D float array of values in [-1,1]
-    - u_y  :: m/min
-    - x    :: integer column index in phi
-    - y    :: integer row index in phi
-    - rows :: integer number of rows in the phi matrix
-    """
-    very_north_y: pyidx = min(y+2, rows-1)
-    north_y     : pyidx = min(y+1, rows-1)
-    south_y     : pyidx = max(y-1, 0)
-
-    dphi_loc: cy.float = phi[north_y][x] - phi[y][x]
-    if u_y >= 0.0:
-        dphi_up: cy.float = phi[y][x] - phi[south_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[very_north_y][x] - phi[north_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[north_y][x] - 0.5 * B * dphi_loc
-#+end_src
-
 For the south face:
 
 \begin{align}
@@ -8099,37 +7975,6 @@ For the south face:
                            \phi_{i,j} + \frac{1}{2}B(r)\delta\phi_{loc} & \text{for}\ u_{y,i,j} < 0
                          \end{cases}
 \end{align}
-
-#+NAME: phi-south
-#+begin_src python
-@cy.cfunc
-@cy.exceptval(65504.0)
-@cy.wraparound(False)
-@cy.boundscheck(False)
-def calc_phi_south(phi: cy.float[:,:], u_y: cy.float, x: pyidx, y: pyidx, rows: pyidx) -> cy.float:
-    """
-    Calculate the spatial gradient of the phi raster in the -y (north->south)
-    direction at grid cell (x,y) given:
-    - phi  :: 2D float array of values in [-1,1]
-    - u_y  :: m/min
-    - x    :: integer column index in phi
-    - y    :: integer row index in phi
-    - rows :: integer number of rows in the phi matrix
-    """
-    north_y     : pyidx = min(y+1, rows-1)
-    south_y     : pyidx = max(y-1, 0)
-    very_south_y: pyidx = max(y-2, 0)
-
-    dphi_loc: cy.float = phi[south_y][x] - phi[y][x]
-    if u_y >= 0.0:
-        dphi_up: cy.float = phi[very_south_y][x] - phi[south_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[south_y][x] - 0.5 * B * dphi_loc
-    else:
-        dphi_up: cy.float = phi[y][x] - phi[north_y][x]
-        B      : cy.float = calc_superbee_flux_limiter(dphi_up, dphi_loc)
-        return phi[y][x] + 0.5 * B * dphi_loc
-#+end_src
 
 Once the various spatial partial derivatives have been calculated, we
 can march the $\phi$ field solution forward in time using a second
