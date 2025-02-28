@@ -1,6 +1,9 @@
+import os
 from setuptools import setup
 from Cython.Build import cythonize
 import numpy
+
+profile_cython = (os.getenv("PROFILE_CYTHON") == "1")
 
 setup(
     name="pyretechnics",
@@ -11,7 +14,7 @@ setup(
         annotate=True,
         compiler_directives={
             "language_level": "3",
-            "profile": False,
+            "profile": profile_cython,
             "initializedcheck": False,
             "cdivision": True,
             "wraparound": False,

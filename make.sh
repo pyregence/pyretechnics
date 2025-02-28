@@ -76,7 +76,7 @@ case $CMD in
         ;;
 
     "build-cython-profiled")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- cythonize -X profile=True -3 -i -a --exclude="src/pyretechnics/py_types.py" src/pyretechnics/*.py
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PROFILE_CYTHON=1 python setup.py build_ext --inplace
         ;;
 
     "build-guix")
