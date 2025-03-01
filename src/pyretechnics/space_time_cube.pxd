@@ -9,8 +9,6 @@ cdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_lengt
 cdef class ISpaceTimeCube:
     cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
 
-cpdef float cube_get(ISpaceTimeCube space_time_cube, pyidx t, pyidx y, pyidx x) noexcept
-
 cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
     cdef public unsigned long size
@@ -21,7 +19,7 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int x_repetitions
     # NOTE we use const (read-only MemoryView) so that Cython will accept to use a read-only array, which is required for shared-memory parallelism.
     cdef public const float[:,:,::1] data
-    cdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
     # def getTimeSeries(self, t_range, y, x)
     # def getSpatialPlane(self, t, y_range, x_range)
     # def getSubcube(self, t_range, y_range, x_range)
@@ -41,7 +39,7 @@ cdef class LazySpaceTimeCube(ISpaceTimeCube):
         pyidx cache_y,
         pyidx cache_x,
         )
-    cdef float get(LazySpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef float get(LazySpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
     # def getTimeSeries(self, t_range, y, x)
     # def getSpatialPlane(self, t, y_range, x_range)
     # def getSubcube(self, t_range, y_range, x_range)

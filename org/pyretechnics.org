@@ -275,6 +275,26 @@ def maybe_repeat_array(array, axis_repetitions):
             return np.repeat(array, repetitions, axis)
 #+end_src
 
+*** ISpaceTimeCube Class
+    :PROPERTIES:
+    :CUSTOM_ID: ispacetimecube-class
+    :END:
+
+The ISpaceTimeCube class provides an abstract parent class from which
+both the SpaceTimeCube and LazySpaceTimeCube classes inherit. Because
+of this, functions which accept an ISpaceTimeCube can provide
+polymorphism over these two child classes.
+
+#+NAME: ispace-time-cube-class
+#+begin_src python
+@cy.cclass
+class ISpaceTimeCube:
+    @cy.cfunc
+    @cy.exceptval(check=False)
+    def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
+        pass
+#+end_src
+
 *** SpaceTimeCube Class
     :PROPERTIES:
     :CUSTOM_ID: spacetimecube-class
@@ -307,21 +327,6 @@ constant input dimensions.
 
 #+NAME: space-time-cube-class
 #+begin_src python
-@cy.cclass
-class ISpaceTimeCube:
-    @cy.cfunc
-    @cy.exceptval(check=False)
-    def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
-        pass
-
-
-@cy.ccall
-@cy.inline
-@cy.exceptval(check=False)
-def cube_get(space_time_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
-    return space_time_cube.get(t, y, x)
-
-
 @cy.cclass
 class SpaceTimeCube(ISpaceTimeCube):
     """
@@ -417,7 +422,7 @@ class SpaceTimeCube(ISpaceTimeCube):
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
 
-    @cy.cfunc
+    @cy.ccall
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
@@ -461,7 +466,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         t_start_idx    = t_start - t_chunk_origin
         t_stop_idx     = t_stop  - t_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_time[t_start_idx:(t_stop_idx + 1)]
+        return np.asarray(high_res_time[t_start_idx:(t_stop_idx + 1)])
 
 
     def getSpatialPlane(self, t, y_range, x_range):
@@ -502,8 +507,8 @@ class SpaceTimeCube(ISpaceTimeCube):
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_space[y_start_idx:(y_stop_idx + 1),
-                              x_start_idx:(x_stop_idx + 1)]
+        return np.asarray(high_res_space[y_start_idx:(y_stop_idx + 1),
+                                         x_start_idx:(x_stop_idx + 1)])
 
 
     def getSubcube(self, t_range, y_range, x_range):
@@ -551,9 +556,9 @@ class SpaceTimeCube(ISpaceTimeCube):
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_cube[t_start_idx:(t_stop_idx + 1),
-                             y_start_idx:(y_stop_idx + 1),
-                             x_start_idx:(x_stop_idx + 1)]
+        return np.asarray(high_res_cube[t_start_idx:(t_stop_idx + 1),
+                                        y_start_idx:(y_stop_idx + 1),
+                                        x_start_idx:(x_stop_idx + 1)])
 
 
     def __getFullyRealizedCube(self):
@@ -589,11 +594,11 @@ class SpaceTimeCube(ISpaceTimeCube):
         else:
             # 3D: Spatio-Temporal Input
             # Repeat (t0,y0,x0) -> (t,y,x)
-            return reduce(maybe_repeat_array,
-                          ((0, self.t_repetitions),
-                           (1, self.y_repetitions),
-                           (2, self.x_repetitions)),
-                          self.data)
+            return np.asarray(reduce(maybe_repeat_array,
+                                     ((0, self.t_repetitions),
+                                      (1, self.y_repetitions),
+                                      (2, self.x_repetitions)),
+                                     self.data))
 
 
     def getFullyRealizedCube(self, cache=False):
@@ -748,7 +753,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
             return subcube
 
 
-    @cy.cfunc
+    @cy.ccall
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
@@ -1021,16 +1026,16 @@ print(spatiotemporal_cube.get(band, row, col))
 #+RESULTS: space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
-0.7 
+0.699999988079071 
 
 Value from Time Series Data: Spread Rate Adjustment
 1.0 
 
 Value from Spatial Data: Elevation
-564 
+564.0 
 
 Value from Spatio-Temporal Data: Wind Speed
-32
+32.0
 #+end_example
 
 **** Retrieve a Time Series at a Spatial Coordinate
@@ -1068,10 +1073,10 @@ Time Series from Time Series Data: Spread Rate Adjustment
 [1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
 
 Time Series from Spatial Data: Elevation
-[564 564 564 564 564 564 564 564 564 564 564 564] 
+[564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.] 
 
 Time Series from Spatio-Temporal Data: Wind Speed
-[32 32 32 32 32 32 37 37 37 37 37 37]
+[32. 32. 32. 32. 32. 32. 37. 37. 37. 37. 37. 37.]
 #+end_example
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
@@ -1127,28 +1132,28 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
 
 Spatial Plane from Spatial Data: Elevation
-[[574 369 544 310 517 488 565 549 450 470]
- [443 551 480 476 432 561 578 361 468 480]
- [520 712 396 393 584 292 424 391 494 586]
- [707 534 246 423 521 500 426 340 288 482]
- [542 285 607 555 645 559 461 603 330 452]
- [498 497 664 445 518 564 461 508 600 380]
- [454 500 276 487 447 591 413 378 458 508]
- [573 890 485 501 357 413 356 635 374 618]
- [535 558 491 482 539 572 598 703 463 329]
- [487 555 580 492 462 484 495 396 711 356]] 
+[[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
+ [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
+ [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
+ [707. 534. 246. 423. 521. 500. 426. 340. 288. 482.]
+ [542. 285. 607. 555. 645. 559. 461. 603. 330. 452.]
+ [498. 497. 664. 445. 518. 564. 461. 508. 600. 380.]
+ [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
+ [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
+ [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
+ [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]] 
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
-[[31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]]
+[[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]]
 #+end_example
 
 **** Retrieve a Subcube within a Space-Time Region
@@ -1226,50 +1231,50 @@ Subcube from Time Series Data: Spread Rate Adjustment
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]] 
 
 Subcube from Spatial Data: Elevation
-[[[574 369 544 310 517 488 565 549 450 470]
-  [443 551 480 476 432 561 578 361 468 480]
-  [520 712 396 393 584 292 424 391 494 586]
-  [707 534 246 423 521 500 426 340 288 482]
-  [542 285 607 555 645 559 461 603 330 452]
-  [498 497 664 445 518 564 461 508 600 380]
-  [454 500 276 487 447 591 413 378 458 508]
-  [573 890 485 501 357 413 356 635 374 618]
-  [535 558 491 482 539 572 598 703 463 329]
-  [487 555 580 492 462 484 495 396 711 356]]
+[[[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
+  [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
+  [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
+  [707. 534. 246. 423. 521. 500. 426. 340. 288. 482.]
+  [542. 285. 607. 555. 645. 559. 461. 603. 330. 452.]
+  [498. 497. 664. 445. 518. 564. 461. 508. 600. 380.]
+  [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
+  [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
+  [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
+  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]
 
- [[574 369 544 310 517 488 565 549 450 470]
-  [443 551 480 476 432 561 578 361 468 480]
-  [520 712 396 393 584 292 424 391 494 586]
-  [707 534 246 423 521 500 426 340 288 482]
-  [542 285 607 555 645 559 461 603 330 452]
-  [498 497 664 445 518 564 461 508 600 380]
-  [454 500 276 487 447 591 413 378 458 508]
-  [573 890 485 501 357 413 356 635 374 618]
-  [535 558 491 482 539 572 598 703 463 329]
-  [487 555 580 492 462 484 495 396 711 356]]] 
+ [[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
+  [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
+  [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
+  [707. 534. 246. 423. 521. 500. 426. 340. 288. 482.]
+  [542. 285. 607. 555. 645. 559. 461. 603. 330. 452.]
+  [498. 497. 664. 445. 518. 564. 461. 508. 600. 380.]
+  [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
+  [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
+  [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
+  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]] 
 
 Subcube from Spatio-Temporal Data: Wind Speed
-[[[31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]]
+[[[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]]
 
- [[30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]]]
+ [[30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]]]
 #+end_example
 
 *** How to Use LazySpaceTimeCube
@@ -1409,16 +1414,16 @@ print(spatiotemporal_cube.get(band, row, col))
 #+RESULTS: lazy-space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
-0.7 
+0.699999988079071 
 
 Value from Time Series Data: Spread Rate Adjustment
 1.0 
 
 Value from Spatial Data: Elevation
-564 
+564.0 
 
 Value from Spatio-Temporal Data: Wind Speed
-32
+32.0
 #+end_example
 
 **** Retrieve a Time Series at a Spatial Coordinate
@@ -1456,10 +1461,10 @@ Time Series from Time Series Data: Spread Rate Adjustment
 [1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
 
 Time Series from Spatial Data: Elevation
-[564 564 564 564 564 564 564 564 564 564 564 564] 
+[564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.] 
 
 Time Series from Spatio-Temporal Data: Wind Speed
-[32 32 32 32 32 32 37 37 37 37 37 37]
+[32. 32. 32. 32. 32. 32. 37. 37. 37. 37. 37. 37.]
 #+end_example
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
@@ -1515,28 +1520,28 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
 
 Spatial Plane from Spatial Data: Elevation
-[[574 369 544 310 517 488 565 549 450 470]
- [443 551 480 476 432 561 578 361 468 480]
- [520 712 396 393 584 292 424 391 494 586]
- [707 534 246 423 521 500 426 340 288 482]
- [542 285 607 555 645 559 461 603 330 452]
- [498 497 664 445 518 564 461 508 600 380]
- [454 500 276 487 447 591 413 378 458 508]
- [573 890 485 501 357 413 356 635 374 618]
- [535 558 491 482 539 572 598 703 463 329]
- [487 555 580 492 462 484 495 396 711 356]] 
+[[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
+ [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
+ [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
+ [707. 534. 246. 423. 521. 500. 426. 340. 288. 482.]
+ [542. 285. 607. 555. 645. 559. 461. 603. 330. 452.]
+ [498. 497. 664. 445. 518. 564. 461. 508. 600. 380.]
+ [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
+ [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
+ [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
+ [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]] 
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
-[[31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [31 31 31 31 31 31 31 31 31 31]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]
- [26 26 26 26 26 32 32 32 32 32]]
+[[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+ [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]]
 #+end_example
 
 **** Retrieve a Subcube within a Space-Time Region
@@ -1614,50 +1619,50 @@ Subcube from Time Series Data: Spread Rate Adjustment
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]] 
 
 Subcube from Spatial Data: Elevation
-[[[574 369 544 310 517 488 565 549 450 470]
-  [443 551 480 476 432 561 578 361 468 480]
-  [520 712 396 393 584 292 424 391 494 586]
-  [707 534 246 423 521 500 426 340 288 482]
-  [542 285 607 555 645 559 461 603 330 452]
-  [498 497 664 445 518 564 461 508 600 380]
-  [454 500 276 487 447 591 413 378 458 508]
-  [573 890 485 501 357 413 356 635 374 618]
-  [535 558 491 482 539 572 598 703 463 329]
-  [487 555 580 492 462 484 495 396 711 356]]
+[[[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
+  [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
+  [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
+  [707. 534. 246. 423. 521. 500. 426. 340. 288. 482.]
+  [542. 285. 607. 555. 645. 559. 461. 603. 330. 452.]
+  [498. 497. 664. 445. 518. 564. 461. 508. 600. 380.]
+  [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
+  [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
+  [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
+  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]
 
- [[574 369 544 310 517 488 565 549 450 470]
-  [443 551 480 476 432 561 578 361 468 480]
-  [520 712 396 393 584 292 424 391 494 586]
-  [707 534 246 423 521 500 426 340 288 482]
-  [542 285 607 555 645 559 461 603 330 452]
-  [498 497 664 445 518 564 461 508 600 380]
-  [454 500 276 487 447 591 413 378 458 508]
-  [573 890 485 501 357 413 356 635 374 618]
-  [535 558 491 482 539 572 598 703 463 329]
-  [487 555 580 492 462 484 495 396 711 356]]] 
+ [[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
+  [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
+  [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
+  [707. 534. 246. 423. 521. 500. 426. 340. 288. 482.]
+  [542. 285. 607. 555. 645. 559. 461. 603. 330. 452.]
+  [498. 497. 664. 445. 518. 564. 461. 508. 600. 380.]
+  [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
+  [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
+  [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
+  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]] 
 
 Subcube from Spatio-Temporal Data: Wind Speed
-[[[31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [31 31 31 31 31 31 31 31 31 31]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]
-  [26 26 26 26 26 32 32 32 32 32]]
+[[[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]
+  [26. 26. 26. 26. 26. 32. 32. 32. 32. 32.]]
 
- [[30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [30 30 30 30 30 36 36 36 36 36]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]
-  [34 34 34 34 34 37 37 37 37 37]]]
+ [[30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [30. 30. 30. 30. 30. 36. 36. 36. 36. 36.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]
+  [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]]]
 #+end_example
 
 * [WIP] Fire Behavior Model :noexport:
@@ -6665,7 +6670,7 @@ import numpy as np
 if cython.compiled:
     from cython.cimports.pyretechnics.cy_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range, cube_get
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
@@ -6674,7 +6679,7 @@ if cython.compiled:
 else:
     from pyretechnics.py_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
-    from pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range, cube_get
+    from pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
@@ -6743,29 +6748,29 @@ def burn_cell_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube],
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    slope              : cy.float = cube_get(space_time_cubes["slope"], t, y, x)
-    aspect             : cy.float = cube_get(space_time_cubes["aspect"], t, y, x)
-    fuel_model_number  : cy.int   = cy.cast(cy.int, cube_get(space_time_cubes["fuel_model"], t, y, x))
-    canopy_cover       : cy.float = cube_get(space_time_cubes["canopy_cover"], t, y, x)
-    canopy_height      : cy.float = cube_get(space_time_cubes["canopy_height"], t, y, x)
-    canopy_base_height : cy.float = cube_get(space_time_cubes["canopy_base_height"], t, y, x)
-    canopy_bulk_density: cy.float = cube_get(space_time_cubes["canopy_bulk_density"], t, y, x)
+    slope              : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["slope"]).get(t, y, x)
+    aspect             : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["aspect"]).get(t, y, x)
+    fuel_model_number  : cy.int   = cy.cast(cy.int, cy.cast(ISpaceTimeCube, space_time_cubes["fuel_model"]).get(t, y, x))
+    canopy_cover       : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_cover"]).get(t, y, x)
+    canopy_height      : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_height"]).get(t, y, x)
+    canopy_base_height : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_base_height"]).get(t, y, x)
+    canopy_bulk_density: cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_bulk_density"]).get(t, y, x)
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m               : cy.float = cube_get(space_time_cubes["wind_speed_10m"], t, y, x)
-    upwind_direction             : cy.float = cube_get(space_time_cubes["upwind_direction"], t, y, x)
-    fuel_moisture_dead_1hr       : cy.float = cube_get(space_time_cubes["fuel_moisture_dead_1hr"], t, y, x)
-    fuel_moisture_dead_10hr      : cy.float = cube_get(space_time_cubes["fuel_moisture_dead_10hr"], t, y, x)
-    fuel_moisture_dead_100hr     : cy.float = cube_get(space_time_cubes["fuel_moisture_dead_100hr"], t, y, x)
-    fuel_moisture_live_herbaceous: cy.float = cube_get(space_time_cubes["fuel_moisture_live_herbaceous"], t, y, x)
-    fuel_moisture_live_woody     : cy.float = cube_get(space_time_cubes["fuel_moisture_live_woody"], t, y, x)
-    foliar_moisture              : cy.float = cube_get(space_time_cubes["foliar_moisture"], t, y, x)
+    wind_speed_10m               : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["wind_speed_10m"]).get(t, y, x)
+    upwind_direction             : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["upwind_direction"]).get(t, y, x)
+    fuel_moisture_dead_1hr       : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_dead_1hr"]).get(t, y, x)
+    fuel_moisture_dead_10hr      : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_dead_10hr"]).get(t, y, x)
+    fuel_moisture_dead_100hr     : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_dead_100hr"]).get(t, y, x)
+    fuel_moisture_live_herbaceous: cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_live_herbaceous"]).get(t, y, x)
+    fuel_moisture_live_woody     : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_live_woody"]).get(t, y, x)
+    foliar_moisture              : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["foliar_moisture"]).get(t, y, x)
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment   : cy.float = (cube_get(space_time_cubes["fuel_spread_adjustment"], t, y, x)
+    fuel_spread_adjustment   : cy.float = (cy.cast(ISpaceTimeCube, space_time_cubes["fuel_spread_adjustment"]).get(t, y, x)
                                            if "fuel_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment: cy.float = (cube_get(space_time_cubes["weather_spread_adjustment"], t, y, x)
+    weather_spread_adjustment: cy.float = (cy.cast(ISpaceTimeCube, space_time_cubes["weather_spread_adjustment"]).get(t, y, x)
                                            if "weather_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
     spread_rate_adjustment   : cy.float = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
@@ -6954,7 +6959,7 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
     - fireline_intensity :: 2D float array (kW/m)
     - flame_length       :: 2D float array (m)
     """
-    slope_cube  : ISpaceTimeCube      = space_time_cubes["slope"]
+    slope_cube  : ISpaceTimeCube      = cy.cast(ISpaceTimeCube, space_time_cubes["slope"])
     bands       : pyidx               = slope_cube.shape[0]
     rows        : pyidx               = slope_cube.shape[1]
     cols        : pyidx               = slope_cube.shape[2]
@@ -7085,29 +7090,29 @@ def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
     #================================================================================================
 
     # Topography, Fuel Model, and Vegetation
-    slope              : cy.float = cube_get(space_time_cubes["slope"], t, y, x)
-    aspect             : cy.float = cube_get(space_time_cubes["aspect"], t, y, x)
-    fuel_model_number  : cy.int   = cy.cast(cy.int, cube_get(space_time_cubes["fuel_model"], t, y, x))
-    canopy_cover       : cy.float = cube_get(space_time_cubes["canopy_cover"], t, y, x)
-    canopy_height      : cy.float = cube_get(space_time_cubes["canopy_height"], t, y, x)
-    canopy_base_height : cy.float = cube_get(space_time_cubes["canopy_base_height"], t, y, x)
-    canopy_bulk_density: cy.float = cube_get(space_time_cubes["canopy_bulk_density"], t, y, x)
+    slope              : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["slope"]).get(t, y, x)
+    aspect             : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["aspect"]).get(t, y, x)
+    fuel_model_number  : cy.int   = cy.cast(cy.int, cy.cast(ISpaceTimeCube, space_time_cubes["fuel_model"]).get(t, y, x))
+    canopy_cover       : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_cover"]).get(t, y, x)
+    canopy_height      : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_height"]).get(t, y, x)
+    canopy_base_height : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_base_height"]).get(t, y, x)
+    canopy_bulk_density: cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["canopy_bulk_density"]).get(t, y, x)
 
     # Wind, Surface Moisture, and Foliar Moisture
-    wind_speed_10m               : cy.float = cube_get(space_time_cubes["wind_speed_10m"], t, y, x)
-    upwind_direction             : cy.float = cube_get(space_time_cubes["upwind_direction"], t, y, x)
-    fuel_moisture_dead_1hr       : cy.float = cube_get(space_time_cubes["fuel_moisture_dead_1hr"], t, y, x)
-    fuel_moisture_dead_10hr      : cy.float = cube_get(space_time_cubes["fuel_moisture_dead_10hr"], t, y, x)
-    fuel_moisture_dead_100hr     : cy.float = cube_get(space_time_cubes["fuel_moisture_dead_100hr"], t, y, x)
-    fuel_moisture_live_herbaceous: cy.float = cube_get(space_time_cubes["fuel_moisture_live_herbaceous"], t, y, x)
-    fuel_moisture_live_woody     : cy.float = cube_get(space_time_cubes["fuel_moisture_live_woody"], t, y, x)
-    foliar_moisture              : cy.float = cube_get(space_time_cubes["foliar_moisture"], t, y, x)
+    wind_speed_10m               : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["wind_speed_10m"]).get(t, y, x)
+    upwind_direction             : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["upwind_direction"]).get(t, y, x)
+    fuel_moisture_dead_1hr       : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_dead_1hr"]).get(t, y, x)
+    fuel_moisture_dead_10hr      : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_dead_10hr"]).get(t, y, x)
+    fuel_moisture_dead_100hr     : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_dead_100hr"]).get(t, y, x)
+    fuel_moisture_live_herbaceous: cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_live_herbaceous"]).get(t, y, x)
+    fuel_moisture_live_woody     : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["fuel_moisture_live_woody"]).get(t, y, x)
+    foliar_moisture              : cy.float = cy.cast(ISpaceTimeCube, space_time_cubes["foliar_moisture"]).get(t, y, x)
 
     # Spread Rate Adjustments (Optional)
-    fuel_spread_adjustment   : cy.float = (cube_get(space_time_cubes["fuel_spread_adjustment"], t, y, x)
+    fuel_spread_adjustment   : cy.float = (cy.cast(ISpaceTimeCube, space_time_cubes["fuel_spread_adjustment"]).get(t, y, x)
                                            if "fuel_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
-    weather_spread_adjustment: cy.float = (cube_get(space_time_cubes["weather_spread_adjustment"], t, y, x)
+    weather_spread_adjustment: cy.float = (cy.cast(ISpaceTimeCube, space_time_cubes["weather_spread_adjustment"]).get(t, y, x)
                                            if "weather_spread_adjustment" in space_time_cubes
                                            else 1.0)                                         # float >= 0.0
     spread_rate_adjustment   : cy.float = fuel_spread_adjustment * weather_spread_adjustment # float >= 0.0
@@ -7300,7 +7305,7 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
     - fireline_intensity :: 2D float array (kW/m)
     - flame_length       :: 2D float array (m)
     """
-    slope_cube  : ISpaceTimeCube      = space_time_cubes["slope"]
+    slope_cube  : ISpaceTimeCube      = cy.cast(ISpaceTimeCube, space_time_cubes["slope"])
     bands       : pyidx               = slope_cube.shape[0]
     rows        : pyidx               = slope_cube.shape[1]
     cols        : pyidx               = slope_cube.shape[2]
@@ -13324,7 +13329,7 @@ Pass1CellOutput = cy.struct(
 #+NAME: test-space-time-cube
 #+begin_src python
 import numpy as np
-from pyretechnics.space_time_cube import SpaceTimeCube, cube_get
+from pyretechnics.space_time_cube import SpaceTimeCube
 
 #==============================================================
 # Raw Data - Managed by the Caller
@@ -13408,16 +13413,16 @@ def test_make_layer_lookup():
 
 def test_use_layer_lookup_2d():
     layer_lookup = make_layer_lookup()
-    dem_100_100  = cube_get(layer_lookup["elevation"], 0, 100, 100)
-    slp_100_100  = cube_get(layer_lookup["slope"], 0, 100, 100)
-    asp_100_100  = cube_get(layer_lookup["aspect"], 0, 100, 100)
-    fbfm_100_100 = cube_get(layer_lookup["fuel_model"], 0, 100, 100)
-    cc_100_100   = cube_get(layer_lookup["canopy_cover"], 0, 100, 100)
-    ch_100_100   = cube_get(layer_lookup["canopy_height"], 0, 100, 100)
-    cbh_100_100  = cube_get(layer_lookup["canopy_base_height"], 0, 100, 100)
-    cbd_100_100  = cube_get(layer_lookup["canopy_bulk_density"], 0, 100, 100)
-    fsa_100_100  = cube_get(layer_lookup["fuel_spread_adjustment"], 0, 100, 100)           # Optional
-    sdi_100_100  = cube_get(layer_lookup["suppression_difficulty_index"], 0, 100, 100)     # Optional
+    dem_100_100  = layer_lookup["elevation"].get(0, 100, 100)
+    slp_100_100  = layer_lookup["slope"].get(0, 100, 100)
+    asp_100_100  = layer_lookup["aspect"].get(0, 100, 100)
+    fbfm_100_100 = layer_lookup["fuel_model"].get(0, 100, 100)
+    cc_100_100   = layer_lookup["canopy_cover"].get(0, 100, 100)
+    ch_100_100   = layer_lookup["canopy_height"].get(0, 100, 100)
+    cbh_100_100  = layer_lookup["canopy_base_height"].get(0, 100, 100)
+    cbd_100_100  = layer_lookup["canopy_bulk_density"].get(0, 100, 100)
+    fsa_100_100  = layer_lookup["fuel_spread_adjustment"].get(0, 100, 100)           # Optional
+    sdi_100_100  = layer_lookup["suppression_difficulty_index"].get(0, 100, 100)     # Optional
     assert dem_100_100  == 100100
     assert slp_100_100  == 100100
     assert asp_100_100  == 100100
@@ -13432,17 +13437,17 @@ def test_use_layer_lookup_2d():
 
 def test_use_layer_lookup_3d():
     layer_lookup     = make_layer_lookup()
-    temp_12_100_100  = cube_get(layer_lookup["temperature"], 12, 100, 100)
-    rh_12_100_100    = cube_get(layer_lookup["relative_humidity"], 12, 100, 100)
-    wsp_12_100_100   = cube_get(layer_lookup["wind_speed_10m"], 12, 100, 100)
-    wdir_12_100_100  = cube_get(layer_lookup["upwind_direction"], 12, 100, 100)
-    md1_12_100_100   = cube_get(layer_lookup["fuel_moisture_dead_1hr"], 12, 100, 100)
-    md10_12_100_100  = cube_get(layer_lookup["fuel_moisture_dead_10hr"], 12, 100, 100)
-    md100_12_100_100 = cube_get(layer_lookup["fuel_moisture_dead_100hr"], 12, 100, 100)
-    mlh_12_100_100   = cube_get(layer_lookup["fuel_moisture_live_herbaceous"], 12, 100, 100)
-    mlw_12_100_100   = cube_get(layer_lookup["fuel_moisture_live_woody"], 12, 100, 100)
-    fm_12_100_100    = cube_get(layer_lookup["foliar_moisture"], 12, 100, 100)
-    wsa_12_100_100   = cube_get(layer_lookup["weather_spread_adjustment"], 12, 100, 100) # Optional
+    temp_12_100_100  = layer_lookup["temperature"].get(12, 100, 100)
+    rh_12_100_100    = layer_lookup["relative_humidity"].get(12, 100, 100)
+    wsp_12_100_100   = layer_lookup["wind_speed_10m"].get(12, 100, 100)
+    wdir_12_100_100  = layer_lookup["upwind_direction"].get(12, 100, 100)
+    md1_12_100_100   = layer_lookup["fuel_moisture_dead_1hr"].get(12, 100, 100)
+    md10_12_100_100  = layer_lookup["fuel_moisture_dead_10hr"].get(12, 100, 100)
+    md100_12_100_100 = layer_lookup["fuel_moisture_dead_100hr"].get(12, 100, 100)
+    mlh_12_100_100   = layer_lookup["fuel_moisture_live_herbaceous"].get(12, 100, 100)
+    mlw_12_100_100   = layer_lookup["fuel_moisture_live_woody"].get(12, 100, 100)
+    fm_12_100_100    = layer_lookup["foliar_moisture"].get(12, 100, 100)
+    wsa_12_100_100   = layer_lookup["weather_spread_adjustment"].get(12, 100, 100) # Optional
     assert temp_12_100_100  == 121010
     assert rh_12_100_100    == 121010
     assert wsp_12_100_100   == 121010

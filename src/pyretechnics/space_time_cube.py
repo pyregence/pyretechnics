@@ -64,22 +64,15 @@ def maybe_repeat_array(array, axis_repetitions):
         else:
             return np.repeat(array, repetitions, axis)
 # space-time-cube-utilities ends here
-# [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
+# [[file:../../org/pyretechnics.org::ispace-time-cube-class][ispace-time-cube-class]]
 @cy.cclass
 class ISpaceTimeCube:
     @cy.cfunc
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         pass
-
-
-@cy.ccall
-@cy.inline
-@cy.exceptval(check=False)
-def cube_get(space_time_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
-    return space_time_cube.get(t, y, x)
-
-
+# ispace-time-cube-class ends here
+# [[file:../../org/pyretechnics.org::space-time-cube-class][space-time-cube-class]]
 @cy.cclass
 class SpaceTimeCube(ISpaceTimeCube):
     """
@@ -175,7 +168,7 @@ class SpaceTimeCube(ISpaceTimeCube):
             raise ValueError("Invalid input: base must have 0-3 dimensions.")
 
 
-    @cy.cfunc
+    @cy.ccall
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
@@ -219,7 +212,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         t_start_idx    = t_start - t_chunk_origin
         t_stop_idx     = t_stop  - t_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_time[t_start_idx:(t_stop_idx + 1)]
+        return np.asarray(high_res_time[t_start_idx:(t_stop_idx + 1)])
 
 
     def getSpatialPlane(self, t, y_range, x_range):
@@ -260,8 +253,8 @@ class SpaceTimeCube(ISpaceTimeCube):
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_space[y_start_idx:(y_stop_idx + 1),
-                              x_start_idx:(x_stop_idx + 1)]
+        return np.asarray(high_res_space[y_start_idx:(y_stop_idx + 1),
+                                         x_start_idx:(x_stop_idx + 1)])
 
 
     def getSubcube(self, t_range, y_range, x_range):
@@ -309,9 +302,9 @@ class SpaceTimeCube(ISpaceTimeCube):
         x_start_idx    = x_start - x_chunk_origin
         x_stop_idx     = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return high_res_cube[t_start_idx:(t_stop_idx + 1),
-                             y_start_idx:(y_stop_idx + 1),
-                             x_start_idx:(x_stop_idx + 1)]
+        return np.asarray(high_res_cube[t_start_idx:(t_stop_idx + 1),
+                                        y_start_idx:(y_stop_idx + 1),
+                                        x_start_idx:(x_stop_idx + 1)])
 
 
     def __getFullyRealizedCube(self):
@@ -347,11 +340,11 @@ class SpaceTimeCube(ISpaceTimeCube):
         else:
             # 3D: Spatio-Temporal Input
             # Repeat (t0,y0,x0) -> (t,y,x)
-            return reduce(maybe_repeat_array,
-                          ((0, self.t_repetitions),
-                           (1, self.y_repetitions),
-                           (2, self.x_repetitions)),
-                          self.data)
+            return np.asarray(reduce(maybe_repeat_array,
+                                     ((0, self.t_repetitions),
+                                      (1, self.y_repetitions),
+                                      (2, self.x_repetitions)),
+                                     self.data))
 
 
     def getFullyRealizedCube(self, cache=False):
@@ -470,7 +463,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
             return subcube
 
 
-    @cy.cfunc
+    @cy.ccall
     @cy.exceptval(check=False)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
