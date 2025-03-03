@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
+# [[file:../../org/pyretechnics.org::spot-fire-imports][spot-fire-imports]]
 import cython
 import cython as cy
 if cython.compiled:
@@ -19,8 +19,8 @@ else:
     import pyretechnics.conversion as conv
     import pyretechnics.fuel_models as fm
     import pyretechnics.surface_fire as sf
-
-
+# spot-fire-imports ends here
+# [[file:../../org/pyretechnics.org::expected-firebrand-production][expected-firebrand-production]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def expected_firebrand_production(fire_behavior           : SpreadBehavior,

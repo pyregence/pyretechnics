@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
+# [[file:../../org/pyretechnics.org::eulerian-level-set-imports][eulerian-level-set-imports]]
 import cython
 import cython as cy
 import numpy as np
@@ -33,8 +33,8 @@ else:
     import pyretechnics.crown_fire as cf
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
-
-
+# eulerian-level-set-imports ends here
+# [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
 # NOTE: No longer used in tight loops.
 @cy.cfunc
 @cy.exceptval(check=False)

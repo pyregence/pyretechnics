@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
+# [[file:../../org/pyretechnics.org::crown-fire-imports][crown-fire-imports]]
 import cython
 import cython as cy
 if cython.compiled:
@@ -15,8 +15,8 @@ else:
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.surface_fire as sf
-
-
+# crown-fire-imports ends here
+# [[file:../../org/pyretechnics.org::van-wagner-critical-fireline-intensity][van-wagner-critical-fireline-intensity]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_moisture: cy.float) -> cy.float:

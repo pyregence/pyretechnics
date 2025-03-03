@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::load-raster][load-raster]]
+# [[file:../../org/pyretechnics.org::load-landfire-imports][load-landfire-imports]]
 import cython
 import numpy as np
 import rasterio
@@ -6,8 +6,8 @@ if cython.compiled:
     from cython.cimports.pyretechnics.space_time_cube import SpaceTimeCube
 else:
     from pyretechnics.space_time_cube import SpaceTimeCube
-
-
+# load-landfire-imports ends here
+# [[file:../../org/pyretechnics.org::load-raster][load-raster]]
 def raster_metadata(raster):
     return {
         "name"      : raster.name,

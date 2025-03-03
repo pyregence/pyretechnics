@@ -197,7 +197,7 @@ various types of input datasets.
 
 *** Module Imports
     :PROPERTIES:
-    :CUSTOM_ID: module-imports
+    :CUSTOM_ID: module-imports-space-time-cube
     :END:
 
 #+NAME: space-time-cube-imports
@@ -1710,6 +1710,23 @@ properties with additional information that is dependent upon fuel
 moisture. This combination of fuel models and moisture form the basis
 of many fire behavior analyses.
 
+*** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: module-imports-fuel-models
+    :END:
+
+#+NAME: fuel-models-imports
+#+begin_src python
+import cython
+import cython as cy
+if cython.compiled:
+    from cython.cimports.libc.math import exp
+    from cython.cimports.pyretechnics.cy_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
+else:
+    from math import exp
+    from pyretechnics.py_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
+#+end_src
+
 *** Fuel Model Properties
     :PROPERTIES:
     :CUSTOM_ID: fuel-model-properties
@@ -1780,16 +1797,6 @@ user.
 
 #+NAME: fuel-model-compact-table
 #+begin_src python
-import cython
-import cython as cy
-if cython.compiled:
-    from cython.cimports.libc.math import exp
-    from cython.cimports.pyretechnics.cy_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
-else:
-    from math import exp
-    from pyretechnics.py_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
-
-
 # FIXME: Replace this dictionary with something more efficient
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
 #
@@ -2458,6 +2465,31 @@ wind and topography inputs to determine the maximum spread rate and
 direction of a surface fire as well as its fireline intensity and
 flame length.
 
+*** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: module-imports-surface-fire
+    :END:
+
+#+NAME: surface-fire-imports
+#+begin_src python
+import cython
+import cython as cy
+if cython.compiled:
+    from cython.cimports.libc.math import sqrt, pow, log, exp
+    from cython.cimports.pyretechnics.cy_types import \
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
+        FireBehaviorMax, SpreadBehavior
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.vector_utils as vu
+else:
+    from math import sqrt, pow, log, exp
+    from pyretechnics.py_types import \
+        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
+        FireBehaviorMax, SpreadBehavior
+    import pyretechnics.conversion as conv
+    import pyretechnics.vector_utils as vu
+#+end_src
+
 *** Rothermel's Surface Fire Rate of Spread Equation
     :PROPERTIES:
     :CUSTOM_ID: rothermel's-surface-fire-rate-of-spread-equation
@@ -2520,31 +2552,6 @@ no-wind-no-slope term $R_0$ defined as follows:
 
 Each term will be defined in its own section, and finally they will be
 combined together in a single function that computes $R_0$.
-
-**** Module Imports
-     :PROPERTIES:
-     :CUSTOM_ID: module-imports
-     :END:
-
-#+NAME: surface-fire-imports
-#+begin_src python
-import cython
-import cython as cy
-if cython.compiled:
-    from cython.cimports.libc.math import sqrt, pow, log, exp
-    from cython.cimports.pyretechnics.cy_types import \
-        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
-        FireBehaviorMax, SpreadBehavior
-    import cython.cimports.pyretechnics.conversion as conv
-    import cython.cimports.pyretechnics.vector_utils as vu
-else:
-    from math import sqrt, pow, log, exp
-    from pyretechnics.py_types import \
-        vec_xy, vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, FireBehaviorMin, \
-        FireBehaviorMax, SpreadBehavior
-    import pyretechnics.conversion as conv
-    import pyretechnics.vector_utils as vu
-#+end_src
 
 **** Common Intermediate Calculations: $\sigma', \beta, \beta_{op}$
      :PROPERTIES:
@@ -3947,6 +3954,31 @@ active crown fire. If so, they can then calculate the maximum spread
 rate and direction of this crown fire as well as its fireline
 intensity and flame length.
 
+*** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: module-imports-crown-fire
+    :END:
+
+#+NAME: crown-fire-imports
+#+begin_src python
+import cython
+import cython as cy
+if cython.compiled:
+    from cython.cimports.libc.math import sqrt, exp, pow
+    from cython.cimports.pyretechnics.cy_types import \
+        vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.vector_utils as vu
+    import cython.cimports.pyretechnics.surface_fire as sf
+else:
+    from math import sqrt, exp, pow
+    from pyretechnics.py_types import \
+        vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
+    import pyretechnics.conversion as conv
+    import pyretechnics.vector_utils as vu
+    import pyretechnics.surface_fire as sf
+#+end_src
+
 *** Crown Fire Initiation
     :PROPERTIES:
     :CUSTOM_ID: crown-fire-initiation
@@ -3971,24 +4003,6 @@ $\text{kW/m}$.
 
 #+NAME: van-wagner-critical-fireline-intensity
 #+begin_src python
-import cython
-import cython as cy
-if cython.compiled:
-    from cython.cimports.libc.math import sqrt, exp, pow
-    from cython.cimports.pyretechnics.cy_types import \
-        vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
-    import cython.cimports.pyretechnics.conversion as conv
-    import cython.cimports.pyretechnics.vector_utils as vu
-    import cython.cimports.pyretechnics.surface_fire as sf
-else:
-    from math import sqrt, exp, pow
-    from pyretechnics.py_types import \
-        vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
-    import pyretechnics.conversion as conv
-    import pyretechnics.vector_utils as vu
-    import pyretechnics.surface_fire as sf
-
-
 @cy.cfunc
 @cy.exceptval(check=False)
 def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_moisture: cy.float) -> cy.float:
@@ -5311,6 +5325,35 @@ their likelihood of surviving their flight until landing, their
 likelihood of igniting spot fires once deposited, and the time to grow
 from a spark to a fire capable of spreading on its own.
 
+*** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: module-imports-spot-fire
+    :END:
+
+#+NAME: spot-fire-imports
+#+begin_src python
+import cython
+import cython as cy
+if cython.compiled:
+    from cython.cimports.libc.math import round, sqrt, pow, log, exp, sin, cos
+    from cython.cimports.pyretechnics.cy_types import \
+        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+    from cython.cimports.pyretechnics.random import BufferedRandGen
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.fuel_models as fm
+    import cython.cimports.pyretechnics.surface_fire as sf
+else:
+    from math import round, sqrt, pow, log, exp, sin, cos
+    from pyretechnics.py_types import \
+        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+    from pyretechnics.random import BufferedRandGen
+    from pyretechnics.space_time_cube import ISpaceTimeCube
+    import pyretechnics.conversion as conv
+    import pyretechnics.fuel_models as fm
+    import pyretechnics.surface_fire as sf
+#+end_src
+
 *** Expected Firebrand Production
     :PROPERTIES:
     :CUSTOM_ID: expected-firebrand-production
@@ -5358,28 +5401,6 @@ to cast per cell $F_C$:
 
 #+NAME: expected-firebrand-production
 #+begin_src python
-import cython
-import cython as cy
-if cython.compiled:
-    from cython.cimports.libc.math import round, sqrt, pow, log, exp, sin, cos
-    from cython.cimports.pyretechnics.cy_types import \
-        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
-    from cython.cimports.pyretechnics.random import BufferedRandGen
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
-    import cython.cimports.pyretechnics.conversion as conv
-    import cython.cimports.pyretechnics.fuel_models as fm
-    import cython.cimports.pyretechnics.surface_fire as sf
-else:
-    from math import round, sqrt, pow, log, exp, sin, cos
-    from pyretechnics.py_types import \
-        pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
-    from pyretechnics.random import BufferedRandGen
-    from pyretechnics.space_time_cube import ISpaceTimeCube
-    import pyretechnics.conversion as conv
-    import pyretechnics.fuel_models as fm
-    import pyretechnics.surface_fire as sf
-
-
 @cy.cfunc
 @cy.exceptval(check=False)
 def expected_firebrand_production(fire_behavior           : SpreadBehavior,
@@ -6647,22 +6668,12 @@ fire equations from section [[Crown Fire Equations
 (pyretechnics.crown_fire)]] to cells within a space-time cube, returning
 their combined surface and crown fire behavior.
 
-*** Burn Cell as a Head Fire
+*** Module Imports
     :PROPERTIES:
-    :CUSTOM_ID: burn-cell-as-a-head-fire
+    :CUSTOM_ID: module-imports-burn-cells
     :END:
 
-Sometimes the goal of a fire behavior analysis is to determine the
-most extreme behavior to be expected, given static measurements of
-surface fuels, tree canopy characteristics, topography, wind, and
-moisture. The following function computes the maximum surface fire
-behavior and checks to see whether its maximum surface fireline
-intensity causes a crown fire. If so, the maximum crown fire behavior
-is computed and combined with the maximum surface fire behavior as per
-section [[Combining Surface and Crown Fire Behavior]]. If not, the maximum
-surface fire behavior is returned.
-
-#+NAME: burn-cell-as-head-fire
+#+NAME: burn-cells-imports
 #+begin_src python
 import cython
 import cython as cy
@@ -6685,8 +6696,25 @@ else:
     import pyretechnics.fuel_models as fm
     import pyretechnics.surface_fire as sf
     import pyretechnics.crown_fire as cf
+#+end_src
 
+*** Burn Cell as a Head Fire
+    :PROPERTIES:
+    :CUSTOM_ID: burn-cell-as-a-head-fire
+    :END:
 
+Sometimes the goal of a fire behavior analysis is to determine the
+most extreme behavior to be expected, given static measurements of
+surface fuels, tree canopy characteristics, topography, wind, and
+moisture. The following function computes the maximum surface fire
+behavior and checks to see whether its maximum surface fireline
+intensity causes a crown fire. If so, the maximum crown fire behavior
+is computed and combined with the maximum surface fire behavior as per
+section [[Combining Surface and Crown Fire Behavior]]. If not, the maximum
+surface fire behavior is returned.
+
+#+NAME: burn-cell-as-head-fire
+#+begin_src python
 @cy.cfunc
 @cy.inline
 def SpreadBehavior_to_dict(sb: SpreadBehavior) -> dict:
@@ -7607,6 +7635,49 @@ This section introduces the equations used in the Eulerian level set
 method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
 model[fn::https://elmfire.io].
 
+*** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: module-imports-eulerian-level-set
+    :END:
+
+#+NAME: eulerian-level-set-imports
+#+begin_src python
+import cython
+import cython as cy
+import numpy as np
+from sortedcontainers import SortedDict
+if cython.compiled:
+    from cython.cimports.libc.stdlib import malloc, realloc, free
+    from cython.cimports.libc.math import pi, floor, sqrt, pow, atan
+    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
+        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
+        PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
+    from cython.cimports.pyretechnics.random import BufferedRandGen
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
+    import cython.cimports.pyretechnics.conversion as conv
+    import cython.cimports.pyretechnics.vector_utils as vu
+    import cython.cimports.pyretechnics.fuel_models as fm
+    import cython.cimports.pyretechnics.surface_fire as sf
+    import cython.cimports.pyretechnics.crown_fire as cf
+    import cython.cimports.pyretechnics.spot_fire as spot
+    import cython.cimports.pyretechnics.narrow_band_tracking as nbt
+else:
+    # TODO: Create equivalent Python functions for malloc, realloc, free
+    from math import pi, floor, sqrt, pow, atan
+    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
+        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
+        PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
+    from pyretechnics.random import BufferedRandGen
+    from pyretechnics.space_time_cube import ISpaceTimeCube
+    import pyretechnics.conversion as conv
+    import pyretechnics.vector_utils as vu
+    import pyretechnics.fuel_models as fm
+    import pyretechnics.surface_fire as sf
+    import pyretechnics.crown_fire as cf
+    import pyretechnics.spot_fire as spot
+    import pyretechnics.narrow_band_tracking as nbt
+#+end_src
+
 *** The $\phi$ Field
     :PROPERTIES:
     :CUSTOM_ID: the-$\phi$-field
@@ -7652,42 +7723,6 @@ $\phi$ raster's grid cells.
 
 #+NAME: phi-field-spatial-gradients-approx
 #+begin_src python
-import cython
-import cython as cy
-import numpy as np
-from sortedcontainers import SortedDict
-if cython.compiled:
-    from cython.cimports.libc.stdlib import malloc, realloc, free
-    from cython.cimports.libc.math import pi, floor, sqrt, pow, atan
-    from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
-        PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
-    from cython.cimports.pyretechnics.random import BufferedRandGen
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
-    import cython.cimports.pyretechnics.conversion as conv
-    import cython.cimports.pyretechnics.vector_utils as vu
-    import cython.cimports.pyretechnics.fuel_models as fm
-    import cython.cimports.pyretechnics.surface_fire as sf
-    import cython.cimports.pyretechnics.crown_fire as cf
-    import cython.cimports.pyretechnics.spot_fire as spot
-    import cython.cimports.pyretechnics.narrow_band_tracking as nbt
-else:
-    # TODO: Create equivalent Python functions for malloc, realloc, free
-    from math import pi, floor, sqrt, pow, atan
-    from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
-        fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
-        PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
-    from pyretechnics.random import BufferedRandGen
-    from pyretechnics.space_time_cube import ISpaceTimeCube
-    import pyretechnics.conversion as conv
-    import pyretechnics.vector_utils as vu
-    import pyretechnics.fuel_models as fm
-    import pyretechnics.surface_fire as sf
-    import pyretechnics.crown_fire as cf
-    import pyretechnics.spot_fire as spot
-    import pyretechnics.narrow_band_tracking as nbt
-
-
 # NOTE: No longer used in tight loops.
 @cy.cfunc
 @cy.exceptval(check=False)
@@ -13497,6 +13532,22 @@ For convenience, this section introduces functionality to load these
 raster layers from files on disk into a Python dictionary of
 =SpaceTimeCube= objects.
 
+*** Module Imports
+    :PROPERTIES:
+    :CUSTOM_ID: module-imports-load-landfire
+    :END:
+
+#+NAME: load-landfire-imports
+#+begin_src python
+import cython
+import numpy as np
+import rasterio
+if cython.compiled:
+    from cython.cimports.pyretechnics.space_time_cube import SpaceTimeCube
+else:
+    from pyretechnics.space_time_cube import SpaceTimeCube
+#+end_src
+
 *** Loading Raster Files with Python Rasterio
     :PROPERTIES:
     :CUSTOM_ID: loading-raster-files-with-python-rasterio
@@ -13511,15 +13562,6 @@ these keys:
 
 #+NAME: load-raster
 #+begin_src python
-import cython
-import numpy as np
-import rasterio
-if cython.compiled:
-    from cython.cimports.pyretechnics.space_time_cube import SpaceTimeCube
-else:
-    from pyretechnics.space_time_cube import SpaceTimeCube
-
-
 def raster_metadata(raster):
     return {
         "name"      : raster.name,

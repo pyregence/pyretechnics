@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
+# [[file:../../org/pyretechnics.org::fuel-models-imports][fuel-models-imports]]
 import cython
 import cython as cy
 if cython.compiled:
@@ -7,8 +7,8 @@ if cython.compiled:
 else:
     from math import exp
     from pyretechnics.py_types import fcatarr, fclaarr, CompactFuelModel, FuelModel
-
-
+# fuel-models-imports ends here
+# [[file:../../org/pyretechnics.org::fuel-model-compact-table][fuel-model-compact-table]]
 # FIXME: Replace this dictionary with something more efficient
 # Lookup table including entries for each of the Anderson 13 and Scott & Burgan 40 fuel models.
 #

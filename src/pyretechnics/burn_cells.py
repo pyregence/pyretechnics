@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
+# [[file:../../org/pyretechnics.org::burn-cells-imports][burn-cells-imports]]
 import cython
 import cython as cy
 import numpy as np
@@ -20,8 +20,8 @@ else:
     import pyretechnics.fuel_models as fm
     import pyretechnics.surface_fire as sf
     import pyretechnics.crown_fire as cf
-
-
+# burn-cells-imports ends here
+# [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
 @cy.cfunc
 @cy.inline
 def SpreadBehavior_to_dict(sb: SpreadBehavior) -> dict:
