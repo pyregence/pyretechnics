@@ -16,7 +16,7 @@ else:
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
 # surface-fire-imports ends here
-# [[file:../../org/pyretechnics.org::surface-fire-common-intermediate-calculations][surface-fire-common-intermediate-calculations]]
+# [[file:../../org/pyretechnics.org::surface-fire-utility-functions][surface-fire-utility-functions]]
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
@@ -46,8 +46,8 @@ def __dotp_categories(x_i: fcatarr, y_i: fcatarr) -> cy.float:
         (x_i[0] * y_i[0]) +
         (x_i[1] * y_i[1])
     )
-
-
+# surface-fire-utility-functions ends here
+# [[file:../../org/pyretechnics.org::surface-fire-common-intermediate-calculations][surface-fire-common-intermediate-calculations]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def calc_surface_area_to_volume_ratio(f_i: fcatarr, f_ij: fclaarr, sigma: fclaarr) -> cy.float:
@@ -404,7 +404,7 @@ def make_surface_fire_min(base_spread_rate        : cy.float,
         _ws_expnt)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model: FuelModel,
                                                 spread_rate_adjustment: cy.float = 1.0) -> FireBehaviorMin:
@@ -503,7 +503,7 @@ def calc_wind_adjustment_factor(fuel_bed_depth: cy.float, canopy_height: cy.floa
         return 0.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_midflame_wind_speed(wind_speed_20ft: cy.float,
                              fuel_bed_depth : cy.float,
@@ -635,7 +635,7 @@ def maybe_limit_wind_speed(use_wind_limit  : cy.bint,
         )
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_max(surface_fire_min      : FireBehaviorMin,
                                    midflame_wind_speed   : cy.float,
@@ -721,7 +721,7 @@ def calc_surface_fire_behavior_max(surface_fire_min      : FireBehaviorMin,
     )
 # surface-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::surface-fire-behavior-in-direction][surface-fire-behavior-in-direction]]
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
                                             spread_direction: vec_xyz) -> SpreadBehavior:

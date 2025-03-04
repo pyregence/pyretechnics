@@ -214,7 +214,7 @@ else:
 
 *** Utility Functions
     :PROPERTIES:
-    :CUSTOM_ID: utility-functions
+    :CUSTOM_ID: utility-functions-space-time-cube
     :END:
 
 #+NAME: space-time-cube-utilities
@@ -2659,12 +2659,12 @@ no-wind-no-slope term $R_0$ defined as follows:
 Each term will be defined in its own section, and finally they will be
 combined together in a single function that computes $R_0$.
 
-**** Common Intermediate Calculations: $\sigma', \beta, \beta_{op}$
+**** Utility Functions
      :PROPERTIES:
-     :CUSTOM_ID: common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$
+     :CUSTOM_ID: utility-functions-surface-fire
      :END:
 
-#+NAME: surface-fire-common-intermediate-calculations
+#+NAME: surface-fire-utility-functions
 #+begin_src python
 @cy.cfunc
 @cy.inline
@@ -2695,8 +2695,15 @@ def __dotp_categories(x_i: fcatarr, y_i: fcatarr) -> cy.float:
         (x_i[0] * y_i[0]) +
         (x_i[1] * y_i[1])
     )
+#+end_src
 
+**** Common Intermediate Calculations: $\sigma', \beta, \beta_{op}$
+     :PROPERTIES:
+     :CUSTOM_ID: common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$
+     :END:
 
+#+NAME: surface-fire-common-intermediate-calculations
+#+begin_src python
 @cy.cfunc
 @cy.exceptval(check=False)
 def calc_surface_area_to_volume_ratio(f_i: fcatarr, f_ij: fclaarr, sigma: fclaarr) -> cy.float:
@@ -3217,7 +3224,7 @@ def make_surface_fire_min(base_spread_rate        : cy.float,
         _ws_expnt)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_no_wind_no_slope(moisturized_fuel_model: FuelModel,
                                                 spread_rate_adjustment: cy.float = 1.0) -> FireBehaviorMin:
@@ -3348,7 +3355,7 @@ def calc_wind_adjustment_factor(fuel_bed_depth: cy.float, canopy_height: cy.floa
         return 0.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_midflame_wind_speed(wind_speed_20ft: cy.float,
                              fuel_bed_depth : cy.float,
@@ -3581,7 +3588,7 @@ def maybe_limit_wind_speed(use_wind_limit  : cy.bint,
         )
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_max(surface_fire_min      : FireBehaviorMin,
                                    midflame_wind_speed   : cy.float,
@@ -3707,7 +3714,7 @@ this plane from $\vec{u_{\max}}$.
 
 #+NAME: surface-fire-behavior-in-direction
 #+begin_src python
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
                                             spread_direction: vec_xyz) -> SpreadBehavior:
@@ -3795,7 +3802,7 @@ import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
 
 # Set input parameters
-fuel_model    = fm.fuel_model_table[101] # GR1
+fuel_model    = fm.get_fuel_model(101) # GR1
 fuel_moisture = [
     0.05, # dead_1hr
     0.10, # dead_10hr
@@ -3819,10 +3826,10 @@ pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_inte
 
 #+NAME: compute-surface-fire-behavior-min-results
 #+RESULTS: compute-surface-fire-behavior-min
-: No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-: {'base_fireline_intensity': 1.7899978160858154,
-:  'base_spread_rate': 0.12637238204479218,
-:  'max_effective_wind_speed': 109.7729263305664}
+: No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+: {'base_fireline_intensity': 1.7899988889694214,
+:  'base_spread_rate': 0.12637242674827576,
+:  'max_effective_wind_speed': 109.77295684814453}
 
 *** How to Translate the 10m Wind Speed Vector into the Midflame Wind Speed Vector
     :PROPERTIES:
@@ -3836,11 +3843,11 @@ import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
 
 # Set input parameters
-fuel_model       = fm.fuel_model_table[101] # GR1
-canopy_height    = 20                       # meters
-canopy_cover     = 0.6                      # 0-1
-wind_speed_10m   = 20                       # km/hr
-upwind_direction = 45.0                     # degrees clockwise from North
+fuel_model       = fm.get_fuel_model(101) # GR1
+canopy_height    = 20                     # meters
+canopy_cover     = 0.6                    # 0-1
+wind_speed_10m   = 20                     # km/hr
+upwind_direction = 45.0                   # degrees clockwise from North
 
 # Convert from 10m wind speed to 20ft wind speed
 wind_speed_20ft = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
@@ -3862,7 +3869,7 @@ print("Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind D
 #+RESULTS: translate-10m-wind-to-midflame-wind
 : Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Direction = 45.0
 :  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
-: - Speed: 27.22428573967944 (m/min)
+: - Speed: 27.21068000793457 (m/min)
 : - Downwind Direction: 225.0 (degrees clockwise from North)
 
 *** How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread
@@ -3877,7 +3884,7 @@ import pyretechnics.fuel_models as fm
 import pyretechnics.surface_fire as sf
 
 # Set input parameters
-fuel_model    = fm.fuel_model_table[101] # GR1
+fuel_model    = fm.get_fuel_model(101) # GR1
 fuel_moisture = [
     0.05, # dead_1hr
     0.10, # dead_10hr
@@ -3902,7 +3909,8 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      midflame_wind_speed,
                                                      upwind_direction,
                                                      slope,
-                                                     aspect)
+                                                     aspect,
+                                                     surface_lw_ratio_model="rothermel")
 
 # View results
 print("Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = "
@@ -3915,7 +3923,8 @@ surface_fire_max_unlimited = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                                upwind_direction,
                                                                slope,
                                                                aspect,
-                                                               use_wind_limit=False)
+                                                               use_wind_limit=False,
+                                                               surface_lw_ratio_model="rothermel")
 
 # View results
 print("\nSurface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = "
@@ -3926,21 +3935,29 @@ pprint(surface_fire_max_unlimited)
 #+NAME: compute-surface-fire-behavior-max-results
 #+RESULTS: compute-surface-fire-behavior-max
 #+begin_example
-Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.8693098689345452,
- 'length_to_width_ratio': 2.02319598197937,
- 'max_fireline_intensity': 32.52824021555232,
- 'max_flame_length': 0.384393279547724,
- 'max_spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
- 'max_spread_rate': 2.2964671592467902}
+Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'critical_spread_rate': 0.0,
+ 'eccentricity': 0.8693099021911621,
+ 'length_to_width_ratio': 2.023196220397949,
+ 'max_fire_type': 1,
+ 'max_fireline_intensity': 32.52827453613281,
+ 'max_flame_length': 0.38439345359802246,
+ 'max_spread_direction': (0.5751420855522156,
+                          0.8099259734153748,
+                          0.11502841860055923),
+ 'max_spread_rate': 2.29646897315979}
 
-Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.9845208635180694,
- 'length_to_width_ratio': 5.705566883087158,
- 'max_fireline_intensity': 330.52327700735987,
- 'max_flame_length': 1.116783188433671,
- 'max_spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
- 'max_spread_rate': 23.334673071281713}
+Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'critical_spread_rate': 0.0,
+ 'eccentricity': 0.9845208525657654,
+ 'length_to_width_ratio': 5.705564498901367,
+ 'max_fire_type': 1,
+ 'max_fireline_intensity': 330.52349853515625,
+ 'max_flame_length': 1.1167834997177124,
+ 'max_spread_direction': (0.5751420855522156,
+                          0.8099259734153748,
+                          0.11502841860055923),
+ 'max_spread_rate': 23.33468246459961}
 #+end_example
 
 *** How to Calculate the Surface Fire Behavior in Any Direction
@@ -3957,7 +3974,7 @@ import pyretechnics.surface_fire as sf
 import pyretechnics.vector_utils as vu
 
 # Set input parameters
-fuel_model    = fm.fuel_model_table[101] # GR1
+fuel_model    = fm.get_fuel_model(101) # GR1
 fuel_moisture = [
     0.05, # dead_1hr
     0.10, # dead_10hr
@@ -3982,7 +3999,8 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      midflame_wind_speed,
                                                      upwind_direction,
                                                      slope,
-                                                     aspect)
+                                                     aspect,
+                                                     surface_lw_ratio_model="rothermel")
 
 # Calculate surface fire behavior for the heading, flanking, and backing fires
 heading_fire_direction  = surface_fire_max["max_spread_direction"]
@@ -4015,26 +4033,35 @@ pprint(backing_fire_behavior)
 #+NAME: compute-surface-fire-behavior-in-direction-results
 #+RESULTS: compute-surface-fire-behavior-in-direction
 #+begin_example
-Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 32.52822719177826,
- 'flame_length': 0.38439320875152366,
- 'spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
- 'spread_rate': 2.2964662397789914}
+Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 32.52827453613281,
+ 'flame_length': 0.38439345359802246,
+ 'spread_direction': (0.5751420855522156,
+                      0.8099259734153748,
+                      0.11502841860055923),
+ 'spread_rate': 2.29646897315979}
 
-Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 4.251119786484406,
- 'flame_length': 0.15074657797968766,
- 'spread_direction': array([ 0.79419774, -0.58653224,  0.15883955]),
- 'spread_rate': 0.30012558057223193}
+Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 4.251122951507568,
+ 'flame_length': 0.15074662864208221,
+ 'spread_direction': (0.7941977381706238,
+                      -0.5865322351455688,
+                      0.15883956849575043),
+ 'spread_rate': 0.30012571811676025}
 
-Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 2.274165557579764,
- 'flame_length': 0.1130509146666419,
- 'spread_direction': array([-0.57514215, -0.80992585, -0.11502843]),
- 'spread_rate': 0.16055422866605315}
+Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 2.27416729927063,
+ 'flame_length': 0.11305095255374908,
+ 'spread_direction': (-0.5751421451568604,
+                      -0.80992591381073,
+                      -0.11502843350172043),
+ 'spread_rate': 0.16055430471897125}
 #+end_example
 
 * Crown Fire Equations (pyretechnics.crown_fire)
@@ -12514,7 +12541,7 @@ else:
     from pyretechnics.py_types import vec_xy
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def rad_to_deg(radians: cy.float) -> cy.float:
@@ -12522,7 +12549,7 @@ def rad_to_deg(radians: cy.float) -> cy.float:
     return radians * 180.0 / pi
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def deg_to_rad(degrees: cy.float) -> cy.float:
@@ -12530,7 +12557,7 @@ def deg_to_rad(degrees: cy.float) -> cy.float:
     return degrees * pi / 180.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def deg_to_ratio(degrees: cy.float) -> cy.float:
@@ -12538,7 +12565,7 @@ def deg_to_ratio(degrees: cy.float) -> cy.float:
     return tan(deg_to_rad(degrees))
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def ratio_to_deg(ratio: cy.float) -> cy.float:
@@ -12546,7 +12573,7 @@ def ratio_to_deg(ratio: cy.float) -> cy.float:
     return rad_to_deg(atan(ratio))
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def F_to_K(degrees: cy.float) -> cy.float:
@@ -12554,7 +12581,7 @@ def F_to_K(degrees: cy.float) -> cy.float:
     return (degrees + 459.67) * 0.5555555555555556
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def K_to_F(degrees: cy.float) -> cy.float:
@@ -12562,7 +12589,7 @@ def K_to_F(degrees: cy.float) -> cy.float:
     return (degrees * 1.8) - 459.67
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def F_to_C(degrees: cy.float) -> cy.float:
@@ -12570,7 +12597,7 @@ def F_to_C(degrees: cy.float) -> cy.float:
     return (degrees - 32.0) * 0.5555555555555556
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def C_to_F(degrees: cy.float) -> cy.float:
@@ -12578,7 +12605,7 @@ def C_to_F(degrees: cy.float) -> cy.float:
     return (degrees * 1.8) + 32.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def ch_to_m(ch: cy.float) -> cy.float:
@@ -12586,7 +12613,7 @@ def ch_to_m(ch: cy.float) -> cy.float:
     return ch * 20.1168
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def m_to_ch(m: cy.float) -> cy.float:
@@ -12594,7 +12621,7 @@ def m_to_ch(m: cy.float) -> cy.float:
     return m * 0.0497097
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def m_to_ft(m: cy.float) -> cy.float:
@@ -12602,7 +12629,7 @@ def m_to_ft(m: cy.float) -> cy.float:
     return m * 3.281
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def ft_to_m(ft: cy.float) -> cy.float:
@@ -12610,7 +12637,7 @@ def ft_to_m(ft: cy.float) -> cy.float:
     return ft * 0.30478512648582745
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mph_to_mps(mph: cy.float) -> cy.float:
@@ -12618,7 +12645,7 @@ def mph_to_mps(mph: cy.float) -> cy.float:
     return mph * 0.44701818551254696
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mps_to_mph(mps: cy.float) -> cy.float:
@@ -12626,7 +12653,7 @@ def mps_to_mph(mps: cy.float) -> cy.float:
     return mps * 2.237045454545455
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def km_hr_to_mps(km_hr: cy.float) -> cy.float:
@@ -12634,7 +12661,7 @@ def km_hr_to_mps(km_hr: cy.float) -> cy.float:
     return km_hr * 0.277764222883701
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mps_to_km_hr(mps: cy.float) -> cy.float:
@@ -12642,7 +12669,7 @@ def mps_to_km_hr(mps: cy.float) -> cy.float:
     return mps * 3.6001756800000004
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mph_to_km_hr(mph: cy.float) -> cy.float:
@@ -12650,7 +12677,7 @@ def mph_to_km_hr(mph: cy.float) -> cy.float:
     return mph * 1.609344
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def km_hr_to_mph(km_hr: cy.float) -> cy.float:
@@ -12658,7 +12685,7 @@ def km_hr_to_mph(km_hr: cy.float) -> cy.float:
     return km_hr * 0.621371192237334
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def m_min_to_km_hr(m_min: cy.float) -> cy.float:
@@ -12666,7 +12693,7 @@ def m_min_to_km_hr(m_min: cy.float) -> cy.float:
     return m_min * 0.06
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def km_hr_to_m_min(km_hr: cy.float) -> cy.float:
@@ -12674,7 +12701,7 @@ def km_hr_to_m_min(km_hr: cy.float) -> cy.float:
     return km_hr / 0.06
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def m_min_to_mph(m_min: cy.float) -> cy.float:
@@ -12682,7 +12709,7 @@ def m_min_to_mph(m_min: cy.float) -> cy.float:
     return m_min * 0.0372840909091
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mph_to_m_min(mph: cy.float) -> cy.float:
@@ -12690,7 +12717,7 @@ def mph_to_m_min(mph: cy.float) -> cy.float:
     return mph * 26.8210911307
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mps_to_fpm(mps: cy.float) -> cy.float:
@@ -12698,7 +12725,7 @@ def mps_to_fpm(mps: cy.float) -> cy.float:
     return mps * 196.86
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def fpm_to_mps(fpm: cy.float) -> cy.float:
@@ -12706,7 +12733,7 @@ def fpm_to_mps(fpm: cy.float) -> cy.float:
     return fpm / 196.86
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def mph_to_fpm(mph: cy.float) -> cy.float:
@@ -12714,7 +12741,7 @@ def mph_to_fpm(mph: cy.float) -> cy.float:
     return mph * 88.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def fpm_to_mph(fpm: cy.float) -> cy.float:
@@ -12722,7 +12749,7 @@ def fpm_to_mph(fpm: cy.float) -> cy.float:
     return fpm / 88.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def Btu_ft_s_to_kW_m(Btu_ft_s: cy.float) -> cy.float:
@@ -12730,7 +12757,7 @@ def Btu_ft_s_to_kW_m(Btu_ft_s: cy.float) -> cy.float:
     return Btu_ft_s * 3.46165186
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def kW_m_to_Btu_ft_s(kW_m: cy.float) -> cy.float:
@@ -12738,7 +12765,7 @@ def kW_m_to_Btu_ft_s(kW_m: cy.float) -> cy.float:
     return kW_m * 0.28887942532730604
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def Btu_lb_to_kJ_kg(Btu_lb: cy.float) -> cy.float:
@@ -12746,7 +12773,7 @@ def Btu_lb_to_kJ_kg(Btu_lb: cy.float) -> cy.float:
     return Btu_lb * 2.3259999996185
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def kJ_kg_to_Btu_lb(kJ_kg: cy.float) -> cy.float:
@@ -12754,7 +12781,7 @@ def kJ_kg_to_Btu_lb(kJ_kg: cy.float) -> cy.float:
     return kJ_kg / 2.3259999996185
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def kg_m3_to_lb_ft3(kg_m3: cy.float) -> cy.float:
@@ -12762,7 +12789,7 @@ def kg_m3_to_lb_ft3(kg_m3: cy.float) -> cy.float:
     return kg_m3 * 0.0624
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def lb_ft3_to_kg_m3(lb_ft3: cy.float) -> cy.float:
@@ -12770,7 +12797,7 @@ def lb_ft3_to_kg_m3(lb_ft3: cy.float) -> cy.float:
     return lb_ft3 * 16.025641025641026
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def percent_to_dec(percent: cy.float) -> cy.float:
@@ -12778,7 +12805,7 @@ def percent_to_dec(percent: cy.float) -> cy.float:
     return percent * 0.01
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def dec_to_percent(decimal: cy.float) -> cy.float:
@@ -12786,7 +12813,7 @@ def dec_to_percent(decimal: cy.float) -> cy.float:
     return decimal * 100.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def sec_to_min(seconds: cy.float) -> cy.float:
@@ -12794,7 +12821,7 @@ def sec_to_min(seconds: cy.float) -> cy.float:
     return seconds * 0.016666666666666666
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def min_to_sec(minutes: cy.float) -> cy.float:
@@ -12802,7 +12829,7 @@ def min_to_sec(minutes: cy.float) -> cy.float:
     return minutes * 60.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def ms_to_min(milliseconds: cy.float) -> cy.float:
@@ -12810,7 +12837,7 @@ def ms_to_min(milliseconds: cy.float) -> cy.float:
     return milliseconds * 0.000016667
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def min_to_ms(minutes: cy.float) -> cy.float:
@@ -12818,7 +12845,7 @@ def min_to_ms(minutes: cy.float) -> cy.float:
     return minutes * 60000.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def hour_to_min(hours: cy.float) -> cy.float:
@@ -12826,7 +12853,7 @@ def hour_to_min(hours: cy.float) -> cy.float:
     return hours * 60.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def min_to_hour(minutes: cy.float) -> cy.float:
@@ -12834,7 +12861,7 @@ def min_to_hour(minutes: cy.float) -> cy.float:
     return minutes / 60.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def day_to_min(days: cy.float) -> cy.float:
@@ -12842,7 +12869,7 @@ def day_to_min(days: cy.float) -> cy.float:
     return days * 1440.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def min_to_day(minutes: cy.float) -> cy.float:
@@ -12851,7 +12878,7 @@ def min_to_day(minutes: cy.float) -> cy.float:
 
 
 # TODO Return vec_rt
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def cartesian_to_polar(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
@@ -12861,7 +12888,7 @@ def cartesian_to_polar(x: cy.float, y: cy.float) -> vec_xy:
     return (r, theta)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def polar_to_cartesian(r: cy.float, theta: cy.float) -> vec_xy:
     """Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""
@@ -12872,7 +12899,7 @@ def polar_to_cartesian(r: cy.float, theta: cy.float) -> vec_xy:
 
 
 # TODO Return vec_ra
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
@@ -12882,7 +12909,7 @@ def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     return (r, azimuth)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def azimuthal_to_cartesian(r: cy.float, azimuth: cy.float) -> vec_xy:
     """Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""
@@ -12892,7 +12919,7 @@ def azimuthal_to_cartesian(r: cy.float, azimuth: cy.float) -> vec_xy:
     return (x, y)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def opposite_direction(theta: cy.float) -> cy.float:
@@ -12900,7 +12927,7 @@ def opposite_direction(theta: cy.float) -> cy.float:
     return (theta + 180.0) % 360.0
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m: cy.float) -> cy.float:
@@ -12908,7 +12935,7 @@ def wind_speed_10m_to_wind_speed_20ft(wind_speed_10m: cy.float) -> cy.float:
     return wind_speed_10m / 1.15
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft: cy.float) -> cy.float:
@@ -12920,55 +12947,55 @@ def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft: cy.float) -> cy.float:
 #+begin_src python :eval no :tangle ../src/pyretechnics/conversion.pxd
 from pyretechnics.cy_types cimport vec_xy
 
-cdef float rad_to_deg(float radians) noexcept
-cdef float deg_to_rad(float degrees) noexcept
-cdef float deg_to_ratio(float degrees) noexcept
-cdef float ratio_to_deg(float ratio) noexcept
-cdef float F_to_K(float degrees) noexcept
-cdef float K_to_F(float degrees) noexcept
-cdef float F_to_C(float degrees) noexcept
-cdef float C_to_F(float degrees) noexcept
-cdef float ch_to_m(float ch) noexcept
-cdef float m_to_ch(float m) noexcept
-cdef float m_to_ft(float m) noexcept
-cdef float ft_to_m(float ft) noexcept
-cdef float mph_to_mps(float mph) noexcept
-cdef float mps_to_mph(float mps) noexcept
-cdef float km_hr_to_mps(float km_hr) noexcept
-cdef float mps_to_km_hr(float mps) noexcept
-cdef float mph_to_km_hr(float mph) noexcept
-cdef float km_hr_to_mph(float km_hr) noexcept
-cdef float m_min_to_km_hr(float m_min) noexcept
-cdef float km_hr_to_m_min(float km_hr) noexcept
-cdef float m_min_to_mph(float m_min) noexcept
-cdef float mph_to_m_min(float mph) noexcept
-cdef float mps_to_fpm(float mps) noexcept
-cdef float fpm_to_mps(float fpm) noexcept
-cdef float mph_to_fpm(float mph) noexcept
-cdef float fpm_to_mph(float fpm) noexcept
-cdef float Btu_ft_s_to_kW_m(float Btu_ft_s) noexcept
-cdef float kW_m_to_Btu_ft_s(float kW_m) noexcept
-cdef float Btu_lb_to_kJ_kg(float Btu_lb) noexcept
-cdef float kJ_kg_to_Btu_lb(float kJ_kg) noexcept
-cdef float kg_m3_to_lb_ft3(float kg_m3) noexcept
-cdef float lb_ft3_to_kg_m3(float lb_ft3) noexcept
-cdef float percent_to_dec(float percent) noexcept
-cdef float dec_to_percent(float decimal) noexcept
-cdef float sec_to_min(float seconds) noexcept
-cdef float min_to_sec(float minutes) noexcept
-cdef float ms_to_min(float milliseconds) noexcept
-cdef float min_to_ms(float minutes) noexcept
-cdef float hour_to_min(float hours) noexcept
-cdef float min_to_hour(float minutes) noexcept
-cdef float day_to_min(float days) noexcept
-cdef float min_to_day(float minutes) noexcept
-cdef vec_xy cartesian_to_polar(float x, float y) noexcept
-cdef vec_xy polar_to_cartesian(float r, float theta) noexcept
-cdef vec_xy cartesian_to_azimuthal(float x, float y) noexcept
-cdef vec_xy azimuthal_to_cartesian(float r, float azimuth) noexcept
-cdef float opposite_direction(float theta) noexcept
-cdef float wind_speed_10m_to_wind_speed_20ft(float wind_speed_10m) noexcept
-cdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft) noexcept
+cpdef float rad_to_deg(float radians) noexcept
+cpdef float deg_to_rad(float degrees) noexcept
+cpdef float deg_to_ratio(float degrees) noexcept
+cpdef float ratio_to_deg(float ratio) noexcept
+cpdef float F_to_K(float degrees) noexcept
+cpdef float K_to_F(float degrees) noexcept
+cpdef float F_to_C(float degrees) noexcept
+cpdef float C_to_F(float degrees) noexcept
+cpdef float ch_to_m(float ch) noexcept
+cpdef float m_to_ch(float m) noexcept
+cpdef float m_to_ft(float m) noexcept
+cpdef float ft_to_m(float ft) noexcept
+cpdef float mph_to_mps(float mph) noexcept
+cpdef float mps_to_mph(float mps) noexcept
+cpdef float km_hr_to_mps(float km_hr) noexcept
+cpdef float mps_to_km_hr(float mps) noexcept
+cpdef float mph_to_km_hr(float mph) noexcept
+cpdef float km_hr_to_mph(float km_hr) noexcept
+cpdef float m_min_to_km_hr(float m_min) noexcept
+cpdef float km_hr_to_m_min(float km_hr) noexcept
+cpdef float m_min_to_mph(float m_min) noexcept
+cpdef float mph_to_m_min(float mph) noexcept
+cpdef float mps_to_fpm(float mps) noexcept
+cpdef float fpm_to_mps(float fpm) noexcept
+cpdef float mph_to_fpm(float mph) noexcept
+cpdef float fpm_to_mph(float fpm) noexcept
+cpdef float Btu_ft_s_to_kW_m(float Btu_ft_s) noexcept
+cpdef float kW_m_to_Btu_ft_s(float kW_m) noexcept
+cpdef float Btu_lb_to_kJ_kg(float Btu_lb) noexcept
+cpdef float kJ_kg_to_Btu_lb(float kJ_kg) noexcept
+cpdef float kg_m3_to_lb_ft3(float kg_m3) noexcept
+cpdef float lb_ft3_to_kg_m3(float lb_ft3) noexcept
+cpdef float percent_to_dec(float percent) noexcept
+cpdef float dec_to_percent(float decimal) noexcept
+cpdef float sec_to_min(float seconds) noexcept
+cpdef float min_to_sec(float minutes) noexcept
+cpdef float ms_to_min(float milliseconds) noexcept
+cpdef float min_to_ms(float minutes) noexcept
+cpdef float hour_to_min(float hours) noexcept
+cpdef float min_to_hour(float minutes) noexcept
+cpdef float day_to_min(float days) noexcept
+cpdef float min_to_day(float minutes) noexcept
+cpdef vec_xy cartesian_to_polar(float x, float y) noexcept
+cpdef vec_xy polar_to_cartesian(float r, float theta) noexcept
+cpdef vec_xy cartesian_to_azimuthal(float x, float y) noexcept
+cpdef vec_xy azimuthal_to_cartesian(float r, float azimuth) noexcept
+cpdef float opposite_direction(float theta) noexcept
+cpdef float wind_speed_10m_to_wind_speed_20ft(float wind_speed_10m) noexcept
+cpdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft) noexcept
 #+end_src
 
 ** Vector Utility Functions (pyretechnics.vector_utils)
@@ -12993,63 +13020,63 @@ else:
     import pyretechnics.conversion as conv
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def dot_2d(vector1: vec_xy, vector2: vec_xy) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1]
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def dot_3d(vector1: vec_xyz, vector2: vec_xyz) -> cy.float:
     return vector1[0] * vector2[0] + vector1[1] * vector2[1] + vector1[2] * vector2[2]
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def scale_2d(scalar: cy.float, vector: vec_xy) -> vec_xy:
     return (scalar * vector[0], scalar * vector[1])
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def scale_3d(scalar: cy.float, vector: vec_xyz) -> vec_xyz:
     return (scalar * vector[0], scalar * vector[1], scalar * vector[2])
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def add_2d(vector1: vec_xy, vector2: vec_xy) -> vec_xy:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1])
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def add_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     return (vector1[0] + vector2[0], vector1[1] + vector2[1], vector1[2] + vector2[2])
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def vector_magnitude_2d(vector: vec_xy) -> cy.float:
     return sqrt(dot_2d(vector, vector))
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def vector_magnitude_3d(vector: vec_xyz) -> cy.float:
     return sqrt(dot_3d(vector, vector))
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
     magnitude: cy.float = vector_magnitude_2d(vector)
@@ -13061,7 +13088,7 @@ def as_unit_vector_2d(vector: vec_xy) -> vec_xy:
         return (ux, uy)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
     magnitude: cy.float = vector_magnitude_3d(vector)
@@ -13074,7 +13101,7 @@ def as_unit_vector_3d(vector: vec_xyz) -> vec_xyz:
         return (ux, uy, uz)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
@@ -13085,14 +13112,14 @@ def to_slope_plane(vector_2d: vec_xy, elevation_gradient: vec_xy) -> vec_xyz:
     )
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def to_horizontal_plane(vector_3d: vec_xyz) -> vec_xy:
     return (vector_3d[0], vector_3d[1])
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
     x        : cy.float = vector_3d[0]
@@ -13102,7 +13129,7 @@ def spread_direction_vector_to_angle(vector_3d: vec_xyz) -> cy.float:
     return azimuth
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     (dz_dx, dz_dy)               = elevation_gradient
@@ -13110,7 +13137,7 @@ def get_slope_normal_vector(elevation_gradient: vec_xy) -> vec_xyz:
     return as_unit_vector_3d(slope_normal_vector)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def cross_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     (a, b, c) = vector1
@@ -13122,7 +13149,7 @@ def cross_3d(vector1: vec_xyz, vector2: vec_xyz) -> vec_xyz:
     )
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, aspect: cy.float) -> vec_xyz:
     """
@@ -13158,22 +13185,22 @@ def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, as
 #+begin_src python :eval no :tangle ../src/pyretechnics/vector_utils.pxd
 from pyretechnics.cy_types cimport vec_xy, vec_xyz
 
-cdef float dot_2d(vec_xy vector1, vec_xy vector2) noexcept
-cdef float dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cdef vec_xy scale_2d(float scalar, vec_xy vector) noexcept
-cdef vec_xyz scale_3d(float scalar, vec_xyz vector) noexcept
-cdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
-cdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cdef float vector_magnitude_2d(vec_xy vector) noexcept
-cdef float vector_magnitude_3d(vec_xyz vector) noexcept
-cdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
-cdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
-cdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
-cdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
-cdef float spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
-cdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
-cdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, float theta, float slope, float aspect) noexcept
+cpdef float dot_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef float dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xy scale_2d(float scalar, vec_xy vector) noexcept
+cpdef vec_xyz scale_3d(float scalar, vec_xyz vector) noexcept
+cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef float vector_magnitude_2d(vec_xy vector) noexcept
+cpdef float vector_magnitude_3d(vec_xyz vector) noexcept
+cpdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
+cpdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
+cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
+cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
+cpdef float spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
+cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
+cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, float theta, float slope, float aspect) noexcept
 #+end_src
 
 #+NAME: cy-types-pxd

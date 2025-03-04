@@ -271,7 +271,7 @@ org_html_manager.setup();  // activate after the parameters are set
 <li><a href="#for-developers-spacetimecube">3.1. For Developers</a>
 <ul>
 <li><a href="#module-imports-space-time-cube">3.1.1. Module Imports</a></li>
-<li><a href="#utility-functions">3.1.2. Utility Functions</a></li>
+<li><a href="#utility-functions-space-time-cube">3.1.2. Utility Functions</a></li>
 <li><a href="#ispacetimecube-class">3.1.3. ISpaceTimeCube Class</a></li>
 <li><a href="#spacetimecube-class">3.1.4. SpaceTimeCube Class</a></li>
 <li><a href="#lazyspacetimecube-class">3.1.5. LazySpaceTimeCube Class</a></li>
@@ -638,9 +638,9 @@ various types of input datasets.
 </div>
 </div>
 </div>
-<div id="outline-container-utility-functions" class="outline-4">
-<h4 id="utility-functions"><span class="section-number-4">3.1.2.</span> Utility Functions</h4>
-<div class="outline-text-4" id="text-utility-functions">
+<div id="outline-container-utility-functions-space-time-cube" class="outline-4">
+<h4 id="utility-functions-space-time-cube"><span class="section-number-4">3.1.2.</span> Utility Functions</h4>
+<div class="outline-text-4" id="text-utility-functions-space-time-cube">
 <div class="org-src-container">
 <pre class="src src-python" id="space-time-cube-utilities"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.inline</span>
@@ -3175,10 +3175,10 @@ combined together in a single function that computes \(R_0\).
 </p>
 </div>
 <ol class="org-ol">
-<li><a id="common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$"></a>Common Intermediate Calculations: \(\sigma', \beta, \beta_{op}\)<br>
-<div class="outline-text-5" id="text-common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$">
+<li><a id="utility-functions-surface-fire"></a>Utility Functions<br>
+<div class="outline-text-5" id="text-utility-functions-surface-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="surface-fire-common-intermediate-calculations"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="surface-fire-utility-functions"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">__dotp_in_category</span>(x_ij: fclaarr, y_ij: fclaarr) <span class="org-operator">-&gt;</span> fcatarr:
@@ -3207,9 +3207,14 @@ combined together in a single function that computes \(R_0\).
         (x_i[0] <span class="org-operator">*</span> y_i[0]) <span class="org-operator">+</span>
         (x_i[1] <span class="org-operator">*</span> y_i[1])
     )
-
-
-<span class="org-type">@cy.cfunc</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$"></a>Common Intermediate Calculations: \(\sigma', \beta, \beta_{op}\)<br>
+<div class="outline-text-5" id="text-common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$">
+<div class="org-src-container">
+<pre class="src src-python" id="surface-fire-common-intermediate-calculations"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_surface_area_to_volume_ratio</span>(f_i: fcatarr, f_ij: fclaarr, sigma: fclaarr) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-variable-name">sigma_prime</span>: fcatarr <span class="org-operator">=</span> __dotp_in_category(f_ij, sigma)
@@ -3719,7 +3724,7 @@ and \(U_{\text{eff}}^{\max}\) is the maximum effective wind speed in
         _ws_expnt)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_surface_fire_behavior_no_wind_no_slope</span>(moisturized_fuel_model: FuelModel,
                                                 spread_rate_adjustment: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1.0) <span class="org-operator">-&gt;</span> FireBehaviorMin:
@@ -3853,7 +3858,7 @@ fraction \((0-1)\).
         <span class="org-keyword">return</span> 0.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_midflame_wind_speed</span>(wind_speed_20ft: cy.<span class="org-builtin">float</span>,
                              fuel_bed_depth : cy.<span class="org-builtin">float</span>,
@@ -4110,7 +4115,7 @@ off.
         )
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_surface_fire_behavior_max</span>(surface_fire_min      : FireBehaviorMin,
                                    midflame_wind_speed   : cy.<span class="org-builtin">float</span>,
@@ -4243,7 +4248,7 @@ this plane from \(\vec{u_{\max}}\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="surface-fire-behavior-in-direction"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="surface-fire-behavior-in-direction"><span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_surface_fire_behavior_in_direction</span>(surface_fire_max: FireBehaviorMax,
                                             spread_direction: vec_xyz) <span class="org-operator">-&gt;</span> SpreadBehavior:
@@ -4334,7 +4339,7 @@ the full list of available vector manipulation functions.
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Set input parameters</span>
-<span class="org-variable-name">fuel_model</span>    <span class="org-operator">=</span> fm.fuel_model_table[101] <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
+<span class="org-variable-name">fuel_model</span>    <span class="org-operator">=</span> fm.get_fuel_model(101) <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
 <span class="org-variable-name">fuel_moisture</span> <span class="org-operator">=</span> [
     0.05, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_1hr</span>
     0.10, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_10hr</span>
@@ -4358,10 +4363,10 @@ pprint({k: surface_fire_min[k] <span class="org-keyword">for</span> k <span clas
 </div>
 
 <pre class="example">
-No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'base_fireline_intensity': 1.7899978160858154,
- 'base_spread_rate': 0.12637238204479218,
- 'max_effective_wind_speed': 109.7729263305664}
+No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'base_fireline_intensity': 1.7899988889694214,
+ 'base_spread_rate': 0.12637242674827576,
+ 'max_effective_wind_speed': 109.77295684814453}
 </pre>
 </div>
 </div>
@@ -4374,11 +4379,11 @@ No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Set input parameters</span>
-<span class="org-variable-name">fuel_model</span>       <span class="org-operator">=</span> fm.fuel_model_table[101] <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
-<span class="org-variable-name">canopy_height</span>    <span class="org-operator">=</span> 20                       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-<span class="org-variable-name">canopy_cover</span>     <span class="org-operator">=</span> 0.6                      <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
-<span class="org-variable-name">wind_speed_10m</span>   <span class="org-operator">=</span> 20                       <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
-<span class="org-variable-name">upwind_direction</span> <span class="org-operator">=</span> 45.0                     <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+<span class="org-variable-name">fuel_model</span>       <span class="org-operator">=</span> fm.get_fuel_model(101) <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
+<span class="org-variable-name">canopy_height</span>    <span class="org-operator">=</span> 20                     <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+<span class="org-variable-name">canopy_cover</span>     <span class="org-operator">=</span> 0.6                    <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+<span class="org-variable-name">wind_speed_10m</span>   <span class="org-operator">=</span> 20                     <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+<span class="org-variable-name">upwind_direction</span> <span class="org-operator">=</span> 45.0                   <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Convert from 10m wind speed to 20ft wind speed</span>
 <span class="org-variable-name">wind_speed_20ft</span> <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
@@ -4400,7 +4405,7 @@ No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = [
 <pre class="example">
 Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Direction = 45.0
  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
-- Speed: 27.22428573967944 (m/min)
+- Speed: 27.21068000793457 (m/min)
 - Downwind Direction: 225.0 (degrees clockwise from North)
 </pre>
 </div>
@@ -4414,7 +4419,7 @@ Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Directio
 <span class="org-keyword">import</span> pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Set input parameters</span>
-<span class="org-variable-name">fuel_model</span>    <span class="org-operator">=</span> fm.fuel_model_table[101] <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
+<span class="org-variable-name">fuel_model</span>    <span class="org-operator">=</span> fm.get_fuel_model(101) <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
 <span class="org-variable-name">fuel_moisture</span> <span class="org-operator">=</span> [
     0.05, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_1hr</span>
     0.10, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_10hr</span>
@@ -4439,7 +4444,8 @@ Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Directio
                                                      midflame_wind_speed,
                                                      upwind_direction,
                                                      slope,
-                                                     aspect)
+                                                     aspect,
+                                                     surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">View results</span>
 <span class="org-builtin">print</span>(<span class="org-string">"Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = "</span>
@@ -4452,7 +4458,8 @@ pprint(surface_fire_max)
                                                                upwind_direction,
                                                                slope,
                                                                aspect,
-                                                               use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>)
+                                                               use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>,
+                                                               surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">View results</span>
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = "</span>
@@ -4462,21 +4469,29 @@ pprint(surface_fire_max_unlimited)
 </div>
 
 <pre class="example" id="compute-surface-fire-behavior-max-results">
-Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.8693098689345452,
- 'length_to_width_ratio': 2.02319598197937,
- 'max_fireline_intensity': 32.52824021555232,
- 'max_flame_length': 0.384393279547724,
- 'max_spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
- 'max_spread_rate': 2.2964671592467902}
+Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'critical_spread_rate': 0.0,
+ 'eccentricity': 0.8693099021911621,
+ 'length_to_width_ratio': 2.023196220397949,
+ 'max_fire_type': 1,
+ 'max_fireline_intensity': 32.52827453613281,
+ 'max_flame_length': 0.38439345359802246,
+ 'max_spread_direction': (0.5751420855522156,
+                          0.8099259734153748,
+                          0.11502841860055923),
+ 'max_spread_rate': 2.29646897315979}
 
-Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'eccentricity': 0.9845208635180694,
- 'length_to_width_ratio': 5.705566883087158,
- 'max_fireline_intensity': 330.52327700735987,
- 'max_flame_length': 1.116783188433671,
- 'max_spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
- 'max_spread_rate': 23.334673071281713}
+Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'critical_spread_rate': 0.0,
+ 'eccentricity': 0.9845208525657654,
+ 'length_to_width_ratio': 5.705564498901367,
+ 'max_fire_type': 1,
+ 'max_fireline_intensity': 330.52349853515625,
+ 'max_flame_length': 1.1167834997177124,
+ 'max_spread_direction': (0.5751420855522156,
+                          0.8099259734153748,
+                          0.11502841860055923),
+ 'max_spread_rate': 23.33468246459961}
 </pre>
 </div>
 </div>
@@ -4491,7 +4506,7 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
 <span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Set input parameters</span>
-<span class="org-variable-name">fuel_model</span>    <span class="org-operator">=</span> fm.fuel_model_table[101] <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
+<span class="org-variable-name">fuel_model</span>    <span class="org-operator">=</span> fm.get_fuel_model(101) <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
 <span class="org-variable-name">fuel_moisture</span> <span class="org-operator">=</span> [
     0.05, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_1hr</span>
     0.10, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_10hr</span>
@@ -4516,7 +4531,8 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = [0
                                                      midflame_wind_speed,
                                                      upwind_direction,
                                                      slope,
-                                                     aspect)
+                                                     aspect,
+                                                     surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior for the heading, flanking, and backing fires</span>
 <span class="org-variable-name">heading_fire_direction</span>  <span class="org-operator">=</span> surface_fire_max[<span class="org-string">"max_spread_direction"</span>]
@@ -4548,26 +4564,35 @@ pprint(backing_fire_behavior)
 </div>
 
 <pre class="example" id="compute-surface-fire-behavior-in-direction-results">
-Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 32.52822719177826,
- 'flame_length': 0.38439320875152366,
- 'spread_direction': array([0.57514209, 0.80992591, 0.11502841]),
- 'spread_rate': 2.2964662397789914}
+Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 32.52827453613281,
+ 'flame_length': 0.38439345359802246,
+ 'spread_direction': (0.5751420855522156,
+                      0.8099259734153748,
+                      0.11502841860055923),
+ 'spread_rate': 2.29646897315979}
 
-Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 4.251119786484406,
- 'flame_length': 0.15074657797968766,
- 'spread_direction': array([ 0.79419774, -0.58653224,  0.15883955]),
- 'spread_rate': 0.30012558057223193}
+Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 4.251122951507568,
+ 'flame_length': 0.15074662864208221,
+ 'spread_direction': (0.7941977381706238,
+                      -0.5865322351455688,
+                      0.15883956849575043),
+ 'spread_rate': 0.30012571811676025}
 
-Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = [0.05, 0.1, 0.15, 0.05, 0.9, 0.6]
-{'fire_type': 'surface',
- 'fireline_intensity': 2.274165557579764,
- 'flame_length': 0.1130509146666419,
- 'spread_direction': array([-0.57514215, -0.80992585, -0.11502843]),
- 'spread_rate': 0.16055422866605315}
+Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 2.27416729927063,
+ 'flame_length': 0.11305095255374908,
+ 'spread_direction': (-0.5751421451568604,
+                      -0.80992591381073,
+                      -0.11502843350172043),
+ 'spread_rate': 0.16055430471897125}
 </pre>
 </div>
 </div>
@@ -12861,7 +12886,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> vec_xy
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">rad_to_deg</span>(radians: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12869,7 +12894,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> radians <span class="org-operator">*</span> 180.0 <span class="org-operator">/</span> pi
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">deg_to_rad</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12877,7 +12902,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> degrees <span class="org-operator">*</span> pi <span class="org-operator">/</span> 180.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">deg_to_ratio</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12885,7 +12910,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> tan(deg_to_rad(degrees))
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">ratio_to_deg</span>(ratio: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12893,7 +12918,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> rad_to_deg(atan(ratio))
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">F_to_K</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12901,7 +12926,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (degrees <span class="org-operator">+</span> 459.67) <span class="org-operator">*</span> 0.5555555555555556
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">K_to_F</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12909,7 +12934,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (degrees <span class="org-operator">*</span> 1.8) <span class="org-operator">-</span> 459.67
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">F_to_C</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12917,7 +12942,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (degrees <span class="org-operator">-</span> 32.0) <span class="org-operator">*</span> 0.5555555555555556
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">C_to_F</span>(degrees: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12925,7 +12950,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (degrees <span class="org-operator">*</span> 1.8) <span class="org-operator">+</span> 32.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">ch_to_m</span>(ch: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12933,7 +12958,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> ch <span class="org-operator">*</span> 20.1168
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">m_to_ch</span>(m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12941,7 +12966,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> m <span class="org-operator">*</span> 0.0497097
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">m_to_ft</span>(m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12949,7 +12974,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> m <span class="org-operator">*</span> 3.281
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">ft_to_m</span>(ft: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12957,7 +12982,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> ft <span class="org-operator">*</span> 0.30478512648582745
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mph_to_mps</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12965,7 +12990,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 0.44701818551254696
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mps_to_mph</span>(mps: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12973,7 +12998,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 2.237045454545455
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mps</span>(km_hr: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12981,7 +13006,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> km_hr <span class="org-operator">*</span> 0.277764222883701
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mps_to_km_hr</span>(mps: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12989,7 +13014,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 3.6001756800000004
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mph_to_km_hr</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -12997,7 +13022,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 1.609344
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_mph</span>(km_hr: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13005,7 +13030,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> km_hr <span class="org-operator">*</span> 0.621371192237334
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">m_min_to_km_hr</span>(m_min: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13013,7 +13038,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> m_min <span class="org-operator">*</span> 0.06
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">km_hr_to_m_min</span>(km_hr: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13021,7 +13046,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> km_hr <span class="org-operator">/</span> 0.06
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">m_min_to_mph</span>(m_min: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13029,7 +13054,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> m_min <span class="org-operator">*</span> 0.0372840909091
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mph_to_m_min</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13037,7 +13062,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 26.8210911307
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mps_to_fpm</span>(mps: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13045,7 +13070,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mps <span class="org-operator">*</span> 196.86
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">fpm_to_mps</span>(fpm: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13053,7 +13078,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> fpm <span class="org-operator">/</span> 196.86
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">mph_to_fpm</span>(mph: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13061,7 +13086,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> mph <span class="org-operator">*</span> 88.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">fpm_to_mph</span>(fpm: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13069,7 +13094,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> fpm <span class="org-operator">/</span> 88.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">Btu_ft_s_to_kW_m</span>(Btu_ft_s: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13077,7 +13102,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> Btu_ft_s <span class="org-operator">*</span> 3.46165186
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">kW_m_to_Btu_ft_s</span>(kW_m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13085,7 +13110,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> kW_m <span class="org-operator">*</span> 0.28887942532730604
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">Btu_lb_to_kJ_kg</span>(Btu_lb: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13093,7 +13118,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> Btu_lb <span class="org-operator">*</span> 2.3259999996185
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">kJ_kg_to_Btu_lb</span>(kJ_kg: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13101,7 +13126,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> kJ_kg <span class="org-operator">/</span> 2.3259999996185
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">kg_m3_to_lb_ft3</span>(kg_m3: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13109,7 +13134,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> kg_m3 <span class="org-operator">*</span> 0.0624
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">lb_ft3_to_kg_m3</span>(lb_ft3: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13117,7 +13142,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> lb_ft3 <span class="org-operator">*</span> 16.025641025641026
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">percent_to_dec</span>(percent: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13125,7 +13150,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> percent <span class="org-operator">*</span> 0.01
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">dec_to_percent</span>(decimal: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13133,7 +13158,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> decimal <span class="org-operator">*</span> 100.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">sec_to_min</span>(seconds: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13141,7 +13166,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> seconds <span class="org-operator">*</span> 0.016666666666666666
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">min_to_sec</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13149,7 +13174,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> minutes <span class="org-operator">*</span> 60.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">ms_to_min</span>(milliseconds: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13157,7 +13182,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> milliseconds <span class="org-operator">*</span> 0.000016667
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">min_to_ms</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13165,7 +13190,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> minutes <span class="org-operator">*</span> 60000.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">hour_to_min</span>(hours: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13173,7 +13198,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> hours <span class="org-operator">*</span> 60.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">min_to_hour</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13181,7 +13206,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> minutes <span class="org-operator">/</span> 60.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">day_to_min</span>(days: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13189,7 +13214,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> days <span class="org-operator">*</span> 1440.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">min_to_day</span>(minutes: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13198,7 +13223,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO Return vec_rt</span>
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_polar</span>(x: cy.<span class="org-builtin">float</span>, y: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""</span>
@@ -13208,7 +13233,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (r, theta)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">polar_to_cartesian</span>(r: cy.<span class="org-builtin">float</span>, theta: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert polar coordinates (r, theta) to cartesian coordinates (x, y)."""</span>
@@ -13219,7 +13244,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO Return vec_ra</span>
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">cartesian_to_azimuthal</span>(x: cy.<span class="org-builtin">float</span>, y: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""</span>
@@ -13229,7 +13254,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (r, azimuth)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">azimuthal_to_cartesian</span>(r: cy.<span class="org-builtin">float</span>, azimuth: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-doc">"""Convert azimuthal coordinates (r, azimuth) to cartesian coordinates (x, y)."""</span>
@@ -13239,7 +13264,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (x, y)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">opposite_direction</span>(theta: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13247,7 +13272,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> (theta <span class="org-operator">+</span> 180.0) <span class="org-operator">%</span> 360.0
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">wind_speed_10m_to_wind_speed_20ft</span>(wind_speed_10m: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13255,7 +13280,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     <span class="org-keyword">return</span> wind_speed_10m <span class="org-operator">/</span> 1.15
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">wind_speed_20ft_to_wind_speed_10m</span>(wind_speed_20ft: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -13267,55 +13292,55 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
 <div class="org-src-container">
 <pre class="src src-python" id="conversion-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy
 
-cdef <span class="org-builtin">float</span> rad_to_deg(<span class="org-builtin">float</span> radians) noexcept
-cdef <span class="org-builtin">float</span> deg_to_rad(<span class="org-builtin">float</span> degrees) noexcept
-cdef <span class="org-builtin">float</span> deg_to_ratio(<span class="org-builtin">float</span> degrees) noexcept
-cdef <span class="org-builtin">float</span> ratio_to_deg(<span class="org-builtin">float</span> ratio) noexcept
-cdef <span class="org-builtin">float</span> F_to_K(<span class="org-builtin">float</span> degrees) noexcept
-cdef <span class="org-builtin">float</span> K_to_F(<span class="org-builtin">float</span> degrees) noexcept
-cdef <span class="org-builtin">float</span> F_to_C(<span class="org-builtin">float</span> degrees) noexcept
-cdef <span class="org-builtin">float</span> C_to_F(<span class="org-builtin">float</span> degrees) noexcept
-cdef <span class="org-builtin">float</span> ch_to_m(<span class="org-builtin">float</span> ch) noexcept
-cdef <span class="org-builtin">float</span> m_to_ch(<span class="org-builtin">float</span> m) noexcept
-cdef <span class="org-builtin">float</span> m_to_ft(<span class="org-builtin">float</span> m) noexcept
-cdef <span class="org-builtin">float</span> ft_to_m(<span class="org-builtin">float</span> ft) noexcept
-cdef <span class="org-builtin">float</span> mph_to_mps(<span class="org-builtin">float</span> mph) noexcept
-cdef <span class="org-builtin">float</span> mps_to_mph(<span class="org-builtin">float</span> mps) noexcept
-cdef <span class="org-builtin">float</span> km_hr_to_mps(<span class="org-builtin">float</span> km_hr) noexcept
-cdef <span class="org-builtin">float</span> mps_to_km_hr(<span class="org-builtin">float</span> mps) noexcept
-cdef <span class="org-builtin">float</span> mph_to_km_hr(<span class="org-builtin">float</span> mph) noexcept
-cdef <span class="org-builtin">float</span> km_hr_to_mph(<span class="org-builtin">float</span> km_hr) noexcept
-cdef <span class="org-builtin">float</span> m_min_to_km_hr(<span class="org-builtin">float</span> m_min) noexcept
-cdef <span class="org-builtin">float</span> km_hr_to_m_min(<span class="org-builtin">float</span> km_hr) noexcept
-cdef <span class="org-builtin">float</span> m_min_to_mph(<span class="org-builtin">float</span> m_min) noexcept
-cdef <span class="org-builtin">float</span> mph_to_m_min(<span class="org-builtin">float</span> mph) noexcept
-cdef <span class="org-builtin">float</span> mps_to_fpm(<span class="org-builtin">float</span> mps) noexcept
-cdef <span class="org-builtin">float</span> fpm_to_mps(<span class="org-builtin">float</span> fpm) noexcept
-cdef <span class="org-builtin">float</span> mph_to_fpm(<span class="org-builtin">float</span> mph) noexcept
-cdef <span class="org-builtin">float</span> fpm_to_mph(<span class="org-builtin">float</span> fpm) noexcept
-cdef <span class="org-builtin">float</span> Btu_ft_s_to_kW_m(<span class="org-builtin">float</span> Btu_ft_s) noexcept
-cdef <span class="org-builtin">float</span> kW_m_to_Btu_ft_s(<span class="org-builtin">float</span> kW_m) noexcept
-cdef <span class="org-builtin">float</span> Btu_lb_to_kJ_kg(<span class="org-builtin">float</span> Btu_lb) noexcept
-cdef <span class="org-builtin">float</span> kJ_kg_to_Btu_lb(<span class="org-builtin">float</span> kJ_kg) noexcept
-cdef <span class="org-builtin">float</span> kg_m3_to_lb_ft3(<span class="org-builtin">float</span> kg_m3) noexcept
-cdef <span class="org-builtin">float</span> lb_ft3_to_kg_m3(<span class="org-builtin">float</span> lb_ft3) noexcept
-cdef <span class="org-builtin">float</span> percent_to_dec(<span class="org-builtin">float</span> percent) noexcept
-cdef <span class="org-builtin">float</span> dec_to_percent(<span class="org-builtin">float</span> decimal) noexcept
-cdef <span class="org-builtin">float</span> sec_to_min(<span class="org-builtin">float</span> seconds) noexcept
-cdef <span class="org-builtin">float</span> min_to_sec(<span class="org-builtin">float</span> minutes) noexcept
-cdef <span class="org-builtin">float</span> ms_to_min(<span class="org-builtin">float</span> milliseconds) noexcept
-cdef <span class="org-builtin">float</span> min_to_ms(<span class="org-builtin">float</span> minutes) noexcept
-cdef <span class="org-builtin">float</span> hour_to_min(<span class="org-builtin">float</span> hours) noexcept
-cdef <span class="org-builtin">float</span> min_to_hour(<span class="org-builtin">float</span> minutes) noexcept
-cdef <span class="org-builtin">float</span> day_to_min(<span class="org-builtin">float</span> days) noexcept
-cdef <span class="org-builtin">float</span> min_to_day(<span class="org-builtin">float</span> minutes) noexcept
-cdef vec_xy cartesian_to_polar(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
-cdef vec_xy polar_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> theta) noexcept
-cdef vec_xy cartesian_to_azimuthal(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
-cdef vec_xy azimuthal_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> azimuth) noexcept
-cdef <span class="org-builtin">float</span> opposite_direction(<span class="org-builtin">float</span> theta) noexcept
-cdef <span class="org-builtin">float</span> wind_speed_10m_to_wind_speed_20ft(<span class="org-builtin">float</span> wind_speed_10m) noexcept
-cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<span class="org-builtin">float</span> wind_speed_20ft) noexcept
+cpdef <span class="org-builtin">float</span> rad_to_deg(<span class="org-builtin">float</span> radians) noexcept
+cpdef <span class="org-builtin">float</span> deg_to_rad(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> deg_to_ratio(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> ratio_to_deg(<span class="org-builtin">float</span> ratio) noexcept
+cpdef <span class="org-builtin">float</span> F_to_K(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> K_to_F(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> F_to_C(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> C_to_F(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> ch_to_m(<span class="org-builtin">float</span> ch) noexcept
+cpdef <span class="org-builtin">float</span> m_to_ch(<span class="org-builtin">float</span> m) noexcept
+cpdef <span class="org-builtin">float</span> m_to_ft(<span class="org-builtin">float</span> m) noexcept
+cpdef <span class="org-builtin">float</span> ft_to_m(<span class="org-builtin">float</span> ft) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_mps(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> mps_to_mph(<span class="org-builtin">float</span> mps) noexcept
+cpdef <span class="org-builtin">float</span> km_hr_to_mps(<span class="org-builtin">float</span> km_hr) noexcept
+cpdef <span class="org-builtin">float</span> mps_to_km_hr(<span class="org-builtin">float</span> mps) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_km_hr(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> km_hr_to_mph(<span class="org-builtin">float</span> km_hr) noexcept
+cpdef <span class="org-builtin">float</span> m_min_to_km_hr(<span class="org-builtin">float</span> m_min) noexcept
+cpdef <span class="org-builtin">float</span> km_hr_to_m_min(<span class="org-builtin">float</span> km_hr) noexcept
+cpdef <span class="org-builtin">float</span> m_min_to_mph(<span class="org-builtin">float</span> m_min) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_m_min(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> mps_to_fpm(<span class="org-builtin">float</span> mps) noexcept
+cpdef <span class="org-builtin">float</span> fpm_to_mps(<span class="org-builtin">float</span> fpm) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_fpm(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> fpm_to_mph(<span class="org-builtin">float</span> fpm) noexcept
+cpdef <span class="org-builtin">float</span> Btu_ft_s_to_kW_m(<span class="org-builtin">float</span> Btu_ft_s) noexcept
+cpdef <span class="org-builtin">float</span> kW_m_to_Btu_ft_s(<span class="org-builtin">float</span> kW_m) noexcept
+cpdef <span class="org-builtin">float</span> Btu_lb_to_kJ_kg(<span class="org-builtin">float</span> Btu_lb) noexcept
+cpdef <span class="org-builtin">float</span> kJ_kg_to_Btu_lb(<span class="org-builtin">float</span> kJ_kg) noexcept
+cpdef <span class="org-builtin">float</span> kg_m3_to_lb_ft3(<span class="org-builtin">float</span> kg_m3) noexcept
+cpdef <span class="org-builtin">float</span> lb_ft3_to_kg_m3(<span class="org-builtin">float</span> lb_ft3) noexcept
+cpdef <span class="org-builtin">float</span> percent_to_dec(<span class="org-builtin">float</span> percent) noexcept
+cpdef <span class="org-builtin">float</span> dec_to_percent(<span class="org-builtin">float</span> decimal) noexcept
+cpdef <span class="org-builtin">float</span> sec_to_min(<span class="org-builtin">float</span> seconds) noexcept
+cpdef <span class="org-builtin">float</span> min_to_sec(<span class="org-builtin">float</span> minutes) noexcept
+cpdef <span class="org-builtin">float</span> ms_to_min(<span class="org-builtin">float</span> milliseconds) noexcept
+cpdef <span class="org-builtin">float</span> min_to_ms(<span class="org-builtin">float</span> minutes) noexcept
+cpdef <span class="org-builtin">float</span> hour_to_min(<span class="org-builtin">float</span> hours) noexcept
+cpdef <span class="org-builtin">float</span> min_to_hour(<span class="org-builtin">float</span> minutes) noexcept
+cpdef <span class="org-builtin">float</span> day_to_min(<span class="org-builtin">float</span> days) noexcept
+cpdef <span class="org-builtin">float</span> min_to_day(<span class="org-builtin">float</span> minutes) noexcept
+cpdef vec_xy cartesian_to_polar(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
+cpdef vec_xy polar_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> theta) noexcept
+cpdef vec_xy cartesian_to_azimuthal(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
+cpdef vec_xy azimuthal_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> azimuth) noexcept
+cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org-builtin">float</span> theta) noexcept
+cpdef <span class="org-builtin">float</span> wind_speed_10m_to_wind_speed_20ft(<span class="org-builtin">float</span> wind_speed_10m) noexcept
+cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<span class="org-builtin">float</span> wind_speed_20ft) noexcept
 </pre>
 </div>
 </div>
@@ -13336,63 +13361,63 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
     <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">dot_2d</span>(vector1: vec_xy, vector2: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1]
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">dot_3d</span>(vector1: vec_xyz, vector2: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> vector1[0] <span class="org-operator">*</span> vector2[0] <span class="org-operator">+</span> vector1[1] <span class="org-operator">*</span> vector2[1] <span class="org-operator">+</span> vector1[2] <span class="org-operator">*</span> vector2[2]
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">scale_2d</span>(scalar: cy.<span class="org-builtin">float</span>, vector: vec_xy) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-keyword">return</span> (scalar <span class="org-operator">*</span> vector[0], scalar <span class="org-operator">*</span> vector[1])
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">scale_3d</span>(scalar: cy.<span class="org-builtin">float</span>, vector: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-keyword">return</span> (scalar <span class="org-operator">*</span> vector[0], scalar <span class="org-operator">*</span> vector[1], scalar <span class="org-operator">*</span> vector[2])
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">add_2d</span>(vector1: vec_xy, vector2: vec_xy) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-keyword">return</span> (vector1[0] <span class="org-operator">+</span> vector2[0], vector1[1] <span class="org-operator">+</span> vector2[1])
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">add_3d</span>(vector1: vec_xyz, vector2: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-keyword">return</span> (vector1[0] <span class="org-operator">+</span> vector2[0], vector1[1] <span class="org-operator">+</span> vector2[1], vector1[2] <span class="org-operator">+</span> vector2[2])
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude_2d</span>(vector: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> sqrt(dot_2d(vector, vector))
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">vector_magnitude_3d</span>(vector: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-keyword">return</span> sqrt(dot_3d(vector, vector))
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector_2d</span>(vector: vec_xy) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-variable-name">magnitude</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_2d(vector)
@@ -13404,7 +13429,7 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
         <span class="org-keyword">return</span> (ux, uy)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">as_unit_vector_3d</span>(vector: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-variable-name">magnitude</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_magnitude_3d(vector)
@@ -13417,7 +13442,7 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
         <span class="org-keyword">return</span> (ux, uy, uz)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">to_slope_plane</span>(vector_2d: vec_xy, elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
@@ -13428,14 +13453,14 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
     )
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">to_horizontal_plane</span>(vector_3d: vec_xyz) <span class="org-operator">-&gt;</span> vec_xy:
     <span class="org-keyword">return</span> (vector_3d[0], vector_3d[1])
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">spread_direction_vector_to_angle</span>(vector_3d: vec_xyz) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-variable-name">x</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vector_3d[0]
@@ -13445,7 +13470,7 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
     <span class="org-keyword">return</span> azimuth
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">get_slope_normal_vector</span>(elevation_gradient: vec_xy) <span class="org-operator">-&gt;</span> vec_xyz:
     (<span class="org-variable-name">dz_dx</span>, <span class="org-variable-name">dz_dy</span>)               <span class="org-operator">=</span> elevation_gradient
@@ -13453,7 +13478,7 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
     <span class="org-keyword">return</span> as_unit_vector_3d(slope_normal_vector)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">cross_3d</span>(vector1: vec_xyz, vector2: vec_xyz) <span class="org-operator">-&gt;</span> vec_xyz:
     (<span class="org-variable-name">a</span>, <span class="org-variable-name">b</span>, <span class="org-variable-name">c</span>) <span class="org-operator">=</span> vector1
@@ -13465,7 +13490,7 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
     )
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">rotate_on_sloped_plane</span>(vector: vec_xyz, theta: cy.<span class="org-builtin">float</span>, slope: cy.<span class="org-builtin">float</span>, aspect: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> vec_xyz:
     <span class="org-doc">"""</span>
@@ -13501,22 +13526,22 @@ cdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<s
 <div class="org-src-container">
 <pre class="src src-python" id="vector-utils-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy, vec_xyz
 
-cdef <span class="org-builtin">float</span> dot_2d(vec_xy vector1, vec_xy vector2) noexcept
-cdef <span class="org-builtin">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cdef vec_xy scale_2d(<span class="org-builtin">float</span> scalar, vec_xy vector) noexcept
-cdef vec_xyz scale_3d(<span class="org-builtin">float</span> scalar, vec_xyz vector) noexcept
-cdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
-cdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cdef <span class="org-builtin">float</span> vector_magnitude_2d(vec_xy vector) noexcept
-cdef <span class="org-builtin">float</span> vector_magnitude_3d(vec_xyz vector) noexcept
-cdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
-cdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
-cdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
-cdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
-cdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
-cdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
-cdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect) noexcept
+cpdef <span class="org-builtin">float</span> dot_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef <span class="org-builtin">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xy scale_2d(<span class="org-builtin">float</span> scalar, vec_xy vector) noexcept
+cpdef vec_xyz scale_3d(<span class="org-builtin">float</span> scalar, vec_xyz vector) noexcept
+cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef <span class="org-builtin">float</span> vector_magnitude_2d(vec_xy vector) noexcept
+cpdef <span class="org-builtin">float</span> vector_magnitude_3d(vec_xyz vector) noexcept
+cpdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
+cpdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
+cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
+cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
+cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
+cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
+cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect) noexcept
 </pre>
 </div>
 

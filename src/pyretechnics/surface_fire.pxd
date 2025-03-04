@@ -68,14 +68,14 @@ cdef FireBehaviorMin make_surface_fire_min(
     float beta,
     ) noexcept
 
-cdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
+cpdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
     FuelModel moisturized_fuel_model,
     float spread_rate_adjustment=?,
     ) noexcept
 
 cdef float calc_wind_adjustment_factor(float fuel_bed_depth, float canopy_height, float canopy_cover) noexcept
 
-cdef float calc_midflame_wind_speed(
+cpdef float calc_midflame_wind_speed(
     float wind_speed_20ft,
     float fuel_bed_depth,
     float canopy_height,
@@ -102,7 +102,7 @@ cdef (float, float) maybe_limit_wind_speed(
     float phi_E_magnitude,
     ) noexcept
 
-cdef FireBehaviorMax calc_surface_fire_behavior_max(
+cpdef FireBehaviorMax calc_surface_fire_behavior_max(
     FireBehaviorMin sfmin,
     float midflame_wind_speed,
     float upwind_direction,
@@ -112,7 +112,7 @@ cdef FireBehaviorMax calc_surface_fire_behavior_max(
     str surface_lw_ratio_model=?,
     ) noexcept
 
-cdef SpreadBehavior calc_surface_fire_behavior_in_direction(
+cpdef SpreadBehavior calc_surface_fire_behavior_in_direction(
     FireBehaviorMax surface_fire_max,
     vec_xyz spread_direction,
     ) noexcept
