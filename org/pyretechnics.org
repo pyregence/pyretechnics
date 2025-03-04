@@ -2019,6 +2019,20 @@ def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
 fuel_model_table = cy.declare(dict[int, FuelModel], {
     k: expand_compact_fuel_model(k) for k in compact_fuel_model_table.keys()
 })
+
+
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def fuel_model_exists(fuel_model_number: cy.int) -> cy.bint:
+    return fuel_model_number in fuel_model_table
+
+
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def get_fuel_model(fuel_model_number: cy.int) -> FuelModel:
+    return cy.cast(FuelModel, fuel_model_table[fuel_model_number])
 #+end_src
 
 *** Fuel Categories and Size Classes
@@ -2047,11 +2061,6 @@ When we refer to a fuel size class, we mean one of these six values:
 - Dead herbaceous (dynamic fuel models only)
 - Live herbaceous
 - Live woody
-
-In order to more easily encode mathematical operations over these fuel
-categories and size classes, we define a collection of utility
-functions that will later be used in both the fuel moisture and
-surface fire equations.
 
 *** Dynamic Fuel Loading
     :PROPERTIES:
@@ -2292,7 +2301,7 @@ Pyretechnics provides the =moisturize= utility function.
 #+begin_src python
 # TODO: If these functions aren't called anywhere else, create a copy
 #       of the fuel model here and mutate it in the called functions.
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def moisturize(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
     """
@@ -2326,13 +2335,13 @@ fuel moisture.
 #+NAME: look-up-fuel-model-properties
 #+begin_src python
 from pprint import pprint
-from pyretechnics.fuel_models import fuel_model_table
+from pyretechnics.fuel_models import get_fuel_model
 
 static_fuel_model_number  = 1   # R01
 dynamic_fuel_model_number = 101 # GR1
 
-static_fuel_model  = fuel_model_table.get(static_fuel_model_number)
-dynamic_fuel_model = fuel_model_table.get(dynamic_fuel_model_number)
+static_fuel_model  = get_fuel_model(static_fuel_model_number)
+dynamic_fuel_model = get_fuel_model(dynamic_fuel_model_number)
 
 print("Static Fuel Model: R01")
 pprint(static_fuel_model)
@@ -2345,32 +2354,77 @@ pprint(dynamic_fuel_model)
 #+RESULTS: look-up-fuel-model-properties
 #+begin_example
 Static Fuel Model: R01
-{'M_x': [0.12, 0.12, 0.12, 0.0, 0.0, 0.0],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'M_x': (0.11999999731779099,
+         0.11999999731779099,
+         0.11999999731779099,
+         0.0,
+         0.0,
+         0.0),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
  'delta': 1.0,
  'dynamic': False,
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'R01',
+ 'exp_A_sigma': (0.9613386392593384, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'f_i': (0.0, 0.0),
+ 'f_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'firemod_size_classes': (1.0, 6.0, 6.0, 6.0, 6.0, 6.0),
+ 'g_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 1,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [3500.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'w_o': [0.034, 0.0, 0.0, 0.0, 0.0, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (3500.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'w_o': (0.03400000184774399, 0.0, 0.0, 0.0, 0.0, 0.0)}
 
 Dynamic Fuel Model: GR1
-{'M_x': [0.15, 0.15, 0.15, 0.15, 0.0, 0.0],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'M_x': (0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         0.0,
+         0.0),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
- 'delta': 0.4,
+ 'delta': 0.4000000059604645,
  'dynamic': True,
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'GR1',
+ 'exp_A_sigma': (0.9391995668411255,
+                 0.281941682100296,
+                 0.010051836259663105,
+                 0.9333266615867615,
+                 0.7788007855415344,
+                 0.0),
+ 'f_i': (0.0, 0.0),
+ 'f_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'firemod_size_classes': (1.0, 3.0, 5.0, 1.0, 1.0, 6.0),
+ 'g_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 101,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0],
- 'w_o': [0.0046, 0.0, 0.0, 0.0, 0.0138, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0),
+ 'w_o': (0.004600000102072954, 0.0, 0.0, 0.0, 0.013799999840557575, 0.0)}
 #+end_example
 
 *** How to Apply Fuel Moisture to a Fuel Model
@@ -2381,13 +2435,13 @@ Dynamic Fuel Model: GR1
 #+NAME: moisturize-fuel-model
 #+begin_src python
 from pprint import pprint
-from pyretechnics.fuel_models import fuel_model_table, moisturize
+from pyretechnics.fuel_models import get_fuel_model, moisturize
 
 static_fuel_model_number  = 1   # R01
 dynamic_fuel_model_number = 101 # GR1
 
-static_fuel_model  = fuel_model_table.get(static_fuel_model_number)
-dynamic_fuel_model = fuel_model_table.get(dynamic_fuel_model_number)
+static_fuel_model  = get_fuel_model(static_fuel_model_number)
+dynamic_fuel_model = get_fuel_model(dynamic_fuel_model_number)
 
 fuel_moisture = [
     0.05, # dead_1hr
@@ -2409,40 +2463,92 @@ pprint(moisturize(dynamic_fuel_model, fuel_moisture))
 #+RESULTS: moisturize-fuel-model
 #+begin_example
 Moisturized Static Fuel Model: R01
-{'M_f': [0.05, 0.1, 0.15, 0.0, 0.3, 0.5],
- 'M_x': [0.12, 0.12, 0.12, 0.0, 0.12, 0.12],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.05000000074505806,
+         0.10000000149011612,
+         0.15000000596046448,
+         0.0,
+         0.30000001192092896,
+         0.5),
+ 'M_x': (0.11999999731779099,
+         0.11999999731779099,
+         0.11999999731779099,
+         0.0,
+         0.11999999731779099,
+         0.11999999731779099),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
  'delta': 1.0,
  'dynamic': False,
- 'f_i': [1.0, 0.0],
- 'f_ij': [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'g_ij': [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'R01',
+ 'exp_A_sigma': (0.9613386392593384, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'f_i': (1.0, 0.0),
+ 'f_ij': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'firemod_size_classes': (1.0, 6.0, 6.0, 6.0, 6.0, 6.0),
+ 'g_ij': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 1,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [3500.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'w_o': [0.034, 0.0, 0.0, 0.0, 0.0, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (3500.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'w_o': (0.03400000184774399, 0.0, 0.0, 0.0, 0.0, 0.0)}
 
 Moisturized Dynamic Fuel Model: GR1
-{'M_f': [0.05, 0.1, 0.15, 0.05, 0.3, 0.5],
- 'M_x': [0.15, 0.15, 0.15, 0.15, 0.15, 0.15],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.05000000074505806,
+         0.10000000149011612,
+         0.15000000596046448,
+         0.05000000074505806,
+         0.30000001192092896,
+         0.5),
+ 'M_x': (0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         233597312.0,
+         233597312.0),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
- 'delta': 0.4,
+ 'delta': 0.4000000059604645,
  'dynamic': True,
- 'f_i': [1.0, 0.0],
- 'f_ij': [0.26829268292682923, 0.0, 0.0, 0.7317073170731707, 0.0, 0.0],
- 'g_ij': [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'GR1',
+ 'exp_A_sigma': (0.9391995668411255,
+                 0.281941682100296,
+                 0.010051836259663105,
+                 0.9333266615867615,
+                 0.7788007855415344,
+                 0.0),
+ 'f_i': (1.0, 9.691811797551964e-09),
+ 'f_ij': (0.2682926654815674, 0.0, 0.0, 0.7317073345184326, 1.0, 0.0),
+ 'firemod_size_classes': (1.0, 3.0, 5.0, 1.0, 1.0, 6.0),
+ 'g_ij': (1.0, 0.0, 0.0, 1.0, 1.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 101,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0],
- 'w_o': [0.0046, 0.0, 0.0, 0.0138, 0.0, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0),
+ 'w_o': (0.004600000102072954,
+         0.0,
+         0.0,
+         0.013799999840557575,
+         1.8278757674128343e-10,
+         0.0)}
 #+end_example
 
 * Surface Fire Equations (pyretechnics.surface_fire)

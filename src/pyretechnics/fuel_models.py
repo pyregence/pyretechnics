@@ -210,6 +210,20 @@ def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
 fuel_model_table = cy.declare(dict[int, FuelModel], {
     k: expand_compact_fuel_model(k) for k in compact_fuel_model_table.keys()
 })
+
+
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def fuel_model_exists(fuel_model_number: cy.int) -> cy.bint:
+    return fuel_model_number in fuel_model_table
+
+
+@cy.ccall
+@cy.inline
+@cy.exceptval(check=False)
+def get_fuel_model(fuel_model_number: cy.int) -> FuelModel:
+    return cy.cast(FuelModel, fuel_model_table[fuel_model_number])
 # expand-compact-fuel-model-table ends here
 # [[file:../../org/pyretechnics.org::add-dynamic-fuel-loading][add-dynamic-fuel-loading]]
 @cy.cfunc
@@ -363,7 +377,7 @@ def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
 # [[file:../../org/pyretechnics.org::moisturize][moisturize]]
 # TODO: If these functions aren't called anywhere else, create a copy
 #       of the fuel model here and mutate it in the called functions.
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def moisturize(fuel_model: FuelModel, fuel_moisture: fclaarr) -> FuelModel:
     """

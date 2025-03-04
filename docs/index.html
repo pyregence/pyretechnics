@@ -2464,6 +2464,20 @@ models. Finally, we add two boolean properties (<code>dynamic</code> and
 <span class="org-variable-name">fuel_model_table</span> <span class="org-operator">=</span> cy.declare(<span class="org-builtin">dict</span>[<span class="org-builtin">int</span>, FuelModel], {
     k: expand_compact_fuel_model(k) <span class="org-keyword">for</span> k <span class="org-keyword">in</span> compact_fuel_model_table.keys()
 })
+
+
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.inline</span>
+<span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">fuel_model_exists</span>(fuel_model_number: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> cy.bint:
+    <span class="org-keyword">return</span> fuel_model_number <span class="org-keyword">in</span> fuel_model_table
+
+
+<span class="org-type">@cy.ccall</span>
+<span class="org-type">@cy.inline</span>
+<span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
+<span class="org-keyword">def</span> <span class="org-function-name">get_fuel_model</span>(fuel_model_number: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> FuelModel:
+    <span class="org-keyword">return</span> cy.cast(FuelModel, fuel_model_table[fuel_model_number])
 </pre>
 </div>
 </div>
@@ -2504,13 +2518,6 @@ When we refer to a fuel size class, we mean one of these six values:
 <li>Live herbaceous</li>
 <li>Live woody</li>
 </ul>
-
-<p>
-In order to more easily encode mathematical operations over these fuel
-categories and size classes, we define a collection of utility
-functions that will later be used in both the fuel moisture and
-surface fire equations.
-</p>
 </div>
 </div>
 <div id="outline-container-dynamic-fuel-loading" class="outline-4">
@@ -2756,7 +2763,7 @@ Pyretechnics provides the <code>moisturize</code> utility function.
 <div class="org-src-container">
 <pre class="src src-python" id="moisturize"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: If these functions aren't called anywhere else, create a copy</span>
 <span class="org-comment-delimiter">#       </span><span class="org-comment">of the fuel model here and mutate it in the called functions.</span>
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">moisturize</span>(fuel_model: FuelModel, fuel_moisture: fclaarr) <span class="org-operator">-&gt;</span> FuelModel:
     <span class="org-doc">"""</span>
@@ -2789,13 +2796,13 @@ fuel moisture.
 <div class="outline-text-4" id="text-how-to-look-up-a-fuel-model's-properties">
 <div class="org-src-container">
 <pre class="src src-python" id="look-up-fuel-model-properties"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
-<span class="org-keyword">from</span> pyretechnics.fuel_models <span class="org-keyword">import</span> fuel_model_table
+<span class="org-keyword">from</span> pyretechnics.fuel_models <span class="org-keyword">import</span> get_fuel_model
 
 <span class="org-variable-name">static_fuel_model_number</span>  <span class="org-operator">=</span> 1   <span class="org-comment-delimiter"># </span><span class="org-comment">R01</span>
 <span class="org-variable-name">dynamic_fuel_model_number</span> <span class="org-operator">=</span> 101 <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
 
-<span class="org-variable-name">static_fuel_model</span>  <span class="org-operator">=</span> fuel_model_table.get(static_fuel_model_number)
-<span class="org-variable-name">dynamic_fuel_model</span> <span class="org-operator">=</span> fuel_model_table.get(dynamic_fuel_model_number)
+<span class="org-variable-name">static_fuel_model</span>  <span class="org-operator">=</span> get_fuel_model(static_fuel_model_number)
+<span class="org-variable-name">dynamic_fuel_model</span> <span class="org-operator">=</span> get_fuel_model(dynamic_fuel_model_number)
 
 <span class="org-builtin">print</span>(<span class="org-string">"Static Fuel Model: R01"</span>)
 pprint(static_fuel_model)
@@ -2807,32 +2814,77 @@ pprint(dynamic_fuel_model)
 
 <pre class="example" id="look-up-fuel-model-properties-results">
 Static Fuel Model: R01
-{'M_x': [0.12, 0.12, 0.12, 0.0, 0.0, 0.0],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'M_x': (0.11999999731779099,
+         0.11999999731779099,
+         0.11999999731779099,
+         0.0,
+         0.0,
+         0.0),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
  'delta': 1.0,
  'dynamic': False,
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'R01',
+ 'exp_A_sigma': (0.9613386392593384, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'f_i': (0.0, 0.0),
+ 'f_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'firemod_size_classes': (1.0, 6.0, 6.0, 6.0, 6.0, 6.0),
+ 'g_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 1,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [3500.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'w_o': [0.034, 0.0, 0.0, 0.0, 0.0, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (3500.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'w_o': (0.03400000184774399, 0.0, 0.0, 0.0, 0.0, 0.0)}
 
 Dynamic Fuel Model: GR1
-{'M_x': [0.15, 0.15, 0.15, 0.15, 0.0, 0.0],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'M_x': (0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         0.0,
+         0.0),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
- 'delta': 0.4,
+ 'delta': 0.4000000059604645,
  'dynamic': True,
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'GR1',
+ 'exp_A_sigma': (0.9391995668411255,
+                 0.281941682100296,
+                 0.010051836259663105,
+                 0.9333266615867615,
+                 0.7788007855415344,
+                 0.0),
+ 'f_i': (0.0, 0.0),
+ 'f_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'firemod_size_classes': (1.0, 3.0, 5.0, 1.0, 1.0, 6.0),
+ 'g_ij': (0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 101,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0],
- 'w_o': [0.0046, 0.0, 0.0, 0.0, 0.0138, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0),
+ 'w_o': (0.004600000102072954, 0.0, 0.0, 0.0, 0.013799999840557575, 0.0)}
 </pre>
 </div>
 </div>
@@ -2841,13 +2893,13 @@ Dynamic Fuel Model: GR1
 <div class="outline-text-4" id="text-how-to-apply-fuel-moisture-to-a-fuel-model">
 <div class="org-src-container">
 <pre class="src src-python" id="moisturize-fuel-model"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
-<span class="org-keyword">from</span> pyretechnics.fuel_models <span class="org-keyword">import</span> fuel_model_table, moisturize
+<span class="org-keyword">from</span> pyretechnics.fuel_models <span class="org-keyword">import</span> get_fuel_model, moisturize
 
 <span class="org-variable-name">static_fuel_model_number</span>  <span class="org-operator">=</span> 1   <span class="org-comment-delimiter"># </span><span class="org-comment">R01</span>
 <span class="org-variable-name">dynamic_fuel_model_number</span> <span class="org-operator">=</span> 101 <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
 
-<span class="org-variable-name">static_fuel_model</span>  <span class="org-operator">=</span> fuel_model_table.get(static_fuel_model_number)
-<span class="org-variable-name">dynamic_fuel_model</span> <span class="org-operator">=</span> fuel_model_table.get(dynamic_fuel_model_number)
+<span class="org-variable-name">static_fuel_model</span>  <span class="org-operator">=</span> get_fuel_model(static_fuel_model_number)
+<span class="org-variable-name">dynamic_fuel_model</span> <span class="org-operator">=</span> get_fuel_model(dynamic_fuel_model_number)
 
 <span class="org-variable-name">fuel_moisture</span> <span class="org-operator">=</span> [
     0.05, <span class="org-comment-delimiter"># </span><span class="org-comment">dead_1hr</span>
@@ -2868,40 +2920,92 @@ pprint(moisturize(dynamic_fuel_model, fuel_moisture))
 
 <pre class="example" id="moisturize-fuel-model-results">
 Moisturized Static Fuel Model: R01
-{'M_f': [0.05, 0.1, 0.15, 0.0, 0.3, 0.5],
- 'M_x': [0.12, 0.12, 0.12, 0.0, 0.12, 0.12],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.05000000074505806,
+         0.10000000149011612,
+         0.15000000596046448,
+         0.0,
+         0.30000001192092896,
+         0.5),
+ 'M_x': (0.11999999731779099,
+         0.11999999731779099,
+         0.11999999731779099,
+         0.0,
+         0.11999999731779099,
+         0.11999999731779099),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
  'delta': 1.0,
  'dynamic': False,
- 'f_i': [1.0, 0.0],
- 'f_ij': [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'g_ij': [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'R01',
+ 'exp_A_sigma': (0.9613386392593384, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'f_i': (1.0, 0.0),
+ 'f_ij': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'firemod_size_classes': (1.0, 6.0, 6.0, 6.0, 6.0, 6.0),
+ 'g_ij': (1.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 1,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [3500.0, 0.0, 0.0, 0.0, 0.0, 0.0],
- 'w_o': [0.034, 0.0, 0.0, 0.0, 0.0, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (3500.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+ 'w_o': (0.03400000184774399, 0.0, 0.0, 0.0, 0.0, 0.0)}
 
 Moisturized Dynamic Fuel Model: GR1
-{'M_f': [0.05, 0.1, 0.15, 0.05, 0.3, 0.5],
- 'M_x': [0.15, 0.15, 0.15, 0.15, 0.15, 0.15],
- 'S_T': [0.0555, 0.0555, 0.0555, 0.0555, 0.0555, 0.0555],
- 'S_e': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+{'M_f': (0.05000000074505806,
+         0.10000000149011612,
+         0.15000000596046448,
+         0.05000000074505806,
+         0.30000001192092896,
+         0.5),
+ 'M_x': (0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         0.15000000596046448,
+         233597312.0,
+         233597312.0),
+ 'S_T': (0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574,
+         0.05550000071525574),
+ 'S_e': (0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582,
+         0.009999999776482582),
  'burnable': True,
- 'delta': 0.4,
+ 'delta': 0.4000000059604645,
  'dynamic': True,
- 'f_i': [1.0, 0.0],
- 'f_ij': [0.26829268292682923, 0.0, 0.0, 0.7317073170731707, 0.0, 0.0],
- 'g_ij': [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
- 'h': [8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0],
- 'name': 'GR1',
+ 'exp_A_sigma': (0.9391995668411255,
+                 0.281941682100296,
+                 0.010051836259663105,
+                 0.9333266615867615,
+                 0.7788007855415344,
+                 0.0),
+ 'f_i': (1.0, 9.691811797551964e-09),
+ 'f_ij': (0.2682926654815674, 0.0, 0.0, 0.7317073345184326, 1.0, 0.0),
+ 'firemod_size_classes': (1.0, 3.0, 5.0, 1.0, 1.0, 6.0),
+ 'g_ij': (1.0, 0.0, 0.0, 1.0, 1.0, 0.0),
+ 'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 101,
- 'rho_p': [32.0, 32.0, 32.0, 32.0, 32.0, 32.0],
- 'sigma': [2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0],
- 'w_o': [0.0046, 0.0, 0.0, 0.0138, 0.0, 0.0]}
+ 'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+ 'sigma': (2200.0, 109.0, 30.0, 2000.0, 2000.0, 0.0),
+ 'w_o': (0.004600000102072954,
+         0.0,
+         0.0,
+         0.013799999840557575,
+         1.8278757674128343e-10,
+         0.0)}
 </pre>
 </div>
 </div>

@@ -12,6 +12,10 @@ cdef FuelModel expand_compact_fuel_model(int fuel_model_number) noexcept
 
 cdef dict[int, FuelModel] fuel_model_table
 
+cpdef bint fuel_model_exists(int fuel_model_number) noexcept
+
+cpdef FuelModel get_fuel_model(int fuel_model_number) noexcept
+
 cdef FuelModel add_dynamic_fuel_loading(FuelModel fuel_model, fclaarr M_f) noexcept
 
 cdef float compute_gij(fclaarr firemod_size_classes, fclaarr f_ij, float firemod_size_class_ij, bint is_dead) noexcept
@@ -20,4 +24,4 @@ cdef FuelModel add_weighting_factors(FuelModel fuel_model) noexcept
 
 cdef FuelModel add_live_moisture_of_extinction(FuelModel fuel_model) noexcept
 
-cdef FuelModel moisturize(FuelModel fuel_model, fclaarr fuel_moisture) noexcept
+cpdef FuelModel moisturize(FuelModel fuel_model, fclaarr fuel_moisture) noexcept
