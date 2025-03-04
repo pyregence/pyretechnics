@@ -4153,12 +4153,15 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
     return v * sqrt(v) # NOTE: This is faster than pow(v, 1.5).
 #+end_src
 
-If a surface fire is present, the canopy cover is greater than 40%,
-and the surface fireline intensity $I_s$ is greater than or equal to
-the critical fireline intensity $I_s^*$, then the surface fire
-transitions to a crown fire.
+By using the linear relationship between spread rate and fireline
+intensity outlined in section [[Surface Fire Intensity Functions]], we can
+also calculate the surface fire spread rate at which crowning occurs.
 
-#+NAME: van-wagner-crown-fire-initiation
+\begin{align}
+  R_s^* = R_s \frac{I_s^*}{I_s}
+\end{align}
+
+#+NAME: van-wagner-crowning-spread-rate
 #+begin_src python
 @cy.cfunc
 @cy.exceptval(check=False)
@@ -4179,9 +4182,16 @@ def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
         return (surface_max_spread_rate * critical_fireline_intensity / surface_max_fireline_intensity)
     else:
         return 0.0
+#+end_src
 
+If a surface fire is present, the canopy cover is greater than 40%,
+and the surface fireline intensity $I_s$ is greater than or equal to
+the critical fireline intensity $I_s^*$, then the surface fire
+transitions to a crown fire.
 
-@cy.cfunc
+#+NAME: van-wagner-crown-fire-initiation
+#+begin_src python
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def van_wagner_crown_fire_initiation(surface_fireline_intensity: cy.float,
@@ -4413,10 +4423,6 @@ where $U_{20}$ is the 20-ft wind speed in $\text{mph}$.
 #+NAME: crown-fire-eccentricity
 #+begin_src python
 # Parameters for the linear model that computes LoW from wind speed.
-LoW_intercept       = cy.declare(cy.float, 1.0)
-LoW_slope_per_km_hr = cy.declare(cy.float, conv.km_hr_to_mph(0.125)) # The original formula used wind speeds in mph
-
-
 @cy.cfunc
 @cy.exceptval(check=False)
 def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ratio: cy.float = 1e10) -> cy.float:
@@ -4426,12 +4432,14 @@ def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ra
     - wind_speed_10m            :: km/hr (aligned with the slope-tangential plane)
     - max_length_to_width_ratio :: float > 0.0 (Optional)
     """
-    # FIXME: Why is wind speed not in SI units???
-    length_to_width_ratio: cy.float = LoW_intercept + LoW_slope_per_km_hr * wind_speed_10m
+    wind_speed_20ft      : cy.float = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+    wind_speed_20ft_mph  : cy.float = conv.km_hr_to_mph(wind_speed_20ft)                     # mph
+    length_to_width_ratio: cy.float = 1.0 + 0.125 * wind_speed_20ft_mph
     return min(length_to_width_ratio, max_length_to_width_ratio)
 
 
 @cy.cfunc
+@cy.inline
 @cy.exceptval(check=False)
 def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     """
@@ -4439,8 +4447,7 @@ def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     Albini and Chase 1980 given:
     - length_to_width_ratio :: (1: circular spread, > 1: elliptical spread)
     """
-    LoW2: cy.float = length_to_width_ratio * length_to_width_ratio
-    return sqrt(LoW2 - 1.0) / length_to_width_ratio
+    return sqrt(length_to_width_ratio * length_to_width_ratio - 1.0) / length_to_width_ratio
 #+end_src
 
 *** Crown Fire Behavior in the Direction of Maximum Spread
@@ -4462,7 +4469,7 @@ Surface and Crown Fire Behavior]].
 
 #+NAME: crown-fire-behavior-max
 #+begin_src python
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_crown_fire_behavior_max(canopy_height               : cy.float,
                                  canopy_base_height          : cy.float,
@@ -4507,6 +4514,7 @@ def calc_crown_fire_behavior_max(canopy_height               : cy.float,
     wind_vector_3d : vec_xyz = vectors.wind_vector_3d  # km/hr
     slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
     # Determine the max spread direction
+    # FIXME: REVIEW Should we make the max_spread_direction the combined wind and slope direction?
     wind_speed_10m_3d: cy.float = vu.vector_magnitude_3d(wind_vector_3d) # km/hr
     max_spread_direction: vec_xyz
     if wind_speed_10m_3d > 0.0:
@@ -4580,7 +4588,7 @@ this plane from $\vec{u_{\max}}$.
 
 #+NAME: crown-fire-behavior-in-direction
 #+begin_src python
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
                                           spread_direction: vec_xyz) -> SpreadBehavior:
@@ -4774,7 +4782,7 @@ follows:
 
 #+NAME: combined-fire-behavior
 #+begin_src python
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior,
                                 crown_fire_behavior  : SpreadBehavior) -> SpreadBehavior:
@@ -5163,12 +5171,13 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.821895863285579,
- 'length_to_width_ratio': 1.7555015683174133,
- 'max_fire_type': 'active_crown',
- 'max_fireline_intensity': 82666.07018304318,
- 'max_spread_direction': array([0.        , 0.89442718, 0.44721359]),
- 'max_spread_rate': 32.90741942256743}
+ 'eccentricity': 0.8218109607696533,
+ 'length_to_width_ratio': 1.7551240921020508,
+ 'max_fire_type': 3,
+ 'max_fireline_intensity': 82666.078125,
+ 'max_flame_length': 0.0,
+ 'max_spread_direction': (0.0, 0.8944271802902222, 0.4472135901451111),
+ 'max_spread_rate': 32.90742111206055}
 
 Crown Fire Behavior Max with Wind and Slope Perpendicular
 ============================================================
@@ -5186,12 +5195,13 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.8024265608222492,
- 'length_to_width_ratio': 1.6757411360740662,
- 'max_fire_type': 'active_crown',
- 'max_fireline_intensity': 74768.3487091958,
- 'max_spread_direction': array([ 0.00000000e+00,  1.00000000e+00, -2.18556941e-08]),
- 'max_spread_rate': 29.763522144675242}
+ 'eccentricity': 0.802337110042572,
+ 'length_to_width_ratio': 1.6754034757614136,
+ 'max_fire_type': 3,
+ 'max_fireline_intensity': 74768.359375,
+ 'max_flame_length': 0.0,
+ 'max_spread_direction': (0.0, 1.0, -2.1855694143368964e-08),
+ 'max_spread_rate': 29.763521194458008}
 #+end_example
 
 *** How to Calculate the Crown Fire Behavior in Any Direction
@@ -5260,24 +5270,34 @@ pprint(backing_fire_behavior)
 #+begin_example
 Heading Fire Behavior
 ============================================================
-{'fire_type': 'active_crown',
- 'fireline_intensity': 78838.15458910078,
- 'spread_direction': array([0.        , 0.94280905, 0.33333334]),
- 'spread_rate': 31.383616202151522}
+{'dphi_dt': 0.0,
+ 'fire_type': 3,
+ 'fireline_intensity': 78838.15625,
+ 'flame_length': 0.0,
+ 'spread_direction': (0.0, 0.9428090453147888, 0.3333333432674408),
+ 'spread_rate': 31.38361358642578}
 
 Flanking Fire Behavior
 ============================================================
-{'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204747877806,
- 'spread_direction': array([ 0.94868332, -0.1054093 ,  0.2981424 ]),
- 'spread_rate': 3.2646179246550817}
+{'dphi_dt': 0.0,
+ 'fire_type': 2,
+ 'fireline_intensity': 14763.076171875,
+ 'flame_length': 0.0,
+ 'spread_direction': (0.9486833214759827,
+                      -0.10540930181741714,
+                      0.2981424033641815),
+ 'spread_rate': 3.265244722366333}
 
 Backing Fire Behavior
 ============================================================
-{'fire_type': 'passive_crown',
- 'fireline_intensity': 8139.876410946037,
- 'spread_direction': array([-8.29365305e-08, -9.42809045e-01, -3.33333373e-01]),
- 'spread_rate': 2.3434742608260732}
+{'dphi_dt': 0.0,
+ 'fire_type': 2,
+ 'fireline_intensity': 8144.0576171875,
+ 'flame_length': 0.0,
+ 'spread_direction': (-8.293653053215166e-08,
+                      -0.9428090453147888,
+                      -0.3333333730697632),
+ 'spread_rate': 2.344287633895874}
 #+end_example
 
 *** How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction
@@ -5299,13 +5319,13 @@ import pyretechnics.vector_utils as vu
 #================================================================================================
 
 # Landscape
-fuel_model          = fm.fuel_model_table[101] # GR1
-canopy_cover        = 0.6                      # 0-1
-canopy_height       = 30.0                     # m
-canopy_base_height  = 3.0                      # m
-canopy_bulk_density = 0.3                      # kg/m^3
-slope               = 0.8                      # rise/run
-aspect              = 225.0                    # degrees clockwise from North
+fuel_model          = fm.get_fuel_model(101) # GR1
+canopy_cover        = 0.6                    # 0-1
+canopy_height       = 30.0                   # m
+canopy_base_height  = 3.0                    # m
+canopy_bulk_density = 0.3                    # kg/m^3
+slope               = 0.8                    # rise/run
+aspect              = 225.0                  # degrees clockwise from North
 
 # Weather
 fuel_moisture    = [
@@ -5368,7 +5388,8 @@ surface_fire_max = sf.calc_surface_fire_behavior_max(surface_fire_min,
                                                      midflame_wind_speed,
                                                      upwind_direction,
                                                      slope,
-                                                     aspect)
+                                                     aspect,
+                                                     surface_lw_ratio_model="rothermel")
 
 #================================================================================================
 # Calculate surface fire behavior in the direction normal to the fire perimeter
@@ -5428,11 +5449,12 @@ else:
 #+RESULTS: compute-combined-fire-behavior-in-direction
 : Fire Behavior from Surface Fire (No Crown Fire Occurred)
 : ============================================================
-: {'fire_type': 'surface',
-:  'fireline_intensity': 11.637273243704481,
-:  'flame_length': 0.23956727406332143,
-:  'spread_direction': array([0.87038827, 0.        , 0.49236599]),
-:  'spread_rate': 0.8215819746243512}
+: {'dphi_dt': 0.0,
+:  'fire_type': 1,
+:  'fireline_intensity': 11.63843822479248,
+:  'flame_length': 0.23957830667495728,
+:  'spread_direction': (0.8703882694244385, 0.0, 0.4923659861087799),
+:  'spread_rate': 0.821664035320282}
 
 * Spot Fire Equations (pyretechnics.spot_fire)
   :PROPERTIES:

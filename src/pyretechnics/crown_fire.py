@@ -33,7 +33,7 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
     v: cy.float = 0.01 * canopy_base_height * H
     return v * sqrt(v) # NOTE: This is faster than pow(v, 1.5).
 # van-wagner-critical-fireline-intensity ends here
-# [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
+# [[file:../../org/pyretechnics.org::van-wagner-crowning-spread-rate][van-wagner-crowning-spread-rate]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
@@ -53,9 +53,9 @@ def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
         return (surface_max_spread_rate * critical_fireline_intensity / surface_max_fireline_intensity)
     else:
         return 0.0
-
-
-@cy.cfunc
+# van-wagner-crowning-spread-rate ends here
+# [[file:../../org/pyretechnics.org::van-wagner-crown-fire-initiation][van-wagner-crown-fire-initiation]]
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def van_wagner_crown_fire_initiation(surface_fireline_intensity: cy.float,
@@ -179,10 +179,6 @@ def calc_crown_fireline_intensity(crown_spread_rate  : cy.float,
 # crown-fireline-intensity ends here
 # [[file:../../org/pyretechnics.org::crown-fire-eccentricity][crown-fire-eccentricity]]
 # Parameters for the linear model that computes LoW from wind speed.
-LoW_intercept       = cy.declare(cy.float, 1.0)
-LoW_slope_per_km_hr = cy.declare(cy.float, conv.km_hr_to_mph(0.125)) # The original formula used wind speeds in mph
-
-
 @cy.cfunc
 @cy.exceptval(check=False)
 def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ratio: cy.float = 1e10) -> cy.float:
@@ -192,12 +188,14 @@ def crown_length_to_width_ratio(wind_speed_10m: cy.float, max_length_to_width_ra
     - wind_speed_10m            :: km/hr (aligned with the slope-tangential plane)
     - max_length_to_width_ratio :: float > 0.0 (Optional)
     """
-    # FIXME: Why is wind speed not in SI units???
-    length_to_width_ratio: cy.float = LoW_intercept + LoW_slope_per_km_hr * wind_speed_10m
+    wind_speed_20ft      : cy.float = conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) # km/hr
+    wind_speed_20ft_mph  : cy.float = conv.km_hr_to_mph(wind_speed_20ft)                     # mph
+    length_to_width_ratio: cy.float = 1.0 + 0.125 * wind_speed_20ft_mph
     return min(length_to_width_ratio, max_length_to_width_ratio)
 
 
 @cy.cfunc
+@cy.inline
 @cy.exceptval(check=False)
 def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     """
@@ -205,11 +203,10 @@ def crown_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     Albini and Chase 1980 given:
     - length_to_width_ratio :: (1: circular spread, > 1: elliptical spread)
     """
-    LoW2: cy.float = length_to_width_ratio * length_to_width_ratio
-    return sqrt(LoW2 - 1.0) / length_to_width_ratio
+    return sqrt(length_to_width_ratio * length_to_width_ratio - 1.0) / length_to_width_ratio
 # crown-fire-eccentricity ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-max][crown-fire-behavior-max]]
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_crown_fire_behavior_max(canopy_height               : cy.float,
                                  canopy_base_height          : cy.float,
@@ -254,6 +251,7 @@ def calc_crown_fire_behavior_max(canopy_height               : cy.float,
     wind_vector_3d : vec_xyz = vectors.wind_vector_3d  # km/hr
     slope_vector_3d: vec_xyz = vectors.slope_vector_3d # rise/run
     # Determine the max spread direction
+    # FIXME: REVIEW Should we make the max_spread_direction the combined wind and slope direction?
     wind_speed_10m_3d: cy.float = vu.vector_magnitude_3d(wind_vector_3d) # km/hr
     max_spread_direction: vec_xyz
     if wind_speed_10m_3d > 0.0:
@@ -287,7 +285,7 @@ def calc_crown_fire_behavior_max(canopy_height               : cy.float,
     )
 # crown-fire-behavior-max ends here
 # [[file:../../org/pyretechnics.org::crown-fire-behavior-in-direction][crown-fire-behavior-in-direction]]
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
                                           spread_direction: vec_xyz) -> SpreadBehavior:
@@ -357,7 +355,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
         )
 # crown-fire-behavior-in-direction ends here
 # [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def calc_combined_fire_behavior(surface_fire_behavior: SpreadBehavior,
                                 crown_fire_behavior  : SpreadBehavior) -> SpreadBehavior:

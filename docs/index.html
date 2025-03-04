@@ -4686,14 +4686,17 @@ height in meters, and \(I_s^*\) is the critical fireline intensity in
 </div>
 
 <p>
-If a surface fire is present, the canopy cover is greater than 40%,
-and the surface fireline intensity \(I_s\) is greater than or equal to
-the critical fireline intensity \(I_s^*\), then the surface fire
-transitions to a crown fire.
+By using the linear relationship between spread rate and fireline
+intensity outlined in section <a href="#surface-fire-intensity-functions">5.1.4</a>, we can
+also calculate the surface fire spread rate at which crowning occurs.
 </p>
 
+\begin{align}
+  R_s^* = R_s \frac{I_s^*}{I_s}
+\end{align}
+
 <div class="org-src-container">
-<pre class="src src-python" id="van-wagner-crown-fire-initiation"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="van-wagner-crowning-spread-rate"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">van_wagner_crowning_spread_rate</span>(surface_fire_max  : FireBehaviorMax,
                                     canopy_base_height: cy.<span class="org-builtin">float</span>,
@@ -4712,9 +4715,18 @@ transitions to a crown fire.
         <span class="org-keyword">return</span> (surface_max_spread_rate <span class="org-operator">*</span> critical_fireline_intensity <span class="org-operator">/</span> surface_max_fireline_intensity)
     <span class="org-keyword">else</span>:
         <span class="org-keyword">return</span> 0.0
+</pre>
+</div>
 
+<p>
+If a surface fire is present, the canopy cover is greater than 40%,
+and the surface fireline intensity \(I_s\) is greater than or equal to
+the critical fireline intensity \(I_s^*\), then the surface fire
+transitions to a crown fire.
+</p>
 
-<span class="org-type">@cy.cfunc</span>
+<div class="org-src-container">
+<pre class="src src-python" id="van-wagner-crown-fire-initiation"><span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">van_wagner_crown_fire_initiation</span>(surface_fireline_intensity: cy.<span class="org-builtin">float</span>,
@@ -4966,10 +4978,6 @@ where \(U_{20}\) is the 20-ft wind speed in \(\text{mph}\).
 
 <div class="org-src-container">
 <pre class="src src-python" id="crown-fire-eccentricity"><span class="org-comment-delimiter"># </span><span class="org-comment">Parameters for the linear model that computes LoW from wind speed.</span>
-<span class="org-variable-name">LoW_intercept</span>       <span class="org-operator">=</span> cy.declare(cy.<span class="org-builtin">float</span>, 1.0)
-<span class="org-variable-name">LoW_slope_per_km_hr</span> <span class="org-operator">=</span> cy.declare(cy.<span class="org-builtin">float</span>, conv.km_hr_to_mph(0.125)) <span class="org-comment-delimiter"># </span><span class="org-comment">The original formula used wind speeds in mph</span>
-
-
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">crown_length_to_width_ratio</span>(wind_speed_10m: cy.<span class="org-builtin">float</span>, max_length_to_width_ratio: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1e10) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
@@ -4979,12 +4987,14 @@ where \(U_{20}\) is the 20-ft wind speed in \(\text{mph}\).
 <span class="org-doc">    - wind_speed_10m            :: km/hr (aligned with the slope-tangential plane)</span>
 <span class="org-doc">    - max_length_to_width_ratio :: float &gt; 0.0 (Optional)</span>
 <span class="org-doc">    """</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Why is wind speed not in SI units???</span>
-    <span class="org-variable-name">length_to_width_ratio</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> LoW_intercept <span class="org-operator">+</span> LoW_slope_per_km_hr <span class="org-operator">*</span> wind_speed_10m
+    <span class="org-variable-name">wind_speed_20ft</span>      : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> conv.wind_speed_10m_to_wind_speed_20ft(wind_speed_10m) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+    <span class="org-variable-name">wind_speed_20ft_mph</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> conv.km_hr_to_mph(wind_speed_20ft)                     <span class="org-comment-delimiter"># </span><span class="org-comment">mph</span>
+    <span class="org-variable-name">length_to_width_ratio</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1.0 <span class="org-operator">+</span> 0.125 <span class="org-operator">*</span> wind_speed_20ft_mph
     <span class="org-keyword">return</span> <span class="org-builtin">min</span>(length_to_width_ratio, max_length_to_width_ratio)
 
 
 <span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">crown_fire_eccentricity</span>(length_to_width_ratio: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
@@ -4992,8 +5002,7 @@ where \(U_{20}\) is the 20-ft wind speed in \(\text{mph}\).
 <span class="org-doc">    Albini and Chase 1980 given:</span>
 <span class="org-doc">    - length_to_width_ratio :: (1: circular spread, &gt; 1: elliptical spread)</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">LoW2</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> length_to_width_ratio <span class="org-operator">*</span> length_to_width_ratio
-    <span class="org-keyword">return</span> sqrt(LoW2 <span class="org-operator">-</span> 1.0) <span class="org-operator">/</span> length_to_width_ratio
+    <span class="org-keyword">return</span> sqrt(length_to_width_ratio <span class="org-operator">*</span> length_to_width_ratio <span class="org-operator">-</span> 1.0) <span class="org-operator">/</span> length_to_width_ratio
 </pre>
 </div>
 </div>
@@ -5014,7 +5023,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="crown-fire-behavior-max"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="crown-fire-behavior-max"><span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_crown_fire_behavior_max</span>(canopy_height               : cy.<span class="org-builtin">float</span>,
                                  canopy_base_height          : cy.<span class="org-builtin">float</span>,
@@ -5059,6 +5068,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
     <span class="org-variable-name">wind_vector_3d</span> : vec_xyz <span class="org-operator">=</span> vectors.wind_vector_3d  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
     <span class="org-variable-name">slope_vector_3d</span>: vec_xyz <span class="org-operator">=</span> vectors.slope_vector_3d <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine the max spread direction</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: REVIEW Should we make the max_spread_direction the combined wind and slope direction?</span>
     <span class="org-variable-name">wind_speed_10m_3d</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vu.vector_magnitude_3d(wind_vector_3d) <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
     max_spread_direction: vec_xyz
     <span class="org-keyword">if</span> wind_speed_10m_3d <span class="org-operator">&gt;</span> 0.0:
@@ -5139,7 +5149,7 @@ this plane from \(\vec{u_{\max}}\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="crown-fire-behavior-in-direction"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="crown-fire-behavior-in-direction"><span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_crown_fire_behavior_in_direction</span>(crown_fire_max  : FireBehaviorMax,
                                           spread_direction: vec_xyz) <span class="org-operator">-&gt;</span> SpreadBehavior:
@@ -5344,7 +5354,7 @@ follows:
 <li><a id="combined-fire-behavior-implementation"></a>Combined Fire Behavior Implementation<br>
 <div class="outline-text-5" id="text-combined-fire-behavior-implementation">
 <div class="org-src-container">
-<pre class="src src-python" id="combined-fire-behavior"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="combined-fire-behavior"><span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_combined_fire_behavior</span>(surface_fire_behavior: SpreadBehavior,
                                 crown_fire_behavior  : SpreadBehavior) <span class="org-operator">-&gt;</span> SpreadBehavior:
@@ -5734,12 +5744,13 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.821895863285579,
- 'length_to_width_ratio': 1.7555015683174133,
- 'max_fire_type': 'active_crown',
- 'max_fireline_intensity': 82666.07018304318,
- 'max_spread_direction': array([0.        , 0.89442718, 0.44721359]),
- 'max_spread_rate': 32.90741942256743}
+ 'eccentricity': 0.8218109607696533,
+ 'length_to_width_ratio': 1.7551240921020508,
+ 'max_fire_type': 3,
+ 'max_fireline_intensity': 82666.078125,
+ 'max_flame_length': 0.0,
+ 'max_spread_direction': (0.0, 0.8944271802902222, 0.4472135901451111),
+ 'max_spread_rate': 32.90742111206055}
 
 Crown Fire Behavior Max with Wind and Slope Perpendicular
 ============================================================
@@ -5757,12 +5768,13 @@ Inputs:
 
 Outputs:
 {'critical_spread_rate': 10.0,
- 'eccentricity': 0.8024265608222492,
- 'length_to_width_ratio': 1.6757411360740662,
- 'max_fire_type': 'active_crown',
- 'max_fireline_intensity': 74768.3487091958,
- 'max_spread_direction': array([ 0.00000000e+00,  1.00000000e+00, -2.18556941e-08]),
- 'max_spread_rate': 29.763522144675242}
+ 'eccentricity': 0.802337110042572,
+ 'length_to_width_ratio': 1.6754034757614136,
+ 'max_fire_type': 3,
+ 'max_fireline_intensity': 74768.359375,
+ 'max_flame_length': 0.0,
+ 'max_spread_direction': (0.0, 1.0, -2.1855694143368964e-08),
+ 'max_spread_rate': 29.763521194458008}
 </pre>
 </div>
 </div>
@@ -5828,24 +5840,34 @@ pprint(backing_fire_behavior)
 <pre class="example" id="compute-crown-fire-behavior-in-direction-results">
 Heading Fire Behavior
 ============================================================
-{'fire_type': 'active_crown',
- 'fireline_intensity': 78838.15458910078,
- 'spread_direction': array([0.        , 0.94280905, 0.33333334]),
- 'spread_rate': 31.383616202151522}
+{'dphi_dt': 0.0,
+ 'fire_type': 3,
+ 'fireline_intensity': 78838.15625,
+ 'flame_length': 0.0,
+ 'spread_direction': (0.0, 0.9428090453147888, 0.3333333432674408),
+ 'spread_rate': 31.38361358642578}
 
 Flanking Fire Behavior
 ============================================================
-{'fire_type': 'passive_crown',
- 'fireline_intensity': 14756.204747877806,
- 'spread_direction': array([ 0.94868332, -0.1054093 ,  0.2981424 ]),
- 'spread_rate': 3.2646179246550817}
+{'dphi_dt': 0.0,
+ 'fire_type': 2,
+ 'fireline_intensity': 14763.076171875,
+ 'flame_length': 0.0,
+ 'spread_direction': (0.9486833214759827,
+                      -0.10540930181741714,
+                      0.2981424033641815),
+ 'spread_rate': 3.265244722366333}
 
 Backing Fire Behavior
 ============================================================
-{'fire_type': 'passive_crown',
- 'fireline_intensity': 8139.876410946037,
- 'spread_direction': array([-8.29365305e-08, -9.42809045e-01, -3.33333373e-01]),
- 'spread_rate': 2.3434742608260732}
+{'dphi_dt': 0.0,
+ 'fire_type': 2,
+ 'fireline_intensity': 8144.0576171875,
+ 'flame_length': 0.0,
+ 'spread_direction': (-8.293653053215166e-08,
+                      -0.9428090453147888,
+                      -0.3333333730697632),
+ 'spread_rate': 2.344287633895874}
 </pre>
 </div>
 </div>
@@ -5865,13 +5887,13 @@ Backing Fire Behavior
 <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Landscape</span>
-<span class="org-variable-name">fuel_model</span>          <span class="org-operator">=</span> fm.fuel_model_table[101] <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
-<span class="org-variable-name">canopy_cover</span>        <span class="org-operator">=</span> 0.6                      <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
-<span class="org-variable-name">canopy_height</span>       <span class="org-operator">=</span> 30.0                     <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-<span class="org-variable-name">canopy_base_height</span>  <span class="org-operator">=</span> 3.0                      <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-<span class="org-variable-name">canopy_bulk_density</span> <span class="org-operator">=</span> 0.3                      <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
-<span class="org-variable-name">slope</span>               <span class="org-operator">=</span> 0.8                      <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
-<span class="org-variable-name">aspect</span>              <span class="org-operator">=</span> 225.0                    <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+<span class="org-variable-name">fuel_model</span>          <span class="org-operator">=</span> fm.get_fuel_model(101) <span class="org-comment-delimiter"># </span><span class="org-comment">GR1</span>
+<span class="org-variable-name">canopy_cover</span>        <span class="org-operator">=</span> 0.6                    <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+<span class="org-variable-name">canopy_height</span>       <span class="org-operator">=</span> 30.0                   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+<span class="org-variable-name">canopy_base_height</span>  <span class="org-operator">=</span> 3.0                    <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+<span class="org-variable-name">canopy_bulk_density</span> <span class="org-operator">=</span> 0.3                    <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
+<span class="org-variable-name">slope</span>               <span class="org-operator">=</span> 0.8                    <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
+<span class="org-variable-name">aspect</span>              <span class="org-operator">=</span> 225.0                  <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Weather</span>
 <span class="org-variable-name">fuel_moisture</span>    <span class="org-operator">=</span> [
@@ -5934,7 +5956,8 @@ Backing Fire Behavior
                                                      midflame_wind_speed,
                                                      upwind_direction,
                                                      slope,
-                                                     aspect)
+                                                     aspect,
+                                                     surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">================================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate surface fire behavior in the direction normal to the fire perimeter</span>
@@ -5994,11 +6017,12 @@ Backing Fire Behavior
 <pre class="example">
 Fire Behavior from Surface Fire (No Crown Fire Occurred)
 ============================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 11.637273243704481,
- 'flame_length': 0.23956727406332143,
- 'spread_direction': array([0.87038827, 0.        , 0.49236599]),
- 'spread_rate': 0.8215819746243512}
+{'dphi_dt': 0.0,
+ 'fire_type': 1,
+ 'fireline_intensity': 11.63843822479248,
+ 'flame_length': 0.23957830667495728,
+ 'spread_direction': (0.8703882694244385, 0.0, 0.4923659861087799),
+ 'spread_rate': 0.821664035320282}
 </pre>
 </div>
 </div>

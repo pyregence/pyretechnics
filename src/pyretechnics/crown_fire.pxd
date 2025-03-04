@@ -1,5 +1,4 @@
 from pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
-cimport pyretechnics.conversion as conv
 
 cdef float van_wagner_critical_fireline_intensity(
     float canopy_base_height,
@@ -12,7 +11,7 @@ cdef float van_wagner_crowning_spread_rate(
     float foliar_moisture,
     ) noexcept
 
-cdef bint van_wagner_crown_fire_initiation(
+cpdef bint van_wagner_crown_fire_initiation(
     float surface_fireline_intensity,
     float canopy_cover,
     float canopy_base_height,
@@ -46,10 +45,6 @@ cdef float calc_crown_fireline_intensity(
     float heat_of_combustion,
     ) noexcept
 
-cdef float LoW_intercept = 1.0
-
-cdef float LoW_slope_per_km_hr = conv.km_hr_to_mph(0.125)
-
 cdef float crown_length_to_width_ratio(
     float wind_speed_10m,
     float max_length_to_width_ratio=?,
@@ -57,7 +52,7 @@ cdef float crown_length_to_width_ratio(
 
 cdef float crown_fire_eccentricity(float length_to_width_ratio) noexcept
 
-cdef FireBehaviorMax calc_crown_fire_behavior_max(
+cpdef FireBehaviorMax calc_crown_fire_behavior_max(
     float canopy_height,
     float canopy_base_height,
     float canopy_bulk_density,
@@ -70,12 +65,12 @@ cdef FireBehaviorMax calc_crown_fire_behavior_max(
     float crown_max_lw_ratio=?,
     ) noexcept
 
-cdef SpreadBehavior calc_crown_fire_behavior_in_direction(
+cpdef SpreadBehavior calc_crown_fire_behavior_in_direction(
     FireBehaviorMax crown_fire_max,
     vec_xyz spread_direction,
     ) noexcept
 
-cdef SpreadBehavior calc_combined_fire_behavior(
+cpdef SpreadBehavior calc_combined_fire_behavior(
     SpreadBehavior surface_fire_behavior,
     SpreadBehavior crown_fire_behavior,
     ) noexcept
