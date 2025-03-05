@@ -8578,7 +8578,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 </pre>
 </div>
 
-<pre class="example" id="org04caaa5">
+<pre class="example" id="org75aa5d0">
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
 =========================================================================================================================
 
@@ -8873,7 +8873,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 </pre>
 </div>
 
-<pre class="example" id="org3b1a1bb">
+<pre class="example" id="orge61a37b">
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
 =========================================================================================================================
 
@@ -8990,7 +8990,7 @@ model<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.random <span class="org-keyword">import</span> BufferedRandGen
-    <span class="org-keyword">from</span> cython.cimports.pyretechnics.space_time_cube <span class="org-keyword">import</span> ISpaceTimeCube
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.space_time_cube <span class="org-keyword">import</span> ISpaceTimeCube, SpaceTimeCube
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">as</span> conv
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">as</span> vu
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.fuel_models <span class="org-keyword">as</span> fm
@@ -9005,7 +9005,7 @@ model<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     <span class="org-keyword">from</span> pyretechnics.random <span class="org-keyword">import</span> BufferedRandGen
-    <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> ISpaceTimeCube
+    <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> ISpaceTimeCube, SpaceTimeCube
     <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
     <span class="org-keyword">import</span> pyretechnics.vector_utils <span class="org-keyword">as</span> vu
     <span class="org-keyword">import</span> pyretechnics.fuel_models <span class="org-keyword">as</span> fm
@@ -9720,7 +9720,9 @@ is returned.
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Inline this code at its call sites</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.inline</span>
-<span class="org-keyword">def</span> <span class="org-function-name">make_SpreadInputs</span>(cube_resolution: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>], space_time_cubes: <span class="org-builtin">dict</span>) <span class="org-operator">-&gt;</span> SpreadInputs:
+<span class="org-keyword">def</span> <span class="org-function-name">make_SpreadInputs</span>(cube_shape      : <span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx],
+                      cube_resolution : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>],
+                      space_time_cubes: <span class="org-builtin">dict</span>) <span class="org-operator">-&gt;</span> SpreadInputs:
     <span class="org-keyword">return</span> SpreadInputs(cube_resolution,
                         space_time_cubes[<span class="org-string">"slope"</span>],
                         space_time_cubes[<span class="org-string">"aspect"</span>],
@@ -9737,9 +9739,9 @@ is returned.
                         space_time_cubes[<span class="org-string">"fuel_moisture_live_herbaceous"</span>],
                         space_time_cubes[<span class="org-string">"fuel_moisture_live_woody"</span>],
                         space_time_cubes[<span class="org-string">"foliar_moisture"</span>],
-                        space_time_cubes.get(<span class="org-string">"temperature"</span>),
-                        space_time_cubes.get(<span class="org-string">"fuel_spread_adjustment"</span>),
-                        space_time_cubes.get(<span class="org-string">"weather_spread_adjustment"</span>))
+                        space_time_cubes.get(<span class="org-string">"temperature"</span>, SpaceTimeCube(cube_shape, <span class="org-operator">-</span>1.0)),
+                        space_time_cubes.get(<span class="org-string">"fuel_spread_adjustment"</span>, SpaceTimeCube(cube_shape, 1.0)),
+                        space_time_cubes.get(<span class="org-string">"weather_spread_adjustment"</span>, SpaceTimeCube(cube_shape, 1.0)))
 
 
 <span class="org-type">@cy.cfunc</span>
@@ -11710,7 +11712,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 <span class="org-doc">    return a dictionary with these keys:</span>
 <span class="org-doc">    - stop_time            :: minutes</span>
-<span class="org-doc">    - stop_condition       :: "max duration reached", "zero-length timestep", or "no burnable cells"</span>
+<span class="org-doc">    - stop_condition       :: "max duration reached" or "no burnable cells"</span>
 <span class="org-doc">    - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes</span>
 <span class="org-doc">      - phi                   :: 2D float array of values in [-1,1]</span>
 <span class="org-doc">      - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)</span>
@@ -11719,6 +11721,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - fireline_intensity    :: 2D float array (kW/m)</span>
 <span class="org-doc">      - flame_length          :: 2D float array (m)</span>
 <span class="org-doc">      - time_of_arrival       :: 2D float array (min)</span>
+<span class="org-doc">    - num_tracked_cells    :: number of cells in the narrow band at stop_time</span>
 <span class="org-doc">    - spot_ignitions       :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
 <span class="org-doc">    - random_generator     :: BufferedRandGen object (only included when spotting is used)</span>
 <span class="org-doc">    """</span>
@@ -11777,7 +11780,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Change this name without a collision</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the SpreadInputs struct</span>
-    <span class="org-variable-name">spread_inputs</span>: SpreadInputs <span class="org-operator">=</span> make_SpreadInputs(cube_resolution, space_time_cubes)
+    <span class="org-variable-name">spread_inputs</span>: SpreadInputs <span class="org-operator">=</span> make_SpreadInputs(cube_shape, cube_resolution, space_time_cubes)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the FireBehaviorSettings struct</span>
     <span class="org-variable-name">fb_opts</span>: FireBehaviorSettings <span class="org-operator">=</span> FireBehaviorSettings(
@@ -11854,19 +11857,19 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <li><a id="configure-and-run-the-fire-spread-simulation"></a>Configure and Run the Fire Spread Simulation<br>
 <div class="outline-text-5" id="text-configure-and-run-the-fire-spread-simulation">
 <div class="org-src-container">
-<pre class="src src-python" id="run-spread-fire-with-phi-field"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
+<pre class="src src-python" id="run-spread-fire-with-phi-field"><span class="org-keyword">import</span> time
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
-<span class="org-keyword">import</span> time
+<span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-variable-name">cube_shape</span> <span class="org-operator">=</span> (
-    75, <span class="org-comment-delimiter"># </span><span class="org-comment">bands: 10 days @ 1 hour/band</span>
-    5000, <span class="org-comment-delimiter"># </span><span class="org-comment">rows:  3 km @ 30 meters/row</span>
-    5000, <span class="org-comment-delimiter"># </span><span class="org-comment">cols:  3 km @ 30 meters/col</span>
+    240, <span class="org-comment-delimiter"># </span><span class="org-comment">bands: 10 days @ 1 hour/band</span>
+    100, <span class="org-comment-delimiter"># </span><span class="org-comment">rows:  3 km @ 30 meters/row</span>
+    100, <span class="org-comment-delimiter"># </span><span class="org-comment">cols:  3 km @ 30 meters/col</span>
 )
 
 <span class="org-variable-name">grid_shape</span> <span class="org-operator">=</span> cube_shape[1:]
@@ -11885,58 +11888,39 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">Create an input dictionary of SpaceTimeCubes (using constant data for this example)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-keyword">def</span> <span class="org-function-name">arr2d</span>(value):
-    <span class="org-keyword">return</span> np.full(grid_shape, value)
-
-<span class="org-keyword">def</span> <span class="org-function-name">arr3d</span>(value):
-    (<span class="org-variable-name">b</span>, <span class="org-variable-name">r</span>, <span class="org-variable-name">c</span>) <span class="org-operator">=</span> cube_shape
-    <span class="org-keyword">return</span> np.full((b, r<span class="org-operator">//</span>10, c<span class="org-operator">//</span>10) , value)
-
 <span class="org-variable-name">space_time_cubes</span> <span class="org-operator">=</span> {
-    <span class="org-string">"slope"</span>                        : SpaceTimeCube(cube_shape, arr2d(0.8)),   <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
-    <span class="org-string">"aspect"</span>                       : SpaceTimeCube(cube_shape, arr2d(225.0)), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Fuel model 185: (TL5) high-load conifer litter</span>
-    <span class="org-string">"fuel_model"</span>                   : SpaceTimeCube(cube_shape, arr2d(185)),   <span class="org-comment-delimiter"># </span><span class="org-comment">integer index in fm.fuel_model_table</span>
-    <span class="org-string">"canopy_cover"</span>                 : SpaceTimeCube(cube_shape, arr2d(0.7)),   <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
-    <span class="org-string">"canopy_height"</span>                : SpaceTimeCube(cube_shape, arr2d(10.0)),  <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-    <span class="org-string">"canopy_base_height"</span>           : SpaceTimeCube(cube_shape, arr2d(0.5)),   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
-    <span class="org-string">"canopy_bulk_density"</span>          : SpaceTimeCube(cube_shape, arr2d(0.3)),   <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
-    <span class="org-string">"wind_speed_10m"</span>               : SpaceTimeCube(cube_shape, arr3d(10.0)),  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
-    <span class="org-string">"upwind_direction"</span>             : SpaceTimeCube(cube_shape, arr3d(180.0)), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
-    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : SpaceTimeCube(cube_shape, arr3d(0.03)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_dead_10hr"</span>      : SpaceTimeCube(cube_shape, arr3d(0.04)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_dead_100hr"</span>     : SpaceTimeCube(cube_shape, arr3d(0.05)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_live_herbaceous"</span>: SpaceTimeCube(cube_shape, arr3d(0.90)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"fuel_moisture_live_woody"</span>     : SpaceTimeCube(cube_shape, arr3d(0.60)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"foliar_moisture"</span>              : SpaceTimeCube(cube_shape, arr3d(0.70)),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
-    <span class="org-string">"temperature"</span>                  : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">degrees Celsius</span>
-    <span class="org-string">"fuel_spread_adjustment"</span>       : SpaceTimeCube(cube_shape, arr2d(1.0)),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-    <span class="org-string">"weather_spread_adjustment"</span>    : SpaceTimeCube(cube_shape, arr3d(1.0)),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-}
-
-<span class="org-variable-name">cube_refresh_rates</span> <span class="org-operator">=</span> {
-    <span class="org-string">"wind_speed_10m"</span>               : 1.0 <span class="org-operator">/</span> 15.0,
-    <span class="org-string">"upwind_direction"</span>             : 1.0 <span class="org-operator">/</span> 15.0,
-
-    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : 1.0 <span class="org-operator">/</span> 30.0,
-
-    <span class="org-string">"temperature"</span>                  : 1.0 <span class="org-operator">/</span> 30.0,
-    <span class="org-string">"fuel_spread_adjustment"</span>       : 0.0,
-    <span class="org-string">"weather_spread_adjustment"</span>    : 1.0 <span class="org-operator">/</span> 30.0,
+    <span class="org-string">"slope"</span>                        : SpaceTimeCube(cube_shape, 0.8),   <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
+    <span class="org-string">"aspect"</span>                       : SpaceTimeCube(cube_shape, 225.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_model"</span>                   : SpaceTimeCube(cube_shape, 101),   <span class="org-comment-delimiter"># </span><span class="org-comment">integer index in fm.fuel_model_table</span>
+    <span class="org-string">"canopy_cover"</span>                 : SpaceTimeCube(cube_shape, 0.6),   <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+    <span class="org-string">"canopy_height"</span>                : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_base_height"</span>           : SpaceTimeCube(cube_shape, 3.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_bulk_density"</span>          : SpaceTimeCube(cube_shape, 0.3),   <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
+    <span class="org-string">"wind_speed_10m"</span>               : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+    <span class="org-string">"upwind_direction"</span>             : SpaceTimeCube(cube_shape, 180.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : SpaceTimeCube(cube_shape, 0.05),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_10hr"</span>      : SpaceTimeCube(cube_shape, 0.10),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_100hr"</span>     : SpaceTimeCube(cube_shape, 0.15),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_herbaceous"</span>: SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_woody"</span>     : SpaceTimeCube(cube_shape, 0.60),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"foliar_moisture"</span>              : SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_spread_adjustment"</span>       : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+    <span class="org-string">"weather_spread_adjustment"</span>    : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Create an output dictionary of 2D Numpy arrays</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster needs to be padded by 2 cells on each side.</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> {
-    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1] # FIXME NOTE padding the phi raster to avoid the cost of checking bounds.</span>
-    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),        <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
-    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
-    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
-    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
-    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
-    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
+    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
+    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),                              <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
+    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
+    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
+    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
+    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
+    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -11948,26 +11932,14 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
 <span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 480 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 60<span class="org-operator">*</span>24<span class="org-operator">*</span>0.5 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Burn initially ignited cell into the phi matrix by setting it to -1.0</span>
-output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>500,2<span class="org-operator">+</span>500] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster is padded by 2 cells on each side.</span>
+output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>50,2<span class="org-operator">+</span>50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-
-<span class="org-variable-name">spot_config</span> <span class="org-operator">=</span> {
-    <span class="org-string">"random_seed"</span>                 : 1234567890,
-    <span class="org-string">"firebrands_per_unit_heat"</span>    : 1e<span class="org-operator">-</span>9,       <span class="org-comment-delimiter"># </span><span class="org-comment">firebrands/kJ</span>
-    <span class="org-string">"downwind_distance_mean"</span>      : 10.0,       <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-string">"fireline_intensity_exponent"</span> : 0.3,        <span class="org-comment-delimiter"># </span><span class="org-comment">downwind_distance_mean multiplier [I^fireline_intensity_exponent]</span>
-    <span class="org-string">"wind_speed_exponent"</span>         : 0.55,       <span class="org-comment-delimiter"># </span><span class="org-comment">downwind_distance_mean multiplier [U^wind_speed_exponent]</span>
-    <span class="org-string">"downwind_variance_mean_ratio"</span>: 425.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters^2 / meter [downwind_variance_mean_ratio = Var(X) / E(X)]</span>
-    <span class="org-string">"crosswind_distance_stdev"</span>    : 100.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-    <span class="org-string">"decay_distance"</span>              : 200.0,      <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-}
-
 
 <span class="org-variable-name">runtime_start</span>       <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
@@ -11975,14 +11947,11 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
                                                      cube_resolution,
                                                      start_time,
                                                      max_duration,
-                                                     spot_config<span class="org-operator">=</span>spot_config,
-                                                     cube_refresh_rates<span class="org-operator">=</span>cube_refresh_rates)
+                                                     surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop</span>        <span class="org-operator">=</span> time.perf_counter()
-
-<span class="org-variable-name">stop_time</span>           <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]         <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>      <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]    <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]   <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
-<span class="org-variable-name">num_tracked_cells</span>   <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"num_tracked_cells"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">cell count</span>
+<span class="org-variable-name">stop_time</span>           <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>      <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
@@ -11993,33 +11962,9 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
 <span class="org-variable-name">simulation_runtime</span>      <span class="org-operator">=</span> runtime_stop <span class="org-operator">-</span> runtime_start                   <span class="org-comment-delimiter"># </span><span class="org-comment">seconds</span>
 <span class="org-variable-name">runtime_per_burned_cell</span> <span class="org-operator">=</span> 1000.0 <span class="org-operator">*</span> simulation_runtime <span class="org-operator">/</span> num_burned_cells <span class="org-comment-delimiter"># </span><span class="org-comment">ms/cell</span>
 
-
-<span class="org-variable-name">ftype</span> <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
-
-<span class="org-keyword">def</span> <span class="org-function-name">empirical_LoW</span>(ftype):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Estimates the length/width ratio (elliptical shape) by computing the empirical covariance matrix of the burned coordinates,</span>
-<span class="org-doc">    and using its eigenvalues.</span>
-<span class="org-doc">    """</span>
-    <span class="org-variable-name">burned_yx</span> <span class="org-operator">=</span> np.argwhere(ftype <span class="org-operator">&gt;</span> 0)
-    <span class="org-variable-name">c</span> <span class="org-operator">=</span> np.cov(burned_yx.astype(<span class="org-builtin">float</span>), rowvar<span class="org-operator">=</span><span class="org-constant">False</span>)
-    <span class="org-variable-name">eig</span> <span class="org-operator">=</span> np.linalg.eig(c)
-    <span class="org-variable-name">v1</span>, <span class="org-variable-name">v2</span> <span class="org-operator">=</span> eig[0] <span class="org-comment-delimiter"># </span><span class="org-comment">eigenvalues</span>
-    <span class="org-keyword">return</span> np.sqrt(v1 <span class="org-operator">/</span> v2)
-
-
-
-<span class="org-variable-name">num_crowned</span> <span class="org-operator">=</span> np.count_nonzero(ftype <span class="org-operator">&gt;</span> 1)
-<span class="org-builtin">print</span>(f<span class="org-string">"Tracked Cells: </span>{num_tracked_cells}<span class="org-string">"</span>)
-<span class="org-builtin">print</span>(f<span class="org-string">"Crowning Fraction: </span>{num_crowned <span class="org-operator">/</span> num_burned_cells}<span class="org-string">"</span>)
-<span class="org-builtin">print</span>(f<span class="org-string">"Empirical Length/Width Ratio: </span>{empirical_LoW(ftype)}<span class="org-string">"</span>)
-
 <span class="org-builtin">print</span>(<span class="org-string">"Acres Burned: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(acres_burned))
 <span class="org-builtin">print</span>(<span class="org-string">"Total Runtime: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(simulation_runtime) <span class="org-operator">+</span> <span class="org-string">" seconds"</span>)
 <span class="org-builtin">print</span>(<span class="org-string">"Runtime Per Burned Cell: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(runtime_per_burned_cell) <span class="org-operator">+</span> <span class="org-string">" ms/cell"</span>)
-<span class="org-variable-name">Mha_per_cell</span> <span class="org-operator">=</span> 0.09e<span class="org-operator">-</span>6
-<span class="org-variable-name">ms_per_hr</span> <span class="org-operator">=</span> 3.6e6
-<span class="org-builtin">print</span>(f<span class="org-string">"Areal Throughput: </span>{(ms_per_hr<span class="org-operator">*</span>Mha_per_cell<span class="org-operator">/</span>runtime_per_burned_cell):.2f}<span class="org-string"> Mha/(CPU.hr)"</span>)
 </pre>
 </div>
 </div>
@@ -12089,25 +12034,25 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9256893, 'Max': 1.0, 'Mean': 0.9060591, 'Stdev': 0.3892009}
+{'Min': -0.92554456, 'Max': 1.0, 'Mean': 0.9133916, 'Stdev': 0.3737736}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16077116, 'Max': 2.2964668, 'Mean': 1.2116479, 'Stdev': 0.6341628}
+{'Min': 0.16077131, 'Max': 2.2964673, 'Mean': 1.2116312, 'Stdev': 0.6338168}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.658666, 'Max': 359.69885, 'Mean': 191.40175, 'Stdev': 117.9331}
+{'Min': -176.88382, 'Max': 175.99118, 'Mean': 36.238808, 'Stdev': 75.949234}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.16235, 'Stdev': 8.982579}
+{'Min': 2.277241, 'Max': 32.52825, 'Mean': 17.162119, 'Stdev': 8.977682}
 
 Flame Length (meters)
-{'Min': 0.11312115, 'Max': 0.38439324, 'Mean': 0.27523616, 'Stdev': 0.07356826}
+{'Min': 0.11312121, 'Max': 0.38439333, 'Mean': 0.27523533, 'Stdev': 0.07356613}
 
 Time of Arrival (minutes)
-{'Min': 2081.8516, 'Max': 2548.1523, 'Mean': 2385.591, 'Stdev': 116.83735}
+{'Min': 2081.852, 'Max': 2547.9133, 'Mean': 2385.5022, 'Stdev': 116.77271}
 </pre>
 </div>
 </li>
@@ -12144,14 +12089,14 @@ Time of Arrival (minutes)
         <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_phi.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_phi.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fire_type.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fire_type.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 3,
         <span class="org-string">"ticks"</span>   : [0,1,2,3],
@@ -12161,14 +12106,14 @@ Time of Arrival (minutes)
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spread_rate.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_rate.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spread_direction.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_direction.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 360,
         <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
@@ -12178,14 +12123,14 @@ Time of Arrival (minutes)
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fireline_intensity.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fireline_intensity.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_flame_length.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_flame_length.png"</span>,
     },
 ]
 
@@ -12194,7 +12139,7 @@ Time of Arrival (minutes)
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"time_of_arrival"</span>],
         <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_time_of_arrival.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_time_of_arrival.png"</span>,
         <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
     },
 ]
@@ -12253,10 +12198,10 @@ Time of Arrival (minutes)
 <li><a id="configure-and-run-the-fire-spread-simulation-with-spotting-enabled"></a>Configure and Run the Fire Spread Simulation with Spotting Enabled<br>
 <div class="outline-text-5" id="text-configure-and-run-the-fire-spread-simulation-with-spotting-enabled">
 <div class="org-src-container">
-<pre class="src src-python" id="run-spread-fire-with-phi-field-with-spotting"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
+<pre class="src src-python" id="run-spread-fire-with-phi-field-with-spotting"><span class="org-keyword">import</span> time
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
-<span class="org-keyword">import</span> time
+<span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -12309,15 +12254,15 @@ Time of Arrival (minutes)
 <span class="org-comment-delimiter"># </span><span class="org-comment">Create an output dictionary of 2D Numpy arrays</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster needs to be padded by 2 cells on each side.</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> {
-    <span class="org-string">"phi"</span>               : np.ones(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
-    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),        <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
-    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
-    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
-    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
-    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
-    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
-    <span class="org-string">"firebrand_count"</span>   : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"int32"</span>),        <span class="org-comment-delimiter"># </span><span class="org-comment">2D integer array (number of firebrands)</span>
+    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
+    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
+    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
+    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
+    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
+    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
+    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                     <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -12331,7 +12276,8 @@ Time of Arrival (minutes)
 <span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 480 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Burn initially ignited cell into the phi matrix by setting it to -1.0</span>
-output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster is padded by 2 cells on each side.</span>
+output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>50,2<span class="org-operator">+</span>50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the spotting parameters</span>
@@ -12353,16 +12299,20 @@ output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-o
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-variable-name">runtime_start</span>       <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
-                                                     start_time, max_duration, spot_ignitions<span class="org-operator">=</span>{},
+<span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
+                                                     output_matrices,
+                                                     cube_resolution,
+                                                     start_time,
+                                                     max_duration,
+                                                     surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>,
+                                                     spot_ignitions<span class="org-operator">=</span>{},
                                                      spot_config<span class="org-operator">=</span>spot_config)
 <span class="org-variable-name">runtime_stop</span>        <span class="org-operator">=</span> time.perf_counter()
-
-<span class="org-variable-name">stop_time</span>        <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]                  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>   <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]             <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span>  <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
-<span class="org-variable-name">spot_ignitions</span>   <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {})     <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
-<span class="org-variable-name">random_generator</span> <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"random_generator"</span>, <span class="org-constant">None</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">numpy.random.Generator object</span>
+<span class="org-variable-name">stop_time</span>           <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]                  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>      <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]             <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">spot_ignitions</span>      <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {})     <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
+<span class="org-variable-name">random_generator</span>    <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"random_generator"</span>, <span class="org-constant">None</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">numpy.random.Generator object</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
@@ -12436,14 +12386,8 @@ pprint(get_array_stats(output_matrices[<span class="org-string">"flame_length"</
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Time of Arrival (minutes)"</span>)
 pprint(get_array_stats(output_matrices[<span class="org-string">"time_of_arrival"</span>]), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
 
-<span class="org-variable-name">firebrand_count_matrix</span> <span class="org-operator">=</span> output_matrices.get(<span class="org-string">"firebrand_count"</span>)
-<span class="org-keyword">if</span> <span class="org-builtin">isinstance</span>(firebrand_count_matrix, np.ndarray):
-    <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Firebrand Count (number of firebrands)"</span>)
-    pprint(get_array_stats(firebrand_count_matrix, use_burn_scar_mask<span class="org-operator">=</span><span class="org-constant">False</span>), sort_dicts<span class="org-operator">=</span><span class="org-constant">False</span>)
-    <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Total Firebrands on Grid: "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(np.<span class="org-builtin">sum</span>(firebrand_count_matrix)))
-
 <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Future Spot Ignitions:"</span>)
-pprint(spot_ignitions)
+pprint(<span class="org-builtin">dict</span>(spot_ignitions))
 </pre>
 </div>
 
@@ -12454,67 +12398,75 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.9967122, 'Max': 1.0, 'Mean': 0.7720047, 'Stdev': 0.5722504}
+{'Min': -1.0, 'Max': 1.0, 'Mean': 0.73885256, 'Stdev': 0.61126536}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16055717, 'Max': 2.2964664, 'Mean': 1.3839706, 'Stdev': 0.6849228}
+{'Min': 0.1605582, 'Max': 2.296455, 'Mean': 1.3731884, 'Stdev': 0.66230774}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.015500054, 'Max': 359.82297, 'Mean': 179.89368, 'Stdev': 127.714645}
+{'Min': -178.7865, 'Max': 177.48085, 'Mean': 31.861712, 'Stdev': 71.49162}
 
 Fireline Intensity (kW/m)
-{'Min': 2.274207, 'Max': 32.52823, 'Mean': 19.60321, 'Stdev': 9.701569}
+{'Min': 2.2742224, 'Max': 32.528076, 'Mean': 19.450493, 'Stdev': 9.381241}
 
 Flame Length (meters)
-{'Min': 0.11305186, 'Max': 0.38439322, 'Mean': 0.29242113, 'Stdev': 0.079029635}
+{'Min': 0.11305221, 'Max': 0.38439238, 'Mean': 0.2921405, 'Stdev': 0.07622042}
 
 Time of Arrival (minutes)
-{'Min': 2081.8516, 'Max': 2549.8735, 'Mean': 2406.4568, 'Stdev': 106.72756}
-
-Firebrand Count (number of firebrands)
-{'Min': 0, 'Max': 4, 'Mean': 0.0743, 'Stdev': 0.32307817939316175}
-
-Total Firebrands on Grid: 743
+{'Min': 2081.852, 'Max': 2549.8206, 'Mean': 2406.426, 'Stdev': 99.674736}
 
 Future Spot Ignitions:
-{2551.197586000257: {(78, 75)},
- 2551.4126499292092: {(79, 54), (80, 60)},
- 2551.856804638606: {(82, 36)},
- 2553.2429458344905: {(73, 50)},
- 2553.503079371683: {(82, 42)},
- 2553.670617042156: {(88, 50)},
- 2554.83807664013: {(78, 64)},
- 2555.525101157285: {(78, 60), (78, 58)},
- 2556.2804247854724: {(80, 74)},
- 2556.956798222929: {(79, 80), (78, 75)},
- 2557.195619307969: {(72, 52), (75, 51)},
- 2560.051319507768: {(82, 76)},
- 2560.0546776037436: {(75, 81)},
- 2562.2242880384597: {(78, 53)},
- 2563.013039281081: {(60, 78)},
- 2563.863116389773: {(81, 38)},
- 2566.6678273977955: {(82, 40)},
- 2567.2125614511942: {(78, 77)},
- 2567.3587638733025: {(83, 69)},
- 2569.330376022855: {(79, 77)},
- 2570.921652617251: {(83, 43), (83, 36)},
- 2573.7323031261817: {(92, 51)},
- 2574.6585895680705: {(53, 44)},
- 2574.794226434831: {(85, 72)},
- 2575.851040433648: {(81, 65), (80, 63)},
- 2576.9250365965636: {(90, 38)},
- 2576.970322423062: {(78, 60), (80, 63)},
- 2581.2574393261707: {(73, 78)},
- 2583.2559022370483: {(84, 31)},
- 2583.5325256200385: {(84, 54)},
- 2583.757301741892: {(70, 84)},
- 2591.9147157633897: {(66, 34), (71, 40)},
- 2592.883811071109: {(64, 36)},
- 2603.1103976938066: {(80, 55)},
- 2613.4410783216385: {(61, 37)}}
+{2550.881103515625: {(80, 36)},
+ 2552.015625: {(67, 35)},
+ 2552.82763671875: {(73, 30)},
+ 2553.318603515625: {(86, 61), (86, 57)},
+ 2553.742431640625: {(83, 21)},
+ 2553.755859375: {(58, 73)},
+ 2554.1259765625: {(85, 24), (82, 30)},
+ 2555.26318359375: {(74, 74)},
+ 2555.499267578125: {(80, 73)},
+ 2556.433837890625: {(82, 24)},
+ 2556.76953125: {(86, 56)},
+ 2557.221435546875: {(83, 65), (91, 70)},
+ 2558.892578125: {(82, 63)},
+ 2559.96044921875: {(47, 50)},
+ 2560.7099609375: {(85, 30)},
+ 2561.644775390625: {(86, 58)},
+ 2562.282470703125: {(89, 46)},
+ 2565.146240234375: {(90, 39)},
+ 2566.47998046875: {(83, 32)},
+ 2566.483154296875: {(87, 53)},
+ 2566.6533203125: {(79, 81), (79, 76)},
+ 2568.689697265625: {(98, 48)},
+ 2568.84228515625: {(65, 78)},
+ 2569.245849609375: {(90, 41)},
+ 2570.54345703125: {(82, 64)},
+ 2571.021240234375: {(82, 57)},
+ 2571.06640625: {(86, 34)},
+ 2571.98388671875: {(62, 77)},
+ 2572.31103515625: {(94, 55)},
+ 2572.808837890625: {(85, 74), (89, 71)},
+ 2572.984130859375: {(83, 63)},
+ 2573.141357421875: {(62, 27)},
+ 2574.059326171875: {(50, 43)},
+ 2574.989990234375: {(88, 35)},
+ 2575.57958984375: {(86, 54), (87, 59)},
+ 2576.198974609375: {(89, 53)},
+ 2577.04248046875: {(85, 34)},
+ 2577.150146484375: {(74, 73)},
+ 2577.362548828125: {(53, 68), (54, 66)},
+ 2579.9619140625: {(82, 74)},
+ 2581.1455078125: {(92, 48)},
+ 2581.962646484375: {(97, 37)},
+ 2582.848876953125: {(79, 75), (79, 76)},
+ 2583.228271484375: {(60, 30)},
+ 2584.211669921875: {(97, 60)},
+ 2587.57763671875: {(66, 78)},
+ 2589.155517578125: {(92, 48)},
+ 2592.04296875: {(57, 30)}}
 </pre>
 </div>
 </li>
@@ -12551,14 +12503,14 @@ Future Spot Ignitions:
         <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_phi.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_phi.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_fire_type.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_fire_type.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 3,
         <span class="org-string">"ticks"</span>   : [0,1,2,3],
@@ -12568,14 +12520,14 @@ Future Spot Ignitions:
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_spread_rate.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_spread_rate.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_spread_direction.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_spread_direction.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 360,
         <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
@@ -12585,36 +12537,23 @@ Future Spot Ignitions:
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_fireline_intensity.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_fireline_intensity.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_flame_length.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_flame_length.png"</span>,
     },
 ]
-
-
-<span class="org-variable-name">firebrand_count_matrix</span> <span class="org-operator">=</span> output_matrices.get(<span class="org-string">"firebrand_count"</span>)
-<span class="org-keyword">if</span> <span class="org-builtin">isinstance</span>(firebrand_count_matrix, np.ndarray):
-    heatmap_configs.append(
-        {
-            <span class="org-string">"matrix"</span>  : firebrand_count_matrix,
-            <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
-            <span class="org-string">"units"</span>   : <span class="org-string">"number of firebrands"</span>,
-            <span class="org-string">"title"</span>   : <span class="org-string">"Firebrand Count"</span>,
-            <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_firebrand_count.png"</span>,
-        }
-    )
 
 
 <span class="org-variable-name">contour_configs</span> <span class="org-operator">=</span> [
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"time_of_arrival"</span>],
         <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spot_time_of_arrival.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spot_time_of_arrival.png"</span>,
         <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
     },
 ]
@@ -12656,17 +12595,10 @@ Future Spot Ignitions:
 </table>
 
 
-<div id="spot-firebrand-count-matplotlib-heatmap" class="figure">
-<p><img src="pics/els_spot_firebrand_count.png" alt="els_spot_firebrand_count.png">
-</p>
-<p><span class="figure-number">Figure 5: </span>Firebrand count with spotting enabled (NOTE: This is not the same as ember exposure.)</p>
-</div>
-
-
 <div id="spot-time-of-arrival-matplotlib-countours" class="figure">
 <p><img src="pics/els_spot_time_of_arrival.png" alt="els_spot_time_of_arrival.png">
 </p>
-<p><span class="figure-number">Figure 6: </span>Time of arrival with hourly perimeters with spotting enabled</p>
+<p><span class="figure-number">Figure 5: </span>Time of arrival with hourly perimeters with spotting enabled</p>
 </div>
 </div>
 </li>
@@ -12680,10 +12612,10 @@ Future Spot Ignitions:
 <li><a id="configure-and-run-the-initial-fire-spread-simulation"></a>Configure and Run the Initial Fire Spread Simulation<br>
 <div class="outline-text-5" id="text-configure-and-run-the-initial-fire-spread-simulation">
 <div class="org-src-container">
-<pre class="src src-python" id="run-spread-fire-with-phi-field-initial"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-<span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
+<pre class="src src-python" id="run-spread-fire-with-phi-field-initial"><span class="org-keyword">import</span> time
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
-<span class="org-keyword">import</span> time
+<span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -12735,14 +12667,15 @@ Future Spot Ignitions:
 <span class="org-comment-delimiter"># </span><span class="org-comment">Create an output dictionary of 2D Numpy arrays</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster needs to be padded by 2 cells on each side.</span>
 <span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> {
-    <span class="org-string">"phi"</span>               : np.ones(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
-    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),        <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
-    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
-    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
-    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
-    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),      <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
-    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
+    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
+    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),                              <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
+    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
+    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
+    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
+    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
+    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -12756,20 +12689,24 @@ Future Spot Ignitions:
 <span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 480 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Burn initially ignited cell into the phi matrix by setting it to -1.0</span>
-output_matrices[<span class="org-string">"phi"</span>][50,50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster is padded by 2 cells on each side.</span>
+output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>50,2<span class="org-operator">+</span>50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-variable-name">runtime_start</span>         <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">fire_spread_results_8</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices, cube_resolution,
-                                                       start_time, max_duration)
+<span class="org-variable-name">fire_spread_results_8</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
+                                                       output_matrices,
+                                                       cube_resolution,
+                                                       start_time,
+                                                       max_duration,
+                                                       surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop</span>          <span class="org-operator">=</span> time.perf_counter()
-
-<span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time</span>             <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>        <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">output_matrices</span>       <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
@@ -12828,23 +12765,29 @@ fuel_model_grid[60:,60:][(<span class="org-builtin">list</span>(<span class="org
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the main simulation</span>
 <span class="org-variable-name">runtime_start_main</span>     <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">fire_spread_results_12</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes, output_matrices,
-                                                        cube_resolution, new_start_time, new_max_duration)
+<span class="org-variable-name">fire_spread_results_12</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
+                                                        output_matrices,
+                                                        cube_resolution,
+                                                        new_start_time,
+                                                        new_max_duration,
+                                                        surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop_main</span>      <span class="org-operator">=</span> time.perf_counter()
-
-<span class="org-variable-name">stop_time</span>       <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>  <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time</span>              <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>         <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">output_matrices</span>        <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the forked simulation</span>
 <span class="org-variable-name">runtime_start_fork</span>          <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">fire_spread_results_12_fork</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes_fork, output_matrices_fork,
-                                                             cube_resolution, new_start_time, new_max_duration)
+<span class="org-variable-name">fire_spread_results_12_fork</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes_fork,
+                                                             output_matrices_fork,
+                                                             cube_resolution,
+                                                             new_start_time,
+                                                             new_max_duration,
+                                                             surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop_fork</span>           <span class="org-operator">=</span> time.perf_counter()
-
-<span class="org-variable-name">stop_time_fork</span>       <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition_fork</span>  <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices_fork</span> <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time_fork</span>              <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition_fork</span>         <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">output_matrices_fork</span>        <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell for the main run</span>
@@ -12987,32 +12930,32 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-Main: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7945679, 'Stdev': 0.5639848}
-Fork: {'Min': -0.92524624, 'Max': 1.0, 'Mean': 0.7984585, 'Stdev': 0.56110543}
+Main: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.8109577, 'Stdev': 0.542039}
+Fork: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.8146855, 'Stdev': 0.538873}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 Fork: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-Main: {'Min': 0.16077116, 'Max': 2.2964668, 'Mean': 1.2057376, 'Stdev': 0.6379757}
-Fork: {'Min': 0.16077116, 'Max': 2.2964668, 'Mean': 1.1890496, 'Stdev': 0.63051146}
+Main: {'Min': 0.16077131, 'Max': 2.2964673, 'Mean': 1.20478, 'Stdev': 0.63748336}
+Fork: {'Min': 0.16077131, 'Max': 2.2964673, 'Mean': 1.1882343, 'Stdev': 0.6302192}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': 0.27235666, 'Max': 359.69885, 'Mean': 190.26033, 'Stdev': 117.35212}
-Fork: {'Min': 0.27235666, 'Max': 359.69885, 'Mean': 192.25833, 'Stdev': 116.70386}
+Main: {'Min': -176.88382, 'Max': 178.20366, 'Mean': 37.11217, 'Stdev': 75.857666}
+Fork: {'Min': -176.88382, 'Max': 178.20366, 'Mean': 37.066925, 'Stdev': 76.436516}
 
 Fireline Intensity (kW/m)
-Main: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 17.078634, 'Stdev': 9.036588}
-Fork: {'Min': 2.2772384, 'Max': 32.528233, 'Mean': 16.842258, 'Stdev': 8.9308605}
+Main: {'Min': 2.277241, 'Max': 32.52825, 'Mean': 17.065073, 'Stdev': 9.029617}
+Fork: {'Min': 2.277241, 'Max': 32.52825, 'Mean': 16.830713, 'Stdev': 8.926724}
 
 Flame Length (meters)
-Main: {'Min': 0.11312115, 'Max': 0.38439324, 'Mean': 0.27460182, 'Stdev': 0.073415086}
-Fork: {'Min': 0.11312115, 'Max': 0.38439324, 'Mean': 0.27287114, 'Stdev': 0.07285743}
+Main: {'Min': 0.11312121, 'Max': 0.38439333, 'Mean': 0.27448973, 'Stdev': 0.073427655}
+Fork: {'Min': 0.11312121, 'Max': 0.38439333, 'Mean': 0.2727701, 'Stdev': 0.07288398}
 
 Time of Arrival (minutes)
-Main: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2543.6892, 'Stdev': 173.15518}
-Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
+Main: {'Min': 2081.852, 'Max': 2789.606, 'Mean': 2543.9004, 'Stdev': 173.16722}
+Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </pre>
 </div>
 </li>
@@ -13049,7 +12992,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis_r"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"fuel model number: 91-204"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fuel Model"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fuel_model_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fuel_model_main.png"</span>,
         <span class="org-string">"vmin"</span>    : 91,
         <span class="org-string">"vmax"</span>    : 204,
     },
@@ -13058,7 +13001,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis_r"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"fuel model number: 91-204"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fuel Model"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fuel_model_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fuel_model_fork.png"</span>,
         <span class="org-string">"vmin"</span>    : 91,
         <span class="org-string">"vmax"</span>    : 204,
     },
@@ -13067,21 +13010,21 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_phi_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_phi_main.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices_fork[<span class="org-string">"phi"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_phi_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_phi_fork.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fire_type_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fire_type_main.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 3,
         <span class="org-string">"ticks"</span>   : [0,1,2,3],
@@ -13091,7 +13034,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fire_type_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fire_type_fork.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 3,
         <span class="org-string">"ticks"</span>   : [0,1,2,3],
@@ -13101,21 +13044,21 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spread_rate_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_rate_main.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices_fork[<span class="org-string">"spread_rate"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spread_rate_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_rate_fork.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spread_direction_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_direction_main.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 360,
         <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
@@ -13125,7 +13068,7 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_spread_direction_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_direction_fork.png"</span>,
         <span class="org-string">"vmin"</span>    : 0,
         <span class="org-string">"vmax"</span>    : 360,
         <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
@@ -13135,28 +13078,28 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fireline_intensity_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fireline_intensity_main.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices_fork[<span class="org-string">"fireline_intensity"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_fireline_intensity_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fireline_intensity_fork.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_flame_length_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_flame_length_main.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices_fork[<span class="org-string">"flame_length"</span>],
         <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
         <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_flame_length_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_flame_length_fork.png"</span>,
     },
 ]
 
@@ -13165,13 +13108,13 @@ Fork: {'Min': 2081.8516, 'Max': 2789.743, 'Mean': 2539.6372, 'Stdev': 171.93945}
     {
         <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"time_of_arrival"</span>],
         <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_time_of_arrival_main.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_time_of_arrival_main.png"</span>,
         <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
     },
     {
         <span class="org-string">"matrix"</span>  : output_matrices_fork[<span class="org-string">"time_of_arrival"</span>],
         <span class="org-string">"title"</span>   : <span class="org-string">"Time of Arrival"</span>,
-        <span class="org-string">"filename"</span>: <span class="org-string">"pics/els_time_of_arrival_fork.png"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_time_of_arrival_fork.png"</span>,
         <span class="org-string">"levels"</span>  : <span class="org-builtin">int</span>(start_time) <span class="org-operator">+</span> np.asarray(<span class="org-builtin">range</span>(0, <span class="org-builtin">int</span>(max_duration) <span class="org-operator">+</span> 1, 60)),
     },
 ]
