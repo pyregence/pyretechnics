@@ -2023,6 +2023,18 @@ fuel_model_table = cy.declare(dict[int, FuelModel], {
 
 @cy.ccall
 @cy.inline
+def list_fuel_model_numbers() -> list[int]:
+    return list(fuel_model_table.keys())
+
+
+@cy.ccall
+@cy.inline
+def list_fuel_models() -> list[FuelModel]:
+    return list(fuel_model_table.values())
+
+
+@cy.ccall
+@cy.inline
 @cy.exceptval(check=False)
 def fuel_model_exists(fuel_model_number: cy.int) -> cy.bint:
     return fuel_model_number in fuel_model_table
@@ -3075,7 +3087,7 @@ def calc_flame_length(fireline_intensity: cy.float) -> cy.float:
     return 0.07747042253266703 * pow(fireline_intensity, 0.46)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def calc_areal_heat_output(spread_rate: cy.float, fireline_intensity: cy.float) -> cy.float:
@@ -6038,7 +6050,7 @@ def heat_of_preignition(temperature: cy.float, fine_fuel_moisture: cy.float) -> 
     return Q_a + Q_b + Q_c + Q_d
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy.float) -> cy.float:
     """
@@ -6089,7 +6101,7 @@ meter decreases $P(I)_l$ by 0.5%.
 
 #+NAME: firebrand-flight-survival-probability
 #+begin_src python
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
