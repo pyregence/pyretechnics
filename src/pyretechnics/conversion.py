@@ -352,7 +352,7 @@ def cartesian_to_polar(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""
     r        : cy.float = sqrt(x * x + y * y)
     theta_rad: cy.float = atan2(y, x)
-    theta    : cy.float = rad_to_deg(theta_rad) % 360.0
+    theta    : cy.float = (rad_to_deg(theta_rad) + 360.0) % 360.0
     return (r, theta)
 
 
@@ -373,7 +373,7 @@ def cartesian_to_azimuthal(x: cy.float, y: cy.float) -> vec_xy:
     """Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""
     r          : cy.float = sqrt(x * x + y * y)
     azimuth_rad: cy.float = atan2(x, y)
-    azimuth    : cy.float = rad_to_deg(azimuth_rad) % 360.0
+    azimuth    : cy.float = (rad_to_deg(azimuth_rad) + 360.0) % 360.0
     return (r, azimuth)
 
 

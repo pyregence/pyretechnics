@@ -12043,7 +12043,7 @@ Spread Rate (m/min)
 {'Min': 0.16077131, 'Max': 2.2964673, 'Mean': 1.2116312, 'Stdev': 0.6338168}
 
 Spread Direction (degrees clockwise from North)
-{'Min': -176.88382, 'Max': 175.99118, 'Mean': 36.238808, 'Stdev': 75.949234}
+{'Min': 0.12497545, 'Max': 359.51932, 'Mean': 192.26268, 'Stdev': 117.77033}
 
 Fireline Intensity (kW/m)
 {'Min': 2.277241, 'Max': 32.52825, 'Mean': 17.162119, 'Stdev': 8.977682}
@@ -12407,7 +12407,7 @@ Spread Rate (m/min)
 {'Min': 0.1605582, 'Max': 2.296455, 'Mean': 1.3731884, 'Stdev': 0.66230774}
 
 Spread Direction (degrees clockwise from North)
-{'Min': -178.7865, 'Max': 177.48085, 'Mean': 31.861712, 'Stdev': 71.49162}
+{'Min': 0.12497545, 'Max': 359.96307, 'Mean': 180.6012, 'Stdev': 125.7165}
 
 Fireline Intensity (kW/m)
 {'Min': 2.2742224, 'Max': 32.528076, 'Mean': 19.450493, 'Stdev': 9.381241}
@@ -12942,8 +12942,8 @@ Main: {'Min': 0.16077131, 'Max': 2.2964673, 'Mean': 1.20478, 'Stdev': 0.63748336
 Fork: {'Min': 0.16077131, 'Max': 2.2964673, 'Mean': 1.1882343, 'Stdev': 0.6302192}
 
 Spread Direction (degrees clockwise from North)
-Main: {'Min': -176.88382, 'Max': 178.20366, 'Mean': 37.11217, 'Stdev': 75.857666}
-Fork: {'Min': -176.88382, 'Max': 178.20366, 'Mean': 37.066925, 'Stdev': 76.436516}
+Main: {'Min': 0.12497545, 'Max': 359.51932, 'Mean': 191.53839, 'Stdev': 117.237366}
+Fork: {'Min': 0.12497545, 'Max': 359.51932, 'Mean': 193.54515, 'Stdev': 116.56749}
 
 Fireline Intensity (kW/m)
 Main: {'Min': 2.277241, 'Max': 32.52825, 'Mean': 17.065073, 'Stdev': 9.029617}
@@ -13568,7 +13568,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to polar coordinates (r, theta)."""</span>
     <span class="org-variable-name">r</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt(x <span class="org-operator">*</span> x <span class="org-operator">+</span> y <span class="org-operator">*</span> y)
     <span class="org-variable-name">theta_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> atan2(y, x)
-    <span class="org-variable-name">theta</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> rad_to_deg(theta_rad) <span class="org-operator">%</span> 360.0
+    <span class="org-variable-name">theta</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (rad_to_deg(theta_rad) <span class="org-operator">+</span> 360.0) <span class="org-operator">%</span> 360.0
     <span class="org-keyword">return</span> (r, theta)
 
 
@@ -13589,7 +13589,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-doc">"""Convert cartesian coordinates (x, y) to azimuthal coordinates (r, azimuth)."""</span>
     <span class="org-variable-name">r</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt(x <span class="org-operator">*</span> x <span class="org-operator">+</span> y <span class="org-operator">*</span> y)
     <span class="org-variable-name">azimuth_rad</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> atan2(x, y)
-    <span class="org-variable-name">azimuth</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> rad_to_deg(azimuth_rad) <span class="org-operator">%</span> 360.0
+    <span class="org-variable-name">azimuth</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (rad_to_deg(azimuth_rad) <span class="org-operator">+</span> 360.0) <span class="org-operator">%</span> 360.0
     <span class="org-keyword">return</span> (r, azimuth)
 
 
