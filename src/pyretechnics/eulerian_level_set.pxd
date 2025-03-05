@@ -51,7 +51,11 @@
 #     cdef FuelModel* fuel_model_cache
 #     cdef void __init_fuel_models(SpreadInputs self)
 #     cdef FuelModel get_fm_struct(SpreadInputs self, pyidx fm_number) noexcept
-# cdef SpreadInputs make_SpreadInputs((float, float, float) cube_resolution, dict space_time_cubes)
+# cdef SpreadInputs make_SpreadInputs(
+#     (pyidx, pyidx, pyidx) cube_shape,
+#     (float, float, float) cube_resolution,
+#     dict space_time_cubes,
+#     )
 # cdef CellInputs lookup_cell_inputs(SpreadInputs spread_inputs, coord_tyx space_time_coordinate) noexcept
 # cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept
 # cdef object encode_cell_index(pyidx y, pyidx x)

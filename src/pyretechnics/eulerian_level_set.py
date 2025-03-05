@@ -10,7 +10,7 @@ if cython.compiled:
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     from cython.cimports.pyretechnics.random import BufferedRandGen
-    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube
+    from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
@@ -25,7 +25,7 @@ else:
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     from pyretechnics.random import BufferedRandGen
-    from pyretechnics.space_time_cube import ISpaceTimeCube
+    from pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
@@ -471,7 +471,9 @@ class SpreadInputs:
 # TODO: Inline this code at its call sites
 @cy.cfunc
 @cy.inline
-def make_SpreadInputs(cube_resolution: tuple[cy.float, cy.float, cy.float], space_time_cubes: dict) -> SpreadInputs:
+def make_SpreadInputs(cube_shape      : tuple[pyidx, pyidx, pyidx],
+                      cube_resolution : tuple[cy.float, cy.float, cy.float],
+                      space_time_cubes: dict) -> SpreadInputs:
     return SpreadInputs(cube_resolution,
                         space_time_cubes["slope"],
                         space_time_cubes["aspect"],
@@ -488,9 +490,9 @@ def make_SpreadInputs(cube_resolution: tuple[cy.float, cy.float, cy.float], spac
                         space_time_cubes["fuel_moisture_live_herbaceous"],
                         space_time_cubes["fuel_moisture_live_woody"],
                         space_time_cubes["foliar_moisture"],
-                        space_time_cubes.get("temperature"),
-                        space_time_cubes.get("fuel_spread_adjustment"),
-                        space_time_cubes.get("weather_spread_adjustment"))
+                        space_time_cubes.get("temperature", SpaceTimeCube(cube_shape, -1.0)),
+                        space_time_cubes.get("fuel_spread_adjustment", SpaceTimeCube(cube_shape, 1.0)),
+                        space_time_cubes.get("weather_spread_adjustment", SpaceTimeCube(cube_shape, 1.0)))
 
 
 @cy.cfunc
@@ -2420,7 +2422,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     # FIXME: Change this name without a collision
     # Prepare the SpreadInputs struct
-    spread_inputs: SpreadInputs = make_SpreadInputs(cube_resolution, space_time_cubes)
+    spread_inputs: SpreadInputs = make_SpreadInputs(cube_shape, cube_resolution, space_time_cubes)
 
     # Prepare the FireBehaviorSettings struct
     fb_opts: FireBehaviorSettings = FireBehaviorSettings(
