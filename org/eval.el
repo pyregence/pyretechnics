@@ -16,14 +16,15 @@
 (setq org-confirm-babel-evaluate        nil
       python-indent-guess-indent-offset nil)
 
-(let ((project-root-dir (project-root (project-current))))
-  (setq python-shell-extra-pythonpaths
-        (append
-         (mapcar 'expand-file-name
-                 (list
-                  (concat project-root-dir "src")
-                  (concat project-root-dir "test")))
-         python-shell-extra-pythonpaths)))
+(defvar project-root-dir (project-root (project-current)))
+
+(setq python-shell-extra-pythonpaths
+      (append
+       (mapcar 'expand-file-name
+               (list
+                (concat project-root-dir "src")
+                (concat project-root-dir "test")))
+       python-shell-extra-pythonpaths))
 
 ;;==========================================================
 ;; Now load pyretechnics.org and evaluate its src blocks
@@ -31,11 +32,10 @@
 
 (message "Evaluating all source code blocks in org/pyretechnics.org")
 
-(let ((script-directory (file-name-directory load-file-name)))
-  (cd script-directory)
-  (find-file "pyretechnics.org")
-  (org-babel-execute-buffer)
-  (save-buffer))
+(find-file "org/pyretechnics.org")
+(cd project-root-dir)
+(org-babel-execute-buffer)
+(save-buffer)
 
 ;;==========================================================
 ;; Obligatory calling shell protection
