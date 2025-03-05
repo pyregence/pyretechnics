@@ -2355,7 +2355,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     return a dictionary with these keys:
     - stop_time            :: minutes
-    - stop_condition       :: "max duration reached", "zero-length timestep", or "no burnable cells"
+    - stop_condition       :: "max duration reached" or "no burnable cells"
     - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
       - phi                   :: 2D float array of values in [-1,1]
       - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
@@ -2364,6 +2364,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
       - fireline_intensity    :: 2D float array (kW/m)
       - flame_length          :: 2D float array (m)
       - time_of_arrival       :: 2D float array (min)
+    - num_tracked_cells    :: number of cells in the narrow band at stop_time
     - spot_ignitions       :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
     - random_generator     :: BufferedRandGen object (only included when spotting is used)
     """
