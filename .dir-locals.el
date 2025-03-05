@@ -13,7 +13,9 @@
                                                 (list
                                                  (concat project-root-dir "src")
                                                  (concat project-root-dir "test")))
-                                        python-shell-extra-pythonpaths)))))))
+                                        python-shell-extra-pythonpaths)
+                                       python-shell-prompt-detect-failure-warning
+                                       nil)))))))))
  (python-mode . ((eval (lambda ()
                          (let ((project-root-dir (project-root (project-current))))
                            (setq-local python-shell-interpreter
@@ -26,4 +28,6 @@
                                                 (list
                                                  (concat project-root-dir "src")
                                                  (concat project-root-dir "test")))
-                                        python-shell-extra-pythonpaths))))))))
+                                        python-shell-extra-pythonpaths)
+                                       python-shell-prompt-detect-failure-warning
+                                       nil))))))))
