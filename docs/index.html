@@ -387,14 +387,16 @@ org_html_manager.setup();  // activate after the parameters are set
 <li><a href="#for-developers-burn-cells">8.1. For Developers</a>
 <ul>
 <li><a href="#module-imports-burn-cells">8.1.1. Module Imports</a></li>
-<li><a href="#burn-cell-as-a-head-fire">8.1.2. Burn Cell as a Head Fire</a></li>
-<li><a href="#burn-cell-in-any-direction">8.1.3. Burn Cell in Any Direction</a></li>
+<li><a href="#burn-cells-as-a-head-fire">8.1.2. Burn Cells as a Head Fire</a></li>
+<li><a href="#burn-cells-in-any-direction">8.1.3. Burn Cells in Any Direction</a></li>
 </ul>
 </li>
 <li><a href="#for-users-burn-cells">8.2. For Users</a>
 <ul>
-<li><a href="#how-to-burn-a-cell-as-a-head-fire">8.2.1. How to Burn a Cell as a Head Fire</a></li>
-<li><a href="#how-to-burn-a-cell-in-any-direction">8.2.2. How to Burn a Cell in Any Direction</a></li>
+<li><a href="#how-to-burn-a-single-cell-as-a-head-fire">8.2.1. How to Burn a Single Cell as a Head Fire</a></li>
+<li><a href="#how-to-burn-a-region-of-cells-as-a-head-fire">8.2.2. How to Burn a Region of Cells as a Head Fire</a></li>
+<li><a href="#how-to-burn-a-single-cell-in-any-direction">8.2.3. How to Burn a Single Cell in Any Direction</a></li>
+<li><a href="#how-to-burn-a-region-of-cells-in-any-direction">8.2.4. How to Burn a Region of Cells in Any Direction</a></li>
 </ul>
 </li>
 </ul>
@@ -7670,9 +7672,9 @@ their combined surface and crown fire behavior.
 </div>
 </div>
 </div>
-<div id="outline-container-burn-cell-as-a-head-fire" class="outline-4">
-<h4 id="burn-cell-as-a-head-fire"><span class="section-number-4">8.1.2.</span> Burn Cell as a Head Fire</h4>
-<div class="outline-text-4" id="text-burn-cell-as-a-head-fire">
+<div id="outline-container-burn-cells-as-a-head-fire" class="outline-4">
+<h4 id="burn-cells-as-a-head-fire"><span class="section-number-4">8.1.2.</span> Burn Cells as a Head Fire</h4>
+<div class="outline-text-4" id="text-burn-cells-as-a-head-fire">
 <p>
 Sometimes the goal of a fire behavior analysis is to determine the
 most extreme behavior to be expected, given static measurements of
@@ -7686,7 +7688,7 @@ surface fire behavior is returned.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="burn-cell-as-head-fire"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="burn-cells-as-head-fire"><span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-keyword">def</span> <span class="org-function-name">SpreadBehavior_to_dict</span>(sb: SpreadBehavior) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-keyword">return</span> {
@@ -8018,9 +8020,9 @@ surface fire behavior is returned.
 </div>
 </div>
 </div>
-<div id="outline-container-burn-cell-in-any-direction" class="outline-4">
-<h4 id="burn-cell-in-any-direction"><span class="section-number-4">8.1.3.</span> Burn Cell in Any Direction</h4>
-<div class="outline-text-4" id="text-burn-cell-in-any-direction">
+<div id="outline-container-burn-cells-in-any-direction" class="outline-4">
+<h4 id="burn-cells-in-any-direction"><span class="section-number-4">8.1.3.</span> Burn Cells in Any Direction</h4>
+<div class="outline-text-4" id="text-burn-cells-in-any-direction">
 <p>
 When the goal of a fire behavior analysis is to evolve a burn scar
 from its point of ignition into a generally conical shape in
@@ -8039,7 +8041,7 @@ azimuth direction is returned.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="burn-cell-toward-azimuth"><span class="org-type">@cy.ccall</span>
+<pre class="src src-python" id="burn-cells-toward-azimuth"><span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">burn_cell_toward_azimuth</span>(space_time_cubes      : <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, ISpaceTimeCube],
                              space_time_coordinate : coord_tyx,
                              azimuth               : cy.<span class="org-builtin">float</span>,
@@ -8376,13 +8378,13 @@ combined surface and crown fire behavior first in the direction of
 maximum spread and then in any direction.
 </p>
 </div>
-<div id="outline-container-how-to-burn-a-cell-as-a-head-fire" class="outline-4">
-<h4 id="how-to-burn-a-cell-as-a-head-fire"><span class="section-number-4">8.2.1.</span> How to Burn a Cell as a Head Fire</h4>
-<div class="outline-text-4" id="text-how-to-burn-a-cell-as-a-head-fire">
+<div id="outline-container-how-to-burn-a-single-cell-as-a-head-fire" class="outline-4">
+<h4 id="how-to-burn-a-single-cell-as-a-head-fire"><span class="section-number-4">8.2.1.</span> How to Burn a Single Cell as a Head Fire</h4>
+<div class="outline-text-4" id="text-how-to-burn-a-single-cell-as-a-head-fire">
 <div class="org-src-container">
 <pre class="src src-python" id="run-burn-cell-as-head-fire"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
-<span class="org-keyword">import</span> pyretechnics.burn_cells <span class="org-keyword">as</span> bc
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> pyretechnics.burn_cells <span class="org-keyword">as</span> bc
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -8428,14 +8430,18 @@ maximum spread and then in any direction.
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of maximum spread (with wind limit)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-variable-name">combined_behavior_limited</span> <span class="org-operator">=</span> bc.burn_cell_as_head_fire(space_time_cubes, space_time_coordinate)
+<span class="org-variable-name">combined_behavior_limited</span> <span class="org-operator">=</span> bc.burn_cell_as_head_fire(space_time_cubes,
+                                                      space_time_coordinate,
+                                                      surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of maximum spread (without wind limit)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-variable-name">combined_behavior_unlimited</span> <span class="org-operator">=</span> bc.burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
-                                                        use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>)
+<span class="org-variable-name">combined_behavior_unlimited</span> <span class="org-operator">=</span> bc.burn_cell_as_head_fire(space_time_cubes,
+                                                        space_time_coordinate,
+                                                        use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>,
+                                                        surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Display combined fire behavior in the direction of maximum spread (with wind limit)</span>
@@ -8458,29 +8464,206 @@ pprint(combined_behavior_unlimited)
 <pre class="example" id="run-burn-cell-as-head-fire-results">
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 32.528250853562525,
- 'flame_length': 0.38439333737509035,
- 'spread_direction': array([0.48686895, 0.61304247, 0.62220383]),
- 'spread_rate': 2.2964679102816112}
+{'fire_type': 1,
+ 'fireline_intensity': 32.52825927734375,
+ 'flame_length': 0.3843933939933777,
+ 'spread_direction': (0.4869149327278137,
+                      0.6130024194717407,
+                      0.6222072243690491),
+ 'spread_rate': 2.2964677810668945}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 50.61292548195906,
- 'flame_length': 0.47108164985334633,
- 'spread_direction': array([0.48686895, 0.61304247, 0.62220383]),
- 'spread_rate': 3.5732311503021905}
+{'fire_type': 1,
+ 'fireline_intensity': 50.6082878112793,
+ 'flame_length': 0.4710617959499359,
+ 'spread_direction': (0.4869149327278137,
+                      0.6130024194717407,
+                      0.6222072243690491),
+ 'spread_rate': 3.5729029178619385}
 </pre>
 </div>
 </div>
-<div id="outline-container-how-to-burn-a-cell-in-any-direction" class="outline-4">
-<h4 id="how-to-burn-a-cell-in-any-direction"><span class="section-number-4">8.2.2.</span> How to Burn a Cell in Any Direction</h4>
-<div class="outline-text-4" id="text-how-to-burn-a-cell-in-any-direction">
+<div id="outline-container-how-to-burn-a-region-of-cells-as-a-head-fire" class="outline-4">
+<h4 id="how-to-burn-a-region-of-cells-as-a-head-fire"><span class="section-number-4">8.2.2.</span> How to Burn a Region of Cells as a Head Fire</h4>
+<div class="outline-text-4" id="text-how-to-burn-a-region-of-cells-as-a-head-fire">
+<div class="org-src-container">
+<pre class="src src-python" id="run-burn-all-cells-as-head-fire"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
+<span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> pyretechnics.burn_cells <span class="org-keyword">as</span> bc
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">cube_shape</span> <span class="org-operator">=</span> (
+    240,  <span class="org-comment-delimiter"># </span><span class="org-comment">bands: 10 days @ 1 hour/band</span>
+    1000, <span class="org-comment-delimiter"># </span><span class="org-comment">rows:  30 km @ 30 meters/row</span>
+    1000, <span class="org-comment-delimiter"># </span><span class="org-comment">cols:  30 km @ 30 meters/col</span>
+)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Create an input dictionary of SpaceTimeCubes (using constant data for this example)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">space_time_cubes</span> <span class="org-operator">=</span> {
+    <span class="org-string">"slope"</span>                        : SpaceTimeCube(cube_shape, 0.8),   <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
+    <span class="org-string">"aspect"</span>                       : SpaceTimeCube(cube_shape, 225.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_model"</span>                   : SpaceTimeCube(cube_shape, 101),   <span class="org-comment-delimiter"># </span><span class="org-comment">integer index in fm.fuel_model_table</span>
+    <span class="org-string">"canopy_cover"</span>                 : SpaceTimeCube(cube_shape, 0.6),   <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+    <span class="org-string">"canopy_height"</span>                : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_base_height"</span>           : SpaceTimeCube(cube_shape, 3.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_bulk_density"</span>          : SpaceTimeCube(cube_shape, 0.3),   <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
+    <span class="org-string">"wind_speed_10m"</span>               : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+    <span class="org-string">"upwind_direction"</span>             : SpaceTimeCube(cube_shape, 180.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : SpaceTimeCube(cube_shape, 0.05),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_10hr"</span>      : SpaceTimeCube(cube_shape, 0.10),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_100hr"</span>     : SpaceTimeCube(cube_shape, 0.15),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_herbaceous"</span>: SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_woody"</span>     : SpaceTimeCube(cube_shape, 0.60),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"foliar_moisture"</span>              : SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_spread_adjustment"</span>       : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+    <span class="org-string">"weather_spread_adjustment"</span>    : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+}
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Specify a space-time region (t, (y_min, y_max), (x_min, x_max))</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">within the extent of the SpaceTimeCube dimensions</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">t</span>       <span class="org-operator">=</span> 24
+<span class="org-variable-name">y_range</span> <span class="org-operator">=</span> (100,105)
+<span class="org-variable-name">x_range</span> <span class="org-operator">=</span> (100,105)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of maximum spread (with wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">combined_behavior_limited</span> <span class="org-operator">=</span> bc.burn_all_cells_as_head_fire(space_time_cubes,
+                                                           t,
+                                                           y_range,
+                                                           x_range,
+                                                           surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of maximum spread (without wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">combined_behavior_unlimited</span> <span class="org-operator">=</span> bc.burn_all_cells_as_head_fire(space_time_cubes,
+                                                             t,
+                                                             y_range,
+                                                             x_range,
+                                                             use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>,
+                                                             surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Display combined fire behavior in the direction of maximum spread (with wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region "</span>
+      <span class="org-operator">+</span> <span class="org-builtin">str</span>((t, y_range, x_range)) <span class="org-operator">+</span> <span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 121)
+<span class="org-keyword">for</span> (name, matrix) <span class="org-keyword">in</span> combined_behavior_limited.items():
+    <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Layer: "</span> <span class="org-operator">+</span> name)
+    <span class="org-builtin">print</span>(matrix[100:105,100:105])
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Display combined fire behavior in the direction of maximum spread (without wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region "</span>
+      <span class="org-operator">+</span> <span class="org-builtin">str</span>((t, y_range, x_range)) <span class="org-operator">+</span> <span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 121)
+<span class="org-keyword">for</span> (name, matrix) <span class="org-keyword">in</span> combined_behavior_unlimited.items():
+    <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Layer: "</span> <span class="org-operator">+</span> name)
+    <span class="org-builtin">print</span>(matrix[100:105,100:105])
+</pre>
+</div>
+
+<pre class="example" id="org04caaa5">
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]]
+
+Layer: spread_direction
+[[38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]]
+
+Layer: fireline_intensity
+[[32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]]
+
+Layer: flame_length
+[[0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]]
+
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]]
+
+Layer: spread_direction
+[[38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]]
+
+Layer: fireline_intensity
+[[50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]]
+
+Layer: flame_length
+[[0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]]
+</pre>
+</div>
+</div>
+<div id="outline-container-how-to-burn-a-single-cell-in-any-direction" class="outline-4">
+<h4 id="how-to-burn-a-single-cell-in-any-direction"><span class="section-number-4">8.2.3.</span> How to Burn a Single Cell in Any Direction</h4>
+<div class="outline-text-4" id="text-how-to-burn-a-single-cell-in-any-direction">
 <div class="org-src-container">
 <pre class="src src-python" id="run-burn-cell-toward-azimuth"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
-<span class="org-keyword">import</span> pyretechnics.burn_cells <span class="org-keyword">as</span> bc
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> pyretechnics.burn_cells <span class="org-keyword">as</span> bc
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
@@ -8532,14 +8715,20 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of the azimuth (with wind limit)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-variable-name">combined_behavior_limited</span> <span class="org-operator">=</span> bc.burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, spread_azimuth)
+<span class="org-variable-name">combined_behavior_limited</span> <span class="org-operator">=</span> bc.burn_cell_toward_azimuth(space_time_cubes,
+                                                        space_time_coordinate,
+                                                        spread_azimuth,
+                                                        surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of the azimuth (without wind limit)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-variable-name">combined_behavior_unlimited</span> <span class="org-operator">=</span> bc.burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, spread_azimuth,
-                                                          use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>)
+<span class="org-variable-name">combined_behavior_unlimited</span> <span class="org-operator">=</span> bc.burn_cell_toward_azimuth(space_time_cubes,
+                                                          space_time_coordinate,
+                                                          spread_azimuth,
+                                                          use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>,
+                                                          surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Display combined fire behavior in the direction of the azimuth (with wind limit)</span>
@@ -8562,19 +8751,204 @@ pprint(combined_behavior_unlimited)
 <pre class="example" id="run-burn-cell-toward-azimuth-results">
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 11.637272597794672,
- 'flame_length': 0.23956726794677918,
- 'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.8215819290236468}
+{'fire_type': 1,
+ 'fireline_intensity': 11.638436317443848,
+ 'flame_length': 0.23957829177379608,
+ 'spread_direction': (0.8703882694244385,
+                      -3.804587933586845e-08,
+                      0.4923659861087799),
+ 'spread_rate': 0.8216638565063477}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 13.89820197455359,
- 'flame_length': 0.2599542303459697,
- 'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.9812016941476362}
+{'fire_type': 1,
+ 'fireline_intensity': 13.899334907531738,
+ 'flame_length': 0.2599639892578125,
+ 'spread_direction': (0.8703882694244385,
+                      -3.804587933586845e-08,
+                      0.4923659861087799),
+ 'spread_rate': 0.9812814593315125}
+</pre>
+</div>
+</div>
+<div id="outline-container-how-to-burn-a-region-of-cells-in-any-direction" class="outline-4">
+<h4 id="how-to-burn-a-region-of-cells-in-any-direction"><span class="section-number-4">8.2.4.</span> How to Burn a Region of Cells in Any Direction</h4>
+<div class="outline-text-4" id="text-how-to-burn-a-region-of-cells-in-any-direction">
+<div class="org-src-container">
+<pre class="src src-python" id="run-burn-all-cells-toward-azimuth"><span class="org-keyword">from</span> pprint <span class="org-keyword">import</span> pprint
+<span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
+<span class="org-keyword">import</span> pyretechnics.burn_cells <span class="org-keyword">as</span> bc
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">cube_shape</span> <span class="org-operator">=</span> (
+    240,  <span class="org-comment-delimiter"># </span><span class="org-comment">bands: 10 days @ 1 hour/band</span>
+    1000, <span class="org-comment-delimiter"># </span><span class="org-comment">rows:  30 km @ 30 meters/row</span>
+    1000, <span class="org-comment-delimiter"># </span><span class="org-comment">cols:  30 km @ 30 meters/col</span>
+)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Create an input dictionary of SpaceTimeCubes (using constant data for this example)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">space_time_cubes</span> <span class="org-operator">=</span> {
+    <span class="org-string">"slope"</span>                        : SpaceTimeCube(cube_shape, 0.8),   <span class="org-comment-delimiter"># </span><span class="org-comment">rise/run</span>
+    <span class="org-string">"aspect"</span>                       : SpaceTimeCube(cube_shape, 225.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_model"</span>                   : SpaceTimeCube(cube_shape, 101),   <span class="org-comment-delimiter"># </span><span class="org-comment">integer index in fm.fuel_model_table</span>
+    <span class="org-string">"canopy_cover"</span>                 : SpaceTimeCube(cube_shape, 0.6),   <span class="org-comment-delimiter"># </span><span class="org-comment">0-1</span>
+    <span class="org-string">"canopy_height"</span>                : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_base_height"</span>           : SpaceTimeCube(cube_shape, 3.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">m</span>
+    <span class="org-string">"canopy_bulk_density"</span>          : SpaceTimeCube(cube_shape, 0.3),   <span class="org-comment-delimiter"># </span><span class="org-comment">kg/m^3</span>
+    <span class="org-string">"wind_speed_10m"</span>               : SpaceTimeCube(cube_shape, 30.0),  <span class="org-comment-delimiter"># </span><span class="org-comment">km/hr</span>
+    <span class="org-string">"upwind_direction"</span>             : SpaceTimeCube(cube_shape, 180.0), <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North</span>
+    <span class="org-string">"fuel_moisture_dead_1hr"</span>       : SpaceTimeCube(cube_shape, 0.05),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_10hr"</span>      : SpaceTimeCube(cube_shape, 0.10),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_dead_100hr"</span>     : SpaceTimeCube(cube_shape, 0.15),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_herbaceous"</span>: SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_moisture_live_woody"</span>     : SpaceTimeCube(cube_shape, 0.60),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"foliar_moisture"</span>              : SpaceTimeCube(cube_shape, 0.90),  <span class="org-comment-delimiter"># </span><span class="org-comment">kg moisture/kg ovendry weight</span>
+    <span class="org-string">"fuel_spread_adjustment"</span>       : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+    <span class="org-string">"weather_spread_adjustment"</span>    : SpaceTimeCube(cube_shape, 1.0),   <span class="org-comment-delimiter"># </span><span class="org-comment">float &gt;= 0.0 (Optional: defaults to 1.0)</span>
+}
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Specify a space-time region (t, (y_min, y_max), (x_min, x_max))</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">within the extent of the SpaceTimeCube dimensions</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">t</span>       <span class="org-operator">=</span> 24
+<span class="org-variable-name">y_range</span> <span class="org-operator">=</span> (100,105)
+<span class="org-variable-name">x_range</span> <span class="org-operator">=</span> (100,105)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Specify an azimuth to spread the fire towards</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">spread_azimuth</span> <span class="org-operator">=</span> 90.0 <span class="org-comment-delimiter"># </span><span class="org-comment">degrees clockwise from North on the horizontal plane</span>
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of the azimuth (with wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">combined_behavior_limited</span> <span class="org-operator">=</span> bc.burn_all_cells_toward_azimuth(space_time_cubes,
+                                                             spread_azimuth,
+                                                             t,
+                                                             y_range,
+                                                             x_range,
+                                                             surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Calculate combined fire behavior in the direction of the azimuth (without wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-variable-name">combined_behavior_unlimited</span> <span class="org-operator">=</span> bc.burn_all_cells_toward_azimuth(space_time_cubes,
+                                                               spread_azimuth,
+                                                               t,
+                                                               y_range,
+                                                               x_range,
+                                                               use_wind_limit<span class="org-operator">=</span><span class="org-constant">False</span>,
+                                                               surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Display combined fire behavior in the direction of the azimuth (with wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region "</span>
+      <span class="org-operator">+</span> <span class="org-builtin">str</span>((t, y_range, x_range)) <span class="org-operator">+</span> <span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 121)
+<span class="org-keyword">for</span> (name, matrix) <span class="org-keyword">in</span> combined_behavior_limited.items():
+    <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Layer: "</span> <span class="org-operator">+</span> name)
+    <span class="org-builtin">print</span>(matrix[100:105,100:105])
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Display combined fire behavior in the direction of the azimuth (without wind limit)</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
+
+<span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region "</span>
+      <span class="org-operator">+</span> <span class="org-builtin">str</span>((t, y_range, x_range)) <span class="org-operator">+</span> <span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">"</span> <span class="org-operator">+</span> <span class="org-string">"="</span> <span class="org-operator">*</span> 121)
+<span class="org-keyword">for</span> (name, matrix) <span class="org-keyword">in</span> combined_behavior_unlimited.items():
+    <span class="org-builtin">print</span>(<span class="org-string">"</span><span class="org-constant">\n</span><span class="org-string">Layer: "</span> <span class="org-operator">+</span> name)
+    <span class="org-builtin">print</span>(matrix[100:105,100:105])
+</pre>
+</div>
+
+<pre class="example" id="org3b1a1bb">
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]]
+
+Layer: spread_direction
+[[90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]]
+
+Layer: fireline_intensity
+[[11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]]
+
+Layer: flame_length
+[[0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]]
+
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]]
+
+Layer: spread_direction
+[[90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]]
+
+Layer: fireline_intensity
+[[13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]]
+
+Layer: flame_length
+[[0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]]
 </pre>
 </div>
 </div>

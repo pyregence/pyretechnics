@@ -6853,9 +6853,9 @@ else:
     import pyretechnics.crown_fire as cf
 #+end_src
 
-*** Burn Cell as a Head Fire
+*** Burn Cells as a Head Fire
     :PROPERTIES:
-    :CUSTOM_ID: burn-cell-as-a-head-fire
+    :CUSTOM_ID: burn-cells-as-a-head-fire
     :END:
 
 Sometimes the goal of a fire behavior analysis is to determine the
@@ -6868,7 +6868,7 @@ is computed and combined with the maximum surface fire behavior as per
 section [[Combining Surface and Crown Fire Behavior]]. If not, the maximum
 surface fire behavior is returned.
 
-#+NAME: burn-cell-as-head-fire
+#+NAME: burn-cells-as-head-fire
 #+begin_src python
 @cy.cfunc
 @cy.inline
@@ -7200,9 +7200,9 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
     }
 #+end_src
 
-*** Burn Cell in Any Direction
+*** Burn Cells in Any Direction
     :PROPERTIES:
-    :CUSTOM_ID: burn-cell-in-any-direction
+    :CUSTOM_ID: burn-cells-in-any-direction
     :END:
 
 When the goal of a fire behavior analysis is to evolve a burn scar
@@ -7220,7 +7220,7 @@ azimuth direction, and the combined surface and crown fire behavior
 returned. If no crown fire occurs, the surface fire behavior in the
 azimuth direction is returned.
 
-#+NAME: burn-cell-toward-azimuth
+#+NAME: burn-cells-toward-azimuth
 #+begin_src python
 @cy.ccall
 def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
@@ -7559,16 +7559,16 @@ In the following sections, we will demonstrate how to calculate the
 combined surface and crown fire behavior first in the direction of
 maximum spread and then in any direction.
 
-*** How to Burn a Cell as a Head Fire
+*** How to Burn a Single Cell as a Head Fire
     :PROPERTIES:
-    :CUSTOM_ID: how-to-burn-a-cell-as-a-head-fire
+    :CUSTOM_ID: how-to-burn-a-single-cell-as-a-head-fire
     :END:
 
 #+NAME: run-burn-cell-as-head-fire
 #+begin_src python
 from pprint import pprint
-import pyretechnics.burn_cells as bc
 from pyretechnics.space_time_cube import SpaceTimeCube
+import pyretechnics.burn_cells as bc
 
 #============================================================================================
 # Specify the SpaceTimeCube dimensions
@@ -7614,14 +7614,18 @@ space_time_coordinate = (24, 100, 100)
 # Calculate combined fire behavior in the direction of maximum spread (with wind limit)
 #============================================================================================
 
-combined_behavior_limited = bc.burn_cell_as_head_fire(space_time_cubes, space_time_coordinate)
+combined_behavior_limited = bc.burn_cell_as_head_fire(space_time_cubes,
+                                                      space_time_coordinate,
+                                                      surface_lw_ratio_model="rothermel")
 
 #============================================================================================
 # Calculate combined fire behavior in the direction of maximum spread (without wind limit)
 #============================================================================================
 
-combined_behavior_unlimited = bc.burn_cell_as_head_fire(space_time_cubes, space_time_coordinate,
-                                                        use_wind_limit=False)
+combined_behavior_unlimited = bc.burn_cell_as_head_fire(space_time_cubes,
+                                                        space_time_coordinate,
+                                                        use_wind_limit=False,
+                                                        surface_lw_ratio_model="rothermel")
 
 #============================================================================================
 # Display combined fire behavior in the direction of maximum spread (with wind limit)
@@ -7645,31 +7649,210 @@ pprint(combined_behavior_unlimited)
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 32.528250853562525,
- 'flame_length': 0.38439333737509035,
- 'spread_direction': array([0.48686895, 0.61304247, 0.62220383]),
- 'spread_rate': 2.2964679102816112}
+{'fire_type': 1,
+ 'fireline_intensity': 32.52825927734375,
+ 'flame_length': 0.3843933939933777,
+ 'spread_direction': (0.4869149327278137,
+                      0.6130024194717407,
+                      0.6222072243690491),
+ 'spread_rate': 2.2964677810668945}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 50.61292548195906,
- 'flame_length': 0.47108164985334633,
- 'spread_direction': array([0.48686895, 0.61304247, 0.62220383]),
- 'spread_rate': 3.5732311503021905}
+{'fire_type': 1,
+ 'fireline_intensity': 50.6082878112793,
+ 'flame_length': 0.4710617959499359,
+ 'spread_direction': (0.4869149327278137,
+                      0.6130024194717407,
+                      0.6222072243690491),
+ 'spread_rate': 3.5729029178619385}
 #+end_example
 
-*** How to Burn a Cell in Any Direction
+*** How to Burn a Region of Cells as a Head Fire
     :PROPERTIES:
-    :CUSTOM_ID: how-to-burn-a-cell-in-any-direction
+    :CUSTOM_ID: how-to-burn-a-region-of-cells-as-a-head-fire
+    :END:
+
+#+NAME: run-burn-all-cells-as-head-fire
+#+begin_src python
+from pprint import pprint
+from pyretechnics.space_time_cube import SpaceTimeCube
+import pyretechnics.burn_cells as bc
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240,  # bands: 10 days @ 1 hour/band
+    1000, # rows:  30 km @ 30 meters/row
+    1000, # cols:  30 km @ 30 meters/col
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Specify a space-time region (t, (y_min, y_max), (x_min, x_max))
+# within the extent of the SpaceTimeCube dimensions
+#============================================================================================
+
+t       = 24
+y_range = (100,105)
+x_range = (100,105)
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of maximum spread (with wind limit)
+#============================================================================================
+
+combined_behavior_limited = bc.burn_all_cells_as_head_fire(space_time_cubes,
+                                                           t,
+                                                           y_range,
+                                                           x_range,
+                                                           surface_lw_ratio_model="rothermel")
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of maximum spread (without wind limit)
+#============================================================================================
+
+combined_behavior_unlimited = bc.burn_all_cells_as_head_fire(space_time_cubes,
+                                                             t,
+                                                             y_range,
+                                                             x_range,
+                                                             use_wind_limit=False,
+                                                             surface_lw_ratio_model="rothermel")
+
+#============================================================================================
+# Display combined fire behavior in the direction of maximum spread (with wind limit)
+#============================================================================================
+
+print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region "
+      + str((t, y_range, x_range)) + "\n" + "=" * 121)
+for (name, matrix) in combined_behavior_limited.items():
+    print("\nLayer: " + name)
+    print(matrix[100:105,100:105])
+
+#============================================================================================
+# Display combined fire behavior in the direction of maximum spread (without wind limit)
+#============================================================================================
+
+print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region "
+      + str((t, y_range, x_range)) + "\n" + "=" * 121)
+for (name, matrix) in combined_behavior_unlimited.items():
+    print("\nLayer: " + name)
+    print(matrix[100:105,100:105])
+#+end_src
+
+#+RESULTS: run-burn-all-cells-as-head-fire
+#+begin_example
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
+ [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]]
+
+Layer: spread_direction
+[[38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]]
+
+Layer: fireline_intensity
+[[32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]
+ [32.52826 32.52826 32.52826 32.52826 32.52826]]
+
+Layer: flame_length
+[[0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
+ [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]]
+
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]
+ [3.572903 3.572903 3.572903 3.572903 3.572903]]
+
+Layer: spread_direction
+[[38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]
+ [38.46052 38.46052 38.46052 38.46052 38.46052]]
+
+Layer: fireline_intensity
+[[50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]
+ [50.608288 50.608288 50.608288 50.608288 50.608288]]
+
+Layer: flame_length
+[[0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
+ [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]]
+#+end_example
+
+*** How to Burn a Single Cell in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-burn-a-single-cell-in-any-direction
     :END:
 
 #+NAME: run-burn-cell-toward-azimuth
 #+begin_src python
 from pprint import pprint
-import pyretechnics.burn_cells as bc
 from pyretechnics.space_time_cube import SpaceTimeCube
+import pyretechnics.burn_cells as bc
 
 #============================================================================================
 # Specify the SpaceTimeCube dimensions
@@ -7721,14 +7904,20 @@ spread_azimuth = 90.0 # degrees clockwise from North on the horizontal plane
 # Calculate combined fire behavior in the direction of the azimuth (with wind limit)
 #============================================================================================
 
-combined_behavior_limited = bc.burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, spread_azimuth)
+combined_behavior_limited = bc.burn_cell_toward_azimuth(space_time_cubes,
+                                                        space_time_coordinate,
+                                                        spread_azimuth,
+                                                        surface_lw_ratio_model="rothermel")
 
 #============================================================================================
 # Calculate combined fire behavior in the direction of the azimuth (without wind limit)
 #============================================================================================
 
-combined_behavior_unlimited = bc.burn_cell_toward_azimuth(space_time_cubes, space_time_coordinate, spread_azimuth,
-                                                          use_wind_limit=False)
+combined_behavior_unlimited = bc.burn_cell_toward_azimuth(space_time_cubes,
+                                                          space_time_coordinate,
+                                                          spread_azimuth,
+                                                          use_wind_limit=False,
+                                                          surface_lw_ratio_model="rothermel")
 
 #============================================================================================
 # Display combined fire behavior in the direction of the azimuth (with wind limit)
@@ -7752,19 +7941,206 @@ pprint(combined_behavior_unlimited)
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 11.637272597794672,
- 'flame_length': 0.23956726794677918,
- 'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.8215819290236468}
+{'fire_type': 1,
+ 'fireline_intensity': 11.638436317443848,
+ 'flame_length': 0.23957829177379608,
+ 'spread_direction': (0.8703882694244385,
+                      -3.804587933586845e-08,
+                      0.4923659861087799),
+ 'spread_rate': 0.8216638565063477}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
-{'fire_type': 'surface',
- 'fireline_intensity': 13.89820197455359,
- 'flame_length': 0.2599542303459697,
- 'spread_direction': array([ 8.70388269e-01, -3.80458793e-08,  4.92365986e-01]),
- 'spread_rate': 0.9812016941476362}
+{'fire_type': 1,
+ 'fireline_intensity': 13.899334907531738,
+ 'flame_length': 0.2599639892578125,
+ 'spread_direction': (0.8703882694244385,
+                      -3.804587933586845e-08,
+                      0.4923659861087799),
+ 'spread_rate': 0.9812814593315125}
+#+end_example
+
+*** How to Burn a Region of Cells in Any Direction
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-burn-a-region-of-cells-in-any-direction
+    :END:
+
+#+NAME: run-burn-all-cells-toward-azimuth
+#+begin_src python
+from pprint import pprint
+from pyretechnics.space_time_cube import SpaceTimeCube
+import pyretechnics.burn_cells as bc
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240,  # bands: 10 days @ 1 hour/band
+    1000, # rows:  30 km @ 30 meters/row
+    1000, # cols:  30 km @ 30 meters/col
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Specify a space-time region (t, (y_min, y_max), (x_min, x_max))
+# within the extent of the SpaceTimeCube dimensions
+#============================================================================================
+
+t       = 24
+y_range = (100,105)
+x_range = (100,105)
+
+#============================================================================================
+# Specify an azimuth to spread the fire towards
+#============================================================================================
+
+spread_azimuth = 90.0 # degrees clockwise from North on the horizontal plane
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of the azimuth (with wind limit)
+#============================================================================================
+
+combined_behavior_limited = bc.burn_all_cells_toward_azimuth(space_time_cubes,
+                                                             spread_azimuth,
+                                                             t,
+                                                             y_range,
+                                                             x_range,
+                                                             surface_lw_ratio_model="rothermel")
+
+#============================================================================================
+# Calculate combined fire behavior in the direction of the azimuth (without wind limit)
+#============================================================================================
+
+combined_behavior_unlimited = bc.burn_all_cells_toward_azimuth(space_time_cubes,
+                                                               spread_azimuth,
+                                                               t,
+                                                               y_range,
+                                                               x_range,
+                                                               use_wind_limit=False,
+                                                               surface_lw_ratio_model="rothermel")
+
+#============================================================================================
+# Display combined fire behavior in the direction of the azimuth (with wind limit)
+#============================================================================================
+
+print("Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region "
+      + str((t, y_range, x_range)) + "\n" + "=" * 121)
+for (name, matrix) in combined_behavior_limited.items():
+    print("\nLayer: " + name)
+    print(matrix[100:105,100:105])
+
+#============================================================================================
+# Display combined fire behavior in the direction of the azimuth (without wind limit)
+#============================================================================================
+
+print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region "
+      + str((t, y_range, x_range)) + "\n" + "=" * 121)
+for (name, matrix) in combined_behavior_unlimited.items():
+    print("\nLayer: " + name)
+    print(matrix[100:105,100:105])
+#+end_src
+
+#+RESULTS: run-burn-all-cells-toward-azimuth
+#+begin_example
+Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
+ [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]]
+
+Layer: spread_direction
+[[90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]]
+
+Layer: fireline_intensity
+[[11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]
+ [11.638436 11.638436 11.638436 11.638436 11.638436]]
+
+Layer: flame_length
+[[0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
+ [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]]
+
+Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
+=========================================================================================================================
+
+Layer: fire_type
+[[1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]
+ [1 1 1 1 1]]
+
+Layer: spread_rate
+[[0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
+ [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]]
+
+Layer: spread_direction
+[[90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]
+ [90. 90. 90. 90. 90.]]
+
+Layer: fireline_intensity
+[[13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]
+ [13.899335 13.899335 13.899335 13.899335 13.899335]]
+
+Layer: flame_length
+[[0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]
+ [0.259964 0.259964 0.259964 0.259964 0.259964]]
 #+end_example
 
 * Fire Spread Algorithm (ELMFIRE): Eulerian Level Set Method (pyretechnics.eulerian_level_set)

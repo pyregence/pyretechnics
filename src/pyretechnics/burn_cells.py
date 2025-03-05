@@ -21,7 +21,7 @@ else:
     import pyretechnics.surface_fire as sf
     import pyretechnics.crown_fire as cf
 # burn-cells-imports ends here
-# [[file:../../org/pyretechnics.org::burn-cell-as-head-fire][burn-cell-as-head-fire]]
+# [[file:../../org/pyretechnics.org::burn-cells-as-head-fire][burn-cells-as-head-fire]]
 @cy.cfunc
 @cy.inline
 def SpreadBehavior_to_dict(sb: SpreadBehavior) -> dict:
@@ -350,8 +350,8 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
         "fireline_intensity": fireline_intensity_matrix,
         "flame_length"      : flame_length_matrix,
     }
-# burn-cell-as-head-fire ends here
-# [[file:../../org/pyretechnics.org::burn-cell-toward-azimuth][burn-cell-toward-azimuth]]
+# burn-cells-as-head-fire ends here
+# [[file:../../org/pyretechnics.org::burn-cells-toward-azimuth][burn-cells-toward-azimuth]]
 @cy.ccall
 def burn_cell_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCube],
                              space_time_coordinate : coord_tyx,
@@ -675,4 +675,4 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
         "fireline_intensity": fireline_intensity_matrix,
         "flame_length"      : flame_length_matrix,
     }
-# burn-cell-toward-azimuth ends here
+# burn-cells-toward-azimuth ends here
