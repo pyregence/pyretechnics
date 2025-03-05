@@ -189,27 +189,7 @@ def resolve_lognormal_params(spot_config       : SpotConfig,
     prob_lognormal_sigma: cy.float = lognormal_sigma_from_moments(exp_delta_x, var_delta_x)
     return (prob_lognormal_mu, prob_lognormal_sigma)
 # resolve-spotting-lognormal-elmfire ends here
-# [[file:../../org/pyretechnics.org::sardoy-firebrand-dispersal][sardoy-firebrand-dispersal]]
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def sample_normal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
-    """
-    Returns sample from normal/gaussian distribution given mu and sd.
-    """
-    return mu + sd * rng.next_normal()
-
-
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def sample_lognormal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
-    """
-    Returns sample from log-normal distribution given mu and sd.
-    """
-    return exp(sample_normal(rng, mu, sd))
-
-
+# [[file:../../org/pyretechnics.org::resolve-spotting-normal-elmfire][resolve-spotting-normal-elmfire]]
 # When will we have the default sigma_Y > E[ΔX]?
 # It can be seen that this nonsensical situation
 # happens iff sigma_X exceeds the following number:
@@ -249,6 +229,26 @@ def resolve_crosswind_distance_stdev(spot_config       : SpotConfig,
         return crosswind_distance_stdev # meters
     else:
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
+# resolve-spotting-normal-elmfire ends here
+# [[file:../../org/pyretechnics.org::sardoy-firebrand-dispersal][sardoy-firebrand-dispersal]]
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def sample_normal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
+    """
+    Returns sample from normal/gaussian distribution given mu and sd.
+    """
+    return mu + sd * rng.next_normal()
+
+
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def sample_lognormal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
+    """
+    Returns sample from log-normal distribution given mu and sd.
+    """
+    return exp(sample_normal(rng, mu, sd))
 
 
 @cy.cfunc
@@ -278,21 +278,7 @@ def sample_downwind_jump(jd: JumpDistribution, random_generator: BufferedRandGen
 def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGen) -> cy.float:
     return sample_normal(random_generator, 0.0, jd.sigma_y)
 # sardoy-firebrand-dispersal ends here
-# [[file:../../org/pyretechnics.org::firebrand-ignition-probability][firebrand-ignition-probability]]
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
-    """
-    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
-    - spotting_distance :: meters (d)
-    - decay_distance    :: meters (1/lambda)
-
-    P(Survival) = exp(-d * lambda)
-    """
-    return exp(-spotting_distance / decay_distance)
-
-
+# [[file:../../org/pyretechnics.org::schroeder-ignition-probability][schroeder-ignition-probability]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def heat_of_preignition(temperature: cy.float, fine_fuel_moisture: cy.float) -> cy.float:
@@ -324,14 +310,28 @@ def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy
     - temperature        :: degrees Celsius
     - fine_fuel_moisture :: 0-1
 
-    X           = (400 - Q_ig) / 10
-    P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
+    X    = (400 - Q_ig) / 10
+    P(I) = (0.000048 * X^4.3) / 50 (pg. 15)
     """
-    Q_ig      : cy.float = heat_of_preignition(temperature, fine_fuel_moisture)
-    X         : cy.float = max(0.0, 400.0 - Q_ig) * 0.1
-    P_Ignition: cy.float = 0.000048 * pow(X, 4.3) * 0.02
-    return min(P_Ignition, 1.0)
-# firebrand-ignition-probability ends here
+    Q_ig: cy.float = heat_of_preignition(temperature, fine_fuel_moisture)
+    X   : cy.float = max(0.0, 400.0 - Q_ig) * 0.1
+    P_I : cy.float = 0.000048 * pow(X, 4.3) * 0.02
+    return min(P_I, 1.0)
+# schroeder-ignition-probability ends here
+# [[file:../../org/pyretechnics.org::firebrand-flight-survival-probability][firebrand-flight-survival-probability]]
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
+    """
+    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
+    - spotting_distance :: meters (d)
+    - decay_distance    :: meters (1/lambda)
+
+    P(Survival) = exp(-d * lambda)
+    """
+    return exp(-spotting_distance / decay_distance)
+# firebrand-flight-survival-probability ends here
 # [[file:../../org/pyretechnics.org::firebrands-time-of-ignition][firebrands-time-of-ignition]]
 # FIXME: unused
 @cy.cfunc
@@ -370,7 +370,7 @@ def albini_t_max(flame_length: cy.float) -> cy.float:
     return charact_t * travel_time
 
 
-# FIXME: What is t_max still doing here? I thought we decided to neglect the flight time! (Val)
+# FIXME: Consider removing t_max from this calculation for performance.
 @cy.cfunc
 @cy.exceptval(check=False)
 def spot_ignition_time(time_of_arrival: cy.float, flame_length: cy.float) -> cy.float:

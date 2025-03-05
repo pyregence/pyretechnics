@@ -5537,7 +5537,7 @@ area of the cell $A_C$ (in $\text{m}^2$) as follows:
 \begin{align}
   A_C &= \Delta x \, \Delta y \left[1 + \left(\frac{\partial z}{\partial x}\right)^2 + \left(\frac{\partial z}{\partial y}\right)^2 \right] \\
   \nonumber \\
-  H_C &= H \, A_C
+  H_C &= H \, A_C \\
 \end{align}
 
 where $\Delta x$ is the cell width (in $\text{m}$), $\Delta y$ is the
@@ -5630,9 +5630,9 @@ distribution, conditional on the fire behavior $\Phi$ at the cell of
 origin:[fn::Perryman2012][fn::Sardoy2008][fn::Himoto2005]
 
 \begin{align}
-  \ln (\Delta_X / \text{1m}) | \Phi \sim & \text{Normal}(\mu = \mu_X(\Phi), \sigma = \sigma_X(\Phi)) & \\
+  \ln (\Delta_X / \text{1m}) | \Phi \sim & \text{Normal}(\mu = \mu_X(\Phi), \sigma = \sigma_X(\Phi)) \\
   \nonumber \\
-  \Delta_Y | \Phi \sim & \text{Normal}(\mu = 0, \sigma = \sigma_Y(\Phi)) &
+  \Delta_Y | \Phi \sim & \text{Normal}(\mu = 0, \sigma = \sigma_Y(\Phi)) \\
 \end{align}
 
 where $\text{Normal}(\mu, \sigma)$ denotes a one-dimensional Gaussian
@@ -5700,9 +5700,9 @@ that dependency using the following relationships between the moments
 of the distribution and the fireline intensity $I$ and wind speed $U$:
 
 \begin{align}
-  \mathbb{E}[\Delta_X] = & \Delta_1 \left(\frac{I}{\text{1 kW/m}}\right)^{e_I} \left(\frac{U}{\text{1 m/s}}\right)^{e_U} & \\
+  \mathbb{E}[\Delta_X] &= \Delta_1 \left(\frac{I}{\text{1 kW/m}}\right)^{e_I} \left(\frac{U}{\text{1 m/s}}\right)^{e_U} \\
   \nonumber \\
-  \text{Var}[\Delta_X] = & r_\frac{V}{E} \mathbb{E}[\Delta_X] &
+  \text{Var}[\Delta_X] &= r_\frac{V}{E} \mathbb{E}[\Delta_X] \\
 \end{align}
 
 in which $\Delta_1, e_I, e_U, r_\frac{V}{E}$ are configured by the
@@ -5731,9 +5731,9 @@ From the above moments, $\mu_X$ and $\sigma_X$ can be obtained using
 the properties of the log-normal distribution:
 
 \begin{align}
-  \sigma_X^2 = & \ln \left(1 + \frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]^2}\right) & \\
+  \mu_X &= \ln \frac{\mathbb{E}[\Delta_X]^2}{\sqrt{\text{Var}[\Delta_X] + \mathbb{E}[\Delta_X]^2}} \\
   \nonumber \\
-  \mu_X = & \ln \frac{\mathbb{E}[\Delta_X]^2}{\sqrt{\text{Var}[\Delta_X] + \mathbb{E}[\Delta_X]^2}} &
+  \sigma_X^2 &= \ln \left(1 + \frac{\text{Var}[\Delta_X]}{\mathbb{E}[\Delta_X]^2}\right) \\
 \end{align}
 
 #+NAME: resolve-spotting-lognormal-elmfire
@@ -5837,9 +5837,9 @@ $\text{Var}[\Delta_X]$ and $\mathbb{E}[\Delta_X]$ can be calculated
 from the properties of the log-normal distribution:
 
 \begin{align}
-  \mathbb{E}[\Delta_X] = \text{1m} \times \exp \left(\mu_X + \frac{1}{2}\sigma_X^2 \right) \\
+  \mathbb{E}[\Delta_X] &= \text{1m} \times \exp \left(\mu_X + \frac{1}{2}\sigma_X^2 \right) \\
   \nonumber \\
-  \text{Var}[\Delta_X] = \mathbb{E}[\Delta_X]^2 \left(e^{\sigma_X^2} - 1\right)
+  \text{Var}[\Delta_X] &= \mathbb{E}[\Delta_X]^2 \left(e^{\sigma_X^2} - 1\right) \\
 \end{align}
 
 Combining the above equations and applying some algebra yields a
@@ -5888,39 +5888,8 @@ variation ranging from 30% to 70%. For this reason, we *strongly
 recommend to supply $\sigma_Y$ directly* through the configuration key
 *crosswind_distance_stdev*.
 
-*** Sampling Firebrand Casting Distances
-    :PROPERTIES:
-    :CUSTOM_ID: sampling-firebrand-casting-distances
-    :END:
-
-Having computed the $\mu_X$, $\sigma_X$ and $\sigma_Y$ parameters, it
-remains to draw values of $\Delta_X$ and $\Delta_Y$ by sampling from
-log-normal and normal distributions. This can be done by sampling from
-a standard normal distribution, then transforming by affine and
-exponential functions:
-
-#+NAME: sardoy-firebrand-dispersal
+#+NAME: resolve-spotting-normal-elmfire
 #+begin_src python
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def sample_normal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
-    """
-    Returns sample from normal/gaussian distribution given mu and sd.
-    """
-    return mu + sd * rng.next_normal()
-
-
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def sample_lognormal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
-    """
-    Returns sample from log-normal distribution given mu and sd.
-    """
-    return exp(sample_normal(rng, mu, sd))
-
-
 # When will we have the default sigma_Y > E[ΔX]?
 # It can be seen that this nonsensical situation
 # happens iff sigma_X exceeds the following number:
@@ -5960,6 +5929,39 @@ def resolve_crosswind_distance_stdev(spot_config       : SpotConfig,
         return crosswind_distance_stdev # meters
     else:
         return himoto_resolve_default_sigma_y(spot_config, fireline_intensity, wind_speed_20ft) # meters
+#+end_src
+
+*** Sampling Firebrand Casting Distances
+    :PROPERTIES:
+    :CUSTOM_ID: sampling-firebrand-casting-distances
+    :END:
+
+Having computed the $\mu_X$, $\sigma_X$ and $\sigma_Y$ parameters, it
+remains to draw values of $\Delta_X$ and $\Delta_Y$ by sampling from
+log-normal and normal distributions. This can be done by sampling from
+a standard normal distribution, then transforming by affine and
+exponential functions:
+
+#+NAME: sardoy-firebrand-dispersal
+#+begin_src python
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def sample_normal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
+    """
+    Returns sample from normal/gaussian distribution given mu and sd.
+    """
+    return mu + sd * rng.next_normal()
+
+
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def sample_lognormal(rng: BufferedRandGen, mu: cy.float, sd: cy.float) -> cy.float:
+    """
+    Returns sample from log-normal distribution given mu and sd.
+    """
+    return exp(sample_normal(rng, mu, sd))
 
 
 @cy.cfunc
@@ -5990,89 +5992,29 @@ def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGe
     return sample_normal(random_generator, 0.0, jd.sigma_y)
 #+end_src
 
-*** Spotting Probability and Number of Firebrands
-    :PROPERTIES:
-    :CUSTOM_ID: spotting-probability-and-number-of-firebrands
-    :END:
-
-Whether or not a cell emits firebrands is determined by a spotting
-probability. Pyretechnics lets users configure separate spotting
-probabilities for crown fires (*crown_fire_spotting_percent*) and for
-surface fires under certain conditions
-(*surface_fire_spotting_percent*). Note that these configuration keys
-have misleading names (the values must be between 0 and 1).
-
-Surface fire spotting can only happen when the fireline intensity
-exceeds a certain threshold (configured with
-*critical_fireline_intensity*). Both that threshold and the spotting
-probability can be configured per fuel model.
-
-If spotting occurs at a cell, the number of firebrands is randomly
-drawn from a Poisson distribution, the mean of which is configured
-with key *num_firebrands*. As such, non-integer values are allowed for
-*num_firebrands*. The use of a Poisson distribution can help make the
-behavior robust to changes in simulation resolution. That being said,
-note that *num_firebrands* and/or the spotting probabilities will need
-to be adjusted if you change the simulation resolution, the essential
-invariant being the average number of firebrands per unit area. What's
-more, it may be sensible to set the spotting probability to 1 and
-compensate with a low Poisson mean.
-
 *** Spot Ignition Model
     :PROPERTIES:
     :CUSTOM_ID: spot-ignition-model
     :END:
 
-The Spot Ignition model describes the probability of a spot ignition
-as well as when the spot ignition should occur. Perryman 2012 uses the
-method described in Schroeder 1969 but adjusts the result to take into
-account the distance a firebrand lands from the source tree (using
-Albini 1979) and the number of firebrands that land in a cell (using
-Stauffer
-2008).[fn::Perryman2012][fn::Schroeder1969][fn::Albini1979][fn::Stauffer2008]
+The spot ignition model (Schroeder 1969)[fn::Schroeder1969] describes
+the probability of a spot ignition based on the temperature and fine
+fuel moisture at the firebrand landing location as follows:
 
 \begin{align}
-  P(I)_l = P(I)\exp(-\lambda_s l) \\
+  Q_{\text{ig}} &= 144.512 - 0.266 \, T_o - 0.00058 \, (T_o)^2 - T_o \, M + 18.54 \, (1 - \exp(-15.1 \, M)) + 640 \, M \\
   \nonumber \\
-  P(I)_l^{FB} = 1 - (1 - P(I)_l)^{n_b}
+  X &= \frac{400 - Q_{\text{ig}}}{10} \\
+  \nonumber \\
+  P(I) &= \frac{0.000048 \, X^{4.3}}{50} \\
 \end{align}
 
-where $\lambda_s$ is a positive number representing the decay
-constant, $l$ is the firebrand's landing distance away from the source
-cell. $P(I)_l$ is the probability of spot ignition taking into
-consideration $l$. $P(I)_l^{FB}$ is the probability of spot fire
-ignition taking into consideration $n_b$, the number of firebrands
-landing in a cell.
+where $P(I)$ is the probability of a spot ignition, $Q_{\text{ig}}$ is
+the heat of preignition in degrees Celsius, $T_o$ is the temperature
+in degrees Celsius, and $M$ is the fine fuel moisture in $\text{kg moisture}/\text{kg ovendry weight}$.
 
-We observe that the second formula is equivalent to a model where the
-firebrands are i.i.d causes of ignition (this is consistent with the
-goal of making the model insensitive to grid resolution). Therefore,
-Pyretechnics will simply draw an independent Bernoulli trial for each
-firebrand rather than apply the above formula.
-
-The first formula simply says that the per-firebrand probability
-decays exponentially with distance (i.e. adding $1/\lambda_s$ to the
-distance divides the probability by $e$, or equivalently $l \mapsto
-P(I)_l$ has derivative $\lambda_s P(I)_l$). Yet another way to say
-this is that, if $\lambda_s = \text{0.005 m}^{-1}$, then each added
-meter decreases $P(I)_l$ by 0.5%.
-
-#+NAME: firebrand-ignition-probability
+#+NAME: schroeder-ignition-probability
 #+begin_src python
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
-    """
-    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
-    - spotting_distance :: meters (d)
-    - decay_distance    :: meters (1/lambda)
-
-    P(Survival) = exp(-d * lambda)
-    """
-    return exp(-spotting_distance / decay_distance)
-
-
 @cy.cfunc
 @cy.exceptval(check=False)
 def heat_of_preignition(temperature: cy.float, fine_fuel_moisture: cy.float) -> cy.float:
@@ -6104,13 +6046,61 @@ def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy
     - temperature        :: degrees Celsius
     - fine_fuel_moisture :: 0-1
 
-    X           = (400 - Q_ig) / 10
-    P(Ignition) = (0.000048 * X^4.3) / 50 (pg. 15)
+    X    = (400 - Q_ig) / 10
+    P(I) = (0.000048 * X^4.3) / 50 (pg. 15)
     """
-    Q_ig      : cy.float = heat_of_preignition(temperature, fine_fuel_moisture)
-    X         : cy.float = max(0.0, 400.0 - Q_ig) * 0.1
-    P_Ignition: cy.float = 0.000048 * pow(X, 4.3) * 0.02
-    return min(P_Ignition, 1.0)
+    Q_ig: cy.float = heat_of_preignition(temperature, fine_fuel_moisture)
+    X   : cy.float = max(0.0, 400.0 - Q_ig) * 0.1
+    P_I : cy.float = 0.000048 * pow(X, 4.3) * 0.02
+    return min(P_I, 1.0)
+#+end_src
+
+Perryman 2012 uses this ignition probability but multiplies it by a
+flight survival probability based on the distance a firebrand lands
+from its casting source (using Albini 1979) and the number of
+firebrands that land in a cell (using Stauffer
+2008).[fn::Perryman2012][fn::Albini1979][fn::Stauffer2008]
+
+\begin{align}
+  P(I)_l &= P(I)\exp(-\lambda_s l) \\
+  \nonumber \\
+  P(I)_l^{FB} &= 1 - (1 - P(I)_l)^{n_b} \\
+\end{align}
+
+where $\lambda_s$ is a positive number representing the decay
+constant, $l$ is the firebrand's landing distance away from the source
+cell. $P(I)_l$ is the probability of spot ignition taking into
+consideration $l$. $P(I)_l^{FB}$ is the probability of spot fire
+ignition taking into consideration $n_b$, the number of firebrands
+landing in a cell.
+
+We observe that the second formula is equivalent to a model where the
+firebrands are i.i.d causes of ignition (this is consistent with the
+goal of making the model insensitive to grid resolution). Therefore,
+Pyretechnics will simply draw an independent Bernoulli trial for each
+firebrand rather than apply the above formula.
+
+The first formula simply says that the per-firebrand probability
+decays exponentially with distance (i.e. adding $1/\lambda_s$ to the
+distance divides the probability by $e$, or equivalently $l \mapsto
+P(I)_l$ has derivative $\lambda_s P(I)_l$). Yet another way to say
+this is that, if $\lambda_s = \text{0.005 m}^{-1}$, then each added
+meter decreases $P(I)_l$ by 0.5%.
+
+#+NAME: firebrand-flight-survival-probability
+#+begin_src python
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:
+    """
+    Returns the probability that a firebrand will survive its flight (Perryman 2012) given:
+    - spotting_distance :: meters (d)
+    - decay_distance    :: meters (1/lambda)
+
+    P(Survival) = exp(-d * lambda)
+    """
+    return exp(-spotting_distance / decay_distance)
 #+end_src
 
 A firebrand will cause an unburned cell to transition to a burned
@@ -6138,7 +6128,7 @@ maximum vertical height $t_v$, the amount of time required for the
 firebrand to descend from the maximum vertical height to the forest
 floor $t_g$, and the amount of time required for a spot fire to ignite
 and build up to the steady-state $t_I$. Perryman
-2012[fn::Perryman2012] assumes $t_v$ and $t_g$ to be equal and used
+2012[fn::Perryman2012] assumes $t_v$ and $t_g$ to be equal and uses
 the formula from Albini 1979[fn::Albini1979spot] to calculate it.
 $t_I$ is also assumed to be 20 min as used in McAlpine
 1991[fn::McAlpine1991].
@@ -6233,7 +6223,7 @@ def albini_t_max(flame_length: cy.float) -> cy.float:
     return charact_t * travel_time
 
 
-# FIXME: What is t_max still doing here? I thought we decided to neglect the flight time! (Val)
+# FIXME: Consider removing t_max from this calculation for performance.
 @cy.cfunc
 @cy.exceptval(check=False)
 def spot_ignition_time(time_of_arrival: cy.float, flame_length: cy.float) -> cy.float:
