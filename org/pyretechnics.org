@@ -7764,6 +7764,7 @@ for (name, matrix) in combined_behavior_unlimited.items():
     print(matrix[100:105,100:105])
 #+end_src
 
+#+NAME: run-burn-all-cells-as-head-fire-results
 #+RESULTS: run-burn-all-cells-as-head-fire
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
@@ -8064,6 +8065,7 @@ for (name, matrix) in combined_behavior_unlimited.items():
     print(matrix[100:105,100:105])
 #+end_src
 
+#+NAME: run-burn-all-cells-toward-azimuth-results
 #+RESULTS: run-burn-all-cells-toward-azimuth
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
