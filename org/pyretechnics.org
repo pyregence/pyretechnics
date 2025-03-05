@@ -11010,10 +11010,10 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
      :END:
 
 #+NAME: run-spread-fire-with-phi-field
-#+begin_src python :results silent :tangle ../prof/spread_fire.py
+#+begin_src python :results silent
 import numpy as np
-import pyretechnics.eulerian_level_set as els
 from pyretechnics.space_time_cube import SpaceTimeCube
+import pyretechnics.eulerian_level_set as els
 import time
 
 #============================================================================================

@@ -1,4 +1,3 @@
-# [[file:../org/pyretechnics.org::run-spread-fire-with-phi-field][run-spread-fire-with-phi-field]]
 import numpy as np
 import pyretechnics.eulerian_level_set as els
 from pyretechnics.space_time_cube import SpaceTimeCube
@@ -165,4 +164,3 @@ print("Runtime Per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
 Mha_per_cell = 0.09e-6
 ms_per_hr = 3.6e6
 print(f"Areal Throughput: {(ms_per_hr*Mha_per_cell/runtime_per_burned_cell):.2f} Mha/(CPU.hr)")
-# run-spread-fire-with-phi-field ends here
