@@ -6499,43 +6499,43 @@ def save_areal_heat_output_as_histogram(areal_heat_output, moisture_category):
     plt.title("Areal Heat Output for All Surface Fuel Models - " + str.capitalize(moisture_category) + " Conditions")
     plt.xlabel("Areal Heat Output (kJ/m^2)")
     plt.ylabel("Probability Density")
-    plt.savefig("pics/fm_areal_heat_output_" + moisture_category + ".png")
+    plt.savefig("org/pics/fm_areal_heat_output_" + moisture_category + ".png")
     plt.close("all")
 
-fuel_moisture_dry = [
+fuel_moisture_dry = (
     0.025, # dead_1hr
     0.050, # dead_10hr
     0.075, # dead_100hr
     0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
     0.45, # live_herbaceous
     0.30, # live_woody
-]
+)
 
-fuel_moisture_mod = [
+fuel_moisture_mod = (
     0.05, # dead_1hr
     0.10, # dead_10hr
     0.15, # dead_100hr
     0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
     0.90, # live_herbaceous
     0.60, # live_woody
-]
+)
 
-fuel_moisture_wet = [
+fuel_moisture_wet = (
     0.10, # dead_1hr
     0.20, # dead_10hr
     0.30, # dead_100hr
     0.00, # dead_herbaceous (will be set by moisturize for dynamic fuel models)
     1.80, # live_herbaceous
     1.20, # live_woody
-]
+)
 
 areal_heat_output = {
     "dry": [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_dry))
-            for v in fm.fuel_model_table.values()],
+            for v in fm.list_fuel_models()],
     "mod": [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_mod))
-            for v in fm.fuel_model_table.values()],
+            for v in fm.list_fuel_models()],
     "wet": [calc_areal_heat_output_from_fuel_model(fm.moisturize(v, fuel_moisture_wet))
-            for v in fm.fuel_model_table.values()],
+            for v in fm.list_fuel_models()],
 }
 
 for moisture_category in ["dry", "mod", "wet"]:
@@ -6568,17 +6568,15 @@ pprint({
 #+begin_example
 Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 ================================================================================
-{'dry': 9517.751889162279, 'mod': 7050.1670422893385, 'wet': 3533.8201824045955}
+{'dry': 9517.75048828125, 'mod': 7050.16748046875, 'wet': 3533.8206787109375}
 
 Mean Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 ================================================================================
-{'dry': 14270.339217272918,
- 'mod': 10954.330808704475,
- 'wet': 5705.4111616613945}
+{'dry': 14270.339441759834, 'mod': 10954.33150508486, 'wet': 5705.411192269161}
 
 Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 ================================================================================
-{'dry': 54285.275558317175, 'mod': 45108.6289738327, 'wet': 32325.037970995523}
+{'dry': 54285.28515625, 'mod': 45108.625, 'wet': 32325.0390625}
 #+end_example
 
 #+NAME: areal-heat-output-all-fm-dry
@@ -6719,26 +6717,26 @@ pprint({
                                  50: 15.75,
                                  75: 27.0,
                                  100: 81.0},
- 'flight_distance_penalty_percentiles': {0: 9.357622968840175e-14,
-                                         25: 0.1353352832366127,
-                                         50: 0.36787944117144233,
-                                         75: 0.5961628688829711,
-                                         100: 0.9672161004820059},
- 'schroeder_ignition_probability_percentiles': {0: 0.0410643084416302,
-                                                25: 0.05806152126033939,
-                                                50: 0.1462606114856146,
-                                                75: 0.32092711244047045,
-                                                100: 0.6532412198970651},
- 'spot_ignition_probability_percentiles': {0: 3.842643158729363e-15,
-                                           25: 0.016675322729050666,
-                                           50: 0.05110365673058294,
-                                           75: 0.1456615550998886,
-                                           100: 0.6318254253829478},
+ 'flight_distance_penalty_percentiles': {0: 9.357622912219837e-14,
+                                         25: 0.1353352814912796,
+                                         50: 0.3678794503211975,
+                                         75: 0.5961628556251526,
+                                         100: 0.9672160744667053},
+ 'schroeder_ignition_probability_percentiles': {0: 0.041064321994781494,
+                                                25: 0.05806152522563934,
+                                                50: 0.14626064896583557,
+                                                75: 0.3209269940853119,
+                                                100: 0.6532412171363831},
+ 'spot_ignition_probability_percentiles': {0: 3.842644403731403e-15,
+                                           25: 0.01667532404047145,
+                                           50: 0.05110364729968131,
+                                           75: 0.14566152291234502,
+                                           100: 0.6318254057185051},
  'spot_fire_count_percentiles': {0: 0.0,
-                                 25: 0.09538065053197298,
-                                 50: 0.6628202779508812,
-                                 75: 2.3768372423970905,
-                                 100: 51.17785945601877}}
+                                 25: 0.09538073616268317,
+                                 50: 0.662820466042433,
+                                 75: 2.3768363731988043,
+                                 100: 51.17785786319891}}
 #+end_example
 
 We can see that depending on the surface fuel model and weather

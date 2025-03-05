@@ -214,6 +214,18 @@ fuel_model_table = cy.declare(dict[int, FuelModel], {
 
 @cy.ccall
 @cy.inline
+def list_fuel_model_numbers() -> list[int]:
+    return list(fuel_model_table.keys())
+
+
+@cy.ccall
+@cy.inline
+def list_fuel_models() -> list[FuelModel]:
+    return list(fuel_model_table.values())
+
+
+@cy.ccall
+@cy.inline
 @cy.exceptval(check=False)
 def fuel_model_exists(fuel_model_number: cy.int) -> cy.bint:
     return fuel_model_number in fuel_model_table

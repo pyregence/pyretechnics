@@ -48,7 +48,7 @@ cdef float calc_fireline_intensity(float reaction_intensity, float flame_depth) 
 
 cdef float calc_flame_length(float fireline_intensity) noexcept
 
-cdef float calc_areal_heat_output(float spread_rate, float fireline_intensity) noexcept
+cpdef float calc_areal_heat_output(float spread_rate, float fireline_intensity) noexcept
 
 cdef float calc_max_effective_wind_speed(float reaction_intensity) noexcept
 

@@ -327,7 +327,7 @@ def calc_flame_length(fireline_intensity: cy.float) -> cy.float:
     return 0.07747042253266703 * pow(fireline_intensity, 0.46)
 
 
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def calc_areal_heat_output(spread_rate: cy.float, fireline_intensity: cy.float) -> cy.float:

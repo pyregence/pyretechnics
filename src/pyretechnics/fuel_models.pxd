@@ -12,6 +12,10 @@ cdef FuelModel expand_compact_fuel_model(int fuel_model_number) noexcept
 
 cdef dict[int, FuelModel] fuel_model_table
 
+cpdef list[int] list_fuel_model_numbers()
+
+cpdef list[FuelModel] list_fuel_models()
+
 cpdef bint fuel_model_exists(int fuel_model_number) noexcept
 
 cpdef FuelModel get_fuel_model(int fuel_model_number) noexcept

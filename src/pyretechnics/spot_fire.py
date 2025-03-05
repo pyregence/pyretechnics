@@ -302,7 +302,7 @@ def heat_of_preignition(temperature: cy.float, fine_fuel_moisture: cy.float) -> 
     return Q_a + Q_b + Q_c + Q_d
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy.float) -> cy.float:
     """
@@ -319,7 +319,7 @@ def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy
     return min(P_I, 1.0)
 # schroeder-ignition-probability ends here
 # [[file:../../org/pyretechnics.org::firebrand-flight-survival-probability][firebrand-flight-survival-probability]]
-@cy.cfunc
+@cy.ccall
 @cy.inline
 @cy.exceptval(check=False)
 def firebrand_flight_survival_probability(spotting_distance: cy.float, decay_distance: cy.float) -> cy.float:

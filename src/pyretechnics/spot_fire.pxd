@@ -26,9 +26,6 @@ cdef (float, float) resolve_lognormal_params(
     float wind_speed_20ft
     ) noexcept
 
-cdef float sample_normal(BufferedRandGen rng, float mu, float sd) noexcept
-cdef float sample_lognormal(BufferedRandGen rng, float mu, float sd) noexcept
-
 cdef double sigma_y_scalar_m = 0.92 * 0.47 / (0.88 * 0.88)
 
 cdef float himoto_resolve_default_sigma_y_from_lognormal_params(float mu_x, float sigma_x) noexcept
@@ -44,14 +41,17 @@ cdef float resolve_crosswind_distance_stdev(
     float wind_speed_20ft
     ) noexcept
 
+cdef float sample_normal(BufferedRandGen rng, float mu, float sd) noexcept
+cdef float sample_lognormal(BufferedRandGen rng, float mu, float sd) noexcept
+
 cdef JumpDistribution resolve_JumpDistribution(SpotConfig spot_config, float fireline_intensity, float wind_speed_20ft)
 
 cdef float sample_downwind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
 cdef float sample_crosswind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
 
-cdef float firebrand_flight_survival_probability(float spotting_distance, float decay_distance) noexcept
 cdef float heat_of_preignition(float temperature, float fine_fuel_moisture) noexcept
-cdef float schroeder_ignition_probability(float temperature, float fine_fuel_moisture) noexcept
+cpdef float schroeder_ignition_probability(float temperature, float fine_fuel_moisture) noexcept
+cpdef float firebrand_flight_survival_probability(float spotting_distance, float decay_distance) noexcept
 
 cdef float albini_firebrand_maximum_height(float firebrand_diameter) noexcept
 cdef float albini_t_max(float flame_length) noexcept
