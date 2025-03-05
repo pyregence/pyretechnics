@@ -40,10 +40,15 @@ then
     exit 1
 fi
 
+RUN_DIR=$(pwd)
+SCRIPT_DIR=$(dirname "$0")
 CMD=$1
 ARGS=${@:2:$#}
 
 export PYTHONPATH="src:test"
+
+# Ensure current directory contains channels.scm and guix.scm
+cd $SCRIPT_DIR
 
 case $CMD in
 
@@ -124,3 +129,6 @@ case $CMD in
         ;;
 
 esac
+
+# Return to the directory where make.sh was run
+cd $RUN_DIR

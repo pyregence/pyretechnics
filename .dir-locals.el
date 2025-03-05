@@ -3,7 +3,11 @@
 
 ((org-mode    . ((eval (lambda ()
                          (let ((project-root-dir (project-root (project-current))))
-                           (setq-local python-shell-extra-pythonpaths
+                           (setq-local python-shell-interpreter
+                                       (concat project-root-dir "make.sh")
+                                       python-shell-interpreter-args
+                                       (concat "shell -- python3 -i")
+                                       python-shell-extra-pythonpaths
                                        (append
                                         (mapcar 'expand-file-name
                                                 (list
@@ -12,7 +16,11 @@
                                         python-shell-extra-pythonpaths)))))))
  (python-mode . ((eval (lambda ()
                          (let ((project-root-dir (project-root (project-current))))
-                           (setq-local python-shell-extra-pythonpaths
+                           (setq-local python-shell-interpreter
+                                       (concat project-root-dir "make.sh")
+                                       python-shell-interpreter-args
+                                       (concat "shell -- python3 -i")
+                                       python-shell-extra-pythonpaths
                                        (append
                                         (mapcar 'expand-file-name
                                                 (list
