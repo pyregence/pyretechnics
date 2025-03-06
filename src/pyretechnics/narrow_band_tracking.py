@@ -308,14 +308,14 @@ class TrackedCellsIterator:
     # TODO: OPTIM It may be faster to maintain an iteration index and compare it to num_tracked_cells.
     @cy.cfunc
     @cy.exceptval(check=False)
-    def has_next(self: TrackedCellsIterator) -> cy.bint:
+    def has_next(self) -> cy.bint:
         return self.segment_iter is not None
 
 
     # FIXME: Cython uninitialized warning
     @cy.cfunc
     @cy.exceptval(check=False)
-    def next_cell(self: TrackedCellsIterator) -> coord_yx:
+    def next_cell(self) -> coord_yx:
         segment: CellsCountSegment = self.current_segment
         y      : pyidx             = segment.y
         x      : pyidx             = segment.x0 + self.current_k

@@ -35,7 +35,7 @@ class BufferedRandGen:
 
     @cy.cfunc
     @cy.exceptval(check=False)
-    def next_poisson(self: BufferedRandGen, M: cy.double) -> cy.long:
+    def next_poisson(self, M: cy.double) -> cy.long:
         """
         A method for efficiently drawing from a Poisson distribution of (very) small mean,
         doing fewer random draws than method calls.
@@ -78,7 +78,7 @@ class BufferedRandGen:
 
     @cy.cfunc
     @cy.exceptval(check=False)
-    def next_uniform(self: BufferedRandGen) -> cy.float:
+    def next_uniform(self) -> cy.float:
         if not(self.uniform_pos < 1024):
             __reset_uniform_buffer(self)
         ret: cy.float     = self.uniform_buf[self.uniform_pos]
@@ -88,7 +88,7 @@ class BufferedRandGen:
 
     @cy.cfunc
     @cy.exceptval(check=False)
-    def next_normal(self: BufferedRandGen) -> cy.float:
+    def next_normal(self) -> cy.float:
         if not(self.normal_pos < 1024):
             __reset_normal_buffer(self)
         ret: cy.float    = self.normal_buf[self.normal_pos]

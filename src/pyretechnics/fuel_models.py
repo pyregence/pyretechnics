@@ -28,7 +28,7 @@ else:
 #                         sigma_live_herbaceous,
 #                         sigma_live_woody), # name
 #   }
-compact_fuel_model_table = cy.declare(dict[int, CompactFuelModel], {
+compact_fuel_model_table = cy.declare(dict, { # dict[int, CompactFuelModel]
     # Anderson 13:
     # Grass and Grass-dominated (short-grass,timber-grass-and-understory,tall-grass)
     1  : (1.0, 12.0, 8.0, 0.0340, 0.0000, 0.0000, 0.0000, 0.0000, 3500.0,   0.0,  0.0,    0.0,    0.0), # R01
@@ -207,7 +207,7 @@ def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
 
 
 # FIXME: Replace this dictionary with something more efficient
-fuel_model_table = cy.declare(dict[int, FuelModel], {
+fuel_model_table = cy.declare(dict, { # dict[int, FuelModel]
     k: expand_compact_fuel_model(k) for k in compact_fuel_model_table.keys()
 })
 

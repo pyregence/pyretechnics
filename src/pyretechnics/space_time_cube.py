@@ -30,7 +30,7 @@ def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
             raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: pyidx) -> tuple[pyidx, pyidx]:
     """

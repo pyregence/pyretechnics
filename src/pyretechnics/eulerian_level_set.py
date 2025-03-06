@@ -439,7 +439,7 @@ class SpreadInputs:
 
     # TODO: Move this code to fuel_models.py
     @cy.cfunc
-    def __init_fuel_models(self: SpreadInputs) -> cy.void:
+    def __init_fuel_models(self) -> cy.void:
         # Allocate an empty FuelModel array in memory
         fuel_model_cache: cy.pointer(FuelModel) = cy.cast(cy.pointer(FuelModel),
                                                           malloc(300 * cy.sizeof(FuelModel)))
@@ -460,11 +460,11 @@ class SpreadInputs:
     @cy.cfunc
     @cy.inline
     @cy.exceptval(check=False)
-    def get_fm_struct(self: SpreadInputs, fm_number: pyidx) -> FuelModel:
+    def get_fm_struct(self, fm_number: pyidx) -> FuelModel:
         return self.fuel_model_cache[fm_number]
 
 
-    def __dealloc__(self: SpreadInputs) -> cy.void:
+    def __dealloc__(self) -> cy.void:
         free(self.fuel_model_cache) # no-op if self.fuel_model_cache is NULL
 
 
@@ -947,7 +947,7 @@ class TrackedCellsArrays:
 
 
     @cy.cfunc
-    def reset_size(self: TrackedCellsArrays, num_tracked_cells: pyidx) -> cy.void:
+    def reset_size(self, num_tracked_cells: pyidx) -> cy.void:
         """
         Ensures that this can hold at least `num_tracked_cells`, resizing the internal arrays if necessary.
         Also updates `self.num_tracked_cells`.
@@ -985,7 +985,7 @@ class TrackedCellsArrays:
         self.num_tracked_cells = num_tracked_cells
 
 
-    def __dealloc__(self: TrackedCellsArrays) -> cy.void:
+    def __dealloc__(self) -> cy.void:
         free(self.sfmin_cache)
         free(self.ellipse_cache)
         free(self.pass1_cache)

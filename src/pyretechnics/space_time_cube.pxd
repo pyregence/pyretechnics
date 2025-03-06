@@ -4,7 +4,7 @@ from pyretechnics.cy_types cimport pyidx
 
 cdef bint is_pos_int(object x) noexcept
 cdef int divide_evenly(int dividend, int divisor)
-cdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
+cpdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
 # def maybe_repeat_array(array, axis_repetitions)
 
 cdef class ISpaceTimeCube:

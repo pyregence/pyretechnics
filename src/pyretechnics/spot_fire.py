@@ -11,7 +11,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.fuel_models as fm
     import cython.cimports.pyretechnics.surface_fire as sf
 else:
-    from math import round, sqrt, pow, log, exp, sin, cos
+    from math import sqrt, pow, log, exp, sin, cos
     from pyretechnics.py_types import \
         pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
     from pyretechnics.random import BufferedRandGen
