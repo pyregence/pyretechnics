@@ -19,15 +19,24 @@ extensions = [
     Extension("*",
               ["src/pyretechnics/*.py"],
               include_dirs=[numpy.get_include()],
-              extra_compile_args=["-Wno-unused-result",
-                                  "-Wsign-compare",
-                                  "-DNDEBUG",
-                                  "-g",
-                                  "-fwrapv",
-                                  "-O3",
-                                  "-Wall",
-                                  "-fno-semantic-interposition",
-                                  "-fPIC"])
+              extra_compile_args=[
+                  # Warnings
+                  "-Wall",
+                  "-Wno-maybe-uninitialized",
+                  "-Wno-unused-result",
+                  "-Wno-unused-function",
+                  "-Wsign-compare",
+                  # Optimization
+                  "-O3",
+                  "-fno-semantic-interposition",
+                  # Debugging
+                  "-g",
+                  "-DNDEBUG",
+                  "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
+                  # Code Generation
+                  "-fwrapv",
+                  "-fPIC",
+              ])
 ]
 
 setup(name="pyretechnics",
