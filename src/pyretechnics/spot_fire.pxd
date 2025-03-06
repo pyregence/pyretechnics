@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::spot-fire-pxd][spot-fire-pxd]]
 from pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
 from pyretechnics.random cimport BufferedRandGen
 from pyretechnics.space_time_cube cimport ISpaceTimeCube
@@ -97,3 +98,4 @@ cdef object spread_firebrands(
     long num_firebrands,
     SpotConfig spot_config,
     )
+# spot-fire-pxd ends here

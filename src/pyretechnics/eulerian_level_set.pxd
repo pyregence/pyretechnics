@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::eulerian-level-set-pxd][eulerian-level-set-pxd]]
 # from pyretechnics.cy_types cimport pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
 #      FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
 #      PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
@@ -302,3 +303,4 @@
 #     object spot_config=?,
 #     dict[str, float] cube_refresh_rates=?,
 #     )
+# eulerian-level-set-pxd ends here

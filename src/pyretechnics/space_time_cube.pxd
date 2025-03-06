@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::space-time-cube-pxd][space-time-cube-pxd]]
 cimport numpy as np
 from pyretechnics.cy_types cimport pyidx
 
@@ -45,3 +46,4 @@ cdef class LazySpaceTimeCube(ISpaceTimeCube):
     # def getSubcube(self, t_range, y_range, x_range)
     # def getFullyRealizedCube(self, cache=False)
     # def releaseFullyRealizedCube(self)
+# space-time-cube-pxd ends here

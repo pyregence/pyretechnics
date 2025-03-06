@@ -12867,6 +12867,172 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
   :PROPERTIES:
   :CUSTOM_ID: appendices
   :END:
+** Custom Types (pyretechnics.py_types)
+   :PROPERTIES:
+   :CUSTOM_ID: custom-types-(pyretechnics.py_types)
+   :header-args:python+: :session *pyretechnics.py_types*
+   :header-args:python+: :tangle  ../src/pyretechnics/py_types.py
+   :header-args:python+: :exports code
+   :END:
+
+#+NAME: py-types
+#+begin_src python
+#==============================================================
+# Runtime-defined type aliases
+#==============================================================
+
+import cython as cy
+
+pyidx            = cy.typedef(cy.Py_ssize_t)
+vec_xy           = cy.typedef(tuple[cy.float, cy.float])
+vec_xyz          = cy.typedef(tuple[cy.float, cy.float, cy.float])
+coord_yx         = cy.typedef(tuple[pyidx, pyidx])
+coord_tyx        = cy.typedef(tuple[pyidx, pyidx, pyidx])
+fcatarr          = cy.typedef(tuple[cy.float, cy.float])
+fclaarr          = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
+CompactFuelModel = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float,
+                                    cy.float, cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
+
+FuelModel = cy.struct(
+    number               = cy.int,
+    delta                = cy.float,
+    M_x                  = fclaarr,
+    M_f                  = fclaarr,
+    w_o                  = fclaarr,
+    sigma                = fclaarr,
+    h                    = fclaarr,
+    rho_p                = fclaarr,
+    S_T                  = fclaarr,
+    S_e                  = fclaarr,
+    dynamic              = cy.bint,
+    burnable             = cy.bint,
+    exp_A_sigma          = fclaarr,
+    firemod_size_classes = fclaarr,
+    f_ij                 = fclaarr,
+    f_i                  = fcatarr,
+    g_ij                 = fclaarr,
+)
+
+ProjectedVectors = cy.struct(
+    wind_vector_3d  = vec_xyz,
+    slope_vector_3d = vec_xyz,
+)
+
+FireBehaviorMin = cy.struct(
+    base_spread_rate         = cy.float,
+    base_fireline_intensity  = cy.float,
+    max_effective_wind_speed = cy.float,
+    _phiS_G                  = cy.float,
+    _phiW_scalr              = cy.float,
+    _phiW_expnt              = cy.float,
+    _ws_scalr                = cy.float,
+    _ws_expnt                = cy.float,
+)
+
+FireBehaviorMax = cy.struct(
+    max_fire_type          = cy.int,
+    max_spread_rate        = cy.float,
+    max_spread_direction   = vec_xyz,
+    max_fireline_intensity = cy.float,
+    max_flame_length       = cy.float,
+    length_to_width_ratio  = cy.float,
+    eccentricity           = cy.float,
+    critical_spread_rate   = cy.float,
+)
+
+SpreadBehavior = cy.struct(
+    dphi_dt            = cy.float,
+    fire_type          = cy.int,
+    spread_rate        = cy.float,
+    spread_direction   = vec_xyz,
+    fireline_intensity = cy.float,
+    flame_length       = cy.float,
+)
+
+CrownSpreadInfo = cy.struct(
+    fire_type            = cy.int,
+    spread_rate          = cy.float,
+    critical_spread_rate = cy.float,
+)
+
+SpotConfig = cy.struct(
+    random_seed                  = cy.long,
+    firebrands_per_unit_heat     = cy.float,
+    downwind_distance_mean       = cy.float,
+    fireline_intensity_exponent  = cy.float,
+    wind_speed_exponent          = cy.float,
+    downwind_variance_mean_ratio = cy.float,
+    crosswind_distance_stdev     = cy.float,
+    decay_distance               = cy.float,
+)
+
+JumpDistribution = cy.struct(
+    # Downwind LogNormal params
+    # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
+    mu_x    = cy.float, # dimensionless (log-space)
+    sigma_x = cy.float, # dimensionless (log-space)
+    # Crosswind normal params
+    # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
+    sigma_y = cy.float, # meters
+)
+
+# Pre-computed coefficients to apply elliptical wavelet math as fast as possible
+# once the phi gradient information is available.
+# See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.
+PartialedEllWavelet = cy.struct(
+    Vh_3d = vec_xyz,  # Heading spread rate vector (m/min)
+    ewc_A = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
+    ewc_B = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
+    ewc_C = cy.float, # Dimensionless elliptical wavelet coefficient (>= 0)
+)
+
+CellInputs = cy.struct(
+    slope                         = cy.float,
+    aspect                        = cy.float,
+    fuel_model_number             = cy.float,
+    canopy_cover                  = cy.float,
+    canopy_height                 = cy.float,
+    canopy_base_height            = cy.float,
+    canopy_bulk_density           = cy.float,
+    wind_speed_10m                = cy.float,
+    upwind_direction              = cy.float,
+    fuel_moisture_dead_1hr        = cy.float,
+    fuel_moisture_dead_10hr       = cy.float,
+    fuel_moisture_dead_100hr      = cy.float,
+    fuel_moisture_live_herbaceous = cy.float,
+    fuel_moisture_live_woody      = cy.float,
+    foliar_moisture               = cy.float,
+    fuel_spread_adjustment        = cy.float,
+    weather_spread_adjustment     = cy.float,
+)
+
+# Pre-computed information required to compute dphi/dt once the phi
+# gradient is known. Derived from the surface and crown wavelets.
+#
+# NOTE: The reason to make this a small struct stored in an array is
+#       efficiency - we want the CPU to have a low cache miss rate.
+#
+# NOTE: A significant benefit of this architecture is that it's
+#       Rothermel-agnostic. EllipticalInfo could conceivably be
+#       implemented using variants of the Rothermel model. This can be
+#       valuable to give flexibility to users.
+EllipticalInfo = cy.struct(
+    cell_index           = coord_yx,
+    elevation_gradient   = vec_xy,
+    surface_wavelet      = PartialedEllWavelet,
+    crown_wavelet        = PartialedEllWavelet,
+    crowning_spread_rate = cy.float, # Surface spread rate at which crowning occurs
+)
+
+# Some data saved during the 1st Runge-Kutta pass.
+Pass1CellOutput = cy.struct(
+    cell_index      = coord_yx,
+    phi_gradient_xy = vec_xy,
+    dphi_dt_flim    = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
+    phi_old         = cy.float,
+)
+#+end_src
+
 ** Units Conversion Functions (pyretechnics.conversion)
    :PROPERTIES:
    :CUSTOM_ID: units-conversion-functions-(pyretechnics.conversion)
@@ -13289,61 +13455,6 @@ def wind_speed_20ft_to_wind_speed_10m(wind_speed_20ft: cy.float) -> cy.float:
     return wind_speed_20ft * 1.15
 #+end_src
 
-#+NAME: conversion-pxd
-#+begin_src python :eval no :tangle ../src/pyretechnics/conversion.pxd
-from pyretechnics.cy_types cimport vec_xy
-
-cpdef float rad_to_deg(float radians) noexcept
-cpdef float deg_to_rad(float degrees) noexcept
-cpdef float deg_to_ratio(float degrees) noexcept
-cpdef float ratio_to_deg(float ratio) noexcept
-cpdef float F_to_K(float degrees) noexcept
-cpdef float K_to_F(float degrees) noexcept
-cpdef float F_to_C(float degrees) noexcept
-cpdef float C_to_F(float degrees) noexcept
-cpdef float ch_to_m(float ch) noexcept
-cpdef float m_to_ch(float m) noexcept
-cpdef float m_to_ft(float m) noexcept
-cpdef float ft_to_m(float ft) noexcept
-cpdef float mph_to_mps(float mph) noexcept
-cpdef float mps_to_mph(float mps) noexcept
-cpdef float km_hr_to_mps(float km_hr) noexcept
-cpdef float mps_to_km_hr(float mps) noexcept
-cpdef float mph_to_km_hr(float mph) noexcept
-cpdef float km_hr_to_mph(float km_hr) noexcept
-cpdef float m_min_to_km_hr(float m_min) noexcept
-cpdef float km_hr_to_m_min(float km_hr) noexcept
-cpdef float m_min_to_mph(float m_min) noexcept
-cpdef float mph_to_m_min(float mph) noexcept
-cpdef float mps_to_fpm(float mps) noexcept
-cpdef float fpm_to_mps(float fpm) noexcept
-cpdef float mph_to_fpm(float mph) noexcept
-cpdef float fpm_to_mph(float fpm) noexcept
-cpdef float Btu_ft_s_to_kW_m(float Btu_ft_s) noexcept
-cpdef float kW_m_to_Btu_ft_s(float kW_m) noexcept
-cpdef float Btu_lb_to_kJ_kg(float Btu_lb) noexcept
-cpdef float kJ_kg_to_Btu_lb(float kJ_kg) noexcept
-cpdef float kg_m3_to_lb_ft3(float kg_m3) noexcept
-cpdef float lb_ft3_to_kg_m3(float lb_ft3) noexcept
-cpdef float percent_to_dec(float percent) noexcept
-cpdef float dec_to_percent(float decimal) noexcept
-cpdef float sec_to_min(float seconds) noexcept
-cpdef float min_to_sec(float minutes) noexcept
-cpdef float ms_to_min(float milliseconds) noexcept
-cpdef float min_to_ms(float minutes) noexcept
-cpdef float hour_to_min(float hours) noexcept
-cpdef float min_to_hour(float minutes) noexcept
-cpdef float day_to_min(float days) noexcept
-cpdef float min_to_day(float minutes) noexcept
-cpdef vec_xy cartesian_to_polar(float x, float y) noexcept
-cpdef vec_xy polar_to_cartesian(float r, float theta) noexcept
-cpdef vec_xy cartesian_to_azimuthal(float x, float y) noexcept
-cpdef vec_xy azimuthal_to_cartesian(float r, float azimuth) noexcept
-cpdef float opposite_direction(float theta) noexcept
-cpdef float wind_speed_10m_to_wind_speed_20ft(float wind_speed_10m) noexcept
-cpdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft) noexcept
-#+end_src
-
 ** Vector Utility Functions (pyretechnics.vector_utils)
    :PROPERTIES:
    :CUSTOM_ID: vector-utility-functions-(pyretechnics.vector_utils)
@@ -13525,311 +13636,6 @@ def rotate_on_sloped_plane(vector: vec_xyz, theta: cy.float, slope: cy.float, as
         vector_i[1] + vector_k[1],
         vector_i[2] + vector_k[2],
     )
-#+end_src
-
-#+NAME: vector-utils-pxd
-#+begin_src python :eval no :tangle ../src/pyretechnics/vector_utils.pxd
-from pyretechnics.cy_types cimport vec_xy, vec_xyz
-
-cpdef float dot_2d(vec_xy vector1, vec_xy vector2) noexcept
-cpdef float dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cpdef vec_xy scale_2d(float scalar, vec_xy vector) noexcept
-cpdef vec_xyz scale_3d(float scalar, vec_xyz vector) noexcept
-cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
-cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cpdef float vector_magnitude_2d(vec_xy vector) noexcept
-cpdef float vector_magnitude_3d(vec_xyz vector) noexcept
-cpdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
-cpdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
-cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
-cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
-cpdef float spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
-cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
-cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, float theta, float slope, float aspect) noexcept
-#+end_src
-
-#+NAME: cy-types-pxd
-#+begin_src python :eval no :tangle ../src/pyretechnics/cy_types.pxd
-#==================================================
-# Compile-time-defined type aliases
-#==================================================
-
-ctypedef Py_ssize_t pyidx
-ctypedef (float, float) vec_xy
-ctypedef (float, float, float) vec_xyz
-ctypedef (pyidx, pyidx) coord_yx
-ctypedef (pyidx, pyidx, pyidx) coord_tyx
-ctypedef (float, float) fcatarr
-ctypedef (float, float, float, float, float, float) fclaarr
-ctypedef (float, float, float, float, float, float, float, float, float, float, float, float, float) CompactFuelModel
-
-cdef struct FuelModel:
-    int number
-    float delta
-    fclaarr M_x
-    fclaarr M_f
-    fclaarr w_o
-    fclaarr sigma
-    fclaarr h
-    fclaarr rho_p
-    fclaarr S_T
-    fclaarr S_e
-    bint dynamic
-    bint burnable
-    fclaarr exp_A_sigma
-    fclaarr firemod_size_classes
-    fclaarr f_ij
-    fcatarr f_i
-    fclaarr g_ij
-
-cdef struct ProjectedVectors:
-    vec_xyz wind_vector_3d
-    vec_xyz slope_vector_3d
-
-cdef struct FireBehaviorMin:
-    float base_spread_rate
-    float base_fireline_intensity
-    float max_effective_wind_speed
-    float _phiS_G
-    float _phiW_scalr
-    float _phiW_expnt
-    float _ws_scalr
-    float _ws_expnt
-
-cdef struct FireBehaviorMax:
-    int max_fire_type
-    float max_spread_rate
-    vec_xyz max_spread_direction
-    float max_fireline_intensity
-    float max_flame_length
-    float length_to_width_ratio
-    float eccentricity
-    float critical_spread_rate
-
-cdef struct SpreadBehavior:
-    float dphi_dt
-    int fire_type
-    float spread_rate
-    vec_xyz spread_direction
-    float fireline_intensity
-    float flame_length
-
-cdef struct CrownSpreadInfo:
-    int fire_type
-    float spread_rate
-    float critical_spread_rate
-
-cdef struct SpotConfig:
-    long random_seed
-    float firebrands_per_unit_heat
-    float downwind_distance_mean
-    float fireline_intensity_exponent
-    float wind_speed_exponent
-    float downwind_variance_mean_ratio
-    float crosswind_distance_stdev
-    float decay_distance
-
-cdef struct JumpDistribution:
-    float mu_x
-    float sigma_x
-    float sigma_y
-
-cdef struct PartialedEllWavelet:
-    vec_xyz Vh_3d
-    float ewc_A
-    float ewc_B
-    float ewc_C
-
-cdef struct CellInputs:
-    float slope
-    float aspect
-    float fuel_model_number
-    float canopy_cover
-    float canopy_height
-    float canopy_base_height
-    float canopy_bulk_density
-    float wind_speed_10m
-    float upwind_direction
-    float fuel_moisture_dead_1hr
-    float fuel_moisture_dead_10hr
-    float fuel_moisture_dead_100hr
-    float fuel_moisture_live_herbaceous
-    float fuel_moisture_live_woody
-    float foliar_moisture
-    float fuel_spread_adjustment
-    float weather_spread_adjustment
-
-cdef struct EllipticalInfo:
-    coord_yx cell_index
-    vec_xy elevation_gradient
-    PartialedEllWavelet surface_wavelet
-    PartialedEllWavelet crown_wavelet
-    float crowning_spread_rate
-
-cdef struct Pass1CellOutput:
-    coord_yx cell_index
-    vec_xy phi_gradient_xy
-    float dphi_dt_flim
-    float phi_old
-#+end_src
-
-#+NAME: py-types-py
-#+begin_src python :tangle ../src/pyretechnics/py_types.py
-#==============================================================
-# Runtime-defined type aliases
-#==============================================================
-
-import cython as cy
-
-pyidx            = cy.typedef(cy.Py_ssize_t)
-vec_xy           = cy.typedef(tuple[cy.float, cy.float])
-vec_xyz          = cy.typedef(tuple[cy.float, cy.float, cy.float])
-coord_yx         = cy.typedef(tuple[pyidx, pyidx])
-coord_tyx        = cy.typedef(tuple[pyidx, pyidx, pyidx])
-fcatarr          = cy.typedef(tuple[cy.float, cy.float])
-fclaarr          = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
-CompactFuelModel = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float,
-                                    cy.float, cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
-
-FuelModel = cy.struct(
-    number               = cy.int,
-    delta                = cy.float,
-    M_x                  = fclaarr,
-    M_f                  = fclaarr,
-    w_o                  = fclaarr,
-    sigma                = fclaarr,
-    h                    = fclaarr,
-    rho_p                = fclaarr,
-    S_T                  = fclaarr,
-    S_e                  = fclaarr,
-    dynamic              = cy.bint,
-    burnable             = cy.bint,
-    exp_A_sigma          = fclaarr,
-    firemod_size_classes = fclaarr,
-    f_ij                 = fclaarr,
-    f_i                  = fcatarr,
-    g_ij                 = fclaarr,
-)
-
-ProjectedVectors = cy.struct(
-    wind_vector_3d  = vec_xyz,
-    slope_vector_3d = vec_xyz,
-)
-
-FireBehaviorMin = cy.struct(
-    base_spread_rate         = cy.float,
-    base_fireline_intensity  = cy.float,
-    max_effective_wind_speed = cy.float,
-    _phiS_G                  = cy.float,
-    _phiW_scalr              = cy.float,
-    _phiW_expnt              = cy.float,
-    _ws_scalr                = cy.float,
-    _ws_expnt                = cy.float,
-)
-
-FireBehaviorMax = cy.struct(
-    max_fire_type          = cy.int,
-    max_spread_rate        = cy.float,
-    max_spread_direction   = vec_xyz,
-    max_fireline_intensity = cy.float,
-    max_flame_length       = cy.float,
-    length_to_width_ratio  = cy.float,
-    eccentricity           = cy.float,
-    critical_spread_rate   = cy.float,
-)
-
-SpreadBehavior = cy.struct(
-    dphi_dt            = cy.float,
-    fire_type          = cy.int,
-    spread_rate        = cy.float,
-    spread_direction   = vec_xyz,
-    fireline_intensity = cy.float,
-    flame_length       = cy.float,
-)
-
-CrownSpreadInfo = cy.struct(
-    fire_type            = cy.int,
-    spread_rate          = cy.float,
-    critical_spread_rate = cy.float,
-)
-
-SpotConfig = cy.struct(
-    random_seed                  = cy.long,
-    firebrands_per_unit_heat     = cy.float,
-    downwind_distance_mean       = cy.float,
-    fireline_intensity_exponent  = cy.float,
-    wind_speed_exponent          = cy.float,
-    downwind_variance_mean_ratio = cy.float,
-    crosswind_distance_stdev     = cy.float,
-    decay_distance               = cy.float,
-)
-
-JumpDistribution = cy.struct(
-    # Downwind LogNormal params
-    # Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)
-    mu_x    = cy.float, # dimensionless (log-space)
-    sigma_x = cy.float, # dimensionless (log-space)
-    # Crosswind normal params
-    # Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)
-    sigma_y = cy.float, # meters
-)
-
-# Pre-computed coefficients to apply elliptical wavelet math as fast as possible
-# once the phi gradient information is available.
-# See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.
-PartialedEllWavelet = cy.struct(
-    Vh_3d = vec_xyz,  # Heading spread rate vector (m/min)
-    ewc_A = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
-    ewc_B = cy.float, # Dimensionless elliptical wavelet coefficient (<= 0)
-    ewc_C = cy.float, # Dimensionless elliptical wavelet coefficient (>= 0)
-)
-
-CellInputs = cy.struct(
-    slope                         = cy.float,
-    aspect                        = cy.float,
-    fuel_model_number             = cy.float,
-    canopy_cover                  = cy.float,
-    canopy_height                 = cy.float,
-    canopy_base_height            = cy.float,
-    canopy_bulk_density           = cy.float,
-    wind_speed_10m                = cy.float,
-    upwind_direction              = cy.float,
-    fuel_moisture_dead_1hr        = cy.float,
-    fuel_moisture_dead_10hr       = cy.float,
-    fuel_moisture_dead_100hr      = cy.float,
-    fuel_moisture_live_herbaceous = cy.float,
-    fuel_moisture_live_woody      = cy.float,
-    foliar_moisture               = cy.float,
-    fuel_spread_adjustment        = cy.float,
-    weather_spread_adjustment     = cy.float,
-)
-
-# Pre-computed information required to compute dphi/dt once the phi
-# gradient is known. Derived from the surface and crown wavelets.
-#
-# NOTE: The reason to make this a small struct stored in an array is
-#       efficiency - we want the CPU to have a low cache miss rate.
-#
-# NOTE: A significant benefit of this architecture is that it's
-#       Rothermel-agnostic. EllipticalInfo could conceivably be
-#       implemented using variants of the Rothermel model. This can be
-#       valuable to give flexibility to users.
-EllipticalInfo = cy.struct(
-    cell_index           = coord_yx,
-    elevation_gradient   = vec_xy,
-    surface_wavelet      = PartialedEllWavelet,
-    crown_wavelet        = PartialedEllWavelet,
-    crowning_spread_rate = cy.float, # Surface spread rate at which crowning occurs
-)
-
-# Some data saved during the 1st Runge-Kutta pass.
-Pass1CellOutput = cy.struct(
-    cell_index      = coord_yx,
-    phi_gradient_xy = vec_xy,
-    dphi_dt_flim    = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
-    phi_old         = cy.float,
-)
 #+end_src
 
 ** SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)
@@ -14463,3 +14269,1077 @@ savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="h
 # #+end_src
 
 Layer Disagreement: [-10.93608, 8.9857025] inches/min
+
+** Cython PXD Files
+   :PROPERTIES:
+   :CUSTOM_ID: cython-pxd-files
+   :header-args:python+: :exports code
+   :header-args:python+: :eval no
+   :END:
+
+The following sections contain the PXD (Cython description) files used
+by the Cython compiler to enable fast C-level linking between modules.
+
+*** pyretechnics.cy_types
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-cy-types-pxd
+    :END:
+
+#+NAME: cy-types-pxd
+#+begin_src python :tangle ../src/pyretechnics/cy_types.pxd
+#==================================================
+# Compile-time-defined type aliases
+#==================================================
+
+ctypedef Py_ssize_t pyidx
+ctypedef (float, float) vec_xy
+ctypedef (float, float, float) vec_xyz
+ctypedef (pyidx, pyidx) coord_yx
+ctypedef (pyidx, pyidx, pyidx) coord_tyx
+ctypedef (float, float) fcatarr
+ctypedef (float, float, float, float, float, float) fclaarr
+ctypedef (float, float, float, float, float, float, float, float, float, float, float, float, float) CompactFuelModel
+
+cdef struct FuelModel:
+    int number
+    float delta
+    fclaarr M_x
+    fclaarr M_f
+    fclaarr w_o
+    fclaarr sigma
+    fclaarr h
+    fclaarr rho_p
+    fclaarr S_T
+    fclaarr S_e
+    bint dynamic
+    bint burnable
+    fclaarr exp_A_sigma
+    fclaarr firemod_size_classes
+    fclaarr f_ij
+    fcatarr f_i
+    fclaarr g_ij
+
+cdef struct ProjectedVectors:
+    vec_xyz wind_vector_3d
+    vec_xyz slope_vector_3d
+
+cdef struct FireBehaviorMin:
+    float base_spread_rate
+    float base_fireline_intensity
+    float max_effective_wind_speed
+    float _phiS_G
+    float _phiW_scalr
+    float _phiW_expnt
+    float _ws_scalr
+    float _ws_expnt
+
+cdef struct FireBehaviorMax:
+    int max_fire_type
+    float max_spread_rate
+    vec_xyz max_spread_direction
+    float max_fireline_intensity
+    float max_flame_length
+    float length_to_width_ratio
+    float eccentricity
+    float critical_spread_rate
+
+cdef struct SpreadBehavior:
+    float dphi_dt
+    int fire_type
+    float spread_rate
+    vec_xyz spread_direction
+    float fireline_intensity
+    float flame_length
+
+cdef struct CrownSpreadInfo:
+    int fire_type
+    float spread_rate
+    float critical_spread_rate
+
+cdef struct SpotConfig:
+    long random_seed
+    float firebrands_per_unit_heat
+    float downwind_distance_mean
+    float fireline_intensity_exponent
+    float wind_speed_exponent
+    float downwind_variance_mean_ratio
+    float crosswind_distance_stdev
+    float decay_distance
+
+cdef struct JumpDistribution:
+    float mu_x
+    float sigma_x
+    float sigma_y
+
+cdef struct PartialedEllWavelet:
+    vec_xyz Vh_3d
+    float ewc_A
+    float ewc_B
+    float ewc_C
+
+cdef struct CellInputs:
+    float slope
+    float aspect
+    float fuel_model_number
+    float canopy_cover
+    float canopy_height
+    float canopy_base_height
+    float canopy_bulk_density
+    float wind_speed_10m
+    float upwind_direction
+    float fuel_moisture_dead_1hr
+    float fuel_moisture_dead_10hr
+    float fuel_moisture_dead_100hr
+    float fuel_moisture_live_herbaceous
+    float fuel_moisture_live_woody
+    float foliar_moisture
+    float fuel_spread_adjustment
+    float weather_spread_adjustment
+
+cdef struct EllipticalInfo:
+    coord_yx cell_index
+    vec_xy elevation_gradient
+    PartialedEllWavelet surface_wavelet
+    PartialedEllWavelet crown_wavelet
+    float crowning_spread_rate
+
+cdef struct Pass1CellOutput:
+    coord_yx cell_index
+    vec_xy phi_gradient_xy
+    float dphi_dt_flim
+    float phi_old
+#+end_src
+
+*** pyretechnics.conversion
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-conversion-pxd
+    :END:
+
+#+NAME: conversion-pxd
+#+begin_src python :tangle ../src/pyretechnics/conversion.pxd
+from pyretechnics.cy_types cimport vec_xy
+
+cpdef float rad_to_deg(float radians) noexcept
+cpdef float deg_to_rad(float degrees) noexcept
+cpdef float deg_to_ratio(float degrees) noexcept
+cpdef float ratio_to_deg(float ratio) noexcept
+cpdef float F_to_K(float degrees) noexcept
+cpdef float K_to_F(float degrees) noexcept
+cpdef float F_to_C(float degrees) noexcept
+cpdef float C_to_F(float degrees) noexcept
+cpdef float ch_to_m(float ch) noexcept
+cpdef float m_to_ch(float m) noexcept
+cpdef float m_to_ft(float m) noexcept
+cpdef float ft_to_m(float ft) noexcept
+cpdef float mph_to_mps(float mph) noexcept
+cpdef float mps_to_mph(float mps) noexcept
+cpdef float km_hr_to_mps(float km_hr) noexcept
+cpdef float mps_to_km_hr(float mps) noexcept
+cpdef float mph_to_km_hr(float mph) noexcept
+cpdef float km_hr_to_mph(float km_hr) noexcept
+cpdef float m_min_to_km_hr(float m_min) noexcept
+cpdef float km_hr_to_m_min(float km_hr) noexcept
+cpdef float m_min_to_mph(float m_min) noexcept
+cpdef float mph_to_m_min(float mph) noexcept
+cpdef float mps_to_fpm(float mps) noexcept
+cpdef float fpm_to_mps(float fpm) noexcept
+cpdef float mph_to_fpm(float mph) noexcept
+cpdef float fpm_to_mph(float fpm) noexcept
+cpdef float Btu_ft_s_to_kW_m(float Btu_ft_s) noexcept
+cpdef float kW_m_to_Btu_ft_s(float kW_m) noexcept
+cpdef float Btu_lb_to_kJ_kg(float Btu_lb) noexcept
+cpdef float kJ_kg_to_Btu_lb(float kJ_kg) noexcept
+cpdef float kg_m3_to_lb_ft3(float kg_m3) noexcept
+cpdef float lb_ft3_to_kg_m3(float lb_ft3) noexcept
+cpdef float percent_to_dec(float percent) noexcept
+cpdef float dec_to_percent(float decimal) noexcept
+cpdef float sec_to_min(float seconds) noexcept
+cpdef float min_to_sec(float minutes) noexcept
+cpdef float ms_to_min(float milliseconds) noexcept
+cpdef float min_to_ms(float minutes) noexcept
+cpdef float hour_to_min(float hours) noexcept
+cpdef float min_to_hour(float minutes) noexcept
+cpdef float day_to_min(float days) noexcept
+cpdef float min_to_day(float minutes) noexcept
+cpdef vec_xy cartesian_to_polar(float x, float y) noexcept
+cpdef vec_xy polar_to_cartesian(float r, float theta) noexcept
+cpdef vec_xy cartesian_to_azimuthal(float x, float y) noexcept
+cpdef vec_xy azimuthal_to_cartesian(float r, float azimuth) noexcept
+cpdef float opposite_direction(float theta) noexcept
+cpdef float wind_speed_10m_to_wind_speed_20ft(float wind_speed_10m) noexcept
+cpdef float wind_speed_20ft_to_wind_speed_10m(float wind_speed_20ft) noexcept
+#+end_src
+
+*** pyretechnics.vector_utils
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-vector-utils-pxd
+    :END:
+
+#+NAME: vector-utils-pxd
+#+begin_src python :tangle ../src/pyretechnics/vector_utils.pxd
+from pyretechnics.cy_types cimport vec_xy, vec_xyz
+
+cpdef float dot_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef float dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xy scale_2d(float scalar, vec_xy vector) noexcept
+cpdef vec_xyz scale_3d(float scalar, vec_xyz vector) noexcept
+cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef float vector_magnitude_2d(vec_xy vector) noexcept
+cpdef float vector_magnitude_3d(vec_xyz vector) noexcept
+cpdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
+cpdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
+cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
+cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
+cpdef float spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
+cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
+cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, float theta, float slope, float aspect) noexcept
+#+end_src
+
+*** pyretechnics.random
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-random-pxd
+    :END:
+
+#+NAME: random-pxd
+#+begin_src python :tangle ../src/pyretechnics/random.pxd
+from pyretechnics.cy_types cimport pyidx
+
+cdef class BufferedRandGen:
+    cdef object numpy_rand     # TODO: object -> Generator
+    cdef float[::1] uniform_buf
+    cdef pyidx uniform_pos
+    cdef float[::1] normal_buf
+    cdef pyidx normal_pos
+    cdef long[::1] poisson16_buf
+    cdef pyidx poisson16_pos
+    cdef long[::1] poisson1_buf
+    cdef pyidx poisson1_pos
+    cdef double[::1] poisson_exp_buf
+    cdef pyidx poisson_exp_pos
+    cdef long next_poisson(BufferedRandGen self, double M) noexcept
+    cdef float next_uniform(BufferedRandGen self) noexcept
+    cdef float next_normal(BufferedRandGen self) noexcept
+#+end_src
+
+*** pyretechnics.space_time_cube
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-space-time-cube-pxd
+    :END:
+
+#+NAME: space-time-cube-pxd
+#+begin_src python :tangle ../src/pyretechnics/space_time_cube.pxd
+cimport numpy as np
+from pyretechnics.cy_types cimport pyidx
+
+cdef bint is_pos_int(object x) noexcept
+cdef int divide_evenly(int dividend, int divisor)
+cdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
+# def maybe_repeat_array(array, axis_repetitions)
+
+cdef class ISpaceTimeCube:
+    cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+
+cdef class SpaceTimeCube(ISpaceTimeCube):
+    cdef public int ndim
+    cdef public unsigned long size
+    cdef public (int, int, int) shape
+    cdef public object base
+    cdef public int t_repetitions
+    cdef public int y_repetitions
+    cdef public int x_repetitions
+    # NOTE we use const (read-only MemoryView) so that Cython will accept to use a read-only array, which is required for shared-memory parallelism.
+    cdef public const float[:,:,::1] data
+    cpdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    # def getTimeSeries(self, t_range, y, x)
+    # def getSpatialPlane(self, t, y_range, x_range)
+    # def getSubcube(self, t_range, y_range, x_range)
+    # def getFullyRealizedCube(self, cache=False)
+
+cdef class LazySpaceTimeCube(ISpaceTimeCube):
+    cdef public int ndim
+    cdef public unsigned long size
+    cdef public (int, int, int) shape
+    cdef public (int, int, int) subcube_shape
+    cdef public (int, int, int) cache_shape
+    cdef public np.ndarray cache
+    cdef public object load_subcube
+    cdef SpaceTimeCube __getOrLoadSubcube(
+        LazySpaceTimeCube self,
+        pyidx cache_t,
+        pyidx cache_y,
+        pyidx cache_x,
+        )
+    cpdef float get(LazySpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
+    # def getTimeSeries(self, t_range, y, x)
+    # def getSpatialPlane(self, t, y_range, x_range)
+    # def getSubcube(self, t_range, y_range, x_range)
+    # def getFullyRealizedCube(self, cache=False)
+    # def releaseFullyRealizedCube(self)
+#+end_src
+
+*** pyretechnics.fuel_models
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-fuel-models-pxd
+    :END:
+
+#+NAME: fuel-models-pxd
+#+begin_src python :tangle ../src/pyretechnics/fuel_models.pxd
+from pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
+
+cdef dict[int, CompactFuelModel] compact_fuel_model_table
+
+cdef bint is_burnable_fuel_model_number(int fuel_model_number) noexcept
+
+cdef float compute_exp_A_sigma(float A, float sigma_ij) noexcept
+
+cdef float compute_firemod_size_class(float sigma_i) noexcept
+
+cdef FuelModel expand_compact_fuel_model(int fuel_model_number) noexcept
+
+cdef dict[int, FuelModel] fuel_model_table
+
+cpdef list[int] list_fuel_model_numbers()
+
+cpdef list[FuelModel] list_fuel_models()
+
+cpdef bint fuel_model_exists(int fuel_model_number) noexcept
+
+cpdef FuelModel get_fuel_model(int fuel_model_number) noexcept
+
+cdef FuelModel add_dynamic_fuel_loading(FuelModel fuel_model, fclaarr M_f) noexcept
+
+cdef float compute_gij(fclaarr firemod_size_classes, fclaarr f_ij, float firemod_size_class_ij, bint is_dead) noexcept
+
+cdef FuelModel add_weighting_factors(FuelModel fuel_model) noexcept
+
+cdef FuelModel add_live_moisture_of_extinction(FuelModel fuel_model) noexcept
+
+cpdef FuelModel moisturize(FuelModel fuel_model, fclaarr fuel_moisture) noexcept
+#+end_src
+
+*** pyretechnics.surface_fire
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-surface-fire-pxd
+    :END:
+
+#+NAME: surface-fire-pxd
+#+begin_src python :tangle ../src/pyretechnics/surface_fire.pxd
+from pyretechnics.cy_types cimport vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, \
+     FireBehaviorMin, FireBehaviorMax, SpreadBehavior
+
+cdef float calc_surface_area_to_volume_ratio(fcatarr f_i, fclaarr f_ij, fclaarr sigma) noexcept
+
+cdef float calc_packing_ratio(fclaarr w_o, fclaarr rho_p, float delta) noexcept
+
+cdef float calc_optimum_packing_ratio(float sigma_prime) noexcept
+
+cdef fcatarr calc_mineral_damping_coefficients(fclaarr f_ij, fclaarr S_e) noexcept
+
+cdef fcatarr calc_moisture_damping_coefficients(fclaarr f_ij, fclaarr M_f, fclaarr M_x) noexcept
+
+cdef fcatarr calc_low_heat_content(fclaarr f_ij, fclaarr h) noexcept
+
+cdef fcatarr calc_net_fuel_loading(fclaarr g_ij, fclaarr w_o, fclaarr S_T) noexcept
+
+cdef float calc_heat_per_unit_area(fcatarr eta_S_i, fcatarr eta_M_i, fcatarr h_i, fcatarr W_n_i) noexcept
+
+cdef float calc_optimum_reaction_velocity(float sigma_prime, float beta, float beta_op) noexcept
+
+cdef float calc_reaction_intensity(
+    FuelModel moisturized_fuel_model,
+    float sigma_prime,
+    float beta,
+    float beta_op,
+    ) noexcept
+
+cdef float calc_propagating_flux_ratio(float sigma_prime, float beta) noexcept
+
+cdef float calc_heat_source(float I_R, float xi) noexcept
+
+cdef float calc_ovendry_bulk_density(fclaarr w_o, float delta) noexcept
+
+cdef fclaarr calc_effective_heating_number_distribution(fclaarr sigma) noexcept
+
+cdef fclaarr calc_heat_of_preignition_distribution(fclaarr M_f) noexcept
+
+cdef float calc_heat_sink(fcatarr f_i, fclaarr f_ij, float rho_b, fclaarr epsilon_ij, fclaarr Q_ig_ij) noexcept
+
+cdef float calc_spread_rate(float heat_source, float heat_sink) noexcept
+
+cdef float calc_residence_time(float sigma_prime) noexcept
+
+cdef float calc_flame_depth(float spread_rate, float residence_time) noexcept
+
+cdef float calc_fireline_intensity(float reaction_intensity, float flame_depth) noexcept
+
+cdef float calc_flame_length(float fireline_intensity) noexcept
+
+cpdef float calc_areal_heat_output(float spread_rate, float fireline_intensity) noexcept
+
+cdef float calc_max_effective_wind_speed(float reaction_intensity) noexcept
+
+cdef float get_phi_S(FireBehaviorMin sfmin, float slope) noexcept
+
+cdef float get_phi_W(FireBehaviorMin sfmin, float midflame_wind_speed) noexcept
+
+cdef float get_wind_speed(FireBehaviorMin sfmin, float phi_W) noexcept
+
+cdef FireBehaviorMin make_surface_fire_min(
+    float base_spread_rate,
+    float base_fireline_intensity,
+    float max_effective_wind_speed,
+    float B,
+    float C,
+    float F,
+    float beta,
+    ) noexcept
+
+cpdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
+    FuelModel moisturized_fuel_model,
+    float spread_rate_adjustment=?,
+    ) noexcept
+
+cdef float calc_wind_adjustment_factor(float fuel_bed_depth, float canopy_height, float canopy_cover) noexcept
+
+cpdef float calc_midflame_wind_speed(
+    float wind_speed_20ft,
+    float fuel_bed_depth,
+    float canopy_height,
+    float canopy_cover,
+    ) noexcept
+
+cdef ProjectedVectors project_wind_and_slope_vectors_3d(
+    float wind_speed,
+    float downwind_direction,
+    float slope,
+    float upslope_direction,
+    ) noexcept
+
+cdef vec_xyz get_phi_E(vec_xyz wind_vector_3d, vec_xyz slope_vector_3d, float phi_W, float phi_S) noexcept
+
+cdef float surface_length_to_width_ratio(float effective_wind_speed, str model=?)
+
+cdef float surface_fire_eccentricity(float length_to_width_ratio) noexcept
+
+cdef (float, float) maybe_limit_wind_speed(
+    bint use_wind_limit,
+    float max_wind_speed,
+    FireBehaviorMin sfmin,
+    float phi_E_magnitude,
+    ) noexcept
+
+cpdef FireBehaviorMax calc_surface_fire_behavior_max(
+    FireBehaviorMin sfmin,
+    float midflame_wind_speed,
+    float upwind_direction,
+    float slope,
+    float aspect,
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    ) noexcept
+
+cpdef SpreadBehavior calc_surface_fire_behavior_in_direction(
+    FireBehaviorMax surface_fire_max,
+    vec_xyz spread_direction,
+    ) noexcept
+#+end_src
+
+*** pyretechnics.crown_fire
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-crown-fire-pxd
+    :END:
+
+#+NAME: crown-fire-pxd
+#+begin_src python :tangle ../src/pyretechnics/crown_fire.pxd
+from pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
+
+cdef float van_wagner_critical_fireline_intensity(
+    float canopy_base_height,
+    float foliar_moisture,
+    ) noexcept
+
+cdef float van_wagner_crowning_spread_rate(
+    FireBehaviorMax surface_fire_max,
+    float canopy_base_height,
+    float foliar_moisture,
+    ) noexcept
+
+cpdef bint van_wagner_crown_fire_initiation(
+    float surface_fireline_intensity,
+    float canopy_cover,
+    float canopy_base_height,
+    float foliar_moisture,
+    ) noexcept
+
+cdef float cruz_active_crown_fire_spread_rate(
+    float wind_speed_10m,
+    float canopy_bulk_density,
+    float estimated_fine_fuel_moisture,
+    ) noexcept
+
+cdef float van_wagner_critical_spread_rate(float canopy_bulk_density) noexcept
+
+cdef float cruz_passive_crown_fire_spread_rate(
+    float active_spread_rate,
+    float critical_spread_rate,
+    ) noexcept
+
+cdef CrownSpreadInfo cruz_crown_fire_spread_info(
+    float wind_speed_10m,
+    float canopy_bulk_density,
+    float estimated_fine_fuel_moisture,
+    ) noexcept
+
+cdef float calc_crown_fireline_intensity(
+    float crown_spread_rate,
+    float canopy_bulk_density,
+    float canopy_height,
+    float canopy_base_height,
+    float heat_of_combustion,
+    ) noexcept
+
+cdef float crown_length_to_width_ratio(
+    float wind_speed_10m,
+    float max_length_to_width_ratio=?,
+    ) noexcept
+
+cdef float crown_fire_eccentricity(float length_to_width_ratio) noexcept
+
+cpdef FireBehaviorMax calc_crown_fire_behavior_max(
+    float canopy_height,
+    float canopy_base_height,
+    float canopy_bulk_density,
+    float heat_of_combustion,
+    float estimated_fine_fuel_moisture,
+    float wind_speed_10m,
+    float upwind_direction,
+    float slope,
+    float aspect,
+    float crown_max_lw_ratio=?,
+    ) noexcept
+
+cpdef SpreadBehavior calc_crown_fire_behavior_in_direction(
+    FireBehaviorMax crown_fire_max,
+    vec_xyz spread_direction,
+    ) noexcept
+
+cpdef SpreadBehavior calc_combined_fire_behavior(
+    SpreadBehavior surface_fire_behavior,
+    SpreadBehavior crown_fire_behavior,
+    ) noexcept
+#+end_src
+
+*** pyretechnics.spot_fire
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-spot-fire-pxd
+    :END:
+
+#+NAME: spot-fire-pxd
+#+begin_src python :tangle ../src/pyretechnics/spot_fire.pxd
+from pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+from pyretechnics.random cimport BufferedRandGen
+from pyretechnics.space_time_cube cimport ISpaceTimeCube
+
+cdef float expected_firebrand_production(
+    SpreadBehavior fire_behavior,
+    vec_xy elevation_gradient,
+    float cell_horizontal_area,
+    float firebrands_per_unit_heat=?,
+    ) noexcept
+
+cdef float delta_to_grid_dx(float cos_wdir, float sin_wdir, float delta_x, float delta_y) noexcept
+cdef float delta_to_grid_dy(float cos_wdir, float sin_wdir, float delta_x, float delta_y) noexcept
+
+cdef int distance_to_n_cells(float distance, float cell_size) noexcept
+
+cdef float resolve_exp_delta_x(SpotConfig spot_config, float fireline_intensity, float wind_speed_20ft) noexcept
+cdef float resolve_var_delta_x(SpotConfig spot_config, float exp_delta_x) noexcept
+
+cdef float lognormal_mu_from_moments(float mean, float variance) noexcept
+cdef float lognormal_sigma_from_moments(float mean, float variance) noexcept
+
+cdef (float, float) resolve_lognormal_params(
+    SpotConfig spot_config,
+    float fireline_intensity,
+    float wind_speed_20ft
+    ) noexcept
+
+cdef double sigma_y_scalar_m = 0.92 * 0.47 / (0.88 * 0.88)
+
+cdef float himoto_resolve_default_sigma_y_from_lognormal_params(float mu_x, float sigma_x) noexcept
+cdef float himoto_resolve_default_sigma_y(
+    SpotConfig spot_config,
+    float fireline_intensity,
+    float wind_speed_20ft
+    ) noexcept
+
+cdef float resolve_crosswind_distance_stdev(
+    SpotConfig spot_config,
+    float fireline_intensity,
+    float wind_speed_20ft
+    ) noexcept
+
+cdef float sample_normal(BufferedRandGen rng, float mu, float sd) noexcept
+cdef float sample_lognormal(BufferedRandGen rng, float mu, float sd) noexcept
+
+cdef JumpDistribution resolve_JumpDistribution(SpotConfig spot_config, float fireline_intensity, float wind_speed_20ft)
+
+cdef float sample_downwind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
+cdef float sample_crosswind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
+
+cdef float heat_of_preignition(float temperature, float fine_fuel_moisture) noexcept
+cpdef float schroeder_ignition_probability(float temperature, float fine_fuel_moisture) noexcept
+cpdef float firebrand_flight_survival_probability(float spotting_distance, float decay_distance) noexcept
+
+cdef float albini_firebrand_maximum_height(float firebrand_diameter) noexcept
+cdef float albini_t_max(float flame_length) noexcept
+cdef float spot_ignition_time(float time_of_arrival, float flame_length) noexcept
+
+cdef bint is_in_bounds(pyidx y, pyidx x, pyidx rows, pyidx cols) noexcept
+cdef bint is_burnable_cell(ISpaceTimeCube fuel_model_cube, pyidx t, pyidx y, pyidx x) noexcept
+
+cdef coord_yx cast_firebrand(
+    BufferedRandGen rng,
+    ISpaceTimeCube fuel_model_cube,
+    ISpaceTimeCube temperature_cube,
+    ISpaceTimeCube fuel_moisture_dead_1hr_cube,
+    unsigned char[:,::1] fire_type_matrix,
+    pyidx rows,
+    pyidx cols,
+    float cell_height,
+    float cell_width,
+    pyidx source_t,
+    pyidx source_y,
+    pyidx source_x,
+    float decay_distance,
+    float cos_wdir,
+    float sin_wdir,
+    JumpDistribution jd,
+    ) noexcept
+
+cdef object spread_firebrands(
+    ISpaceTimeCube fuel_model_cube,
+    ISpaceTimeCube temperature_cube,
+    ISpaceTimeCube fuel_moisture_dead_1hr_cube,
+    unsigned char[:,::1] fire_type_matrix,
+    coord_yx sim_area_bounds,
+    float cell_height,
+    float cell_width,
+    coord_tyx space_time_coordinate,
+    float wind_speed_10m,
+    float upwind_direction,
+    float fireline_intensity,
+    float flame_length,
+    float time_of_arrival,
+    BufferedRandGen random_generator,
+    long num_firebrands,
+    SpotConfig spot_config,
+    )
+#+end_src
+
+*** pyretechnics.burn_cells
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-burn-cells-pxd
+    :END:
+
+#+NAME: burn-cells-pxd
+#+begin_src python :tangle ../src/pyretechnics/burn_cells.pxd
+from pyretechnics.cy_types cimport pyidx, coord_tyx
+
+cpdef dict burn_cell_as_head_fire(
+    dict space_time_cubes,
+    coord_tyx space_time_coordinate,
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    float crown_max_lw_ratio=?,
+    )
+
+cpdef dict burn_all_cells_as_head_fire(
+    dict space_time_cubes,
+    pyidx t,
+    object y_range=?,
+    object x_range=?,
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    float crown_max_lw_ratio=?,
+    )
+
+cpdef dict burn_cell_toward_azimuth(
+    dict space_time_cubes,
+    coord_tyx space_time_coordinate,
+    float azimuth,
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    float crown_max_lw_ratio=?,
+    )
+
+cpdef dict burn_all_cells_toward_azimuth(
+    dict space_time_cubes,
+    float azimuth,
+    pyidx t,
+    object y_range=?,
+    object x_range=?,
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    float crown_max_lw_ratio=?,
+    )
+#+end_src
+
+*** pyretechnics.narrow_band_tracking
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-narrow-band-tracking-pxd
+    :END:
+
+#+NAME: narrow-band-tracking-pxd
+#+begin_src python :tangle ../src/pyretechnics/narrow_band_tracking.pxd
+from pyretechnics.cy_types cimport pyidx, coord_yx
+
+cdef class CellsCountSegment:
+    cdef int y
+    cdef int x0
+    cdef unsigned short[16] counts
+
+cdef bint segment_is_empty(CellsCountSegment segment) noexcept
+cdef bint segment_is_pos_at(CellsCountSegment segment, pyidx k) noexcept
+cdef CellsCountSegment make_CellsCountSegment(pyidx y, pyidx x0)
+
+cdef class NarrowBandTracker:
+    cdef public int num_tracked_cells
+    cdef pyidx y_high
+    cdef pyidx x_high
+    cdef pyidx ys_offset
+    cdef list ys_list
+    cdef int _rows_count
+
+cdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
+cdef void inc_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept
+cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept
+cdef (pyidx, pyidx) resolve_truncated_x_segment(NarrowBandTracker tracked_cells, pyidx x, pyidx buffer_width) noexcept
+cdef void inc_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
+cdef void dec_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
+cdef bint nonempty_tracked_cells(NarrowBandTracker tracked_cells) noexcept
+
+cdef class TrackedCellsIterator:
+    cdef object segment_iter
+    cdef CellsCountSegment current_segment
+    cdef pyidx current_k
+    cdef bint has_next(TrackedCellsIterator self) noexcept
+    cdef coord_yx next_cell(TrackedCellsIterator self) noexcept
+
+cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells)
+#+end_src
+
+*** pyretechnics.eulerian_level_set
+    :PROPERTIES:
+    :CUSTOM_ID: pyretechnics-eulerian-level-set-pxd
+    :END:
+
+#+NAME: eulerian-level-set-pxd
+#+begin_src python :tangle ../src/pyretechnics/eulerian_level_set.pxd
+# from pyretechnics.cy_types cimport pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
+#      FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
+#      PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
+# from pyretechnics.space_time_cube cimport ISpaceTimeCube
+# from pyretechnics.narrow_band_tracking cimport NarrowBandTracker
+# from pyretechnics.random cimport BufferedRandGen
+# cimport numpy as np
+#
+# cdef float calc_dphi_dx_approx(float[:,::1] phi_matrix, float dx, pyidx x, pyidx y) noexcept
+# cdef float calc_dphi_dy_approx(float[:,::1] phi_matrix, float dy, pyidx x, pyidx y) noexcept
+# cdef vec_xy calc_phi_gradient_approx(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
+# cdef vec_xy calc_phi_normal_vector(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
+# cdef float calc_phi_normal_azimuth(vec_xy phi_normal_vector) noexcept
+# cdef float half_superbee_dphi_up(float dphi_up, float dphi_loc) noexcept
+# cdef float calc_dphi_flim_x(float p00, float pw2, float pw1, float pe1, float pe2) noexcept
+# cdef float calc_dphi_flim_y(float p00, float ps2, float ps1, float pn1, float pn2) noexcept
+# cdef int fire_type_unburned      = 0
+# cdef int fire_type_surface       = 1
+# cdef int fire_type_crown_passive = 2
+# cdef int fire_type_crown_active  = 3
+# cdef vec_xy calc_elevation_gradient(float slope, float aspect) noexcept
+# cdef vec_xyz calc_phi_gradient_on_slope(vec_xy phi_gradient_xy, vec_xy elevation_gradient) noexcept
+# cdef SpreadBehavior calc_fireline_normal_behavior(
+#     FireBehaviorMax fire_behavior_max,
+#     vec_xyz phi_gradient_xyz,
+#     ) noexcept
+# cdef class SpreadInputs:
+#     cdef pyidx rows
+#     cdef pyidx cols
+#     cdef float band_duration
+#     cdef float cell_height
+#     cdef float cell_width
+#     cdef ISpaceTimeCube slope
+#     cdef ISpaceTimeCube aspect
+#     cdef ISpaceTimeCube fuel_model
+#     cdef ISpaceTimeCube canopy_cover
+#     cdef ISpaceTimeCube canopy_height
+#     cdef ISpaceTimeCube canopy_base_height
+#     cdef ISpaceTimeCube canopy_bulk_density
+#     cdef ISpaceTimeCube wind_speed_10m
+#     cdef ISpaceTimeCube upwind_direction
+#     cdef ISpaceTimeCube fuel_moisture_dead_1hr
+#     cdef ISpaceTimeCube fuel_moisture_dead_10hr
+#     cdef ISpaceTimeCube fuel_moisture_dead_100hr
+#     cdef ISpaceTimeCube fuel_moisture_live_herbaceous
+#     cdef ISpaceTimeCube fuel_moisture_live_woody
+#     cdef ISpaceTimeCube foliar_moisture
+#     cdef ISpaceTimeCube temperature
+#     cdef ISpaceTimeCube fuel_spread_adjustment
+#     cdef ISpaceTimeCube weather_spread_adjustment
+#     cdef FuelModel* fuel_model_cache
+#     cdef void __init_fuel_models(SpreadInputs self)
+#     cdef FuelModel get_fm_struct(SpreadInputs self, pyidx fm_number) noexcept
+# cdef SpreadInputs make_SpreadInputs(
+#     (pyidx, pyidx, pyidx) cube_shape,
+#     (float, float, float) cube_resolution,
+#     dict space_time_cubes,
+#     )
+# cdef CellInputs lookup_cell_inputs(SpreadInputs spread_inputs, coord_tyx space_time_coordinate) noexcept
+# cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept
+# cdef object encode_cell_index(pyidx y, pyidx x)
+# cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
+# cdef bint opposite_phi_signs(float[:,::1] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept
+# cdef bint is_frontier_cell(
+#     float[:,::1] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
+#     pyidx y,
+#     pyidx x,
+#     ) noexcept
+# cdef set identify_all_frontier_cells(
+#     float[:,::1] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
+#     pyidx rows,
+#     pyidx cols,
+#     )
+# cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)
+# cdef void spot_from_burned_cell(
+#     SpreadInputs spread_inputs,
+#     unsigned char[:,::1] fire_type_matrix,
+#     pyidx y,
+#     pyidx x,
+#     SpreadBehavior fire_behavior,
+#     float time_of_arrival,
+#     BufferedRandGen random_generator,
+#     SpotConfig spot_config,
+#     object spot_ignitions,
+#     ) noexcept
+# cdef float calc_phi_magnitude_xyz_2(vec_xy phi_gradient_xy, vec_xy elevation_gradient) noexcept
+# cdef PartialedEllWavelet zero_partialed_wavelet() noexcept
+# cdef PartialedEllWavelet prepare_partialed_wavelet(
+#     vec_xyz heading_spread_vector,
+#     float flanking_spread_rate,
+#     float backing_spread_rate,
+#     ) noexcept
+# cdef PartialedEllWavelet wavelet_from_FireBehaviorMax(FireBehaviorMax fire_behavior_max) noexcept
+# cdef float dphi_dt_from_partialed_wavelet(
+#     PartialedEllWavelet wavelet,
+#     vec_xy phi_gradient_xy,
+#     float phi_magnitude_xyz_2,
+#     ) noexcept
+# cdef bint phi_aware_crowning_check(
+#     float phi_magnitude_xyz_2,
+#     float surface_dphi_dt,
+#     float crowning_spread_rate,
+#     ) noexcept
+# cdef float dphi_dt_from_ellipses(EllipticalInfo ellipses, vec_xy phi_gradient_xy) noexcept
+# cdef pyidx p_CellInputs = 17
+# cdef class TrackedCellsArrays:
+#     cdef pyidx _array_length
+#     cdef pyidx num_tracked_cells
+#     cdef float[:,::1] cube_cache
+#     cdef float[:,::1] phi_cache
+#     cdef FireBehaviorMin* sfmin_cache
+#     cdef EllipticalInfo* ellipse_cache
+#     cdef Pass1CellOutput* pass1_cache
+#     cdef float[17] time_refreshed
+#     cdef pyidx[17] t_refreshed
+#     cdef void reset_size(TrackedCellsArrays self, pyidx num_tracked_cells)
+# cdef void collect_phi_cache(float[:,::1] phi_matrix, TrackedCellsArrays tca) noexcept
+# cdef int compare_cell_indexes(coord_yx c0, coord_yx c1) noexcept
+# cdef void copy_tracked_cell_data(
+#     pyidx i_old,
+#     TrackedCellsArrays tca_old,
+#     pyidx i_new,
+#     TrackedCellsArrays tca_new,
+#     ) noexcept
+# cdef list[str] inputs_name_list()
+# cdef class FireBehaviorSettings:
+#     cdef float max_cells_per_timestep
+#     cdef pyidx buffer_width
+#     cdef bint use_wind_limit
+#     cdef str surface_lw_ratio_model
+#     cdef float crown_max_lw_ratio
+#     cdef dict spot_config
+#     cdef float[17] cube_refresh_rates
+# cdef void load_cube_cache_for_cell(
+#     SpreadInputs spread_inputs,
+#     coord_yx cell_index,
+#     TrackedCellsArrays tca,
+#     pyidx i,
+#     ) noexcept
+# cdef list[ISpaceTimeCube] list_float_input_cubes(SpreadInputs spread_inputs)
+# cdef dict default_cube_refresh_rates(float band_duration)
+# cdef unsigned int recompute_level_for_input(pyidx input_k) noexcept
+# cdef unsigned int refresh_inputs_if_needed(
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     TrackedCellsArrays tca,
+#     float present_time,
+#     ) noexcept
+# cdef CellInputs load_saved_CellInputs(float[:,::1] cube_cache, pyidx i) noexcept
+# cdef FireBehaviorMin resolve_surface_no_wind_no_slope_behavior(CellInputs cell_inputs, FuelModel fuel_model) noexcept
+# cdef FireBehaviorMax resolve_surface_max_behavior(
+#     FireBehaviorSettings fb_opts,
+#     CellInputs cell_inputs,
+#     FuelModel fuel_model,
+#     FireBehaviorMin surface_fire_min,
+#     ) noexcept
+# cdef FireBehaviorMax resolve_crown_max_behavior(
+#     FireBehaviorSettings fb_opts,
+#     CellInputs cell_inputs,
+#     FuelModel fuel_model,
+#     ) noexcept
+# cdef float resolve_crowning_spread_rate(CellInputs cell_inputs, FireBehaviorMax surface_fire_max) noexcept
+# cdef EllipticalInfo resolve_cell_elliptical_info(
+#     FireBehaviorSettings fb_opts,
+#     coord_yx cell_index,
+#     CellInputs cell_inputs,
+#     FuelModel fuel_model,
+#     FireBehaviorMin surface_fire_min,
+#     ) noexcept
+# cdef void refresh_caches_from_inputs_if_needed(
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     TrackedCellsArrays tca,
+#     float present_time,
+#     ) noexcept
+# cdef SpreadBehavior resolve_combined_spread_behavior(
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     coord_tyx space_time_coordinate,
+#     vec_xy phi_gradient_xy,
+#     ) noexcept
+# cdef void load_tracked_cell_data(
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     coord_yx cell_index,
+#     TrackedCellsArrays tca,
+#     pyidx i,
+#     ) noexcept
+# cdef void sync_tracked_cells_arrays(
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     NarrowBandTracker tracked_cells,
+#     TrackedCellsArrays tca_old,
+#     TrackedCellsArrays tca_new,
+#     ) noexcept
+# cdef float runge_kutta_pass1(
+#     float max_cells_per_timestep,
+#     float dy,
+#     float dx,
+#     float max_timestep,
+#     TrackedCellsArrays tca,
+#     ) noexcept
+# cdef void update_phi_star(TrackedCellsArrays tca, float dt, float[:,::1] phi_star_matrix) noexcept
+# cdef class BurnedCellInfo:
+#     cdef coord_yx cell_index
+#     cdef float time_of_arrival
+#     cdef vec_xy phi_gradient_xy
+#     cdef bint from_spotting
+# cdef BurnedCellInfo new_BurnedCellInfo(
+#     coord_yx cell_index,
+#     float time_of_arrival,
+#     vec_xy phi_gradient_xy,
+#     bint from_spotting,
+#     )
+# cdef list[BurnedCellInfo] runge_kutta_pass2(
+#     float dy,
+#     float dx,
+#     float start_time,
+#     float dt,
+#     TrackedCellsArrays tca,
+#     float[:,::1] phi_matrix,
+#     )
+# cdef void process_burned_cells(
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     dict output_matrices,
+#     object spot_ignitions,
+#     BufferedRandGen random_generator,
+#     list[BurnedCellInfo] burned_cells,
+#     ) noexcept
+# cdef void reset_phi_star(
+#     TrackedCellsArrays tca,
+#     list[BurnedCellInfo] spot_ignited_cells,
+#     float[:,::1] phi_star_matrix,
+#     float[:,::1] phi_matrix,
+#     ) noexcept
+# cdef list[BurnedCellInfo] ignite_from_spotting(
+#     object spot_ignitions,
+#     dict output_matrices,
+#     float stop_time,
+#     )
+# cdef void route_cell_to_diff(
+#     set frontier_cells_old,
+#     set frontier_additions,
+#     set frontier_removals,
+#     float[:,::1] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
+#     pyidx y,
+#     pyidx x,
+#     ) noexcept
+# cdef tuple[set, set] diff_frontier_cells(
+#     set frontier_cells_old,
+#     list[BurnedCellInfo] spread_ignited_cells,
+#     list[BurnedCellInfo] spot_ignited_cells,
+#     float[:,::1] phi_matrix,
+#     ISpaceTimeCube fuel_model_cube,
+#     pyidx t,
+#     )
+# cdef set apply_frontier_diff(set frontier_cells_old, set frontier_additions, set frontier_removals)
+# cdef NarrowBandTracker update_tracked_cells_with_frontier_diff(
+#     NarrowBandTracker tracked_cells,
+#     set frontier_cells_added,
+#     set frontier_cells_dropped,
+#     pyidx buffer_width,
+#     )
+# cdef dict spread_one_timestep(
+#     dict sim_state,
+#     SpreadInputs spread_inputs,
+#     FireBehaviorSettings fb_opts,
+#     float max_timestep,
+#     )
+# cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)
+# cdef void check_output_matrices(dict output_matrices)
+# cdef void check_dimensions_and_resolutions(
+#     dict space_time_cubes,
+#     dict output_matrices,
+#     pyidx bands,
+#     pyidx rows,
+#     pyidx cols,
+#     float band_duration,
+#     float cell_height,
+#     float cell_width,
+#     )
+# cdef void check_start_and_stop_times(float start_time, float max_stop_time, float cube_duration, object max_duration=?)
+# cpdef dict[str, object] spread_fire_with_phi_field(
+#     dict[str, ISpaceTimeCube] space_time_cubes,
+#     dict[str, np.ndarray] output_matrices,
+#     (float, float, float) cube_resolution,
+#     float start_time,
+#     object max_duration=?,
+#     float max_cells_per_timestep=?,
+#     pyidx buffer_width=?,
+#     bint use_wind_limit=?,
+#     str surface_lw_ratio_model=?,
+#     float crown_max_lw_ratio=?,
+#     dict[float, set] spot_ignitions=?,
+#     object spot_config=?,
+#     dict[str, float] cube_refresh_rates=?,
+#     )
+#+end_src

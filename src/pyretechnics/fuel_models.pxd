@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::fuel-models-pxd][fuel-models-pxd]]
 from pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
 
 cdef dict[int, CompactFuelModel] compact_fuel_model_table
@@ -29,3 +30,4 @@ cdef FuelModel add_weighting_factors(FuelModel fuel_model) noexcept
 cdef FuelModel add_live_moisture_of_extinction(FuelModel fuel_model) noexcept
 
 cpdef FuelModel moisturize(FuelModel fuel_model, fclaarr fuel_moisture) noexcept
+# fuel-models-pxd ends here

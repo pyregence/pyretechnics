@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::surface-fire-pxd][surface-fire-pxd]]
 from pyretechnics.cy_types cimport vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, \
      FireBehaviorMin, FireBehaviorMax, SpreadBehavior
 
@@ -116,3 +117,4 @@ cpdef SpreadBehavior calc_surface_fire_behavior_in_direction(
     FireBehaviorMax surface_fire_max,
     vec_xyz spread_direction,
     ) noexcept
+# surface-fire-pxd ends here

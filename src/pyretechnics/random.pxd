@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::random-pxd][random-pxd]]
 from pyretechnics.cy_types cimport pyidx
 
 cdef class BufferedRandGen:
@@ -15,3 +16,4 @@ cdef class BufferedRandGen:
     cdef long next_poisson(BufferedRandGen self, double M) noexcept
     cdef float next_uniform(BufferedRandGen self) noexcept
     cdef float next_normal(BufferedRandGen self) noexcept
+# random-pxd ends here

@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::narrow-band-tracking-pxd][narrow-band-tracking-pxd]]
 from pyretechnics.cy_types cimport pyidx, coord_yx
 
 cdef class CellsCountSegment:
@@ -33,3 +34,4 @@ cdef class TrackedCellsIterator:
     cdef coord_yx next_cell(TrackedCellsIterator self) noexcept
 
 cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells)
+# narrow-band-tracking-pxd ends here

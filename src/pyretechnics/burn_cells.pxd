@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::burn-cells-pxd][burn-cells-pxd]]
 from pyretechnics.cy_types cimport pyidx, coord_tyx
 
 cpdef dict burn_cell_as_head_fire(
@@ -37,3 +38,4 @@ cpdef dict burn_all_cells_toward_azimuth(
     str surface_lw_ratio_model=?,
     float crown_max_lw_ratio=?,
     )
+# burn-cells-pxd ends here

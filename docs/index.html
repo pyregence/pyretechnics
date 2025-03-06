@@ -426,17 +426,34 @@ org_html_manager.setup();  // activate after the parameters are set
 </li>
 <li><a href="#appendices">10. Appendices</a>
 <ul>
-<li><a href="#units-conversion-functions-(pyretechnics.conversion)">10.1. Units Conversion Functions (pyretechnics.conversion)</a></li>
-<li><a href="#vector-utility-functions-(pyretechnics.vector_utils)">10.2. Vector Utility Functions (pyretechnics.vector_utils)</a></li>
-<li><a href="#spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)">10.3. SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)</a></li>
-<li><a href="#loading-landfire-inputs-(pyretechnics.load_landfire)">10.4. Loading LANDFIRE Inputs (pyretechnics.load_landfire)</a>
+<li><a href="#custom-types-(pyretechnics.py_types)">10.1. Custom Types (pyretechnics.py_types)</a></li>
+<li><a href="#units-conversion-functions-(pyretechnics.conversion)">10.2. Units Conversion Functions (pyretechnics.conversion)</a></li>
+<li><a href="#vector-utility-functions-(pyretechnics.vector_utils)">10.3. Vector Utility Functions (pyretechnics.vector_utils)</a></li>
+<li><a href="#spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)">10.4. SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)</a></li>
+<li><a href="#loading-landfire-inputs-(pyretechnics.load_landfire)">10.5. Loading LANDFIRE Inputs (pyretechnics.load_landfire)</a>
 <ul>
-<li><a href="#module-imports-load-landfire">10.4.1. Module Imports</a></li>
-<li><a href="#loading-raster-files-with-python-rasterio">10.4.2. Loading Raster Files with Python Rasterio</a></li>
-<li><a href="#converting-landfire-units-and-datatypes">10.4.3. Converting LANDFIRE Units and Datatypes</a></li>
-<li><a href="#verifying-raster-constraints">10.4.4. Verifying Raster Constraints</a></li>
-<li><a href="#converting-rasters-to-spacetimecubes">10.4.5. Converting Rasters to SpaceTimeCubes</a></li>
-<li><a href="#putting-it-all-together">10.4.6. Putting It All Together</a></li>
+<li><a href="#module-imports-load-landfire">10.5.1. Module Imports</a></li>
+<li><a href="#loading-raster-files-with-python-rasterio">10.5.2. Loading Raster Files with Python Rasterio</a></li>
+<li><a href="#converting-landfire-units-and-datatypes">10.5.3. Converting LANDFIRE Units and Datatypes</a></li>
+<li><a href="#verifying-raster-constraints">10.5.4. Verifying Raster Constraints</a></li>
+<li><a href="#converting-rasters-to-spacetimecubes">10.5.5. Converting Rasters to SpaceTimeCubes</a></li>
+<li><a href="#putting-it-all-together">10.5.6. Putting It All Together</a></li>
+</ul>
+</li>
+<li><a href="#cython-pxd-files">10.6. Cython PXD Files</a>
+<ul>
+<li><a href="#pyretechnics-cy-types-pxd">10.6.1. pyretechnics.cy_types</a></li>
+<li><a href="#pyretechnics-conversion-pxd">10.6.2. pyretechnics.conversion</a></li>
+<li><a href="#pyretechnics-vector-utils-pxd">10.6.3. pyretechnics.vector_utils</a></li>
+<li><a href="#pyretechnics-random-pxd">10.6.4. pyretechnics.random</a></li>
+<li><a href="#pyretechnics-space-time-cube-pxd">10.6.5. pyretechnics.space_time_cube</a></li>
+<li><a href="#pyretechnics-fuel-models-pxd">10.6.6. pyretechnics.fuel_models</a></li>
+<li><a href="#pyretechnics-surface-fire-pxd">10.6.7. pyretechnics.surface_fire</a></li>
+<li><a href="#pyretechnics-crown-fire-pxd">10.6.8. pyretechnics.crown_fire</a></li>
+<li><a href="#pyretechnics-spot-fire-pxd">10.6.9. pyretechnics.spot_fire</a></li>
+<li><a href="#pyretechnics-burn-cells-pxd">10.6.10. pyretechnics.burn_cells</a></li>
+<li><a href="#pyretechnics-narrow-band-tracking-pxd">10.6.11. pyretechnics.narrow_band_tracking</a></li>
+<li><a href="#pyretechnics-eulerian-level-set-pxd">10.6.12. pyretechnics.eulerian_level_set</a></li>
 </ul>
 </li>
 </ul>
@@ -4334,12 +4351,12 @@ canopy cover.
 </p>
 
 <p>
-See Appendix <a href="#units-conversion-functions-(pyretechnics.conversion)">10.1</a> for
+See Appendix <a href="#units-conversion-functions-(pyretechnics.conversion)">10.2</a> for
 the full list of available units conversion functions.
 </p>
 
 <p>
-See Appendix <a href="#vector-utility-functions-(pyretechnics.vector_utils)">10.2</a> for
+See Appendix <a href="#vector-utility-functions-(pyretechnics.vector_utils)">10.3</a> for
 the full list of available vector manipulation functions.
 </p>
 </div>
@@ -5481,12 +5498,12 @@ coordinates and from 10m to 20ft wind speeds.
 </p>
 
 <p>
-See Appendix <a href="#units-conversion-functions-(pyretechnics.conversion)">10.1</a> for
+See Appendix <a href="#units-conversion-functions-(pyretechnics.conversion)">10.2</a> for
 the full list of available units conversion functions.
 </p>
 
 <p>
-See Appendix <a href="#vector-utility-functions-(pyretechnics.vector_utils)">10.2</a> for
+See Appendix <a href="#vector-utility-functions-(pyretechnics.vector_utils)">10.3</a> for
 the full list of available vector manipulation functions.
 </p>
 </div>
@@ -13211,8 +13228,170 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <h2 id="appendices"><span class="section-number-2">10.</span> Appendices</h2>
 <div class="outline-text-2" id="text-appendices">
 </div>
+<div id="outline-container-custom-types-(pyretechnics.py_types)" class="outline-3">
+<h3 id="custom-types-(pyretechnics.py_types)"><span class="section-number-3">10.1.</span> Custom Types (pyretechnics.py_types)</h3>
+<div class="outline-text-3" id="text-custom-types-(pyretechnics.py_types)">
+<div class="org-src-container">
+<pre class="src src-python" id="py-types"><span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Runtime-defined type aliases</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
+
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+
+<span class="org-variable-name">pyidx</span>            <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
+<span class="org-variable-name">vec_xy</span>           <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">vec_xyz</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">coord_yx</span>         <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
+<span class="org-variable-name">coord_tyx</span>        <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
+<span class="org-variable-name">fcatarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">fclaarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">CompactFuelModel</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>,
+                                    cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+
+<span class="org-variable-name">FuelModel</span> <span class="org-operator">=</span> cy.struct(
+    number               <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
+    delta                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    M_x                  <span class="org-operator">=</span> fclaarr,
+    M_f                  <span class="org-operator">=</span> fclaarr,
+    w_o                  <span class="org-operator">=</span> fclaarr,
+    sigma                <span class="org-operator">=</span> fclaarr,
+    h                    <span class="org-operator">=</span> fclaarr,
+    rho_p                <span class="org-operator">=</span> fclaarr,
+    S_T                  <span class="org-operator">=</span> fclaarr,
+    S_e                  <span class="org-operator">=</span> fclaarr,
+    dynamic              <span class="org-operator">=</span> cy.bint,
+    burnable             <span class="org-operator">=</span> cy.bint,
+    exp_A_sigma          <span class="org-operator">=</span> fclaarr,
+    firemod_size_classes <span class="org-operator">=</span> fclaarr,
+    f_ij                 <span class="org-operator">=</span> fclaarr,
+    f_i                  <span class="org-operator">=</span> fcatarr,
+    g_ij                 <span class="org-operator">=</span> fclaarr,
+)
+
+<span class="org-variable-name">ProjectedVectors</span> <span class="org-operator">=</span> cy.struct(
+    wind_vector_3d  <span class="org-operator">=</span> vec_xyz,
+    slope_vector_3d <span class="org-operator">=</span> vec_xyz,
+)
+
+<span class="org-variable-name">FireBehaviorMin</span> <span class="org-operator">=</span> cy.struct(
+    base_spread_rate         <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    base_fireline_intensity  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    max_effective_wind_speed <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    _phiS_G                  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    _phiW_scalr              <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    _phiW_expnt              <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    _ws_scalr                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    _ws_expnt                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+
+<span class="org-variable-name">FireBehaviorMax</span> <span class="org-operator">=</span> cy.struct(
+    max_fire_type          <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
+    max_spread_rate        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    max_spread_direction   <span class="org-operator">=</span> vec_xyz,
+    max_fireline_intensity <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    max_flame_length       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    length_to_width_ratio  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    eccentricity           <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    critical_spread_rate   <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+
+<span class="org-variable-name">SpreadBehavior</span> <span class="org-operator">=</span> cy.struct(
+    dphi_dt            <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fire_type          <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
+    spread_rate        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    spread_direction   <span class="org-operator">=</span> vec_xyz,
+    fireline_intensity <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    flame_length       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+
+<span class="org-variable-name">CrownSpreadInfo</span> <span class="org-operator">=</span> cy.struct(
+    fire_type            <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
+    spread_rate          <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    critical_spread_rate <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+
+<span class="org-variable-name">SpotConfig</span> <span class="org-operator">=</span> cy.struct(
+    random_seed                  <span class="org-operator">=</span> cy.<span class="org-builtin">long</span>,
+    firebrands_per_unit_heat     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    downwind_distance_mean       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fireline_intensity_exponent  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    wind_speed_exponent          <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    downwind_variance_mean_ratio <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    crosswind_distance_stdev     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    decay_distance               <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+
+<span class="org-variable-name">JumpDistribution</span> <span class="org-operator">=</span> cy.struct(
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Downwind LogNormal params</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)</span>
+    mu_x    <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">dimensionless (log-space)</span>
+    sigma_x <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">dimensionless (log-space)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Crosswind normal params</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)</span>
+    sigma_y <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+)
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Pre-computed coefficients to apply elliptical wavelet math as fast as possible</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">once the phi gradient information is available.</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.</span>
+<span class="org-variable-name">PartialedEllWavelet</span> <span class="org-operator">=</span> cy.struct(
+    Vh_3d <span class="org-operator">=</span> vec_xyz,  <span class="org-comment-delimiter"># </span><span class="org-comment">Heading spread rate vector (m/min)</span>
+    ewc_A <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Dimensionless elliptical wavelet coefficient (&lt;= 0)</span>
+    ewc_B <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Dimensionless elliptical wavelet coefficient (&lt;= 0)</span>
+    ewc_C <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Dimensionless elliptical wavelet coefficient (&gt;= 0)</span>
+)
+
+<span class="org-variable-name">CellInputs</span> <span class="org-operator">=</span> cy.struct(
+    slope                         <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    aspect                        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_model_number             <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    canopy_cover                  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    canopy_height                 <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    canopy_base_height            <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    canopy_bulk_density           <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    wind_speed_10m                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    upwind_direction              <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_moisture_dead_1hr        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_moisture_dead_10hr       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_moisture_dead_100hr      <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_moisture_live_herbaceous <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_moisture_live_woody      <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    foliar_moisture               <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    fuel_spread_adjustment        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+    weather_spread_adjustment     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Pre-computed information required to compute dphi/dt once the phi</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">gradient is known. Derived from the surface and crown wavelets.</span>
+<span class="org-comment-delimiter">#</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The reason to make this a small struct stored in an array is</span>
+<span class="org-comment-delimiter">#       </span><span class="org-comment">efficiency - we want the CPU to have a low cache miss rate.</span>
+<span class="org-comment-delimiter">#</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: A significant benefit of this architecture is that it's</span>
+<span class="org-comment-delimiter">#       </span><span class="org-comment">Rothermel-agnostic. EllipticalInfo could conceivably be</span>
+<span class="org-comment-delimiter">#       </span><span class="org-comment">implemented using variants of the Rothermel model. This can be</span>
+<span class="org-comment-delimiter">#       </span><span class="org-comment">valuable to give flexibility to users.</span>
+<span class="org-variable-name">EllipticalInfo</span> <span class="org-operator">=</span> cy.struct(
+    cell_index           <span class="org-operator">=</span> coord_yx,
+    elevation_gradient   <span class="org-operator">=</span> vec_xy,
+    surface_wavelet      <span class="org-operator">=</span> PartialedEllWavelet,
+    crown_wavelet        <span class="org-operator">=</span> PartialedEllWavelet,
+    crowning_spread_rate <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Surface spread rate at which crowning occurs</span>
+)
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Some data saved during the 1st Runge-Kutta pass.</span>
+<span class="org-variable-name">Pass1CellOutput</span> <span class="org-operator">=</span> cy.struct(
+    cell_index      <span class="org-operator">=</span> coord_yx,
+    phi_gradient_xy <span class="org-operator">=</span> vec_xy,
+    dphi_dt_flim    <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Flux-limited dphi/dt (phi/min, &lt;= 0).</span>
+    phi_old         <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
+)
+</pre>
+</div>
+</div>
+</div>
 <div id="outline-container-units-conversion-functions-(pyretechnics.conversion)" class="outline-3">
-<h3 id="units-conversion-functions-(pyretechnics.conversion)"><span class="section-number-3">10.1.</span> Units Conversion Functions (pyretechnics.conversion)</h3>
+<h3 id="units-conversion-functions-(pyretechnics.conversion)"><span class="section-number-3">10.2.</span> Units Conversion Functions (pyretechnics.conversion)</h3>
 <div class="outline-text-3" id="text-units-conversion-functions-(pyretechnics.conversion)">
 <div class="org-src-container">
 <pre class="src src-python" id="units-conversion"><span class="org-keyword">import</span> cython
@@ -13627,65 +13806,10 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-keyword">return</span> wind_speed_20ft <span class="org-operator">*</span> 1.15
 </pre>
 </div>
-
-<div class="org-src-container">
-<pre class="src src-python" id="conversion-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy
-
-cpdef <span class="org-builtin">float</span> rad_to_deg(<span class="org-builtin">float</span> radians) noexcept
-cpdef <span class="org-builtin">float</span> deg_to_rad(<span class="org-builtin">float</span> degrees) noexcept
-cpdef <span class="org-builtin">float</span> deg_to_ratio(<span class="org-builtin">float</span> degrees) noexcept
-cpdef <span class="org-builtin">float</span> ratio_to_deg(<span class="org-builtin">float</span> ratio) noexcept
-cpdef <span class="org-builtin">float</span> F_to_K(<span class="org-builtin">float</span> degrees) noexcept
-cpdef <span class="org-builtin">float</span> K_to_F(<span class="org-builtin">float</span> degrees) noexcept
-cpdef <span class="org-builtin">float</span> F_to_C(<span class="org-builtin">float</span> degrees) noexcept
-cpdef <span class="org-builtin">float</span> C_to_F(<span class="org-builtin">float</span> degrees) noexcept
-cpdef <span class="org-builtin">float</span> ch_to_m(<span class="org-builtin">float</span> ch) noexcept
-cpdef <span class="org-builtin">float</span> m_to_ch(<span class="org-builtin">float</span> m) noexcept
-cpdef <span class="org-builtin">float</span> m_to_ft(<span class="org-builtin">float</span> m) noexcept
-cpdef <span class="org-builtin">float</span> ft_to_m(<span class="org-builtin">float</span> ft) noexcept
-cpdef <span class="org-builtin">float</span> mph_to_mps(<span class="org-builtin">float</span> mph) noexcept
-cpdef <span class="org-builtin">float</span> mps_to_mph(<span class="org-builtin">float</span> mps) noexcept
-cpdef <span class="org-builtin">float</span> km_hr_to_mps(<span class="org-builtin">float</span> km_hr) noexcept
-cpdef <span class="org-builtin">float</span> mps_to_km_hr(<span class="org-builtin">float</span> mps) noexcept
-cpdef <span class="org-builtin">float</span> mph_to_km_hr(<span class="org-builtin">float</span> mph) noexcept
-cpdef <span class="org-builtin">float</span> km_hr_to_mph(<span class="org-builtin">float</span> km_hr) noexcept
-cpdef <span class="org-builtin">float</span> m_min_to_km_hr(<span class="org-builtin">float</span> m_min) noexcept
-cpdef <span class="org-builtin">float</span> km_hr_to_m_min(<span class="org-builtin">float</span> km_hr) noexcept
-cpdef <span class="org-builtin">float</span> m_min_to_mph(<span class="org-builtin">float</span> m_min) noexcept
-cpdef <span class="org-builtin">float</span> mph_to_m_min(<span class="org-builtin">float</span> mph) noexcept
-cpdef <span class="org-builtin">float</span> mps_to_fpm(<span class="org-builtin">float</span> mps) noexcept
-cpdef <span class="org-builtin">float</span> fpm_to_mps(<span class="org-builtin">float</span> fpm) noexcept
-cpdef <span class="org-builtin">float</span> mph_to_fpm(<span class="org-builtin">float</span> mph) noexcept
-cpdef <span class="org-builtin">float</span> fpm_to_mph(<span class="org-builtin">float</span> fpm) noexcept
-cpdef <span class="org-builtin">float</span> Btu_ft_s_to_kW_m(<span class="org-builtin">float</span> Btu_ft_s) noexcept
-cpdef <span class="org-builtin">float</span> kW_m_to_Btu_ft_s(<span class="org-builtin">float</span> kW_m) noexcept
-cpdef <span class="org-builtin">float</span> Btu_lb_to_kJ_kg(<span class="org-builtin">float</span> Btu_lb) noexcept
-cpdef <span class="org-builtin">float</span> kJ_kg_to_Btu_lb(<span class="org-builtin">float</span> kJ_kg) noexcept
-cpdef <span class="org-builtin">float</span> kg_m3_to_lb_ft3(<span class="org-builtin">float</span> kg_m3) noexcept
-cpdef <span class="org-builtin">float</span> lb_ft3_to_kg_m3(<span class="org-builtin">float</span> lb_ft3) noexcept
-cpdef <span class="org-builtin">float</span> percent_to_dec(<span class="org-builtin">float</span> percent) noexcept
-cpdef <span class="org-builtin">float</span> dec_to_percent(<span class="org-builtin">float</span> decimal) noexcept
-cpdef <span class="org-builtin">float</span> sec_to_min(<span class="org-builtin">float</span> seconds) noexcept
-cpdef <span class="org-builtin">float</span> min_to_sec(<span class="org-builtin">float</span> minutes) noexcept
-cpdef <span class="org-builtin">float</span> ms_to_min(<span class="org-builtin">float</span> milliseconds) noexcept
-cpdef <span class="org-builtin">float</span> min_to_ms(<span class="org-builtin">float</span> minutes) noexcept
-cpdef <span class="org-builtin">float</span> hour_to_min(<span class="org-builtin">float</span> hours) noexcept
-cpdef <span class="org-builtin">float</span> min_to_hour(<span class="org-builtin">float</span> minutes) noexcept
-cpdef <span class="org-builtin">float</span> day_to_min(<span class="org-builtin">float</span> days) noexcept
-cpdef <span class="org-builtin">float</span> min_to_day(<span class="org-builtin">float</span> minutes) noexcept
-cpdef vec_xy cartesian_to_polar(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
-cpdef vec_xy polar_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> theta) noexcept
-cpdef vec_xy cartesian_to_azimuthal(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
-cpdef vec_xy azimuthal_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> azimuth) noexcept
-cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org-builtin">float</span> theta) noexcept
-cpdef <span class="org-builtin">float</span> wind_speed_10m_to_wind_speed_20ft(<span class="org-builtin">float</span> wind_speed_10m) noexcept
-cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<span class="org-builtin">float</span> wind_speed_20ft) noexcept
-</pre>
-</div>
 </div>
 </div>
 <div id="outline-container-vector-utility-functions-(pyretechnics.vector_utils)" class="outline-3">
-<h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.2.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
+<h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">10.3.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
 <pre class="src src-python" id="vector-utilities"><span class="org-keyword">import</span> cython
@@ -13861,315 +13985,10 @@ cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<
     )
 </pre>
 </div>
-
-<div class="org-src-container">
-<pre class="src src-python" id="vector-utils-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy, vec_xyz
-
-cpdef <span class="org-builtin">float</span> dot_2d(vec_xy vector1, vec_xy vector2) noexcept
-cpdef <span class="org-builtin">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cpdef vec_xy scale_2d(<span class="org-builtin">float</span> scalar, vec_xy vector) noexcept
-cpdef vec_xyz scale_3d(<span class="org-builtin">float</span> scalar, vec_xyz vector) noexcept
-cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
-cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cpdef <span class="org-builtin">float</span> vector_magnitude_2d(vec_xy vector) noexcept
-cpdef <span class="org-builtin">float</span> vector_magnitude_3d(vec_xyz vector) noexcept
-cpdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
-cpdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
-cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
-cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
-cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
-cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
-cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
-cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect) noexcept
-</pre>
-</div>
-
-<div class="org-src-container">
-<pre class="src src-python" id="cy-types-pxd"><span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Compile-time-defined type aliases</span>
-<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
-
-ctypedef Py_ssize_t pyidx
-ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) vec_xy
-ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) vec_xyz
-ctypedef (pyidx, pyidx) coord_yx
-ctypedef (pyidx, pyidx, pyidx) coord_tyx
-ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) fcatarr
-ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) fclaarr
-ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) CompactFuelModel
-
-cdef struct FuelModel:
-    <span class="org-builtin">int</span> number
-    <span class="org-builtin">float</span> delta
-    fclaarr M_x
-    fclaarr M_f
-    fclaarr w_o
-    fclaarr sigma
-    fclaarr h
-    fclaarr rho_p
-    fclaarr S_T
-    fclaarr S_e
-    bint dynamic
-    bint burnable
-    fclaarr exp_A_sigma
-    fclaarr firemod_size_classes
-    fclaarr f_ij
-    fcatarr f_i
-    fclaarr g_ij
-
-cdef struct ProjectedVectors:
-    vec_xyz wind_vector_3d
-    vec_xyz slope_vector_3d
-
-cdef struct FireBehaviorMin:
-    <span class="org-builtin">float</span> base_spread_rate
-    <span class="org-builtin">float</span> base_fireline_intensity
-    <span class="org-builtin">float</span> max_effective_wind_speed
-    <span class="org-builtin">float</span> _phiS_G
-    <span class="org-builtin">float</span> _phiW_scalr
-    <span class="org-builtin">float</span> _phiW_expnt
-    <span class="org-builtin">float</span> _ws_scalr
-    <span class="org-builtin">float</span> _ws_expnt
-
-cdef struct FireBehaviorMax:
-    <span class="org-builtin">int</span> max_fire_type
-    <span class="org-builtin">float</span> max_spread_rate
-    vec_xyz max_spread_direction
-    <span class="org-builtin">float</span> max_fireline_intensity
-    <span class="org-builtin">float</span> max_flame_length
-    <span class="org-builtin">float</span> length_to_width_ratio
-    <span class="org-builtin">float</span> eccentricity
-    <span class="org-builtin">float</span> critical_spread_rate
-
-cdef struct SpreadBehavior:
-    <span class="org-builtin">float</span> dphi_dt
-    <span class="org-builtin">int</span> fire_type
-    <span class="org-builtin">float</span> spread_rate
-    vec_xyz spread_direction
-    <span class="org-builtin">float</span> fireline_intensity
-    <span class="org-builtin">float</span> flame_length
-
-cdef struct CrownSpreadInfo:
-    <span class="org-builtin">int</span> fire_type
-    <span class="org-builtin">float</span> spread_rate
-    <span class="org-builtin">float</span> critical_spread_rate
-
-cdef struct SpotConfig:
-    <span class="org-builtin">long</span> random_seed
-    <span class="org-builtin">float</span> firebrands_per_unit_heat
-    <span class="org-builtin">float</span> downwind_distance_mean
-    <span class="org-builtin">float</span> fireline_intensity_exponent
-    <span class="org-builtin">float</span> wind_speed_exponent
-    <span class="org-builtin">float</span> downwind_variance_mean_ratio
-    <span class="org-builtin">float</span> crosswind_distance_stdev
-    <span class="org-builtin">float</span> decay_distance
-
-cdef struct JumpDistribution:
-    <span class="org-builtin">float</span> mu_x
-    <span class="org-builtin">float</span> sigma_x
-    <span class="org-builtin">float</span> sigma_y
-
-cdef struct PartialedEllWavelet:
-    vec_xyz Vh_3d
-    <span class="org-builtin">float</span> ewc_A
-    <span class="org-builtin">float</span> ewc_B
-    <span class="org-builtin">float</span> ewc_C
-
-cdef struct CellInputs:
-    <span class="org-builtin">float</span> slope
-    <span class="org-builtin">float</span> aspect
-    <span class="org-builtin">float</span> fuel_model_number
-    <span class="org-builtin">float</span> canopy_cover
-    <span class="org-builtin">float</span> canopy_height
-    <span class="org-builtin">float</span> canopy_base_height
-    <span class="org-builtin">float</span> canopy_bulk_density
-    <span class="org-builtin">float</span> wind_speed_10m
-    <span class="org-builtin">float</span> upwind_direction
-    <span class="org-builtin">float</span> fuel_moisture_dead_1hr
-    <span class="org-builtin">float</span> fuel_moisture_dead_10hr
-    <span class="org-builtin">float</span> fuel_moisture_dead_100hr
-    <span class="org-builtin">float</span> fuel_moisture_live_herbaceous
-    <span class="org-builtin">float</span> fuel_moisture_live_woody
-    <span class="org-builtin">float</span> foliar_moisture
-    <span class="org-builtin">float</span> fuel_spread_adjustment
-    <span class="org-builtin">float</span> weather_spread_adjustment
-
-cdef struct EllipticalInfo:
-    coord_yx cell_index
-    vec_xy elevation_gradient
-    PartialedEllWavelet surface_wavelet
-    PartialedEllWavelet crown_wavelet
-    <span class="org-builtin">float</span> crowning_spread_rate
-
-cdef struct Pass1CellOutput:
-    coord_yx cell_index
-    vec_xy phi_gradient_xy
-    <span class="org-builtin">float</span> dphi_dt_flim
-    <span class="org-builtin">float</span> phi_old
-</pre>
-</div>
-
-<div class="org-src-container">
-<pre class="src src-python" id="py-types-py"><span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Runtime-defined type aliases</span>
-<span class="org-comment-delimiter">#</span><span class="org-comment">==============================================================</span>
-
-<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
-
-<span class="org-variable-name">pyidx</span>            <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
-<span class="org-variable-name">vec_xy</span>           <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">vec_xyz</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">coord_yx</span>         <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
-<span class="org-variable-name">coord_tyx</span>        <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
-<span class="org-variable-name">fcatarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">fclaarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">CompactFuelModel</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>,
-                                    cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-
-<span class="org-variable-name">FuelModel</span> <span class="org-operator">=</span> cy.struct(
-    number               <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
-    delta                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    M_x                  <span class="org-operator">=</span> fclaarr,
-    M_f                  <span class="org-operator">=</span> fclaarr,
-    w_o                  <span class="org-operator">=</span> fclaarr,
-    sigma                <span class="org-operator">=</span> fclaarr,
-    h                    <span class="org-operator">=</span> fclaarr,
-    rho_p                <span class="org-operator">=</span> fclaarr,
-    S_T                  <span class="org-operator">=</span> fclaarr,
-    S_e                  <span class="org-operator">=</span> fclaarr,
-    dynamic              <span class="org-operator">=</span> cy.bint,
-    burnable             <span class="org-operator">=</span> cy.bint,
-    exp_A_sigma          <span class="org-operator">=</span> fclaarr,
-    firemod_size_classes <span class="org-operator">=</span> fclaarr,
-    f_ij                 <span class="org-operator">=</span> fclaarr,
-    f_i                  <span class="org-operator">=</span> fcatarr,
-    g_ij                 <span class="org-operator">=</span> fclaarr,
-)
-
-<span class="org-variable-name">ProjectedVectors</span> <span class="org-operator">=</span> cy.struct(
-    wind_vector_3d  <span class="org-operator">=</span> vec_xyz,
-    slope_vector_3d <span class="org-operator">=</span> vec_xyz,
-)
-
-<span class="org-variable-name">FireBehaviorMin</span> <span class="org-operator">=</span> cy.struct(
-    base_spread_rate         <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    base_fireline_intensity  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    max_effective_wind_speed <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    _phiS_G                  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    _phiW_scalr              <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    _phiW_expnt              <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    _ws_scalr                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    _ws_expnt                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-
-<span class="org-variable-name">FireBehaviorMax</span> <span class="org-operator">=</span> cy.struct(
-    max_fire_type          <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
-    max_spread_rate        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    max_spread_direction   <span class="org-operator">=</span> vec_xyz,
-    max_fireline_intensity <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    max_flame_length       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    length_to_width_ratio  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    eccentricity           <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    critical_spread_rate   <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-
-<span class="org-variable-name">SpreadBehavior</span> <span class="org-operator">=</span> cy.struct(
-    dphi_dt            <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fire_type          <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
-    spread_rate        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    spread_direction   <span class="org-operator">=</span> vec_xyz,
-    fireline_intensity <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    flame_length       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-
-<span class="org-variable-name">CrownSpreadInfo</span> <span class="org-operator">=</span> cy.struct(
-    fire_type            <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
-    spread_rate          <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    critical_spread_rate <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-
-<span class="org-variable-name">SpotConfig</span> <span class="org-operator">=</span> cy.struct(
-    random_seed                  <span class="org-operator">=</span> cy.<span class="org-builtin">long</span>,
-    firebrands_per_unit_heat     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    downwind_distance_mean       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fireline_intensity_exponent  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    wind_speed_exponent          <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    downwind_variance_mean_ratio <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    crosswind_distance_stdev     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    decay_distance               <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-
-<span class="org-variable-name">JumpDistribution</span> <span class="org-operator">=</span> cy.struct(
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Downwind LogNormal params</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Formally, we have ln(downwind_jump / 1m) ~ Normal(mu = mu_x, sigma = sigma_x)</span>
-    mu_x    <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">dimensionless (log-space)</span>
-    sigma_x <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">dimensionless (log-space)</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Crosswind normal params</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Formally, we have crosswind_jump ~ Normal(mu = 0, sigma = sigma_y)</span>
-    sigma_y <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-)
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Pre-computed coefficients to apply elliptical wavelet math as fast as possible</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">once the phi gradient information is available.</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">See `pyretechnics.eulerian_level_set.dphi_dt_from_partialed_wavelet`.</span>
-<span class="org-variable-name">PartialedEllWavelet</span> <span class="org-operator">=</span> cy.struct(
-    Vh_3d <span class="org-operator">=</span> vec_xyz,  <span class="org-comment-delimiter"># </span><span class="org-comment">Heading spread rate vector (m/min)</span>
-    ewc_A <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Dimensionless elliptical wavelet coefficient (&lt;= 0)</span>
-    ewc_B <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Dimensionless elliptical wavelet coefficient (&lt;= 0)</span>
-    ewc_C <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Dimensionless elliptical wavelet coefficient (&gt;= 0)</span>
-)
-
-<span class="org-variable-name">CellInputs</span> <span class="org-operator">=</span> cy.struct(
-    slope                         <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    aspect                        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_model_number             <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    canopy_cover                  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    canopy_height                 <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    canopy_base_height            <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    canopy_bulk_density           <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    wind_speed_10m                <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    upwind_direction              <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_moisture_dead_1hr        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_moisture_dead_10hr       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_moisture_dead_100hr      <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_moisture_live_herbaceous <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_moisture_live_woody      <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    foliar_moisture               <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    fuel_spread_adjustment        <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-    weather_spread_adjustment     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Pre-computed information required to compute dphi/dt once the phi</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">gradient is known. Derived from the surface and crown wavelets.</span>
-<span class="org-comment-delimiter">#</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The reason to make this a small struct stored in an array is</span>
-<span class="org-comment-delimiter">#       </span><span class="org-comment">efficiency - we want the CPU to have a low cache miss rate.</span>
-<span class="org-comment-delimiter">#</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: A significant benefit of this architecture is that it's</span>
-<span class="org-comment-delimiter">#       </span><span class="org-comment">Rothermel-agnostic. EllipticalInfo could conceivably be</span>
-<span class="org-comment-delimiter">#       </span><span class="org-comment">implemented using variants of the Rothermel model. This can be</span>
-<span class="org-comment-delimiter">#       </span><span class="org-comment">valuable to give flexibility to users.</span>
-<span class="org-variable-name">EllipticalInfo</span> <span class="org-operator">=</span> cy.struct(
-    cell_index           <span class="org-operator">=</span> coord_yx,
-    elevation_gradient   <span class="org-operator">=</span> vec_xy,
-    surface_wavelet      <span class="org-operator">=</span> PartialedEllWavelet,
-    crown_wavelet        <span class="org-operator">=</span> PartialedEllWavelet,
-    crowning_spread_rate <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Surface spread rate at which crowning occurs</span>
-)
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Some data saved during the 1st Runge-Kutta pass.</span>
-<span class="org-variable-name">Pass1CellOutput</span> <span class="org-operator">=</span> cy.struct(
-    cell_index      <span class="org-operator">=</span> coord_yx,
-    phi_gradient_xy <span class="org-operator">=</span> vec_xy,
-    dphi_dt_flim    <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>, <span class="org-comment-delimiter"># </span><span class="org-comment">Flux-limited dphi/dt (phi/min, &lt;= 0).</span>
-    phi_old         <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
-)
-</pre>
-</div>
 </div>
 </div>
 <div id="outline-container-spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)" class="outline-3">
-<h3 id="spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)"><span class="section-number-3">10.3.</span> SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)</h3>
+<h3 id="spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)"><span class="section-number-3">10.4.</span> SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)</h3>
 <div class="outline-text-3" id="text-spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)">
 <div class="org-src-container">
 <pre class="src src-python" id="test-space-time-cube"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
@@ -14308,7 +14127,7 @@ cdef struct Pass1CellOutput:
 </div>
 </div>
 <div id="outline-container-loading-landfire-inputs-(pyretechnics.load_landfire)" class="outline-3">
-<h3 id="loading-landfire-inputs-(pyretechnics.load_landfire)"><span class="section-number-3">10.4.</span> Loading LANDFIRE Inputs (pyretechnics.load_landfire)</h3>
+<h3 id="loading-landfire-inputs-(pyretechnics.load_landfire)"><span class="section-number-3">10.5.</span> Loading LANDFIRE Inputs (pyretechnics.load_landfire)</h3>
 <div class="outline-text-3" id="text-loading-landfire-inputs-(pyretechnics.load_landfire)">
 <p>
 In order to use the functions from <code>pyretechnics.burn_cells</code> (see
@@ -14473,7 +14292,7 @@ raster layers from files on disk into a Python dictionary of
 </p>
 </div>
 <div id="outline-container-module-imports-load-landfire" class="outline-4">
-<h4 id="module-imports-load-landfire"><span class="section-number-4">10.4.1.</span> Module Imports</h4>
+<h4 id="module-imports-load-landfire"><span class="section-number-4">10.5.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-load-landfire">
 <div class="org-src-container">
 <pre class="src src-python" id="load-landfire-imports"><span class="org-keyword">import</span> cython
@@ -14488,7 +14307,7 @@ raster layers from files on disk into a Python dictionary of
 </div>
 </div>
 <div id="outline-container-loading-raster-files-with-python-rasterio" class="outline-4">
-<h4 id="loading-raster-files-with-python-rasterio"><span class="section-number-4">10.4.2.</span> Loading Raster Files with Python Rasterio</h4>
+<h4 id="loading-raster-files-with-python-rasterio"><span class="section-number-4">10.5.2.</span> Loading Raster Files with Python Rasterio</h4>
 <div class="outline-text-4" id="text-loading-raster-files-with-python-rasterio">
 <p>
 We will begin by defining a <code>load_raster</code> function that takes a path
@@ -14528,7 +14347,7 @@ these keys:
 </div>
 </div>
 <div id="outline-container-converting-landfire-units-and-datatypes" class="outline-4">
-<h4 id="converting-landfire-units-and-datatypes"><span class="section-number-4">10.4.3.</span> Converting LANDFIRE Units and Datatypes</h4>
+<h4 id="converting-landfire-units-and-datatypes"><span class="section-number-4">10.5.3.</span> Converting LANDFIRE Units and Datatypes</h4>
 <div class="outline-text-4" id="text-converting-landfire-units-and-datatypes">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
@@ -14570,7 +14389,7 @@ during the layer loading process.
 </div>
 </div>
 <div id="outline-container-verifying-raster-constraints" class="outline-4">
-<h4 id="verifying-raster-constraints"><span class="section-number-4">10.4.4.</span> Verifying Raster Constraints</h4>
+<h4 id="verifying-raster-constraints"><span class="section-number-4">10.5.4.</span> Verifying Raster Constraints</h4>
 <div class="outline-text-4" id="text-verifying-raster-constraints">
 <p>
 In order to work with the Pyretechnics Fire Spread API, all rasters
@@ -14619,7 +14438,7 @@ Below we implement functions to check these constraints:
 </div>
 </div>
 <div id="outline-container-converting-rasters-to-spacetimecubes" class="outline-4">
-<h4 id="converting-rasters-to-spacetimecubes"><span class="section-number-4">10.4.5.</span> Converting Rasters to SpaceTimeCubes</h4>
+<h4 id="converting-rasters-to-spacetimecubes"><span class="section-number-4">10.5.5.</span> Converting Rasters to SpaceTimeCubes</h4>
 <div class="outline-text-4" id="text-converting-rasters-to-spacetimecubes">
 <p>
 Another requirement of the Pyretechnics Fire Spread API is that each
@@ -14652,7 +14471,7 @@ lookup calls.
 </div>
 </div>
 <div id="outline-container-putting-it-all-together" class="outline-4">
-<h4 id="putting-it-all-together"><span class="section-number-4">10.4.6.</span> Putting It All Together</h4>
+<h4 id="putting-it-all-together"><span class="section-number-4">10.5.6.</span> Putting It All Together</h4>
 <div class="outline-text-4" id="text-putting-it-all-together">
 <p>
 By combining the functions defined in the previous sections, we can
@@ -14667,6 +14486,1067 @@ with a <code>SpaceTimeCube</code> object.
     <span class="org-variable-name">landfire_rasters</span> <span class="org-operator">=</span> load_and_convert_landfire_rasters(landfire_file_paths)
     <span class="org-keyword">if</span> verify_raster_constraints(cube_shape, landfire_rasters.values()):
         <span class="org-keyword">return</span> convert_rasters_to_space_time_cubes(cube_shape, landfire_rasters)
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-cython-pxd-files" class="outline-3">
+<h3 id="cython-pxd-files"><span class="section-number-3">10.6.</span> Cython PXD Files</h3>
+<div class="outline-text-3" id="text-cython-pxd-files">
+<p>
+The following sections contain the PXD (Cython description) files used
+by the Cython compiler to enable fast C-level linking between modules.
+</p>
+</div>
+<div id="outline-container-pyretechnics-cy-types-pxd" class="outline-4">
+<h4 id="pyretechnics-cy-types-pxd"><span class="section-number-4">10.6.1.</span> pyretechnics.cy_types</h4>
+<div class="outline-text-4" id="text-pyretechnics-cy-types-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="cy-types-pxd"><span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Compile-time-defined type aliases</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">==================================================</span>
+
+ctypedef Py_ssize_t pyidx
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) vec_xy
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) vec_xyz
+ctypedef (pyidx, pyidx) coord_yx
+ctypedef (pyidx, pyidx, pyidx) coord_tyx
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) fcatarr
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) fclaarr
+ctypedef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>, <span class="org-builtin">float</span>) CompactFuelModel
+
+cdef struct FuelModel:
+    <span class="org-builtin">int</span> number
+    <span class="org-builtin">float</span> delta
+    fclaarr M_x
+    fclaarr M_f
+    fclaarr w_o
+    fclaarr sigma
+    fclaarr h
+    fclaarr rho_p
+    fclaarr S_T
+    fclaarr S_e
+    bint dynamic
+    bint burnable
+    fclaarr exp_A_sigma
+    fclaarr firemod_size_classes
+    fclaarr f_ij
+    fcatarr f_i
+    fclaarr g_ij
+
+cdef struct ProjectedVectors:
+    vec_xyz wind_vector_3d
+    vec_xyz slope_vector_3d
+
+cdef struct FireBehaviorMin:
+    <span class="org-builtin">float</span> base_spread_rate
+    <span class="org-builtin">float</span> base_fireline_intensity
+    <span class="org-builtin">float</span> max_effective_wind_speed
+    <span class="org-builtin">float</span> _phiS_G
+    <span class="org-builtin">float</span> _phiW_scalr
+    <span class="org-builtin">float</span> _phiW_expnt
+    <span class="org-builtin">float</span> _ws_scalr
+    <span class="org-builtin">float</span> _ws_expnt
+
+cdef struct FireBehaviorMax:
+    <span class="org-builtin">int</span> max_fire_type
+    <span class="org-builtin">float</span> max_spread_rate
+    vec_xyz max_spread_direction
+    <span class="org-builtin">float</span> max_fireline_intensity
+    <span class="org-builtin">float</span> max_flame_length
+    <span class="org-builtin">float</span> length_to_width_ratio
+    <span class="org-builtin">float</span> eccentricity
+    <span class="org-builtin">float</span> critical_spread_rate
+
+cdef struct SpreadBehavior:
+    <span class="org-builtin">float</span> dphi_dt
+    <span class="org-builtin">int</span> fire_type
+    <span class="org-builtin">float</span> spread_rate
+    vec_xyz spread_direction
+    <span class="org-builtin">float</span> fireline_intensity
+    <span class="org-builtin">float</span> flame_length
+
+cdef struct CrownSpreadInfo:
+    <span class="org-builtin">int</span> fire_type
+    <span class="org-builtin">float</span> spread_rate
+    <span class="org-builtin">float</span> critical_spread_rate
+
+cdef struct SpotConfig:
+    <span class="org-builtin">long</span> random_seed
+    <span class="org-builtin">float</span> firebrands_per_unit_heat
+    <span class="org-builtin">float</span> downwind_distance_mean
+    <span class="org-builtin">float</span> fireline_intensity_exponent
+    <span class="org-builtin">float</span> wind_speed_exponent
+    <span class="org-builtin">float</span> downwind_variance_mean_ratio
+    <span class="org-builtin">float</span> crosswind_distance_stdev
+    <span class="org-builtin">float</span> decay_distance
+
+cdef struct JumpDistribution:
+    <span class="org-builtin">float</span> mu_x
+    <span class="org-builtin">float</span> sigma_x
+    <span class="org-builtin">float</span> sigma_y
+
+cdef struct PartialedEllWavelet:
+    vec_xyz Vh_3d
+    <span class="org-builtin">float</span> ewc_A
+    <span class="org-builtin">float</span> ewc_B
+    <span class="org-builtin">float</span> ewc_C
+
+cdef struct CellInputs:
+    <span class="org-builtin">float</span> slope
+    <span class="org-builtin">float</span> aspect
+    <span class="org-builtin">float</span> fuel_model_number
+    <span class="org-builtin">float</span> canopy_cover
+    <span class="org-builtin">float</span> canopy_height
+    <span class="org-builtin">float</span> canopy_base_height
+    <span class="org-builtin">float</span> canopy_bulk_density
+    <span class="org-builtin">float</span> wind_speed_10m
+    <span class="org-builtin">float</span> upwind_direction
+    <span class="org-builtin">float</span> fuel_moisture_dead_1hr
+    <span class="org-builtin">float</span> fuel_moisture_dead_10hr
+    <span class="org-builtin">float</span> fuel_moisture_dead_100hr
+    <span class="org-builtin">float</span> fuel_moisture_live_herbaceous
+    <span class="org-builtin">float</span> fuel_moisture_live_woody
+    <span class="org-builtin">float</span> foliar_moisture
+    <span class="org-builtin">float</span> fuel_spread_adjustment
+    <span class="org-builtin">float</span> weather_spread_adjustment
+
+cdef struct EllipticalInfo:
+    coord_yx cell_index
+    vec_xy elevation_gradient
+    PartialedEllWavelet surface_wavelet
+    PartialedEllWavelet crown_wavelet
+    <span class="org-builtin">float</span> crowning_spread_rate
+
+cdef struct Pass1CellOutput:
+    coord_yx cell_index
+    vec_xy phi_gradient_xy
+    <span class="org-builtin">float</span> dphi_dt_flim
+    <span class="org-builtin">float</span> phi_old
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-conversion-pxd" class="outline-4">
+<h4 id="pyretechnics-conversion-pxd"><span class="section-number-4">10.6.2.</span> pyretechnics.conversion</h4>
+<div class="outline-text-4" id="text-pyretechnics-conversion-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="conversion-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy
+
+cpdef <span class="org-builtin">float</span> rad_to_deg(<span class="org-builtin">float</span> radians) noexcept
+cpdef <span class="org-builtin">float</span> deg_to_rad(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> deg_to_ratio(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> ratio_to_deg(<span class="org-builtin">float</span> ratio) noexcept
+cpdef <span class="org-builtin">float</span> F_to_K(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> K_to_F(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> F_to_C(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> C_to_F(<span class="org-builtin">float</span> degrees) noexcept
+cpdef <span class="org-builtin">float</span> ch_to_m(<span class="org-builtin">float</span> ch) noexcept
+cpdef <span class="org-builtin">float</span> m_to_ch(<span class="org-builtin">float</span> m) noexcept
+cpdef <span class="org-builtin">float</span> m_to_ft(<span class="org-builtin">float</span> m) noexcept
+cpdef <span class="org-builtin">float</span> ft_to_m(<span class="org-builtin">float</span> ft) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_mps(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> mps_to_mph(<span class="org-builtin">float</span> mps) noexcept
+cpdef <span class="org-builtin">float</span> km_hr_to_mps(<span class="org-builtin">float</span> km_hr) noexcept
+cpdef <span class="org-builtin">float</span> mps_to_km_hr(<span class="org-builtin">float</span> mps) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_km_hr(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> km_hr_to_mph(<span class="org-builtin">float</span> km_hr) noexcept
+cpdef <span class="org-builtin">float</span> m_min_to_km_hr(<span class="org-builtin">float</span> m_min) noexcept
+cpdef <span class="org-builtin">float</span> km_hr_to_m_min(<span class="org-builtin">float</span> km_hr) noexcept
+cpdef <span class="org-builtin">float</span> m_min_to_mph(<span class="org-builtin">float</span> m_min) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_m_min(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> mps_to_fpm(<span class="org-builtin">float</span> mps) noexcept
+cpdef <span class="org-builtin">float</span> fpm_to_mps(<span class="org-builtin">float</span> fpm) noexcept
+cpdef <span class="org-builtin">float</span> mph_to_fpm(<span class="org-builtin">float</span> mph) noexcept
+cpdef <span class="org-builtin">float</span> fpm_to_mph(<span class="org-builtin">float</span> fpm) noexcept
+cpdef <span class="org-builtin">float</span> Btu_ft_s_to_kW_m(<span class="org-builtin">float</span> Btu_ft_s) noexcept
+cpdef <span class="org-builtin">float</span> kW_m_to_Btu_ft_s(<span class="org-builtin">float</span> kW_m) noexcept
+cpdef <span class="org-builtin">float</span> Btu_lb_to_kJ_kg(<span class="org-builtin">float</span> Btu_lb) noexcept
+cpdef <span class="org-builtin">float</span> kJ_kg_to_Btu_lb(<span class="org-builtin">float</span> kJ_kg) noexcept
+cpdef <span class="org-builtin">float</span> kg_m3_to_lb_ft3(<span class="org-builtin">float</span> kg_m3) noexcept
+cpdef <span class="org-builtin">float</span> lb_ft3_to_kg_m3(<span class="org-builtin">float</span> lb_ft3) noexcept
+cpdef <span class="org-builtin">float</span> percent_to_dec(<span class="org-builtin">float</span> percent) noexcept
+cpdef <span class="org-builtin">float</span> dec_to_percent(<span class="org-builtin">float</span> decimal) noexcept
+cpdef <span class="org-builtin">float</span> sec_to_min(<span class="org-builtin">float</span> seconds) noexcept
+cpdef <span class="org-builtin">float</span> min_to_sec(<span class="org-builtin">float</span> minutes) noexcept
+cpdef <span class="org-builtin">float</span> ms_to_min(<span class="org-builtin">float</span> milliseconds) noexcept
+cpdef <span class="org-builtin">float</span> min_to_ms(<span class="org-builtin">float</span> minutes) noexcept
+cpdef <span class="org-builtin">float</span> hour_to_min(<span class="org-builtin">float</span> hours) noexcept
+cpdef <span class="org-builtin">float</span> min_to_hour(<span class="org-builtin">float</span> minutes) noexcept
+cpdef <span class="org-builtin">float</span> day_to_min(<span class="org-builtin">float</span> days) noexcept
+cpdef <span class="org-builtin">float</span> min_to_day(<span class="org-builtin">float</span> minutes) noexcept
+cpdef vec_xy cartesian_to_polar(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
+cpdef vec_xy polar_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> theta) noexcept
+cpdef vec_xy cartesian_to_azimuthal(<span class="org-builtin">float</span> x, <span class="org-builtin">float</span> y) noexcept
+cpdef vec_xy azimuthal_to_cartesian(<span class="org-builtin">float</span> r, <span class="org-builtin">float</span> azimuth) noexcept
+cpdef <span class="org-builtin">float</span> opposite_direction(<span class="org-builtin">float</span> theta) noexcept
+cpdef <span class="org-builtin">float</span> wind_speed_10m_to_wind_speed_20ft(<span class="org-builtin">float</span> wind_speed_10m) noexcept
+cpdef <span class="org-builtin">float</span> wind_speed_20ft_to_wind_speed_10m(<span class="org-builtin">float</span> wind_speed_20ft) noexcept
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-vector-utils-pxd" class="outline-4">
+<h4 id="pyretechnics-vector-utils-pxd"><span class="section-number-4">10.6.3.</span> pyretechnics.vector_utils</h4>
+<div class="outline-text-4" id="text-pyretechnics-vector-utils-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="vector-utils-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xy, vec_xyz
+
+cpdef <span class="org-builtin">float</span> dot_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef <span class="org-builtin">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xy scale_2d(<span class="org-builtin">float</span> scalar, vec_xy vector) noexcept
+cpdef vec_xyz scale_3d(<span class="org-builtin">float</span> scalar, vec_xyz vector) noexcept
+cpdef vec_xy add_2d(vec_xy vector1, vec_xy vector2) noexcept
+cpdef vec_xyz add_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef <span class="org-builtin">float</span> vector_magnitude_2d(vec_xy vector) noexcept
+cpdef <span class="org-builtin">float</span> vector_magnitude_3d(vec_xyz vector) noexcept
+cpdef vec_xy as_unit_vector_2d(vec_xy vector) noexcept
+cpdef vec_xyz as_unit_vector_3d(vec_xyz vector) noexcept
+cpdef vec_xyz to_slope_plane(vec_xy vector_2d, vec_xy elevation_gradient) noexcept
+cpdef vec_xy to_horizontal_plane(vec_xyz vector_3d) noexcept
+cpdef <span class="org-builtin">float</span> spread_direction_vector_to_angle(vec_xyz vector_3d) noexcept
+cpdef vec_xyz get_slope_normal_vector(vec_xy elevation_gradient) noexcept
+cpdef vec_xyz cross_3d(vec_xyz vector1, vec_xyz vector2) noexcept
+cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, <span class="org-builtin">float</span> theta, <span class="org-builtin">float</span> slope, <span class="org-builtin">float</span> aspect) noexcept
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-random-pxd" class="outline-4">
+<h4 id="pyretechnics-random-pxd"><span class="section-number-4">10.6.4.</span> pyretechnics.random</h4>
+<div class="outline-text-4" id="text-pyretechnics-random-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="random-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport pyidx
+
+cdef <span class="org-keyword">class</span> <span class="org-type">BufferedRandGen</span>:
+    cdef <span class="org-builtin">object</span> numpy_rand     <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: object -&gt; Generator</span>
+    cdef <span class="org-builtin">float</span>[::1] uniform_buf
+    cdef pyidx uniform_pos
+    cdef <span class="org-builtin">float</span>[::1] normal_buf
+    cdef pyidx normal_pos
+    cdef <span class="org-builtin">long</span>[::1] poisson16_buf
+    cdef pyidx poisson16_pos
+    cdef <span class="org-builtin">long</span>[::1] poisson1_buf
+    cdef pyidx poisson1_pos
+    cdef double[::1] poisson_exp_buf
+    cdef pyidx poisson_exp_pos
+    cdef <span class="org-builtin">long</span> next_poisson(BufferedRandGen <span class="org-keyword">self</span>, double M) noexcept
+    cdef <span class="org-builtin">float</span> next_uniform(BufferedRandGen <span class="org-keyword">self</span>) noexcept
+    cdef <span class="org-builtin">float</span> next_normal(BufferedRandGen <span class="org-keyword">self</span>) noexcept
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-space-time-cube-pxd" class="outline-4">
+<h4 id="pyretechnics-space-time-cube-pxd"><span class="section-number-4">10.6.5.</span> pyretechnics.space_time_cube</h4>
+<div class="outline-text-4" id="text-pyretechnics-space-time-cube-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="space-time-cube-pxd">cimport numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">from</span> pyretechnics.cy_types cimport pyidx
+
+cdef bint is_pos_int(<span class="org-builtin">object</span> x) noexcept
+cdef <span class="org-builtin">int</span> divide_evenly(<span class="org-builtin">int</span> dividend, <span class="org-builtin">int</span> divisor)
+cdef (pyidx, pyidx) to_positive_index_range(<span class="org-builtin">object</span> index_range, pyidx axis_length) noexcept
+<span class="org-comment-delimiter"># </span><span class="org-comment">def maybe_repeat_array(array, axis_repetitions)</span>
+
+cdef <span class="org-keyword">class</span> <span class="org-type">ISpaceTimeCube</span>:
+    cdef <span class="org-builtin">float</span> get(ISpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
+
+cdef <span class="org-keyword">class</span> <span class="org-type">SpaceTimeCube</span>(ISpaceTimeCube):
+    cdef public <span class="org-builtin">int</span> ndim
+    cdef public unsigned <span class="org-builtin">long</span> size
+    cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) shape
+    cdef public <span class="org-builtin">object</span> base
+    cdef public <span class="org-builtin">int</span> t_repetitions
+    cdef public <span class="org-builtin">int</span> y_repetitions
+    cdef public <span class="org-builtin">int</span> x_repetitions
+    <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE we use const (read-only MemoryView) so that Cython will accept to use a read-only array, which is required for shared-memory parallelism.</span>
+    cdef public const <span class="org-builtin">float</span>[:,:,::1] data
+    cpdef <span class="org-builtin">float</span> get(SpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getTimeSeries(self, t_range, y, x)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getSpatialPlane(self, t, y_range, x_range)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getSubcube(self, t_range, y_range, x_range)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getFullyRealizedCube(self, cache=False)</span>
+
+cdef <span class="org-keyword">class</span> <span class="org-type">LazySpaceTimeCube</span>(ISpaceTimeCube):
+    cdef public <span class="org-builtin">int</span> ndim
+    cdef public unsigned <span class="org-builtin">long</span> size
+    cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) shape
+    cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) subcube_shape
+    cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) cache_shape
+    cdef public np.ndarray cache
+    cdef public <span class="org-builtin">object</span> load_subcube
+    cdef SpaceTimeCube __getOrLoadSubcube(
+        LazySpaceTimeCube <span class="org-keyword">self</span>,
+        pyidx cache_t,
+        pyidx cache_y,
+        pyidx cache_x,
+        )
+    cpdef <span class="org-builtin">float</span> get(LazySpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getTimeSeries(self, t_range, y, x)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getSpatialPlane(self, t, y_range, x_range)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getSubcube(self, t_range, y_range, x_range)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def getFullyRealizedCube(self, cache=False)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def releaseFullyRealizedCube(self)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-fuel-models-pxd" class="outline-4">
+<h4 id="pyretechnics-fuel-models-pxd"><span class="section-number-4">10.6.6.</span> pyretechnics.fuel_models</h4>
+<div class="outline-text-4" id="text-pyretechnics-fuel-models-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="fuel-models-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
+
+cdef <span class="org-builtin">dict</span>[<span class="org-builtin">int</span>, CompactFuelModel] compact_fuel_model_table
+
+cdef bint is_burnable_fuel_model_number(<span class="org-builtin">int</span> fuel_model_number) noexcept
+
+cdef <span class="org-builtin">float</span> compute_exp_A_sigma(<span class="org-builtin">float</span> A, <span class="org-builtin">float</span> sigma_ij) noexcept
+
+cdef <span class="org-builtin">float</span> compute_firemod_size_class(<span class="org-builtin">float</span> sigma_i) noexcept
+
+cdef FuelModel expand_compact_fuel_model(<span class="org-builtin">int</span> fuel_model_number) noexcept
+
+cdef <span class="org-builtin">dict</span>[<span class="org-builtin">int</span>, FuelModel] fuel_model_table
+
+cpdef <span class="org-builtin">list</span>[<span class="org-builtin">int</span>] list_fuel_model_numbers()
+
+cpdef <span class="org-builtin">list</span>[FuelModel] list_fuel_models()
+
+cpdef bint fuel_model_exists(<span class="org-builtin">int</span> fuel_model_number) noexcept
+
+cpdef FuelModel get_fuel_model(<span class="org-builtin">int</span> fuel_model_number) noexcept
+
+cdef FuelModel add_dynamic_fuel_loading(FuelModel fuel_model, fclaarr M_f) noexcept
+
+cdef <span class="org-builtin">float</span> compute_gij(fclaarr firemod_size_classes, fclaarr f_ij, <span class="org-builtin">float</span> firemod_size_class_ij, bint is_dead) noexcept
+
+cdef FuelModel add_weighting_factors(FuelModel fuel_model) noexcept
+
+cdef FuelModel add_live_moisture_of_extinction(FuelModel fuel_model) noexcept
+
+cpdef FuelModel moisturize(FuelModel fuel_model, fclaarr fuel_moisture) noexcept
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-surface-fire-pxd" class="outline-4">
+<h4 id="pyretechnics-surface-fire-pxd"><span class="section-number-4">10.6.7.</span> pyretechnics.surface_fire</h4>
+<div class="outline-text-4" id="text-pyretechnics-surface-fire-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="surface-fire-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, \
+     FireBehaviorMin, FireBehaviorMax, SpreadBehavior
+
+cdef <span class="org-builtin">float</span> calc_surface_area_to_volume_ratio(fcatarr f_i, fclaarr f_ij, fclaarr sigma) noexcept
+
+cdef <span class="org-builtin">float</span> calc_packing_ratio(fclaarr w_o, fclaarr rho_p, <span class="org-builtin">float</span> delta) noexcept
+
+cdef <span class="org-builtin">float</span> calc_optimum_packing_ratio(<span class="org-builtin">float</span> sigma_prime) noexcept
+
+cdef fcatarr calc_mineral_damping_coefficients(fclaarr f_ij, fclaarr S_e) noexcept
+
+cdef fcatarr calc_moisture_damping_coefficients(fclaarr f_ij, fclaarr M_f, fclaarr M_x) noexcept
+
+cdef fcatarr calc_low_heat_content(fclaarr f_ij, fclaarr h) noexcept
+
+cdef fcatarr calc_net_fuel_loading(fclaarr g_ij, fclaarr w_o, fclaarr S_T) noexcept
+
+cdef <span class="org-builtin">float</span> calc_heat_per_unit_area(fcatarr eta_S_i, fcatarr eta_M_i, fcatarr h_i, fcatarr W_n_i) noexcept
+
+cdef <span class="org-builtin">float</span> calc_optimum_reaction_velocity(<span class="org-builtin">float</span> sigma_prime, <span class="org-builtin">float</span> beta, <span class="org-builtin">float</span> beta_op) noexcept
+
+cdef <span class="org-builtin">float</span> calc_reaction_intensity(
+    FuelModel moisturized_fuel_model,
+    <span class="org-builtin">float</span> sigma_prime,
+    <span class="org-builtin">float</span> beta,
+    <span class="org-builtin">float</span> beta_op,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> calc_propagating_flux_ratio(<span class="org-builtin">float</span> sigma_prime, <span class="org-builtin">float</span> beta) noexcept
+
+cdef <span class="org-builtin">float</span> calc_heat_source(<span class="org-builtin">float</span> I_R, <span class="org-builtin">float</span> xi) noexcept
+
+cdef <span class="org-builtin">float</span> calc_ovendry_bulk_density(fclaarr w_o, <span class="org-builtin">float</span> delta) noexcept
+
+cdef fclaarr calc_effective_heating_number_distribution(fclaarr sigma) noexcept
+
+cdef fclaarr calc_heat_of_preignition_distribution(fclaarr M_f) noexcept
+
+cdef <span class="org-builtin">float</span> calc_heat_sink(fcatarr f_i, fclaarr f_ij, <span class="org-builtin">float</span> rho_b, fclaarr epsilon_ij, fclaarr Q_ig_ij) noexcept
+
+cdef <span class="org-builtin">float</span> calc_spread_rate(<span class="org-builtin">float</span> heat_source, <span class="org-builtin">float</span> heat_sink) noexcept
+
+cdef <span class="org-builtin">float</span> calc_residence_time(<span class="org-builtin">float</span> sigma_prime) noexcept
+
+cdef <span class="org-builtin">float</span> calc_flame_depth(<span class="org-builtin">float</span> spread_rate, <span class="org-builtin">float</span> residence_time) noexcept
+
+cdef <span class="org-builtin">float</span> calc_fireline_intensity(<span class="org-builtin">float</span> reaction_intensity, <span class="org-builtin">float</span> flame_depth) noexcept
+
+cdef <span class="org-builtin">float</span> calc_flame_length(<span class="org-builtin">float</span> fireline_intensity) noexcept
+
+cpdef <span class="org-builtin">float</span> calc_areal_heat_output(<span class="org-builtin">float</span> spread_rate, <span class="org-builtin">float</span> fireline_intensity) noexcept
+
+cdef <span class="org-builtin">float</span> calc_max_effective_wind_speed(<span class="org-builtin">float</span> reaction_intensity) noexcept
+
+cdef <span class="org-builtin">float</span> get_phi_S(FireBehaviorMin sfmin, <span class="org-builtin">float</span> slope) noexcept
+
+cdef <span class="org-builtin">float</span> get_phi_W(FireBehaviorMin sfmin, <span class="org-builtin">float</span> midflame_wind_speed) noexcept
+
+cdef <span class="org-builtin">float</span> get_wind_speed(FireBehaviorMin sfmin, <span class="org-builtin">float</span> phi_W) noexcept
+
+cdef FireBehaviorMin make_surface_fire_min(
+    <span class="org-builtin">float</span> base_spread_rate,
+    <span class="org-builtin">float</span> base_fireline_intensity,
+    <span class="org-builtin">float</span> max_effective_wind_speed,
+    <span class="org-builtin">float</span> B,
+    <span class="org-builtin">float</span> C,
+    <span class="org-builtin">float</span> F,
+    <span class="org-builtin">float</span> beta,
+    ) noexcept
+
+cpdef FireBehaviorMin calc_surface_fire_behavior_no_wind_no_slope(
+    FuelModel moisturized_fuel_model,
+    <span class="org-builtin">float</span> spread_rate_adjustment<span class="org-operator">=</span>?,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> calc_wind_adjustment_factor(<span class="org-builtin">float</span> fuel_bed_depth, <span class="org-builtin">float</span> canopy_height, <span class="org-builtin">float</span> canopy_cover) noexcept
+
+cpdef <span class="org-builtin">float</span> calc_midflame_wind_speed(
+    <span class="org-builtin">float</span> wind_speed_20ft,
+    <span class="org-builtin">float</span> fuel_bed_depth,
+    <span class="org-builtin">float</span> canopy_height,
+    <span class="org-builtin">float</span> canopy_cover,
+    ) noexcept
+
+cdef ProjectedVectors project_wind_and_slope_vectors_3d(
+    <span class="org-builtin">float</span> wind_speed,
+    <span class="org-builtin">float</span> downwind_direction,
+    <span class="org-builtin">float</span> slope,
+    <span class="org-builtin">float</span> upslope_direction,
+    ) noexcept
+
+cdef vec_xyz get_phi_E(vec_xyz wind_vector_3d, vec_xyz slope_vector_3d, <span class="org-builtin">float</span> phi_W, <span class="org-builtin">float</span> phi_S) noexcept
+
+cdef <span class="org-builtin">float</span> surface_length_to_width_ratio(<span class="org-builtin">float</span> effective_wind_speed, <span class="org-builtin">str</span> model<span class="org-operator">=</span>?)
+
+cdef <span class="org-builtin">float</span> surface_fire_eccentricity(<span class="org-builtin">float</span> length_to_width_ratio) noexcept
+
+cdef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) maybe_limit_wind_speed(
+    bint use_wind_limit,
+    <span class="org-builtin">float</span> max_wind_speed,
+    FireBehaviorMin sfmin,
+    <span class="org-builtin">float</span> phi_E_magnitude,
+    ) noexcept
+
+cpdef FireBehaviorMax calc_surface_fire_behavior_max(
+    FireBehaviorMin sfmin,
+    <span class="org-builtin">float</span> midflame_wind_speed,
+    <span class="org-builtin">float</span> upwind_direction,
+    <span class="org-builtin">float</span> slope,
+    <span class="org-builtin">float</span> aspect,
+    bint use_wind_limit<span class="org-operator">=</span>?,
+    <span class="org-builtin">str</span> surface_lw_ratio_model<span class="org-operator">=</span>?,
+    ) noexcept
+
+cpdef SpreadBehavior calc_surface_fire_behavior_in_direction(
+    FireBehaviorMax surface_fire_max,
+    vec_xyz spread_direction,
+    ) noexcept
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-crown-fire-pxd" class="outline-4">
+<h4 id="pyretechnics-crown-fire-pxd"><span class="section-number-4">10.6.8.</span> pyretechnics.crown_fire</h4>
+<div class="outline-text-4" id="text-pyretechnics-crown-fire-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="crown-fire-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
+
+cdef <span class="org-builtin">float</span> van_wagner_critical_fireline_intensity(
+    <span class="org-builtin">float</span> canopy_base_height,
+    <span class="org-builtin">float</span> foliar_moisture,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> van_wagner_crowning_spread_rate(
+    FireBehaviorMax surface_fire_max,
+    <span class="org-builtin">float</span> canopy_base_height,
+    <span class="org-builtin">float</span> foliar_moisture,
+    ) noexcept
+
+cpdef bint van_wagner_crown_fire_initiation(
+    <span class="org-builtin">float</span> surface_fireline_intensity,
+    <span class="org-builtin">float</span> canopy_cover,
+    <span class="org-builtin">float</span> canopy_base_height,
+    <span class="org-builtin">float</span> foliar_moisture,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> cruz_active_crown_fire_spread_rate(
+    <span class="org-builtin">float</span> wind_speed_10m,
+    <span class="org-builtin">float</span> canopy_bulk_density,
+    <span class="org-builtin">float</span> estimated_fine_fuel_moisture,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> van_wagner_critical_spread_rate(<span class="org-builtin">float</span> canopy_bulk_density) noexcept
+
+cdef <span class="org-builtin">float</span> cruz_passive_crown_fire_spread_rate(
+    <span class="org-builtin">float</span> active_spread_rate,
+    <span class="org-builtin">float</span> critical_spread_rate,
+    ) noexcept
+
+cdef CrownSpreadInfo cruz_crown_fire_spread_info(
+    <span class="org-builtin">float</span> wind_speed_10m,
+    <span class="org-builtin">float</span> canopy_bulk_density,
+    <span class="org-builtin">float</span> estimated_fine_fuel_moisture,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> calc_crown_fireline_intensity(
+    <span class="org-builtin">float</span> crown_spread_rate,
+    <span class="org-builtin">float</span> canopy_bulk_density,
+    <span class="org-builtin">float</span> canopy_height,
+    <span class="org-builtin">float</span> canopy_base_height,
+    <span class="org-builtin">float</span> heat_of_combustion,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> crown_length_to_width_ratio(
+    <span class="org-builtin">float</span> wind_speed_10m,
+    <span class="org-builtin">float</span> max_length_to_width_ratio<span class="org-operator">=</span>?,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> crown_fire_eccentricity(<span class="org-builtin">float</span> length_to_width_ratio) noexcept
+
+cpdef FireBehaviorMax calc_crown_fire_behavior_max(
+    <span class="org-builtin">float</span> canopy_height,
+    <span class="org-builtin">float</span> canopy_base_height,
+    <span class="org-builtin">float</span> canopy_bulk_density,
+    <span class="org-builtin">float</span> heat_of_combustion,
+    <span class="org-builtin">float</span> estimated_fine_fuel_moisture,
+    <span class="org-builtin">float</span> wind_speed_10m,
+    <span class="org-builtin">float</span> upwind_direction,
+    <span class="org-builtin">float</span> slope,
+    <span class="org-builtin">float</span> aspect,
+    <span class="org-builtin">float</span> crown_max_lw_ratio<span class="org-operator">=</span>?,
+    ) noexcept
+
+cpdef SpreadBehavior calc_crown_fire_behavior_in_direction(
+    FireBehaviorMax crown_fire_max,
+    vec_xyz spread_direction,
+    ) noexcept
+
+cpdef SpreadBehavior calc_combined_fire_behavior(
+    SpreadBehavior surface_fire_behavior,
+    SpreadBehavior crown_fire_behavior,
+    ) noexcept
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-spot-fire-pxd" class="outline-4">
+<h4 id="pyretechnics-spot-fire-pxd"><span class="section-number-4">10.6.9.</span> pyretechnics.spot_fire</h4>
+<div class="outline-text-4" id="text-pyretechnics-spot-fire-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="spot-fire-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+<span class="org-keyword">from</span> pyretechnics.random cimport BufferedRandGen
+<span class="org-keyword">from</span> pyretechnics.space_time_cube cimport ISpaceTimeCube
+
+cdef <span class="org-builtin">float</span> expected_firebrand_production(
+    SpreadBehavior fire_behavior,
+    vec_xy elevation_gradient,
+    <span class="org-builtin">float</span> cell_horizontal_area,
+    <span class="org-builtin">float</span> firebrands_per_unit_heat<span class="org-operator">=</span>?,
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> delta_to_grid_dx(<span class="org-builtin">float</span> cos_wdir, <span class="org-builtin">float</span> sin_wdir, <span class="org-builtin">float</span> delta_x, <span class="org-builtin">float</span> delta_y) noexcept
+cdef <span class="org-builtin">float</span> delta_to_grid_dy(<span class="org-builtin">float</span> cos_wdir, <span class="org-builtin">float</span> sin_wdir, <span class="org-builtin">float</span> delta_x, <span class="org-builtin">float</span> delta_y) noexcept
+
+cdef <span class="org-builtin">int</span> distance_to_n_cells(<span class="org-builtin">float</span> distance, <span class="org-builtin">float</span> cell_size) noexcept
+
+cdef <span class="org-builtin">float</span> resolve_exp_delta_x(SpotConfig spot_config, <span class="org-builtin">float</span> fireline_intensity, <span class="org-builtin">float</span> wind_speed_20ft) noexcept
+cdef <span class="org-builtin">float</span> resolve_var_delta_x(SpotConfig spot_config, <span class="org-builtin">float</span> exp_delta_x) noexcept
+
+cdef <span class="org-builtin">float</span> lognormal_mu_from_moments(<span class="org-builtin">float</span> mean, <span class="org-builtin">float</span> variance) noexcept
+cdef <span class="org-builtin">float</span> lognormal_sigma_from_moments(<span class="org-builtin">float</span> mean, <span class="org-builtin">float</span> variance) noexcept
+
+cdef (<span class="org-builtin">float</span>, <span class="org-builtin">float</span>) resolve_lognormal_params(
+    SpotConfig spot_config,
+    <span class="org-builtin">float</span> fireline_intensity,
+    <span class="org-builtin">float</span> wind_speed_20ft
+    ) noexcept
+
+cdef double <span class="org-variable-name">sigma_y_scalar_m</span> <span class="org-operator">=</span> 0.92 <span class="org-operator">*</span> 0.47 <span class="org-operator">/</span> (0.88 <span class="org-operator">*</span> 0.88)
+
+cdef <span class="org-builtin">float</span> himoto_resolve_default_sigma_y_from_lognormal_params(<span class="org-builtin">float</span> mu_x, <span class="org-builtin">float</span> sigma_x) noexcept
+cdef <span class="org-builtin">float</span> himoto_resolve_default_sigma_y(
+    SpotConfig spot_config,
+    <span class="org-builtin">float</span> fireline_intensity,
+    <span class="org-builtin">float</span> wind_speed_20ft
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> resolve_crosswind_distance_stdev(
+    SpotConfig spot_config,
+    <span class="org-builtin">float</span> fireline_intensity,
+    <span class="org-builtin">float</span> wind_speed_20ft
+    ) noexcept
+
+cdef <span class="org-builtin">float</span> sample_normal(BufferedRandGen rng, <span class="org-builtin">float</span> mu, <span class="org-builtin">float</span> sd) noexcept
+cdef <span class="org-builtin">float</span> sample_lognormal(BufferedRandGen rng, <span class="org-builtin">float</span> mu, <span class="org-builtin">float</span> sd) noexcept
+
+cdef JumpDistribution resolve_JumpDistribution(SpotConfig spot_config, <span class="org-builtin">float</span> fireline_intensity, <span class="org-builtin">float</span> wind_speed_20ft)
+
+cdef <span class="org-builtin">float</span> sample_downwind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
+cdef <span class="org-builtin">float</span> sample_crosswind_jump(JumpDistribution jd, BufferedRandGen random_generator) noexcept
+
+cdef <span class="org-builtin">float</span> heat_of_preignition(<span class="org-builtin">float</span> temperature, <span class="org-builtin">float</span> fine_fuel_moisture) noexcept
+cpdef <span class="org-builtin">float</span> schroeder_ignition_probability(<span class="org-builtin">float</span> temperature, <span class="org-builtin">float</span> fine_fuel_moisture) noexcept
+cpdef <span class="org-builtin">float</span> firebrand_flight_survival_probability(<span class="org-builtin">float</span> spotting_distance, <span class="org-builtin">float</span> decay_distance) noexcept
+
+cdef <span class="org-builtin">float</span> albini_firebrand_maximum_height(<span class="org-builtin">float</span> firebrand_diameter) noexcept
+cdef <span class="org-builtin">float</span> albini_t_max(<span class="org-builtin">float</span> flame_length) noexcept
+cdef <span class="org-builtin">float</span> spot_ignition_time(<span class="org-builtin">float</span> time_of_arrival, <span class="org-builtin">float</span> flame_length) noexcept
+
+cdef bint is_in_bounds(pyidx y, pyidx x, pyidx rows, pyidx cols) noexcept
+cdef bint is_burnable_cell(ISpaceTimeCube fuel_model_cube, pyidx t, pyidx y, pyidx x) noexcept
+
+cdef coord_yx cast_firebrand(
+    BufferedRandGen rng,
+    ISpaceTimeCube fuel_model_cube,
+    ISpaceTimeCube temperature_cube,
+    ISpaceTimeCube fuel_moisture_dead_1hr_cube,
+    unsigned char[:,::1] fire_type_matrix,
+    pyidx rows,
+    pyidx cols,
+    <span class="org-builtin">float</span> cell_height,
+    <span class="org-builtin">float</span> cell_width,
+    pyidx source_t,
+    pyidx source_y,
+    pyidx source_x,
+    <span class="org-builtin">float</span> decay_distance,
+    <span class="org-builtin">float</span> cos_wdir,
+    <span class="org-builtin">float</span> sin_wdir,
+    JumpDistribution jd,
+    ) noexcept
+
+cdef <span class="org-builtin">object</span> spread_firebrands(
+    ISpaceTimeCube fuel_model_cube,
+    ISpaceTimeCube temperature_cube,
+    ISpaceTimeCube fuel_moisture_dead_1hr_cube,
+    unsigned char[:,::1] fire_type_matrix,
+    coord_yx sim_area_bounds,
+    <span class="org-builtin">float</span> cell_height,
+    <span class="org-builtin">float</span> cell_width,
+    coord_tyx space_time_coordinate,
+    <span class="org-builtin">float</span> wind_speed_10m,
+    <span class="org-builtin">float</span> upwind_direction,
+    <span class="org-builtin">float</span> fireline_intensity,
+    <span class="org-builtin">float</span> flame_length,
+    <span class="org-builtin">float</span> time_of_arrival,
+    BufferedRandGen random_generator,
+    <span class="org-builtin">long</span> num_firebrands,
+    SpotConfig spot_config,
+    )
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-burn-cells-pxd" class="outline-4">
+<h4 id="pyretechnics-burn-cells-pxd"><span class="section-number-4">10.6.10.</span> pyretechnics.burn_cells</h4>
+<div class="outline-text-4" id="text-pyretechnics-burn-cells-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="burn-cells-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport pyidx, coord_tyx
+
+cpdef <span class="org-builtin">dict</span> burn_cell_as_head_fire(
+    <span class="org-builtin">dict</span> space_time_cubes,
+    coord_tyx space_time_coordinate,
+    bint use_wind_limit<span class="org-operator">=</span>?,
+    <span class="org-builtin">str</span> surface_lw_ratio_model<span class="org-operator">=</span>?,
+    <span class="org-builtin">float</span> crown_max_lw_ratio<span class="org-operator">=</span>?,
+    )
+
+cpdef <span class="org-builtin">dict</span> burn_all_cells_as_head_fire(
+    <span class="org-builtin">dict</span> space_time_cubes,
+    pyidx t,
+    <span class="org-builtin">object</span> y_range<span class="org-operator">=</span>?,
+    <span class="org-builtin">object</span> x_range<span class="org-operator">=</span>?,
+    bint use_wind_limit<span class="org-operator">=</span>?,
+    <span class="org-builtin">str</span> surface_lw_ratio_model<span class="org-operator">=</span>?,
+    <span class="org-builtin">float</span> crown_max_lw_ratio<span class="org-operator">=</span>?,
+    )
+
+cpdef <span class="org-builtin">dict</span> burn_cell_toward_azimuth(
+    <span class="org-builtin">dict</span> space_time_cubes,
+    coord_tyx space_time_coordinate,
+    <span class="org-builtin">float</span> azimuth,
+    bint use_wind_limit<span class="org-operator">=</span>?,
+    <span class="org-builtin">str</span> surface_lw_ratio_model<span class="org-operator">=</span>?,
+    <span class="org-builtin">float</span> crown_max_lw_ratio<span class="org-operator">=</span>?,
+    )
+
+cpdef <span class="org-builtin">dict</span> burn_all_cells_toward_azimuth(
+    <span class="org-builtin">dict</span> space_time_cubes,
+    <span class="org-builtin">float</span> azimuth,
+    pyidx t,
+    <span class="org-builtin">object</span> y_range<span class="org-operator">=</span>?,
+    <span class="org-builtin">object</span> x_range<span class="org-operator">=</span>?,
+    bint use_wind_limit<span class="org-operator">=</span>?,
+    <span class="org-builtin">str</span> surface_lw_ratio_model<span class="org-operator">=</span>?,
+    <span class="org-builtin">float</span> crown_max_lw_ratio<span class="org-operator">=</span>?,
+    )
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-narrow-band-tracking-pxd" class="outline-4">
+<h4 id="pyretechnics-narrow-band-tracking-pxd"><span class="section-number-4">10.6.11.</span> pyretechnics.narrow_band_tracking</h4>
+<div class="outline-text-4" id="text-pyretechnics-narrow-band-tracking-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="narrow-band-tracking-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport pyidx, coord_yx
+
+cdef <span class="org-keyword">class</span> <span class="org-type">CellsCountSegment</span>:
+    cdef <span class="org-builtin">int</span> y
+    cdef <span class="org-builtin">int</span> x0
+    cdef unsigned short[16] counts
+
+cdef bint segment_is_empty(CellsCountSegment segment) noexcept
+cdef bint segment_is_pos_at(CellsCountSegment segment, pyidx k) noexcept
+cdef CellsCountSegment make_CellsCountSegment(pyidx y, pyidx x0)
+
+cdef <span class="org-keyword">class</span> <span class="org-type">NarrowBandTracker</span>:
+    cdef public <span class="org-builtin">int</span> num_tracked_cells
+    cdef pyidx y_high
+    cdef pyidx x_high
+    cdef pyidx ys_offset
+    cdef <span class="org-builtin">list</span> ys_list
+    cdef <span class="org-builtin">int</span> _rows_count
+
+cdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
+cdef void inc_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, <span class="org-builtin">int</span> segment_length) noexcept
+cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, <span class="org-builtin">int</span> segment_length) noexcept
+cdef (pyidx, pyidx) resolve_truncated_x_segment(NarrowBandTracker tracked_cells, pyidx x, pyidx buffer_width) noexcept
+cdef void inc_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
+cdef void dec_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
+cdef bint nonempty_tracked_cells(NarrowBandTracker tracked_cells) noexcept
+
+cdef <span class="org-keyword">class</span> <span class="org-type">TrackedCellsIterator</span>:
+    cdef <span class="org-builtin">object</span> segment_iter
+    cdef CellsCountSegment current_segment
+    cdef pyidx current_k
+    cdef bint has_next(TrackedCellsIterator <span class="org-keyword">self</span>) noexcept
+    cdef coord_yx next_cell(TrackedCellsIterator <span class="org-keyword">self</span>) noexcept
+
+cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-pyretechnics-eulerian-level-set-pxd" class="outline-4">
+<h4 id="pyretechnics-eulerian-level-set-pxd"><span class="section-number-4">10.6.12.</span> pyretechnics.eulerian_level_set</h4>
+<div class="outline-text-4" id="text-pyretechnics-eulerian-level-set-pxd">
+<div class="org-src-container">
+<pre class="src src-python" id="eulerian-level-set-pxd"><span class="org-comment-delimiter"># </span><span class="org-comment">from pyretechnics.cy_types cimport pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \</span>
+<span class="org-comment-delimiter">#      </span><span class="org-comment">FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \</span>
+<span class="org-comment-delimiter">#      </span><span class="org-comment">PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">from pyretechnics.space_time_cube cimport ISpaceTimeCube</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">from pyretechnics.narrow_band_tracking cimport NarrowBandTracker</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">from pyretechnics.random cimport BufferedRandGen</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cimport numpy as np</span>
+<span class="org-comment-delimiter">#</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float calc_dphi_dx_approx(float[:,::1] phi_matrix, float dx, pyidx x, pyidx y) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float calc_dphi_dy_approx(float[:,::1] phi_matrix, float dy, pyidx x, pyidx y) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef vec_xy calc_phi_gradient_approx(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef vec_xy calc_phi_normal_vector(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float calc_phi_normal_azimuth(vec_xy phi_normal_vector) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float half_superbee_dphi_up(float dphi_up, float dphi_loc) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float calc_dphi_flim_x(float p00, float pw2, float pw1, float pe1, float pe2) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float calc_dphi_flim_y(float p00, float ps2, float ps1, float pn1, float pn2) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef int fire_type_unburned      = 0</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef int fire_type_surface       = 1</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef int fire_type_crown_passive = 2</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef int fire_type_crown_active  = 3</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef vec_xy calc_elevation_gradient(float slope, float aspect) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef vec_xyz calc_phi_gradient_on_slope(vec_xy phi_gradient_xy, vec_xy elevation_gradient) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef SpreadBehavior calc_fireline_normal_behavior(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorMax fire_behavior_max,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">vec_xyz phi_gradient_xyz,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef class SpreadInputs:</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef pyidx rows</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef pyidx cols</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float band_duration</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float cell_height</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float cell_width</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube slope</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube aspect</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_model</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube canopy_cover</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube canopy_height</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube canopy_base_height</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube canopy_bulk_density</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube wind_speed_10m</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube upwind_direction</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_moisture_dead_1hr</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_moisture_dead_10hr</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_moisture_dead_100hr</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_moisture_live_herbaceous</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_moisture_live_woody</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube foliar_moisture</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube temperature</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube fuel_spread_adjustment</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef ISpaceTimeCube weather_spread_adjustment</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef FuelModel* fuel_model_cache</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef void __init_fuel_models(SpreadInputs self)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef FuelModel get_fm_struct(SpreadInputs self, pyidx fm_number) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef SpreadInputs make_SpreadInputs(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">(pyidx, pyidx, pyidx) cube_shape,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">(float, float, float) cube_resolution,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict space_time_cubes,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef CellInputs lookup_cell_inputs(SpreadInputs spread_inputs, coord_tyx space_time_coordinate) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef object encode_cell_index(pyidx y, pyidx x)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef bint opposite_phi_signs(float[:,::1] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef bint is_frontier_cell(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx y,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx x,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef set identify_all_frontier_cells(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx rows,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void spot_from_burned_cell(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">unsigned char[:,::1] fire_type_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx y,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx x,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadBehavior fire_behavior,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float time_of_arrival,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">BufferedRandGen random_generator,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpotConfig spot_config,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">object spot_ignitions,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float calc_phi_magnitude_xyz_2(vec_xy phi_gradient_xy, vec_xy elevation_gradient) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef PartialedEllWavelet zero_partialed_wavelet() noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef PartialedEllWavelet prepare_partialed_wavelet(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">vec_xyz heading_spread_vector,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float flanking_spread_rate,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float backing_spread_rate,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef PartialedEllWavelet wavelet_from_FireBehaviorMax(FireBehaviorMax fire_behavior_max) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float dphi_dt_from_partialed_wavelet(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">PartialedEllWavelet wavelet,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">vec_xy phi_gradient_xy,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float phi_magnitude_xyz_2,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef bint phi_aware_crowning_check(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float phi_magnitude_xyz_2,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float surface_dphi_dt,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float crowning_spread_rate,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float dphi_dt_from_ellipses(EllipticalInfo ellipses, vec_xy phi_gradient_xy) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef pyidx p_CellInputs = 17</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef class TrackedCellsArrays:</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef pyidx _array_length</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef pyidx num_tracked_cells</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] cube_cache</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] phi_cache</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef FireBehaviorMin* sfmin_cache</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef EllipticalInfo* ellipse_cache</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef Pass1CellOutput* pass1_cache</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[17] time_refreshed</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef pyidx[17] t_refreshed</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef void reset_size(TrackedCellsArrays self, pyidx num_tracked_cells)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void collect_phi_cache(float[:,::1] phi_matrix, TrackedCellsArrays tca) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef int compare_cell_indexes(coord_yx c0, coord_yx c1) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void copy_tracked_cell_data(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx i_old,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca_old,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx i_new,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca_new,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef list[str] inputs_name_list()</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef class FireBehaviorSettings:</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float max_cells_per_timestep</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef pyidx buffer_width</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef bint use_wind_limit</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef str surface_lw_ratio_model</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float crown_max_lw_ratio</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef dict spot_config</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[17] cube_refresh_rates</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void load_cube_cache_for_cell(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">coord_yx cell_index,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx i,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef list[ISpaceTimeCube] list_float_input_cubes(SpreadInputs spread_inputs)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef dict default_cube_refresh_rates(float band_duration)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef unsigned int recompute_level_for_input(pyidx input_k) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef unsigned int refresh_inputs_if_needed(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float present_time,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef CellInputs load_saved_CellInputs(float[:,::1] cube_cache, pyidx i) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef FireBehaviorMin resolve_surface_no_wind_no_slope_behavior(CellInputs cell_inputs, FuelModel fuel_model) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef FireBehaviorMax resolve_surface_max_behavior(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">CellInputs cell_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FuelModel fuel_model,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorMin surface_fire_min,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef FireBehaviorMax resolve_crown_max_behavior(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">CellInputs cell_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FuelModel fuel_model,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float resolve_crowning_spread_rate(CellInputs cell_inputs, FireBehaviorMax surface_fire_max) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef EllipticalInfo resolve_cell_elliptical_info(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">coord_yx cell_index,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">CellInputs cell_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FuelModel fuel_model,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorMin surface_fire_min,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void refresh_caches_from_inputs_if_needed(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float present_time,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef SpreadBehavior resolve_combined_spread_behavior(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">coord_tyx space_time_coordinate,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">vec_xy phi_gradient_xy,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void load_tracked_cell_data(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">coord_yx cell_index,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx i,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void sync_tracked_cells_arrays(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">NarrowBandTracker tracked_cells,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca_old,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca_new,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef float runge_kutta_pass1(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float max_cells_per_timestep,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float dy,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float dx,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float max_timestep,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void update_phi_star(TrackedCellsArrays tca, float dt, float[:,::1] phi_star_matrix) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef class BurnedCellInfo:</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef coord_yx cell_index</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float time_of_arrival</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef vec_xy phi_gradient_xy</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef bint from_spotting</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef BurnedCellInfo new_BurnedCellInfo(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">coord_yx cell_index,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float time_of_arrival,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">vec_xy phi_gradient_xy,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">bint from_spotting,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef list[BurnedCellInfo] runge_kutta_pass2(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float dy,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float dx,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float start_time,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float dt,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void process_burned_cells(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">object spot_ignitions,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">BufferedRandGen random_generator,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">list[BurnedCellInfo] burned_cells,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void reset_phi_star(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">TrackedCellsArrays tca,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">list[BurnedCellInfo] spot_ignited_cells,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_star_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef list[BurnedCellInfo] ignite_from_spotting(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">object spot_ignitions,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float stop_time,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void route_cell_to_diff(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_cells_old,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_additions,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_removals,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx y,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx x,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef tuple[set, set] diff_frontier_cells(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_cells_old,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">list[BurnedCellInfo] spread_ignited_cells,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">list[BurnedCellInfo] spot_ignited_cells,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef set apply_frontier_diff(set frontier_cells_old, set frontier_additions, set frontier_removals)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef NarrowBandTracker update_tracked_cells_with_frontier_diff(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">NarrowBandTracker tracked_cells,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_cells_added,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_cells_dropped,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx buffer_width,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef dict spread_one_timestep(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict sim_state,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float max_timestep,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_output_matrices(dict output_matrices)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_dimensions_and_resolutions(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict space_time_cubes,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx bands,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx rows,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float band_duration,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float cell_height,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float cell_width,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_start_and_stop_times(float start_time, float max_stop_time, float cube_duration, object max_duration=?)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cpdef dict[str, object] spread_fire_with_phi_field(</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict[str, ISpaceTimeCube] space_time_cubes,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict[str, np.ndarray] output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">(float, float, float) cube_resolution,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float start_time,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">object max_duration=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float max_cells_per_timestep=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx buffer_width=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">bint use_wind_limit=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">str surface_lw_ratio_model=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float crown_max_lw_ratio=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict[float, set] spot_ignitions=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">object spot_config=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">dict[str, float] cube_refresh_rates=?,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
 </pre>
 </div>
 </div>

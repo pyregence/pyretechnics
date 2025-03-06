@@ -1,4 +1,4 @@
-# [[file:../../org/pyretechnics.org::py-types-py][py-types-py]]
+# [[file:../../org/pyretechnics.org::py-types][py-types]]
 #==============================================================
 # Runtime-defined type aliases
 #==============================================================
@@ -153,4 +153,4 @@ Pass1CellOutput = cy.struct(
     dphi_dt_flim    = cy.float, # Flux-limited dphi/dt (phi/min, <= 0).
     phi_old         = cy.float,
 )
-# py-types-py ends here
+# py-types ends here

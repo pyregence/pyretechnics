@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::crown-fire-pxd][crown-fire-pxd]]
 from pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
 
 cdef float van_wagner_critical_fireline_intensity(
@@ -74,3 +75,4 @@ cpdef SpreadBehavior calc_combined_fire_behavior(
     SpreadBehavior surface_fire_behavior,
     SpreadBehavior crown_fire_behavior,
     ) noexcept
+# crown-fire-pxd ends here
