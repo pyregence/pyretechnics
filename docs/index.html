@@ -681,7 +681,7 @@ various types of input datasets.
             <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-builtin">str</span>(dividend) <span class="org-operator">+</span> <span class="org-string">" must be an exact multiple of "</span> <span class="org-operator">+</span> <span class="org-builtin">str</span>(divisor) <span class="org-operator">+</span> <span class="org-string">"."</span>)
 
 
-<span class="org-type">@cy.cfunc</span>
+<span class="org-type">@cy.ccall</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">to_positive_index_range</span>(index_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>, axis_length: pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">tuple</span>[pyidx, pyidx]:
     <span class="org-doc">"""</span>
@@ -2276,7 +2276,7 @@ user.
 <span class="org-comment-delimiter">#                         </span><span class="org-comment">sigma_live_herbaceous,</span>
 <span class="org-comment-delimiter">#                         </span><span class="org-comment">sigma_live_woody), # name</span>
 <span class="org-comment-delimiter">#   </span><span class="org-comment">}</span>
-<span class="org-variable-name">compact_fuel_model_table</span> <span class="org-operator">=</span> cy.declare(<span class="org-builtin">dict</span>[<span class="org-builtin">int</span>, CompactFuelModel], {
+<span class="org-variable-name">compact_fuel_model_table</span> <span class="org-operator">=</span> cy.declare(<span class="org-builtin">dict</span>, { <span class="org-comment-delimiter"># </span><span class="org-comment">dict[int, CompactFuelModel]</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Anderson 13:</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Grass and Grass-dominated (short-grass,timber-grass-and-understory,tall-grass)</span>
     1  : (1.0, 12.0, 8.0, 0.0340, 0.0000, 0.0000, 0.0000, 0.0000, 3500.0,   0.0,  0.0,    0.0,    0.0), <span class="org-comment-delimiter"># </span><span class="org-comment">R01</span>
@@ -2479,7 +2479,7 @@ models. Finally, we add two boolean properties (<code>dynamic</code> and
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Replace this dictionary with something more efficient</span>
-<span class="org-variable-name">fuel_model_table</span> <span class="org-operator">=</span> cy.declare(<span class="org-builtin">dict</span>[<span class="org-builtin">int</span>, FuelModel], {
+<span class="org-variable-name">fuel_model_table</span> <span class="org-operator">=</span> cy.declare(<span class="org-builtin">dict</span>, { <span class="org-comment-delimiter"># </span><span class="org-comment">dict[int, FuelModel]</span>
     k: expand_compact_fuel_model(k) <span class="org-keyword">for</span> k <span class="org-keyword">in</span> compact_fuel_model_table.keys()
 })
 
@@ -6095,7 +6095,7 @@ from a spark to a fire capable of spreading on its own.
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.fuel_models <span class="org-keyword">as</span> fm
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 <span class="org-keyword">else</span>:
-    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> <span class="org-builtin">round</span>, sqrt, <span class="org-builtin">pow</span>, log, exp, sin, cos
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, <span class="org-builtin">pow</span>, log, exp, sin, cos
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> \
         pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
     <span class="org-keyword">from</span> pyretechnics.random <span class="org-keyword">import</span> BufferedRandGen
@@ -9705,7 +9705,7 @@ is returned.
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Move this code to fuel_models.py</span>
     <span class="org-type">@cy.cfunc</span>
-    <span class="org-keyword">def</span> <span class="org-function-name">__init_fuel_models</span>(<span class="org-keyword">self</span>: SpreadInputs) <span class="org-operator">-&gt;</span> cy.void:
+    <span class="org-keyword">def</span> <span class="org-function-name">__init_fuel_models</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> cy.void:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Allocate an empty FuelModel array in memory</span>
         <span class="org-variable-name">fuel_model_cache</span>: cy.pointer(FuelModel) <span class="org-operator">=</span> cy.cast(cy.pointer(FuelModel),
                                                           malloc(300 <span class="org-operator">*</span> cy.sizeof(FuelModel)))
@@ -9726,11 +9726,11 @@ is returned.
     <span class="org-type">@cy.cfunc</span>
     <span class="org-type">@cy.inline</span>
     <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
-    <span class="org-keyword">def</span> <span class="org-function-name">get_fm_struct</span>(<span class="org-keyword">self</span>: SpreadInputs, fm_number: pyidx) <span class="org-operator">-&gt;</span> FuelModel:
+    <span class="org-keyword">def</span> <span class="org-function-name">get_fm_struct</span>(<span class="org-keyword">self</span>, fm_number: pyidx) <span class="org-operator">-&gt;</span> FuelModel:
         <span class="org-keyword">return</span> <span class="org-keyword">self</span>.fuel_model_cache[fm_number]
 
 
-    <span class="org-keyword">def</span> <span class="org-function-name">__dealloc__</span>(<span class="org-keyword">self</span>: SpreadInputs) <span class="org-operator">-&gt;</span> cy.void:
+    <span class="org-keyword">def</span> <span class="org-function-name">__dealloc__</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> cy.void:
         free(<span class="org-keyword">self</span>.fuel_model_cache) <span class="org-comment-delimiter"># </span><span class="org-comment">no-op if self.fuel_model_cache is NULL</span>
 
 
@@ -10321,7 +10321,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 
     <span class="org-type">@cy.cfunc</span>
-    <span class="org-keyword">def</span> <span class="org-function-name">reset_size</span>(<span class="org-keyword">self</span>: TrackedCellsArrays, num_tracked_cells: pyidx) <span class="org-operator">-&gt;</span> cy.void:
+    <span class="org-keyword">def</span> <span class="org-function-name">reset_size</span>(<span class="org-keyword">self</span>, num_tracked_cells: pyidx) <span class="org-operator">-&gt;</span> cy.void:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Ensures that this can hold at least `num_tracked_cells`, resizing the internal arrays if necessary.</span>
 <span class="org-doc">        Also updates `self.num_tracked_cells`.</span>
@@ -10359,7 +10359,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-keyword">self</span>.<span class="org-variable-name">num_tracked_cells</span> <span class="org-operator">=</span> num_tracked_cells
 
 
-    <span class="org-keyword">def</span> <span class="org-function-name">__dealloc__</span>(<span class="org-keyword">self</span>: TrackedCellsArrays) <span class="org-operator">-&gt;</span> cy.void:
+    <span class="org-keyword">def</span> <span class="org-function-name">__dealloc__</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> cy.void:
         free(<span class="org-keyword">self</span>.sfmin_cache)
         free(<span class="org-keyword">self</span>.ellipse_cache)
         free(<span class="org-keyword">self</span>.pass1_cache)
@@ -13239,14 +13239,14 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 
 <span class="org-variable-name">pyidx</span>            <span class="org-operator">=</span> cy.typedef(cy.Py_ssize_t)
-<span class="org-variable-name">vec_xy</span>           <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">vec_xyz</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">coord_yx</span>         <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx])
-<span class="org-variable-name">coord_tyx</span>        <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx])
-<span class="org-variable-name">fcatarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">fclaarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
-<span class="org-variable-name">CompactFuelModel</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>,
-                                    cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>])
+<span class="org-variable-name">vec_xy</span>           <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[cy.float, cy.float]</span>
+<span class="org-variable-name">vec_xyz</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[cy.float, cy.float, cy.float]</span>
+<span class="org-variable-name">coord_yx</span>         <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[pyidx, pyidx]</span>
+<span class="org-variable-name">coord_tyx</span>        <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[pyidx, pyidx, pyidx]</span>
+<span class="org-variable-name">fcatarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[cy.float, cy.float]</span>
+<span class="org-variable-name">fclaarr</span>          <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float]</span>
+<span class="org-variable-name">CompactFuelModel</span> <span class="org-operator">=</span> cy.typedef(<span class="org-builtin">tuple</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float,</span>
+                                     <span class="org-comment-delimiter">#       </span><span class="org-comment">cy.float, cy.float, cy.float, cy.float, cy.float, cy.float, cy.float]</span>
 
 <span class="org-variable-name">FuelModel</span> <span class="org-operator">=</span> cy.struct(
     number               <span class="org-operator">=</span> cy.<span class="org-builtin">int</span>,
@@ -14747,7 +14747,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">BufferedRandG
 
 cdef bint is_pos_int(<span class="org-builtin">object</span> x) noexcept
 cdef <span class="org-builtin">int</span> divide_evenly(<span class="org-builtin">int</span> dividend, <span class="org-builtin">int</span> divisor)
-cdef (pyidx, pyidx) to_positive_index_range(<span class="org-builtin">object</span> index_range, pyidx axis_length) noexcept
+cpdef (pyidx, pyidx) to_positive_index_range(<span class="org-builtin">object</span> index_range, pyidx axis_length) noexcept
 <span class="org-comment-delimiter"># </span><span class="org-comment">def maybe_repeat_array(array, axis_repetitions)</span>
 
 cdef <span class="org-keyword">class</span> <span class="org-type">ISpaceTimeCube</span>:

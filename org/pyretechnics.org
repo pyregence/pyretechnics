@@ -240,7 +240,7 @@ def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
             raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
 
 
-@cy.cfunc
+@cy.ccall
 @cy.exceptval(check=False)
 def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: pyidx) -> tuple[pyidx, pyidx]:
     """
@@ -1816,7 +1816,7 @@ user.
 #                         sigma_live_herbaceous,
 #                         sigma_live_woody), # name
 #   }
-compact_fuel_model_table = cy.declare(dict[int, CompactFuelModel], {
+compact_fuel_model_table = cy.declare(dict, { # dict[int, CompactFuelModel]
     # Anderson 13:
     # Grass and Grass-dominated (short-grass,timber-grass-and-understory,tall-grass)
     1  : (1.0, 12.0, 8.0, 0.0340, 0.0000, 0.0000, 0.0000, 0.0000, 3500.0,   0.0,  0.0,    0.0,    0.0), # R01
@@ -2016,7 +2016,7 @@ def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
 
 
 # FIXME: Replace this dictionary with something more efficient
-fuel_model_table = cy.declare(dict[int, FuelModel], {
+fuel_model_table = cy.declare(dict, { # dict[int, FuelModel]
     k: expand_compact_fuel_model(k) for k in compact_fuel_model_table.keys()
 })
 
@@ -5511,7 +5511,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.fuel_models as fm
     import cython.cimports.pyretechnics.surface_fire as sf
 else:
-    from math import round, sqrt, pow, log, exp, sin, cos
+    from math import sqrt, pow, log, exp, sin, cos
     from pyretechnics.py_types import \
         pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
     from pyretechnics.random import BufferedRandGen
@@ -8849,7 +8849,7 @@ class SpreadInputs:
 
     # TODO: Move this code to fuel_models.py
     @cy.cfunc
-    def __init_fuel_models(self: SpreadInputs) -> cy.void:
+    def __init_fuel_models(self) -> cy.void:
         # Allocate an empty FuelModel array in memory
         fuel_model_cache: cy.pointer(FuelModel) = cy.cast(cy.pointer(FuelModel),
                                                           malloc(300 * cy.sizeof(FuelModel)))
@@ -8870,11 +8870,11 @@ class SpreadInputs:
     @cy.cfunc
     @cy.inline
     @cy.exceptval(check=False)
-    def get_fm_struct(self: SpreadInputs, fm_number: pyidx) -> FuelModel:
+    def get_fm_struct(self, fm_number: pyidx) -> FuelModel:
         return self.fuel_model_cache[fm_number]
 
 
-    def __dealloc__(self: SpreadInputs) -> cy.void:
+    def __dealloc__(self) -> cy.void:
         free(self.fuel_model_cache) # no-op if self.fuel_model_cache is NULL
 
 
@@ -9458,7 +9458,7 @@ class TrackedCellsArrays:
 
 
     @cy.cfunc
-    def reset_size(self: TrackedCellsArrays, num_tracked_cells: pyidx) -> cy.void:
+    def reset_size(self, num_tracked_cells: pyidx) -> cy.void:
         """
         Ensures that this can hold at least `num_tracked_cells`, resizing the internal arrays if necessary.
         Also updates `self.num_tracked_cells`.
@@ -9496,7 +9496,7 @@ class TrackedCellsArrays:
         self.num_tracked_cells = num_tracked_cells
 
 
-    def __dealloc__(self: TrackedCellsArrays) -> cy.void:
+    def __dealloc__(self) -> cy.void:
         free(self.sfmin_cache)
         free(self.ellipse_cache)
         free(self.pass1_cache)
@@ -12884,14 +12884,14 @@ The following table contains the current mapping from ELMFIRE parameters to Pyre
 import cython as cy
 
 pyidx            = cy.typedef(cy.Py_ssize_t)
-vec_xy           = cy.typedef(tuple[cy.float, cy.float])
-vec_xyz          = cy.typedef(tuple[cy.float, cy.float, cy.float])
-coord_yx         = cy.typedef(tuple[pyidx, pyidx])
-coord_tyx        = cy.typedef(tuple[pyidx, pyidx, pyidx])
-fcatarr          = cy.typedef(tuple[cy.float, cy.float])
-fclaarr          = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
-CompactFuelModel = cy.typedef(tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float,
-                                    cy.float, cy.float, cy.float, cy.float, cy.float, cy.float, cy.float])
+vec_xy           = cy.typedef(tuple) # tuple[cy.float, cy.float]
+vec_xyz          = cy.typedef(tuple) # tuple[cy.float, cy.float, cy.float]
+coord_yx         = cy.typedef(tuple) # tuple[pyidx, pyidx]
+coord_tyx        = cy.typedef(tuple) # tuple[pyidx, pyidx, pyidx]
+fcatarr          = cy.typedef(tuple) # tuple[cy.float, cy.float]
+fclaarr          = cy.typedef(tuple) # tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float]
+CompactFuelModel = cy.typedef(tuple) # tuple[cy.float, cy.float, cy.float, cy.float, cy.float, cy.float,
+                                     #       cy.float, cy.float, cy.float, cy.float, cy.float, cy.float, cy.float]
 
 FuelModel = cy.struct(
     number               = cy.int,
@@ -14535,7 +14535,7 @@ from pyretechnics.cy_types cimport pyidx
 
 cdef bint is_pos_int(object x) noexcept
 cdef int divide_evenly(int dividend, int divisor)
-cdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
+cpdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
 # def maybe_repeat_array(array, axis_repetitions)
 
 cdef class ISpaceTimeCube:
