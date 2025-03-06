@@ -45,7 +45,7 @@ def calc_dphi_dx_approx(phi_matrix: cy.float[:,::1], dx: cy.float, x: pyidx, y: 
     """
     east_x: pyidx = x + 1
     west_x: pyidx = x - 1
-    return (phi_matrix[2+y][2+east_x] - phi_matrix[2+y][2+west_x]) / (2.0 * dx)
+    return (phi_matrix[2+y, 2+east_x] - phi_matrix[2+y, 2+west_x]) / (2.0 * dx)
 
 
 # NOTE: No longer used in tight loops.
@@ -58,7 +58,7 @@ def calc_dphi_dy_approx(phi_matrix: cy.float[:,::1], dy: cy.float, x: pyidx, y: 
     """
     north_y: pyidx = y + 1
     south_y: pyidx = y - 1
-    return (phi_matrix[2+north_y][2+x] - phi_matrix[2+south_y][2+x]) / (2.0 * dy)
+    return (phi_matrix[2+north_y, 2+x] - phi_matrix[2+south_y, 2+x]) / (2.0 * dy)
 
 
 # NOTE: No longer used in tight loops.
@@ -1297,7 +1297,7 @@ def refresh_inputs_if_needed(spread_inputs: SpreadInputs,
             x         : pyidx
             for i in range(tca.num_tracked_cells):
                 (y, x)           = tca.ellipse_cache[i].cell_index
-                cube_cache[i][k] = space_time_cube.get(t_refreshed_new, y, x)
+                cube_cache[i, k] = space_time_cube.get(t_refreshed_new, y, x)
             # Reset the recompute_level
             recompute_level = max(recompute_level, recompute_level_for_input(k))
     return recompute_level

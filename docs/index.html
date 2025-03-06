@@ -9144,7 +9144,7 @@ node-centered central differences, represented by the values in the
 <span class="org-doc">    """</span>
     <span class="org-variable-name">east_x</span>: pyidx <span class="org-operator">=</span> x <span class="org-operator">+</span> 1
     <span class="org-variable-name">west_x</span>: pyidx <span class="org-operator">=</span> x <span class="org-operator">-</span> 1
-    <span class="org-keyword">return</span> (phi_matrix[2<span class="org-operator">+</span>y][2<span class="org-operator">+</span>east_x] <span class="org-operator">-</span> phi_matrix[2<span class="org-operator">+</span>y][2<span class="org-operator">+</span>west_x]) <span class="org-operator">/</span> (2.0 <span class="org-operator">*</span> dx)
+    <span class="org-keyword">return</span> (phi_matrix[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>east_x] <span class="org-operator">-</span> phi_matrix[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>west_x]) <span class="org-operator">/</span> (2.0 <span class="org-operator">*</span> dx)
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: No longer used in tight loops.</span>
@@ -9157,7 +9157,7 @@ node-centered central differences, represented by the values in the
 <span class="org-doc">    """</span>
     <span class="org-variable-name">north_y</span>: pyidx <span class="org-operator">=</span> y <span class="org-operator">+</span> 1
     <span class="org-variable-name">south_y</span>: pyidx <span class="org-operator">=</span> y <span class="org-operator">-</span> 1
-    <span class="org-keyword">return</span> (phi_matrix[2<span class="org-operator">+</span>north_y][2<span class="org-operator">+</span>x] <span class="org-operator">-</span> phi_matrix[2<span class="org-operator">+</span>south_y][2<span class="org-operator">+</span>x]) <span class="org-operator">/</span> (2.0 <span class="org-operator">*</span> dy)
+    <span class="org-keyword">return</span> (phi_matrix[2<span class="org-operator">+</span>north_y, 2<span class="org-operator">+</span>x] <span class="org-operator">-</span> phi_matrix[2<span class="org-operator">+</span>south_y, 2<span class="org-operator">+</span>x]) <span class="org-operator">/</span> (2.0 <span class="org-operator">*</span> dy)
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: No longer used in tight loops.</span>
@@ -10720,7 +10720,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
             x         : pyidx
             <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(tca.num_tracked_cells):
                 (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)           <span class="org-operator">=</span> tca.ellipse_cache[i].cell_index
-                cube_cache[i][k] <span class="org-operator">=</span> space_time_cube.get(t_refreshed_new, y, x)
+                <span class="org-variable-name">cube_cache</span>[<span class="org-variable-name">i</span>, <span class="org-variable-name">k</span>] <span class="org-operator">=</span> space_time_cube.get(t_refreshed_new, y, x)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Reset the recompute_level</span>
             <span class="org-variable-name">recompute_level</span> <span class="org-operator">=</span> <span class="org-builtin">max</span>(recompute_level, recompute_level_for_input(k))
     <span class="org-keyword">return</span> recompute_level
