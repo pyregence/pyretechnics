@@ -103,6 +103,10 @@ compact_fuel_model_table = cy.declare(dict, { # dict[int, CompactFuelModel]
 })
 # fuel-model-compact-table ends here
 # [[file:../../org/pyretechnics.org::expand-compact-fuel-model-table][expand-compact-fuel-model-table]]
+# NOTE: We use this variable for X > 0.0 comparisons to account for floating point precision issues.
+almost_zero = cy.declare(cy.float, 1e-6)
+
+
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
@@ -113,7 +117,7 @@ def is_burnable_fuel_model_number(fuel_model_number: cy.int) -> cy.bint:
 @cy.cfunc
 @cy.exceptval(check=False)
 def compute_exp_A_sigma(A: cy.float, sigma_ij: cy.float) -> cy.float:
-    if sigma_ij > 0.0:
+    if sigma_ij > almost_zero:
         return exp(A / sigma_ij)
     else:
         return 0.0
@@ -156,7 +160,7 @@ def expand_compact_fuel_model(fuel_model_number: cy.int) -> FuelModel:
     M_x_dead: cy.float = M_x_dead * 0.01
     h       : cy.float = h * 1000.0
     # Pre-compute some dynamic fuel model values
-    dynamic              : cy.bint  = fuel_model_number > 100 and w_o_live_herbaceous > 0.0
+    dynamic              : cy.bint  = fuel_model_number > 100 and w_o_live_herbaceous > almost_zero
     M_x_dead_herbaceous  : cy.float = M_x_dead              if dynamic else 0.0
     sigma_dead_herbaceous: cy.float = sigma_live_herbaceous if dynamic else 0.0
     # Re-pack everything into a FuelModel struct
@@ -332,13 +336,13 @@ def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
     f_ij_5   : cy.float = 0.0
     A_i_0_inv: cy.float
     A_i_1_inv: cy.float
-    if A_i_0 > 0.0:
+    if A_i_0 > almost_zero:
         A_i_0_inv = 1.0 / A_i_0
         f_ij_0    = A_ij[0] * A_i_0_inv
         f_ij_1    = A_ij[1] * A_i_0_inv
         f_ij_2    = A_ij[2] * A_i_0_inv
         f_ij_3    = A_ij[3] * A_i_0_inv
-    if A_i_1 > 0.0:
+    if A_i_1 > almost_zero:
         A_i_1_inv = 1.0 / A_i_1
         f_ij_4    = A_ij[4] * A_i_1_inv
         f_ij_5    = A_ij[5] * A_i_1_inv
@@ -347,7 +351,7 @@ def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
     f_i_0  : cy.float = 0.0
     f_i_1  : cy.float = 0.0
     A_T_inv: cy.float
-    if A_T > 0.0:
+    if A_T > almost_zero:
         A_T_inv = 1.0 / A_T
         f_i_0   = A_i_0 * A_T_inv
         f_i_1   = A_i_1 * A_T_inv
@@ -397,7 +401,7 @@ def add_live_moisture_of_extinction(fuel_model: FuelModel) -> FuelModel:
     dead_fuel_moisture: cy.float
     dead_to_live_ratio: cy.float
     M_x_live          : cy.float
-    if (dead_loading_factor > 0.0 and live_loading_factor > 0.0):
+    if (dead_loading_factor > almost_zero and live_loading_factor > almost_zero):
         dead_fuel_moisture = dead_moisture_factor / dead_loading_factor
         dead_to_live_ratio = dead_loading_factor / live_loading_factor
         M_x_live           = max(M_x_dead,

@@ -3,6 +3,8 @@ from pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
 
 cdef dict[int, CompactFuelModel] compact_fuel_model_table
 
+cdef float almost_zero = 1e-6
+
 cdef bint is_burnable_fuel_model_number(int fuel_model_number) noexcept
 
 cdef float compute_exp_A_sigma(float A, float sigma_ij) noexcept

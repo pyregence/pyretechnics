@@ -2375,7 +2375,11 @@ models. Finally, we add two boolean properties (<code>dynamic</code> and
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="expand-compact-fuel-model-table"><span class="org-type">@cy.cfunc</span>
+<pre class="src src-python" id="expand-compact-fuel-model-table"><span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: We use this variable for X &gt; 0.0 comparisons to account for floating point precision issues.</span>
+<span class="org-variable-name">almost_zero</span> <span class="org-operator">=</span> cy.declare(cy.<span class="org-builtin">float</span>, 1e<span class="org-operator">-</span>6)
+
+
+<span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.inline</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">is_burnable_fuel_model_number</span>(fuel_model_number: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> cy.bint:
@@ -2385,7 +2389,7 @@ models. Finally, we add two boolean properties (<code>dynamic</code> and
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">compute_exp_A_sigma</span>(A: cy.<span class="org-builtin">float</span>, sigma_ij: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
-    <span class="org-keyword">if</span> sigma_ij <span class="org-operator">&gt;</span> 0.0:
+    <span class="org-keyword">if</span> sigma_ij <span class="org-operator">&gt;</span> almost_zero:
         <span class="org-keyword">return</span> exp(A <span class="org-operator">/</span> sigma_ij)
     <span class="org-keyword">else</span>:
         <span class="org-keyword">return</span> 0.0
@@ -2428,7 +2432,7 @@ models. Finally, we add two boolean properties (<code>dynamic</code> and
     <span class="org-variable-name">M_x_dead</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> M_x_dead <span class="org-operator">*</span> 0.01
     <span class="org-variable-name">h</span>       : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> h <span class="org-operator">*</span> 1000.0
     <span class="org-comment-delimiter"># </span><span class="org-comment">Pre-compute some dynamic fuel model values</span>
-    <span class="org-variable-name">dynamic</span>              : cy.bint  <span class="org-operator">=</span> fuel_model_number <span class="org-operator">&gt;</span> 100 <span class="org-keyword">and</span> w_o_live_herbaceous <span class="org-operator">&gt;</span> 0.0
+    <span class="org-variable-name">dynamic</span>              : cy.bint  <span class="org-operator">=</span> fuel_model_number <span class="org-operator">&gt;</span> 100 <span class="org-keyword">and</span> w_o_live_herbaceous <span class="org-operator">&gt;</span> almost_zero
     <span class="org-variable-name">M_x_dead_herbaceous</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> M_x_dead              <span class="org-keyword">if</span> dynamic <span class="org-keyword">else</span> 0.0
     <span class="org-variable-name">sigma_dead_herbaceous</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sigma_live_herbaceous <span class="org-keyword">if</span> dynamic <span class="org-keyword">else</span> 0.0
     <span class="org-comment-delimiter"># </span><span class="org-comment">Re-pack everything into a FuelModel struct</span>
@@ -2684,13 +2688,13 @@ this text.
     <span class="org-variable-name">f_ij_5</span>   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 0.0
     A_i_0_inv: cy.<span class="org-builtin">float</span>
     A_i_1_inv: cy.<span class="org-builtin">float</span>
-    <span class="org-keyword">if</span> A_i_0 <span class="org-operator">&gt;</span> 0.0:
+    <span class="org-keyword">if</span> A_i_0 <span class="org-operator">&gt;</span> almost_zero:
         <span class="org-variable-name">A_i_0_inv</span> <span class="org-operator">=</span> 1.0 <span class="org-operator">/</span> A_i_0
         <span class="org-variable-name">f_ij_0</span>    <span class="org-operator">=</span> A_ij[0] <span class="org-operator">*</span> A_i_0_inv
         <span class="org-variable-name">f_ij_1</span>    <span class="org-operator">=</span> A_ij[1] <span class="org-operator">*</span> A_i_0_inv
         <span class="org-variable-name">f_ij_2</span>    <span class="org-operator">=</span> A_ij[2] <span class="org-operator">*</span> A_i_0_inv
         <span class="org-variable-name">f_ij_3</span>    <span class="org-operator">=</span> A_ij[3] <span class="org-operator">*</span> A_i_0_inv
-    <span class="org-keyword">if</span> A_i_1 <span class="org-operator">&gt;</span> 0.0:
+    <span class="org-keyword">if</span> A_i_1 <span class="org-operator">&gt;</span> almost_zero:
         <span class="org-variable-name">A_i_1_inv</span> <span class="org-operator">=</span> 1.0 <span class="org-operator">/</span> A_i_1
         <span class="org-variable-name">f_ij_4</span>    <span class="org-operator">=</span> A_ij[4] <span class="org-operator">*</span> A_i_1_inv
         <span class="org-variable-name">f_ij_5</span>    <span class="org-operator">=</span> A_ij[5] <span class="org-operator">*</span> A_i_1_inv
@@ -2699,7 +2703,7 @@ this text.
     <span class="org-variable-name">f_i_0</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 0.0
     <span class="org-variable-name">f_i_1</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 0.0
     A_T_inv: cy.<span class="org-builtin">float</span>
-    <span class="org-keyword">if</span> A_T <span class="org-operator">&gt;</span> 0.0:
+    <span class="org-keyword">if</span> A_T <span class="org-operator">&gt;</span> almost_zero:
         <span class="org-variable-name">A_T_inv</span> <span class="org-operator">=</span> 1.0 <span class="org-operator">/</span> A_T
         <span class="org-variable-name">f_i_0</span>   <span class="org-operator">=</span> A_i_0 <span class="org-operator">*</span> A_T_inv
         <span class="org-variable-name">f_i_1</span>   <span class="org-operator">=</span> A_i_1 <span class="org-operator">*</span> A_T_inv
@@ -2785,7 +2789,7 @@ size class \(c\).
     dead_fuel_moisture: cy.<span class="org-builtin">float</span>
     dead_to_live_ratio: cy.<span class="org-builtin">float</span>
     M_x_live          : cy.<span class="org-builtin">float</span>
-    <span class="org-keyword">if</span> (dead_loading_factor <span class="org-operator">&gt;</span> 0.0 <span class="org-keyword">and</span> live_loading_factor <span class="org-operator">&gt;</span> 0.0):
+    <span class="org-keyword">if</span> (dead_loading_factor <span class="org-operator">&gt;</span> almost_zero <span class="org-keyword">and</span> live_loading_factor <span class="org-operator">&gt;</span> almost_zero):
         <span class="org-variable-name">dead_fuel_moisture</span> <span class="org-operator">=</span> dead_moisture_factor <span class="org-operator">/</span> dead_loading_factor
         <span class="org-variable-name">dead_to_live_ratio</span> <span class="org-operator">=</span> dead_loading_factor <span class="org-operator">/</span> live_loading_factor
         <span class="org-variable-name">M_x_live</span>           <span class="org-operator">=</span> <span class="org-builtin">max</span>(M_x_dead,
@@ -3048,8 +3052,8 @@ Moisturized Dynamic Fuel Model: GR1
          0.15000000596046448,
          0.15000000596046448,
          0.15000000596046448,
-         233597312.0,
-         233597312.0),
+         0.15000000596046448,
+         0.15000000596046448),
  'S_T': (0.05550000071525574,
          0.05550000071525574,
          0.05550000071525574,
@@ -3072,9 +3076,9 @@ Moisturized Dynamic Fuel Model: GR1
                  0.7788007855415344,
                  0.0),
  'f_i': (1.0, 9.691811797551964e-09),
- 'f_ij': (0.2682926654815674, 0.0, 0.0, 0.7317073345184326, 1.0, 0.0),
+ 'f_ij': (0.2682926654815674, 0.0, 0.0, 0.7317073345184326, 0.0, 0.0),
  'firemod_size_classes': (1.0, 3.0, 5.0, 1.0, 1.0, 6.0),
- 'g_ij': (1.0, 0.0, 0.0, 1.0, 1.0, 0.0),
+ 'g_ij': (1.0, 0.0, 0.0, 1.0, 0.0, 0.0),
  'h': (8000.0, 8000.0, 8000.0, 8000.0, 8000.0, 8000.0),
  'number': 101,
  'rho_p': (32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
@@ -14849,6 +14853,8 @@ cdef <span class="org-keyword">class</span> <span class="org-type">LazySpaceTime
 <pre class="src src-python" id="fuel-models-pxd"><span class="org-keyword">from</span> pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
 
 cdef <span class="org-builtin">dict</span>[<span class="org-builtin">int</span>, CompactFuelModel] compact_fuel_model_table
+
+cdef <span class="org-builtin">float</span> <span class="org-variable-name">almost_zero</span> <span class="org-operator">=</span> 1e<span class="org-operator">-</span>6
 
 cdef bint is_burnable_fuel_model_number(<span class="org-builtin">int</span> fuel_model_number) noexcept
 
