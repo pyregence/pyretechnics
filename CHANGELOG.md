@@ -1,4 +1,4 @@
-# Version 2025.3.7
+# Version 2025.3.8
 
 Changes for Developers:
 - Major round of efficiency optimizations (many of them non-trivial and relying heavily on low-level programming and C semantics), improving throughput by over 1400x.
