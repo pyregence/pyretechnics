@@ -2,7 +2,8 @@
   #:use-module ((gnu packages base)            #:select (coreutils
                                                          which))
   #:use-module ((gnu packages bash)            #:select (bash))
-  #:use-module ((gnu packages check)           #:select (python-pytest))
+  #:use-module ((gnu packages check)           #:select (python-pytest
+                                                         python-pytest-cov))
   #:use-module ((gnu packages emacs)           #:select (emacs-minimal))
   #:use-module ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
   #:use-module ((gnu packages geo)             #:select (gdal))
@@ -25,7 +26,7 @@
   #:use-module ((guix download)                #:select (url-fetch))
   #:use-module ((guix gexp)                    #:select (local-file))
   #:use-module ((guix git-download)            #:select (git-predicate))
-  #:use-module ((guix licenses)                #:select (epl2.0 bsd-3))
+  #:use-module ((guix licenses)                #:select (epl2.0 bsd-3 expat))
   #:use-module ((guix packages)                #:select (package origin base32))
   #:use-module ((guix utils)                   #:select (current-source-directory)))
 
@@ -61,6 +62,24 @@
    (description
     "This package provides a web-based viewer for Python profiler output.")
    (license bsd-3)))
+
+(define-public python-pkginfo
+  (package
+   (name "python-pkginfo")
+   (version "1.12.1.2")
+   (source
+    (origin
+     (method url-fetch)
+     (uri (pypi-uri "pkginfo" version))
+     (sha256
+      (base32 "0ysbl0rhy8chvx58zi5qb61jli76dcyblklnc0118vy39a15gnaw"))))
+   (build-system pyproject-build-system)
+   (native-inputs (list python-pytest python-pytest-cov python-setuptools
+                        python-wheel))
+   (home-page "https://code.launchpad.net/~tseaver/pkginfo/trunk")
+   (synopsis "Query metadata from sdists / bdists / installed packages.")
+   (description "Query metadata from sdists / bdists / installed packages.")
+   (license expat)))
 
 ;;============================================================
 ;; The Pyretechnics Package
@@ -100,7 +119,8 @@
                    python-matplotlib
                    python-setuptools
                    python-wheel
-                   python-pypa-build))
+                   python-pypa-build
+                   python-pkginfo))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper
