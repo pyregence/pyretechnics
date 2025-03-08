@@ -1,7 +1,7 @@
 # Version 2025.3.7
 
 Changes for Developers:
-- Major round of efficiency optimizations (many of them non-trivial and relying heavily on low-level programming and C semantics), improving throughput by about 300x.
+- Major round of efficiency optimizations (many of them non-trivial and relying heavily on low-level programming and C semantics), improving throughput by over 1400x.
 - Overhauled the high-level structure of the fire spread code. This was done for optimization purposes, but it also paves the way to using other fire behavior equations than Rothermel’s, as this change largely decouples the fire spread logic from the fire behavior calculations.
 - Redefined frontier cells as burnable cells with a burnable neighbor of opposite phi sign. This optimization dramatically improves performance on landscapes with a lot of non-burnable cells, restoring near linear scaling of runtime to the number of cells burned.
 - Fixed numerical stability issues (related to flux-limiting).
