@@ -89,15 +89,15 @@ case $CMD in
         ;;
 
     "build-dist")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m build $ARGS
+        rm -rf dist && guix time-machine -C channels.scm -- shell -D -f guix.scm -- python setup.py sdist $ARGS
         ;;
 
     "upload-testpypi")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload --repository testpypi dist/* $ARGS
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload --repository testpypi dist/*.tar.gz $ARGS
         ;;
 
     "upload-pypi")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload dist/* $ARGS
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload dist/*.tar.gz $ARGS
         ;;
 
     "install-shell")
