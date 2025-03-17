@@ -15,6 +15,7 @@ Changes for Users:
 - The default value for `surface_lw_ratio_model` is now "behave" rather than "rothermel" to better agree with both ELMFIRE and Behave7.
 - The `calc_combined_fire_behavior` function in `pyretechnics.crown_fire` was updated to allow for passive crown fires with a crown spread rate of 0 since this is mathematically possible and matches FlamMap's behavior.
 - Added `burn_all_cells_as_head_fire` and `burn_all_cells_toward_azimuth` functions to `burn_cells.py`.
+- The conversion coefficient between 10m and 20ft wind speeds has been updated to match Behave7.
 - Floating point precision has been changed from 64 bit doubles to 32 bit floats for memory efficiency.
 - Functions that return fire behavior metrics as dictionaries may contain a `dphi_dt` attribute that can be ignored. Also, the `fire_type` attribute in these dictionaries has changed type from string to integer as follows:
   - "unburned" -> 0
