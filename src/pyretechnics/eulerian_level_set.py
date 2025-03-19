@@ -2285,6 +2285,61 @@ def check_start_and_stop_times(start_time   : cy.float,
         raise ValueError("The start_time + max_duration exceeds the temporal bounds of the space_time_cubes.")
 
 
+@cy.cclass
+class SpreadState:
+    """
+    Stores the stateful data associated with a fire spread simulation.
+    """
+    phi               : cy.float[:,::1] # 2D float array of values in [-1,1]
+    fire_type         : cy.uchar[:,::1] # 2D byte array (0-3)
+    spread_rate       : cy.float[:,::1] # 2D float array (m/min)
+    spread_direction  : cy.float[:,::1] # 2D float array (degrees clockwise from North)
+    fireline_intensity: cy.float[:,::1] # 2D float array (kW/m)
+    flame_length      : cy.float[:,::1] # 2D float array (m)
+    time_of_arrival   : cy.float[:,::1] # 2D float array (min)
+
+
+    # TODO: Initialize output matrices to NaN if possible
+    def __init__(self, cube_shape: tuple[pyidx, pyidx, pyidx]) -> cy.void:
+        # Extract the grid_shape from the cube_shape
+        grid_rows : pyidx               = cube_shape[1]
+        grid_cols : pyidx               = cube_shape[2]
+        grid_shape: tuple[pyidx, pyidx] = (grid_rows, grid_cols)
+        # Create the initial 2D arrays
+        # NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.
+        self.phi                = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
+        self.fire_type          = np.zeros(grid_shape, dtype="uint8")
+        self.spread_rate        = np.zeros(grid_shape, dtype="float32")
+        self.spread_direction   = np.zeros(grid_shape, dtype="float32")
+        self.fireline_intensity = np.zeros(grid_shape, dtype="float32")
+        self.flame_length       = np.zeros(grid_shape, dtype="float32")
+        self.time_of_arrival    = np.full(grid_shape, -1.0, dtype="float32")
+
+
+    @cy.ccall
+    @cy.exceptval(check=False)
+    def ignite_cell(self, ignited_cell: coord_yx) -> cy.void:
+        # Extract coords
+        y: pyidx = ignited_cell[0]
+        x: pyidx = ignited_cell[1]
+        # Overwrite phi state
+        self.phi[y,x] = -1.0
+
+
+    @cy.ccall
+    @cy.exceptval(check=False)
+    def ignite_cells(self, lower_left_corner: coord_yx, ignition_matrix: cy.float[:,::1]) -> cy.void:
+        # Extract coords
+        rows : pyidx = ignition_matrix.shape[0]
+        cols : pyidx = ignition_matrix.shape[1]
+        min_y: pyidx = lower_left_corner[0]
+        min_x: pyidx = lower_left_corner[1]
+        max_y: pyidx = min_y + rows
+        max_x: pyidx = min_x + cols
+        # Overwrite phi state
+        self.phi[min_y:max_y,min_x:max_x] = ignition_matrix
+
+
 @cy.ccall
 def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube],
                                output_matrices       : dict[str, np.ndarray],

@@ -288,6 +288,20 @@
 #     float cell_width,
 #     )
 # cdef void check_start_and_stop_times(float start_time, float max_stop_time, float cube_duration, object max_duration=?)
+# cdef class SpreadState:
+#     cdef float[:,::1] phi
+#     cdef unsigned char[:,::1] fire_type
+#     cdef float[:,::1] spread_rate
+#     cdef float[:,::1] spread_direction
+#     cdef float[:,::1] fireline_intensity
+#     cdef float[:,::1] flame_length
+#     cdef float[:,::1] time_of_arrival
+#     cdef void ignite_cell(SpreadState self, coord_yx ignited_cell) noexcept
+#     cdef void ignite_cells(
+#         SpreadState self,
+#         coord_yx lower_left_corner,
+#         float[:,::1] ignition_matrix,
+#     ) noexcept
 # cpdef dict[str, object] spread_fire_with_phi_field(
 #     dict[str, ISpaceTimeCube] space_time_cubes,
 #     dict[str, np.ndarray] output_matrices,
