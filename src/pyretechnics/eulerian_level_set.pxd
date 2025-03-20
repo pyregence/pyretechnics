@@ -296,12 +296,13 @@
 #     cdef float[:,::1] fireline_intensity
 #     cdef float[:,::1] flame_length
 #     cdef float[:,::1] time_of_arrival
-#     cdef void ignite_cell(SpreadState self, coord_yx ignited_cell) noexcept
-#     cdef void ignite_cells(
+#     cpdef void ignite_cell(SpreadState self, coord_yx ignited_cell) noexcept
+#     cpdef void ignite_cells(
 #         SpreadState self,
 #         coord_yx lower_left_corner,
 #         float[:,::1] ignition_matrix,
 #     ) noexcept
+#     cpdef dict extract_burn_scar(SpreadState self, list only_metrics=?)
 # cpdef dict[str, object] spread_fire_with_phi_field(
 #     dict[str, ISpaceTimeCube] space_time_cubes,
 #     dict[str, np.ndarray] output_matrices,

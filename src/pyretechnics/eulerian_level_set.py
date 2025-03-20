@@ -2340,6 +2340,36 @@ class SpreadState:
         self.phi[min_y:max_y,min_x:max_x] = ignition_matrix
 
 
+    @cy.ccall
+    def extract_burn_scar(self, only_metrics: list[str]|None = None) -> dict:
+        # Find bounding box of burned area
+        burned_mask: tuple[np.ndarray, np.ndarray] = np.nonzero(self.fire_type)
+        min_y      : pyidx                         = burned_mask[0].min()
+        max_y      : pyidx                         = burned_mask[0].max()
+        min_x      : pyidx                         = burned_mask[1].min()
+        max_x      : pyidx                         = burned_mask[1].max()
+        # Prepare the 2D arrays in a dict
+        output_matrices: dict[str, np.ndarray] = {
+            "fire_type"         : self.fire_type,
+            "spread_rate"       : self.spread_rate,
+            "spread_direction"  : self.spread_direction,
+            "fireline_intensity": self.fireline_intensity,
+            "flame_length"      : self.flame_length,
+            "time_of_arrival"   : self.time_of_arrival,
+        }
+        # Set selected_metrics to only_metrics if specified and otherwise to all available metrics
+        selected_metrics: list[str] = only_metrics if only_metrics is not None else list(output_matrices.keys())
+        # Clip the 2D arrays from selected_metrics to the bounding box
+        clipped_matrices: dict[str, np.ndarray] = {
+            k: np.copy(output_matrices[k][min_y:max_y+1, min_x:max_x+1]) for k in selected_metrics
+        }
+        # Return the clipped_matrices along with their lower_left_corner for reference
+        return {
+            "lower_left_corner": (min_y, min_x),
+            "clipped_matrices" : clipped_matrices,
+        }
+
+
 @cy.ccall
 def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube],
                                output_matrices       : dict[str, np.ndarray],
