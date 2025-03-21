@@ -70,7 +70,6 @@ def make_CellsCountSegment(y: pyidx, x0: pyidx) -> CellsCountSegment:
 
 
 @cy.cfunc
-@cy.exceptval(-1)
 def __find_first_k(segment: CellsCountSegment) -> pyidx:
     k: pyidx
     for k in range(16):
@@ -178,7 +177,6 @@ def inc_y_segment(tracked_cells: NarrowBandTracker, y: pyidx, x_start: pyidx, se
 
 
 @cy.cfunc
-@cy.exceptval(check=False)
 def dec_y_segment(tracked_cells: NarrowBandTracker, y: pyidx, x_start: pyidx, segment_length: cy.int) -> cy.void:
     y_idx: int        = y - tracked_cells.ys_offset
     s    : SortedDict = tracked_cells.ys_list[y_idx]

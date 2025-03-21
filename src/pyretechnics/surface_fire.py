@@ -559,9 +559,8 @@ def get_phi_E(wind_vector_3d: vec_xyz, slope_vector_3d: vec_xyz, phi_W: cy.float
     return phi_E_3d
 # surface-fire-combine-wind-and-slope-vectors ends here
 # [[file:../../org/pyretechnics.org::surface-fire-eccentricity][surface-fire-eccentricity]]
-# TODO: Change model from str to enumerated type and set @cy.exceptval(-1) to @cy.exceptval(check=False)
+# TODO: Change model from str to enumerated type
 @cy.cfunc
-@cy.exceptval(-1)
 def surface_length_to_width_ratio(effective_wind_speed: cy.float, model: str = "behave") -> cy.float:
     """
     Calculate the length_to_width_ratio of the surface fire front given:

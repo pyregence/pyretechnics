@@ -19,7 +19,6 @@ def is_pos_int(x: object) -> cy.bint:
 
 
 @cy.cfunc
-@cy.exceptval(-1)
 def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
     if divisor == 0:
         raise ValueError(str(divisor) + " may not be zero.")

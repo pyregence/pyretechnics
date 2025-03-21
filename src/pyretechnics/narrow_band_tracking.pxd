@@ -20,7 +20,7 @@ cdef class NarrowBandTracker:
 
 cdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
 cdef void inc_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept
-cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept
+cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length)
 cdef (pyidx, pyidx) resolve_truncated_x_segment(NarrowBandTracker tracked_cells, pyidx x, pyidx buffer_width) noexcept
 cdef void inc_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
 cdef void dec_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
