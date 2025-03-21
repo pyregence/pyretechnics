@@ -5,7 +5,7 @@ from pyretechnics.cy_types cimport pyidx
 cdef bint is_pos_int(object x) noexcept
 cdef int divide_evenly(int dividend, int divisor)
 cpdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
-# def maybe_repeat_array(array, axis_repetitions)
+cdef np.ndarray maybe_repeat_array(np.ndarray array, (pyidx, int) axis_repetitions)
 
 cdef class ISpaceTimeCube:
     cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept

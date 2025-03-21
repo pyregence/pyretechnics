@@ -4,6 +4,7 @@ import cython as cy
 import numpy as np
 from sortedcontainers import SortedDict
 if cython.compiled:
+    from cython.cimports.numpy import ndarray
     from cython.cimports.libc.stdlib import malloc, realloc, free
     from cython.cimports.libc.math import pi, floor, sqrt, pow, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
@@ -20,6 +21,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.narrow_band_tracking as nbt
 else:
     # TODO: Create equivalent Python functions for malloc, realloc, free
+    from numpy import ndarray
     from math import pi, floor, sqrt, pow, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
@@ -655,13 +657,13 @@ class SpreadState:
     @cy.ccall
     def get_burned_matrices(self, layers: list[str]|None = None) -> dict:
         # Find bounding box of burned area
-        burned_mask: tuple[np.ndarray, np.ndarray] = np.nonzero(self.fire_type)
-        min_y      : pyidx                         = burned_mask[0].min()
-        max_y      : pyidx                         = burned_mask[0].max()
-        min_x      : pyidx                         = burned_mask[1].min()
-        max_x      : pyidx                         = burned_mask[1].max()
+        burned_mask: tuple[ndarray, ndarray] = np.nonzero(self.fire_type)
+        min_y      : pyidx                   = burned_mask[0].min()
+        max_y      : pyidx                   = burned_mask[0].max()
+        min_x      : pyidx                   = burned_mask[1].min()
+        max_x      : pyidx                   = burned_mask[1].max()
         # Prepare the 2D arrays in a dict
-        available_matrices: dict[str, np.ndarray] = {
+        available_matrices: dict[str, ndarray] = {
             "phi"               : self.phi,
             "fire_type"         : self.fire_type,
             "spread_rate"       : self.spread_rate,
@@ -673,7 +675,7 @@ class SpreadState:
         # Set selected_layers to layers if specified and otherwise to all available layers
         selected_layers: list[str] = layers if layers is not None else list(available_matrices.keys())
         # Clip the 2D arrays from selected_layers to the bounding box
-        clipped_matrices: dict[str, np.ndarray] = {
+        clipped_matrices: dict[str, ndarray] = {
             k: np.copy(available_matrices[k][min_y:max_y+1, min_x:max_x+1]) for k in selected_layers
         }
         # Return the clipped_matrices along with their lower_left_corner for reference
@@ -687,7 +689,7 @@ class SpreadState:
     @cy.ccall
     def get_full_matrices(self, layers: list[str]|None = None) -> dict:
         # Prepare the 2D arrays in a dict
-        available_matrices: dict[str, np.ndarray] = {
+        available_matrices: dict[str, ndarray] = {
             "phi"               : np.asarray(self.phi),
             "fire_type"         : np.asarray(self.fire_type),
             "spread_rate"       : np.asarray(self.spread_rate),

@@ -3,6 +3,7 @@ import cython
 import cython as cy
 import numpy as np
 if cython.compiled:
+    from cython.cimports.numpy import ndarray
     from cython.cimports.pyretechnics.cy_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
@@ -12,6 +13,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.surface_fire as sf
     import cython.cimports.pyretechnics.crown_fire as cf
 else:
+    from numpy import ndarray
     from pyretechnics.py_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     from pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
@@ -315,11 +317,11 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
     if not(0 <= min_x < max_x <= rows):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
-    fire_type_matrix          : np.ndarray      = np.zeros(grid_shape, dtype="uint8")
-    spread_rate_matrix        : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    fireline_intensity_matrix : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    flame_length_matrix       : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
     spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
     spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix
@@ -639,11 +641,11 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
     if not(0 <= min_x < max_x <= rows):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
-    fire_type_matrix          : np.ndarray      = np.zeros(grid_shape, dtype="uint8")
-    spread_rate_matrix        : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    fireline_intensity_matrix : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    flame_length_matrix       : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
     spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
     spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix

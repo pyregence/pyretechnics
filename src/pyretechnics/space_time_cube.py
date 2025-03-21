@@ -4,8 +4,10 @@ import cython as cy
 from functools import reduce
 import numpy as np
 if cython.compiled:
+    from cython.cimports.numpy import ndarray
     from cython.cimports.pyretechnics.cy_types import pyidx
 else:
+    from numpy import ndarray
     from pyretechnics.py_types import pyidx
 # space-time-cube-imports ends here
 # [[file:../../org/pyretechnics.org::space-time-cube-utilities][space-time-cube-utilities]]
@@ -47,7 +49,8 @@ def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: 
         )
 
 
-def maybe_repeat_array(array, axis_repetitions):
+@cy.cfunc
+def maybe_repeat_array(array: ndarray, axis_repetitions: tuple[pyidx, cy.int]) -> ndarray:
     """
     Return a new array that is created by repeating the elements from the input
     array repetitions times along the specified array axis. Avoid allocating
@@ -57,7 +60,7 @@ def maybe_repeat_array(array, axis_repetitions):
     if repetitions == 1:
         return array
     else:
-        array_shape = list(np.shape(array))
+        array_shape: list = list(np.shape(array))
         if array_shape[axis] == 1:
             array_shape[axis] = repetitions
             return np.broadcast_to(array, array_shape)
@@ -387,7 +390,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
     shape        : tuple[cy.int, cy.int, cy.int]
     subcube_shape: tuple[cy.int, cy.int, cy.int]
     cache_shape  : tuple[cy.int, cy.int, cy.int]
-    cache        : np.ndarray
+    cache        : ndarray
     load_subcube : object
 
 
