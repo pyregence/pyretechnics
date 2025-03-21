@@ -587,6 +587,120 @@ def unburned_SpreadBehavior(elevation_gradient: vec_xy, phi_gradient_xyz: vec_xy
         fireline_intensity = 0.0,
         flame_length       = 0.0,
     )
+
+
+@cy.cclass
+class SpreadState:
+    """
+    Stores the stateful data associated with a fire spread simulation.
+    """
+    cube_shape        : tuple[pyidx, pyidx, pyidx]
+    phi               : cy.float[:,::1] # 2D float array of values in [-1,1]
+    phi_star          : cy.float[:,::1] # 2D float array of values in [-1,1]
+    fire_type         : cy.uchar[:,::1] # 2D byte array (0-3)
+    spread_rate       : cy.float[:,::1] # 2D float array (m/min)
+    spread_direction  : cy.float[:,::1] # 2D float array (degrees clockwise from North)
+    fireline_intensity: cy.float[:,::1] # 2D float array (kW/m)
+    flame_length      : cy.float[:,::1] # 2D float array (m)
+    time_of_arrival   : cy.float[:,::1] # 2D float array (min)
+
+
+    # TODO: Initialize output matrices to NaN if possible
+    def __init__(self, cube_shape: tuple[pyidx, pyidx, pyidx]) -> cy.void:
+        # Extract the grid_shape from the cube_shape
+        grid_rows : pyidx               = cube_shape[1]
+        grid_cols : pyidx               = cube_shape[2]
+        grid_shape: tuple[pyidx, pyidx] = (grid_rows, grid_cols)
+        # Create the initial 2D arrays
+        # NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.
+        self.cube_shape         = cube_shape
+        self.phi                = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
+        self.phi_star           = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
+        self.fire_type          = np.zeros(grid_shape, dtype="uint8")
+        self.spread_rate        = np.zeros(grid_shape, dtype="float32")
+        self.spread_direction   = np.zeros(grid_shape, dtype="float32")
+        self.fireline_intensity = np.zeros(grid_shape, dtype="float32")
+        self.flame_length       = np.zeros(grid_shape, dtype="float32")
+        self.time_of_arrival    = np.full(grid_shape, -1.0, dtype="float32")
+
+
+    @cy.ccall
+    def ignite_cell(self, ignited_cell: coord_yx) -> SpreadState:
+        # Extract coords
+        y: pyidx = ignited_cell[0]
+        x: pyidx = ignited_cell[1]
+        # Overwrite phi and phi_star state
+        self.phi[2+y,2+x]      = -1.0
+        self.phi_star[2+y,2+x] = -1.0
+        # Return the updated SpreadState object
+        return self
+
+
+    @cy.ccall
+    def ignite_cells(self, lower_left_corner: coord_yx, ignition_matrix: cy.float[:,::1]) -> SpreadState:
+        # Extract coords
+        rows : pyidx = ignition_matrix.shape[0]
+        cols : pyidx = ignition_matrix.shape[1]
+        min_y: pyidx = lower_left_corner[0]
+        min_x: pyidx = lower_left_corner[1]
+        max_y: pyidx = min_y + rows
+        max_x: pyidx = min_x + cols
+        # Overwrite phi and phi_star state
+        self.phi[2+min_y:2+max_y,2+min_x:2+max_x]      = ignition_matrix
+        self.phi_star[2+min_y:2+max_y,2+min_x:2+max_x] = ignition_matrix
+        # Return the updated SpreadState object
+        return self
+
+
+    @cy.ccall
+    def get_burned_matrices(self, layers: list[str]|None = None) -> dict:
+        # Find bounding box of burned area
+        burned_mask: tuple[np.ndarray, np.ndarray] = np.nonzero(self.fire_type)
+        min_y      : pyidx                         = burned_mask[0].min()
+        max_y      : pyidx                         = burned_mask[0].max()
+        min_x      : pyidx                         = burned_mask[1].min()
+        max_x      : pyidx                         = burned_mask[1].max()
+        # Prepare the 2D arrays in a dict
+        available_matrices: dict[str, np.ndarray] = {
+            "fire_type"         : self.fire_type,
+            "spread_rate"       : self.spread_rate,
+            "spread_direction"  : self.spread_direction,
+            "fireline_intensity": self.fireline_intensity,
+            "flame_length"      : self.flame_length,
+            "time_of_arrival"   : self.time_of_arrival,
+        }
+        # Set selected_layers to layers if specified and otherwise to all available layers
+        selected_layers: list[str] = layers if layers is not None else list(available_matrices.keys())
+        # Clip the 2D arrays from selected_layers to the bounding box
+        clipped_matrices: dict[str, np.ndarray] = {
+            k: np.copy(available_matrices[k][min_y:max_y+1, min_x:max_x+1]) for k in selected_layers
+        }
+        # Return the clipped_matrices along with their lower_left_corner for reference
+        return {
+            "cube_shape"       : self.cube_shape,
+            "lower_left_corner": (min_y, min_x),
+            "clipped_matrices" : clipped_matrices,
+        }
+
+
+    @cy.ccall
+    def get_full_matrices(self, layers: list[str]|None = None) -> dict:
+        # Prepare the 2D arrays in a dict
+        available_matrices: dict[str, np.ndarray] = {
+            "fire_type"         : np.asarray(self.fire_type),
+            "spread_rate"       : np.asarray(self.spread_rate),
+            "spread_direction"  : np.asarray(self.spread_direction),
+            "fireline_intensity": np.asarray(self.fireline_intensity),
+            "flame_length"      : np.asarray(self.flame_length),
+            "time_of_arrival"   : np.asarray(self.time_of_arrival),
+        }
+        # Return the matrices in layers if specified and otherwise return all available layers
+        if layers is None:
+            return available_matrices
+        else:
+            return {
+                k: available_matrices[k] for k in layers
+            }
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
 @cy.cfunc
@@ -1832,24 +1946,23 @@ def runge_kutta_pass2(dy                : cy.float,
     return burned_cells
 
 
-# TODO: Pass output_matrices as a struct
 @cy.cfunc
 @cy.exceptval(check=False)
 def process_burned_cells(spread_inputs   : SpreadInputs,
                          fb_opts         : FireBehaviorSettings,
-                         output_matrices : dict,
+                         spread_state    : SpreadState,
                          spot_ignitions  : SortedDict[float, set],
                          random_generator: BufferedRandGen,
                          burned_cells    : list[BurnedCellInfo]) -> cy.void:
-    # Unpack output_matrices
-    fire_type_matrix         : cy.uchar[:,::1] = output_matrices["fire_type"]
-    spread_rate_matrix       : cy.float[:,::1] = output_matrices["spread_rate"]
-    spread_direction_matrix  : cy.float[:,::1] = output_matrices["spread_direction"]
-    fireline_intensity_matrix: cy.float[:,::1] = output_matrices["fireline_intensity"]
-    flame_length_matrix      : cy.float[:,::1] = output_matrices["flame_length"]
-    time_of_arrival_matrix   : cy.float[:,::1] = output_matrices["time_of_arrival"]
+    # Unpack spread_state
+    fire_type_matrix         : cy.uchar[:,::1] = spread_state.fire_type
+    spread_rate_matrix       : cy.float[:,::1] = spread_state.spread_rate
+    spread_direction_matrix  : cy.float[:,::1] = spread_state.spread_direction
+    fireline_intensity_matrix: cy.float[:,::1] = spread_state.fireline_intensity
+    flame_length_matrix      : cy.float[:,::1] = spread_state.flame_length
+    time_of_arrival_matrix   : cy.float[:,::1] = spread_state.time_of_arrival
 
-    # Save the burned_cells fire behavior values in output_matrices
+    # Save the burned_cells fire behavior values in the spread_state matrices
     burned_cell: BurnedCellInfo
     for burned_cell in burned_cells:
         # Determine the current space_time_coordinate
@@ -1863,7 +1976,7 @@ def process_burned_cells(spread_inputs   : SpreadInputs,
                                                                          fb_opts,
                                                                          space_time_coordinate,
                                                                          burned_cell.phi_gradient_xy)
-        # Write to output_matrices
+        # Write to the spread_state matrices
         fire_type_matrix[y, x]          = fire_behavior.fire_type
         spread_rate_matrix[y, x]        = fire_behavior.spread_rate
         spread_direction_matrix[y, x]   = vu.spread_direction_vector_to_angle(fire_behavior.spread_direction)
@@ -1909,19 +2022,18 @@ def reset_phi_star(tca               : TrackedCellsArrays,
         phi_star_matrix[2+y, 2+x] = phi_matrix[2+y, 2+x]
 
 
-# TODO: Pass output_matrices as a struct
 @cy.cfunc
 def ignite_from_spotting(spot_ignitions : SortedDict[float, set],
-                         output_matrices: dict,
+                         spread_state   : SpreadState,
                          stop_time      : cy.float) -> list[BurnedCellInfo]:
     """
     Resolves the cells to be ignited by spotting in the current time step,
-    returning them as a list of (y, x) tuples, and mutates `output_matrices` accordingly.
+    returning them as a list of (y, x) tuples, and mutates `spread_state` accordingly.
     """
     ignited_cells: list[BurnedCellInfo] = []
     if len(spot_ignitions) > 0:
-        phi_matrix            : cy.float[:,::1] = output_matrices["phi"]
-        time_of_arrival_matrix: cy.float[:,::1] = output_matrices["time_of_arrival"]
+        phi_matrix            : cy.float[:,::1] = spread_state.phi
+        time_of_arrival_matrix: cy.float[:,::1] = spread_state.time_of_arrival
         ignition_time         : cy.float
         maybe_ignited_cells   : set
         cell_index            : coord_yx
@@ -2072,7 +2184,6 @@ def update_tracked_cells_with_frontier_diff(tracked_cells         : nbt.NarrowBa
     return tracked_cells
 
 
-# TODO: Turn sim_state and output_matrices into structs
 @cy.cfunc
 def spread_one_timestep(sim_state    : dict,
                         spread_inputs: SpreadInputs,
@@ -2083,9 +2194,9 @@ def spread_one_timestep(sim_state    : dict,
     """
     # Unpack sim_state
     start_time      : cy.float               = sim_state["simulation_time"]
-    output_matrices : dict                   = sim_state["output_matrices"]
-    phi_matrix      : cy.float[:,::1]        = output_matrices["phi"]
-    phi_star_matrix : cy.float[:,::1]        = output_matrices["phi_star"]
+    spread_state    : SpreadState            = sim_state["spread_state"]
+    phi_matrix      : cy.float[:,::1]        = spread_state.phi
+    phi_star_matrix : cy.float[:,::1]        = spread_state.phi_star
     frontier_cells  : set                    = sim_state["frontier_cells"] # TODO: OPTIM Use a binary array instead?
     tracked_cells   : nbt.NarrowBandTracker  = sim_state["tracked_cells"]
     tca             : TrackedCellsArrays     = sim_state["_tracked_cells_arrays"]
@@ -2119,10 +2230,10 @@ def spread_one_timestep(sim_state    : dict,
                                                            phi_matrix)
 
     # Process side-effects of the burned cells (outputs, etc.)
-    process_burned_cells(spread_inputs, fb_opts, output_matrices, spot_ignitions, random_generator, burned_cells)
+    process_burned_cells(spread_inputs, fb_opts, spread_state, spot_ignitions, random_generator, burned_cells)
     # TODO: REVIEW It is a questionable choice to call this function AFTER process_burned_cells.
     #       It may be more sensible to ignite the spotting cells first and then to process them all.
-    spot_ignited_cells: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
+    spot_ignited_cells: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, spread_state, stop_time)
 
     # Save the new phi_matrix values in phi_star_matrix
     reset_phi_star(tca, spot_ignited_cells, phi_star_matrix, phi_matrix)
@@ -2148,7 +2259,7 @@ def spread_one_timestep(sim_state    : dict,
     # NOTE: We are intentionally swapping the tracked_cells_arrays
     return {
         "simulation_time"          : stop_time,
-        "output_matrices"          : output_matrices,
+        "spread_state"             : spread_state,
         "frontier_cells"           : frontier_cells_new,
         "tracked_cells"            : tracked_cells_new,
         "_tracked_cells_arrays"    : tca_old,
@@ -2203,40 +2314,8 @@ def check_space_time_cubes(space_time_cubes: dict, spot_config: dict|None = None
 
 
 @cy.cfunc
-def check_output_matrices(output_matrices: dict) -> cy.void:
-    # Define the provided, required, and optional keys for output_matrices
-    provided_matrices: set = set(output_matrices.keys())
-    required_matrices: set = {
-        "phi",
-        "fire_type",
-        "spread_rate",
-        "spread_direction",
-        "fireline_intensity",
-        "flame_length",
-        "time_of_arrival",
-    }
-    optional_matrices: set = set() # NOTE: Leaving this here in case we add some later
-
-    # Ensure that all required_matrices are present in provided_matrices
-    if not provided_matrices.issuperset(required_matrices):
-        raise ValueError("The output_matrices dictionary is missing these required keys: "
-                         + str(required_matrices.difference(provided_matrices)))
-
-    # Ensure that only required_matrices and optional_matrices are present in provided_matrices
-    if not (required_matrices | optional_matrices).issuperset(provided_matrices):
-        raise ValueError("The output_matrices dictionary contains these unused keys: "
-                         + str(provided_matrices.difference((required_matrices | optional_matrices))))
-
-    # Ensure that all output_matrices values are 2D Numpy arrays
-    matrix: object
-    for matrix in output_matrices.values():
-        if not(isinstance(matrix, np.ndarray) and np.ndim(matrix) == 2):
-            raise ValueError("All values in the output_matrices dictionary must be 2D Numpy arrays.")
-
-
-@cy.cfunc
 def check_dimensions_and_resolutions(space_time_cubes: dict,
-                                     output_matrices : dict,
+                                     spread_state    : SpreadState,
                                      bands           : pyidx,
                                      rows            : pyidx,
                                      cols            : pyidx,
@@ -2249,18 +2328,9 @@ def check_dimensions_and_resolutions(space_time_cubes: dict,
         if cube.shape != (bands, rows, cols):
             raise ValueError("The space_time_cubes must all share the same cube shape.")
 
-    # Ensure that space_time_cubes and output_matrices have the same cube shape
-    label : str
-    matrix: np.ndarray
-    for (label, matrix) in output_matrices.items():
-        if label == "phi":
-            if matrix.shape != (rows + 4, cols + 4):
-                raise ValueError("The phi matrix must be padded by 2 rows and 2 columns "
-                                 + "compared to the simulation dimensions.")
-        else:
-            if matrix.shape != (rows, cols):
-                raise ValueError("The space_time_cubes and output_matrices must share the same "
-                                 + "number of rows and columns.")
+    # Ensure that the space_time_cubes and spread_state have the same cube shape
+    if spread_state.cube_shape != (bands, rows, cols):
+        raise ValueError("The space_time_cubes and spread_state must share the same cube shape.")
 
     # Ensure that all cube resolution values are positive
     if band_duration <= 0.0 or cell_height <= 0.0 or cell_width <= 0.0:
@@ -2285,94 +2355,9 @@ def check_start_and_stop_times(start_time   : cy.float,
         raise ValueError("The start_time + max_duration exceeds the temporal bounds of the space_time_cubes.")
 
 
-@cy.cclass
-class SpreadState:
-    """
-    Stores the stateful data associated with a fire spread simulation.
-    """
-    phi               : cy.float[:,::1] # 2D float array of values in [-1,1]
-    fire_type         : cy.uchar[:,::1] # 2D byte array (0-3)
-    spread_rate       : cy.float[:,::1] # 2D float array (m/min)
-    spread_direction  : cy.float[:,::1] # 2D float array (degrees clockwise from North)
-    fireline_intensity: cy.float[:,::1] # 2D float array (kW/m)
-    flame_length      : cy.float[:,::1] # 2D float array (m)
-    time_of_arrival   : cy.float[:,::1] # 2D float array (min)
-
-
-    # TODO: Initialize output matrices to NaN if possible
-    def __init__(self, cube_shape: tuple[pyidx, pyidx, pyidx]) -> cy.void:
-        # Extract the grid_shape from the cube_shape
-        grid_rows : pyidx               = cube_shape[1]
-        grid_cols : pyidx               = cube_shape[2]
-        grid_shape: tuple[pyidx, pyidx] = (grid_rows, grid_cols)
-        # Create the initial 2D arrays
-        # NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.
-        self.phi                = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
-        self.fire_type          = np.zeros(grid_shape, dtype="uint8")
-        self.spread_rate        = np.zeros(grid_shape, dtype="float32")
-        self.spread_direction   = np.zeros(grid_shape, dtype="float32")
-        self.fireline_intensity = np.zeros(grid_shape, dtype="float32")
-        self.flame_length       = np.zeros(grid_shape, dtype="float32")
-        self.time_of_arrival    = np.full(grid_shape, -1.0, dtype="float32")
-
-
-    @cy.ccall
-    @cy.exceptval(check=False)
-    def ignite_cell(self, ignited_cell: coord_yx) -> cy.void:
-        # Extract coords
-        y: pyidx = ignited_cell[0]
-        x: pyidx = ignited_cell[1]
-        # Overwrite phi state
-        self.phi[y,x] = -1.0
-
-
-    @cy.ccall
-    @cy.exceptval(check=False)
-    def ignite_cells(self, lower_left_corner: coord_yx, ignition_matrix: cy.float[:,::1]) -> cy.void:
-        # Extract coords
-        rows : pyidx = ignition_matrix.shape[0]
-        cols : pyidx = ignition_matrix.shape[1]
-        min_y: pyidx = lower_left_corner[0]
-        min_x: pyidx = lower_left_corner[1]
-        max_y: pyidx = min_y + rows
-        max_x: pyidx = min_x + cols
-        # Overwrite phi state
-        self.phi[min_y:max_y,min_x:max_x] = ignition_matrix
-
-
-    @cy.ccall
-    def extract_burn_scar(self, only_metrics: list[str]|None = None) -> dict:
-        # Find bounding box of burned area
-        burned_mask: tuple[np.ndarray, np.ndarray] = np.nonzero(self.fire_type)
-        min_y      : pyidx                         = burned_mask[0].min()
-        max_y      : pyidx                         = burned_mask[0].max()
-        min_x      : pyidx                         = burned_mask[1].min()
-        max_x      : pyidx                         = burned_mask[1].max()
-        # Prepare the 2D arrays in a dict
-        output_matrices: dict[str, np.ndarray] = {
-            "fire_type"         : self.fire_type,
-            "spread_rate"       : self.spread_rate,
-            "spread_direction"  : self.spread_direction,
-            "fireline_intensity": self.fireline_intensity,
-            "flame_length"      : self.flame_length,
-            "time_of_arrival"   : self.time_of_arrival,
-        }
-        # Set selected_metrics to only_metrics if specified and otherwise to all available metrics
-        selected_metrics: list[str] = only_metrics if only_metrics is not None else list(output_matrices.keys())
-        # Clip the 2D arrays from selected_metrics to the bounding box
-        clipped_matrices: dict[str, np.ndarray] = {
-            k: np.copy(output_matrices[k][min_y:max_y+1, min_x:max_x+1]) for k in selected_metrics
-        }
-        # Return the clipped_matrices along with their lower_left_corner for reference
-        return {
-            "lower_left_corner": (min_y, min_x),
-            "clipped_matrices" : clipped_matrices,
-        }
-
-
 @cy.ccall
 def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube],
-                               output_matrices       : dict[str, np.ndarray],
+                               spread_state          : SpreadState,
                                cube_resolution       : tuple[cy.float, cy.float, cy.float],
                                start_time            : cy.float,
                                max_duration          : float|None             = None,
@@ -2405,14 +2390,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
       - foliar_moisture               :: kg moisture/kg ovendry weight
       - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
       - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
-    - output_matrices              :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
-      - phi                           :: 2D float array of values in [-1,1]
-      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
-      - spread_rate                   :: 2D float array (m/min)
-      - spread_direction              :: 2D float array (degrees clockwise from North)
-      - fireline_intensity            :: 2D float array (kW/m)
-      - flame_length                  :: 2D float array (m)
-      - time_of_arrival               :: 2D float array (min)
+    - spread_state                 :: SpreadState object whose spatial dimensions match the space_time_cubes
     - cube_resolution              :: tuple with these fields
       - band_duration                 :: minutes
       - cell_height                   :: meters
@@ -2439,25 +2417,15 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
                                       whereas non-weather inputs default to 0.
 
     return a dictionary with these keys:
-    - stop_time            :: minutes
-    - stop_condition       :: "max duration reached" or "no burnable cells"
-    - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes
-      - phi                   :: 2D float array of values in [-1,1]
-      - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
-      - spread_rate           :: 2D float array (m/min)
-      - spread_direction      :: 2D float array (degrees clockwise from North)
-      - fireline_intensity    :: 2D float array (kW/m)
-      - flame_length          :: 2D float array (m)
-      - time_of_arrival       :: 2D float array (min)
-    - num_tracked_cells    :: number of cells in the narrow band at stop_time
-    - spot_ignitions       :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
-    - random_generator     :: BufferedRandGen object (only included when spotting is used)
+    - stop_time         :: minutes
+    - stop_condition    :: "max duration reached" or "no burnable cells"
+    - spread_state      :: SpreadState object whose spatial dimensions match the space_time_cubes
+    - num_tracked_cells :: number of cells in the narrow band at stop_time
+    - spot_ignitions    :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
+    - random_generator  :: BufferedRandGen object (only included when spotting is used)
     """
     # Verify the contents of space_time_cubes
     check_space_time_cubes(space_time_cubes, spot_config)
-
-    # Verify the contents of output_matrices
-    check_output_matrices(output_matrices)
 
     # Extract simulation dimensions
     fuel_model_cube: ISpaceTimeCube             = space_time_cubes["fuel_model"]
@@ -2473,7 +2441,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     # Verify the simulation dimensions and resolutions
     check_dimensions_and_resolutions(space_time_cubes,
-                                     output_matrices,
+                                     spread_state,
                                      bands,
                                      rows,
                                      cols,
@@ -2490,23 +2458,18 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
 
     # Identify the sets of frontier cells and tracked cells based on the phi matrix
     start_t       : pyidx                 = int(start_time // band_duration)
-    phi_matrix    : cy.float[:,::1]       = output_matrices["phi"]
-    frontier_cells: set                   = identify_all_frontier_cells(phi_matrix,
+    frontier_cells: set                   = identify_all_frontier_cells(spread_state.phi,
                                                                         fuel_model_cube,
                                                                         start_t,
                                                                         rows,
                                                                         cols)
     tracked_cells : nbt.NarrowBandTracker = identify_tracked_cells(frontier_cells, buffer_width, rows, cols)
 
-    # Make a copy of the phi matrix to use for intermediate calculations in each timestep
-    output_matrices["phi_star"] = np.copy(phi_matrix)
-
     # Create a BufferedRandGen object to produce random samples if spot_config is provided
     random_generator: BufferedRandGen|None = None
     if spot_config:
         random_generator = BufferedRandGen(np.random.default_rng(seed=spot_config.get("random_seed")))
 
-    # FIXME: Change this name without a collision
     # Prepare the SpreadInputs struct
     spread_inputs: SpreadInputs = make_SpreadInputs(cube_shape, cube_resolution, space_time_cubes)
 
@@ -2524,9 +2487,10 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
     # Prepare the sim_state dictionary
     # NOTE: We are intentionally swapping the tracked_cells_arrays.
     #       It's OK not to be in sync - spread_one_timestep will solve this.
-    sim_state: dict  = {
+    # TODO: Turn sim_state into a struct
+    sim_state: dict = {
         "simulation_time"          : start_time,
-        "output_matrices"          : output_matrices,
+        "spread_state"             : spread_state,
         "frontier_cells"           : frontier_cells,
         "tracked_cells"            : tracked_cells,
         "_tracked_cells_arrays"    : TrackedCellsArrays(start_time, start_t),
@@ -2541,7 +2505,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
     early_exit_threshold        : cy.float = 1.0 / 60.0 # 1 second
     while((remaining_time_in_simulation > early_exit_threshold)       # 1. There is still time left in the simulation
           and (nbt.nonempty_tracked_cells(tracked_cells)              # 2. There are burning cells on the grid
-               or len(sim_state["spot_ignitions"]) > 0)):             # 3. There are embers waiting to catch fire on the grid
+               or len(sim_state["spot_ignitions"]) > 0)):             # 3. There are embers waiting to catch fire
         # Spread fire one timestep
         sim_state                    = spread_one_timestep(sim_state,
                                                            spread_inputs,
@@ -2554,15 +2518,11 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
                            if remaining_time_in_simulation <= early_exit_threshold
                            else "no burnable cells")
 
-    # FIXME: REVIEW Perhaps phi_star would be better off in sim_state
-    # Remove the temporary copy of the phi matrix from output_matrices
-    sim_state["output_matrices"].pop("phi_star")
-
     # Return the final simulation results
     return {
         "stop_time"        : sim_state["simulation_time"],
         "stop_condition"   : stop_condition,
-        "output_matrices"  : sim_state["output_matrices"],
+        "spread_state"     : sim_state["spread_state"],
         "num_tracked_cells": tracked_cells.num_tracked_cells,
     } | ({
         "spot_ignitions"  : sim_state["spot_ignitions"],

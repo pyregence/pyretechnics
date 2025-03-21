@@ -59,6 +59,24 @@
 #     )
 # cdef CellInputs lookup_cell_inputs(SpreadInputs spread_inputs, coord_tyx space_time_coordinate) noexcept
 # cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept
+# cdef class SpreadState:
+#     cdef (pyidx, pyidx, pyidx) cube_shape
+#     cdef float[:,::1] phi
+#     cdef float[:,::1] phi_star
+#     cdef unsigned char[:,::1] fire_type
+#     cdef float[:,::1] spread_rate
+#     cdef float[:,::1] spread_direction
+#     cdef float[:,::1] fireline_intensity
+#     cdef float[:,::1] flame_length
+#     cdef float[:,::1] time_of_arrival
+#     cpdef SpreadState ignite_cell(SpreadState self, coord_yx ignited_cell)
+#     cpdef SpreadState ignite_cells(
+#         SpreadState self,
+#         coord_yx lower_left_corner,
+#         float[:,::1] ignition_matrix,
+#     )
+#     cpdef dict get_burned_matrices(SpreadState self, list layers=?)
+#     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
 # cdef bint opposite_phi_signs(float[:,::1] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept
@@ -228,7 +246,7 @@
 # cdef void process_burned_cells(
 #     SpreadInputs spread_inputs,
 #     FireBehaviorSettings fb_opts,
-#     dict output_matrices,
+#     SpreadState spread_state,
 #     object spot_ignitions,
 #     BufferedRandGen random_generator,
 #     list[BurnedCellInfo] burned_cells,
@@ -241,7 +259,7 @@
 #     ) noexcept
 # cdef list[BurnedCellInfo] ignite_from_spotting(
 #     object spot_ignitions,
-#     dict output_matrices,
+#     SpreadState spread_state,
 #     float stop_time,
 #     )
 # cdef void route_cell_to_diff(
@@ -276,10 +294,9 @@
 #     float max_timestep,
 #     )
 # cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)
-# cdef void check_output_matrices(dict output_matrices)
 # cdef void check_dimensions_and_resolutions(
 #     dict space_time_cubes,
-#     dict output_matrices,
+#     SpreadState spread_state,
 #     pyidx bands,
 #     pyidx rows,
 #     pyidx cols,
@@ -288,24 +305,9 @@
 #     float cell_width,
 #     )
 # cdef void check_start_and_stop_times(float start_time, float max_stop_time, float cube_duration, object max_duration=?)
-# cdef class SpreadState:
-#     cdef float[:,::1] phi
-#     cdef unsigned char[:,::1] fire_type
-#     cdef float[:,::1] spread_rate
-#     cdef float[:,::1] spread_direction
-#     cdef float[:,::1] fireline_intensity
-#     cdef float[:,::1] flame_length
-#     cdef float[:,::1] time_of_arrival
-#     cpdef void ignite_cell(SpreadState self, coord_yx ignited_cell) noexcept
-#     cpdef void ignite_cells(
-#         SpreadState self,
-#         coord_yx lower_left_corner,
-#         float[:,::1] ignition_matrix,
-#     ) noexcept
-#     cpdef dict extract_burn_scar(SpreadState self, list only_metrics=?)
 # cpdef dict[str, object] spread_fire_with_phi_field(
 #     dict[str, ISpaceTimeCube] space_time_cubes,
-#     dict[str, np.ndarray] output_matrices,
+#     SpreadState spread_state,
 #     (float, float, float) cube_resolution,
 #     float start_time,
 #     object max_duration=?,
