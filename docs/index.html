@@ -9906,6 +9906,140 @@ is returned.
         fireline_intensity <span class="org-operator">=</span> 0.0,
         flame_length       <span class="org-operator">=</span> 0.0,
     )
+
+
+<span class="org-type">@cy.cclass</span>
+<span class="org-keyword">class</span> <span class="org-type">SpreadState</span>:
+    <span class="org-doc">"""</span>
+<span class="org-doc">    Stores the stateful data associated with a fire spread simulation.</span>
+<span class="org-doc">    """</span>
+    cube_shape        : <span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx]
+    phi               : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
+    phi_star          : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
+    fire_type         : cy.uchar[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
+    spread_rate       : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
+    spread_direction  : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
+    fireline_intensity: cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
+    flame_length      : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
+    time_of_arrival   : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
+
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Initialize output matrices to NaN if possible</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">__init__</span>(<span class="org-keyword">self</span>, cube_shape: <span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx]) <span class="org-operator">-&gt;</span> cy.void:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Extract the grid_shape from the cube_shape</span>
+        <span class="org-variable-name">grid_rows</span> : pyidx               <span class="org-operator">=</span> cube_shape[1]
+        <span class="org-variable-name">grid_cols</span> : pyidx               <span class="org-operator">=</span> cube_shape[2]
+        <span class="org-variable-name">grid_shape</span>: <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> (grid_rows, grid_cols)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Create the initial 2D arrays</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.</span>
+        <span class="org-keyword">self</span>.<span class="org-variable-name">cube_shape</span>         <span class="org-operator">=</span> cube_shape
+        <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>                <span class="org-operator">=</span> np.ones((grid_rows <span class="org-operator">+</span> 4, grid_cols <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>           <span class="org-operator">=</span> np.ones((grid_rows <span class="org-operator">+</span> 4, grid_cols <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">fire_type</span>          <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">spread_rate</span>        <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">spread_direction</span>   <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">fireline_intensity</span> <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">flame_length</span>       <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">ignite_cell</span>(<span class="org-keyword">self</span>, ignited_cell: coord_yx) <span class="org-operator">-&gt;</span> SpreadState:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Extract coords</span>
+        <span class="org-variable-name">y</span>: pyidx <span class="org-operator">=</span> ignited_cell[0]
+        <span class="org-variable-name">x</span>: pyidx <span class="org-operator">=</span> ignited_cell[1]
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Overwrite phi and phi_star state</span>
+        <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x]      <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+        <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated SpreadState object</span>
+        <span class="org-keyword">return</span> <span class="org-keyword">self</span>
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">ignite_cells</span>(<span class="org-keyword">self</span>, lower_left_corner: coord_yx, ignition_matrix: cy.<span class="org-builtin">float</span>[:,::1]) <span class="org-operator">-&gt;</span> SpreadState:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Extract coords</span>
+        <span class="org-variable-name">rows</span> : pyidx <span class="org-operator">=</span> ignition_matrix.shape[0]
+        <span class="org-variable-name">cols</span> : pyidx <span class="org-operator">=</span> ignition_matrix.shape[1]
+        <span class="org-variable-name">min_y</span>: pyidx <span class="org-operator">=</span> lower_left_corner[0]
+        <span class="org-variable-name">min_x</span>: pyidx <span class="org-operator">=</span> lower_left_corner[1]
+        <span class="org-variable-name">max_y</span>: pyidx <span class="org-operator">=</span> min_y <span class="org-operator">+</span> rows
+        <span class="org-variable-name">max_x</span>: pyidx <span class="org-operator">=</span> min_x <span class="org-operator">+</span> cols
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Overwrite phi and phi_star state</span>
+        <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>[2<span class="org-operator">+</span>min_y:2<span class="org-operator">+</span>max_y,2<span class="org-operator">+</span>min_x:2<span class="org-operator">+</span>max_x]      <span class="org-operator">=</span> ignition_matrix
+        <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>[2<span class="org-operator">+</span>min_y:2<span class="org-operator">+</span>max_y,2<span class="org-operator">+</span>min_x:2<span class="org-operator">+</span>max_x] <span class="org-operator">=</span> ignition_matrix
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated SpreadState object</span>
+        <span class="org-keyword">return</span> <span class="org-keyword">self</span>
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">get_burned_matrices</span>(<span class="org-keyword">self</span>, layers: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Find bounding box of burned area</span>
+        <span class="org-variable-name">burned_mask</span>: <span class="org-builtin">tuple</span>[np.<span class="org-variable-name">ndarray</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> np.nonzero(<span class="org-keyword">self</span>.fire_type)
+        <span class="org-variable-name">min_y</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[0].<span class="org-builtin">min</span>()
+        <span class="org-variable-name">max_y</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[0].<span class="org-builtin">max</span>()
+        <span class="org-variable-name">min_x</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[1].<span class="org-builtin">min</span>()
+        <span class="org-variable-name">max_x</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[1].<span class="org-builtin">max</span>()
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the 2D arrays in a dict</span>
+        <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
+            <span class="org-string">"phi"</span>               : <span class="org-keyword">self</span>.phi,
+            <span class="org-string">"fire_type"</span>         : <span class="org-keyword">self</span>.fire_type,
+            <span class="org-string">"spread_rate"</span>       : <span class="org-keyword">self</span>.spread_rate,
+            <span class="org-string">"spread_direction"</span>  : <span class="org-keyword">self</span>.spread_direction,
+            <span class="org-string">"fireline_intensity"</span>: <span class="org-keyword">self</span>.fireline_intensity,
+            <span class="org-string">"flame_length"</span>      : <span class="org-keyword">self</span>.flame_length,
+            <span class="org-string">"time_of_arrival"</span>   : <span class="org-keyword">self</span>.time_of_arrival,
+        }
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Set selected_layers to layers if specified and otherwise to all available layers</span>
+        <span class="org-variable-name">selected_layers</span>: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>] <span class="org-operator">=</span> layers <span class="org-keyword">if</span> layers <span class="org-keyword">is</span> <span class="org-keyword">not</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> <span class="org-builtin">list</span>(available_matrices.keys())
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Clip the 2D arrays from selected_layers to the bounding box</span>
+        <span class="org-variable-name">clipped_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
+            k: np.copy(available_matrices[k][min_y:max_y<span class="org-operator">+</span>1, min_x:max_x<span class="org-operator">+</span>1]) <span class="org-keyword">for</span> k <span class="org-keyword">in</span> selected_layers
+        }
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the clipped_matrices along with their lower_left_corner for reference</span>
+        <span class="org-keyword">return</span> {
+            <span class="org-string">"cube_shape"</span>       : <span class="org-keyword">self</span>.cube_shape,
+            <span class="org-string">"lower_left_corner"</span>: (min_y, min_x),
+            <span class="org-string">"clipped_matrices"</span> : clipped_matrices,
+        }
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">get_full_matrices</span>(<span class="org-keyword">self</span>, layers: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the 2D arrays in a dict</span>
+        <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
+            <span class="org-string">"phi"</span>               : np.asarray(<span class="org-keyword">self</span>.phi),
+            <span class="org-string">"fire_type"</span>         : np.asarray(<span class="org-keyword">self</span>.fire_type),
+            <span class="org-string">"spread_rate"</span>       : np.asarray(<span class="org-keyword">self</span>.spread_rate),
+            <span class="org-string">"spread_direction"</span>  : np.asarray(<span class="org-keyword">self</span>.spread_direction),
+            <span class="org-string">"fireline_intensity"</span>: np.asarray(<span class="org-keyword">self</span>.fireline_intensity),
+            <span class="org-string">"flame_length"</span>      : np.asarray(<span class="org-keyword">self</span>.flame_length),
+            <span class="org-string">"time_of_arrival"</span>   : np.asarray(<span class="org-keyword">self</span>.time_of_arrival),
+        }
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the matrices in layers if specified and otherwise return all available layers</span>
+        <span class="org-keyword">if</span> layers <span class="org-keyword">is</span> <span class="org-constant">None</span>:
+            <span class="org-keyword">return</span> available_matrices
+        <span class="org-keyword">else</span>:
+            <span class="org-keyword">return</span> {
+                k: available_matrices[k] <span class="org-keyword">for</span> k <span class="org-keyword">in</span> layers
+            }
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">copy</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> SpreadState:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Create an empty SpreadState object</span>
+        <span class="org-variable-name">new_spread_state</span>: SpreadState <span class="org-operator">=</span> SpreadState.__new__(SpreadState, <span class="org-keyword">self</span>.cube_shape)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize its fields with copies of the base object's fields</span>
+        new_spread_state.<span class="org-variable-name">cube_shape</span>         <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape <span class="org-comment-delimiter"># </span><span class="org-comment">tuples are immutable</span>
+        new_spread_state.<span class="org-variable-name">phi</span>                <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.phi)
+        new_spread_state.<span class="org-variable-name">phi_star</span>           <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.phi_star)
+        new_spread_state.<span class="org-variable-name">fire_type</span>          <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.fire_type)
+        new_spread_state.<span class="org-variable-name">spread_rate</span>        <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.spread_rate)
+        new_spread_state.<span class="org-variable-name">spread_direction</span>   <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.spread_direction)
+        new_spread_state.<span class="org-variable-name">fireline_intensity</span> <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.fireline_intensity)
+        new_spread_state.<span class="org-variable-name">flame_length</span>       <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.flame_length)
+        new_spread_state.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.time_of_arrival)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the initialized SpreadState object</span>
+        <span class="org-keyword">return</span> new_spread_state
 </pre>
 </div>
 </div>
@@ -11259,24 +11393,23 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-keyword">return</span> burned_cells
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass output_matrices as a struct</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">process_burned_cells</span>(spread_inputs   : SpreadInputs,
                          fb_opts         : FireBehaviorSettings,
-                         output_matrices : <span class="org-builtin">dict</span>,
+                         spread_state    : SpreadState,
                          spot_ignitions  : SortedDict[<span class="org-builtin">float</span>, <span class="org-builtin">set</span>],
                          random_generator: BufferedRandGen,
                          burned_cells    : <span class="org-builtin">list</span>[BurnedCellInfo]) <span class="org-operator">-&gt;</span> cy.void:
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack output_matrices</span>
-    <span class="org-variable-name">fire_type_matrix</span>         : cy.uchar[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"fire_type"</span>]
-    <span class="org-variable-name">spread_rate_matrix</span>       : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"spread_rate"</span>]
-    <span class="org-variable-name">spread_direction_matrix</span>  : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"spread_direction"</span>]
-    <span class="org-variable-name">fireline_intensity_matrix</span>: cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"fireline_intensity"</span>]
-    <span class="org-variable-name">flame_length_matrix</span>      : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"flame_length"</span>]
-    <span class="org-variable-name">time_of_arrival_matrix</span>   : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack spread_state</span>
+    <span class="org-variable-name">fire_type_matrix</span>         : cy.uchar[:,::1] <span class="org-operator">=</span> spread_state.fire_type
+    <span class="org-variable-name">spread_rate_matrix</span>       : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.spread_rate
+    <span class="org-variable-name">spread_direction_matrix</span>  : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.spread_direction
+    <span class="org-variable-name">fireline_intensity_matrix</span>: cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.fireline_intensity
+    <span class="org-variable-name">flame_length_matrix</span>      : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.flame_length
+    <span class="org-variable-name">time_of_arrival_matrix</span>   : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.time_of_arrival
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Save the burned_cells fire behavior values in output_matrices</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Save the burned_cells fire behavior values in the spread_state matrices</span>
     burned_cell: BurnedCellInfo
     <span class="org-keyword">for</span> burned_cell <span class="org-keyword">in</span> burned_cells:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Determine the current space_time_coordinate</span>
@@ -11290,7 +11423,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                          fb_opts,
                                                                          space_time_coordinate,
                                                                          burned_cell.phi_gradient_xy)
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Write to output_matrices</span>
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Write to the spread_state matrices</span>
         <span class="org-variable-name">fire_type_matrix</span>[<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>]          <span class="org-operator">=</span> fire_behavior.fire_type
         <span class="org-variable-name">spread_rate_matrix</span>[<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>]        <span class="org-operator">=</span> fire_behavior.spread_rate
         <span class="org-variable-name">spread_direction_matrix</span>[<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>]   <span class="org-operator">=</span> vu.spread_direction_vector_to_angle(fire_behavior.spread_direction)
@@ -11336,19 +11469,18 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-variable-name">phi_star_matrix</span>[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>x] <span class="org-operator">=</span> phi_matrix[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>x]
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Pass output_matrices as a struct</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">ignite_from_spotting</span>(spot_ignitions : SortedDict[<span class="org-builtin">float</span>, <span class="org-builtin">set</span>],
-                         output_matrices: <span class="org-builtin">dict</span>,
+                         spread_state   : SpreadState,
                          stop_time      : cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[BurnedCellInfo]:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Resolves the cells to be ignited by spotting in the current time step,</span>
-<span class="org-doc">    returning them as a list of (y, x) tuples, and mutates `output_matrices` accordingly.</span>
+<span class="org-doc">    returning them as a list of (y, x) tuples, and mutates `spread_state` accordingly.</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">ignited_cells</span>: <span class="org-builtin">list</span>[BurnedCellInfo] <span class="org-operator">=</span> []
     <span class="org-keyword">if</span> <span class="org-builtin">len</span>(spot_ignitions) <span class="org-operator">&gt;</span> 0:
-        <span class="org-variable-name">phi_matrix</span>            : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
-        <span class="org-variable-name">time_of_arrival_matrix</span>: cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> output_matrices[<span class="org-string">"time_of_arrival"</span>]
+        <span class="org-variable-name">phi_matrix</span>            : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.phi
+        <span class="org-variable-name">time_of_arrival_matrix</span>: cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_state.time_of_arrival
         ignition_time         : cy.<span class="org-builtin">float</span>
         maybe_ignited_cells   : <span class="org-builtin">set</span>
         cell_index            : coord_yx
@@ -11499,7 +11631,6 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-keyword">return</span> tracked_cells
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Turn sim_state and output_matrices into structs</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">spread_one_timestep</span>(sim_state    : <span class="org-builtin">dict</span>,
                         spread_inputs: SpreadInputs,
@@ -11510,9 +11641,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack sim_state</span>
     <span class="org-variable-name">start_time</span>      : cy.<span class="org-builtin">float</span>               <span class="org-operator">=</span> sim_state[<span class="org-string">"simulation_time"</span>]
-    <span class="org-variable-name">output_matrices</span> : <span class="org-builtin">dict</span>                   <span class="org-operator">=</span> sim_state[<span class="org-string">"output_matrices"</span>]
-    <span class="org-variable-name">phi_matrix</span>      : cy.<span class="org-builtin">float</span>[:,::1]        <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
-    <span class="org-variable-name">phi_star_matrix</span> : cy.<span class="org-builtin">float</span>[:,::1]        <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi_star"</span>]
+    <span class="org-variable-name">spread_state</span>    : SpreadState            <span class="org-operator">=</span> sim_state[<span class="org-string">"spread_state"</span>]
+    <span class="org-variable-name">phi_matrix</span>      : cy.<span class="org-builtin">float</span>[:,::1]        <span class="org-operator">=</span> spread_state.phi
+    <span class="org-variable-name">phi_star_matrix</span> : cy.<span class="org-builtin">float</span>[:,::1]        <span class="org-operator">=</span> spread_state.phi_star
     <span class="org-variable-name">frontier_cells</span>  : <span class="org-builtin">set</span>                    <span class="org-operator">=</span> sim_state[<span class="org-string">"frontier_cells"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: OPTIM Use a binary array instead?</span>
     <span class="org-variable-name">tracked_cells</span>   : nbt.NarrowBandTracker  <span class="org-operator">=</span> sim_state[<span class="org-string">"tracked_cells"</span>]
     <span class="org-variable-name">tca</span>             : TrackedCellsArrays     <span class="org-operator">=</span> sim_state[<span class="org-string">"_tracked_cells_arrays"</span>]
@@ -11546,10 +11677,10 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                            phi_matrix)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Process side-effects of the burned cells (outputs, etc.)</span>
-    process_burned_cells(spread_inputs, fb_opts, output_matrices, spot_ignitions, random_generator, burned_cells)
+    process_burned_cells(spread_inputs, fb_opts, spread_state, spot_ignitions, random_generator, burned_cells)
     <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: REVIEW It is a questionable choice to call this function AFTER process_burned_cells.</span>
     <span class="org-comment-delimiter">#       </span><span class="org-comment">It may be more sensible to ignite the spotting cells first and then to process them all.</span>
-    <span class="org-variable-name">spot_ignited_cells</span>: <span class="org-builtin">list</span>[BurnedCellInfo] <span class="org-operator">=</span> ignite_from_spotting(spot_ignitions, output_matrices, stop_time)
+    <span class="org-variable-name">spot_ignited_cells</span>: <span class="org-builtin">list</span>[BurnedCellInfo] <span class="org-operator">=</span> ignite_from_spotting(spot_ignitions, spread_state, stop_time)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Save the new phi_matrix values in phi_star_matrix</span>
     reset_phi_star(tca, spot_ignited_cells, phi_star_matrix, phi_matrix)
@@ -11575,7 +11706,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: We are intentionally swapping the tracked_cells_arrays</span>
     <span class="org-keyword">return</span> {
         <span class="org-string">"simulation_time"</span>          : stop_time,
-        <span class="org-string">"output_matrices"</span>          : output_matrices,
+        <span class="org-string">"spread_state"</span>             : spread_state,
         <span class="org-string">"frontier_cells"</span>           : frontier_cells_new,
         <span class="org-string">"tracked_cells"</span>            : tracked_cells_new,
         <span class="org-string">"_tracked_cells_arrays"</span>    : tca_old,
@@ -11630,40 +11761,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 
 <span class="org-type">@cy.cfunc</span>
-<span class="org-keyword">def</span> <span class="org-function-name">check_output_matrices</span>(output_matrices: <span class="org-builtin">dict</span>) <span class="org-operator">-&gt;</span> cy.void:
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Define the provided, required, and optional keys for output_matrices</span>
-    <span class="org-variable-name">provided_matrices</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>(output_matrices.keys())
-    <span class="org-variable-name">required_matrices</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> {
-        <span class="org-string">"phi"</span>,
-        <span class="org-string">"fire_type"</span>,
-        <span class="org-string">"spread_rate"</span>,
-        <span class="org-string">"spread_direction"</span>,
-        <span class="org-string">"fireline_intensity"</span>,
-        <span class="org-string">"flame_length"</span>,
-        <span class="org-string">"time_of_arrival"</span>,
-    }
-    <span class="org-variable-name">optional_matrices</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>() <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: Leaving this here in case we add some later</span>
-
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all required_matrices are present in provided_matrices</span>
-    <span class="org-keyword">if</span> <span class="org-keyword">not</span> provided_matrices.issuperset(required_matrices):
-        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The output_matrices dictionary is missing these required keys: "</span>
-                         <span class="org-operator">+</span> <span class="org-builtin">str</span>(required_matrices.difference(provided_matrices)))
-
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that only required_matrices and optional_matrices are present in provided_matrices</span>
-    <span class="org-keyword">if</span> <span class="org-keyword">not</span> (required_matrices <span class="org-operator">|</span> optional_matrices).issuperset(provided_matrices):
-        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The output_matrices dictionary contains these unused keys: "</span>
-                         <span class="org-operator">+</span> <span class="org-builtin">str</span>(provided_matrices.difference((required_matrices <span class="org-operator">|</span> optional_matrices))))
-
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all output_matrices values are 2D Numpy arrays</span>
-    matrix: <span class="org-builtin">object</span>
-    <span class="org-keyword">for</span> matrix <span class="org-keyword">in</span> output_matrices.values():
-        <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(matrix, np.ndarray) <span class="org-keyword">and</span> np.ndim(matrix) <span class="org-operator">==</span> 2):
-            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"All values in the output_matrices dictionary must be 2D Numpy arrays."</span>)
-
-
-<span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">check_dimensions_and_resolutions</span>(space_time_cubes: <span class="org-builtin">dict</span>,
-                                     output_matrices : <span class="org-builtin">dict</span>,
+                                     spread_state    : SpreadState,
                                      bands           : pyidx,
                                      rows            : pyidx,
                                      cols            : pyidx,
@@ -11676,18 +11775,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
         <span class="org-keyword">if</span> cube.shape <span class="org-operator">!=</span> (bands, rows, cols):
             <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes must all share the same cube shape."</span>)
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that space_time_cubes and output_matrices have the same cube shape</span>
-    label : <span class="org-builtin">str</span>
-    matrix: np.ndarray
-    <span class="org-keyword">for</span> (label, matrix) <span class="org-keyword">in</span> output_matrices.items():
-        <span class="org-keyword">if</span> label <span class="org-operator">==</span> <span class="org-string">"phi"</span>:
-            <span class="org-keyword">if</span> matrix.shape <span class="org-operator">!=</span> (rows <span class="org-operator">+</span> 4, cols <span class="org-operator">+</span> 4):
-                <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The phi matrix must be padded by 2 rows and 2 columns "</span>
-                                 <span class="org-operator">+</span> <span class="org-string">"compared to the simulation dimensions."</span>)
-        <span class="org-keyword">else</span>:
-            <span class="org-keyword">if</span> matrix.shape <span class="org-operator">!=</span> (rows, cols):
-                <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes and output_matrices must share the same "</span>
-                                 <span class="org-operator">+</span> <span class="org-string">"number of rows and columns."</span>)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the space_time_cubes and spread_state have the same cube shape</span>
+    <span class="org-keyword">if</span> spread_state.cube_shape <span class="org-operator">!=</span> (bands, rows, cols):
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The space_time_cubes and spread_state must share the same cube shape."</span>)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that all cube resolution values are positive</span>
     <span class="org-keyword">if</span> band_duration <span class="org-operator">&lt;=</span> 0.0 <span class="org-keyword">or</span> cell_height <span class="org-operator">&lt;=</span> 0.0 <span class="org-keyword">or</span> cell_width <span class="org-operator">&lt;=</span> 0.0:
@@ -11714,7 +11804,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
 <span class="org-type">@cy.ccall</span>
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes      : <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, ISpaceTimeCube],
-                               output_matrices       : <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.ndarray],
+                               spread_state          : SpreadState,
                                cube_resolution       : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>],
                                start_time            : cy.<span class="org-builtin">float</span>,
                                max_duration          : <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span>             <span class="org-operator">=</span> <span class="org-constant">None</span>,
@@ -11747,14 +11837,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - foliar_moisture               :: kg moisture/kg ovendry weight</span>
 <span class="org-doc">      - fuel_spread_adjustment        :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
 <span class="org-doc">      - weather_spread_adjustment     :: float &gt;= 0.0 (Optional: defaults to 1.0)</span>
-<span class="org-doc">    - output_matrices              :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes</span>
-<span class="org-doc">      - phi                           :: 2D float array of values in [-1,1]</span>
-<span class="org-doc">      - fire_type                     :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)</span>
-<span class="org-doc">      - spread_rate                   :: 2D float array (m/min)</span>
-<span class="org-doc">      - spread_direction              :: 2D float array (degrees clockwise from North)</span>
-<span class="org-doc">      - fireline_intensity            :: 2D float array (kW/m)</span>
-<span class="org-doc">      - flame_length                  :: 2D float array (m)</span>
-<span class="org-doc">      - time_of_arrival               :: 2D float array (min)</span>
+<span class="org-doc">    - spread_state                 :: SpreadState object whose spatial dimensions match the space_time_cubes</span>
 <span class="org-doc">    - cube_resolution              :: tuple with these fields</span>
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
@@ -11781,25 +11864,15 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">                                      whereas non-weather inputs default to 0.</span>
 
 <span class="org-doc">    return a dictionary with these keys:</span>
-<span class="org-doc">    - stop_time            :: minutes</span>
-<span class="org-doc">    - stop_condition       :: "max duration reached" or "no burnable cells"</span>
-<span class="org-doc">    - output_matrices      :: dictionary of 2D Numpy arrays whose spatial dimensions match the space_time_cubes</span>
-<span class="org-doc">      - phi                   :: 2D float array of values in [-1,1]</span>
-<span class="org-doc">      - fire_type             :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)</span>
-<span class="org-doc">      - spread_rate           :: 2D float array (m/min)</span>
-<span class="org-doc">      - spread_direction      :: 2D float array (degrees clockwise from North)</span>
-<span class="org-doc">      - fireline_intensity    :: 2D float array (kW/m)</span>
-<span class="org-doc">      - flame_length          :: 2D float array (m)</span>
-<span class="org-doc">      - time_of_arrival       :: 2D float array (min)</span>
-<span class="org-doc">    - num_tracked_cells    :: number of cells in the narrow band at stop_time</span>
-<span class="org-doc">    - spot_ignitions       :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
-<span class="org-doc">    - random_generator     :: BufferedRandGen object (only included when spotting is used)</span>
+<span class="org-doc">    - stop_time         :: minutes</span>
+<span class="org-doc">    - stop_condition    :: "max duration reached" or "no burnable cells"</span>
+<span class="org-doc">    - spread_state      :: SpreadState object whose spatial dimensions match the space_time_cubes</span>
+<span class="org-doc">    - num_tracked_cells :: number of cells in the narrow band at stop_time</span>
+<span class="org-doc">    - spot_ignitions    :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
+<span class="org-doc">    - random_generator  :: BufferedRandGen object (only included when spotting is used)</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Verify the contents of space_time_cubes</span>
     check_space_time_cubes(space_time_cubes, spot_config)
-
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Verify the contents of output_matrices</span>
-    check_output_matrices(output_matrices)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Extract simulation dimensions</span>
     <span class="org-variable-name">fuel_model_cube</span>: ISpaceTimeCube             <span class="org-operator">=</span> space_time_cubes[<span class="org-string">"fuel_model"</span>]
@@ -11815,7 +11888,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Verify the simulation dimensions and resolutions</span>
     check_dimensions_and_resolutions(space_time_cubes,
-                                     output_matrices,
+                                     spread_state,
                                      bands,
                                      rows,
                                      cols,
@@ -11832,23 +11905,18 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Identify the sets of frontier cells and tracked cells based on the phi matrix</span>
     <span class="org-variable-name">start_t</span>       : pyidx                 <span class="org-operator">=</span> <span class="org-builtin">int</span>(start_time <span class="org-operator">//</span> band_duration)
-    <span class="org-variable-name">phi_matrix</span>    : cy.<span class="org-builtin">float</span>[:,::1]       <span class="org-operator">=</span> output_matrices[<span class="org-string">"phi"</span>]
-    <span class="org-variable-name">frontier_cells</span>: <span class="org-builtin">set</span>                   <span class="org-operator">=</span> identify_all_frontier_cells(phi_matrix,
+    <span class="org-variable-name">frontier_cells</span>: <span class="org-builtin">set</span>                   <span class="org-operator">=</span> identify_all_frontier_cells(spread_state.phi,
                                                                         fuel_model_cube,
                                                                         start_t,
                                                                         rows,
                                                                         cols)
     <span class="org-variable-name">tracked_cells</span> : nbt.NarrowBandTracker <span class="org-operator">=</span> identify_tracked_cells(frontier_cells, buffer_width, rows, cols)
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Make a copy of the phi matrix to use for intermediate calculations in each timestep</span>
-    <span class="org-variable-name">output_matrices</span>[<span class="org-string">"phi_star"</span>] <span class="org-operator">=</span> np.copy(phi_matrix)
-
     <span class="org-comment-delimiter"># </span><span class="org-comment">Create a BufferedRandGen object to produce random samples if spot_config is provided</span>
     random_generator: BufferedRandGen<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>
     <span class="org-keyword">if</span> spot_config:
         <span class="org-variable-name">random_generator</span> <span class="org-operator">=</span> BufferedRandGen(np.random.default_rng(seed<span class="org-operator">=</span>spot_config.get(<span class="org-string">"random_seed"</span>)))
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Change this name without a collision</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the SpreadInputs struct</span>
     <span class="org-variable-name">spread_inputs</span>: SpreadInputs <span class="org-operator">=</span> make_SpreadInputs(cube_shape, cube_resolution, space_time_cubes)
 
@@ -11866,9 +11934,10 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the sim_state dictionary</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: We are intentionally swapping the tracked_cells_arrays.</span>
     <span class="org-comment-delimiter">#       </span><span class="org-comment">It's OK not to be in sync - spread_one_timestep will solve this.</span>
-    <span class="org-variable-name">sim_state</span>: <span class="org-builtin">dict</span>  <span class="org-operator">=</span> {
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Turn sim_state into a struct</span>
+    <span class="org-variable-name">sim_state</span>: <span class="org-builtin">dict</span> <span class="org-operator">=</span> {
         <span class="org-string">"simulation_time"</span>          : start_time,
-        <span class="org-string">"output_matrices"</span>          : output_matrices,
+        <span class="org-string">"spread_state"</span>             : spread_state,
         <span class="org-string">"frontier_cells"</span>           : frontier_cells,
         <span class="org-string">"tracked_cells"</span>            : tracked_cells,
         <span class="org-string">"_tracked_cells_arrays"</span>    : TrackedCellsArrays(start_time, start_t),
@@ -11883,7 +11952,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">early_exit_threshold</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1.0 <span class="org-operator">/</span> 60.0 <span class="org-comment-delimiter"># </span><span class="org-comment">1 second</span>
     <span class="org-keyword">while</span>((remaining_time_in_simulation <span class="org-operator">&gt;</span> early_exit_threshold)       <span class="org-comment-delimiter"># </span><span class="org-comment">1. There is still time left in the simulation</span>
           <span class="org-keyword">and</span> (nbt.nonempty_tracked_cells(tracked_cells)              <span class="org-comment-delimiter"># </span><span class="org-comment">2. There are burning cells on the grid</span>
-               <span class="org-keyword">or</span> <span class="org-builtin">len</span>(sim_state[<span class="org-string">"spot_ignitions"</span>]) <span class="org-operator">&gt;</span> 0)):             <span class="org-comment-delimiter"># </span><span class="org-comment">3. There are embers waiting to catch fire on the grid</span>
+               <span class="org-keyword">or</span> <span class="org-builtin">len</span>(sim_state[<span class="org-string">"spot_ignitions"</span>]) <span class="org-operator">&gt;</span> 0)):             <span class="org-comment-delimiter"># </span><span class="org-comment">3. There are embers waiting to catch fire</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire one timestep</span>
         <span class="org-variable-name">sim_state</span>                    <span class="org-operator">=</span> spread_one_timestep(sim_state,
                                                            spread_inputs,
@@ -11896,15 +11965,11 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                            <span class="org-keyword">if</span> remaining_time_in_simulation <span class="org-operator">&lt;=</span> early_exit_threshold
                            <span class="org-keyword">else</span> <span class="org-string">"no burnable cells"</span>)
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: REVIEW Perhaps phi_star would be better off in sim_state</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Remove the temporary copy of the phi matrix from output_matrices</span>
-    sim_state[<span class="org-string">"output_matrices"</span>].pop(<span class="org-string">"phi_star"</span>)
-
     <span class="org-comment-delimiter"># </span><span class="org-comment">Return the final simulation results</span>
     <span class="org-keyword">return</span> {
         <span class="org-string">"stop_time"</span>        : sim_state[<span class="org-string">"simulation_time"</span>],
         <span class="org-string">"stop_condition"</span>   : stop_condition,
-        <span class="org-string">"output_matrices"</span>  : sim_state[<span class="org-string">"output_matrices"</span>],
+        <span class="org-string">"spread_state"</span>     : sim_state[<span class="org-string">"spread_state"</span>],
         <span class="org-string">"num_tracked_cells"</span>: tracked_cells.num_tracked_cells,
     } <span class="org-operator">|</span> ({
         <span class="org-string">"spot_ignitions"</span>  : sim_state[<span class="org-string">"spot_ignitions"</span>],
@@ -11942,8 +12007,6 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     100, <span class="org-comment-delimiter"># </span><span class="org-comment">cols:  3 km @ 30 meters/col</span>
 )
 
-<span class="org-variable-name">grid_shape</span> <span class="org-operator">=</span> cube_shape[1:]
-
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube resolution</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -11979,33 +12042,20 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Create an output dictionary of 2D Numpy arrays</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Create a SpreadState object and specify a point ignition location (y, x)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster needs to be padded by 2 cells on each side.</span>
-<span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> {
-    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
-    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),                              <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
-    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
-    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
-    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
-    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
-    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
-}
+<span class="org-variable-name">spread_state</span> <span class="org-operator">=</span> els.SpreadState(cube_shape).ignite_cell((50,50))
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Set the start time, max duration, and initially ignited cell</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Set the start time and max duration of the simulation</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Day 2 @ 10:30am</span>
-<span class="org-variable-name">start_time</span> <span class="org-operator">=</span> 2070  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">start_time</span> <span class="org-operator">=</span> (24 <span class="org-operator">*</span> 60) <span class="org-operator">+</span> (10 <span class="org-operator">*</span> 60) <span class="org-operator">+</span> 30 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
-<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 480 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Burn initially ignited cell into the phi matrix by setting it to -1.0</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster is padded by 2 cells on each side.</span>
-output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>50,2<span class="org-operator">+</span>50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 8 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
@@ -12013,15 +12063,16 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
 
 <span class="org-variable-name">runtime_start</span>       <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
-                                                     output_matrices,
+                                                     spread_state,
                                                      cube_resolution,
                                                      start_time,
                                                      max_duration,
                                                      surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop</span>        <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">stop_time</span>           <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>      <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time</span>           <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]      <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>      <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">spread_state</span>        <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"spread_state"</span>]   <span class="org-comment-delimiter"># </span><span class="org-comment">updated SpreadState object (mutated from inputs)</span>
+<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> spread_state.get_full_matrices()
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
@@ -12321,33 +12372,20 @@ Time of Arrival (minutes)
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Create an output dictionary of 2D Numpy arrays</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Create a SpreadState object and specify a point ignition location (y, x)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster needs to be padded by 2 cells on each side.</span>
-<span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> {
-    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
-    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
-    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
-    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
-    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
-    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                          <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
-    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                     <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
-}
+<span class="org-variable-name">spread_state</span> <span class="org-operator">=</span> els.SpreadState(cube_shape).ignite_cell((50,50))
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Set the start time, max duration, and initially ignited cell</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Set the start time and max duration of the simulation</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Day 2 @ 10:30am</span>
-<span class="org-variable-name">start_time</span> <span class="org-operator">=</span> 2070  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">start_time</span> <span class="org-operator">=</span> (24 <span class="org-operator">*</span> 60) <span class="org-operator">+</span> (10 <span class="org-operator">*</span> 60) <span class="org-operator">+</span> 30 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
-<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 480 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Burn initially ignited cell into the phi matrix by setting it to -1.0</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster is padded by 2 cells on each side.</span>
-output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>50,2<span class="org-operator">+</span>50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 8 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the spotting parameters</span>
@@ -12370,7 +12408,7 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
 
 <span class="org-variable-name">runtime_start</span>       <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
-                                                     output_matrices,
+                                                     spread_state,
                                                      cube_resolution,
                                                      start_time,
                                                      max_duration,
@@ -12380,7 +12418,8 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
 <span class="org-variable-name">runtime_stop</span>        <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">stop_time</span>           <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_time"</span>]                  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 <span class="org-variable-name">stop_condition</span>      <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"stop_condition"</span>]             <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"output_matrices"</span>]            <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">spread_state</span>        <span class="org-operator">=</span> fire_spread_results[<span class="org-string">"spread_state"</span>]               <span class="org-comment-delimiter"># </span><span class="org-comment">updated SpreadState object (mutated from inputs)</span>
+<span class="org-variable-name">output_matrices</span>     <span class="org-operator">=</span> spread_state.get_full_matrices()
 <span class="org-variable-name">spot_ignitions</span>      <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"spot_ignitions"</span>, {})     <span class="org-comment-delimiter"># </span><span class="org-comment">remaining firebrands on the landscape</span>
 <span class="org-variable-name">random_generator</span>    <span class="org-operator">=</span> fire_spread_results.get(<span class="org-string">"random_generator"</span>, <span class="org-constant">None</span>) <span class="org-comment-delimiter"># </span><span class="org-comment">numpy.random.Generator object</span>
 
@@ -12697,8 +12736,6 @@ Future Spot Ignitions:
     100, <span class="org-comment-delimiter"># </span><span class="org-comment">cols:  3 km @ 30 meters/col</span>
 )
 
-<span class="org-variable-name">grid_shape</span> <span class="org-operator">=</span> cube_shape[1:]
-
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube resolution</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -12734,33 +12771,20 @@ Future Spot Ignitions:
 }
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Create an output dictionary of 2D Numpy arrays</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Create a SpreadState object and specify a point ignition location (y, x)</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster needs to be padded by 2 cells on each side.</span>
-<span class="org-variable-name">output_matrices</span> <span class="org-operator">=</span> {
-    <span class="org-string">"phi"</span>               : np.ones((grid_shape[0] <span class="org-operator">+</span> 4, grid_shape[1] <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>), <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
-    <span class="org-string">"fire_type"</span>         : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>),                              <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
-    <span class="org-string">"spread_rate"</span>       : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m/min)</span>
-    <span class="org-string">"spread_direction"</span>  : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (degrees clockwise from North)</span>
-    <span class="org-string">"fireline_intensity"</span>: np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (kW/m)</span>
-    <span class="org-string">"flame_length"</span>      : np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                            <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (m)</span>
-    <span class="org-string">"time_of_arrival"</span>   : np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>),                       <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array (min)</span>
-}
+<span class="org-variable-name">spread_state</span> <span class="org-operator">=</span> els.SpreadState(cube_shape).ignite_cell((50,50))
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Set the start time, max duration, and initially ignited cell</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Set the start time and max duration of the simulation</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Day 2 @ 10:30am</span>
-<span class="org-variable-name">start_time</span> <span class="org-operator">=</span> 2070  <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">start_time</span> <span class="org-operator">=</span> (24 <span class="org-operator">*</span> 60) <span class="org-operator">+</span> (10 <span class="org-operator">*</span> 60) <span class="org-operator">+</span> 30 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
-<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 480 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-
-<span class="org-comment-delimiter"># </span><span class="org-comment">Burn initially ignited cell into the phi matrix by setting it to -1.0</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi raster is padded by 2 cells on each side.</span>
-output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operator">+</span>50,2<span class="org-operator">+</span>50] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+<span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 8 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
@@ -12768,15 +12792,16 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
 
 <span class="org-variable-name">runtime_start</span>         <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results_8</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
-                                                       output_matrices,
+                                                       spread_state,
                                                        cube_resolution,
                                                        start_time,
                                                        max_duration,
                                                        surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop</span>          <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">stop_time</span>             <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>        <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span>       <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time</span>             <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_time"</span>]      <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>        <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"stop_condition"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">spread_state</span>          <span class="org-operator">=</span> fire_spread_results_8[<span class="org-string">"spread_state"</span>]   <span class="org-comment-delimiter"># </span><span class="org-comment">updated SpreadState object (mutated from inputs)</span>
+<span class="org-variable-name">output_matrices</span>       <span class="org-operator">=</span> spread_state.get_full_matrices()
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell</span>
@@ -12798,15 +12823,11 @@ output_matrices[<span class="org-string">"phi"</span>][2<span class="org-operato
 <div class="outline-text-5" id="text-fork-and-run-two-fire-spread-scenarios">
 <div class="org-src-container">
 <pre class="src src-python" id="run-spread-fire-with-phi-field-forked"><span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">Fork the simulation by creating a copy of the space_time_cubes and output_matrices</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Fork the simulation by creating a copy of the space_time_cubes and spread_state</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
-<span class="org-keyword">def</span> <span class="org-function-name">copy_matrices</span>(matrix_dict):
-    <span class="org-keyword">return</span> {k: np.copy(matrix_dict[k]) <span class="org-keyword">for</span> k <span class="org-keyword">in</span> matrix_dict}
-
-<span class="org-variable-name">space_time_cubes_fork</span> <span class="org-operator">=</span> space_time_cubes.copy()
-
-<span class="org-variable-name">output_matrices_fork</span> <span class="org-operator">=</span> copy_matrices(output_matrices)
+<span class="org-variable-name">space_time_cubes_fork</span> <span class="org-operator">=</span> space_time_cubes.copy() <span class="org-comment-delimiter"># </span><span class="org-comment">shallow copy</span>
+<span class="org-variable-name">spread_state_fork</span>     <span class="org-operator">=</span> spread_state.copy()     <span class="org-comment-delimiter"># </span><span class="org-comment">deep copy</span>
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Add a non-burnable fire-break to the forked space_time_cubes fuel model</span>
@@ -12831,33 +12852,35 @@ fuel_model_grid[60:,60:][(<span class="org-builtin">list</span>(<span class="org
 <span class="org-variable-name">new_start_time</span> <span class="org-operator">=</span> stop_time <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">4 hours</span>
-<span class="org-variable-name">new_max_duration</span> <span class="org-operator">=</span> 240     <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">new_max_duration</span> <span class="org-operator">=</span> 4 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the main simulation</span>
 <span class="org-variable-name">runtime_start_main</span>     <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results_12</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes,
-                                                        output_matrices,
+                                                        spread_state,
                                                         cube_resolution,
                                                         new_start_time,
                                                         new_max_duration,
                                                         surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop_main</span>      <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">stop_time</span>              <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition</span>         <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices</span>        <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time</span>              <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_time"</span>]      <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition</span>         <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"stop_condition"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">spread_state</span>           <span class="org-operator">=</span> fire_spread_results_12[<span class="org-string">"spread_state"</span>]   <span class="org-comment-delimiter"># </span><span class="org-comment">updated SpreadState object (mutated from inputs)</span>
+<span class="org-variable-name">output_matrices</span>        <span class="org-operator">=</span> spread_state.get_full_matrices()
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the forked simulation</span>
 <span class="org-variable-name">runtime_start_fork</span>          <span class="org-operator">=</span> time.perf_counter()
 <span class="org-variable-name">fire_spread_results_12_fork</span> <span class="org-operator">=</span> els.spread_fire_with_phi_field(space_time_cubes_fork,
-                                                             output_matrices_fork,
+                                                             spread_state_fork,
                                                              cube_resolution,
                                                              new_start_time,
                                                              new_max_duration,
                                                              surface_lw_ratio_model<span class="org-operator">=</span><span class="org-string">"rothermel"</span>)
 <span class="org-variable-name">runtime_stop_fork</span>           <span class="org-operator">=</span> time.perf_counter()
-<span class="org-variable-name">stop_time_fork</span>              <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_time"</span>]       <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
-<span class="org-variable-name">stop_condition_fork</span>         <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_condition"</span>]  <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
-<span class="org-variable-name">output_matrices_fork</span>        <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"output_matrices"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">updated 2D arrays (mutated from inputs)</span>
+<span class="org-variable-name">stop_time_fork</span>              <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_time"</span>]      <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">stop_condition_fork</span>         <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"stop_condition"</span>] <span class="org-comment-delimiter"># </span><span class="org-comment">"max duration reached" or "no burnable cells"</span>
+<span class="org-variable-name">spread_state_fork</span>           <span class="org-operator">=</span> fire_spread_results_12_fork[<span class="org-string">"spread_state"</span>]   <span class="org-comment-delimiter"># </span><span class="org-comment">updated SpreadState object (mutated from inputs)</span>
+<span class="org-variable-name">output_matrices_fork</span>        <span class="org-operator">=</span> spread_state_fork.get_full_matrices()
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Print out the acres burned, total runtime, and runtime per burned cell for the main run</span>
@@ -15358,6 +15381,25 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef CellInputs lookup_cell_inputs(SpreadInputs spread_inputs, coord_tyx space_time_coordinate) noexcept</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef class SpreadState:</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef (pyidx, pyidx, pyidx) cube_shape</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] phi</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] phi_star</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef unsigned char[:,::1] fire_type</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] spread_rate</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] spread_direction</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] fireline_intensity</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] flame_length</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] time_of_arrival</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState ignite_cell(SpreadState self, coord_yx ignited_cell)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState ignite_cells(</span>
+<span class="org-comment-delimiter">#         </span><span class="org-comment">SpreadState self,</span>
+<span class="org-comment-delimiter">#         </span><span class="org-comment">coord_yx lower_left_corner,</span>
+<span class="org-comment-delimiter">#         </span><span class="org-comment">float[:,::1] ignition_matrix,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef dict get_burned_matrices(SpreadState self, list layers=?)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef dict get_full_matrices(SpreadState self, list layers=?)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState copy(SpreadState self)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef object encode_cell_index(pyidx y, pyidx x)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef bint opposite_phi_signs(float[:,::1] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept</span>
@@ -15527,7 +15569,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void process_burned_cells(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">dict output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadState spread_state,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">object spot_ignitions,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">BufferedRandGen random_generator,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">list[BurnedCellInfo] burned_cells,</span>
@@ -15540,7 +15582,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">) noexcept</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef list[BurnedCellInfo] ignite_from_spotting(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">object spot_ignitions,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">dict output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadState spread_state,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float stop_time,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void route_cell_to_diff(</span>
@@ -15575,10 +15617,9 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float max_timestep,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_output_matrices(dict output_matrices)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_dimensions_and_resolutions(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">dict space_time_cubes,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">dict output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadState spread_state,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx bands,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx rows,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
@@ -15589,7 +15630,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_start_and_stop_times(float start_time, float max_stop_time, float cube_duration, object max_duration=?)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cpdef dict[str, object] spread_fire_with_phi_field(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">dict[str, ISpaceTimeCube] space_time_cubes,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">dict[str, np.ndarray] output_matrices,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadState spread_state,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">(float, float, float) cube_resolution,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float start_time,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">object max_duration=?,</span>

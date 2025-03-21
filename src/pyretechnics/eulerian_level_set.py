@@ -662,6 +662,7 @@ class SpreadState:
         max_x      : pyidx                         = burned_mask[1].max()
         # Prepare the 2D arrays in a dict
         available_matrices: dict[str, np.ndarray] = {
+            "phi"               : self.phi,
             "fire_type"         : self.fire_type,
             "spread_rate"       : self.spread_rate,
             "spread_direction"  : self.spread_direction,
@@ -687,6 +688,7 @@ class SpreadState:
     def get_full_matrices(self, layers: list[str]|None = None) -> dict:
         # Prepare the 2D arrays in a dict
         available_matrices: dict[str, np.ndarray] = {
+            "phi"               : np.asarray(self.phi),
             "fire_type"         : np.asarray(self.fire_type),
             "spread_rate"       : np.asarray(self.spread_rate),
             "spread_direction"  : np.asarray(self.spread_direction),
@@ -701,6 +703,24 @@ class SpreadState:
             return {
                 k: available_matrices[k] for k in layers
             }
+
+
+    @cy.ccall
+    def copy(self) -> SpreadState:
+        # Create an empty SpreadState object
+        new_spread_state: SpreadState = SpreadState.__new__(SpreadState, self.cube_shape)
+        # Initialize its fields with copies of the base object's fields
+        new_spread_state.cube_shape         = self.cube_shape # tuples are immutable
+        new_spread_state.phi                = np.copy(self.phi)
+        new_spread_state.phi_star           = np.copy(self.phi_star)
+        new_spread_state.fire_type          = np.copy(self.fire_type)
+        new_spread_state.spread_rate        = np.copy(self.spread_rate)
+        new_spread_state.spread_direction   = np.copy(self.spread_direction)
+        new_spread_state.fireline_intensity = np.copy(self.fireline_intensity)
+        new_spread_state.flame_length       = np.copy(self.flame_length)
+        new_spread_state.time_of_arrival    = np.copy(self.time_of_arrival)
+        # Return the initialized SpreadState object
+        return new_spread_state
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
 @cy.cfunc

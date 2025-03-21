@@ -13,8 +13,6 @@ cube_shape = (
     5000, # cols:  150 km @ 30 meters/col
 )
 
-grid_shape = cube_shape[1:]
-
 #============================================================================================
 # Specify the SpaceTimeCube resolution
 #============================================================================================
@@ -30,6 +28,7 @@ cube_resolution = (
 #============================================================================================
 
 def arr2d(value):
+    grid_shape = cube_shape[1:]
     return np.full(grid_shape, value)
 
 def arr3d(value):
@@ -74,14 +73,14 @@ cube_refresh_rates = {
 spread_state = els.SpreadState(cube_shape).ignite_cell((500,500))
 
 #============================================================================================
-# Set the start time, max duration, and initially ignited cell
+# Set the start time and max duration of the simulation
 #============================================================================================
 
 # Day 2 @ 10:30am
-start_time = 2070 # minutes
+start_time = (24 * 60) + (10 * 60) + 30 # minutes
 
 # 12 hours
-max_duration = 60 * 24 * 0.5 # minutes
+max_duration = 12 * 60 # minutes
 
 #============================================================================================
 # Set the spotting parameters
@@ -111,7 +110,6 @@ fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes,
                                                      spot_config=spot_config,
                                                      cube_refresh_rates=cube_refresh_rates)
 runtime_stop        = time.perf_counter()
-
 stop_time           = fire_spread_results["stop_time"]         # minutes
 stop_condition      = fire_spread_results["stop_condition"]    # "max duration reached" or "no burnable cells"
 spread_state        = fire_spread_results["spread_state"]      # updated SpreadState object (mutated from inputs)
@@ -123,8 +121,8 @@ num_tracked_cells   = fire_spread_results["num_tracked_cells"] # cell count
 
 output_matrices         = spread_state.get_full_matrices(layers=["fire_type"])
 fire_type_matrix        = output_matrices["fire_type"]
-num_burned_cells        = np.count_nonzero(fire_type_matrix)                        # cells
-num_crowned             = np.count_nonzero(fire_type_matrix > 1)
+num_burned_cells        = np.count_nonzero(fire_type_matrix)             # cells
+num_crowned             = np.count_nonzero(fire_type_matrix > 1)         # cells
 acres_burned            = num_burned_cells / 4.5                         # acres
 simulation_runtime      = runtime_stop - runtime_start                   # seconds
 runtime_per_burned_cell = 1000.0 * simulation_runtime / num_burned_cells # ms/cell

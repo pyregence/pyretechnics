@@ -77,6 +77,7 @@
 #     )
 #     cpdef dict get_burned_matrices(SpreadState self, list layers=?)
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
+#     cpdef SpreadState copy(SpreadState self)
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
 # cdef bint opposite_phi_signs(float[:,::1] phi_matrix, pyidx y1, pyidx x1, pyidx y2, pyidx x2) noexcept
