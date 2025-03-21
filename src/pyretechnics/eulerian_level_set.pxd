@@ -294,7 +294,7 @@
 #     FireBehaviorSettings fb_opts,
 #     float max_timestep,
 #     )
-# cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)
+# cdef void check_space_time_cubes(dict space_time_cubes, dict spot_config=?)
 # cdef void check_dimensions_and_resolutions(
 #     dict space_time_cubes,
 #     SpreadState spread_state,

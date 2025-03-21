@@ -490,7 +490,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       time_of_arrival            : cy.float,
                       random_generator           : BufferedRandGen,
                       num_firebrands             : cy.long,
-                      spot_config                : SpotConfig) -> object: # tuple[float, set]|None
+                      spot_config                : SpotConfig) -> tuple: # tuple[float, set]|None
     """
     Given these inputs:
     - fuel_model_cube             :: (Lazy)SpaceTimeCube (integer index in fm.fuel_model_table)

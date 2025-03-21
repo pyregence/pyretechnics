@@ -80,7 +80,7 @@ cdef coord_yx cast_firebrand(
     JumpDistribution jd,
     ) noexcept
 
-cdef object spread_firebrands(
+cdef tuple spread_firebrands(
     ISpaceTimeCube fuel_model_cube,
     ISpaceTimeCube temperature_cube,
     ISpaceTimeCube fuel_moisture_dead_1hr_cube,
