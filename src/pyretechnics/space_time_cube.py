@@ -38,14 +38,14 @@ def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: 
     """
     Translate None and negative indices to positive indices.
     """
-    if index_range == None:
+    if index_range is None:
         return (0, axis_length)
     else:
         start: pyidx|None = index_range[0]
         stop : pyidx|None = index_range[1]
         return (
-            0 if start == None else axis_length + start if start < 0 else start,
-            axis_length if stop == None else axis_length + stop if stop < 0 else stop
+            0 if start is None else axis_length + start if start < 0 else start,
+            axis_length if stop is None else axis_length + stop if stop < 0 else stop
         )
 
 
