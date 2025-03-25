@@ -1,6 +1,21 @@
+# Version 2025.3.25
+
+## Changes for Developers
+- Updated the `build-dist`, `upload-testpypi`, and `upload-pypi` commands in `make.sh` to only build/upload source builds.
+- Updated object types in *.py and *.pxd files to more specific Python types where possible.
+- Fixed optional typing mistake in burn_cells.pxd.
+- Corrected Numpy ndarray types in all *.py and *.pxd files.
+- Replaced all `x == None` expressions with `x is None`.
+- Removed unnecessary `@cy.exceptval` decorators.
+- Addressed index performance hints in `space_time_cube.py` by type-hinting more `SpaceTimeCube` methods.
+
+## Changes for Users
+- Added a `SpreadState` class to `pyretechnics.eulerian_level_set`.
+- Updated `spread_fire_phi_field` to take and return a `SpreadState` object instead of an `output_matrices` dict.
+
 # Version 2025.3.8
 
-Changes for Developers:
+## Changes for Developers
 - Major round of efficiency optimizations (many of them non-trivial and relying heavily on low-level programming and C semantics), improving throughput by over 1400x.
 - Overhauled the high-level structure of the fire spread code. This was done for optimization purposes, but it also paves the way to using other fire behavior equations than Rothermel’s, as this change largely decouples the fire spread logic from the fire behavior calculations.
 - Redefined frontier cells as burnable cells with a burnable neighbor of opposite phi sign. This optimization dramatically improves performance on landscapes with a lot of non-burnable cells, restoring near linear scaling of runtime to the number of cells burned.
@@ -9,7 +24,7 @@ Changes for Developers:
 - Added a new `num_tracked_cells` metric to the return results from `spread_fire_with_phi_field`. This is mostly only useful for testing purposes.
 - Added `build-cython`, `build-cython-profiled`, `benchmark`, `profile`, and `snakeviz` commands to `make.sh`.
 
-Changes for Users:
+## Changes for Users
 - The `fuel_model_table` dictionary in `pyretechnics.fuel_models` is no longer public. Fuel models should now be looked up with `get_fuel_model(fm_number)`, `list_fuel_model_numbers()`, and `list_fuel_models()` instead.
 - More fuel model properties (in `pyretechnics.fuel_models`) are now pre-calculated at module load time.
 - The default value for `surface_lw_ratio_model` is now "behave" rather than "rothermel" to better agree with both ELMFIRE and Behave7.
@@ -31,12 +46,12 @@ Changes for Users:
 
 # Version 2024.11.7
 
-Changes for Developers:
+## Changes for Developers
 - Added `org-eval` command to `make.sh` to complete Emacs-free developer tooling.
 - Added separate `upload-pypi` and `upload-testpypi` commands to `make.sh`.
 - Updated woven LP documentation for Github Pages compatibility.
 
-Changes for Users:
+## Changes for Users
 - Added LP section "How to Spread a Fire, Pause, Fork, and Continue".
 - Renamed `heat_per_firebrand` to `firebrands_per_unit_heat` in `spotting_config`.
 - Allow `SpaceTimeCube` and `LazySpaceTimeCube` look-up functions to accept `None` for open index ranges.
