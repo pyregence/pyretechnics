@@ -649,8 +649,10 @@ various types of input datasets.
 <span class="org-keyword">from</span> functools <span class="org-keyword">import</span> <span class="org-builtin">reduce</span>
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> cython.cimports.numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx
 <span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx
 </pre>
 </div>
@@ -668,7 +670,6 @@ various types of input datasets.
 
 
 <span class="org-type">@cy.cfunc</span>
-<span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>1)
 <span class="org-keyword">def</span> <span class="org-function-name">divide_evenly</span>(dividend: cy.<span class="org-builtin">int</span>, divisor: cy.<span class="org-builtin">int</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">int</span>:
     <span class="org-keyword">if</span> divisor <span class="org-operator">==</span> 0:
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-builtin">str</span>(divisor) <span class="org-operator">+</span> <span class="org-string">" may not be zero."</span>)
@@ -687,18 +688,19 @@ various types of input datasets.
     <span class="org-doc">"""</span>
 <span class="org-doc">    Translate None and negative indices to positive indices.</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">if</span> index_range <span class="org-operator">==</span> <span class="org-constant">None</span>:
+    <span class="org-keyword">if</span> index_range <span class="org-keyword">is</span> <span class="org-constant">None</span>:
         <span class="org-keyword">return</span> (0, axis_length)
     <span class="org-keyword">else</span>:
         start: pyidx<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> index_range[0]
         stop : pyidx<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> index_range[1]
         <span class="org-keyword">return</span> (
-            0 <span class="org-keyword">if</span> start <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> start <span class="org-keyword">if</span> start <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> start,
-            axis_length <span class="org-keyword">if</span> stop <span class="org-operator">==</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> stop <span class="org-keyword">if</span> stop <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> stop
+            0 <span class="org-keyword">if</span> start <span class="org-keyword">is</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> start <span class="org-keyword">if</span> start <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> start,
+            axis_length <span class="org-keyword">if</span> stop <span class="org-keyword">is</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> axis_length <span class="org-operator">+</span> stop <span class="org-keyword">if</span> stop <span class="org-operator">&lt;</span> 0 <span class="org-keyword">else</span> stop
         )
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">maybe_repeat_array</span>(array, axis_repetitions):
+<span class="org-type">@cy.cfunc</span>
+<span class="org-keyword">def</span> <span class="org-function-name">maybe_repeat_array</span>(array: ndarray, axis_repetitions: <span class="org-builtin">tuple</span>[pyidx, cy.<span class="org-builtin">int</span>]) <span class="org-operator">-&gt;</span> ndarray:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Return a new array that is created by repeating the elements from the input</span>
 <span class="org-doc">    array repetitions times along the specified array axis. Avoid allocating</span>
@@ -708,7 +710,7 @@ various types of input datasets.
     <span class="org-keyword">if</span> repetitions <span class="org-operator">==</span> 1:
         <span class="org-keyword">return</span> array
     <span class="org-keyword">else</span>:
-        <span class="org-variable-name">array_shape</span> <span class="org-operator">=</span> <span class="org-builtin">list</span>(np.shape(array))
+        <span class="org-variable-name">array_shape</span>: <span class="org-builtin">list</span> <span class="org-operator">=</span> <span class="org-builtin">list</span>(np.shape(array))
         <span class="org-keyword">if</span> array_shape[axis] <span class="org-operator">==</span> 1:
             <span class="org-variable-name">array_shape</span>[axis] <span class="org-operator">=</span> repetitions
             <span class="org-keyword">return</span> np.broadcast_to(array, array_shape)
@@ -882,7 +884,8 @@ constant input dimensions.
                          x <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions]
 
 
-    <span class="org-keyword">def</span> <span class="org-function-name">getTimeSeries</span>(<span class="org-keyword">self</span>, t_range, y, x):
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">getTimeSeries</span>(<span class="org-keyword">self</span>, t_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> ndarray:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Return the 1D array given by the slice (t_range,y,x) by translating these cube</span>
 <span class="org-doc">        coordinates to base coordinates, looking up the array slice within the base data,</span>
@@ -893,28 +896,34 @@ constant input dimensions.
 <span class="org-doc">              provide (inclusion, exclusion) semantics like Python array slice notation.</span>
 <span class="org-doc">        """</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Destructure the argument range</span>
-        (<span class="org-variable-name">t_start</span>, <span class="org-variable-name">t_stop_exclusive</span>) <span class="org-operator">=</span> to_positive_index_range(t_range, <span class="org-keyword">self</span>.shape[0])
-        <span class="org-variable-name">t_stop</span> <span class="org-operator">=</span> t_stop_exclusive <span class="org-operator">-</span> 1
+        <span class="org-variable-name">t_range_updated</span> : <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> to_positive_index_range(t_range, <span class="org-keyword">self</span>.shape[0])
+        <span class="org-variable-name">t_start</span>         : pyidx               <span class="org-operator">=</span> t_range_updated[0]
+        <span class="org-variable-name">t_stop_exclusive</span>: pyidx               <span class="org-operator">=</span> t_range_updated[1]
+        <span class="org-variable-name">t_stop</span>          : pyidx               <span class="org-operator">=</span> t_stop_exclusive <span class="org-operator">-</span> 1
         <span class="org-comment-delimiter"># </span><span class="org-comment">Translate high-res coordinates to low-res coordinates</span>
-        <span class="org-variable-name">t_start_chunk</span> <span class="org-operator">=</span> t_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">t_stop_chunk</span>  <span class="org-operator">=</span> t_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">y_chunk</span>       <span class="org-operator">=</span> y       <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">x_chunk</span>       <span class="org-operator">=</span> x       <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">t_start_chunk</span>: pyidx <span class="org-operator">=</span> t_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">t_stop_chunk</span> : pyidx <span class="org-operator">=</span> t_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">y_chunk</span>      : pyidx <span class="org-operator">=</span> y       <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">x_chunk</span>      : pyidx <span class="org-operator">=</span> x       <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
         <span class="org-comment-delimiter"># </span><span class="org-comment">Select the array slice that completely contains all low-res coordinates</span>
-        <span class="org-variable-name">low_res_time</span> <span class="org-operator">=</span> <span class="org-keyword">self</span>.data[t_start_chunk:(t_stop_chunk <span class="org-operator">+</span> 1),
-                                 y_chunk,
-                                 x_chunk]
+        <span class="org-variable-name">low_res_time</span>: ndarray <span class="org-operator">=</span> np.asarray(<span class="org-keyword">self</span>.data[t_start_chunk:(t_stop_chunk <span class="org-operator">+</span> 1),
+                                                     y_chunk,
+                                                     x_chunk])
         <span class="org-comment-delimiter"># </span><span class="org-comment">Expand the low-res slice into a high-res slice</span>
-        <span class="org-variable-name">high_res_time</span> <span class="org-operator">=</span> maybe_repeat_array(low_res_time, (0, <span class="org-keyword">self</span>.t_repetitions))
+        <span class="org-variable-name">high_res_time</span>: ndarray <span class="org-operator">=</span> maybe_repeat_array(low_res_time, (0, <span class="org-keyword">self</span>.t_repetitions))
         <span class="org-comment-delimiter"># </span><span class="org-comment">Translate high-res global coordinates to high-res slice coordinates</span>
-        <span class="org-variable-name">t_chunk_origin</span> <span class="org-operator">=</span> t_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">t_start_idx</span>    <span class="org-operator">=</span> t_start <span class="org-operator">-</span> t_chunk_origin
-        <span class="org-variable-name">t_stop_idx</span>     <span class="org-operator">=</span> t_stop  <span class="org-operator">-</span> t_chunk_origin
+        <span class="org-variable-name">t_chunk_origin</span>: pyidx <span class="org-operator">=</span> t_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">t_start_idx</span>   : pyidx <span class="org-operator">=</span> t_start <span class="org-operator">-</span> t_chunk_origin
+        <span class="org-variable-name">t_stop_idx</span>    : pyidx <span class="org-operator">=</span> t_stop  <span class="org-operator">-</span> t_chunk_origin
         <span class="org-comment-delimiter"># </span><span class="org-comment">Select the array slice that matches the high-res slice coordinates</span>
-        <span class="org-keyword">return</span> np.asarray(high_res_time[t_start_idx:(t_stop_idx <span class="org-operator">+</span> 1)])
+        <span class="org-keyword">return</span> high_res_time[t_start_idx:(t_stop_idx <span class="org-operator">+</span> 1)]
 
 
-    <span class="org-keyword">def</span> <span class="org-function-name">getSpatialPlane</span>(<span class="org-keyword">self</span>, t, y_range, x_range):
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">getSpatialPlane</span>(<span class="org-keyword">self</span>,
+                        t      : pyidx,
+                        y_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>,
+                        x_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> ndarray:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Return the 2D array given by the slice (t,y_range,x_range) by translating these</span>
 <span class="org-doc">        cube coordinates to base coordinates, looking up the array slice within the base</span>
@@ -925,38 +934,46 @@ constant input dimensions.
 <span class="org-doc">              provide (inclusion, exclusion) semantics like Python array slice notation.</span>
 <span class="org-doc">        """</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Destructure the argument ranges</span>
-        (<span class="org-variable-name">y_start</span>, <span class="org-variable-name">y_stop_exclusive</span>) <span class="org-operator">=</span> to_positive_index_range(y_range, <span class="org-keyword">self</span>.shape[1])
-        (<span class="org-variable-name">x_start</span>, <span class="org-variable-name">x_stop_exclusive</span>) <span class="org-operator">=</span> to_positive_index_range(x_range, <span class="org-keyword">self</span>.shape[2])
-        <span class="org-variable-name">y_stop</span> <span class="org-operator">=</span> y_stop_exclusive <span class="org-operator">-</span> 1
-        <span class="org-variable-name">x_stop</span> <span class="org-operator">=</span> x_stop_exclusive <span class="org-operator">-</span> 1
+        <span class="org-variable-name">y_range_updated</span> : <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> to_positive_index_range(y_range, <span class="org-keyword">self</span>.shape[1])
+        <span class="org-variable-name">x_range_updated</span> : <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> to_positive_index_range(x_range, <span class="org-keyword">self</span>.shape[2])
+        <span class="org-variable-name">y_start</span>         : pyidx               <span class="org-operator">=</span> y_range_updated[0]
+        <span class="org-variable-name">y_stop_exclusive</span>: pyidx               <span class="org-operator">=</span> y_range_updated[1]
+        <span class="org-variable-name">x_start</span>         : pyidx               <span class="org-operator">=</span> x_range_updated[0]
+        <span class="org-variable-name">x_stop_exclusive</span>: pyidx               <span class="org-operator">=</span> x_range_updated[1]
+        <span class="org-variable-name">y_stop</span>          : pyidx               <span class="org-operator">=</span> y_stop_exclusive <span class="org-operator">-</span> 1
+        <span class="org-variable-name">x_stop</span>          : pyidx               <span class="org-operator">=</span> x_stop_exclusive <span class="org-operator">-</span> 1
         <span class="org-comment-delimiter"># </span><span class="org-comment">Translate high-res coordinates to low-res coordinates</span>
-        <span class="org-variable-name">t_chunk</span>       <span class="org-operator">=</span> t       <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">y_start_chunk</span> <span class="org-operator">=</span> y_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">y_stop_chunk</span>  <span class="org-operator">=</span> y_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">x_start_chunk</span> <span class="org-operator">=</span> x_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
-        <span class="org-variable-name">x_stop_chunk</span>  <span class="org-operator">=</span> x_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">t_chunk</span>      : pyidx <span class="org-operator">=</span> t       <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">y_start_chunk</span>: pyidx <span class="org-operator">=</span> y_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">y_stop_chunk</span> : pyidx <span class="org-operator">=</span> y_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">x_start_chunk</span>: pyidx <span class="org-operator">=</span> x_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">x_stop_chunk</span> : pyidx <span class="org-operator">=</span> x_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
         <span class="org-comment-delimiter"># </span><span class="org-comment">Select the array slice that completely contains all low-res coordinates</span>
-        <span class="org-variable-name">low_res_space</span> <span class="org-operator">=</span> <span class="org-keyword">self</span>.data[t_chunk,
-                                  y_start_chunk:(y_stop_chunk <span class="org-operator">+</span> 1),
-                                  x_start_chunk:(x_stop_chunk <span class="org-operator">+</span> 1)]
+        <span class="org-variable-name">low_res_space</span>: ndarray <span class="org-operator">=</span> np.asarray(<span class="org-keyword">self</span>.data[t_chunk,
+                                                      y_start_chunk:(y_stop_chunk <span class="org-operator">+</span> 1),
+                                                      x_start_chunk:(x_stop_chunk <span class="org-operator">+</span> 1)])
         <span class="org-comment-delimiter"># </span><span class="org-comment">Expand the low-res slice into a high-res slice</span>
-        <span class="org-variable-name">high_res_space</span> <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
-                                ((0, <span class="org-keyword">self</span>.y_repetitions),
-                                 (1, <span class="org-keyword">self</span>.x_repetitions)),
-                                low_res_space)
+        <span class="org-variable-name">high_res_space</span>: ndarray <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
+                                         ((0, <span class="org-keyword">self</span>.y_repetitions),
+                                          (1, <span class="org-keyword">self</span>.x_repetitions)),
+                                         low_res_space)
         <span class="org-comment-delimiter"># </span><span class="org-comment">Translate high-res global coordinates to high-res slice coordinates</span>
-        <span class="org-variable-name">y_chunk_origin</span> <span class="org-operator">=</span> y_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">x_chunk_origin</span> <span class="org-operator">=</span> x_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.x_repetitions
-        <span class="org-variable-name">y_start_idx</span>    <span class="org-operator">=</span> y_start <span class="org-operator">-</span> y_chunk_origin
-        <span class="org-variable-name">y_stop_idx</span>     <span class="org-operator">=</span> y_stop  <span class="org-operator">-</span> y_chunk_origin
-        <span class="org-variable-name">x_start_idx</span>    <span class="org-operator">=</span> x_start <span class="org-operator">-</span> x_chunk_origin
-        <span class="org-variable-name">x_stop_idx</span>     <span class="org-operator">=</span> x_stop  <span class="org-operator">-</span> x_chunk_origin
+        <span class="org-variable-name">y_chunk_origin</span>: pyidx <span class="org-operator">=</span> y_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">x_chunk_origin</span>: pyidx <span class="org-operator">=</span> x_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">y_start_idx</span>   : pyidx <span class="org-operator">=</span> y_start <span class="org-operator">-</span> y_chunk_origin
+        <span class="org-variable-name">y_stop_idx</span>    : pyidx <span class="org-operator">=</span> y_stop  <span class="org-operator">-</span> y_chunk_origin
+        <span class="org-variable-name">x_start_idx</span>   : pyidx <span class="org-operator">=</span> x_start <span class="org-operator">-</span> x_chunk_origin
+        <span class="org-variable-name">x_stop_idx</span>    : pyidx <span class="org-operator">=</span> x_stop  <span class="org-operator">-</span> x_chunk_origin
         <span class="org-comment-delimiter"># </span><span class="org-comment">Select the array slice that matches the high-res slice coordinates</span>
-        <span class="org-keyword">return</span> np.asarray(high_res_space[y_start_idx:(y_stop_idx <span class="org-operator">+</span> 1),
-                                         x_start_idx:(x_stop_idx <span class="org-operator">+</span> 1)])
+        <span class="org-keyword">return</span> high_res_space[y_start_idx:(y_stop_idx <span class="org-operator">+</span> 1),
+                              x_start_idx:(x_stop_idx <span class="org-operator">+</span> 1)]
 
 
-    <span class="org-keyword">def</span> <span class="org-function-name">getSubcube</span>(<span class="org-keyword">self</span>, t_range, y_range, x_range):
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">getSubcube</span>(<span class="org-keyword">self</span>,
+                   t_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>,
+                   y_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>,
+                   x_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> ndarray:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Return the 3D array given by the slice (t_range,y_range,x_range) by translating</span>
 <span class="org-doc">        these cube coordinates to base coordinates, looking up the array slice within the</span>
@@ -967,43 +984,49 @@ constant input dimensions.
 <span class="org-doc">              provide (inclusion, exclusion) semantics like Python array slice notation.</span>
 <span class="org-doc">        """</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Destructure the argument ranges</span>
-        (<span class="org-variable-name">t_start</span>, <span class="org-variable-name">t_stop_exclusive</span>) <span class="org-operator">=</span> to_positive_index_range(t_range, <span class="org-keyword">self</span>.shape[0])
-        (<span class="org-variable-name">y_start</span>, <span class="org-variable-name">y_stop_exclusive</span>) <span class="org-operator">=</span> to_positive_index_range(y_range, <span class="org-keyword">self</span>.shape[1])
-        (<span class="org-variable-name">x_start</span>, <span class="org-variable-name">x_stop_exclusive</span>) <span class="org-operator">=</span> to_positive_index_range(x_range, <span class="org-keyword">self</span>.shape[2])
-        <span class="org-variable-name">t_stop</span> <span class="org-operator">=</span> t_stop_exclusive <span class="org-operator">-</span> 1
-        <span class="org-variable-name">y_stop</span> <span class="org-operator">=</span> y_stop_exclusive <span class="org-operator">-</span> 1
-        <span class="org-variable-name">x_stop</span> <span class="org-operator">=</span> x_stop_exclusive <span class="org-operator">-</span> 1
+        <span class="org-variable-name">t_range_updated</span> : <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> to_positive_index_range(t_range, <span class="org-keyword">self</span>.shape[0])
+        <span class="org-variable-name">y_range_updated</span> : <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> to_positive_index_range(y_range, <span class="org-keyword">self</span>.shape[1])
+        <span class="org-variable-name">x_range_updated</span> : <span class="org-builtin">tuple</span>[<span class="org-variable-name">pyidx</span>, <span class="org-variable-name">pyidx</span>] <span class="org-operator">=</span> to_positive_index_range(x_range, <span class="org-keyword">self</span>.shape[2])
+        <span class="org-variable-name">t_start</span>         : pyidx               <span class="org-operator">=</span> t_range_updated[0]
+        <span class="org-variable-name">t_stop_exclusive</span>: pyidx               <span class="org-operator">=</span> t_range_updated[1]
+        <span class="org-variable-name">y_start</span>         : pyidx               <span class="org-operator">=</span> y_range_updated[0]
+        <span class="org-variable-name">y_stop_exclusive</span>: pyidx               <span class="org-operator">=</span> y_range_updated[1]
+        <span class="org-variable-name">x_start</span>         : pyidx               <span class="org-operator">=</span> x_range_updated[0]
+        <span class="org-variable-name">x_stop_exclusive</span>: pyidx               <span class="org-operator">=</span> x_range_updated[1]
+        <span class="org-variable-name">t_stop</span>          : pyidx               <span class="org-operator">=</span> t_stop_exclusive <span class="org-operator">-</span> 1
+        <span class="org-variable-name">y_stop</span>          : pyidx               <span class="org-operator">=</span> y_stop_exclusive <span class="org-operator">-</span> 1
+        <span class="org-variable-name">x_stop</span>          : pyidx               <span class="org-operator">=</span> x_stop_exclusive <span class="org-operator">-</span> 1
         <span class="org-comment-delimiter"># </span><span class="org-comment">Translate high-res coordinates to low-res coordinates</span>
-        <span class="org-variable-name">t_start_chunk</span> <span class="org-operator">=</span> t_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">t_stop_chunk</span>  <span class="org-operator">=</span> t_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">y_start_chunk</span> <span class="org-operator">=</span> y_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">y_stop_chunk</span>  <span class="org-operator">=</span> y_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">x_start_chunk</span> <span class="org-operator">=</span> x_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
-        <span class="org-variable-name">x_stop_chunk</span>  <span class="org-operator">=</span> x_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">t_start_chunk</span>: pyidx <span class="org-operator">=</span> t_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">t_stop_chunk</span> : pyidx <span class="org-operator">=</span> t_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">y_start_chunk</span>: pyidx <span class="org-operator">=</span> y_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">y_stop_chunk</span> : pyidx <span class="org-operator">=</span> y_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">x_start_chunk</span>: pyidx <span class="org-operator">=</span> x_start <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">x_stop_chunk</span> : pyidx <span class="org-operator">=</span> x_stop  <span class="org-operator">//</span> <span class="org-keyword">self</span>.x_repetitions
         <span class="org-comment-delimiter"># </span><span class="org-comment">Select the array slice that completely contains all low-res coordinates</span>
-        <span class="org-variable-name">low_res_cube</span> <span class="org-operator">=</span> <span class="org-keyword">self</span>.data[t_start_chunk:(t_stop_chunk <span class="org-operator">+</span> 1),
-                                 y_start_chunk:(y_stop_chunk <span class="org-operator">+</span> 1),
-                                 x_start_chunk:(x_stop_chunk <span class="org-operator">+</span> 1)]
+        <span class="org-variable-name">low_res_cube</span>: ndarray <span class="org-operator">=</span> np.asarray(<span class="org-keyword">self</span>.data[t_start_chunk:(t_stop_chunk <span class="org-operator">+</span> 1),
+                                                     y_start_chunk:(y_stop_chunk <span class="org-operator">+</span> 1),
+                                                     x_start_chunk:(x_stop_chunk <span class="org-operator">+</span> 1)])
         <span class="org-comment-delimiter"># </span><span class="org-comment">Expand the low-res slice into a high-res slice</span>
-        <span class="org-variable-name">high_res_cube</span> <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
-                               ((0, <span class="org-keyword">self</span>.t_repetitions),
-                                (1, <span class="org-keyword">self</span>.y_repetitions),
-                                (2, <span class="org-keyword">self</span>.x_repetitions)),
-                               low_res_cube)
+        <span class="org-variable-name">high_res_cube</span>: ndarray <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
+                                        ((0, <span class="org-keyword">self</span>.t_repetitions),
+                                         (1, <span class="org-keyword">self</span>.y_repetitions),
+                                         (2, <span class="org-keyword">self</span>.x_repetitions)),
+                                        low_res_cube)
         <span class="org-comment-delimiter"># </span><span class="org-comment">Translate high-res global coordinates to high-res slice coordinates</span>
-        <span class="org-variable-name">t_chunk_origin</span> <span class="org-operator">=</span> t_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.t_repetitions
-        <span class="org-variable-name">y_chunk_origin</span> <span class="org-operator">=</span> y_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.y_repetitions
-        <span class="org-variable-name">x_chunk_origin</span> <span class="org-operator">=</span> x_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.x_repetitions
-        <span class="org-variable-name">t_start_idx</span>    <span class="org-operator">=</span> t_start <span class="org-operator">-</span> t_chunk_origin
-        <span class="org-variable-name">t_stop_idx</span>     <span class="org-operator">=</span> t_stop  <span class="org-operator">-</span> t_chunk_origin
-        <span class="org-variable-name">y_start_idx</span>    <span class="org-operator">=</span> y_start <span class="org-operator">-</span> y_chunk_origin
-        <span class="org-variable-name">y_stop_idx</span>     <span class="org-operator">=</span> y_stop  <span class="org-operator">-</span> y_chunk_origin
-        <span class="org-variable-name">x_start_idx</span>    <span class="org-operator">=</span> x_start <span class="org-operator">-</span> x_chunk_origin
-        <span class="org-variable-name">x_stop_idx</span>     <span class="org-operator">=</span> x_stop  <span class="org-operator">-</span> x_chunk_origin
+        <span class="org-variable-name">t_chunk_origin</span>: pyidx <span class="org-operator">=</span> t_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.t_repetitions
+        <span class="org-variable-name">y_chunk_origin</span>: pyidx <span class="org-operator">=</span> y_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.y_repetitions
+        <span class="org-variable-name">x_chunk_origin</span>: pyidx <span class="org-operator">=</span> x_start_chunk <span class="org-operator">*</span> <span class="org-keyword">self</span>.x_repetitions
+        <span class="org-variable-name">t_start_idx</span>   : pyidx <span class="org-operator">=</span> t_start <span class="org-operator">-</span> t_chunk_origin
+        <span class="org-variable-name">t_stop_idx</span>    : pyidx <span class="org-operator">=</span> t_stop  <span class="org-operator">-</span> t_chunk_origin
+        <span class="org-variable-name">y_start_idx</span>   : pyidx <span class="org-operator">=</span> y_start <span class="org-operator">-</span> y_chunk_origin
+        <span class="org-variable-name">y_stop_idx</span>    : pyidx <span class="org-operator">=</span> y_stop  <span class="org-operator">-</span> y_chunk_origin
+        <span class="org-variable-name">x_start_idx</span>   : pyidx <span class="org-operator">=</span> x_start <span class="org-operator">-</span> x_chunk_origin
+        <span class="org-variable-name">x_stop_idx</span>    : pyidx <span class="org-operator">=</span> x_stop  <span class="org-operator">-</span> x_chunk_origin
         <span class="org-comment-delimiter"># </span><span class="org-comment">Select the array slice that matches the high-res slice coordinates</span>
-        <span class="org-keyword">return</span> np.asarray(high_res_cube[t_start_idx:(t_stop_idx <span class="org-operator">+</span> 1),
-                                        y_start_idx:(y_stop_idx <span class="org-operator">+</span> 1),
-                                        x_start_idx:(x_stop_idx <span class="org-operator">+</span> 1)])
+        <span class="org-keyword">return</span> high_res_cube[t_start_idx:(t_stop_idx <span class="org-operator">+</span> 1),
+                             y_start_idx:(y_stop_idx <span class="org-operator">+</span> 1),
+                             x_start_idx:(x_stop_idx <span class="org-operator">+</span> 1)]
 
 
     <span class="org-keyword">def</span> <span class="org-function-name">__getFullyRealizedCube</span>(<span class="org-keyword">self</span>):
@@ -1022,7 +1045,7 @@ constant input dimensions.
         <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 1:
             <span class="org-comment-delimiter"># </span><span class="org-comment">1D: Time-Series Input</span>
             <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (t0,1,1) -&gt; (t,1,1)</span>
-            <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> maybe_repeat_array(<span class="org-keyword">self</span>.data, (0, <span class="org-keyword">self</span>.t_repetitions))
+            <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> maybe_repeat_array(np.asarray(<span class="org-keyword">self</span>.data), (0, <span class="org-keyword">self</span>.t_repetitions))
             <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (t,1,1) -&gt; (t,y,x)</span>
             <span class="org-keyword">return</span> np.broadcast_to(repeated_array, <span class="org-keyword">self</span>.shape)
 
@@ -1032,18 +1055,18 @@ constant input dimensions.
             <span class="org-variable-name">repeated_array</span> <span class="org-operator">=</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
                                     ((1, <span class="org-keyword">self</span>.y_repetitions),
                                      (2, <span class="org-keyword">self</span>.x_repetitions)),
-                                    <span class="org-keyword">self</span>.data)
+                                    np.asarray(<span class="org-keyword">self</span>.data))
             <span class="org-comment-delimiter"># </span><span class="org-comment">Broadcast (1,y,x) -&gt; (t,y,x)</span>
             <span class="org-keyword">return</span> np.broadcast_to(repeated_array, <span class="org-keyword">self</span>.shape)
 
         <span class="org-keyword">else</span>:
             <span class="org-comment-delimiter"># </span><span class="org-comment">3D: Spatio-Temporal Input</span>
             <span class="org-comment-delimiter"># </span><span class="org-comment">Repeat (t0,y0,x0) -&gt; (t,y,x)</span>
-            <span class="org-keyword">return</span> np.asarray(<span class="org-builtin">reduce</span>(maybe_repeat_array,
-                                     ((0, <span class="org-keyword">self</span>.t_repetitions),
-                                      (1, <span class="org-keyword">self</span>.y_repetitions),
-                                      (2, <span class="org-keyword">self</span>.x_repetitions)),
-                                     <span class="org-keyword">self</span>.data))
+            <span class="org-keyword">return</span> <span class="org-builtin">reduce</span>(maybe_repeat_array,
+                          ((0, <span class="org-keyword">self</span>.t_repetitions),
+                           (1, <span class="org-keyword">self</span>.y_repetitions),
+                           (2, <span class="org-keyword">self</span>.x_repetitions)),
+                          np.asarray(<span class="org-keyword">self</span>.data))
 
 
     <span class="org-keyword">def</span> <span class="org-function-name">getFullyRealizedCube</span>(<span class="org-keyword">self</span>, cache<span class="org-operator">=</span><span class="org-constant">False</span>):
@@ -1128,7 +1151,7 @@ extents and/or finer resolutions than have been used previously.
     shape        : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
     subcube_shape: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
     cache_shape  : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
-    cache        : np.ndarray
+    cache        : ndarray
     load_subcube : <span class="org-builtin">object</span>
 
 
@@ -4089,9 +4112,8 @@ where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="surface-fire-eccentricity"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Change model from str to enumerated type and set @cy.exceptval(-1) to @cy.exceptval(check=False)</span>
+<pre class="src src-python" id="surface-fire-eccentricity"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Change model from str to enumerated type</span>
 <span class="org-type">@cy.cfunc</span>
-<span class="org-type">@cy.exceptval</span>(<span class="org-operator">-</span>1)
 <span class="org-keyword">def</span> <span class="org-function-name">surface_length_to_width_ratio</span>(effective_wind_speed: cy.<span class="org-builtin">float</span>, model: <span class="org-builtin">str</span> <span class="org-operator">=</span> <span class="org-string">"behave"</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculate the length_to_width_ratio of the surface fire front given:</span>
@@ -7151,7 +7173,7 @@ spot fires will be ignited.
                       time_of_arrival            : cy.<span class="org-builtin">float</span>,
                       random_generator           : BufferedRandGen,
                       num_firebrands             : cy.<span class="org-builtin">long</span>,
-                      spot_config                : SpotConfig) <span class="org-operator">-&gt;</span> <span class="org-builtin">object</span>: <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[float, set]|None</span>
+                      spot_config                : SpotConfig) <span class="org-operator">-&gt;</span> <span class="org-builtin">tuple</span>: <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[float, set]|None</span>
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
 <span class="org-doc">    - fuel_model_cube             :: (Lazy)SpaceTimeCube (integer index in fm.fuel_model_table)</span>
@@ -7721,6 +7743,7 @@ their combined surface and crown fire behavior.
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> cython.cimports.numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.space_time_cube <span class="org-keyword">import</span> ISpaceTimeCube, to_positive_index_range
@@ -7730,6 +7753,7 @@ their combined surface and crown fire behavior.
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.surface_fire <span class="org-keyword">as</span> sf
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.crown_fire <span class="org-keyword">as</span> cf
 <span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> ISpaceTimeCube, to_positive_index_range
@@ -8051,11 +8075,11 @@ surface fire behavior is returned.
     <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_x <span class="org-operator">&lt;</span> max_x <span class="org-operator">&lt;=</span> rows):
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The x_range values are out of range of the space_time_cubes."</span>)
 
-    <span class="org-variable-name">fire_type_matrix</span>          : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
-    <span class="org-variable-name">spread_rate_matrix</span>        : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">spread_direction_matrix</span>   : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">fireline_intensity_matrix</span> : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">flame_length_matrix</span>       : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">fire_type_matrix</span>          : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
+    <span class="org-variable-name">spread_rate_matrix</span>        : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">spread_direction_matrix</span>   : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">fireline_intensity_matrix</span> : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">flame_length_matrix</span>       : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">fire_type_memview</span>         : cy.uchar[:,::1] <span class="org-operator">=</span> fire_type_matrix
     <span class="org-variable-name">spread_rate_memview</span>       : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_rate_matrix
     <span class="org-variable-name">spread_direction_memview</span>  : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_direction_matrix
@@ -8398,11 +8422,11 @@ azimuth direction is returned.
     <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_x <span class="org-operator">&lt;</span> max_x <span class="org-operator">&lt;=</span> rows):
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The x_range values are out of range of the space_time_cubes."</span>)
 
-    <span class="org-variable-name">fire_type_matrix</span>          : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
-    <span class="org-variable-name">spread_rate_matrix</span>        : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">spread_direction_matrix</span>   : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">fireline_intensity_matrix</span> : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">flame_length_matrix</span>       : np.ndarray      <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">fire_type_matrix</span>          : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
+    <span class="org-variable-name">spread_rate_matrix</span>        : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">spread_direction_matrix</span>   : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">fireline_intensity_matrix</span> : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">flame_length_matrix</span>       : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">fire_type_memview</span>         : cy.uchar[:,::1] <span class="org-operator">=</span> fire_type_matrix
     <span class="org-variable-name">spread_rate_memview</span>       : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_rate_matrix
     <span class="org-variable-name">spread_direction_memview</span>  : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-operator">=</span> spread_direction_matrix
@@ -9054,6 +9078,7 @@ model<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">from</span> sortedcontainers <span class="org-keyword">import</span> SortedDict
 <span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> cython.cimports.numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> cython.cimports.libc.stdlib <span class="org-keyword">import</span> malloc, realloc, free
     <span class="org-keyword">from</span> cython.cimports.libc.math <span class="org-keyword">import</span> pi, floor, sqrt, <span class="org-builtin">pow</span>, atan
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
@@ -9070,6 +9095,7 @@ model<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.narrow_band_tracking <span class="org-keyword">as</span> nbt
 <span class="org-keyword">else</span>:
     <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create equivalent Python functions for malloc, realloc, free</span>
+    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> math <span class="org-keyword">import</span> pi, floor, sqrt, <span class="org-builtin">pow</span>, atan
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
@@ -9974,13 +10000,13 @@ is returned.
     <span class="org-type">@cy.ccall</span>
     <span class="org-keyword">def</span> <span class="org-function-name">get_burned_matrices</span>(<span class="org-keyword">self</span>, layers: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Find bounding box of burned area</span>
-        <span class="org-variable-name">burned_mask</span>: <span class="org-builtin">tuple</span>[np.<span class="org-variable-name">ndarray</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> np.nonzero(<span class="org-keyword">self</span>.fire_type)
-        <span class="org-variable-name">min_y</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[0].<span class="org-builtin">min</span>()
-        <span class="org-variable-name">max_y</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[0].<span class="org-builtin">max</span>()
-        <span class="org-variable-name">min_x</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[1].<span class="org-builtin">min</span>()
-        <span class="org-variable-name">max_x</span>      : pyidx                         <span class="org-operator">=</span> burned_mask[1].<span class="org-builtin">max</span>()
+        <span class="org-variable-name">burned_mask</span>: <span class="org-builtin">tuple</span>[<span class="org-variable-name">ndarray</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> np.nonzero(<span class="org-keyword">self</span>.fire_type)
+        <span class="org-variable-name">min_y</span>      : pyidx                   <span class="org-operator">=</span> burned_mask[0].<span class="org-builtin">min</span>()
+        <span class="org-variable-name">max_y</span>      : pyidx                   <span class="org-operator">=</span> burned_mask[0].<span class="org-builtin">max</span>()
+        <span class="org-variable-name">min_x</span>      : pyidx                   <span class="org-operator">=</span> burned_mask[1].<span class="org-builtin">min</span>()
+        <span class="org-variable-name">max_x</span>      : pyidx                   <span class="org-operator">=</span> burned_mask[1].<span class="org-builtin">max</span>()
         <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the 2D arrays in a dict</span>
-        <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
+        <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
             <span class="org-string">"phi"</span>               : <span class="org-keyword">self</span>.phi,
             <span class="org-string">"fire_type"</span>         : <span class="org-keyword">self</span>.fire_type,
             <span class="org-string">"spread_rate"</span>       : <span class="org-keyword">self</span>.spread_rate,
@@ -9992,7 +10018,7 @@ is returned.
         <span class="org-comment-delimiter"># </span><span class="org-comment">Set selected_layers to layers if specified and otherwise to all available layers</span>
         <span class="org-variable-name">selected_layers</span>: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>] <span class="org-operator">=</span> layers <span class="org-keyword">if</span> layers <span class="org-keyword">is</span> <span class="org-keyword">not</span> <span class="org-constant">None</span> <span class="org-keyword">else</span> <span class="org-builtin">list</span>(available_matrices.keys())
         <span class="org-comment-delimiter"># </span><span class="org-comment">Clip the 2D arrays from selected_layers to the bounding box</span>
-        <span class="org-variable-name">clipped_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
+        <span class="org-variable-name">clipped_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
             k: np.copy(available_matrices[k][min_y:max_y<span class="org-operator">+</span>1, min_x:max_x<span class="org-operator">+</span>1]) <span class="org-keyword">for</span> k <span class="org-keyword">in</span> selected_layers
         }
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return the clipped_matrices along with their lower_left_corner for reference</span>
@@ -10006,7 +10032,7 @@ is returned.
     <span class="org-type">@cy.ccall</span>
     <span class="org-keyword">def</span> <span class="org-function-name">get_full_matrices</span>(<span class="org-keyword">self</span>, layers: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the 2D arrays in a dict</span>
-        <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, np.<span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
+        <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
             <span class="org-string">"phi"</span>               : np.asarray(<span class="org-keyword">self</span>.phi),
             <span class="org-string">"fire_type"</span>         : np.asarray(<span class="org-keyword">self</span>.fire_type),
             <span class="org-string">"spread_rate"</span>       : np.asarray(<span class="org-keyword">self</span>.spread_rate),
@@ -14824,7 +14850,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">BufferedRandG
 cdef bint is_pos_int(<span class="org-builtin">object</span> x) noexcept
 cdef <span class="org-builtin">int</span> divide_evenly(<span class="org-builtin">int</span> dividend, <span class="org-builtin">int</span> divisor)
 cpdef (pyidx, pyidx) to_positive_index_range(<span class="org-builtin">object</span> index_range, pyidx axis_length) noexcept
-<span class="org-comment-delimiter"># </span><span class="org-comment">def maybe_repeat_array(array, axis_repetitions)</span>
+cdef np.ndarray maybe_repeat_array(np.ndarray array, (pyidx, <span class="org-builtin">int</span>) axis_repetitions)
 
 cdef <span class="org-keyword">class</span> <span class="org-type">ISpaceTimeCube</span>:
     cdef <span class="org-builtin">float</span> get(ISpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
@@ -14837,13 +14863,14 @@ cdef <span class="org-keyword">class</span> <span class="org-type">SpaceTimeCube
     cdef public <span class="org-builtin">int</span> t_repetitions
     cdef public <span class="org-builtin">int</span> y_repetitions
     cdef public <span class="org-builtin">int</span> x_repetitions
-    <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE we use const (read-only MemoryView) so that Cython will accept to use a read-only array, which is required for shared-memory parallelism.</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: We use const (read-only MemoryView) so that Cython will accept read-only arrays, which is required for shared-memory parallelism.</span>
     cdef public const <span class="org-builtin">float</span>[:,:,::1] data
     cpdef <span class="org-builtin">float</span> get(SpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
-    <span class="org-comment-delimiter"># </span><span class="org-comment">def getTimeSeries(self, t_range, y, x)</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">def getSpatialPlane(self, t, y_range, x_range)</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">def getSubcube(self, t_range, y_range, x_range)</span>
+    cpdef np.ndarray getTimeSeries(SpaceTimeCube <span class="org-keyword">self</span>, <span class="org-builtin">object</span> t_range, pyidx y, pyidx x)
+    cpdef np.ndarray getSpatialPlane(SpaceTimeCube <span class="org-keyword">self</span>, pyidx t, <span class="org-builtin">object</span> y_range, <span class="org-builtin">object</span> x_range)
+    cpdef np.ndarray getSubcube(SpaceTimeCube <span class="org-keyword">self</span>, <span class="org-builtin">object</span> t_range, <span class="org-builtin">object</span> y_range, <span class="org-builtin">object</span> x_range)
     <span class="org-comment-delimiter"># </span><span class="org-comment">def getFullyRealizedCube(self, cache=False)</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">def releaseFullyRealizedCube(self)</span>
 
 cdef <span class="org-keyword">class</span> <span class="org-type">LazySpaceTimeCube</span>(ISpaceTimeCube):
     cdef public <span class="org-builtin">int</span> ndim
@@ -15205,7 +15232,7 @@ cdef coord_yx cast_firebrand(
     JumpDistribution jd,
     ) noexcept
 
-cdef <span class="org-builtin">object</span> spread_firebrands(
+cdef <span class="org-builtin">tuple</span> spread_firebrands(
     ISpaceTimeCube fuel_model_cube,
     ISpaceTimeCube temperature_cube,
     ISpaceTimeCube fuel_moisture_dead_1hr_cube,
@@ -15299,7 +15326,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">NarrowBandTra
 
 cdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
 cdef void inc_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, <span class="org-builtin">int</span> segment_length) noexcept
-cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, <span class="org-builtin">int</span> segment_length) noexcept
+cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, <span class="org-builtin">int</span> segment_length)
 cdef (pyidx, pyidx) resolve_truncated_x_segment(NarrowBandTracker tracked_cells, pyidx x, pyidx buffer_width) noexcept
 cdef void inc_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
 cdef void dec_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
@@ -15616,7 +15643,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">FireBehaviorSettings fb_opts,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float max_timestep,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_space_time_cubes(dict space_time_cubes, dict spot_config=?)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void check_dimensions_and_resolutions(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">dict space_time_cubes,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadState spread_state,</span>

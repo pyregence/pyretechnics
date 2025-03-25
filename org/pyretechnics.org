@@ -207,8 +207,10 @@ import cython as cy
 from functools import reduce
 import numpy as np
 if cython.compiled:
+    from cython.cimports.numpy import ndarray
     from cython.cimports.pyretechnics.cy_types import pyidx
 else:
+    from numpy import ndarray
     from pyretechnics.py_types import pyidx
 #+end_src
 
@@ -227,7 +229,6 @@ def is_pos_int(x: object) -> cy.bint:
 
 
 @cy.cfunc
-@cy.exceptval(-1)
 def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
     if divisor == 0:
         raise ValueError(str(divisor) + " may not be zero.")
@@ -246,18 +247,19 @@ def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: 
     """
     Translate None and negative indices to positive indices.
     """
-    if index_range == None:
+    if index_range is None:
         return (0, axis_length)
     else:
         start: pyidx|None = index_range[0]
         stop : pyidx|None = index_range[1]
         return (
-            0 if start == None else axis_length + start if start < 0 else start,
-            axis_length if stop == None else axis_length + stop if stop < 0 else stop
+            0 if start is None else axis_length + start if start < 0 else start,
+            axis_length if stop is None else axis_length + stop if stop < 0 else stop
         )
 
 
-def maybe_repeat_array(array, axis_repetitions):
+@cy.cfunc
+def maybe_repeat_array(array: ndarray, axis_repetitions: tuple[pyidx, cy.int]) -> ndarray:
     """
     Return a new array that is created by repeating the elements from the input
     array repetitions times along the specified array axis. Avoid allocating
@@ -267,7 +269,7 @@ def maybe_repeat_array(array, axis_repetitions):
     if repetitions == 1:
         return array
     else:
-        array_shape = list(np.shape(array))
+        array_shape: list = list(np.shape(array))
         if array_shape[axis] == 1:
             array_shape[axis] = repetitions
             return np.broadcast_to(array, array_shape)
@@ -437,7 +439,8 @@ class SpaceTimeCube(ISpaceTimeCube):
                          x // self.x_repetitions]
 
 
-    def getTimeSeries(self, t_range, y, x):
+    @cy.ccall
+    def getTimeSeries(self, t_range: tuple[pyidx, pyidx]|None, y: pyidx, x: pyidx) -> ndarray:
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
         coordinates to base coordinates, looking up the array slice within the base data,
@@ -448,28 +451,34 @@ class SpaceTimeCube(ISpaceTimeCube):
               provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument range
-        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
-        t_stop = t_stop_exclusive - 1
+        t_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(t_range, self.shape[0])
+        t_start         : pyidx               = t_range_updated[0]
+        t_stop_exclusive: pyidx               = t_range_updated[1]
+        t_stop          : pyidx               = t_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_start_chunk = t_start // self.t_repetitions
-        t_stop_chunk  = t_stop  // self.t_repetitions
-        y_chunk       = y       // self.y_repetitions
-        x_chunk       = x       // self.x_repetitions
+        t_start_chunk: pyidx = t_start // self.t_repetitions
+        t_stop_chunk : pyidx = t_stop  // self.t_repetitions
+        y_chunk      : pyidx = y       // self.y_repetitions
+        x_chunk      : pyidx = x       // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_time = self.data[t_start_chunk:(t_stop_chunk + 1),
-                                 y_chunk,
-                                 x_chunk]
+        low_res_time: ndarray = np.asarray(self.data[t_start_chunk:(t_stop_chunk + 1),
+                                                     y_chunk,
+                                                     x_chunk])
         # Expand the low-res slice into a high-res slice
-        high_res_time = maybe_repeat_array(low_res_time, (0, self.t_repetitions))
+        high_res_time: ndarray = maybe_repeat_array(low_res_time, (0, self.t_repetitions))
         # Translate high-res global coordinates to high-res slice coordinates
-        t_chunk_origin = t_start_chunk * self.t_repetitions
-        t_start_idx    = t_start - t_chunk_origin
-        t_stop_idx     = t_stop  - t_chunk_origin
+        t_chunk_origin: pyidx = t_start_chunk * self.t_repetitions
+        t_start_idx   : pyidx = t_start - t_chunk_origin
+        t_stop_idx    : pyidx = t_stop  - t_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return np.asarray(high_res_time[t_start_idx:(t_stop_idx + 1)])
+        return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
-    def getSpatialPlane(self, t, y_range, x_range):
+    @cy.ccall
+    def getSpatialPlane(self,
+                        t      : pyidx,
+                        y_range: tuple[pyidx, pyidx]|None,
+                        x_range: tuple[pyidx, pyidx]|None) -> ndarray:
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
         cube coordinates to base coordinates, looking up the array slice within the base
@@ -480,38 +489,46 @@ class SpaceTimeCube(ISpaceTimeCube):
               provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
-        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
-        y_stop = y_stop_exclusive - 1
-        x_stop = x_stop_exclusive - 1
+        y_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(y_range, self.shape[1])
+        x_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(x_range, self.shape[2])
+        y_start         : pyidx               = y_range_updated[0]
+        y_stop_exclusive: pyidx               = y_range_updated[1]
+        x_start         : pyidx               = x_range_updated[0]
+        x_stop_exclusive: pyidx               = x_range_updated[1]
+        y_stop          : pyidx               = y_stop_exclusive - 1
+        x_stop          : pyidx               = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_chunk       = t       // self.t_repetitions
-        y_start_chunk = y_start // self.y_repetitions
-        y_stop_chunk  = y_stop  // self.y_repetitions
-        x_start_chunk = x_start // self.x_repetitions
-        x_stop_chunk  = x_stop  // self.x_repetitions
+        t_chunk      : pyidx = t       // self.t_repetitions
+        y_start_chunk: pyidx = y_start // self.y_repetitions
+        y_stop_chunk : pyidx = y_stop  // self.y_repetitions
+        x_start_chunk: pyidx = x_start // self.x_repetitions
+        x_stop_chunk : pyidx = x_stop  // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_space = self.data[t_chunk,
-                                  y_start_chunk:(y_stop_chunk + 1),
-                                  x_start_chunk:(x_stop_chunk + 1)]
+        low_res_space: ndarray = np.asarray(self.data[t_chunk,
+                                                      y_start_chunk:(y_stop_chunk + 1),
+                                                      x_start_chunk:(x_stop_chunk + 1)])
         # Expand the low-res slice into a high-res slice
-        high_res_space = reduce(maybe_repeat_array,
-                                ((0, self.y_repetitions),
-                                 (1, self.x_repetitions)),
-                                low_res_space)
+        high_res_space: ndarray = reduce(maybe_repeat_array,
+                                         ((0, self.y_repetitions),
+                                          (1, self.x_repetitions)),
+                                         low_res_space)
         # Translate high-res global coordinates to high-res slice coordinates
-        y_chunk_origin = y_start_chunk * self.y_repetitions
-        x_chunk_origin = x_start_chunk * self.x_repetitions
-        y_start_idx    = y_start - y_chunk_origin
-        y_stop_idx     = y_stop  - y_chunk_origin
-        x_start_idx    = x_start - x_chunk_origin
-        x_stop_idx     = x_stop  - x_chunk_origin
+        y_chunk_origin: pyidx = y_start_chunk * self.y_repetitions
+        x_chunk_origin: pyidx = x_start_chunk * self.x_repetitions
+        y_start_idx   : pyidx = y_start - y_chunk_origin
+        y_stop_idx    : pyidx = y_stop  - y_chunk_origin
+        x_start_idx   : pyidx = x_start - x_chunk_origin
+        x_stop_idx    : pyidx = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return np.asarray(high_res_space[y_start_idx:(y_stop_idx + 1),
-                                         x_start_idx:(x_stop_idx + 1)])
+        return high_res_space[y_start_idx:(y_stop_idx + 1),
+                              x_start_idx:(x_stop_idx + 1)]
 
 
-    def getSubcube(self, t_range, y_range, x_range):
+    @cy.ccall
+    def getSubcube(self,
+                   t_range: tuple[pyidx, pyidx]|None,
+                   y_range: tuple[pyidx, pyidx]|None,
+                   x_range: tuple[pyidx, pyidx]|None) -> ndarray:
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
         these cube coordinates to base coordinates, looking up the array slice within the
@@ -522,43 +539,49 @@ class SpaceTimeCube(ISpaceTimeCube):
               provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
-        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
-        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
-        t_stop = t_stop_exclusive - 1
-        y_stop = y_stop_exclusive - 1
-        x_stop = x_stop_exclusive - 1
+        t_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(t_range, self.shape[0])
+        y_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(y_range, self.shape[1])
+        x_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(x_range, self.shape[2])
+        t_start         : pyidx               = t_range_updated[0]
+        t_stop_exclusive: pyidx               = t_range_updated[1]
+        y_start         : pyidx               = y_range_updated[0]
+        y_stop_exclusive: pyidx               = y_range_updated[1]
+        x_start         : pyidx               = x_range_updated[0]
+        x_stop_exclusive: pyidx               = x_range_updated[1]
+        t_stop          : pyidx               = t_stop_exclusive - 1
+        y_stop          : pyidx               = y_stop_exclusive - 1
+        x_stop          : pyidx               = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_start_chunk = t_start // self.t_repetitions
-        t_stop_chunk  = t_stop  // self.t_repetitions
-        y_start_chunk = y_start // self.y_repetitions
-        y_stop_chunk  = y_stop  // self.y_repetitions
-        x_start_chunk = x_start // self.x_repetitions
-        x_stop_chunk  = x_stop  // self.x_repetitions
+        t_start_chunk: pyidx = t_start // self.t_repetitions
+        t_stop_chunk : pyidx = t_stop  // self.t_repetitions
+        y_start_chunk: pyidx = y_start // self.y_repetitions
+        y_stop_chunk : pyidx = y_stop  // self.y_repetitions
+        x_start_chunk: pyidx = x_start // self.x_repetitions
+        x_stop_chunk : pyidx = x_stop  // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_cube = self.data[t_start_chunk:(t_stop_chunk + 1),
-                                 y_start_chunk:(y_stop_chunk + 1),
-                                 x_start_chunk:(x_stop_chunk + 1)]
+        low_res_cube: ndarray = np.asarray(self.data[t_start_chunk:(t_stop_chunk + 1),
+                                                     y_start_chunk:(y_stop_chunk + 1),
+                                                     x_start_chunk:(x_stop_chunk + 1)])
         # Expand the low-res slice into a high-res slice
-        high_res_cube = reduce(maybe_repeat_array,
-                               ((0, self.t_repetitions),
-                                (1, self.y_repetitions),
-                                (2, self.x_repetitions)),
-                               low_res_cube)
+        high_res_cube: ndarray = reduce(maybe_repeat_array,
+                                        ((0, self.t_repetitions),
+                                         (1, self.y_repetitions),
+                                         (2, self.x_repetitions)),
+                                        low_res_cube)
         # Translate high-res global coordinates to high-res slice coordinates
-        t_chunk_origin = t_start_chunk * self.t_repetitions
-        y_chunk_origin = y_start_chunk * self.y_repetitions
-        x_chunk_origin = x_start_chunk * self.x_repetitions
-        t_start_idx    = t_start - t_chunk_origin
-        t_stop_idx     = t_stop  - t_chunk_origin
-        y_start_idx    = y_start - y_chunk_origin
-        y_stop_idx     = y_stop  - y_chunk_origin
-        x_start_idx    = x_start - x_chunk_origin
-        x_stop_idx     = x_stop  - x_chunk_origin
+        t_chunk_origin: pyidx = t_start_chunk * self.t_repetitions
+        y_chunk_origin: pyidx = y_start_chunk * self.y_repetitions
+        x_chunk_origin: pyidx = x_start_chunk * self.x_repetitions
+        t_start_idx   : pyidx = t_start - t_chunk_origin
+        t_stop_idx    : pyidx = t_stop  - t_chunk_origin
+        y_start_idx   : pyidx = y_start - y_chunk_origin
+        y_stop_idx    : pyidx = y_stop  - y_chunk_origin
+        x_start_idx   : pyidx = x_start - x_chunk_origin
+        x_stop_idx    : pyidx = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return np.asarray(high_res_cube[t_start_idx:(t_stop_idx + 1),
-                                        y_start_idx:(y_stop_idx + 1),
-                                        x_start_idx:(x_stop_idx + 1)])
+        return high_res_cube[t_start_idx:(t_stop_idx + 1),
+                             y_start_idx:(y_stop_idx + 1),
+                             x_start_idx:(x_stop_idx + 1)]
 
 
     def __getFullyRealizedCube(self):
@@ -577,7 +600,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         elif base_dimensions == 1:
             # 1D: Time-Series Input
             # Repeat (t0,1,1) -> (t,1,1)
-            repeated_array = maybe_repeat_array(self.data, (0, self.t_repetitions))
+            repeated_array = maybe_repeat_array(np.asarray(self.data), (0, self.t_repetitions))
             # Broadcast (t,1,1) -> (t,y,x)
             return np.broadcast_to(repeated_array, self.shape)
 
@@ -587,18 +610,18 @@ class SpaceTimeCube(ISpaceTimeCube):
             repeated_array = reduce(maybe_repeat_array,
                                     ((1, self.y_repetitions),
                                      (2, self.x_repetitions)),
-                                    self.data)
+                                    np.asarray(self.data))
             # Broadcast (1,y,x) -> (t,y,x)
             return np.broadcast_to(repeated_array, self.shape)
 
         else:
             # 3D: Spatio-Temporal Input
             # Repeat (t0,y0,x0) -> (t,y,x)
-            return np.asarray(reduce(maybe_repeat_array,
-                                     ((0, self.t_repetitions),
-                                      (1, self.y_repetitions),
-                                      (2, self.x_repetitions)),
-                                     self.data))
+            return reduce(maybe_repeat_array,
+                          ((0, self.t_repetitions),
+                           (1, self.y_repetitions),
+                           (2, self.x_repetitions)),
+                          np.asarray(self.data))
 
 
     def getFullyRealizedCube(self, cache=False):
@@ -677,7 +700,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
     shape        : tuple[cy.int, cy.int, cy.int]
     subcube_shape: tuple[cy.int, cy.int, cy.int]
     cache_shape  : tuple[cy.int, cy.int, cy.int]
-    cache        : np.ndarray
+    cache        : ndarray
     load_subcube : object
 
 
@@ -3550,9 +3573,8 @@ where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
 
 #+NAME: surface-fire-eccentricity
 #+begin_src python
-# TODO: Change model from str to enumerated type and set @cy.exceptval(-1) to @cy.exceptval(check=False)
+# TODO: Change model from str to enumerated type
 @cy.cfunc
-@cy.exceptval(-1)
 def surface_length_to_width_ratio(effective_wind_speed: cy.float, model: str = "behave") -> cy.float:
     """
     Calculate the length_to_width_ratio of the surface fire front given:
@@ -6426,7 +6448,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       time_of_arrival            : cy.float,
                       random_generator           : BufferedRandGen,
                       num_firebrands             : cy.long,
-                      spot_config                : SpotConfig) -> object: # tuple[float, set]|None
+                      spot_config                : SpotConfig) -> tuple: # tuple[float, set]|None
     """
     Given these inputs:
     - fuel_model_cube             :: (Lazy)SpaceTimeCube (integer index in fm.fuel_model_table)
@@ -6887,6 +6909,7 @@ import cython
 import cython as cy
 import numpy as np
 if cython.compiled:
+    from cython.cimports.numpy import ndarray
     from cython.cimports.pyretechnics.cy_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
@@ -6896,6 +6919,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.surface_fire as sf
     import cython.cimports.pyretechnics.crown_fire as cf
 else:
+    from numpy import ndarray
     from pyretechnics.py_types import \
         pyidx, vec_xy, vec_xyz, coord_tyx, fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior
     from pyretechnics.space_time_cube import ISpaceTimeCube, to_positive_index_range
@@ -7216,11 +7240,11 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
     if not(0 <= min_x < max_x <= rows):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
-    fire_type_matrix          : np.ndarray      = np.zeros(grid_shape, dtype="uint8")
-    spread_rate_matrix        : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    fireline_intensity_matrix : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    flame_length_matrix       : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
     spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
     spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix
@@ -7562,11 +7586,11 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
     if not(0 <= min_x < max_x <= rows):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
-    fire_type_matrix          : np.ndarray      = np.zeros(grid_shape, dtype="uint8")
-    spread_rate_matrix        : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    fireline_intensity_matrix : np.ndarray      = np.zeros(grid_shape, dtype="float32")
-    flame_length_matrix       : np.ndarray      = np.zeros(grid_shape, dtype="float32")
+    fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
     spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
     spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix
@@ -8233,6 +8257,7 @@ import cython as cy
 import numpy as np
 from sortedcontainers import SortedDict
 if cython.compiled:
+    from cython.cimports.numpy import ndarray
     from cython.cimports.libc.stdlib import malloc, realloc, free
     from cython.cimports.libc.math import pi, floor, sqrt, pow, atan
     from cython.cimports.pyretechnics.cy_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
@@ -8249,6 +8274,7 @@ if cython.compiled:
     import cython.cimports.pyretechnics.narrow_band_tracking as nbt
 else:
     # TODO: Create equivalent Python functions for malloc, realloc, free
+    from numpy import ndarray
     from math import pi, floor, sqrt, pow, atan
     from pyretechnics.py_types import pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
@@ -9118,13 +9144,13 @@ class SpreadState:
     @cy.ccall
     def get_burned_matrices(self, layers: list[str]|None = None) -> dict:
         # Find bounding box of burned area
-        burned_mask: tuple[np.ndarray, np.ndarray] = np.nonzero(self.fire_type)
-        min_y      : pyidx                         = burned_mask[0].min()
-        max_y      : pyidx                         = burned_mask[0].max()
-        min_x      : pyidx                         = burned_mask[1].min()
-        max_x      : pyidx                         = burned_mask[1].max()
+        burned_mask: tuple[ndarray, ndarray] = np.nonzero(self.fire_type)
+        min_y      : pyidx                   = burned_mask[0].min()
+        max_y      : pyidx                   = burned_mask[0].max()
+        min_x      : pyidx                   = burned_mask[1].min()
+        max_x      : pyidx                   = burned_mask[1].max()
         # Prepare the 2D arrays in a dict
-        available_matrices: dict[str, np.ndarray] = {
+        available_matrices: dict[str, ndarray] = {
             "phi"               : self.phi,
             "fire_type"         : self.fire_type,
             "spread_rate"       : self.spread_rate,
@@ -9136,7 +9162,7 @@ class SpreadState:
         # Set selected_layers to layers if specified and otherwise to all available layers
         selected_layers: list[str] = layers if layers is not None else list(available_matrices.keys())
         # Clip the 2D arrays from selected_layers to the bounding box
-        clipped_matrices: dict[str, np.ndarray] = {
+        clipped_matrices: dict[str, ndarray] = {
             k: np.copy(available_matrices[k][min_y:max_y+1, min_x:max_x+1]) for k in selected_layers
         }
         # Return the clipped_matrices along with their lower_left_corner for reference
@@ -9150,7 +9176,7 @@ class SpreadState:
     @cy.ccall
     def get_full_matrices(self, layers: list[str]|None = None) -> dict:
         # Prepare the 2D arrays in a dict
-        available_matrices: dict[str, np.ndarray] = {
+        available_matrices: dict[str, ndarray] = {
             "phi"               : np.asarray(self.phi),
             "fire_type"         : np.asarray(self.fire_type),
             "spread_rate"       : np.asarray(self.spread_rate),
@@ -14612,7 +14638,7 @@ from pyretechnics.cy_types cimport pyidx
 cdef bint is_pos_int(object x) noexcept
 cdef int divide_evenly(int dividend, int divisor)
 cpdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
-# def maybe_repeat_array(array, axis_repetitions)
+cdef np.ndarray maybe_repeat_array(np.ndarray array, (pyidx, int) axis_repetitions)
 
 cdef class ISpaceTimeCube:
     cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
@@ -14625,13 +14651,14 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int t_repetitions
     cdef public int y_repetitions
     cdef public int x_repetitions
-    # NOTE we use const (read-only MemoryView) so that Cython will accept to use a read-only array, which is required for shared-memory parallelism.
+    # NOTE: We use const (read-only MemoryView) so that Cython will accept read-only arrays, which is required for shared-memory parallelism.
     cdef public const float[:,:,::1] data
     cpdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
-    # def getTimeSeries(self, t_range, y, x)
-    # def getSpatialPlane(self, t, y_range, x_range)
-    # def getSubcube(self, t_range, y_range, x_range)
+    cpdef np.ndarray getTimeSeries(SpaceTimeCube self, object t_range, pyidx y, pyidx x)
+    cpdef np.ndarray getSpatialPlane(SpaceTimeCube self, pyidx t, object y_range, object x_range)
+    cpdef np.ndarray getSubcube(SpaceTimeCube self, object t_range, object y_range, object x_range)
     # def getFullyRealizedCube(self, cache=False)
+    # def releaseFullyRealizedCube(self)
 
 cdef class LazySpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
@@ -14997,7 +15024,7 @@ cdef coord_yx cast_firebrand(
     JumpDistribution jd,
     ) noexcept
 
-cdef object spread_firebrands(
+cdef tuple spread_firebrands(
     ISpaceTimeCube fuel_model_cube,
     ISpaceTimeCube temperature_cube,
     ISpaceTimeCube fuel_moisture_dead_1hr_cube,
@@ -15093,7 +15120,7 @@ cdef class NarrowBandTracker:
 
 cdef NarrowBandTracker new_NarrowBandTracker(pyidx y_high, pyidx x_high)
 cdef void inc_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept
-cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length) noexcept
+cdef void dec_y_segment(NarrowBandTracker tracked_cells, pyidx y, pyidx x_start, int segment_length)
 cdef (pyidx, pyidx) resolve_truncated_x_segment(NarrowBandTracker tracked_cells, pyidx x, pyidx buffer_width) noexcept
 cdef void inc_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
 cdef void dec_square_around(NarrowBandTracker tracked_cells, pyidx y, pyidx x, pyidx buffer_width) noexcept
@@ -15411,7 +15438,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     FireBehaviorSettings fb_opts,
 #     float max_timestep,
 #     )
-# cdef void check_space_time_cubes(dict space_time_cubes, object spot_config=?)
+# cdef void check_space_time_cubes(dict space_time_cubes, dict spot_config=?)
 # cdef void check_dimensions_and_resolutions(
 #     dict space_time_cubes,
 #     SpreadState spread_state,
