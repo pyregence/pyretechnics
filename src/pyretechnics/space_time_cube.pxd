@@ -21,9 +21,9 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     # NOTE: We use const (read-only MemoryView) so that Cython will accept read-only arrays, which is required for shared-memory parallelism.
     cdef public const float[:,:,::1] data
     cpdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
-    # def getTimeSeries(self, t_range, y, x)
-    # def getSpatialPlane(self, t, y_range, x_range)
-    # def getSubcube(self, t_range, y_range, x_range)
+    cpdef np.ndarray getTimeSeries(SpaceTimeCube self, object t_range, pyidx y, pyidx x)
+    cpdef np.ndarray getSpatialPlane(SpaceTimeCube self, pyidx t, object y_range, object x_range)
+    cpdef np.ndarray getSubcube(SpaceTimeCube self, object t_range, object y_range, object x_range)
     # def getFullyRealizedCube(self, cache=False)
     # def releaseFullyRealizedCube(self)
 

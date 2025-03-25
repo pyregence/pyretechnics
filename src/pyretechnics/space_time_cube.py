@@ -185,7 +185,8 @@ class SpaceTimeCube(ISpaceTimeCube):
                          x // self.x_repetitions]
 
 
-    def getTimeSeries(self, t_range, y, x):
+    @cy.ccall
+    def getTimeSeries(self, t_range: tuple[pyidx, pyidx]|None, y: pyidx, x: pyidx) -> ndarray:
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
         coordinates to base coordinates, looking up the array slice within the base data,
@@ -196,28 +197,34 @@ class SpaceTimeCube(ISpaceTimeCube):
               provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument range
-        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
-        t_stop = t_stop_exclusive - 1
+        t_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(t_range, self.shape[0])
+        t_start         : pyidx               = t_range_updated[0]
+        t_stop_exclusive: pyidx               = t_range_updated[1]
+        t_stop          : pyidx               = t_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_start_chunk = t_start // self.t_repetitions
-        t_stop_chunk  = t_stop  // self.t_repetitions
-        y_chunk       = y       // self.y_repetitions
-        x_chunk       = x       // self.x_repetitions
+        t_start_chunk: pyidx = t_start // self.t_repetitions
+        t_stop_chunk : pyidx = t_stop  // self.t_repetitions
+        y_chunk      : pyidx = y       // self.y_repetitions
+        x_chunk      : pyidx = x       // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_time = self.data[t_start_chunk:(t_stop_chunk + 1),
-                                 y_chunk,
-                                 x_chunk]
+        low_res_time: ndarray = np.asarray(self.data[t_start_chunk:(t_stop_chunk + 1),
+                                                     y_chunk,
+                                                     x_chunk])
         # Expand the low-res slice into a high-res slice
-        high_res_time = maybe_repeat_array(low_res_time, (0, self.t_repetitions))
+        high_res_time: ndarray = maybe_repeat_array(low_res_time, (0, self.t_repetitions))
         # Translate high-res global coordinates to high-res slice coordinates
-        t_chunk_origin = t_start_chunk * self.t_repetitions
-        t_start_idx    = t_start - t_chunk_origin
-        t_stop_idx     = t_stop  - t_chunk_origin
+        t_chunk_origin: pyidx = t_start_chunk * self.t_repetitions
+        t_start_idx   : pyidx = t_start - t_chunk_origin
+        t_stop_idx    : pyidx = t_stop  - t_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return np.asarray(high_res_time[t_start_idx:(t_stop_idx + 1)])
+        return high_res_time[t_start_idx:(t_stop_idx + 1)]
 
 
-    def getSpatialPlane(self, t, y_range, x_range):
+    @cy.ccall
+    def getSpatialPlane(self,
+                        t      : pyidx,
+                        y_range: tuple[pyidx, pyidx]|None,
+                        x_range: tuple[pyidx, pyidx]|None) -> ndarray:
         """
         Return the 2D array given by the slice (t,y_range,x_range) by translating these
         cube coordinates to base coordinates, looking up the array slice within the base
@@ -228,38 +235,46 @@ class SpaceTimeCube(ISpaceTimeCube):
               provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
-        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
-        y_stop = y_stop_exclusive - 1
-        x_stop = x_stop_exclusive - 1
+        y_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(y_range, self.shape[1])
+        x_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(x_range, self.shape[2])
+        y_start         : pyidx               = y_range_updated[0]
+        y_stop_exclusive: pyidx               = y_range_updated[1]
+        x_start         : pyidx               = x_range_updated[0]
+        x_stop_exclusive: pyidx               = x_range_updated[1]
+        y_stop          : pyidx               = y_stop_exclusive - 1
+        x_stop          : pyidx               = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_chunk       = t       // self.t_repetitions
-        y_start_chunk = y_start // self.y_repetitions
-        y_stop_chunk  = y_stop  // self.y_repetitions
-        x_start_chunk = x_start // self.x_repetitions
-        x_stop_chunk  = x_stop  // self.x_repetitions
+        t_chunk      : pyidx = t       // self.t_repetitions
+        y_start_chunk: pyidx = y_start // self.y_repetitions
+        y_stop_chunk : pyidx = y_stop  // self.y_repetitions
+        x_start_chunk: pyidx = x_start // self.x_repetitions
+        x_stop_chunk : pyidx = x_stop  // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_space = self.data[t_chunk,
-                                  y_start_chunk:(y_stop_chunk + 1),
-                                  x_start_chunk:(x_stop_chunk + 1)]
+        low_res_space: ndarray = np.asarray(self.data[t_chunk,
+                                                      y_start_chunk:(y_stop_chunk + 1),
+                                                      x_start_chunk:(x_stop_chunk + 1)])
         # Expand the low-res slice into a high-res slice
-        high_res_space = reduce(maybe_repeat_array,
-                                ((0, self.y_repetitions),
-                                 (1, self.x_repetitions)),
-                                low_res_space)
+        high_res_space: ndarray = reduce(maybe_repeat_array,
+                                         ((0, self.y_repetitions),
+                                          (1, self.x_repetitions)),
+                                         low_res_space)
         # Translate high-res global coordinates to high-res slice coordinates
-        y_chunk_origin = y_start_chunk * self.y_repetitions
-        x_chunk_origin = x_start_chunk * self.x_repetitions
-        y_start_idx    = y_start - y_chunk_origin
-        y_stop_idx     = y_stop  - y_chunk_origin
-        x_start_idx    = x_start - x_chunk_origin
-        x_stop_idx     = x_stop  - x_chunk_origin
+        y_chunk_origin: pyidx = y_start_chunk * self.y_repetitions
+        x_chunk_origin: pyidx = x_start_chunk * self.x_repetitions
+        y_start_idx   : pyidx = y_start - y_chunk_origin
+        y_stop_idx    : pyidx = y_stop  - y_chunk_origin
+        x_start_idx   : pyidx = x_start - x_chunk_origin
+        x_stop_idx    : pyidx = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return np.asarray(high_res_space[y_start_idx:(y_stop_idx + 1),
-                                         x_start_idx:(x_stop_idx + 1)])
+        return high_res_space[y_start_idx:(y_stop_idx + 1),
+                              x_start_idx:(x_stop_idx + 1)]
 
 
-    def getSubcube(self, t_range, y_range, x_range):
+    @cy.ccall
+    def getSubcube(self,
+                   t_range: tuple[pyidx, pyidx]|None,
+                   y_range: tuple[pyidx, pyidx]|None,
+                   x_range: tuple[pyidx, pyidx]|None) -> ndarray:
         """
         Return the 3D array given by the slice (t_range,y_range,x_range) by translating
         these cube coordinates to base coordinates, looking up the array slice within the
@@ -270,43 +285,49 @@ class SpaceTimeCube(ISpaceTimeCube):
               provide (inclusion, exclusion) semantics like Python array slice notation.
         """
         # Destructure the argument ranges
-        (t_start, t_stop_exclusive) = to_positive_index_range(t_range, self.shape[0])
-        (y_start, y_stop_exclusive) = to_positive_index_range(y_range, self.shape[1])
-        (x_start, x_stop_exclusive) = to_positive_index_range(x_range, self.shape[2])
-        t_stop = t_stop_exclusive - 1
-        y_stop = y_stop_exclusive - 1
-        x_stop = x_stop_exclusive - 1
+        t_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(t_range, self.shape[0])
+        y_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(y_range, self.shape[1])
+        x_range_updated : tuple[pyidx, pyidx] = to_positive_index_range(x_range, self.shape[2])
+        t_start         : pyidx               = t_range_updated[0]
+        t_stop_exclusive: pyidx               = t_range_updated[1]
+        y_start         : pyidx               = y_range_updated[0]
+        y_stop_exclusive: pyidx               = y_range_updated[1]
+        x_start         : pyidx               = x_range_updated[0]
+        x_stop_exclusive: pyidx               = x_range_updated[1]
+        t_stop          : pyidx               = t_stop_exclusive - 1
+        y_stop          : pyidx               = y_stop_exclusive - 1
+        x_stop          : pyidx               = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_start_chunk = t_start // self.t_repetitions
-        t_stop_chunk  = t_stop  // self.t_repetitions
-        y_start_chunk = y_start // self.y_repetitions
-        y_stop_chunk  = y_stop  // self.y_repetitions
-        x_start_chunk = x_start // self.x_repetitions
-        x_stop_chunk  = x_stop  // self.x_repetitions
+        t_start_chunk: pyidx = t_start // self.t_repetitions
+        t_stop_chunk : pyidx = t_stop  // self.t_repetitions
+        y_start_chunk: pyidx = y_start // self.y_repetitions
+        y_stop_chunk : pyidx = y_stop  // self.y_repetitions
+        x_start_chunk: pyidx = x_start // self.x_repetitions
+        x_stop_chunk : pyidx = x_stop  // self.x_repetitions
         # Select the array slice that completely contains all low-res coordinates
-        low_res_cube = self.data[t_start_chunk:(t_stop_chunk + 1),
-                                 y_start_chunk:(y_stop_chunk + 1),
-                                 x_start_chunk:(x_stop_chunk + 1)]
+        low_res_cube: ndarray = np.asarray(self.data[t_start_chunk:(t_stop_chunk + 1),
+                                                     y_start_chunk:(y_stop_chunk + 1),
+                                                     x_start_chunk:(x_stop_chunk + 1)])
         # Expand the low-res slice into a high-res slice
-        high_res_cube = reduce(maybe_repeat_array,
-                               ((0, self.t_repetitions),
-                                (1, self.y_repetitions),
-                                (2, self.x_repetitions)),
-                               low_res_cube)
+        high_res_cube: ndarray = reduce(maybe_repeat_array,
+                                        ((0, self.t_repetitions),
+                                         (1, self.y_repetitions),
+                                         (2, self.x_repetitions)),
+                                        low_res_cube)
         # Translate high-res global coordinates to high-res slice coordinates
-        t_chunk_origin = t_start_chunk * self.t_repetitions
-        y_chunk_origin = y_start_chunk * self.y_repetitions
-        x_chunk_origin = x_start_chunk * self.x_repetitions
-        t_start_idx    = t_start - t_chunk_origin
-        t_stop_idx     = t_stop  - t_chunk_origin
-        y_start_idx    = y_start - y_chunk_origin
-        y_stop_idx     = y_stop  - y_chunk_origin
-        x_start_idx    = x_start - x_chunk_origin
-        x_stop_idx     = x_stop  - x_chunk_origin
+        t_chunk_origin: pyidx = t_start_chunk * self.t_repetitions
+        y_chunk_origin: pyidx = y_start_chunk * self.y_repetitions
+        x_chunk_origin: pyidx = x_start_chunk * self.x_repetitions
+        t_start_idx   : pyidx = t_start - t_chunk_origin
+        t_stop_idx    : pyidx = t_stop  - t_chunk_origin
+        y_start_idx   : pyidx = y_start - y_chunk_origin
+        y_stop_idx    : pyidx = y_stop  - y_chunk_origin
+        x_start_idx   : pyidx = x_start - x_chunk_origin
+        x_stop_idx    : pyidx = x_stop  - x_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
-        return np.asarray(high_res_cube[t_start_idx:(t_stop_idx + 1),
-                                        y_start_idx:(y_stop_idx + 1),
-                                        x_start_idx:(x_stop_idx + 1)])
+        return high_res_cube[t_start_idx:(t_stop_idx + 1),
+                             y_start_idx:(y_stop_idx + 1),
+                             x_start_idx:(x_stop_idx + 1)]
 
 
     def __getFullyRealizedCube(self):
@@ -325,7 +346,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         elif base_dimensions == 1:
             # 1D: Time-Series Input
             # Repeat (t0,1,1) -> (t,1,1)
-            repeated_array = maybe_repeat_array(self.data, (0, self.t_repetitions))
+            repeated_array = maybe_repeat_array(np.asarray(self.data), (0, self.t_repetitions))
             # Broadcast (t,1,1) -> (t,y,x)
             return np.broadcast_to(repeated_array, self.shape)
 
@@ -335,18 +356,18 @@ class SpaceTimeCube(ISpaceTimeCube):
             repeated_array = reduce(maybe_repeat_array,
                                     ((1, self.y_repetitions),
                                      (2, self.x_repetitions)),
-                                    self.data)
+                                    np.asarray(self.data))
             # Broadcast (1,y,x) -> (t,y,x)
             return np.broadcast_to(repeated_array, self.shape)
 
         else:
             # 3D: Spatio-Temporal Input
             # Repeat (t0,y0,x0) -> (t,y,x)
-            return np.asarray(reduce(maybe_repeat_array,
-                                     ((0, self.t_repetitions),
-                                      (1, self.y_repetitions),
-                                      (2, self.x_repetitions)),
-                                     self.data))
+            return reduce(maybe_repeat_array,
+                          ((0, self.t_repetitions),
+                           (1, self.y_repetitions),
+                           (2, self.x_repetitions)),
+                          np.asarray(self.data))
 
 
     def getFullyRealizedCube(self, cache=False):
