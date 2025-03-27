@@ -1,7 +1,8 @@
-# Version 2025.3.25
+# Version 2025.3.27
 
 ## Changes for Developers
-- Updated the `build-dist`, `upload-testpypi`, and `upload-pypi` commands in `make.sh` to only build/upload source builds.
+- Updated the `license` field definition in `pyproject.toml` to conform to PEP 639.
+- Updated the `upload-testpypi` and `upload-pypi` commands in `make.sh` to only upload source builds.
 - Updated object types in *.py and *.pxd files to more specific Python types where possible.
 - Fixed optional typing mistake in burn_cells.pxd.
 - Corrected Numpy ndarray types in all *.py and *.pxd files.
