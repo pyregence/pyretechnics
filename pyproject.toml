@@ -10,7 +10,7 @@ authors = [
 description = "A Python library for simulating fire behavior in a variety of ways."
 keywords = ["fire", "wildfire", "fire behavior", "fire spread"]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "EPL-2.0"
 requires-python = ">=3.10"
 dependencies = [
         "numpy",
@@ -21,7 +21,6 @@ dependencies = [
 classifiers = [
         "Programming Language :: Python :: 3",
         "Natural Language :: English",
-        "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
         "Operating System :: OS Independent",
         "Development Status :: 4 - Beta",
         "Topic :: Scientific/Engineering",
