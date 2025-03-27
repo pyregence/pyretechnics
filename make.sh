@@ -89,7 +89,7 @@ case $CMD in
         ;;
 
     "build-dist")
-        rm -rf dist && guix time-machine -C channels.scm -- shell -D -f guix.scm -- python setup.py sdist $ARGS
+        rm -rf dist && guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m build $ARGS
         ;;
 
     "upload-testpypi")
