@@ -1,25 +1,26 @@
 import os
 import numpy
+from distutils.sysconfig import get_config_var
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 
 profile_cython = (os.getenv("PROFILE_CYTHON") == "1")
 
+uses_gcc_compiler = (get_config_var("CC") == "gcc")
+
 class custom_build_ext(build_ext):
     def build_extensions(self):
-        # Override the compiler executables. Importantly, this
-        # removes the "default" compiler flags that would
-        # otherwise get passed on to to the compiler, i.e.,
-        # distutils.sysconfig.get_var("CFLAGS").
-        self.compiler.set_executable("compiler_so", "gcc")
+        if uses_gcc_compiler:
+            # This removes the "default" compiler flags that would
+            # otherwise get passed on to to the compiler, i.e.,
+            # distutils.sysconfig.get_var("CFLAGS").
+            self.compiler.set_executable("compiler_so", "gcc")
         build_ext.build_extensions(self)
 
-extensions = [
-    Extension("*",
-              ["src/pyretechnics/*.py"],
-              include_dirs=[numpy.get_include()],
-              extra_compile_args=[
+    def build_extension(self, extension):
+        if uses_gcc_compiler:
+            extension.extra_compile_args = [
                   # Warnings
                   "-Wall",
                   "-Wno-maybe-uninitialized",
@@ -36,7 +37,11 @@ extensions = [
                   # Code Generation
                   "-fwrapv",
                   "-fPIC",
-              ])
+            ]
+        build_ext.build_extension(self, extension)
+
+extensions = [
+    Extension("*", ["src/pyretechnics/*.py"], include_dirs=[numpy.get_include()])
 ]
 
 setup(name="pyretechnics",
