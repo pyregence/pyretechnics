@@ -1,6 +1,6 @@
 import os
 import numpy
-from distutils.sysconfig import get_config_var
+from sysconfig import get_config_var
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
@@ -14,7 +14,7 @@ class custom_build_ext(build_ext):
         if uses_gcc_compiler:
             # This removes the "default" compiler flags that would
             # otherwise get passed on to to the compiler, i.e.,
-            # distutils.sysconfig.get_var("CFLAGS").
+            # sysconfig.get_config_var("CFLAGS").
             self.compiler.set_executable("compiler_so", "gcc")
         build_ext.build_extensions(self)
 
