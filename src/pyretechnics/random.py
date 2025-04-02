@@ -28,8 +28,8 @@ class BufferedRandGen:
         self.numpy_rand = numpy_rand
         __reset_uniform_buffer(self)
         __reset_normal_buffer(self)
-        self.poisson16_buf = self.numpy_rand.poisson(lam=16.0, size=1024)
-        self.poisson1_buf  = self.numpy_rand.poisson(lam=1.0, size=1024)
+        self.poisson16_buf = self.numpy_rand.poisson(lam=16.0, size=1024).astype(np.int64)
+        self.poisson1_buf  = self.numpy_rand.poisson(lam=1.0, size=1024).astype(np.int64)
         __reset_exp_buffer(self)
 
 
@@ -121,7 +121,7 @@ def __reset_normal_buffer(self: BufferedRandGen) -> cy.void:
 @cy.exceptval(check=False)
 def __next_poisson1(self: BufferedRandGen) -> cy.long:
     if not(self.poisson1_pos < 1024):
-        self.poisson1_buf = self.numpy_rand.poisson(lam=1.0, size=1024)
+        self.poisson1_buf = self.numpy_rand.poisson(lam=1.0, size=1024).astype(np.int64)
         self.poisson1_pos = 0
     ret: cy.long       = self.poisson1_buf[self.poisson1_pos]
     self.poisson1_pos += 1
@@ -132,7 +132,7 @@ def __next_poisson1(self: BufferedRandGen) -> cy.long:
 @cy.exceptval(check=False)
 def __next_poisson16(self: BufferedRandGen) -> cy.long:
     if not(self.poisson16_pos < 1024):
-        self.poisson16_buf = self.numpy_rand.poisson(lam=16.0, size=1024)
+        self.poisson16_buf = self.numpy_rand.poisson(lam=16.0, size=1024).astype(np.int64)
         self.poisson16_pos = 0
     ret: cy.long        = self.poisson16_buf[self.poisson16_pos]
     self.poisson16_pos += 1
