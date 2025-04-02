@@ -1,3 +1,12 @@
+# Version 2025.4.2
+
+## Changes for Developers
+- Restrict custom compiler flags to only be used when distutils.sysconfig.get_config_var("CC") == "gcc".
+- Removed project.license entry from pyproject.toml to eliminate conflict between pypa-build and setuptools.
+
+## Changes for Users
+- This release should be C compiler agnostic when building wheels.
+
 # Version 2025.3.27
 
 ## Changes for Developers

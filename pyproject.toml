@@ -1,6 +1,6 @@
 [project]
 name = "pyretechnics"
-version = "2025.3.27"
+version = "2025.4.2"
 authors = [
         {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
         {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
