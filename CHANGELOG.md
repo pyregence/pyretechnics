@@ -1,3 +1,15 @@
+# Version 2025.4.3
+
+## Changes for Developers
+- Removed deprecated `distutils` dependency in `setup.py`.
+- Be explicit about all Numpy buffer types created in `random.py`.
+- Only apply custom compiler flags when performing builds under `make.sh`.
+
+## Changes for Users
+- This release should work on a Windows system after being compiled
+  with the Microsoft C++ compiler (cl.exe) and should respect the
+  `CFLAGS` settings on computers that have set `CC="gcc"`.
+
 # Version 2025.4.2
 
 ## Changes for Developers
