@@ -1,17 +1,15 @@
 import os
 import numpy
-from sysconfig import get_config_var
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 
-profile_cython = (os.getenv("PROFILE_CYTHON") == "1")
-
-uses_gcc_compiler = (get_config_var("CC") == "gcc")
+set_gcc_args   = (os.getenv("PYR_SET_GCC_ARGS")   == "1")
+profile_cython = (os.getenv("PYR_PROFILE_CYTHON") == "1")
 
 class custom_build_ext(build_ext):
     def build_extensions(self):
-        if uses_gcc_compiler:
+        if set_gcc_args:
             # This removes the "default" compiler flags that would
             # otherwise get passed on to to the compiler, i.e.,
             # sysconfig.get_config_var("CFLAGS").
@@ -19,7 +17,7 @@ class custom_build_ext(build_ext):
         build_ext.build_extensions(self)
 
     def build_extension(self, extension):
-        if uses_gcc_compiler:
+        if set_gcc_args:
             extension.extra_compile_args = [
                   # Warnings
                   "-Wall",

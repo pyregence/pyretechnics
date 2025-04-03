@@ -77,11 +77,11 @@ case $CMD in
         ;;
 
     "build-cython")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python setup.py build_ext --inplace
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PYR_SET_GCC_ARGS=1 python setup.py build_ext --inplace
         ;;
 
     "build-cython-profiled")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PROFILE_CYTHON=1 python setup.py build_ext --inplace
+        guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PYR_SET_GCC_ARGS=1 PYR_PROFILE_CYTHON=1 python setup.py build_ext --inplace
         ;;
 
     "build-guix")
@@ -89,7 +89,7 @@ case $CMD in
         ;;
 
     "build-dist")
-        rm -rf dist && guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m build $ARGS
+        rm -rf dist && guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PYR_SET_GCC_ARGS=1 python -m build $ARGS
         ;;
 
     "upload-testpypi")
