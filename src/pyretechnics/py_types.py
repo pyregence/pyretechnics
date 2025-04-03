@@ -78,7 +78,7 @@ CrownSpreadInfo = cy.struct(
 )
 
 SpotConfig = cy.struct(
-    random_seed                  = cy.long,
+    random_seed                  = cy.longlong,
     firebrands_per_unit_heat     = cy.float,
     downwind_distance_mean       = cy.float,
     fireline_intensity_exponent  = cy.float,

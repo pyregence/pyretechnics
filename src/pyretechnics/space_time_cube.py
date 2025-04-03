@@ -86,7 +86,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     value or array to the caller.
     """
     ndim         : cy.int
-    size         : cy.ulong
+    size         : cy.ulonglong
     shape        : tuple[cy.int, cy.int, cy.int]
     base         : object
     t_repetitions: cy.int
@@ -406,7 +406,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
     value or array to the caller.
     """
     ndim         : cy.int
-    size         : cy.ulong
+    size         : cy.ulonglong
     shape        : tuple[cy.int, cy.int, cy.int]
     subcube_shape: tuple[cy.int, cy.int, cy.int]
     cache_shape  : tuple[cy.int, cy.int, cy.int]

@@ -95,7 +95,7 @@ cdef tuple spread_firebrands(
     float flame_length,
     float time_of_arrival,
     BufferedRandGen random_generator,
-    long num_firebrands,
+    long long num_firebrands,
     SpotConfig spot_config,
     )
 # spot-fire-pxd ends here

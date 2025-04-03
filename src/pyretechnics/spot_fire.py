@@ -489,7 +489,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       flame_length               : cy.float,
                       time_of_arrival            : cy.float,
                       random_generator           : BufferedRandGen,
-                      num_firebrands             : cy.long,
+                      num_firebrands             : cy.longlong,
                       spot_config                : SpotConfig) -> tuple: # tuple[float, set]|None
     """
     Given these inputs:
@@ -560,7 +560,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
 
             # FIXME: A set is slow, so use a list instead. Collisions can happen with other source cells anyway.
             ignited_cells: set = set()
-            i: cy.long
+            i: cy.longlong
             for i in range(num_firebrands):
                 ignited_cell: coord_yx = cast_firebrand(random_generator,
                                                         fuel_model_cube,

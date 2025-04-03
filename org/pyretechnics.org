@@ -340,7 +340,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     value or array to the caller.
     """
     ndim         : cy.int
-    size         : cy.ulong
+    size         : cy.ulonglong
     shape        : tuple[cy.int, cy.int, cy.int]
     base         : object
     t_repetitions: cy.int
@@ -696,7 +696,7 @@ class LazySpaceTimeCube(ISpaceTimeCube):
     value or array to the caller.
     """
     ndim         : cy.int
-    size         : cy.ulong
+    size         : cy.ulonglong
     shape        : tuple[cy.int, cy.int, cy.int]
     subcube_shape: tuple[cy.int, cy.int, cy.int]
     cache_shape  : tuple[cy.int, cy.int, cy.int]
@@ -6447,7 +6447,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
                       flame_length               : cy.float,
                       time_of_arrival            : cy.float,
                       random_generator           : BufferedRandGen,
-                      num_firebrands             : cy.long,
+                      num_firebrands             : cy.longlong,
                       spot_config                : SpotConfig) -> tuple: # tuple[float, set]|None
     """
     Given these inputs:
@@ -6518,7 +6518,7 @@ def spread_firebrands(fuel_model_cube            : ISpaceTimeCube,
 
             # FIXME: A set is slow, so use a list instead. Collisions can happen with other source cells anyway.
             ignited_cells: set = set()
-            i: cy.long
+            i: cy.longlong
             for i in range(num_firebrands):
                 ignited_cell: coord_yx = cast_firebrand(random_generator,
                                                         fuel_model_cube,
@@ -9298,15 +9298,15 @@ def encode_cell_index(y: pyidx, x: pyidx) -> object: # ulong
     Encodes a (y, x) tuple into a single Python integer object.
     This enables a more efficient memory layout than a tuple of Python integers.
     """
-    return (cy.cast(cy.ulong, y) << 32) + cy.cast(cy.ulong, x)
+    return (cy.cast(cy.ulonglong, y) << 32) + cy.cast(cy.ulonglong, x)
 
 
 @cy.cfunc
 @cy.exceptval(check=False)
 def decode_cell_index(encoded_cell_index: object) -> coord_yx:
-    cell_index: cy.ulong = encoded_cell_index
-    y         : pyidx    = cell_index >> 32
-    x         : pyidx    = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
+    cell_index: cy.ulonglong = encoded_cell_index
+    y         : pyidx        = cell_index >> 32
+    x         : pyidx        = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
     return (y, x)
 
 
@@ -9429,18 +9429,18 @@ def spot_from_burned_cell(spread_inputs   : SpreadInputs,
     Schedules the future spot ignitions following from burning the given cell.
     Mutates `spot_ignitions` (and `random_generator`).
     """
-    t_cast                  : pyidx    = int(time_of_arrival // spread_inputs.band_duration)
-    slope                   : cy.float = spread_inputs.slope.get(t_cast, y, x)
-    aspect                  : cy.float = spread_inputs.aspect.get(t_cast, y, x)
-    elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
-    cell_height             : cy.float = spread_inputs.cell_height
-    cell_width              : cy.float = spread_inputs.cell_width
-    cell_horizontal_area    : cy.float = cell_height * cell_width
-    expected_firebrand_count: cy.float = spot.expected_firebrand_production(fire_behavior,
-                                                                            elevation_gradient,
-                                                                            cell_horizontal_area,
-                                                                            spot_config.firebrands_per_unit_heat)
-    num_firebrands          : cy.long  = random_generator.next_poisson(expected_firebrand_count)
+    t_cast                  : pyidx       = int(time_of_arrival // spread_inputs.band_duration)
+    slope                   : cy.float    = spread_inputs.slope.get(t_cast, y, x)
+    aspect                  : cy.float    = spread_inputs.aspect.get(t_cast, y, x)
+    elevation_gradient      : vec_xy      = calc_elevation_gradient(slope, aspect)
+    cell_height             : cy.float    = spread_inputs.cell_height
+    cell_width              : cy.float    = spread_inputs.cell_width
+    cell_horizontal_area    : cy.float    = cell_height * cell_width
+    expected_firebrand_count: cy.float    = spot.expected_firebrand_production(fire_behavior,
+                                                                               elevation_gradient,
+                                                                               cell_horizontal_area,
+                                                                               spot_config.firebrands_per_unit_heat)
+    num_firebrands          : cy.longlong = random_generator.next_poisson(expected_firebrand_count)
     if num_firebrands > 0:
         wind_speed_10m  : cy.float               = spread_inputs.wind_speed_10m.get(t_cast, y, x)
         upwind_direction: cy.float               = spread_inputs.upwind_direction.get(t_cast, y, x)
@@ -13058,7 +13058,7 @@ CrownSpreadInfo = cy.struct(
 )
 
 SpotConfig = cy.struct(
-    random_seed                  = cy.long,
+    random_seed                  = cy.longlong,
     firebrands_per_unit_heat     = cy.float,
     downwind_distance_mean       = cy.float,
     fireline_intensity_exponent  = cy.float,
@@ -14459,7 +14459,7 @@ cdef struct CrownSpreadInfo:
     float critical_spread_rate
 
 cdef struct SpotConfig:
-    long random_seed
+    long long random_seed
     float firebrands_per_unit_heat
     float downwind_distance_mean
     float fireline_intensity_exponent
@@ -14614,13 +14614,13 @@ cdef class BufferedRandGen:
     cdef pyidx uniform_pos
     cdef float[::1] normal_buf
     cdef pyidx normal_pos
-    cdef long[::1] poisson16_buf
+    cdef long long[::1] poisson16_buf
     cdef pyidx poisson16_pos
-    cdef long[::1] poisson1_buf
+    cdef long long[::1] poisson1_buf
     cdef pyidx poisson1_pos
     cdef double[::1] poisson_exp_buf
     cdef pyidx poisson_exp_pos
-    cdef long next_poisson(BufferedRandGen self, double M) noexcept
+    cdef long long next_poisson(BufferedRandGen self, double M) noexcept
     cdef float next_uniform(BufferedRandGen self) noexcept
     cdef float next_normal(BufferedRandGen self) noexcept
 #+end_src
@@ -14645,7 +14645,7 @@ cdef class ISpaceTimeCube:
 
 cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
-    cdef public unsigned long size
+    cdef public unsigned long long size
     cdef public (int, int, int) shape
     cdef public object base
     cdef public int t_repetitions
@@ -14662,7 +14662,7 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
 
 cdef class LazySpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
-    cdef public unsigned long size
+    cdef public unsigned long long size
     cdef public (int, int, int) shape
     cdef public (int, int, int) subcube_shape
     cdef public (int, int, int) cache_shape
@@ -15039,7 +15039,7 @@ cdef tuple spread_firebrands(
     float flame_length,
     float time_of_arrival,
     BufferedRandGen random_generator,
-    long num_firebrands,
+    long long num_firebrands,
     SpotConfig spot_config,
     )
 #+end_src

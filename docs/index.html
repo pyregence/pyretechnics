@@ -785,7 +785,7 @@ constant input dimensions.
 <span class="org-doc">    value or array to the caller.</span>
 <span class="org-doc">    """</span>
     ndim         : cy.<span class="org-builtin">int</span>
-    size         : cy.ulong
+    size         : cy.ulonglong
     shape        : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
     base         : <span class="org-builtin">object</span>
     t_repetitions: cy.<span class="org-builtin">int</span>
@@ -1147,7 +1147,7 @@ extents and/or finer resolutions than have been used previously.
 <span class="org-doc">    value or array to the caller.</span>
 <span class="org-doc">    """</span>
     ndim         : cy.<span class="org-builtin">int</span>
-    size         : cy.ulong
+    size         : cy.ulonglong
     shape        : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
     subcube_shape: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
     cache_shape  : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>, cy.<span class="org-builtin">int</span>]
@@ -7172,7 +7172,7 @@ spot fires will be ignited.
                       flame_length               : cy.<span class="org-builtin">float</span>,
                       time_of_arrival            : cy.<span class="org-builtin">float</span>,
                       random_generator           : BufferedRandGen,
-                      num_firebrands             : cy.<span class="org-builtin">long</span>,
+                      num_firebrands             : cy.longlong,
                       spot_config                : SpotConfig) <span class="org-operator">-&gt;</span> <span class="org-builtin">tuple</span>: <span class="org-comment-delimiter"># </span><span class="org-comment">tuple[float, set]|None</span>
     <span class="org-doc">"""</span>
 <span class="org-doc">    Given these inputs:</span>
@@ -7243,7 +7243,7 @@ spot fires will be ignited.
 
             <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: A set is slow, so use a list instead. Collisions can happen with other source cells anyway.</span>
             <span class="org-variable-name">ignited_cells</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>()
-            i: cy.<span class="org-builtin">long</span>
+            i: cy.longlong
             <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_firebrands):
                 <span class="org-variable-name">ignited_cell</span>: coord_yx <span class="org-operator">=</span> cast_firebrand(random_generator,
                                                         fuel_model_cube,
@@ -10148,15 +10148,15 @@ near it, and decrement their tracking counter by 1. Upon reaching
 <span class="org-doc">    Encodes a (y, x) tuple into a single Python integer object.</span>
 <span class="org-doc">    This enables a more efficient memory layout than a tuple of Python integers.</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> (cy.cast(cy.ulong, y) <span class="org-operator">&lt;&lt;</span> 32) <span class="org-operator">+</span> cy.cast(cy.ulong, x)
+    <span class="org-keyword">return</span> (cy.cast(cy.ulonglong, y) <span class="org-operator">&lt;&lt;</span> 32) <span class="org-operator">+</span> cy.cast(cy.ulonglong, x)
 
 
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">decode_cell_index</span>(encoded_cell_index: <span class="org-builtin">object</span>) <span class="org-operator">-&gt;</span> coord_yx:
-    <span class="org-variable-name">cell_index</span>: cy.ulong <span class="org-operator">=</span> encoded_cell_index
-    <span class="org-variable-name">y</span>         : pyidx    <span class="org-operator">=</span> cell_index <span class="org-operator">&gt;&gt;</span> 32
-    <span class="org-variable-name">x</span>         : pyidx    <span class="org-operator">=</span> cy.cast(cy.uint, cell_index) <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: faster than (cell_index &amp; 0xFFFFFFFF)</span>
+    <span class="org-variable-name">cell_index</span>: cy.ulonglong <span class="org-operator">=</span> encoded_cell_index
+    <span class="org-variable-name">y</span>         : pyidx        <span class="org-operator">=</span> cell_index <span class="org-operator">&gt;&gt;</span> 32
+    <span class="org-variable-name">x</span>         : pyidx        <span class="org-operator">=</span> cy.cast(cy.uint, cell_index) <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: faster than (cell_index &amp; 0xFFFFFFFF)</span>
     <span class="org-keyword">return</span> (y, x)
 
 
@@ -10292,18 +10292,18 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    Schedules the future spot ignitions following from burning the given cell.</span>
 <span class="org-doc">    Mutates `spot_ignitions` (and `random_generator`).</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">t_cast</span>                  : pyidx    <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival <span class="org-operator">//</span> spread_inputs.band_duration)
-    <span class="org-variable-name">slope</span>                   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> spread_inputs.slope.get(t_cast, y, x)
-    <span class="org-variable-name">aspect</span>                  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> spread_inputs.aspect.get(t_cast, y, x)
-    <span class="org-variable-name">elevation_gradient</span>      : vec_xy   <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
-    <span class="org-variable-name">cell_height</span>             : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> spread_inputs.cell_height
-    <span class="org-variable-name">cell_width</span>              : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> spread_inputs.cell_width
-    <span class="org-variable-name">cell_horizontal_area</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> cell_height <span class="org-operator">*</span> cell_width
-    <span class="org-variable-name">expected_firebrand_count</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> spot.expected_firebrand_production(fire_behavior,
-                                                                            elevation_gradient,
-                                                                            cell_horizontal_area,
-                                                                            spot_config.firebrands_per_unit_heat)
-    <span class="org-variable-name">num_firebrands</span>          : cy.<span class="org-builtin">long</span>  <span class="org-operator">=</span> random_generator.next_poisson(expected_firebrand_count)
+    <span class="org-variable-name">t_cast</span>                  : pyidx       <span class="org-operator">=</span> <span class="org-builtin">int</span>(time_of_arrival <span class="org-operator">//</span> spread_inputs.band_duration)
+    <span class="org-variable-name">slope</span>                   : cy.<span class="org-builtin">float</span>    <span class="org-operator">=</span> spread_inputs.slope.get(t_cast, y, x)
+    <span class="org-variable-name">aspect</span>                  : cy.<span class="org-builtin">float</span>    <span class="org-operator">=</span> spread_inputs.aspect.get(t_cast, y, x)
+    <span class="org-variable-name">elevation_gradient</span>      : vec_xy      <span class="org-operator">=</span> calc_elevation_gradient(slope, aspect)
+    <span class="org-variable-name">cell_height</span>             : cy.<span class="org-builtin">float</span>    <span class="org-operator">=</span> spread_inputs.cell_height
+    <span class="org-variable-name">cell_width</span>              : cy.<span class="org-builtin">float</span>    <span class="org-operator">=</span> spread_inputs.cell_width
+    <span class="org-variable-name">cell_horizontal_area</span>    : cy.<span class="org-builtin">float</span>    <span class="org-operator">=</span> cell_height <span class="org-operator">*</span> cell_width
+    <span class="org-variable-name">expected_firebrand_count</span>: cy.<span class="org-builtin">float</span>    <span class="org-operator">=</span> spot.expected_firebrand_production(fire_behavior,
+                                                                               elevation_gradient,
+                                                                               cell_horizontal_area,
+                                                                               spot_config.firebrands_per_unit_heat)
+    <span class="org-variable-name">num_firebrands</span>          : cy.longlong <span class="org-operator">=</span> random_generator.next_poisson(expected_firebrand_count)
     <span class="org-keyword">if</span> num_firebrands <span class="org-operator">&gt;</span> 0:
         <span class="org-variable-name">wind_speed_10m</span>  : cy.<span class="org-builtin">float</span>               <span class="org-operator">=</span> spread_inputs.wind_speed_10m.get(t_cast, y, x)
         <span class="org-variable-name">upwind_direction</span>: cy.<span class="org-builtin">float</span>               <span class="org-operator">=</span> spread_inputs.upwind_direction.get(t_cast, y, x)
@@ -13413,7 +13413,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 )
 
 <span class="org-variable-name">SpotConfig</span> <span class="org-operator">=</span> cy.struct(
-    random_seed                  <span class="org-operator">=</span> cy.<span class="org-builtin">long</span>,
+    random_seed                  <span class="org-operator">=</span> cy.longlong,
     firebrands_per_unit_heat     <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
     downwind_distance_mean       <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
     fireline_intensity_exponent  <span class="org-operator">=</span> cy.<span class="org-builtin">float</span>,
@@ -14675,7 +14675,7 @@ cdef struct CrownSpreadInfo:
     <span class="org-builtin">float</span> critical_spread_rate
 
 cdef struct SpotConfig:
-    <span class="org-builtin">long</span> random_seed
+    <span class="org-builtin">long</span> <span class="org-builtin">long</span> random_seed
     <span class="org-builtin">float</span> firebrands_per_unit_heat
     <span class="org-builtin">float</span> downwind_distance_mean
     <span class="org-builtin">float</span> fireline_intensity_exponent
@@ -14827,13 +14827,13 @@ cdef <span class="org-keyword">class</span> <span class="org-type">BufferedRandG
     cdef pyidx uniform_pos
     cdef <span class="org-builtin">float</span>[::1] normal_buf
     cdef pyidx normal_pos
-    cdef <span class="org-builtin">long</span>[::1] poisson16_buf
+    cdef <span class="org-builtin">long</span> <span class="org-builtin">long</span>[::1] poisson16_buf
     cdef pyidx poisson16_pos
-    cdef <span class="org-builtin">long</span>[::1] poisson1_buf
+    cdef <span class="org-builtin">long</span> <span class="org-builtin">long</span>[::1] poisson1_buf
     cdef pyidx poisson1_pos
     cdef double[::1] poisson_exp_buf
     cdef pyidx poisson_exp_pos
-    cdef <span class="org-builtin">long</span> next_poisson(BufferedRandGen <span class="org-keyword">self</span>, double M) noexcept
+    cdef <span class="org-builtin">long</span> <span class="org-builtin">long</span> next_poisson(BufferedRandGen <span class="org-keyword">self</span>, double M) noexcept
     cdef <span class="org-builtin">float</span> next_uniform(BufferedRandGen <span class="org-keyword">self</span>) noexcept
     cdef <span class="org-builtin">float</span> next_normal(BufferedRandGen <span class="org-keyword">self</span>) noexcept
 </pre>
@@ -14857,7 +14857,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">ISpaceTimeCub
 
 cdef <span class="org-keyword">class</span> <span class="org-type">SpaceTimeCube</span>(ISpaceTimeCube):
     cdef public <span class="org-builtin">int</span> ndim
-    cdef public unsigned <span class="org-builtin">long</span> size
+    cdef public unsigned <span class="org-builtin">long</span> <span class="org-builtin">long</span> size
     cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) shape
     cdef public <span class="org-builtin">object</span> base
     cdef public <span class="org-builtin">int</span> t_repetitions
@@ -14874,7 +14874,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">SpaceTimeCube
 
 cdef <span class="org-keyword">class</span> <span class="org-type">LazySpaceTimeCube</span>(ISpaceTimeCube):
     cdef public <span class="org-builtin">int</span> ndim
-    cdef public unsigned <span class="org-builtin">long</span> size
+    cdef public unsigned <span class="org-builtin">long</span> <span class="org-builtin">long</span> size
     cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) shape
     cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) subcube_shape
     cdef public (<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>) cache_shape
@@ -15247,7 +15247,7 @@ cdef <span class="org-builtin">tuple</span> spread_firebrands(
     <span class="org-builtin">float</span> flame_length,
     <span class="org-builtin">float</span> time_of_arrival,
     BufferedRandGen random_generator,
-    <span class="org-builtin">long</span> num_firebrands,
+    <span class="org-builtin">long</span> <span class="org-builtin">long</span> num_firebrands,
     SpotConfig spot_config,
     )
 </pre>

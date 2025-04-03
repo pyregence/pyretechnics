@@ -12,7 +12,7 @@ cdef class ISpaceTimeCube:
 
 cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
-    cdef public unsigned long size
+    cdef public unsigned long long size
     cdef public (int, int, int) shape
     cdef public object base
     cdef public int t_repetitions
@@ -29,7 +29,7 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
 
 cdef class LazySpaceTimeCube(ISpaceTimeCube):
     cdef public int ndim
-    cdef public unsigned long size
+    cdef public unsigned long long size
     cdef public (int, int, int) shape
     cdef public (int, int, int) subcube_shape
     cdef public (int, int, int) cache_shape

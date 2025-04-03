@@ -732,15 +732,15 @@ def encode_cell_index(y: pyidx, x: pyidx) -> object: # ulong
     Encodes a (y, x) tuple into a single Python integer object.
     This enables a more efficient memory layout than a tuple of Python integers.
     """
-    return (cy.cast(cy.ulong, y) << 32) + cy.cast(cy.ulong, x)
+    return (cy.cast(cy.ulonglong, y) << 32) + cy.cast(cy.ulonglong, x)
 
 
 @cy.cfunc
 @cy.exceptval(check=False)
 def decode_cell_index(encoded_cell_index: object) -> coord_yx:
-    cell_index: cy.ulong = encoded_cell_index
-    y         : pyidx    = cell_index >> 32
-    x         : pyidx    = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
+    cell_index: cy.ulonglong = encoded_cell_index
+    y         : pyidx        = cell_index >> 32
+    x         : pyidx        = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
     return (y, x)
 
 
@@ -841,18 +841,18 @@ def spot_from_burned_cell(spread_inputs   : SpreadInputs,
     Schedules the future spot ignitions following from burning the given cell.
     Mutates `spot_ignitions` (and `random_generator`).
     """
-    t_cast                  : pyidx    = int(time_of_arrival // spread_inputs.band_duration)
-    slope                   : cy.float = spread_inputs.slope.get(t_cast, y, x)
-    aspect                  : cy.float = spread_inputs.aspect.get(t_cast, y, x)
-    elevation_gradient      : vec_xy   = calc_elevation_gradient(slope, aspect)
-    cell_height             : cy.float = spread_inputs.cell_height
-    cell_width              : cy.float = spread_inputs.cell_width
-    cell_horizontal_area    : cy.float = cell_height * cell_width
-    expected_firebrand_count: cy.float = spot.expected_firebrand_production(fire_behavior,
-                                                                            elevation_gradient,
-                                                                            cell_horizontal_area,
-                                                                            spot_config.firebrands_per_unit_heat)
-    num_firebrands          : cy.long  = random_generator.next_poisson(expected_firebrand_count)
+    t_cast                  : pyidx       = int(time_of_arrival // spread_inputs.band_duration)
+    slope                   : cy.float    = spread_inputs.slope.get(t_cast, y, x)
+    aspect                  : cy.float    = spread_inputs.aspect.get(t_cast, y, x)
+    elevation_gradient      : vec_xy      = calc_elevation_gradient(slope, aspect)
+    cell_height             : cy.float    = spread_inputs.cell_height
+    cell_width              : cy.float    = spread_inputs.cell_width
+    cell_horizontal_area    : cy.float    = cell_height * cell_width
+    expected_firebrand_count: cy.float    = spot.expected_firebrand_production(fire_behavior,
+                                                                               elevation_gradient,
+                                                                               cell_horizontal_area,
+                                                                               spot_config.firebrands_per_unit_heat)
+    num_firebrands          : cy.longlong = random_generator.next_poisson(expected_firebrand_count)
     if num_firebrands > 0:
         wind_speed_10m  : cy.float               = spread_inputs.wind_speed_10m.get(t_cast, y, x)
         upwind_direction: cy.float               = spread_inputs.upwind_direction.get(t_cast, y, x)

@@ -69,7 +69,7 @@ cdef struct CrownSpreadInfo:
     float critical_spread_rate
 
 cdef struct SpotConfig:
-    long random_seed
+    long long random_seed
     float firebrands_per_unit_heat
     float downwind_distance_mean
     float fireline_intensity_exponent
