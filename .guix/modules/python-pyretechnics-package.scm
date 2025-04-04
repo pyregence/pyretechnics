@@ -13,7 +13,7 @@
                                                          python-wheel
                                                          python-pypa-build))
   #:use-module ((gnu packages python-science)  #:select (python-distributed))
-  #:use-module ((gnu packages python-web)      #:select (python-tornado))
+  #:use-module ((gnu packages python-web)      #:select (python-tornado-6))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy
                                                          python-rasterio
                                                          python-matplotlib
@@ -57,7 +57,7 @@
       (base32 "10vx7b0rn3gams2qk0dj5xkbiavh8x13hykm2kzk581lirpqq0h8"))))
    (build-system pyproject-build-system)
    (arguments `(#:tests? #f))
-   (propagated-inputs (list python-tornado))
+   (propagated-inputs (list python-tornado-6))
    (native-inputs (list python-setuptools python-wheel))
    (home-page "https://jiffyclub.github.io/snakeviz/")
    (synopsis "A web-based viewer for Python profiler output")
