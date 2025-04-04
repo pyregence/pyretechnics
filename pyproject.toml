@@ -39,8 +39,8 @@ dev = [
         "twine",
         "pkginfo",
         "matplotlib",
-        "dask"
-        "distributed"
+        "dask",
+        "distributed",
 ]
 
 [build-system]
