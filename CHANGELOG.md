@@ -1,3 +1,12 @@
+# Version 2025.4.4
+
+## Changes for Developers
+- Replaced all C longs with C long longs to ensure compatibility on both 32-bit and 64-bit build targets.
+- Added dask and distributed as optional Python dependencies.
+
+## Changes for Users
+- This release resolves runtime memory allocation issues occurring on architectures that represent C longs as 32 bit primitives (e.g., Microsoft Windows).
+
 # Version 2025.4.3
 
 ## Changes for Developers
@@ -6,9 +15,7 @@
 - Only apply custom compiler flags when performing builds under `make.sh`.
 
 ## Changes for Users
-- This release should work on a Windows system after being compiled
-  with the Microsoft C++ compiler (cl.exe) and should respect the
-  `CFLAGS` settings on computers that have set `CC="gcc"`.
+- This release should work on a Windows system after being compiled with the Microsoft C++ compiler (cl.exe) and should respect the `CFLAGS` settings on computers that have set `CC="gcc"`.
 
 # Version 2025.4.2
 
