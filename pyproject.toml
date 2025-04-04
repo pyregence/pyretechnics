@@ -35,9 +35,12 @@ Changelog = "https://github.com/pyregence/pyretechnics/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 dev = [
         "pytest",
-        "twine",
         "snakeviz",
+        "twine",
+        "pkginfo",
         "matplotlib",
+        "dask"
+        "distributed"
 ]
 
 [build-system]

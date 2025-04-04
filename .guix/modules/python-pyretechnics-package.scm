@@ -12,13 +12,15 @@
   #:use-module ((gnu packages python-build)    #:select (python-setuptools
                                                          python-wheel
                                                          python-pypa-build))
+  #:use-module ((gnu packages python-science)  #:select (python-distributed))
   #:use-module ((gnu packages python-web)      #:select (python-tornado))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy
                                                          python-rasterio
                                                          python-matplotlib
                                                          python-sortedcontainers
                                                          python-cython-3
-                                                         python-twine))
+                                                         python-twine
+                                                         python-dask))
   #:use-module ((gnu packages ssh)             #:select (openssh))
   #:use-module ((gnu packages version-control) #:select (git))
   #:use-module ((guix build-system python)     #:select (pypi-uri))
@@ -110,21 +112,25 @@
                    openssh
                    ;; GIS utilities
                    gdal
-                   ;; Build tools
-                   emacs-minimal
-                   emacs-htmlize
-                   python-pytest
-                   python-twine
-                   python-snakeviz
-                   python-matplotlib
+                   ;; Build/Test/Profile/Deploy utilities
                    python-setuptools
                    python-wheel
                    python-pypa-build
-                   python-pkginfo))
+                   python-pytest
+                   python-snakeviz
+                   python-twine
+                   python-pkginfo
+                   ;; Literate programming
+                   emacs-minimal
+                   emacs-htmlize
+                   ;; Notebook programming examples
+                   python-matplotlib
+                   python-dask
+                   python-distributed))
    (propagated-inputs (list
                        ;; Python3
                        python-wrapper
-                       ;; Python dependency libraries
+                       ;; Runtime dependencies
                        python-numpy
                        python-rasterio
                        python-sortedcontainers
