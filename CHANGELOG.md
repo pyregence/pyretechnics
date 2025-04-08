@@ -1,3 +1,16 @@
+# Version 2025.4.8
+
+## Changes for Developers
+- Averaged the `phi_gradient_xy` from both Runge-Kutta passes to match the `time_of_arrival` for newly burned cells.
+- Set `time_of_arrival` to `stop_time` instead of `ignition_time` for all spot-ignited cells.
+- Calculated all fire behavior values for each spot-ignited cell.
+- Enabled spot-ignited cells to cast firebrands.
+- Removed unused `from_spotting` parameter from `BurnedCellInfo` struct.
+
+## Changes for Users
+- Enhanced the temporal precision associated with fire behavior values produced by `spread_fire_with_phi_field`.
+- Filled in fire behavior values for spot-ignited cells and allowed them to cast firebrands.
+
 # Version 2025.4.4
 
 ## Changes for Developers
@@ -20,7 +33,7 @@
 # Version 2025.4.2
 
 ## Changes for Developers
-- Restrict custom compiler flags to only be used when distutils.sysconfig.get_config_var("CC") == "gcc".
+- Restricted custom compiler flags to only be used when distutils.sysconfig.get_config_var("CC") == "gcc".
 - Removed project.license entry from pyproject.toml to eliminate conflict between pypa-build and setuptools.
 
 ## Changes for Users
