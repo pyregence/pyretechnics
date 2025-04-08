@@ -1955,14 +1955,18 @@ def runge_kutta_pass2(dy                : cy.float,
         # NOTE: Phi can only ever decrease, and cells with negative phi are on fire.
         #       Therefore, if phi_old and phi_new are of opposite signs, the cell has just burned.
         if (phi_old * phi_new) < 0.0:
-            time_of_arrival: cy.float = start_time + dt * phi_old / (phi_old - phi_new)
-            # FIXME: Here we set phi_gradient_xy to be the phi gradient from the 1st pass.
-            #        However, to be consistent with the time_of_arrival, we might want to
-            #        average this with the phi_gradient_xy from the 2nd pass.
+            preburn_weight          : cy.float = phi_old / (phi_old - phi_new)
+            postburn_weight         : cy.float = 1.0 - preburn_weight
+            time_of_arrival         : cy.float = start_time + dt * preburn_weight
+            phi_gradient_xy_pass1   : vec_xy   = pass1_cache[i].phi_gradient_xy
+            dphi_dx_pass1           : cy.float = phi_gradient_xy_pass1[0]
+            dphi_dy_pass1           : cy.float = phi_gradient_xy_pass1[1]
+            phi_gradient_xy_combined: vec_xy   = (dphi_dx_pass1 * postburn_weight + dphi_dx * preburn_weight,
+                                                  dphi_dy_pass1 * postburn_weight + dphi_dy * preburn_weight)
             burned_cells.append(
                 new_BurnedCellInfo(cell_index      = cell_index,
                                    time_of_arrival = time_of_arrival,
-                                   phi_gradient_xy = pass1_cache[i].phi_gradient_xy,
+                                   phi_gradient_xy = phi_gradient_xy_combined,
                                    from_spotting   = False)
             )
     return burned_cells
