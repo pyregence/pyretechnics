@@ -229,12 +229,10 @@
 #     cdef coord_yx cell_index
 #     cdef float time_of_arrival
 #     cdef vec_xy phi_gradient_xy
-#     cdef bint from_spotting
 # cdef BurnedCellInfo new_BurnedCellInfo(
 #     coord_yx cell_index,
 #     float time_of_arrival,
 #     vec_xy phi_gradient_xy,
-#     bint from_spotting,
 #     )
 # cdef list[BurnedCellInfo] runge_kutta_pass2(
 #     float dy,
@@ -260,7 +258,7 @@
 #     ) noexcept
 # cdef list[BurnedCellInfo] ignite_from_spotting(
 #     object spot_ignitions,
-#     SpreadState spread_state,
+#     float[:,::1] phi_matrix,
 #     float stop_time,
 #     )
 # cdef void route_cell_to_diff(

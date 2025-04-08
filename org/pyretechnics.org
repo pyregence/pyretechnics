@@ -10248,19 +10248,43 @@ def resolve_combined_spread_behavior(spread_inputs        : SpreadInputs,
     Similar to resolve_cell_elliptical_info, but does a more exhaustive computation
     and returns a SpreadBehavior struct.
     """
-    # Project phi_gradient_xy onto the slope-tangential plane as a 3D (x,y,z) vector
-    cell_inputs       : CellInputs = lookup_cell_inputs(spread_inputs, space_time_coordinate)
-    elevation_gradient: vec_xy     = calc_elevation_gradient(cell_inputs.slope, cell_inputs.aspect)
-    phi_gradient_xyz  : vec_xyz    = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
-    phi_magnitude     : cy.float   = vu.vector_magnitude_3d(phi_gradient_xyz)
+    # Load the cell inputs
+    cell_inputs: CellInputs = lookup_cell_inputs(spread_inputs, space_time_coordinate)
     # Load the fuel model
+    # FIXME: Verify that this fuel_model_number exists
     fuel_model_number: pyidx     = cy.cast(pyidx, cell_inputs.fuel_model_number)
     fuel_model       : FuelModel = spread_inputs.get_fm_struct(fuel_model_number)
-    if phi_magnitude == 0.0 or not fuel_model.burnable:
-        # This location is not on the fire perimeter and/or is not burnable
+    # Project phi_gradient_xy onto the slope-tangential plane as a 3D (x,y,z) vector
+    elevation_gradient: vec_xy   = calc_elevation_gradient(cell_inputs.slope, cell_inputs.aspect)
+    phi_gradient_xyz  : vec_xyz  = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
+    phi_magnitude     : cy.float = vu.vector_magnitude_3d(phi_gradient_xyz)
+    if not(fuel_model.burnable):
+        # This location is not burnable
         return unburned_SpreadBehavior(elevation_gradient, phi_gradient_xyz)
+    elif phi_magnitude == 0.0:
+        # This location is not on the fire perimeter and represents a new ignition, so burn it as a head fire
+        surface_fire_min       : FireBehaviorMin = resolve_surface_no_wind_no_slope_behavior(cell_inputs, fuel_model)
+        surface_fire_max       : FireBehaviorMax = resolve_surface_max_behavior(fb_opts,
+                                                                                cell_inputs,
+                                                                                fuel_model,
+                                                                                surface_fire_min)
+        spread_direction       : vec_xyz         = surface_fire_max.max_spread_direction
+        surface_fire_max_simple: SpreadBehavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max,
+                                                                                              spread_direction)
+        # Check whether a crown fire occurs
+        crowning_spread_rate: cy.float = resolve_crowning_spread_rate(cell_inputs, surface_fire_max)
+        if (surface_fire_max_simple.spread_rate <= crowning_spread_rate):
+            return surface_fire_max_simple
+        else:
+            crown_fire_max       : FireBehaviorMax = resolve_crown_max_behavior(fb_opts, cell_inputs, fuel_model)
+            spread_direction     : vec_xyz         = crown_fire_max.max_spread_direction
+            crown_fire_max_simple: SpreadBehavior  = cf.calc_crown_fire_behavior_in_direction(crown_fire_max,
+                                                                                              spread_direction)
+            combined_fire_max    : SpreadBehavior  = cf.calc_combined_fire_behavior(surface_fire_max_simple,
+                                                                                    crown_fire_max_simple)
+            return combined_fire_max
     else:
-        # This location is on the fire perimeter and is burnable
+        # This location is on the fire perimeter and is burnable, so burn it normal to the fire front
         surface_fire_min   : FireBehaviorMin = resolve_surface_no_wind_no_slope_behavior(cell_inputs, fuel_model)
         surface_fire_max   : FireBehaviorMax = resolve_surface_max_behavior(fb_opts,
                                                                             cell_inputs,
@@ -10469,19 +10493,16 @@ class BurnedCellInfo:
     cell_index     : coord_yx
     time_of_arrival: cy.float
     phi_gradient_xy: vec_xy
-    from_spotting  : cy.bint # whether spotting is what caused the cell to ignite
 
 
 @cy.cfunc
 def new_BurnedCellInfo(cell_index     : coord_yx,
                        time_of_arrival: cy.float,
-                       phi_gradient_xy: vec_xy,
-                       from_spotting  : cy.bint) -> BurnedCellInfo:
+                       phi_gradient_xy: vec_xy) -> BurnedCellInfo:
     ret: BurnedCellInfo = BurnedCellInfo()
     ret.cell_index      = cell_index
     ret.time_of_arrival = time_of_arrival
     ret.phi_gradient_xy = phi_gradient_xy
-    ret.from_spotting   = from_spotting
     return ret
 
 
@@ -10554,8 +10575,7 @@ def runge_kutta_pass2(dy                : cy.float,
             burned_cells.append(
                 new_BurnedCellInfo(cell_index      = cell_index,
                                    time_of_arrival = time_of_arrival,
-                                   phi_gradient_xy = phi_gradient_xy_combined,
-                                   from_spotting   = False)
+                                   phi_gradient_xy = phi_gradient_xy_combined)
             )
     return burned_cells
 
@@ -10637,39 +10657,33 @@ def reset_phi_star(tca               : TrackedCellsArrays,
 
 
 @cy.cfunc
-def ignite_from_spotting(spot_ignitions : SortedDict[float, set],
-                         spread_state   : SpreadState,
-                         stop_time      : cy.float) -> list[BurnedCellInfo]:
+def ignite_from_spotting(spot_ignitions: SortedDict[float, set],
+                         phi_matrix    : cy.float[:,::1],
+                         stop_time     : cy.float) -> list[BurnedCellInfo]:
     """
     Resolves the cells to be ignited by spotting in the current time step,
-    returning them as a list of (y, x) tuples, and mutates `spread_state` accordingly.
+    returning them as a list of (y, x) tuples, and mutates `phi_matrix` accordingly.
     """
     ignited_cells: list[BurnedCellInfo] = []
     if len(spot_ignitions) > 0:
-        phi_matrix            : cy.float[:,::1] = spread_state.phi
-        time_of_arrival_matrix: cy.float[:,::1] = spread_state.time_of_arrival
-        ignition_time         : cy.float
-        maybe_ignited_cells   : set
-        cell_index            : coord_yx
+        maybe_ignited_cells: set
+        cell_index         : coord_yx
         # https://grantjenks.com/docs/sortedcontainers/sorteddict.html
         n : pyidx = spot_ignitions.bisect_left(stop_time) # number of ignition_time values smaller than stop_time
         _i: pyidx
         for _i in range(n):
             # Remove and return the smallest ignition_time
-            (ignition_time, maybe_ignited_cells) = spot_ignitions.popitem(index=0)
+            maybe_ignited_cells = spot_ignitions.popitem(index=0)[1]
             for cell_index in maybe_ignited_cells:
                 y: pyidx = cell_index[0]
                 x: pyidx = cell_index[1]
-                if phi_matrix[2+y, 2+x] > 0.0: # Not burned yet
-                    phi_matrix[2+y, 2+x]        = -1.0
-                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
-                    ignited_cells.append(new_BurnedCellInfo(
-                        cell_index      = cell_index,
-                        time_of_arrival = ignition_time,
-                        phi_gradient_xy = (0.0, 0.0),
-                        from_spotting   = True
-                    ))
-                    # FIXME: I need to calculate and store the fire_behavior values for these cells
+                if phi_matrix[2+y, 2+x] > 0.0: # Not burned by stop_time
+                    phi_matrix[2+y, 2+x] = -1.0 # Ignite this cell at stop_time
+                    ignited_cells.append(
+                        new_BurnedCellInfo(cell_index      = cell_index,
+                                           time_of_arrival = stop_time, # Start all spot_ignitions on the next timestep
+                                           phi_gradient_xy = (0.0, 0.0))
+                    )
     return ignited_cells
 
 
@@ -10843,11 +10857,14 @@ def spread_one_timestep(sim_state    : dict,
                                                            tca,
                                                            phi_matrix)
 
-    # Process side-effects of the burned cells (outputs, etc.)
+    # Compute and save the fire behavior values for all burned cells and store any spot ignitions they create
     process_burned_cells(spread_inputs, fb_opts, spread_state, spot_ignitions, random_generator, burned_cells)
-    # TODO: REVIEW It is a questionable choice to call this function AFTER process_burned_cells.
-    #       It may be more sensible to ignite the spotting cells first and then to process them all.
-    spot_ignited_cells: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, spread_state, stop_time)
+
+    # Remove from spot_ignitions and return all cells which ignite before stop_time and set phi_matrix to -1.0 for each
+    spot_ignited_cells: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, phi_matrix, stop_time)
+
+    # Compute and save the fire behavior values for all spot-ignited cells and store any spot ignitions they create
+    process_burned_cells(spread_inputs, fb_opts, spread_state, spot_ignitions, random_generator, spot_ignited_cells)
 
     # Save the new phi_matrix values in phi_star_matrix
     reset_phi_star(tca, spot_ignited_cells, phi_star_matrix, phi_matrix)
@@ -11667,96 +11684,89 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.99851185, 'Max': 1.0, 'Mean': 0.72060555, 'Stdev': 0.6200823}
+{'Min': -1.0, 'Max': 1.0, 'Mean': 0.73481274, 'Stdev': 0.6118095}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16076808, 'Max': 2.2964642, 'Mean': 1.3380439, 'Stdev': 0.65815914}
+{'Min': 0.16055909, 'Max': 2.2964687, 'Mean': 1.4940217, 'Stdev': 0.68819606}
 
 Spread Direction (degrees clockwise from North)
-{'Min': 0.008171321, 'Max': 359.93277, 'Mean': 183.86234, 'Stdev': 124.12513}
+{'Min': 0.6275849, 'Max': 359.89905, 'Mean': 164.18701, 'Stdev': 127.15898}
 
 Fireline Intensity (kW/m)
-{'Min': 2.2771952, 'Max': 32.528206, 'Mean': 18.952688, 'Stdev': 9.322478}
+{'Min': 2.274235, 'Max': 32.52827, 'Mean': 21.162033, 'Stdev': 9.747935}
 
 Flame Length (meters)
-{'Min': 0.11312017, 'Max': 0.3843931, 'Mean': 0.2884106, 'Stdev': 0.07616116}
+{'Min': 0.1130525, 'Max': 0.38439345, 'Mean': 0.30407032, 'Stdev': 0.07810408}
 
 Time of Arrival (minutes)
-{'Min': 2081.852, 'Max': 2549.9414, 'Mean': 2414.803, 'Stdev': 100.192955}
+{'Min': 2081.852, 'Max': 2549.9265, 'Mean': 2407.1692, 'Stdev': 102.33414}
 
 Future Spot Ignitions:
-{2550.62060546875: {(82, 34)},
- 2550.910888671875: {(82, 55)},
- 2551.283203125: {(70, 80)},
- 2552.506591796875: {(93, 72)},
- 2552.683349609375: {(71, 76)},
- 2553.067138671875: {(82, 28)},
- 2553.349365234375: {(80, 75)},
- 2553.7451171875: {(58, 69)},
- 2554.014892578125: {(90, 64)},
- 2555.341064453125: {(85, 71)},
- 2555.518310546875: {(91, 38)},
- 2556.18701171875: {(76, 26)},
- 2557.802490234375: {(84, 65)},
- 2557.884765625: {(96, 44), (98, 39)},
- 2558.426025390625: {(97, 43)},
- 2559.60400390625: {(93, 65), (94, 63), (94, 70)},
- 2559.774169921875: {(65, 73)},
- 2559.982421875: {(98, 52)},
- 2562.61572265625: {(64, 41)},
- 2563.051513671875: {(90, 63)},
- 2563.114990234375: {(90, 64)},
- 2563.3046875: {(57, 69)},
- 2563.468505859375: {(89, 69)},
- 2563.47900390625: {(96, 52)},
- 2563.762939453125: {(94, 69)},
- 2564.046142578125: {(75, 75)},
- 2564.81640625: {(92, 71)},
- 2565.680908203125: {(99, 53)},
- 2565.703369140625: {(68, 30)},
- 2565.9892578125: {(91, 64)},
- 2566.058349609375: {(65, 33)},
- 2568.92822265625: {(90, 60)},
- 2569.635009765625: {(89, 26)},
- 2569.886474609375: {(87, 49)},
- 2570.955078125: {(88, 56)},
- 2571.5380859375: {(65, 28)},
- 2574.06103515625: {(50, 40)},
- 2574.521240234375: {(96, 70)},
- 2574.529296875: {(85, 71)},
- 2574.625732421875: {(78, 74)},
- 2574.707275390625: {(89, 59)},
- 2575.22705078125: {(79, 31)},
- 2576.003662109375: {(71, 35)},
- 2577.366943359375: {(98, 49)},
- 2577.732666015625: {(95, 42)},
- 2578.77880859375: {(82, 30)},
- 2580.073486328125: {(92, 66)},
- 2580.331787109375: {(90, 78)},
- 2580.44091796875: {(89, 57)},
- 2580.595458984375: {(85, 67), (85, 68)},
- 2580.7763671875: {(99, 54)},
- 2581.044189453125: {(59, 72)},
- 2581.379638671875: {(55, 71)},
- 2582.188720703125: {(89, 37)},
- 2582.376953125: {(97, 55)},
- 2583.317138671875: {(96, 55)},
- 2583.35107421875: {(83, 63), (84, 60), (84, 72)},
- 2583.5380859375: {(92, 34)},
- 2584.378662109375: {(97, 40)},
- 2584.61669921875: {(99, 59)},
- 2584.913818359375: {(87, 32)},
- 2585.210693359375: {(69, 27)},
- 2585.281982421875: {(89, 34)},
- 2588.391845703125: {(93, 63)},
- 2594.451171875: {(95, 58), (94, 58)},
- 2595.077880859375: {(62, 34)},
- 2597.887939453125: {(89, 49)},
- 2602.0703125: {(87, 67)},
- 2606.407958984375: {(84, 33)}}
+{2550.45703125: {(95, 47)},
+ 2550.852294921875: {(87, 37)},
+ 2550.93896484375: {(92, 41)},
+ 2551.01171875: {(65, 75)},
+ 2551.0771484375: {(68, 28)},
+ 2551.452880859375: {(66, 75)},
+ 2551.677001953125: {(81, 36)},
+ 2552.345947265625: {(81, 74)},
+ 2552.68212890625: {(81, 35)},
+ 2553.10205078125: {(94, 50)},
+ 2553.343994140625: {(97, 55)},
+ 2554.3759765625: {(87, 59)},
+ 2554.402099609375: {(87, 58)},
+ 2554.9951171875: {(80, 68)},
+ 2556.635498046875: {(78, 32)},
+ 2558.4677734375: {(92, 38)},
+ 2558.884521484375: {(83, 40)},
+ 2559.06396484375: {(47, 49)},
+ 2559.979736328125: {(60, 79)},
+ 2561.0: {(81, 65)},
+ 2561.268798828125: {(86, 58)},
+ 2563.274658203125: {(81, 74)},
+ 2565.331298828125: {(66, 79)},
+ 2565.522705078125: {(84, 71)},
+ 2566.02490234375: {(69, 78)},
+ 2566.51025390625: {(87, 52), (89, 52)},
+ 2567.084228515625: {(86, 65)},
+ 2567.610107421875: {(81, 75)},
+ 2567.80810546875: {(88, 38), (96, 44), (89, 34)},
+ 2568.060302734375: {(89, 44)},
+ 2569.0361328125: {(60, 72)},
+ 2569.083740234375: {(91, 44)},
+ 2570.712890625: {(91, 44)},
+ 2572.74169921875: {(51, 43)},
+ 2574.04443359375: {(94, 49)},
+ 2574.22802734375: {(85, 68)},
+ 2574.310302734375: {(94, 50)},
+ 2574.4716796875: {(65, 77), (68, 78)},
+ 2574.9755859375: {(73, 80)},
+ 2575.160888671875: {(85, 66), (69, 77)},
+ 2575.209228515625: {(95, 46)},
+ 2575.345703125: {(87, 50)},
+ 2575.988525390625: {(67, 25), (68, 22)},
+ 2577.4248046875: {(91, 49)},
+ 2577.693603515625: {(81, 36)},
+ 2578.118408203125: {(92, 60)},
+ 2578.92041015625: {(88, 46)},
+ 2580.1201171875: {(89, 70)},
+ 2580.56787109375: {(91, 55)},
+ 2580.878173828125: {(86, 68), (85, 70)},
+ 2580.94140625: {(85, 65)},
+ 2582.059326171875: {(86, 65)},
+ 2582.513916015625: {(58, 76)},
+ 2582.754150390625: {(86, 64)},
+ 2582.821044921875: {(64, 76)},
+ 2583.43505859375: {(97, 64), (98, 57)},
+ 2583.483642578125: {(82, 76)},
+ 2586.32666015625: {(69, 80)},
+ 2588.114013671875: {(88, 38)},
+ 2593.70849609375: {(65, 83), (64, 82)},
+ 2602.1689453125: {(70, 34)},
+ 2607.730224609375: {(76, 38)}}
 #+end_example
 
 **** Create Images of the Output Matrices with Spotting Enabled
@@ -15398,12 +15408,10 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     cdef coord_yx cell_index
 #     cdef float time_of_arrival
 #     cdef vec_xy phi_gradient_xy
-#     cdef bint from_spotting
 # cdef BurnedCellInfo new_BurnedCellInfo(
 #     coord_yx cell_index,
 #     float time_of_arrival,
 #     vec_xy phi_gradient_xy,
-#     bint from_spotting,
 #     )
 # cdef list[BurnedCellInfo] runge_kutta_pass2(
 #     float dy,
@@ -15429,7 +15437,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     ) noexcept
 # cdef list[BurnedCellInfo] ignite_from_spotting(
 #     object spot_ignitions,
-#     SpreadState spread_state,
+#     float[:,::1] phi_matrix,
 #     float stop_time,
 #     )
 # cdef void route_cell_to_diff(

@@ -1660,19 +1660,43 @@ def resolve_combined_spread_behavior(spread_inputs        : SpreadInputs,
     Similar to resolve_cell_elliptical_info, but does a more exhaustive computation
     and returns a SpreadBehavior struct.
     """
-    # Project phi_gradient_xy onto the slope-tangential plane as a 3D (x,y,z) vector
-    cell_inputs       : CellInputs = lookup_cell_inputs(spread_inputs, space_time_coordinate)
-    elevation_gradient: vec_xy     = calc_elevation_gradient(cell_inputs.slope, cell_inputs.aspect)
-    phi_gradient_xyz  : vec_xyz    = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
-    phi_magnitude     : cy.float   = vu.vector_magnitude_3d(phi_gradient_xyz)
+    # Load the cell inputs
+    cell_inputs: CellInputs = lookup_cell_inputs(spread_inputs, space_time_coordinate)
     # Load the fuel model
+    # FIXME: Verify that this fuel_model_number exists
     fuel_model_number: pyidx     = cy.cast(pyidx, cell_inputs.fuel_model_number)
     fuel_model       : FuelModel = spread_inputs.get_fm_struct(fuel_model_number)
-    if phi_magnitude == 0.0 or not fuel_model.burnable:
-        # This location is not on the fire perimeter and/or is not burnable
+    # Project phi_gradient_xy onto the slope-tangential plane as a 3D (x,y,z) vector
+    elevation_gradient: vec_xy   = calc_elevation_gradient(cell_inputs.slope, cell_inputs.aspect)
+    phi_gradient_xyz  : vec_xyz  = calc_phi_gradient_on_slope(phi_gradient_xy, elevation_gradient)
+    phi_magnitude     : cy.float = vu.vector_magnitude_3d(phi_gradient_xyz)
+    if not(fuel_model.burnable):
+        # This location is not burnable
         return unburned_SpreadBehavior(elevation_gradient, phi_gradient_xyz)
+    elif phi_magnitude == 0.0:
+        # This location is not on the fire perimeter and represents a new ignition, so burn it as a head fire
+        surface_fire_min       : FireBehaviorMin = resolve_surface_no_wind_no_slope_behavior(cell_inputs, fuel_model)
+        surface_fire_max       : FireBehaviorMax = resolve_surface_max_behavior(fb_opts,
+                                                                                cell_inputs,
+                                                                                fuel_model,
+                                                                                surface_fire_min)
+        spread_direction       : vec_xyz         = surface_fire_max.max_spread_direction
+        surface_fire_max_simple: SpreadBehavior  = sf.calc_surface_fire_behavior_in_direction(surface_fire_max,
+                                                                                              spread_direction)
+        # Check whether a crown fire occurs
+        crowning_spread_rate: cy.float = resolve_crowning_spread_rate(cell_inputs, surface_fire_max)
+        if (surface_fire_max_simple.spread_rate <= crowning_spread_rate):
+            return surface_fire_max_simple
+        else:
+            crown_fire_max       : FireBehaviorMax = resolve_crown_max_behavior(fb_opts, cell_inputs, fuel_model)
+            spread_direction     : vec_xyz         = crown_fire_max.max_spread_direction
+            crown_fire_max_simple: SpreadBehavior  = cf.calc_crown_fire_behavior_in_direction(crown_fire_max,
+                                                                                              spread_direction)
+            combined_fire_max    : SpreadBehavior  = cf.calc_combined_fire_behavior(surface_fire_max_simple,
+                                                                                    crown_fire_max_simple)
+            return combined_fire_max
     else:
-        # This location is on the fire perimeter and is burnable
+        # This location is on the fire perimeter and is burnable, so burn it normal to the fire front
         surface_fire_min   : FireBehaviorMin = resolve_surface_no_wind_no_slope_behavior(cell_inputs, fuel_model)
         surface_fire_max   : FireBehaviorMax = resolve_surface_max_behavior(fb_opts,
                                                                             cell_inputs,
@@ -1881,19 +1905,16 @@ class BurnedCellInfo:
     cell_index     : coord_yx
     time_of_arrival: cy.float
     phi_gradient_xy: vec_xy
-    from_spotting  : cy.bint # whether spotting is what caused the cell to ignite
 
 
 @cy.cfunc
 def new_BurnedCellInfo(cell_index     : coord_yx,
                        time_of_arrival: cy.float,
-                       phi_gradient_xy: vec_xy,
-                       from_spotting  : cy.bint) -> BurnedCellInfo:
+                       phi_gradient_xy: vec_xy) -> BurnedCellInfo:
     ret: BurnedCellInfo = BurnedCellInfo()
     ret.cell_index      = cell_index
     ret.time_of_arrival = time_of_arrival
     ret.phi_gradient_xy = phi_gradient_xy
-    ret.from_spotting   = from_spotting
     return ret
 
 
@@ -1966,8 +1987,7 @@ def runge_kutta_pass2(dy                : cy.float,
             burned_cells.append(
                 new_BurnedCellInfo(cell_index      = cell_index,
                                    time_of_arrival = time_of_arrival,
-                                   phi_gradient_xy = phi_gradient_xy_combined,
-                                   from_spotting   = False)
+                                   phi_gradient_xy = phi_gradient_xy_combined)
             )
     return burned_cells
 
@@ -2049,39 +2069,33 @@ def reset_phi_star(tca               : TrackedCellsArrays,
 
 
 @cy.cfunc
-def ignite_from_spotting(spot_ignitions : SortedDict[float, set],
-                         spread_state   : SpreadState,
-                         stop_time      : cy.float) -> list[BurnedCellInfo]:
+def ignite_from_spotting(spot_ignitions: SortedDict[float, set],
+                         phi_matrix    : cy.float[:,::1],
+                         stop_time     : cy.float) -> list[BurnedCellInfo]:
     """
     Resolves the cells to be ignited by spotting in the current time step,
-    returning them as a list of (y, x) tuples, and mutates `spread_state` accordingly.
+    returning them as a list of (y, x) tuples, and mutates `phi_matrix` accordingly.
     """
     ignited_cells: list[BurnedCellInfo] = []
     if len(spot_ignitions) > 0:
-        phi_matrix            : cy.float[:,::1] = spread_state.phi
-        time_of_arrival_matrix: cy.float[:,::1] = spread_state.time_of_arrival
-        ignition_time         : cy.float
-        maybe_ignited_cells   : set
-        cell_index            : coord_yx
+        maybe_ignited_cells: set
+        cell_index         : coord_yx
         # https://grantjenks.com/docs/sortedcontainers/sorteddict.html
         n : pyidx = spot_ignitions.bisect_left(stop_time) # number of ignition_time values smaller than stop_time
         _i: pyidx
         for _i in range(n):
             # Remove and return the smallest ignition_time
-            (ignition_time, maybe_ignited_cells) = spot_ignitions.popitem(index=0)
+            maybe_ignited_cells = spot_ignitions.popitem(index=0)[1]
             for cell_index in maybe_ignited_cells:
                 y: pyidx = cell_index[0]
                 x: pyidx = cell_index[1]
-                if phi_matrix[2+y, 2+x] > 0.0: # Not burned yet
-                    phi_matrix[2+y, 2+x]        = -1.0
-                    time_of_arrival_matrix[y,x] = ignition_time # FIXME: REVIEW Should I use stop_time instead?
-                    ignited_cells.append(new_BurnedCellInfo(
-                        cell_index      = cell_index,
-                        time_of_arrival = ignition_time,
-                        phi_gradient_xy = (0.0, 0.0),
-                        from_spotting   = True
-                    ))
-                    # FIXME: I need to calculate and store the fire_behavior values for these cells
+                if phi_matrix[2+y, 2+x] > 0.0: # Not burned by stop_time
+                    phi_matrix[2+y, 2+x] = -1.0 # Ignite this cell at stop_time
+                    ignited_cells.append(
+                        new_BurnedCellInfo(cell_index      = cell_index,
+                                           time_of_arrival = stop_time, # Start all spot_ignitions on the next timestep
+                                           phi_gradient_xy = (0.0, 0.0))
+                    )
     return ignited_cells
 
 
@@ -2255,11 +2269,14 @@ def spread_one_timestep(sim_state    : dict,
                                                            tca,
                                                            phi_matrix)
 
-    # Process side-effects of the burned cells (outputs, etc.)
+    # Compute and save the fire behavior values for all burned cells and store any spot ignitions they create
     process_burned_cells(spread_inputs, fb_opts, spread_state, spot_ignitions, random_generator, burned_cells)
-    # TODO: REVIEW It is a questionable choice to call this function AFTER process_burned_cells.
-    #       It may be more sensible to ignite the spotting cells first and then to process them all.
-    spot_ignited_cells: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, spread_state, stop_time)
+
+    # Remove from spot_ignitions and return all cells which ignite before stop_time and set phi_matrix to -1.0 for each
+    spot_ignited_cells: list[BurnedCellInfo] = ignite_from_spotting(spot_ignitions, phi_matrix, stop_time)
+
+    # Compute and save the fire behavior values for all spot-ignited cells and store any spot ignitions they create
+    process_burned_cells(spread_inputs, fb_opts, spread_state, spot_ignitions, random_generator, spot_ignited_cells)
 
     # Save the new phi_matrix values in phi_star_matrix
     reset_phi_star(tca, spot_ignited_cells, phi_star_matrix, phi_matrix)
