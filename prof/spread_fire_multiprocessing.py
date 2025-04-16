@@ -7,8 +7,10 @@ from pyretechnics.space_time_cube import SpaceTimeCube
 import time
 
 
+# NOTE: All shared arrays will have dtype=np.float32 to avoid copying
+#       into the child processes when converted to SpaceTimeCubes.
 def make_shared_array(shape, value):
-    array           = np.full(shape, value)
+    array           = np.full(shape, value, dtype=np.float32)
     dtype           = array.dtype
     shared_memory   = SharedMemory(create=True, size=array.nbytes)
     shared_array    = np.ndarray(shape, dtype=dtype, buffer=shared_memory.buf)
@@ -60,7 +62,6 @@ def spread_one_fire(shared_array_specs, cube_shape, cube_resolution, ignited_cel
         # Create an input dictionary of SpaceTimeCubes from the shared memory arrays
         #============================================================================================
 
-        # WARNING: Any non-float32 shared arrays will be copied into this process' memory space!
         space_time_cubes = {name: SpaceTimeCube(cube_shape, shared_array["array"])
                             for (name, shared_array) in shared_arrays.items()}
 
@@ -151,25 +152,24 @@ def main():
         lo_res_cube_shape   = (bands, rows // 10, cols // 10)
 
         shared_arrays = {
-            "slope"                        : make_shared_array(hi_res_grid_shape, 0.8),   # rise/run
-            "aspect"                       : make_shared_array(hi_res_grid_shape, 225.0), # degrees clockwise from North
-            # Fuel model 185: (TL5) high-load conifer litter
-            "fuel_model"                   : make_shared_array(hi_res_grid_shape, 185.0), # integer index in fm.fuel_model_table
-            "canopy_cover"                 : make_shared_array(hi_res_grid_shape, 0.7),   # 0-1
-            "canopy_height"                : make_shared_array(hi_res_grid_shape, 10.0),  # m
-            "canopy_base_height"           : make_shared_array(hi_res_grid_shape, 0.5),   # m
-            "canopy_bulk_density"          : make_shared_array(hi_res_grid_shape, 0.3),   # kg/m^3
-            "wind_speed_10m"               : make_shared_array(lo_res_cube_shape, 10.0),  # km/hr
-            "upwind_direction"             : make_shared_array(lo_res_cube_shape, 180.0), # degrees clockwise from North
-            "fuel_moisture_dead_1hr"       : make_shared_array(lo_res_cube_shape, 0.03),  # kg moisture/kg ovendry weight
-            "fuel_moisture_dead_10hr"      : make_shared_array(lo_res_cube_shape, 0.04),  # kg moisture/kg ovendry weight
-            "fuel_moisture_dead_100hr"     : make_shared_array(lo_res_cube_shape, 0.05),  # kg moisture/kg ovendry weight
-            "fuel_moisture_live_herbaceous": make_shared_array(lo_res_cube_shape, 0.90),  # kg moisture/kg ovendry weight
-            "fuel_moisture_live_woody"     : make_shared_array(lo_res_cube_shape, 0.60),  # kg moisture/kg ovendry weight
-            "foliar_moisture"              : make_shared_array(lo_res_cube_shape, 0.70),  # kg moisture/kg ovendry weight
-            "temperature"                  : make_shared_array(lo_res_cube_shape, 30.0),  # degrees Celsius
-            "fuel_spread_adjustment"       : make_shared_array(hi_res_grid_shape, 1.0),   # float >= 0.0 (Optional: default = 1.0)
-            "weather_spread_adjustment"    : make_shared_array(lo_res_cube_shape, 1.0),   # float >= 0.0 (Optional: default = 1.0)
+            "slope"                        : make_shared_array(hi_res_grid_shape,   0.80), # rise/run
+            "aspect"                       : make_shared_array(hi_res_grid_shape, 225.00), # degrees clockwise from North
+            "fuel_model"                   : make_shared_array(hi_res_grid_shape, 185   ), # (TL5) high-load conifer litter
+            "canopy_cover"                 : make_shared_array(hi_res_grid_shape,   0.70), # 0-1
+            "canopy_height"                : make_shared_array(hi_res_grid_shape,  10.00), # m
+            "canopy_base_height"           : make_shared_array(hi_res_grid_shape,   0.50), # m
+            "canopy_bulk_density"          : make_shared_array(hi_res_grid_shape,   0.30), # kg/m^3
+            "wind_speed_10m"               : make_shared_array(lo_res_cube_shape,  10.00), # km/hr
+            "upwind_direction"             : make_shared_array(lo_res_cube_shape, 180.00), # degrees clockwise from North
+            "fuel_moisture_dead_1hr"       : make_shared_array(lo_res_cube_shape,   0.03), # kg moisture/kg ovendry weight
+            "fuel_moisture_dead_10hr"      : make_shared_array(lo_res_cube_shape,   0.04), # kg moisture/kg ovendry weight
+            "fuel_moisture_dead_100hr"     : make_shared_array(lo_res_cube_shape,   0.05), # kg moisture/kg ovendry weight
+            "fuel_moisture_live_herbaceous": make_shared_array(lo_res_cube_shape,   0.90), # kg moisture/kg ovendry weight
+            "fuel_moisture_live_woody"     : make_shared_array(lo_res_cube_shape,   0.60), # kg moisture/kg ovendry weight
+            "foliar_moisture"              : make_shared_array(lo_res_cube_shape,   0.70), # kg moisture/kg ovendry weight
+            "temperature"                  : make_shared_array(lo_res_cube_shape,  30.00), # degrees Celsius
+            "fuel_spread_adjustment"       : make_shared_array(hi_res_grid_shape,   1.00), # float >= 0.0 (Optional: default = 1.0)
+            "weather_spread_adjustment"    : make_shared_array(lo_res_cube_shape,   1.00), # float >= 0.0 (Optional: default = 1.0)
         }
 
         shared_array_specs = {name: shared_array["spec"]
