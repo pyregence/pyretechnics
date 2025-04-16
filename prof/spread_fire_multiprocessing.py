@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from multiprocessing import Pool
 from multiprocessing.shared_memory import SharedMemory
 import numpy as np
@@ -121,7 +122,7 @@ def spread_one_fire(shared_array_specs, cube_shape, cube_resolution, ignited_cel
             shared_array["memory"].close()
 
 
-def main():
+def main(num_cores, num_jobs):
     try:
         #============================================================================================
         # Specify the SpaceTimeCube dimensions
@@ -235,15 +236,13 @@ def main():
         # Run multiple fires in parallel in a multiprocessing pool
         #============================================================================================
 
-        num_cores = 4
-        num_jobs  = 4
-
         print(f"Starting Multiprocessing Pool with {num_cores} Cores...")
 
         with Pool(processes=num_cores) as pool:
             print(f"Submitting {num_jobs} Parallel Jobs...")
-            all_results = pool.starmap(spread_one_fire, [input_args] * num_jobs)
-
+            all_results = pool.starmap(spread_one_fire,
+                                       [input_args] * num_jobs,
+                                       chunksize=max(1, num_jobs // num_cores))
             for i in range(num_jobs):
                 print(f"\nResults of Fire {i + 1}")
                 pprint(all_results[i], sort_dicts=False)
@@ -258,4 +257,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("-c", "--cores", type=int, help = "number of cores")
+    parser.add_argument("-j", "--jobs" , type=int, help = "number of jobs")
+    args = parser.parse_args()
+
+    if args.cores and args.jobs:
+        main(num_cores=args.cores, num_jobs=args.jobs)
+    else:
+        parser.print_help()
