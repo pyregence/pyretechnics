@@ -29,11 +29,11 @@ cube_resolution = (
 
 def arr2d(value):
     grid_shape = cube_shape[1:]
-    return np.full(grid_shape, value)
+    return np.full(grid_shape, value, dtype=np.float32)
 
 def arr3d(value):
     (b, r, c) = cube_shape
-    return np.full((b, r//10, c//10) , value)
+    return np.full((b, r//10, c//10), value, dtype=np.float32)
 
 space_time_cubes = {
     "slope"                        : SpaceTimeCube(cube_shape, arr2d(0.8)),   # rise/run
