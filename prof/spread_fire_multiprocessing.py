@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from multiprocessing import Pool
+import multiprocessing as mp
 from multiprocessing.shared_memory import SharedMemory
 import numpy as np
 from pprint import pprint
@@ -238,7 +238,7 @@ def main(num_cores, num_jobs):
 
         print(f"Starting Multiprocessing Pool with {num_cores} Cores...")
 
-        with Pool(processes=num_cores) as pool:
+        with mp.Pool(processes=num_cores) as pool:
             print(f"Submitting {num_jobs} Parallel Jobs...")
             all_results = pool.starmap(spread_one_fire,
                                        [input_args] * num_jobs,
@@ -263,6 +263,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.cores and args.jobs:
+        mp.set_start_method("spawn") # options: spawn, fork, forkserver
         main(num_cores=args.cores, num_jobs=args.jobs)
     else:
         parser.print_help()
