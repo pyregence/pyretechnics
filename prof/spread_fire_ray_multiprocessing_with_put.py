@@ -100,6 +100,14 @@ def spread_one_fire(shared_array_refs, cube_shape, cube_resolution, ignited_cell
 
 def main(num_cores, num_jobs):
     #============================================================================================
+    # Start a Ray Cluster
+    #============================================================================================
+
+    print(f"Starting Ray Cluster with {num_cores} Cores...")
+
+    ray.init(num_cpus=num_cores)
+
+    #============================================================================================
     # Specify the SpaceTimeCube dimensions
     #============================================================================================
 
