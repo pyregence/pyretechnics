@@ -4,6 +4,36 @@ A Python library for simulating fire behavior in a variety of ways.
 
 Latest API Documentation: https://pyregence.github.io/pyretechnics/
 
+## Overview
+
+The Pyretechnics library provides modules that implement the fundamental equations used in most operational wildland fire behavior models like GridFire, ELMFIRE, FlamMap, FARSITE, FSIM, and BehavePlus. These fall into the following categories:
+
+- pyretechnics.fuel_models: Fuel Model and Moisture Definitions
+- pyretechnics.surface_fire: Surface Fire Equations
+- pyretechnics.crown_fire: Crown Fire Equations
+- pyretechnics.spot_fire: Spot Fire Equations
+- pyretechnics.burn_cells: Burning Cells on a Grid
+- pyretechnics.eulerian_level_set: Fire Spread Algorithm (ELMFIRE)
+
+In addition, it provides a module for unifying 0D (constant), 1D (temporal), 2D (spatial), and 3D (spatiotemporal) input datasets (of potentially different resolutions) for fuels, topography, wind, and moisture called `pyretechnics.space_time_cube`.
+
+The user of this library simply loads in their input datasets as Numpy arrays, wraps them in `SpaceTimeCube` objects to make all of their dimensions and resolutions match, and feeds them into the functions for burning cells (`pyretechnics.burn_cells`) or spreading a fire from a point or existing burn scar (`pyretechnics.eulerian_level_set`).
+The cell-burning functions will return the fire behavior metrics for the burned cell (i.e., fire type, spread rate, spread direction, fireline intensity, flame length) as a Python dictionary. The fire spreading functions return a dictionary containing these same metrics (+ time of arrival) in Numpy arrays, covering the simulation area.
+
+Since the library's main functions take and return Numpy arrays, you are free to create them as needed for your own projects. You can load arrays from numerous geospatial file formats using the Python `rasterio` library. You could grab data from a PostGIS raster using `psycopg2` or load in NetCDF files with the `netCDF4` library. You could also create your own arrays using Numpy or Scipy functions based on your needs. And, of course, you could use these same libraries to apply random noise, value perturbations, or other preprocessing steps on the arrays before initiating fire spread simulations.
+
+Similary, you can use any Python library or algorithm to post-process the output arrays into aggregate arrays (e.g., annual/conditional burn frequency), visualize them (e.g., with `matplotlib`), and/or write them out as raster files, CSVs, or any other format that you can think of.
+
+Notably, Pyretechnics is written as a Literate Program, which you can read online here: https://pyregence.github.io/pyretechnics
+
+Each module has its own dedicated chapter, with two subsections:
+- For Developers
+- For Users
+
+The `For Developers` sections are the literate programming implementation of the equations and algorithms included in that module. Read these sections if you want to understand the science and engineering behind that module.
+
+The `For Users` sections are notebook programming examples of *how to use* the public functions in each module along with their computed outputs. If you just want to use the Pyretechnics library, you can jump to these sections and cut-and-paste the example scripts into your own Python file or Jupyter notebook to get yourself going quickly.
+
 ## Design Principles
 
 ### Free and Open Source Software
