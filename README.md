@@ -307,8 +307,8 @@ files within this repository.
   - Web: https://sig-gis.com
 
 - Chris Lautenberger, PhD, PE
-  - Email: chris@cloudfire.ai
-  - Web: https://cloudfire.ai
+  - Email: chris@cloudfire.com
+  - Web: https://cloudfire.com
 
 - David Saah, PhD
   - Email: dsaah@sig-gis.com

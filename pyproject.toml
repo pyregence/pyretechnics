@@ -4,7 +4,7 @@ version = "2025.4.8"
 authors = [
         {name="Gary W. Johnson, PhD", email="gjohnson@sig-gis.com"},
         {name="Valentin Waeselynck", email="vwaeselynck@sig-gis.com"},
-        {name="Chris Lautenberger, PhD, PE", email="chris@cloudfire.ai"},
+        {name="Chris Lautenberger, PhD, PE", email="chris@cloudfire.com"},
         {name="David Saah, PhD", email="dsaah@sig-gis.com"},
 ]
 description = "A Python library for simulating fire behavior in a variety of ways."
