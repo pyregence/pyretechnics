@@ -98,7 +98,7 @@ class SpaceTimeCube(ISpaceTimeCube):
     def __init__(self, cube_shape: tuple[int, int, int], base: object) -> cy.void:
         """
         NOTE: The resolutions in cube_shape must be exact multiples of any existing dimensions
-              in the base data.
+              in the base data. If base is not a Numpy float32 array, a new array will be allocated.
         """
         # Ensure that cube_shape contains 3 values or throw an error
         if len(cube_shape) != 3:
@@ -140,6 +140,10 @@ class SpaceTimeCube(ISpaceTimeCube):
             self.t_repetitions = divide_evenly(cube_bands, base_bands)
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
+            # Warn if base is not a Numpy float32 array
+            if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
+                print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
+                      flush=True)
             # Expand (base_bands) -> (base_bands,1,1)
             self.data = np.expand_dims(np.asarray(base, dtype=np.float32), axis=(1,2))
 
@@ -151,6 +155,10 @@ class SpaceTimeCube(ISpaceTimeCube):
             self.t_repetitions = cube_bands
             self.y_repetitions = divide_evenly(cube_rows, base_rows)
             self.x_repetitions = divide_evenly(cube_cols, base_cols)
+            # Warn if base is not a Numpy float32 array
+            if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
+                print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
+                      flush=True)
             # Expand (base_rows,base_cols) -> (1,base_rows,base_cols)
             self.data = np.expand_dims(np.asarray(base, dtype=np.float32), axis=0)
 
@@ -163,7 +171,11 @@ class SpaceTimeCube(ISpaceTimeCube):
             self.t_repetitions = divide_evenly(cube_bands, base_bands)
             self.y_repetitions = divide_evenly(cube_rows, base_rows)
             self.x_repetitions = divide_evenly(cube_cols, base_cols)
-            self.data          = np.asarray(base, dtype=np.float32)
+            # Warn if base is not a Numpy float32 array
+            if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
+                print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
+                      flush=True)
+            self.data = np.asarray(base, dtype=np.float32)
 
         else:
             # 4D+: Invalid Input

@@ -797,7 +797,7 @@ constant input dimensions.
     <span class="org-keyword">def</span> <span class="org-function-name">__init__</span>(<span class="org-keyword">self</span>, cube_shape: <span class="org-builtin">tuple</span>[<span class="org-builtin">int</span>, <span class="org-builtin">int</span>, <span class="org-builtin">int</span>], base: <span class="org-builtin">object</span>) <span class="org-operator">-&gt;</span> cy.void:
         <span class="org-doc">"""</span>
 <span class="org-doc">        NOTE: The resolutions in cube_shape must be exact multiples of any existing dimensions</span>
-<span class="org-doc">              in the base data.</span>
+<span class="org-doc">              in the base data. If base is not a Numpy float32 array, a new array will be allocated.</span>
 <span class="org-doc">        """</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that cube_shape contains 3 values or throw an error</span>
         <span class="org-keyword">if</span> <span class="org-builtin">len</span>(cube_shape) <span class="org-operator">!=</span> 3:
@@ -839,6 +839,10 @@ constant input dimensions.
             <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_bands, base_bands)
             <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows
             <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if base is not a Numpy float32 array</span>
+            <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(base, np.ndarray)) <span class="org-keyword">or</span> (base.dtype <span class="org-operator">!=</span> np.float32):
+                <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube."</span>,
+                      flush<span class="org-operator">=</span><span class="org-constant">True</span>)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Expand (base_bands) -&gt; (base_bands,1,1)</span>
             <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.expand_dims(np.asarray(base, dtype<span class="org-operator">=</span>np.float32), axis<span class="org-operator">=</span>(1,2))
 
@@ -850,6 +854,10 @@ constant input dimensions.
             <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands
             <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_rows, base_rows)
             <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_cols, base_cols)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if base is not a Numpy float32 array</span>
+            <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(base, np.ndarray)) <span class="org-keyword">or</span> (base.dtype <span class="org-operator">!=</span> np.float32):
+                <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube."</span>,
+                      flush<span class="org-operator">=</span><span class="org-constant">True</span>)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Expand (base_rows,base_cols) -&gt; (1,base_rows,base_cols)</span>
             <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.expand_dims(np.asarray(base, dtype<span class="org-operator">=</span>np.float32), axis<span class="org-operator">=</span>0)
 
@@ -862,7 +870,11 @@ constant input dimensions.
             <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_bands, base_bands)
             <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_rows, base_rows)
             <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> divide_evenly(cube_cols, base_cols)
-            <span class="org-keyword">self</span>.<span class="org-variable-name">data</span>          <span class="org-operator">=</span> np.asarray(base, dtype<span class="org-operator">=</span>np.float32)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if base is not a Numpy float32 array</span>
+            <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(base, np.ndarray)) <span class="org-keyword">or</span> (base.dtype <span class="org-operator">!=</span> np.float32):
+                <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube."</span>,
+                      flush<span class="org-operator">=</span><span class="org-constant">True</span>)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">data</span> <span class="org-operator">=</span> np.asarray(base, dtype<span class="org-operator">=</span>np.float32)
 
         <span class="org-keyword">else</span>:
             <span class="org-comment-delimiter"># </span><span class="org-comment">4D+: Invalid Input</span>
@@ -1870,12 +1882,15 @@ Value from Constant Data: Foliar Moisture
 0.699999988079071 
 
 Value from Time Series Data: Spread Rate Adjustment
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 1.0 
 
 Value from Spatial Data: Elevation
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 564.0 
 
 Value from Spatio-Temporal Data: Wind Speed
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 32.0
 </pre>
 </div>
@@ -1907,12 +1922,14 @@ Time Series from Constant Data: Foliar Moisture
 [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7] 
 
 Time Series from Time Series Data: Spread Rate Adjustment
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 [1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
 
 Time Series from Spatial Data: Elevation
 [564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.] 
 
 Time Series from Spatio-Temporal Data: Wind Speed
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 [32. 32. 32. 32. 32. 32. 37. 37. 37. 37. 37. 37.]
 </pre>
 </div>
@@ -1965,6 +1982,9 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
 
 Spatial Plane from Spatial Data: Elevation
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 [[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
  [443. 551. 480. 476. 432. 561. 578. 361. 468. 480.]
  [520. 712. 396. 393. 584. 292. 424. 391. 494. 586.]
@@ -1977,6 +1997,9 @@ Spatial Plane from Spatial Data: Elevation
  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]] 
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 [[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
  [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
@@ -2083,6 +2106,9 @@ Subcube from Spatial Data: Elevation
   [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]] 
 
 Subcube from Spatio-Temporal Data: Wind Speed
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
+WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
 [[[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
   [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
   [31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
