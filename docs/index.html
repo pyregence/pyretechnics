@@ -14461,6 +14461,7 @@ raster layers from files on disk into a Python dictionary of
 <pre class="src src-python" id="load-landfire-imports"><span class="org-keyword">import</span> cython
 <span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> rasterio
+<span class="org-keyword">from</span> rasterio.enums <span class="org-keyword">import</span> Resampling
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
 <span class="org-keyword">else</span>:
@@ -14499,12 +14500,56 @@ these keys:
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/</span>
-<span class="org-keyword">def</span> <span class="org-function-name">load_raster</span>(file_path, dtype<span class="org-operator">=</span><span class="org-constant">None</span>):
+<span class="org-keyword">def</span> <span class="org-function-name">maybe_resample_resolution</span>(resolution, divisor, resampling_policy):
+    <span class="org-keyword">if</span> (resolution <span class="org-operator">%</span> divisor <span class="org-operator">==</span> 0):
+        <span class="org-keyword">return</span> resolution
+    <span class="org-keyword">elif</span> resampling_policy <span class="org-operator">==</span> <span class="org-string">"always_upsample"</span>:
+        <span class="org-keyword">return</span> divisor <span class="org-operator">*</span> (resolution <span class="org-operator">//</span> divisor <span class="org-operator">+</span> 1)
+    <span class="org-keyword">elif</span> resampling_policy <span class="org-operator">==</span> <span class="org-string">"nearest_match"</span>:
+        <span class="org-keyword">return</span> divisor <span class="org-operator">*</span> <span class="org-builtin">max</span>(1, <span class="org-builtin">round</span>(resolution <span class="org-operator">/</span> divisor))
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The resampling_policy must be either 'always_upsample' or 'nearest_match'."</span>)
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">load_raster</span>(file_path, dtype<span class="org-operator">=</span><span class="org-constant">None</span>, cube_shape_divisors<span class="org-operator">=</span>(1,1,1),
+                resampling_policy<span class="org-operator">=</span><span class="org-string">"nearest_match"</span>,
+                resampling_method<span class="org-operator">=</span>Resampling.nearest):
+    <span class="org-doc">"""</span>
+<span class="org-doc">    resampling_policy: "always_upsample" or "nearest_match"</span>
+<span class="org-doc">    resampling_method: any rasterio.enums.Resampling method</span>
+<span class="org-doc">    """</span>
     <span class="org-keyword">with</span> rasterio.<span class="org-builtin">open</span>(file_path, <span class="org-string">"r"</span>) <span class="org-keyword">as</span> input_raster:
-        <span class="org-keyword">return</span> {
-            <span class="org-string">"array"</span>   : input_raster.read(out_dtype<span class="org-operator">=</span>dtype),
-            <span class="org-string">"metadata"</span>: raster_metadata(input_raster),
-        }
+        <span class="org-variable-name">metadata</span>  <span class="org-operator">=</span> raster_metadata(input_raster)
+        <span class="org-variable-name">bands</span>     <span class="org-operator">=</span> metadata[<span class="org-string">"bands"</span>]
+        <span class="org-variable-name">rows</span>      <span class="org-operator">=</span> metadata[<span class="org-string">"rows"</span>]
+        <span class="org-variable-name">cols</span>      <span class="org-operator">=</span> metadata[<span class="org-string">"cols"</span>]
+        (<span class="org-variable-name">b</span>, <span class="org-variable-name">r</span>, <span class="org-variable-name">c</span>) <span class="org-operator">=</span> cube_shape_divisors
+        <span class="org-variable-name">new_bands</span> <span class="org-operator">=</span> maybe_resample_resolution(bands, b, resampling_policy)
+        <span class="org-variable-name">new_rows</span>  <span class="org-operator">=</span> maybe_resample_resolution(rows, r, resampling_policy)
+        <span class="org-variable-name">new_cols</span>  <span class="org-operator">=</span> maybe_resample_resolution(cols, c, resampling_policy)
+        <span class="org-keyword">if</span> new_bands <span class="org-operator">==</span> bands <span class="org-keyword">and</span> new_rows <span class="org-operator">==</span> rows <span class="org-keyword">and</span> new_cols <span class="org-operator">==</span> cols:
+            <span class="org-keyword">return</span> {
+                <span class="org-string">"array"</span>   : input_raster.read(out_dtype<span class="org-operator">=</span>dtype),
+                <span class="org-string">"metadata"</span>: metadata,
+            }
+        <span class="org-keyword">else</span>:
+            <span class="org-variable-name">metadata</span>[<span class="org-string">"bands"</span>]     <span class="org-operator">=</span> new_bands
+            <span class="org-variable-name">metadata</span>[<span class="org-string">"rows"</span>]      <span class="org-operator">=</span> new_rows
+            <span class="org-variable-name">metadata</span>[<span class="org-string">"cols"</span>]      <span class="org-operator">=</span> new_cols
+            <span class="org-variable-name">metadata</span>[<span class="org-string">"transform"</span>] <span class="org-operator">=</span> (input_raster.transform
+                                     <span class="org-operator">*</span> input_raster.transform.scale(
+                                         cols <span class="org-operator">/</span> new_cols,
+                                         rows <span class="org-operator">/</span> new_rows,
+                                     ))
+            <span class="org-variable-name">array</span> <span class="org-operator">=</span> input_raster.read(
+                out_dtype<span class="org-operator">=</span>dtype,
+                out_shape<span class="org-operator">=</span>(new_bands, new_rows, new_cols),
+                resampling<span class="org-operator">=</span>resampling_method,
+            )
+            <span class="org-keyword">return</span> {
+                <span class="org-string">"array"</span>   : array,
+                <span class="org-string">"metadata"</span>: metadata,
+            }
 </pre>
 </div>
 </div>

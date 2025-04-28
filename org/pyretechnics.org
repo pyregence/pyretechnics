@@ -13990,6 +13990,7 @@ raster layers from files on disk into a Python dictionary of
 import cython
 import numpy as np
 import rasterio
+from rasterio.enums import Resampling
 if cython.compiled:
     from cython.cimports.pyretechnics.space_time_cube import SpaceTimeCube
 else:
@@ -14025,12 +14026,56 @@ def raster_metadata(raster):
 
 
 # TODO: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
-def load_raster(file_path, dtype=None):
+def maybe_resample_resolution(resolution, divisor, resampling_policy):
+    if (resolution % divisor == 0):
+        return resolution
+    elif resampling_policy == "always_upsample":
+        return divisor * (resolution // divisor + 1)
+    elif resampling_policy == "nearest_match":
+        return divisor * max(1, round(resolution / divisor))
+    else:
+        raise ValueError("The resampling_policy must be either 'always_upsample' or 'nearest_match'.")
+
+
+def load_raster(file_path, dtype=None, cube_shape_divisors=(1,1,1),
+                resampling_policy="nearest_match",
+                resampling_method=Resampling.nearest):
+    """
+    resampling_policy: "always_upsample" or "nearest_match"
+    resampling_method: any rasterio.enums.Resampling method
+    """
     with rasterio.open(file_path, "r") as input_raster:
-        return {
-            "array"   : input_raster.read(out_dtype=dtype),
-            "metadata": raster_metadata(input_raster),
-        }
+        metadata  = raster_metadata(input_raster)
+        bands     = metadata["bands"]
+        rows      = metadata["rows"]
+        cols      = metadata["cols"]
+        (b, r, c) = cube_shape_divisors
+        new_bands = maybe_resample_resolution(bands, b, resampling_policy)
+        new_rows  = maybe_resample_resolution(rows, r, resampling_policy)
+        new_cols  = maybe_resample_resolution(cols, c, resampling_policy)
+        if new_bands == bands and new_rows == rows and new_cols == cols:
+            return {
+                "array"   : input_raster.read(out_dtype=dtype),
+                "metadata": metadata,
+            }
+        else:
+            metadata["bands"]     = new_bands
+            metadata["rows"]      = new_rows
+            metadata["cols"]      = new_cols
+            metadata["transform"] = (input_raster.transform
+                                     * input_raster.transform.scale(
+                                         cols / new_cols,
+                                         rows / new_rows,
+                                     ))
+            array = input_raster.read(
+                out_dtype=dtype,
+                out_shape=(new_bands, new_rows, new_cols),
+                resampling=resampling_method,
+            )
+            return {
+                "array"   : array,
+                "metadata": metadata,
+            }
 #+end_src
 
 *** Converting LANDFIRE Units and Datatypes
