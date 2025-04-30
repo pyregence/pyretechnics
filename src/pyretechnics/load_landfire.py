@@ -111,8 +111,8 @@ def verify_cube_compatible_dimensions(cube_shape, rasters):
         raster_shape = np.asarray((r["metadata"]["bands"],
                                    r["metadata"]["rows"],
                                    r["metadata"]["cols"]))
-        if any(map(lambda x: x != 0, cube_shape_ % raster_shape)):
-            raise ValueError("Some rasters do not evenly divide the space-time cube dimensions.")
+        if np.any(raster_shape > cube_shape_):
+            raise ValueError("Some raster dimensions exceed the space-time cube dimensions.")
 
     return True
 

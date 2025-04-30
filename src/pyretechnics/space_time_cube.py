@@ -21,14 +21,14 @@ def is_pos_int(x: object) -> cy.bint:
 @cy.cfunc
 def divide_evenly(dividend: cy.int, divisor: cy.int) -> cy.int:
     if divisor == 0:
-        raise ValueError(str(divisor) + " may not be zero.")
+        raise ValueError(f"{divisor} may not be zero.")
     else:
         quotient : cy.int = dividend // divisor
         remainder: cy.int = dividend % divisor
         if remainder == 0:
             return quotient
         else:
-            raise ValueError(str(dividend) + " must be an exact multiple of " + str(divisor) + ".")
+            raise ValueError(f"{dividend} must be an exact multiple of {divisor}.")
 
 
 @cy.ccall
@@ -49,22 +49,79 @@ def to_positive_index_range(index_range: tuple[pyidx, pyidx]|None, axis_length: 
 
 
 @cy.cfunc
-def maybe_repeat_array(array: ndarray, axis_repetitions: tuple[pyidx, cy.int]) -> ndarray:
+def stretch_array(old_array: ndarray, new_length: cy.int, repetitions: cy.float) -> ndarray:
+    new_array: ndarray = np.zeros(new_length, dtype=old_array.dtype)
+    i        : pyidx
+    for i in range(new_length):
+        new_array[i] = old_array[int(i / repetitions)]
+    return new_array
+
+
+@cy.cfunc
+def maybe_repeat_array(maybe_array: ndarray, axis_repetitions: tuple[pyidx, cy.float]) -> ndarray:
     """
     Return a new array that is created by repeating the elements from the input
     array repetitions times along the specified array axis. Avoid allocating
     new memory if repetitions == 1 or if the repeated array axis has length 1.
     """
-    (axis, repetitions) = axis_repetitions
-    if repetitions == 1:
-        return array
+    axis       : pyidx    = axis_repetitions[0]
+    repetitions: cy.float = axis_repetitions[1]
+    old_array  : ndarray  = np.asarray(maybe_array)
+    array_dims : pyidx    = old_array.ndim
+    array_shape: list     = list(np.shape(old_array))
+    axis_length: cy.int   = array_shape[axis]
+    if repetitions == 1.0:
+        # no repetitions necessary
+        return old_array
+    elif axis_length == 1:
+        # broadcast single-element axis repetitions times
+        array_shape[axis] = int(repetitions)
+        return np.broadcast_to(old_array, array_shape)
+    elif repetitions % 1.0 == 0.0:
+        # repeat each element on the chosen axis repetitions times
+        return np.repeat(old_array, int(repetitions), axis)
+    elif axis == 0 and array_dims == 1:
+        # populate a new 1D array of the expected length by translating its indices into the original array
+        new_axis_length: cy.int = int(axis_length * repetitions)
+        return stretch_array(old_array, new_axis_length, repetitions)
+    elif axis == 0 and array_dims == 2:
+        # populate a new 2D array of the expected length by translating its indices into the original array
+        new_rows: cy.int = int(axis_length * repetitions)
+        return np.stack([old_array[int(i / repetitions)] for i in range(new_rows)])
+    elif axis == 1 and array_dims == 2:
+        # populate a new 2D array of the expected length by translating its indices into the original array
+        old_rows: cy.int = array_shape[0]
+        new_cols: cy.int = int(axis_length * repetitions)
+        return np.stack([stretch_array(old_array[i], new_cols, repetitions) for i in range(old_rows)])
+    elif axis == 0 and array_dims == 3:
+        # populate a new 3D array of the expected length by translating its indices into the original array
+        new_bands: cy.int = int(axis_length * repetitions)
+        return np.stack([old_array[int(b / repetitions)] for b in range(new_bands)])
+    elif axis == 1 and array_dims == 3:
+        # populate a new 2D array of the expected length by translating its indices into the original array
+        old_bands: cy.int = array_shape[0]
+        new_rows : cy.int = int(axis_length * repetitions)
+        return np.stack([
+            np.stack([
+                old_array[b, int(i / repetitions)]
+                for i in range(new_rows)
+            ])
+            for b in range(old_bands)
+        ])
+    elif axis == 2 and array_dims == 3:
+        # populate a new 3D array of the expected length by translating its indices into the original array
+        old_bands: cy.int = array_shape[0]
+        old_rows : cy.int = array_shape[1]
+        new_cols : cy.int = int(axis_length * repetitions)
+        return np.stack([
+            np.stack([
+                stretch_array(old_array[b,i], new_cols, repetitions)
+                for i in range(old_rows)
+            ])
+            for b in range(old_bands)
+        ])
     else:
-        array_shape: list = list(np.shape(array))
-        if array_shape[axis] == 1:
-            array_shape[axis] = repetitions
-            return np.broadcast_to(array, array_shape)
-        else:
-            return np.repeat(array, repetitions, axis)
+        raise ValueError("Floating point repetitions are only supported for 1D, 2D, and 3D arrays.")
 # space-time-cube-utilities ends here
 # [[file:../../org/pyretechnics.org::ispace-time-cube-class][ispace-time-cube-class]]
 @cy.cclass
@@ -89,9 +146,9 @@ class SpaceTimeCube(ISpaceTimeCube):
     size         : cy.ulonglong
     shape        : tuple[cy.int, cy.int, cy.int]
     base         : object
-    t_repetitions: cy.int
-    y_repetitions: cy.int
-    x_repetitions: cy.int
+    t_repetitions: cy.float
+    y_repetitions: cy.float
+    x_repetitions: cy.float
     data         : cy.float[:,:,::1] # FIXME: Restore polymorphism for the underlying Numpy arrays
 
 
@@ -137,9 +194,12 @@ class SpaceTimeCube(ISpaceTimeCube):
         elif base_dimensions == 1:
             # 1D: Time-Series Input
             base_bands: cy.int = len(base)
-            self.t_repetitions = divide_evenly(cube_bands, base_bands)
+            self.t_repetitions = cube_bands / base_bands
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
+            # Ensure that the cube_shape is not smaller than the base shape
+            if cube_bands < base_bands:
+                raise ValueError("The cube_shape may not be smaller than the base shape.")
             # Warn if base is not a Numpy float32 array
             if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
                 print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
@@ -153,8 +213,11 @@ class SpaceTimeCube(ISpaceTimeCube):
             base_rows : cy.int = base_shape[0]
             base_cols : cy.int = base_shape[1]
             self.t_repetitions = cube_bands
-            self.y_repetitions = divide_evenly(cube_rows, base_rows)
-            self.x_repetitions = divide_evenly(cube_cols, base_cols)
+            self.y_repetitions = cube_rows / base_rows
+            self.x_repetitions = cube_cols / base_cols
+            # Ensure that the cube_shape is not smaller than the base shape
+            if cube_rows < base_rows or cube_cols < base_cols:
+                raise ValueError("The cube_shape may not be smaller than the base shape.")
             # Warn if base is not a Numpy float32 array
             if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
                 print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
@@ -168,9 +231,12 @@ class SpaceTimeCube(ISpaceTimeCube):
             base_bands: cy.int = base_shape[0]
             base_rows : cy.int = base_shape[1]
             base_cols : cy.int = base_shape[2]
-            self.t_repetitions = divide_evenly(cube_bands, base_bands)
-            self.y_repetitions = divide_evenly(cube_rows, base_rows)
-            self.x_repetitions = divide_evenly(cube_cols, base_cols)
+            self.t_repetitions = cube_bands / base_bands
+            self.y_repetitions = cube_rows / base_rows
+            self.x_repetitions = cube_cols / base_cols
+            # Ensure that the cube_shape is not smaller than the base shape
+            if cube_bands < base_bands or cube_rows < base_rows or cube_cols < base_cols:
+                raise ValueError("The cube_shape may not be smaller than the base shape.")
             # Warn if base is not a Numpy float32 array
             if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
                 print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
@@ -192,9 +258,10 @@ class SpaceTimeCube(ISpaceTimeCube):
         NOTE: Indices may be negative.
         """
         # Select value by spatio-temporal coordinate
-        return self.data[t // self.t_repetitions,
-                         y // self.y_repetitions,
-                         x // self.x_repetitions]
+        base_t: pyidx = int(t / self.t_repetitions)
+        base_y: pyidx = int(y / self.y_repetitions)
+        base_x: pyidx = int(x / self.x_repetitions)
+        return self.data[base_t, base_y, base_x]
 
 
     @cy.ccall
@@ -214,10 +281,10 @@ class SpaceTimeCube(ISpaceTimeCube):
         t_stop_exclusive: pyidx               = t_range_updated[1]
         t_stop          : pyidx               = t_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_start_chunk: pyidx = t_start // self.t_repetitions
-        t_stop_chunk : pyidx = t_stop  // self.t_repetitions
-        y_chunk      : pyidx = y       // self.y_repetitions
-        x_chunk      : pyidx = x       // self.x_repetitions
+        t_start_chunk: pyidx = int(t_start / self.t_repetitions)
+        t_stop_chunk : pyidx = int(t_stop  / self.t_repetitions)
+        y_chunk      : pyidx = int(y       / self.y_repetitions)
+        x_chunk      : pyidx = int(x       / self.x_repetitions)
         # Select the array slice that completely contains all low-res coordinates
         low_res_time: ndarray = np.asarray(self.data[t_start_chunk:(t_stop_chunk + 1),
                                                      y_chunk,
@@ -225,7 +292,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         # Expand the low-res slice into a high-res slice
         high_res_time: ndarray = maybe_repeat_array(low_res_time, (0, self.t_repetitions))
         # Translate high-res global coordinates to high-res slice coordinates
-        t_chunk_origin: pyidx = t_start_chunk * self.t_repetitions
+        t_chunk_origin: pyidx = int(t_start_chunk * self.t_repetitions)
         t_start_idx   : pyidx = t_start - t_chunk_origin
         t_stop_idx    : pyidx = t_stop  - t_chunk_origin
         # Select the array slice that matches the high-res slice coordinates
@@ -256,11 +323,11 @@ class SpaceTimeCube(ISpaceTimeCube):
         y_stop          : pyidx               = y_stop_exclusive - 1
         x_stop          : pyidx               = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_chunk      : pyidx = t       // self.t_repetitions
-        y_start_chunk: pyidx = y_start // self.y_repetitions
-        y_stop_chunk : pyidx = y_stop  // self.y_repetitions
-        x_start_chunk: pyidx = x_start // self.x_repetitions
-        x_stop_chunk : pyidx = x_stop  // self.x_repetitions
+        t_chunk      : pyidx = int(t       / self.t_repetitions)
+        y_start_chunk: pyidx = int(y_start / self.y_repetitions)
+        y_stop_chunk : pyidx = int(y_stop  / self.y_repetitions)
+        x_start_chunk: pyidx = int(x_start / self.x_repetitions)
+        x_stop_chunk : pyidx = int(x_stop  / self.x_repetitions)
         # Select the array slice that completely contains all low-res coordinates
         low_res_space: ndarray = np.asarray(self.data[t_chunk,
                                                       y_start_chunk:(y_stop_chunk + 1),
@@ -271,8 +338,8 @@ class SpaceTimeCube(ISpaceTimeCube):
                                           (1, self.x_repetitions)),
                                          low_res_space)
         # Translate high-res global coordinates to high-res slice coordinates
-        y_chunk_origin: pyidx = y_start_chunk * self.y_repetitions
-        x_chunk_origin: pyidx = x_start_chunk * self.x_repetitions
+        y_chunk_origin: pyidx = int(y_start_chunk * self.y_repetitions)
+        x_chunk_origin: pyidx = int(x_start_chunk * self.x_repetitions)
         y_start_idx   : pyidx = y_start - y_chunk_origin
         y_stop_idx    : pyidx = y_stop  - y_chunk_origin
         x_start_idx   : pyidx = x_start - x_chunk_origin
@@ -310,12 +377,12 @@ class SpaceTimeCube(ISpaceTimeCube):
         y_stop          : pyidx               = y_stop_exclusive - 1
         x_stop          : pyidx               = x_stop_exclusive - 1
         # Translate high-res coordinates to low-res coordinates
-        t_start_chunk: pyidx = t_start // self.t_repetitions
-        t_stop_chunk : pyidx = t_stop  // self.t_repetitions
-        y_start_chunk: pyidx = y_start // self.y_repetitions
-        y_stop_chunk : pyidx = y_stop  // self.y_repetitions
-        x_start_chunk: pyidx = x_start // self.x_repetitions
-        x_stop_chunk : pyidx = x_stop  // self.x_repetitions
+        t_start_chunk: pyidx = int(t_start / self.t_repetitions)
+        t_stop_chunk : pyidx = int(t_stop  / self.t_repetitions)
+        y_start_chunk: pyidx = int(y_start / self.y_repetitions)
+        y_stop_chunk : pyidx = int(y_stop  / self.y_repetitions)
+        x_start_chunk: pyidx = int(x_start / self.x_repetitions)
+        x_stop_chunk : pyidx = int(x_stop  / self.x_repetitions)
         # Select the array slice that completely contains all low-res coordinates
         low_res_cube: ndarray = np.asarray(self.data[t_start_chunk:(t_stop_chunk + 1),
                                                      y_start_chunk:(y_stop_chunk + 1),
@@ -327,9 +394,9 @@ class SpaceTimeCube(ISpaceTimeCube):
                                          (2, self.x_repetitions)),
                                         low_res_cube)
         # Translate high-res global coordinates to high-res slice coordinates
-        t_chunk_origin: pyidx = t_start_chunk * self.t_repetitions
-        y_chunk_origin: pyidx = y_start_chunk * self.y_repetitions
-        x_chunk_origin: pyidx = x_start_chunk * self.x_repetitions
+        t_chunk_origin: pyidx = int(t_start_chunk * self.t_repetitions)
+        y_chunk_origin: pyidx = int(y_start_chunk * self.y_repetitions)
+        x_chunk_origin: pyidx = int(x_start_chunk * self.x_repetitions)
         t_start_idx   : pyidx = t_start - t_chunk_origin
         t_stop_idx    : pyidx = t_stop  - t_chunk_origin
         y_start_idx   : pyidx = y_start - y_chunk_origin

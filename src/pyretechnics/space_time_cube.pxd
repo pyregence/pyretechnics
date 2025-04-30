@@ -5,7 +5,8 @@ from pyretechnics.cy_types cimport pyidx
 cdef bint is_pos_int(object x) noexcept
 cdef int divide_evenly(int dividend, int divisor)
 cpdef (pyidx, pyidx) to_positive_index_range(object index_range, pyidx axis_length) noexcept
-cdef np.ndarray maybe_repeat_array(np.ndarray array, (pyidx, int) axis_repetitions)
+cdef np.ndarray stretch_array(np.ndarray old_array, int new_length, float repetitions)
+cdef np.ndarray maybe_repeat_array(np.ndarray maybe_array, (pyidx, float) axis_repetitions)
 
 cdef class ISpaceTimeCube:
     cdef float get(ISpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
@@ -15,9 +16,9 @@ cdef class SpaceTimeCube(ISpaceTimeCube):
     cdef public unsigned long long size
     cdef public (int, int, int) shape
     cdef public object base
-    cdef public int t_repetitions
-    cdef public int y_repetitions
-    cdef public int x_repetitions
+    cdef public float t_repetitions
+    cdef public float y_repetitions
+    cdef public float x_repetitions
     # NOTE: We use const (read-only MemoryView) so that Cython will accept read-only arrays, which is required for shared-memory parallelism.
     cdef public const float[:,:,::1] data
     cpdef float get(SpaceTimeCube self, pyidx t, pyidx y, pyidx x) noexcept
