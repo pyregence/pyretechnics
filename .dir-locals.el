@@ -15,7 +15,7 @@
                                                  (concat project-root-dir "test")))
                                         python-shell-extra-pythonpaths)
                                        python-shell-prompt-detect-failure-warning
-                                       nil)))))))))
+                                       nil))))))
  (python-mode . ((eval (lambda ()
                          (let ((project-root-dir (project-root (project-current))))
                            (setq-local python-shell-interpreter
@@ -30,4 +30,4 @@
                                                  (concat project-root-dir "test")))
                                         python-shell-extra-pythonpaths)
                                        python-shell-prompt-detect-failure-warning
-                                       nil))))))))
+                                       nil)))))))
