@@ -1,13 +1,10 @@
 (define-module (python-pyretechnics-package)
-  #:use-module ((gnu packages base)            #:select (coreutils
-                                                         which))
-  #:use-module ((gnu packages bash)            #:select (bash))
+  #:use-module ((gnu packages base)            #:select (coreutils))
+  #:use-module ((gnu packages certs)           #:select (nss-certs))
   #:use-module ((gnu packages check)           #:select (python-pytest
                                                          python-pytest-cov))
   #:use-module ((gnu packages emacs)           #:select (emacs-minimal))
   #:use-module ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
-  #:use-module ((gnu packages geo)             #:select (gdal))
-  #:use-module ((gnu packages less)            #:select (less))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-setuptools
                                                          python-wheel
@@ -21,8 +18,7 @@
                                                          python-cython-3
                                                          python-twine
                                                          python-dask))
-  #:use-module ((gnu packages ssh)             #:select (openssh))
-  #:use-module ((gnu packages version-control) #:select (git))
+  #:use-module ((gnu packages tls)             #:select (openssl))
   #:use-module ((guix build-system python)     #:select (pypi-uri))
   #:use-module ((guix build-system pyproject)  #:select (pyproject-build-system))
   #:use-module ((guix download)                #:select (url-fetch))
@@ -103,15 +99,15 @@
                 #:test-flags      '())) ; passed to pytest -vv $(test-flags)
    (native-inputs (list
                    ;; Shell utilities
-                   bash
                    coreutils
-                   which
-                   less
-                   ;; Version control
-                   git
-                   openssh
-                   ;; GIS utilities
-                   gdal
+                   ;; SSL/TLS
+                   openssl
+                   nss-certs
+                   ;; Literate programming
+                   emacs-minimal
+                   emacs-htmlize
+                   ;; Python3
+                   python-wrapper
                    ;; Build/Test/Profile/Deploy utilities
                    python-setuptools
                    python-wheel
@@ -120,16 +116,11 @@
                    python-snakeviz
                    python-twine
                    python-pkginfo
-                   ;; Literate programming
-                   emacs-minimal
-                   emacs-htmlize
                    ;; Notebook programming examples
                    python-matplotlib
                    python-dask
                    python-distributed))
    (propagated-inputs (list
-                       ;; Python3
-                       python-wrapper
                        ;; Runtime dependencies
                        python-numpy
                        python-rasterio

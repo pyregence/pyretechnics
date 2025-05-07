@@ -6,7 +6,6 @@ Usage: $0 <command>
   where <command> is one of:
 
   - shell
-  - container-shell
   - test
   - benchmark
   - profile
@@ -47,81 +46,81 @@ ARGS=${@:2:$#}
 
 export PYTHONPATH="src:test"
 
+TIME_MACHINE="guix time-machine -C channels.scm"
+DEV_CONTAINER_SHELL="shell -CN -D -f guix.scm --link-profile -S /usr/bin/env=bin/env --preserve=PYTHONPATH"
+CONTAINER_SHELL="shell -CN -f guix.scm --link-profile"
+
 # Ensure current directory contains channels.scm and guix.scm
 cd $SCRIPT_DIR
 
 case $CMD in
 
     "shell")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm $ARGS
-        ;;
-
-    "container-shell")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm --container --network --link-profile -S /usr/bin/env=bin/env --preserve=PYTHONPATH --share=$HOME/.ssh $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL $ARGS
         ;;
 
     "test")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- pytest -vv $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- pytest -vv $ARGS
         ;;
 
     "benchmark")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python prof/spread_fire.py
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- python prof/spread_fire.py
         ;;
 
     "profile")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m cProfile -o prof/spread_fire.prof prof/spread_fire.py
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- python -m cProfile -o prof/spread_fire.prof prof/spread_fire.py
         ;;
 
     "snakeviz")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- snakeviz prof/spread_fire.prof
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- snakeviz -s prof/spread_fire.prof
         ;;
 
     "build-cython")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PYR_SET_GCC_ARGS=1 python setup.py build_ext --inplace
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- env PYR_SET_GCC_ARGS=1 python setup.py build_ext --inplace
         ;;
 
     "build-cython-profiled")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PYR_SET_GCC_ARGS=1 PYR_PROFILE_CYTHON=1 python setup.py build_ext --inplace
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- env PYR_SET_GCC_ARGS=1 PYR_PROFILE_CYTHON=1 python setup.py build_ext --inplace
         ;;
 
     "build-guix")
-        guix time-machine -C channels.scm -- build -f guix.scm $ARGS
+        $TIME_MACHINE -- build -f guix.scm $ARGS
         ;;
 
     "build-dist")
-        rm -rf dist && guix time-machine -C channels.scm -- shell -D -f guix.scm -- env PYR_SET_GCC_ARGS=1 python -m build $ARGS
+        rm -rf dist && $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- env PYR_SET_GCC_ARGS=1 python -m build $ARGS
         ;;
 
     "upload-testpypi")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload --repository testpypi dist/*.tar.gz $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- python -m twine upload --repository testpypi dist/*.tar.gz $ARGS
         ;;
 
     "upload-pypi")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- python -m twine upload dist/*.tar.gz $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- python -m twine upload dist/*.tar.gz $ARGS
         ;;
 
     "install-shell")
-        guix time-machine -C channels.scm -- shell -f guix.scm $ARGS
+        $TIME_MACHINE -- $CONTAINER_SHELL coreutils python-wrapper $ARGS
         ;;
 
     "install-user")
-        guix time-machine -C channels.scm -- install -L .guix/modules python-wrapper python-pyretechnics $ARGS
+        $TIME_MACHINE -- install -L .guix/modules python-wrapper python-pyretechnics $ARGS
         ;;
 
     "weave")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/weave.el $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- ./org/weave.el $ARGS
         ;;
 
     "tangle")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/tangle.el $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- ./org/tangle.el $ARGS
         ;;
 
     "detangle")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/detangle.el $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- ./org/detangle.el $ARGS
         ;;
 
     "org-eval")
-        guix time-machine -C channels.scm -- shell -D -f guix.scm -- ./org/eval.el $ARGS
+        $TIME_MACHINE -- $DEV_CONTAINER_SHELL -- ./org/eval.el $ARGS
         ;;
 
     *)

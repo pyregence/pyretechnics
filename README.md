@@ -90,18 +90,11 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
     ./make.sh shell
     ```
 
-    If you would like this shell environment to be isolated from your
-    host machine within a container, you can use this command instead:
-
-    ```sh
-    ./make.sh container-shell
-    ```
-
-    On their first invocations, these commands will download the
-    necessary software packages and install them under `/gnu/store`.
-    When this is done, they will drop you into a shell environment in
-    which the environment variables have been automatically configured
-    to point to these newly downloaded packages.
+    On its first invocation, this command will download the necessary
+    software packages and install them under `/gnu/store`. When this
+    is done, you will be dropped into a shell environment in which the
+    environment variables have been automatically configured to point
+    to these newly downloaded packages.
     
     On subsequent calls to `./make.sh shell`, you should be dropped
     directly into the shell environment without the need to install
