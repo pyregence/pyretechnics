@@ -19,6 +19,7 @@
                                                          python-twine
                                                          python-dask))
   #:use-module ((gnu packages tls)             #:select (openssl))
+  #:use-module ((gnu packages version-control) #:select (git))
   #:use-module ((guix build-system python)     #:select (pypi-uri))
   #:use-module ((guix build-system pyproject)  #:select (pyproject-build-system))
   #:use-module ((guix download)                #:select (url-fetch))
@@ -106,6 +107,7 @@
                    ;; Literate programming
                    emacs-minimal
                    emacs-htmlize
+                   git ; used by emacs
                    ;; Python3
                    python-wrapper
                    ;; Build/Test/Profile/Deploy utilities
