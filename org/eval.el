@@ -16,6 +16,9 @@
 (setq org-confirm-babel-evaluate        nil
       python-indent-guess-indent-offset nil)
 
+;; Don't create a backup of pyretechnics.org when saving
+(setq make-backup-files nil)
+
 (defvar project-root-dir (project-root (project-current)))
 
 (setq python-shell-extra-pythonpaths

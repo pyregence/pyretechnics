@@ -11,6 +11,9 @@
 (setq org-src-preserve-indentation      t
       python-indent-guess-indent-offset nil)
 
+;; Don't create a backup of pyretechnics.org when saving
+(setq make-backup-files nil)
+
 (let* ((script-directory     (file-name-directory load-file-name))
        (root-directory       (file-name-parent-directory script-directory))
        (detangle-file-regexp (string-join '("\\.py$"
