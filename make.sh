@@ -17,7 +17,7 @@ Usage: $0 <command>
   - upload-testpypi
   - upload-pypi
   - install-shell
-  - install-user
+  - install-guix
   - weave
   - tangle
   - detangle
@@ -103,7 +103,7 @@ case $CMD in
         $TIME_MACHINE -- $CONTAINER_SHELL coreutils python-wrapper $ARGS
         ;;
 
-    "install-user")
+    "install-guix")
         $TIME_MACHINE -- install -L .guix/modules python-wrapper python-pyretechnics $ARGS
         ;;
 

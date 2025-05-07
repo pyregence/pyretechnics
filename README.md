@@ -199,7 +199,7 @@ https://guix.gnu.org/manual/en/html_node/Running-Guix-in-a-VM.html
     your Guix profile with this command:
 
     ```sh
-    ./make.sh install-user
+    ./make.sh install-guix
     ```
 
     Next, you will need to invoke the following Bash commands in your

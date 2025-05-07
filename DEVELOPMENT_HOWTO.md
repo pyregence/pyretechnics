@@ -13,18 +13,18 @@ Usage: ./make.sh <command>
   where <command> is one of:
 
   - shell
-  - container-shell
   - test
   - benchmark
   - profile
   - snakeviz
   - build-cython
+  - build-cython-profiled
   - build-guix
   - build-dist
   - upload-testpypi
   - upload-pypi
   - install-shell
-  - install-user
+  - install-guix
   - weave
   - tangle
   - detangle
