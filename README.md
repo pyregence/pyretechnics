@@ -4,6 +4,8 @@ A Python library for simulating fire behavior in a variety of ways.
 
 Latest API Documentation: https://pyregence.github.io/pyretechnics/
 
+Conda installation instructions: https://www.anaconda.com/docs/tools/working-with-conda/packages/pip-install
+
 ## Overview
 
 The Pyretechnics library provides modules that implement the fundamental equations used in most operational wildland fire behavior models like GridFire, ELMFIRE, FlamMap, FARSITE, FSIM, and BehavePlus. These fall into the following categories:
