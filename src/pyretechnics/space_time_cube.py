@@ -200,6 +200,10 @@ class SpaceTimeCube(ISpaceTimeCube):
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_bands < base_bands:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")
+            # Warn if any repetitions are not whole numbers
+            if self.t_repetitions % 1.0 != 0.0:
+                print("WARNING: Input data's shape does not evenly divide the cube_shape."
+                      + " Index lookups beyond the cube's edge may mistakenly return values without errors.")
             # Warn if base is not a Numpy float32 array
             if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
                 print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
@@ -218,6 +222,10 @@ class SpaceTimeCube(ISpaceTimeCube):
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_rows < base_rows or cube_cols < base_cols:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")
+            # Warn if any repetitions are not whole numbers
+            if self.y_repetitions % 1.0 != 0.0 or self.x_repetitions % 1.0 != 0.0:
+                print("WARNING: Input data's shape does not evenly divide the cube_shape."
+                      + " Index lookups beyond the cube's edge may mistakenly return values without errors.")
             # Warn if base is not a Numpy float32 array
             if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
                 print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",
@@ -237,6 +245,10 @@ class SpaceTimeCube(ISpaceTimeCube):
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_bands < base_bands or cube_rows < base_rows or cube_cols < base_cols:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")
+            # Warn if any repetitions are not whole numbers
+            if self.t_repetitions % 1.0 != 0.0 or self.y_repetitions % 1.0 != 0.0 or self.x_repetitions % 1.0 != 0.0:
+                print("WARNING: Input data's shape does not evenly divide the cube_shape."
+                      + " Index lookups beyond the cube's edge may mistakenly return values without errors.")
             # Warn if base is not a Numpy float32 array
             if not(isinstance(base, np.ndarray)) or (base.dtype != np.float32):
                 print("WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.",

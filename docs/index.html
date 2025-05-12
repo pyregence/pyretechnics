@@ -909,6 +909,10 @@ constant input dimensions.
             <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the cube_shape is not smaller than the base shape</span>
             <span class="org-keyword">if</span> cube_bands <span class="org-operator">&lt;</span> base_bands:
                 <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The cube_shape may not be smaller than the base shape."</span>)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if any repetitions are not whole numbers</span>
+            <span class="org-keyword">if</span> <span class="org-keyword">self</span>.t_repetitions <span class="org-operator">%</span> 1.0 <span class="org-operator">!=</span> 0.0:
+                <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data's shape does not evenly divide the cube_shape."</span>
+                      <span class="org-operator">+</span> <span class="org-string">" Index lookups beyond the cube's edge may mistakenly return values without errors."</span>)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if base is not a Numpy float32 array</span>
             <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(base, np.ndarray)) <span class="org-keyword">or</span> (base.dtype <span class="org-operator">!=</span> np.float32):
                 <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube."</span>,
@@ -927,6 +931,10 @@ constant input dimensions.
             <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the cube_shape is not smaller than the base shape</span>
             <span class="org-keyword">if</span> cube_rows <span class="org-operator">&lt;</span> base_rows <span class="org-keyword">or</span> cube_cols <span class="org-operator">&lt;</span> base_cols:
                 <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The cube_shape may not be smaller than the base shape."</span>)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if any repetitions are not whole numbers</span>
+            <span class="org-keyword">if</span> <span class="org-keyword">self</span>.y_repetitions <span class="org-operator">%</span> 1.0 <span class="org-operator">!=</span> 0.0 <span class="org-keyword">or</span> <span class="org-keyword">self</span>.x_repetitions <span class="org-operator">%</span> 1.0 <span class="org-operator">!=</span> 0.0:
+                <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data's shape does not evenly divide the cube_shape."</span>
+                      <span class="org-operator">+</span> <span class="org-string">" Index lookups beyond the cube's edge may mistakenly return values without errors."</span>)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if base is not a Numpy float32 array</span>
             <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(base, np.ndarray)) <span class="org-keyword">or</span> (base.dtype <span class="org-operator">!=</span> np.float32):
                 <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube."</span>,
@@ -946,6 +954,10 @@ constant input dimensions.
             <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the cube_shape is not smaller than the base shape</span>
             <span class="org-keyword">if</span> cube_bands <span class="org-operator">&lt;</span> base_bands <span class="org-keyword">or</span> cube_rows <span class="org-operator">&lt;</span> base_rows <span class="org-keyword">or</span> cube_cols <span class="org-operator">&lt;</span> base_cols:
                 <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The cube_shape may not be smaller than the base shape."</span>)
+            <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if any repetitions are not whole numbers</span>
+            <span class="org-keyword">if</span> <span class="org-keyword">self</span>.t_repetitions <span class="org-operator">%</span> 1.0 <span class="org-operator">!=</span> 0.0 <span class="org-keyword">or</span> <span class="org-keyword">self</span>.y_repetitions <span class="org-operator">%</span> 1.0 <span class="org-operator">!=</span> 0.0 <span class="org-keyword">or</span> <span class="org-keyword">self</span>.x_repetitions <span class="org-operator">%</span> 1.0 <span class="org-operator">!=</span> 0.0:
+                <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data's shape does not evenly divide the cube_shape."</span>
+                      <span class="org-operator">+</span> <span class="org-string">" Index lookups beyond the cube's edge may mistakenly return values without errors."</span>)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Warn if base is not a Numpy float32 array</span>
             <span class="org-keyword">if</span> <span class="org-keyword">not</span>(<span class="org-builtin">isinstance</span>(base, np.ndarray)) <span class="org-keyword">or</span> (base.dtype <span class="org-operator">!=</span> np.float32):
                 <span class="org-builtin">print</span>(<span class="org-string">"WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube."</span>,
