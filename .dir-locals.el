@@ -6,7 +6,7 @@
                            (setq-local python-shell-interpreter
                                        (concat project-root-dir "make.sh")
                                        python-shell-interpreter-args
-                                       (concat "shell --expose=/tmp -- python3 -i")
+                                       (concat "shell --share=/tmp -- python3 -i")
                                        python-shell-extra-pythonpaths
                                        (append
                                         (mapcar 'expand-file-name
@@ -21,7 +21,7 @@
                            (setq-local python-shell-interpreter
                                        (concat project-root-dir "make.sh")
                                        python-shell-interpreter-args
-                                       (concat "shell -- python3 -i")
+                                       (concat "shell --share=/tmp -- python3 -i")
                                        python-shell-extra-pythonpaths
                                        (append
                                         (mapcar 'expand-file-name
