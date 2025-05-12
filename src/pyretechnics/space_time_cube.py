@@ -250,6 +250,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
     @cy.ccall
     @cy.exceptval(check=False)
+    @cy.boundscheck(True)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
         Return the scalar value at index (t,y,x) by translating these cube coordinates
@@ -265,6 +266,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.ccall
+    @cy.boundscheck(True)
     def getTimeSeries(self, t_range: tuple[pyidx, pyidx]|None, y: pyidx, x: pyidx) -> ndarray:
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -300,6 +302,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.ccall
+    @cy.boundscheck(True)
     def getSpatialPlane(self,
                         t      : pyidx,
                         y_range: tuple[pyidx, pyidx]|None,
@@ -350,6 +353,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.ccall
+    @cy.boundscheck(True)
     def getSubcube(self,
                    t_range: tuple[pyidx, pyidx]|None,
                    y_range: tuple[pyidx, pyidx]|None,
