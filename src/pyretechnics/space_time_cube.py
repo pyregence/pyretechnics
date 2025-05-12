@@ -194,7 +194,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         elif base_dimensions == 1:
             # 1D: Time-Series Input
             base_bands: cy.int = len(base)
-            self.t_repetitions = cube_bands / base_bands
+            self.t_repetitions = float(cube_bands) / float(base_bands)
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
             # Ensure that the cube_shape is not smaller than the base shape
@@ -213,8 +213,8 @@ class SpaceTimeCube(ISpaceTimeCube):
             base_rows : cy.int = base_shape[0]
             base_cols : cy.int = base_shape[1]
             self.t_repetitions = cube_bands
-            self.y_repetitions = cube_rows / base_rows
-            self.x_repetitions = cube_cols / base_cols
+            self.y_repetitions = float(cube_rows) / float(base_rows)
+            self.x_repetitions = float(cube_cols) / float(base_cols)
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_rows < base_rows or cube_cols < base_cols:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")
@@ -231,9 +231,9 @@ class SpaceTimeCube(ISpaceTimeCube):
             base_bands: cy.int = base_shape[0]
             base_rows : cy.int = base_shape[1]
             base_cols : cy.int = base_shape[2]
-            self.t_repetitions = cube_bands / base_bands
-            self.y_repetitions = cube_rows / base_rows
-            self.x_repetitions = cube_cols / base_cols
+            self.t_repetitions = float(cube_bands) / float(base_bands)
+            self.y_repetitions = float(cube_rows) / float(base_rows)
+            self.x_repetitions = float(cube_cols) / float(base_cols)
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_bands < base_bands or cube_rows < base_rows or cube_cols < base_cols:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")

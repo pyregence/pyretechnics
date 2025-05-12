@@ -903,7 +903,7 @@ constant input dimensions.
         <span class="org-keyword">elif</span> base_dimensions <span class="org-operator">==</span> 1:
             <span class="org-comment-delimiter"># </span><span class="org-comment">1D: Time-Series Input</span>
             <span class="org-variable-name">base_bands</span>: cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(base)
-            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands <span class="org-operator">/</span> base_bands
+            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> <span class="org-builtin">float</span>(cube_bands) <span class="org-operator">/</span> <span class="org-builtin">float</span>(base_bands)
             <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows
             <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols
             <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the cube_shape is not smaller than the base shape</span>
@@ -922,8 +922,8 @@ constant input dimensions.
             <span class="org-variable-name">base_rows</span> : cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> base_shape[0]
             <span class="org-variable-name">base_cols</span> : cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> base_shape[1]
             <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands
-            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows <span class="org-operator">/</span> base_rows
-            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols <span class="org-operator">/</span> base_cols
+            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> <span class="org-builtin">float</span>(cube_rows) <span class="org-operator">/</span> <span class="org-builtin">float</span>(base_rows)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> <span class="org-builtin">float</span>(cube_cols) <span class="org-operator">/</span> <span class="org-builtin">float</span>(base_cols)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the cube_shape is not smaller than the base shape</span>
             <span class="org-keyword">if</span> cube_rows <span class="org-operator">&lt;</span> base_rows <span class="org-keyword">or</span> cube_cols <span class="org-operator">&lt;</span> base_cols:
                 <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The cube_shape may not be smaller than the base shape."</span>)
@@ -940,9 +940,9 @@ constant input dimensions.
             <span class="org-variable-name">base_bands</span>: cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> base_shape[0]
             <span class="org-variable-name">base_rows</span> : cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> base_shape[1]
             <span class="org-variable-name">base_cols</span> : cy.<span class="org-builtin">int</span> <span class="org-operator">=</span> base_shape[2]
-            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> cube_bands <span class="org-operator">/</span> base_bands
-            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> cube_rows <span class="org-operator">/</span> base_rows
-            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> cube_cols <span class="org-operator">/</span> base_cols
+            <span class="org-keyword">self</span>.<span class="org-variable-name">t_repetitions</span> <span class="org-operator">=</span> <span class="org-builtin">float</span>(cube_bands) <span class="org-operator">/</span> <span class="org-builtin">float</span>(base_bands)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">y_repetitions</span> <span class="org-operator">=</span> <span class="org-builtin">float</span>(cube_rows) <span class="org-operator">/</span> <span class="org-builtin">float</span>(base_rows)
+            <span class="org-keyword">self</span>.<span class="org-variable-name">x_repetitions</span> <span class="org-operator">=</span> <span class="org-builtin">float</span>(cube_cols) <span class="org-operator">/</span> <span class="org-builtin">float</span>(base_cols)
             <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that the cube_shape is not smaller than the base shape</span>
             <span class="org-keyword">if</span> cube_bands <span class="org-operator">&lt;</span> base_bands <span class="org-keyword">or</span> cube_rows <span class="org-operator">&lt;</span> base_rows <span class="org-keyword">or</span> cube_cols <span class="org-operator">&lt;</span> base_cols:
                 <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The cube_shape may not be smaller than the base shape."</span>)
@@ -959,6 +959,7 @@ constant input dimensions.
 
     <span class="org-type">@cy.ccall</span>
     <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
+    <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">True</span>)
     <span class="org-keyword">def</span> <span class="org-function-name">get</span>(<span class="org-keyword">self</span>, t: pyidx, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Return the scalar value at index (t,y,x) by translating these cube coordinates</span>
@@ -974,6 +975,7 @@ constant input dimensions.
 
 
     <span class="org-type">@cy.ccall</span>
+    <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">True</span>)
     <span class="org-keyword">def</span> <span class="org-function-name">getTimeSeries</span>(<span class="org-keyword">self</span>, t_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> ndarray:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Return the 1D array given by the slice (t_range,y,x) by translating these cube</span>
@@ -1009,6 +1011,7 @@ constant input dimensions.
 
 
     <span class="org-type">@cy.ccall</span>
+    <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">True</span>)
     <span class="org-keyword">def</span> <span class="org-function-name">getSpatialPlane</span>(<span class="org-keyword">self</span>,
                         t      : pyidx,
                         y_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>,
@@ -1059,6 +1062,7 @@ constant input dimensions.
 
 
     <span class="org-type">@cy.ccall</span>
+    <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">True</span>)
     <span class="org-keyword">def</span> <span class="org-function-name">getSubcube</span>(<span class="org-keyword">self</span>,
                    t_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>,
                    y_range: <span class="org-builtin">tuple</span>[pyidx, pyidx]<span class="org-operator">|</span><span class="org-constant">None</span>,

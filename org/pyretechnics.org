@@ -448,7 +448,7 @@ class SpaceTimeCube(ISpaceTimeCube):
         elif base_dimensions == 1:
             # 1D: Time-Series Input
             base_bands: cy.int = len(base)
-            self.t_repetitions = cube_bands / base_bands
+            self.t_repetitions = float(cube_bands) / float(base_bands)
             self.y_repetitions = cube_rows
             self.x_repetitions = cube_cols
             # Ensure that the cube_shape is not smaller than the base shape
@@ -467,8 +467,8 @@ class SpaceTimeCube(ISpaceTimeCube):
             base_rows : cy.int = base_shape[0]
             base_cols : cy.int = base_shape[1]
             self.t_repetitions = cube_bands
-            self.y_repetitions = cube_rows / base_rows
-            self.x_repetitions = cube_cols / base_cols
+            self.y_repetitions = float(cube_rows) / float(base_rows)
+            self.x_repetitions = float(cube_cols) / float(base_cols)
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_rows < base_rows or cube_cols < base_cols:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")
@@ -485,9 +485,9 @@ class SpaceTimeCube(ISpaceTimeCube):
             base_bands: cy.int = base_shape[0]
             base_rows : cy.int = base_shape[1]
             base_cols : cy.int = base_shape[2]
-            self.t_repetitions = cube_bands / base_bands
-            self.y_repetitions = cube_rows / base_rows
-            self.x_repetitions = cube_cols / base_cols
+            self.t_repetitions = float(cube_bands) / float(base_bands)
+            self.y_repetitions = float(cube_rows) / float(base_rows)
+            self.x_repetitions = float(cube_cols) / float(base_cols)
             # Ensure that the cube_shape is not smaller than the base shape
             if cube_bands < base_bands or cube_rows < base_rows or cube_cols < base_cols:
                 raise ValueError("The cube_shape may not be smaller than the base shape.")
@@ -504,6 +504,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
     @cy.ccall
     @cy.exceptval(check=False)
+    @cy.boundscheck(True)
     def get(self, t: pyidx, y: pyidx, x: pyidx) -> cy.float:
         """
         Return the scalar value at index (t,y,x) by translating these cube coordinates
@@ -519,6 +520,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.ccall
+    @cy.boundscheck(True)
     def getTimeSeries(self, t_range: tuple[pyidx, pyidx]|None, y: pyidx, x: pyidx) -> ndarray:
         """
         Return the 1D array given by the slice (t_range,y,x) by translating these cube
@@ -554,6 +556,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.ccall
+    @cy.boundscheck(True)
     def getSpatialPlane(self,
                         t      : pyidx,
                         y_range: tuple[pyidx, pyidx]|None,
@@ -604,6 +607,7 @@ class SpaceTimeCube(ISpaceTimeCube):
 
 
     @cy.ccall
+    @cy.boundscheck(True)
     def getSubcube(self,
                    t_range: tuple[pyidx, pyidx]|None,
                    y_range: tuple[pyidx, pyidx]|None,
