@@ -47,7 +47,7 @@ ARGS=${@:2:$#}
 export PYTHONPATH="src:test"
 
 TIME_MACHINE="guix time-machine -C channels.scm"
-DEV_CONTAINER_SHELL="shell -CN -D -f guix.scm --link-profile -S /usr/bin/env=bin/env --preserve=PYTHONPATH"
+DEV_CONTAINER_SHELL="shell -CN -D -f guix.scm --link-profile -S /usr/bin/env=bin/env --preserve=PYTHONPATH --share=$HOME/.pypirc"
 CONTAINER_SHELL="shell -CN -f guix.scm --link-profile"
 
 # Ensure current directory contains channels.scm and guix.scm
