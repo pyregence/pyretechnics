@@ -7346,7 +7346,7 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
     if not(0 <= min_y < max_y <= rows):
         raise ValueError("The y_range values are out of range of the space_time_cubes.")
 
-    if not(0 <= min_x < max_x <= rows):
+    if not(0 <= min_x < max_x <= cols):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
     fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
@@ -7692,7 +7692,7 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
     if not(0 <= min_y < max_y <= rows):
         raise ValueError("The y_range values are out of range of the space_time_cubes.")
 
-    if not(0 <= min_x < max_x <= rows):
+    if not(0 <= min_x < max_x <= cols):
         raise ValueError("The x_range values are out of range of the space_time_cubes.")
 
     fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")

@@ -8282,7 +8282,7 @@ surface fire behavior is returned.
     <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_y <span class="org-operator">&lt;</span> max_y <span class="org-operator">&lt;=</span> rows):
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The y_range values are out of range of the space_time_cubes."</span>)
 
-    <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_x <span class="org-operator">&lt;</span> max_x <span class="org-operator">&lt;=</span> rows):
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_x <span class="org-operator">&lt;</span> max_x <span class="org-operator">&lt;=</span> cols):
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The x_range values are out of range of the space_time_cubes."</span>)
 
     <span class="org-variable-name">fire_type_matrix</span>          : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
@@ -8630,7 +8630,7 @@ azimuth direction is returned.
     <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_y <span class="org-operator">&lt;</span> max_y <span class="org-operator">&lt;=</span> rows):
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The y_range values are out of range of the space_time_cubes."</span>)
 
-    <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_x <span class="org-operator">&lt;</span> max_x <span class="org-operator">&lt;=</span> rows):
+    <span class="org-keyword">if</span> <span class="org-keyword">not</span>(0 <span class="org-operator">&lt;=</span> min_x <span class="org-operator">&lt;</span> max_x <span class="org-operator">&lt;=</span> cols):
         <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The x_range values are out of range of the space_time_cubes."</span>)
 
     <span class="org-variable-name">fire_type_matrix</span>          : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
