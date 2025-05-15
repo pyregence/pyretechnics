@@ -1,3 +1,25 @@
+# Version 2025.5.15
+
+## Changes for Developers
+- Created 8 different scripts to benchmark a variety of parallel-processing techniques in Python, ultimately identifying the most resource efficient approach to use when running fire simulations in parallel (`prof/spread_fire_multiprocessing.py)`.
+- Replaced `==` with `~=` for all dependency versions in requirements.txt.
+- Added `README.multiprocessing.md`.
+- Added an Overview section to `README.md`.
+- Fixed parenthesis error in `.dir-locals.el` that broke Emacs users' Guix shell integration.
+- Removed the `container-shell` command from `make.sh` and containerized all `make.sh` commands.
+- Removed unnecessary inputs from `guix.scm`.
+- Renamed `install-user` to `install-guix` in `make.sh`.
+- Enabled bounds checking on the `SpaceTimeCube.get*` functions.
+- Ensured that `SpaceTimeCube.*_repetitions` values are computed via floating point division in C.
+
+## Changes for Users
+- Added Conda installation URL to `README.md`.
+- Enabled `pyretechnics.load_landfire.load_raster` to optionally resample rasters at load time.
+- Allowed `SpaceTimeCubes` to wrap base data whose shape does not evenly divide the cube shape.
+- Added a warning when creating a new `SpaceTimeCube` requires copying the base data into a new Numpy array.
+- Added a warning about misbehaving index lookups beyond the edges of the `cube_shape` when creating a new `SpaceTimeCube` whose base data doesn't evenly divide the `cube_shape`.
+- Fixed `x_range` checking bug in `pyretechnics.burn_cells.burn_all_cells_as_head_fire` and `pyretechnics.burn_cells.burn_all_cells_toward_azimuth`.
+
 # Version 2025.4.8
 
 ## Changes for Developers
