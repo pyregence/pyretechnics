@@ -466,11 +466,10 @@ org_html_manager.setup();  // activate after the parameters are set
 <h2 id="preface"><span class="section-number-2">1.</span> Preface</h2>
 <div class="outline-text-2" id="text-preface">
 <p>
-This document is a Literate
-Program<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>,
-containing both the source code of the software it describes as well
-as the rationale used in each step of its design and implementation.
-The purpose of this approach is to enable both programmers and
+This document is a Literate Program<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, containing
+both the source code of the software it describes as well as the
+rationale used in each step of its design and implementation. The
+purpose of this approach is to enable both programmers and
 non-programmers alike to retrace the author's footsteps as they read
 through the text and code. By the time they have reached the end of
 this document, the reader should have just as strong a grasp of the
@@ -480,11 +479,11 @@ system as the original programmer.
 <p>
 The source code repository containing this document provides a
 comprehensive reproducible development environment through the use of
-the open source GNU Guix<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> transactional
-package manager. This tool will automatically install all the software
-needed to tangle, detangle, weave, test, build, and install this
-library on your machine without conflicting with the main package
-manager of your operating system. See <a href="../README.md">README.md</a> for more details.
+the open source GNU Guix<sup><a id="fnr.2" class="footref" href="#fn.2" role="doc-backlink">2</a></sup> transactional package
+manager. This tool will automatically install all the software needed
+to tangle, detangle, weave, test, build, and install this library on
+your machine without conflicting with the main package manager of your
+operating system. See <a href="../README.md">README.md</a> for more details.
 </p>
 </div>
 </div>
@@ -566,26 +565,25 @@ environmental input variables to take on any of these forms:
 
 <dl class="org-dl">
 <dt>Constant</dt><dd>Constant in both space and time. <br>
-<b>Ex</b>: A single constant foliar moisture value could be used over the
-simulation area for the entire simulation duration.</dd>
+<b>Example</b>: A single constant foliar moisture value could be used
+over the simulation area for the entire simulation duration.</dd>
 
 <dt>Temporal</dt><dd>Constant in space but variable in time. <br>
-<b>Ex</b>: An hourly sequence of spread rate adjustment factors could be
-used to globally ramp up and down fire spread rates throughout a
-day/night cycle, creating burn periods of arbitrary length and
-intensity.</dd>
+<b>Example</b>: An hourly sequence of spread rate adjustment factors
+could be used to globally ramp up and down fire spread rates
+throughout a day/night cycle, creating burn periods of arbitrary
+length and intensity.</dd>
 
 <dt>Spatial</dt><dd>Variable in space but constant in time. <br>
-<b>Ex</b>: A raster layer downloaded from
-LANDFIRE<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> can be used to specify the
-spatial distribution of FBFM40 fuel model values on a landscape.</dd>
+<b>Example</b>: A raster layer downloaded from
+LANDFIRE<sup><a id="fnr.3" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> can be used to specify the spatial
+distribution of FBFM40 fuel model values on a landscape.</dd>
 
 <dt>Spatio-temporal</dt><dd>Variable in both space and time. <br>
-<b>Ex</b>: Hourly
-RTMA<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> weather
-data can be loaded from a multi-band raster and used to specify the
-spatio-temporal distribution of wind speed and direction throughout
-the simulation domain.</dd>
+<b>Example</b>: Hourly RTMA<sup><a id="fnr.4" class="footref" href="#fn.4" role="doc-backlink">4</a></sup> weather data can be loaded
+from a multi-band raster and used to specify the spatio-temporal
+distribution of wind speed and direction throughout the simulation
+domain.</dd>
 </dl>
 
 <p>
@@ -1579,8 +1577,8 @@ np.random.seed(0)
 </div>
 </li>
 
-<li><a id="retrieve-a-scalar-value-at-a-space-time-coordinate"></a>Retrieve a Scalar Value at a Space-Time Coordinate<br>
-<div class="outline-text-5" id="text-retrieve-a-scalar-value-at-a-space-time-coordinate">
+<li><a id="stc-retrieve-a-scalar-value-at-a-space-time-coordinate"></a>Retrieve a Scalar Value at a Space-Time Coordinate<br>
+<div class="outline-text-5" id="text-stc-retrieve-a-scalar-value-at-a-space-time-coordinate">
 <div class="org-src-container">
 <pre class="src src-python" id="space-time-cube-get-point"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinate</span>
 <span class="org-variable-name">band</span> <span class="org-operator">=</span> 12
@@ -1617,8 +1615,8 @@ Value from Spatio-Temporal Data: Wind Speed
 </div>
 </li>
 
-<li><a id="retrieve-a-time-series-at-a-spatial-coordinate"></a>Retrieve a Time Series at a Spatial Coordinate<br>
-<div class="outline-text-5" id="text-retrieve-a-time-series-at-a-spatial-coordinate">
+<li><a id="stc-retrieve-a-time-series-at-a-spatial-coordinate"></a>Retrieve a Time Series at a Spatial Coordinate<br>
+<div class="outline-text-5" id="text-stc-retrieve-a-time-series-at-a-spatial-coordinate">
 <div class="org-src-container">
 <pre class="src src-python" id="space-time-cube-get-time-series"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinates</span>
 <span class="org-variable-name">band_range</span> <span class="org-operator">=</span> (18,30)
@@ -1655,8 +1653,8 @@ Time Series from Spatio-Temporal Data: Wind Speed
 </div>
 </li>
 
-<li><a id="retrieve-a-spatial-plane-at-a-temporal-coordinate"></a>Retrieve a Spatial Plane at a Temporal Coordinate<br>
-<div class="outline-text-5" id="text-retrieve-a-spatial-plane-at-a-temporal-coordinate">
+<li><a id="stc-retrieve-a-spatial-plane-at-a-temporal-coordinate"></a>Retrieve a Spatial Plane at a Temporal Coordinate<br>
+<div class="outline-text-5" id="text-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate">
 <div class="org-src-container">
 <pre class="src src-python" id="space-time-cube-get-spatial-plane"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinates</span>
 <span class="org-variable-name">band</span>      <span class="org-operator">=</span> 12
@@ -1729,8 +1727,8 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 </div>
 </li>
 
-<li><a id="retrieve-a-subcube-within-a-space-time-region"></a>Retrieve a Subcube within a Space-Time Region<br>
-<div class="outline-text-5" id="text-retrieve-a-subcube-within-a-space-time-region">
+<li><a id="stc-retrieve-a-subcube-within-a-space-time-region"></a>Retrieve a Subcube within a Space-Time Region<br>
+<div class="outline-text-5" id="text-stc-retrieve-a-subcube-within-a-space-time-region">
 <div class="org-src-container">
 <pre class="src src-python" id="space-time-cube-get-subcube"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinates</span>
 <span class="org-variable-name">band_range</span> <span class="org-operator">=</span> (23,25)
@@ -1957,8 +1955,8 @@ np.random.seed(0)
 </div>
 </li>
 
-<li><a id="retrieve-a-scalar-value-at-a-space-time-coordinate"></a>Retrieve a Scalar Value at a Space-Time Coordinate<br>
-<div class="outline-text-5" id="text-retrieve-a-scalar-value-at-a-space-time-coordinate">
+<li><a id="lazy-stc-retrieve-a-scalar-value-at-a-space-time-coordinate"></a>Retrieve a Scalar Value at a Space-Time Coordinate<br>
+<div class="outline-text-5" id="text-lazy-stc-retrieve-a-scalar-value-at-a-space-time-coordinate">
 <div class="org-src-container">
 <pre class="src src-python" id="lazy-space-time-cube-get-point"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinate</span>
 <span class="org-variable-name">band</span> <span class="org-operator">=</span> 12
@@ -1998,8 +1996,8 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 </div>
 </li>
 
-<li><a id="retrieve-a-time-series-at-a-spatial-coordinate"></a>Retrieve a Time Series at a Spatial Coordinate<br>
-<div class="outline-text-5" id="text-retrieve-a-time-series-at-a-spatial-coordinate">
+<li><a id="lazy-stc-retrieve-a-time-series-at-a-spatial-coordinate"></a>Retrieve a Time Series at a Spatial Coordinate<br>
+<div class="outline-text-5" id="text-lazy-stc-retrieve-a-time-series-at-a-spatial-coordinate">
 <div class="org-src-container">
 <pre class="src src-python" id="lazy-space-time-cube-get-time-series"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinates</span>
 <span class="org-variable-name">band_range</span> <span class="org-operator">=</span> (18,30)
@@ -2038,8 +2036,8 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 </div>
 </li>
 
-<li><a id="retrieve-a-spatial-plane-at-a-temporal-coordinate"></a>Retrieve a Spatial Plane at a Temporal Coordinate<br>
-<div class="outline-text-5" id="text-retrieve-a-spatial-plane-at-a-temporal-coordinate">
+<li><a id="lazy-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate"></a>Retrieve a Spatial Plane at a Temporal Coordinate<br>
+<div class="outline-text-5" id="text-lazy-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate">
 <div class="org-src-container">
 <pre class="src src-python" id="lazy-space-time-cube-get-spatial-plane"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinates</span>
 <span class="org-variable-name">band</span>      <span class="org-operator">=</span> 12
@@ -2118,8 +2116,8 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 </div>
 </li>
 
-<li><a id="retrieve-a-subcube-within-a-space-time-region"></a>Retrieve a Subcube within a Space-Time Region<br>
-<div class="outline-text-5" id="text-retrieve-a-subcube-within-a-space-time-region">
+<li><a id="lazy-stc-retrieve-a-subcube-within-a-space-time-region"></a>Retrieve a Subcube within a Space-Time Region<br>
+<div class="outline-text-5" id="text-lazy-stc-retrieve-a-subcube-within-a-space-time-region">
 <div class="org-src-container">
 <pre class="src src-python" id="lazy-space-time-cube-get-subcube"><span class="org-comment-delimiter"># </span><span class="org-comment">Space-Time Coordinates</span>
 <span class="org-variable-name">band_range</span> <span class="org-operator">=</span> (23,25)
@@ -4255,8 +4253,9 @@ the length to width ratio \(\frac{L}{W}\):
 </p>
 
 <ol class="org-ol">
-<li>Using equation 9 from Rothermel 1991.<sup><a id="fnr.23" class="footref" href="#fn.23" role="doc-backlink">23</a></sup></li>
-</ol>
+<li><p>
+Using equation 9 from Rothermel 1991.<sup><a id="fnr.23" class="footref" href="#fn.23" role="doc-backlink">23</a></sup>
+</p>
 
 \begin{align}
   \frac{L}{W} = 1 + 0.25 \, U_{\text{eff}}
@@ -4264,11 +4263,11 @@ the length to width ratio \(\frac{L}{W}\):
 
 <p>
 where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
-</p>
+</p></li>
 
-<ol class="org-ol">
-<li>Using the formula implemented in the Missoula Fire Lab's <code>behave</code> C++ library<sup><a id="fnr.24" class="footref" href="#fn.24" role="doc-backlink">24</a></sup></li>
-</ol>
+<li><p>
+Using the formula implemented in the Missoula Fire Lab's <code>behave</code> C++ library<sup><a id="fnr.24" class="footref" href="#fn.24" role="doc-backlink">24</a></sup>
+</p>
 
 \begin{align}
   \frac{L}{W} = \min(8.0, 0.936 e^{(0.1147 U_{\text{eff}})} + 0.461 e^{(-0.0692 U_{\text{eff}})} - 0.397)
@@ -4276,7 +4275,8 @@ where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
 
 <p>
 where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
-</p>
+</p></li>
+</ol>
 
 <div class="org-src-container">
 <pre class="src src-python" id="surface-fire-eccentricity"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Change model from str to enumerated type</span>
@@ -6583,9 +6583,9 @@ these deltas by using trigonometric functions.
 <p>
 We now need to define the functions \(\mu_X(\Phi)\) and
 \(\sigma_X(\Phi)\). Here we depart from Sardoy 2008<sup><a id="fnr.37" class="footref" href="#fn.37" role="doc-backlink">37</a></sup> and
-reproduce the model of ELMFIRE<sup><a id="fnr.38" class="footref" href="#fn.38" role="doc-backlink">38</a></sup>, which models
-that dependency using the following relationships between the moments
-of the distribution and the fireline intensity \(I\) and wind speed \(U\):
+reproduce the model of ELMFIRE<sup><a id="fnr.38" class="footref" href="#fn.38" role="doc-backlink">38</a></sup>, which models that
+dependency using the following relationships between the moments of
+the distribution and the fireline intensity \(I\) and wind speed \(U\):
 </p>
 
 \begin{align}
@@ -9283,7 +9283,7 @@ space-time cube introduced in section <a href="#data-model">2</a>.
 <p>
 This section introduces the equations used in the Eulerian level set
 method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
-model<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a></sup>.
+model<sup><a id="fnr.38.100" class="footref" href="#fn.38" role="doc-backlink">38</a></sup>.
 </p>
 </div>
 
@@ -14519,8 +14519,8 @@ first create a collection of <code>SpaceTimeCube</code> objects, representing al
 of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
-provided by the US LANDFIRE program<sup><a id="fnr.59" class="footref" href="#fn.59" role="doc-backlink">59</a></sup> (see
-table <a href="#tab:landfire-layers">11</a> for details).
+provided by the US LANDFIRE program<sup><a id="fnr.3.100" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> (see table
+<a href="#tab:landfire-layers">11</a> for details).
 </p>
 
 <table id="tab:landfire-layers">
@@ -16026,13 +16026,21 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <h2 class="footnotes">Footnotes: </h2>
 <div id="text-footnotes">
 
-<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://en.wikipedia.org/wiki/Literate_programming">https://en.wikipedia.org/wiki/Literate_programming</a></p></div></div>
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://en.wikipedia.org/wiki/Literate_programming">https://en.wikipedia.org/wiki/Literate_programming</a>
+</p></div></div>
 
-<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://guix.gnu.org">https://guix.gnu.org</a></p></div></div>
+<div class="footdef"><sup><a id="fn.2" class="footnum" href="#fnr.2" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://guix.gnu.org">https://guix.gnu.org</a>
+</p></div></div>
 
-<div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3" role="doc-backlink">3</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://landfire.gov">https://landfire.gov</a></p></div></div>
+<div class="footdef"><sup><a id="fn.3" class="footnum" href="#fnr.3" role="doc-backlink">3</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://landfire.gov">https://landfire.gov</a>
+</p></div></div>
 
-<div class="footdef"><sup><a id="fn.4" class="footnum" href="#fnr.4" role="doc-backlink">4</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://www.nco.ncep.noaa.gov/pmb/products/rtma/">https://www.nco.ncep.noaa.gov/pmb/products/rtma/</a></p></div></div>
+<div class="footdef"><sup><a id="fn.4" class="footnum" href="#fnr.4" role="doc-backlink">4</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://www.nco.ncep.noaa.gov/pmb/products/rtma/">https://www.nco.ncep.noaa.gov/pmb/products/rtma/</a>
+</p></div></div>
 
 <div class="footdef"><sup><a id="fn.5" class="footnum" href="#fnr.5" role="doc-backlink">5</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Anderson1982</p></div></div>
 
@@ -16072,7 +16080,9 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 
 <div class="footdef"><sup><a id="fn.23" class="footnum" href="#fnr.23" role="doc-backlink">23</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1991</p></div></div>
 
-<div class="footdef"><sup><a id="fn.24" class="footnum" href="#fnr.24" role="doc-backlink">24</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93">https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93</a></p></div></div>
+<div class="footdef"><sup><a id="fn.24" class="footnum" href="#fnr.24" role="doc-backlink">24</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93">https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93</a>
+</p></div></div>
 
 <div class="footdef"><sup><a id="fn.25" class="footnum" href="#fnr.25" role="doc-backlink">25</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1972</p></div></div>
 
@@ -16100,7 +16110,9 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 
 <div class="footdef"><sup><a id="fn.37" class="footnum" href="#fnr.37" role="doc-backlink">37</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.38" class="footnum" href="#fnr.38" role="doc-backlink">38</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://elmfire.io">https://elmfire.io</a></p></div></div>
+<div class="footdef"><sup><a id="fn.38" class="footnum" href="#fnr.38" role="doc-backlink">38</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://elmfire.io">https://elmfire.io</a>
+</p></div></div>
 
 <div class="footdef"><sup><a id="fn.39" class="footnum" href="#fnr.39" role="doc-backlink">39</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
 
@@ -16139,10 +16151,6 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <div class="footdef"><sup><a id="fn.56" class="footnum" href="#fnr.56" role="doc-backlink">56</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
 
 <div class="footdef"><sup><a id="fn.57" class="footnum" href="#fnr.57" role="doc-backlink">57</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
-
-<div class="footdef"><sup><a id="fn.58" class="footnum" href="#fnr.58" role="doc-backlink">58</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://elmfire.io">https://elmfire.io</a></p></div></div>
-
-<div class="footdef"><sup><a id="fn.59" class="footnum" href="#fnr.59" role="doc-backlink">59</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara"><a href="https://landfire.gov">https://landfire.gov</a></p></div></div>
 
 
 </div>

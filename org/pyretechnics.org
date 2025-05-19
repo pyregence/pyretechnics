@@ -22,7 +22,6 @@
 # Code Block Settings
 # ================================
 
-#+PROPERTY: header-args:python+ :preamble "import sys\nsys.path.extend(['../src','../test'])"
 #+PROPERTY: header-args:python+ :eval     no-export
 #+PROPERTY: header-args:python+ :results  value verbatim pp silent
 #+PROPERTY: header-args:python+ :mkdirp   yes
@@ -34,11 +33,10 @@
   :CUSTOM_ID: preface
   :END:
 
-This document is a Literate
-Program[fn::https://en.wikipedia.org/wiki/Literate_programming],
-containing both the source code of the software it describes as well
-as the rationale used in each step of its design and implementation.
-The purpose of this approach is to enable both programmers and
+This document is a Literate Program[fn:lit-prog-wikipedia], containing
+both the source code of the software it describes as well as the
+rationale used in each step of its design and implementation. The
+purpose of this approach is to enable both programmers and
 non-programmers alike to retrace the author's footsteps as they read
 through the text and code. By the time they have reached the end of
 this document, the reader should have just as strong a grasp of the
@@ -46,11 +44,14 @@ system as the original programmer.
 
 The source code repository containing this document provides a
 comprehensive reproducible development environment through the use of
-the open source GNU Guix[fn::https://guix.gnu.org] transactional
-package manager. This tool will automatically install all the software
-needed to tangle, detangle, weave, test, build, and install this
-library on your machine without conflicting with the main package
-manager of your operating system. See [[file:../README.md][README.md]] for more details.
+the open source GNU Guix[fn:guix-website] transactional package
+manager. This tool will automatically install all the software needed
+to tangle, detangle, weave, test, build, and install this library on
+your machine without conflicting with the main package manager of your
+operating system. See [[file:../README.md][README.md]] for more details.
+
+[fn:lit-prog-wikipedia] https://en.wikipedia.org/wiki/Literate_programming
+[fn:guix-website] https://guix.gnu.org
 
 * Data Model
   :PROPERTIES:
@@ -122,26 +123,25 @@ within Pyretechnics is flexibly designed to allow any of these
 environmental input variables to take on any of these forms:
 
 - Constant :: Constant in both space and time. \\
-  *Ex*: A single constant foliar moisture value could be used over the
-  simulation area for the entire simulation duration.
+  *Example*: A single constant foliar moisture value could be used
+  over the simulation area for the entire simulation duration.
 
 - Temporal :: Constant in space but variable in time. \\
-  *Ex*: An hourly sequence of spread rate adjustment factors could be
-  used to globally ramp up and down fire spread rates throughout a
-  day/night cycle, creating burn periods of arbitrary length and
-  intensity.
+  *Example*: An hourly sequence of spread rate adjustment factors
+  could be used to globally ramp up and down fire spread rates
+  throughout a day/night cycle, creating burn periods of arbitrary
+  length and intensity.
 
 - Spatial :: Variable in space but constant in time. \\
-  *Ex*: A raster layer downloaded from
-  LANDFIRE[fn::https://landfire.gov] can be used to specify the
-  spatial distribution of FBFM40 fuel model values on a landscape.
+  *Example*: A raster layer downloaded from
+  LANDFIRE[fn:landfire-website] can be used to specify the spatial
+  distribution of FBFM40 fuel model values on a landscape.
 
 - Spatio-temporal :: Variable in both space and time. \\
-  *Ex*: Hourly
-  RTMA[fn::https://www.nco.ncep.noaa.gov/pmb/products/rtma/] weather
-  data can be loaded from a multi-band raster and used to specify the
-  spatio-temporal distribution of wind speed and direction throughout
-  the simulation domain.
+  *Example*: Hourly RTMA[fn:rtma-website] weather data can be loaded
+  from a multi-band raster and used to specify the spatio-temporal
+  distribution of wind speed and direction throughout the simulation
+  domain.
 
 This is accomplished by representing each such input value as an
 abstract datatype with a set of 3D space-time lookup functions for
@@ -151,6 +151,9 @@ always be referentially transparent, so as to ensure that subsequent
 lookups with the same coordinate will always yield the same values.
 See section [[Loading Data into the 3D Space-Time Cube
 (pyretechnics.space_time_cube)]] for implementation details.
+
+[fn:landfire-website] https://landfire.gov
+[fn:rtma-website] https://www.nco.ncep.noaa.gov/pmb/products/rtma/
 
 ** Support for Input Datasets of Varying Resolution
    :PROPERTIES:
@@ -1117,7 +1120,7 @@ spatiotemporal_cube = SpaceTimeCube(cube_shape, wind_speed_raster)
 
 **** Retrieve a Scalar Value at a Space-Time Coordinate
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-scalar-value-at-a-space-time-coordinate
+     :CUSTOM_ID: stc-retrieve-a-scalar-value-at-a-space-time-coordinate
      :END:
 
 #+NAME: space-time-cube-get-point
@@ -1140,7 +1143,7 @@ print("Value from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.get(band, row, col))
 #+end_src
 
-#+NAME: space-time-cube-get-point-results
+#+ATTR_HTML: :id space-time-cube-get-point-results
 #+RESULTS: space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
@@ -1158,7 +1161,7 @@ Value from Spatio-Temporal Data: Wind Speed
 
 **** Retrieve a Time Series at a Spatial Coordinate
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-time-series-at-a-spatial-coordinate
+     :CUSTOM_ID: stc-retrieve-a-time-series-at-a-spatial-coordinate
      :END:
 
 #+NAME: space-time-cube-get-time-series
@@ -1181,7 +1184,7 @@ print("Time Series from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getTimeSeries(band_range, row, col))
 #+end_src
 
-#+NAME: space-time-cube-get-time-series-results
+#+ATTR_HTML: :id space-time-cube-get-time-series-results
 #+RESULTS: space-time-cube-get-time-series
 #+begin_example
 Time Series from Constant Data: Foliar Moisture
@@ -1199,7 +1202,7 @@ Time Series from Spatio-Temporal Data: Wind Speed
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-spatial-plane-at-a-temporal-coordinate
+     :CUSTOM_ID: stc-retrieve-a-spatial-plane-at-a-temporal-coordinate
      :END:
 
 #+NAME: space-time-cube-get-spatial-plane
@@ -1222,7 +1225,7 @@ print("Spatial Plane from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSpatialPlane(band, row_range, col_range))
 #+end_src
 
-#+NAME: space-time-cube-get-spatial-plane-results
+#+ATTR_HTML: :id space-time-cube-get-spatial-plane-results
 #+RESULTS: space-time-cube-get-spatial-plane
 #+begin_example
 Spatial Plane from Constant Data: Foliar Moisture
@@ -1276,7 +1279,7 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 
 **** Retrieve a Subcube within a Space-Time Region
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-subcube-within-a-space-time-region
+     :CUSTOM_ID: stc-retrieve-a-subcube-within-a-space-time-region
      :END:
 
 #+NAME: space-time-cube-get-subcube
@@ -1299,7 +1302,7 @@ print("Subcube from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSubcube(band_range, row_range, col_range))
 #+end_src
 
-#+NAME: space-time-cube-get-subcube-results
+#+ATTR_HTML: :id space-time-cube-get-subcube-results
 #+RESULTS: space-time-cube-get-subcube
 #+begin_example
 Subcube from Constant Data: Foliar Moisture
@@ -1505,7 +1508,7 @@ spatiotemporal_cube = LazySpaceTimeCube(cube_shape,
 
 **** Retrieve a Scalar Value at a Space-Time Coordinate
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-scalar-value-at-a-space-time-coordinate
+     :CUSTOM_ID: lazy-stc-retrieve-a-scalar-value-at-a-space-time-coordinate
      :END:
 
 #+NAME: lazy-space-time-cube-get-point
@@ -1528,7 +1531,7 @@ print("Value from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.get(band, row, col))
 #+end_src
 
-#+NAME: lazy-space-time-cube-get-point-results
+#+ATTR_HTML: :id lazy-space-time-cube-get-point-results
 #+RESULTS: lazy-space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
@@ -1549,7 +1552,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 
 **** Retrieve a Time Series at a Spatial Coordinate
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-time-series-at-a-spatial-coordinate
+     :CUSTOM_ID: lazy-stc-retrieve-a-time-series-at-a-spatial-coordinate
      :END:
 
 #+NAME: lazy-space-time-cube-get-time-series
@@ -1572,7 +1575,7 @@ print("Time Series from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getTimeSeries(band_range, row, col))
 #+end_src
 
-#+NAME: lazy-space-time-cube-get-time-series-results
+#+ATTR_HTML: :id lazy-space-time-cube-get-time-series-results
 #+RESULTS: lazy-space-time-cube-get-time-series
 #+begin_example
 Time Series from Constant Data: Foliar Moisture
@@ -1592,7 +1595,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 
 **** Retrieve a Spatial Plane at a Temporal Coordinate
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-spatial-plane-at-a-temporal-coordinate
+     :CUSTOM_ID: lazy-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate
      :END:
 
 #+NAME: lazy-space-time-cube-get-spatial-plane
@@ -1615,7 +1618,7 @@ print("Spatial Plane from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSpatialPlane(band, row_range, col_range))
 #+end_src
 
-#+NAME: lazy-space-time-cube-get-spatial-plane-results
+#+ATTR_HTML: :id lazy-space-time-cube-get-spatial-plane-results
 #+RESULTS: lazy-space-time-cube-get-spatial-plane
 #+begin_example
 Spatial Plane from Constant Data: Foliar Moisture
@@ -1675,7 +1678,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 
 **** Retrieve a Subcube within a Space-Time Region
      :PROPERTIES:
-     :CUSTOM_ID: retrieve-a-subcube-within-a-space-time-region
+     :CUSTOM_ID: lazy-stc-retrieve-a-subcube-within-a-space-time-region
      :END:
 
 #+NAME: lazy-space-time-cube-get-subcube
@@ -1698,7 +1701,7 @@ print("Subcube from Spatio-Temporal Data: Wind Speed")
 print(spatiotemporal_cube.getSubcube(band_range, row_range, col_range))
 #+end_src
 
-#+NAME: lazy-space-time-cube-get-subcube-results
+#+ATTR_HTML: :id lazy-space-time-cube-get-subcube-results
 #+RESULTS: lazy-space-time-cube-get-subcube
 #+begin_example
 Subcube from Constant Data: Foliar Moisture
@@ -2547,7 +2550,7 @@ print("\nDynamic Fuel Model: GR1")
 pprint(dynamic_fuel_model)
 #+end_src
 
-#+NAME: look-up-fuel-model-properties-results
+#+ATTR_HTML: :id look-up-fuel-model-properties-results
 #+RESULTS: look-up-fuel-model-properties
 #+begin_example
 Static Fuel Model: R01
@@ -2656,7 +2659,7 @@ print("\nMoisturized Dynamic Fuel Model: GR1")
 pprint(moisturize(dynamic_fuel_model, fuel_moisture))
 #+end_src
 
-#+NAME: moisturize-fuel-model-results
+#+ATTR_HTML: :id moisturize-fuel-model-results
 #+RESULTS: moisturize-fuel-model
 #+begin_example
 Moisturized Static Fuel Model: R01
@@ -3666,19 +3669,19 @@ the length to width ratio $\frac{L}{W}$:
 
 1. Using equation 9 from Rothermel 1991.[fn::Rothermel1991]
 
-\begin{align}
-  \frac{L}{W} = 1 + 0.25 \, U_{\text{eff}}
-\end{align}
+   \begin{align}
+     \frac{L}{W} = 1 + 0.25 \, U_{\text{eff}}
+   \end{align}
 
-where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
+   where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
 
-2. Using the formula implemented in the Missoula Fire Lab's =behave= C++ library[fn::https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93]
+2. Using the formula implemented in the Missoula Fire Lab's =behave= C++ library[fn:behave-repo-lw-ratio]
 
-\begin{align}
-  \frac{L}{W} = \min(8.0, 0.936 e^{(0.1147 U_{\text{eff}})} + 0.461 e^{(-0.0692 U_{\text{eff}})} - 0.397)
-\end{align}
+   \begin{align}
+     \frac{L}{W} = \min(8.0, 0.936 e^{(0.1147 U_{\text{eff}})} + 0.461 e^{(-0.0692 U_{\text{eff}})} - 0.397)
+   \end{align}
 
-where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
+   where $U_{\text{eff}}$ is the effective wind speed in $\text{mph}$.
 
 #+NAME: surface-fire-eccentricity
 #+begin_src python
@@ -3718,6 +3721,8 @@ def surface_fire_eccentricity(length_to_width_ratio: cy.float) -> cy.float:
     """
     return sqrt((length_to_width_ratio * length_to_width_ratio) - 1.0) / length_to_width_ratio
 #+end_src
+
+[fn:behave-repo-lw-ratio] https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93
 
 *** Surface Fire Behavior in the Direction of Maximum Spread
     :PROPERTIES:
@@ -4020,7 +4025,7 @@ print("No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moist
 pprint({k: surface_fire_min[k] for k in ["base_spread_rate", "base_fireline_intensity", "max_effective_wind_speed"]})
 #+end_src
 
-#+NAME: compute-surface-fire-behavior-min-results
+#+ATTR_HTML: :id compute-surface-fire-behavior-min-results
 #+RESULTS: compute-surface-fire-behavior-min
 : No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
 : {'base_fireline_intensity': 1.7899988889694214,
@@ -4061,7 +4066,7 @@ print("Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind D
       + "- Downwind Direction: " + str(conv.opposite_direction(upwind_direction)) + " (degrees clockwise from North)")
 #+end_src
 
-#+NAME: translate-10m-wind-to-midflame-wind-results
+#+ATTR_HTML: :id translate-10m-wind-to-midflame-wind-results
 #+RESULTS: translate-10m-wind-to-midflame-wind
 : Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Direction = 45.0
 :  with Fuel Model GR1, Canopy Height = 20m, and Canopy Cover = 60%
@@ -4128,7 +4133,7 @@ print("\nSurface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Mois
 pprint(surface_fire_max_unlimited)
 #+end_src
 
-#+NAME: compute-surface-fire-behavior-max-results
+#+ATTR_HTML: :id compute-surface-fire-behavior-max-results
 #+RESULTS: compute-surface-fire-behavior-max
 #+begin_example
 Surface Fire Behavior Max (Limited) for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
@@ -4226,7 +4231,7 @@ print("\nBacking Fire Behavior for Fuel Model GR1 with Fuel Moisture = "
 pprint(backing_fire_behavior)
 #+end_src
 
-#+NAME: compute-surface-fire-behavior-in-direction-results
+#+ATTR_HTML: :id compute-surface-fire-behavior-in-direction-results
 #+RESULTS: compute-surface-fire-behavior-in-direction
 #+begin_example
 Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
@@ -5227,7 +5232,7 @@ else:
     })
 #+end_src
 
-#+NAME: check-crown-fire-initiation-results
+#+ATTR_HTML: :id check-crown-fire-initiation-results
 #+RESULTS: check-crown-fire-initiation
 #+begin_example
 Low Canopy Cover and Low Surface Fireline Intensity
@@ -5348,7 +5353,7 @@ print("\nOutputs:")
 pprint(crown_fire_max_perpendicular)
 #+end_src
 
-#+NAME: compute-crown-fire-behavior-max-results
+#+ATTR_HTML: :id compute-crown-fire-behavior-max-results
 #+RESULTS: compute-crown-fire-behavior-max
 #+begin_example
 Crown Fire Behavior Max with Wind and Slope Aligned
@@ -5461,7 +5466,7 @@ print("\nBacking Fire Behavior\n" + "=" * 60)
 pprint(backing_fire_behavior)
 #+end_src
 
-#+NAME: compute-crown-fire-behavior-in-direction-results
+#+ATTR_HTML: :id compute-crown-fire-behavior-in-direction-results
 #+RESULTS: compute-crown-fire-behavior-in-direction
 #+begin_example
 Heading Fire Behavior
@@ -5641,7 +5646,7 @@ else:
     pprint(surface_fire_normal)
 #+end_src
 
-#+NAME: compute-combined-fire-behavior-in-direction-results
+#+ATTR_HTML: :id compute-combined-fire-behavior-in-direction-results
 #+RESULTS: compute-combined-fire-behavior-in-direction
 : Fire Behavior from Surface Fire (No Crown Fire Occurred)
 : ============================================================
@@ -5891,9 +5896,9 @@ def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.int:
 
 We now need to define the functions $\mu_X(\Phi)$ and
 $\sigma_X(\Phi)$. Here we depart from Sardoy 2008[fn::Sardoy2008] and
-reproduce the model of ELMFIRE[fn::https://elmfire.io], which models
-that dependency using the following relationships between the moments
-of the distribution and the fireline intensity $I$ and wind speed $U$:
+reproduce the model of ELMFIRE[fn:elmfire-website], which models that
+dependency using the following relationships between the moments of
+the distribution and the fireline intensity $I$ and wind speed $U$:
 
 \begin{align}
   \mathbb{E}[\Delta_X] &= \Delta_1 \left(\frac{I}{\text{1 kW/m}}\right)^{e_I} \left(\frac{U}{\text{1 m/s}}\right)^{e_U} \\
@@ -6759,7 +6764,7 @@ pprint({
 })
 #+end_src
 
-#+NAME: run-estimate-areal-heat-output
+#+ATTR_HTML: :id run-estimate-areal-heat-output
 #+RESULTS: estimate-areal-heat-output
 #+begin_example
 Median Areal Heat Output (kJ/m^2) for All Surface Fuel Models
@@ -6905,7 +6910,7 @@ pprint({
 }, sort_dicts=False)
 #+end_src
 
-#+NAME: estimate-spot-fire-ignition-probability-results
+#+ATTR_HTML: :id estimate-spot-fire-ignition-probability-results
 #+RESULTS: estimate-spot-fire-ignition-probability
 #+begin_example
 {'firebrand_count_percentiles': {0: 0.0,
@@ -6978,7 +6983,7 @@ table_rows            = [list(d.values()) for d in himoto_typical_ranges]
 print([table_header, *table_rows])
 #+end_src
 
-#+NAME: run-himoto-typical-ranges
+#+ATTR_HTML: :id run-himoto-typical-ranges
 #+RESULTS: himoto-typical-ranges
 | $B^*$ | $\text{CV}[\Delta_X]$ | $\sigma_X$ | $\sigma_Y/\mathbb{E}[\Delta_X]$ |
 |    20 |                   69% |       0.72 |                            0.27 |
@@ -7830,7 +7835,7 @@ print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit)
 pprint(combined_behavior_unlimited)
 #+end_src
 
-#+NAME: run-burn-cell-as-head-fire-results
+#+ATTR_HTML: :id run-burn-cell-as-head-fire-results
 #+RESULTS: run-burn-cell-as-head-fire
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
@@ -7950,7 +7955,7 @@ for (name, matrix) in combined_behavior_unlimited.items():
     print(matrix[100:105,100:105])
 #+end_src
 
-#+NAME: run-burn-all-cells-as-head-fire-results
+#+ATTR_HTML: :id run-burn-all-cells-as-head-fire-results
 #+RESULTS: run-burn-all-cells-as-head-fire
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
@@ -8123,7 +8128,7 @@ print("\nFire Behavior from Combined Surface and Crown Fire (without Wind Limit)
 pprint(combined_behavior_unlimited)
 #+end_src
 
-#+NAME: run-burn-cell-toward-azimuth-results
+#+ATTR_HTML: :id run-burn-cell-toward-azimuth-results
 #+RESULTS: run-burn-cell-toward-azimuth
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
@@ -8251,7 +8256,7 @@ for (name, matrix) in combined_behavior_unlimited.items():
     print(matrix[100:105,100:105])
 #+end_src
 
-#+NAME: run-burn-all-cells-toward-azimuth-results
+#+ATTR_HTML: :id run-burn-all-cells-toward-azimuth-results
 #+RESULTS: run-burn-all-cells-toward-azimuth
 #+begin_example
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
@@ -8352,7 +8357,9 @@ space-time cube introduced in section [[Data Model]].
 
 This section introduces the equations used in the Eulerian level set
 method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
-model[fn::https://elmfire.io].
+model[fn:elmfire-website].
+
+[fn:elmfire-website] https://elmfire.io
 
 *** Module Imports
     :PROPERTIES:
@@ -11447,7 +11454,7 @@ print("\nTime of Arrival (minutes)")
 pprint(get_array_stats(output_matrices["time_of_arrival"]), sort_dicts=False)
 #+end_src
 
-#+NAME: run-spread-fire-with-phi-field-stats-results
+#+ATTR_HTML: :id run-spread-fire-with-phi-field-stats-results
 #+RESULTS: run-spread-fire-with-phi-field-stats
 #+begin_example
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
@@ -11784,7 +11791,7 @@ print("\nFuture Spot Ignitions:")
 pprint(dict(spot_ignitions))
 #+end_src
 
-#+NAME: run-spread-fire-with-phi-field-with-spotting-stats-results
+#+ATTR_HTML: :id run-spread-fire-with-phi-field-with-spotting-stats-results
 #+RESULTS: run-spread-fire-with-phi-field-with-spotting-stats
 #+begin_example
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 6:30pm Spreading from Coordinate (50,50)
@@ -12299,7 +12306,7 @@ print("Fork: ", end="")
 pprint(get_array_stats_fork(output_matrices_fork["time_of_arrival"]), sort_dicts=False)
 #+end_src
 
-#+NAME: run-spread-fire-with-phi-field-stats-forked-results
+#+ATTR_HTML: :id run-spread-fire-with-phi-field-stats-forked-results
 #+RESULTS: run-spread-fire-with-phi-field-stats-forked
 #+begin_example
 Fire Behavior from Day 2 @ 10:30am - Day 2 @ 10:30pm Spreading from Coordinate (50,50)
@@ -14041,8 +14048,8 @@ first create a collection of =SpaceTimeCube= objects, representing all
 of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
-provided by the US LANDFIRE program[fn::https://landfire.gov] (see
-table [[tab:landfire-layers]] for details).
+provided by the US LANDFIRE program[fn:landfire-website] (see table
+[[tab:landfire-layers]] for details).
 
 #+NAME: tab:landfire-layers
 #+caption: 2022 LANDFIRE Raster Layers
