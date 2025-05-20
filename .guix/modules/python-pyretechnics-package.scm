@@ -6,12 +6,12 @@
   #:use-module ((gnu packages emacs)           #:select (emacs-minimal))
   #:use-module ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
-  #:use-module ((gnu packages python-build)    #:select (python-setuptools
+  #:use-module ((gnu packages python-build)    #:select (python-setuptools-next
                                                          python-wheel
                                                          python-pypa-build))
   #:use-module ((gnu packages python-science)  #:select (python-distributed))
   #:use-module ((gnu packages python-web)      #:select (python-tornado-6))
-  #:use-module ((gnu packages python-xyz)      #:select (python-numpy
+  #:use-module ((gnu packages python-xyz)      #:select (python-numpy-2
                                                          python-rasterio
                                                          python-matplotlib
                                                          python-sortedcontainers
@@ -55,7 +55,7 @@
    (build-system pyproject-build-system)
    (arguments `(#:tests? #f))
    (propagated-inputs (list python-tornado-6))
-   (native-inputs (list python-setuptools python-wheel))
+   (native-inputs (list python-setuptools-next python-wheel))
    (home-page "https://jiffyclub.github.io/snakeviz/")
    (synopsis "A web-based viewer for Python profiler output")
    (description
@@ -73,7 +73,7 @@
      (sha256
       (base32 "0ysbl0rhy8chvx58zi5qb61jli76dcyblklnc0118vy39a15gnaw"))))
    (build-system pyproject-build-system)
-   (native-inputs (list python-pytest python-pytest-cov python-setuptools
+   (native-inputs (list python-pytest python-pytest-cov python-setuptools-next
                         python-wheel))
    (home-page "https://code.launchpad.net/~tseaver/pkginfo/trunk")
    (synopsis "Query metadata from sdists / bdists / installed packages.")
@@ -111,7 +111,7 @@
                    ;; Python3
                    python-wrapper
                    ;; Build/Test/Profile/Deploy utilities
-                   python-setuptools
+                   python-setuptools-next
                    python-wheel
                    python-pypa-build
                    python-pytest
@@ -124,7 +124,7 @@
                    python-distributed))
    (propagated-inputs (list
                        ;; Runtime dependencies
-                       python-numpy
+                       python-numpy-2
                        python-rasterio
                        python-sortedcontainers
                        python-cython-3))
