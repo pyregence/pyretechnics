@@ -11,7 +11,7 @@ matplotlib ~= 3.8.2
 dask ~= 2024.4.2
 distributed ~= 2024.4.2
 # Runtime dependencies
-numpy ~= 2.2.5
+numpy ~= 1.26.2
 rasterio ~= 1.4.3
 sortedcontainers ~= 2.4.0
 Cython ~= 3.0.11

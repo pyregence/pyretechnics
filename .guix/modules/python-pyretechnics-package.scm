@@ -12,7 +12,7 @@
                                                          python-pyparsing))
   #:use-module ((gnu packages python-science)  #:select (python-distributed))
   #:use-module ((gnu packages python-web)      #:select (python-tornado-6))
-  #:use-module ((gnu packages python-xyz)      #:select (python-numpy-2
+  #:use-module ((gnu packages python-xyz)      #:select (python-numpy
                                                          python-rasterio
                                                          python-matplotlib
                                                          python-sortedcontainers
@@ -52,35 +52,29 @@
   (package
    (name "python-snakeviz")
    (version "2.2.2")
-   (source
-    (origin
-     (method url-fetch)
-     (uri (pypi-uri "snakeviz" version))
-     (sha256
-      (base32 "10vx7b0rn3gams2qk0dj5xkbiavh8x13hykm2kzk581lirpqq0h8"))))
+   (source (origin
+            (method url-fetch)
+            (uri (pypi-uri "snakeviz" version))
+            (sha256 (base32 "10vx7b0rn3gams2qk0dj5xkbiavh8x13hykm2kzk581lirpqq0h8"))))
    (build-system pyproject-build-system)
    (arguments `(#:tests? #f))
    (propagated-inputs (list python-tornado-6))
    (native-inputs (list python-setuptools-next python-wheel))
    (home-page "https://jiffyclub.github.io/snakeviz/")
    (synopsis "A web-based viewer for Python profiler output")
-   (description
-    "This package provides a web-based viewer for Python profiler output.")
+   (description "This package provides a web-based viewer for Python profiler output.")
    (license bsd-3)))
 
 (define-public python-pkginfo
   (package
    (name "python-pkginfo")
    (version "1.12.1.2")
-   (source
-    (origin
-     (method url-fetch)
-     (uri (pypi-uri "pkginfo" version))
-     (sha256
-      (base32 "0ysbl0rhy8chvx58zi5qb61jli76dcyblklnc0118vy39a15gnaw"))))
+   (source (origin
+            (method url-fetch)
+            (uri (pypi-uri "pkginfo" version))
+            (sha256 (base32 "0ysbl0rhy8chvx58zi5qb61jli76dcyblklnc0118vy39a15gnaw"))))
    (build-system pyproject-build-system)
-   (native-inputs (list python-pytest python-pytest-cov python-setuptools-next
-                        python-wheel))
+   (native-inputs (list python-pytest python-pytest-cov python-setuptools-next python-wheel))
    (home-page "https://code.launchpad.net/~tseaver/pkginfo/trunk")
    (synopsis "Query metadata from sdists / bdists / installed packages.")
    (description "Query metadata from sdists / bdists / installed packages.")
@@ -93,17 +87,18 @@
    (source (origin
             (method url-fetch)
             (uri (pypi-uri "rasterio" version))
-            (sha256
-             (base32 "02immzrf8g3ms75nrld4n1jp42www3s1r2n7nan9swy4qzdha7r0"))))
-   (propagated-inputs (cons* python-pyparsing
-                             python-numpy-2
-                             (map cadr
+            (sha256 (base32 "02immzrf8g3ms75nrld4n1jp42www3s1r2n7nan9swy4qzdha7r0"))))
+   (propagated-inputs (cons python-pyparsing
+                            (map cadr
+                                 (assoc-remove!
                                   (assoc-remove!
                                    (package-propagated-inputs python-rasterio)
-                                   "python-numpy"))))
-   (native-inputs (cons* python-cython-3
-                         python-fsspec
+                                   "python-snuggs")
+                                  "python-setuptools"))))
+   (native-inputs (cons* python-fsspec
+                         python-numpy
                          python-setuptools-next
+                         python-cython-3
                          (map cadr
                               (assoc-remove!
                                (package-native-inputs python-rasterio)
@@ -153,7 +148,7 @@
                    python-distributed))
    (propagated-inputs (list
                        ;; Runtime dependencies
-                       python-numpy-2
+                       python-numpy
                        python-rasterio-next
                        python-sortedcontainers
                        python-cython-3))

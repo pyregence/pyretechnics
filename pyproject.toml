@@ -12,7 +12,7 @@ keywords = ["fire", "wildfire", "fire behavior", "fire spread"]
 readme = "README.md"
 requires-python = "~=3.11"
 dependencies = [
-        "numpy ~= 2.2.5",
+        "numpy ~= 1.26.2",
         "rasterio ~= 1.4.3",
         "sortedcontainers ~= 2.4.0",
         "Cython ~= 3.0.11",
@@ -49,7 +49,7 @@ requires = [
         "wheel ~= 0.40.0",
         "build ~= 0.7.0",
         "Cython ~= 3.0.11",
-        "numpy ~= 2.2.5",
+        "numpy ~= 1.26.2",
 ]
 build-backend = "setuptools.build_meta"
 
