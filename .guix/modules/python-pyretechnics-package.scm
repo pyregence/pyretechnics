@@ -8,7 +8,8 @@
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-setuptools-next
                                                          python-wheel
-                                                         python-pypa-build))
+                                                         python-pypa-build
+                                                         python-pyparsing))
   #:use-module ((gnu packages python-science)  #:select (python-distributed))
   #:use-module ((gnu packages python-web)      #:select (python-tornado-6))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy-2
@@ -17,7 +18,8 @@
                                                          python-sortedcontainers
                                                          python-cython-3
                                                          python-twine
-                                                         python-dask))
+                                                         python-dask
+                                                         python-fsspec))
   #:use-module ((gnu packages tls)             #:select (openssl))
   #:use-module ((gnu packages version-control) #:select (git))
   #:use-module ((guix build-system python)     #:select (pypi-uri))
@@ -26,7 +28,11 @@
   #:use-module ((guix gexp)                    #:select (local-file))
   #:use-module ((guix git-download)            #:select (git-predicate))
   #:use-module ((guix licenses)                #:select (epl2.0 bsd-3 expat))
-  #:use-module ((guix packages)                #:select (package origin base32))
+  #:use-module ((guix packages)                #:select (package
+                                                         origin
+                                                         base32
+                                                         package-propagated-inputs
+                                                         package-native-inputs))
   #:use-module ((guix utils)                   #:select (current-source-directory)))
 
 ;;============================================================
@@ -80,6 +86,29 @@
    (description "Query metadata from sdists / bdists / installed packages.")
    (license expat)))
 
+(define-public python-rasterio-next
+  (package
+   (inherit python-rasterio)
+   (version "1.4.3")
+   (source (origin
+            (method url-fetch)
+            (uri (pypi-uri "rasterio" version))
+            (sha256
+             (base32 "02immzrf8g3ms75nrld4n1jp42www3s1r2n7nan9swy4qzdha7r0"))))
+   (propagated-inputs (cons* python-pyparsing
+                             python-numpy-2
+                             (map cadr
+                                  (assoc-remove!
+                                   (package-propagated-inputs python-rasterio)
+                                   "python-numpy"))))
+   (native-inputs (cons* python-cython-3
+                         python-fsspec
+                         python-setuptools-next
+                         (map cadr
+                              (assoc-remove!
+                               (package-native-inputs python-rasterio)
+                               "python-cython"))))))
+
 ;;============================================================
 ;; The Pyretechnics Package
 ;;============================================================
@@ -125,7 +154,7 @@
    (propagated-inputs (list
                        ;; Runtime dependencies
                        python-numpy-2
-                       python-rasterio
+                       python-rasterio-next
                        python-sortedcontainers
                        python-cython-3))
    (synopsis "A Python library for simulating fire behavior in a variety of ways.")
