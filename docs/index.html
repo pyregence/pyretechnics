@@ -10687,20 +10687,25 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: Changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
-<span class="org-keyword">def</span> <span class="org-function-name">dphi_dt_from_ellipses</span>(ellipses: EllipticalInfo, phi_gradient_xy: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+<span class="org-keyword">def</span> <span class="org-function-name">dphi_dt_from_ellipses</span>(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: vec_xy) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Calculates the dphi/dt (a negative number in phi/min) of the combined surface and crown elliptical wavelets.</span>
 
 <span class="org-doc">    NOTE: The reason for computing and returning only dphi/dt is efficiency.</span>
 <span class="org-doc">          Nothing else is needed in the front-propagating tight loop that iterates over tracked cells.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">phi_magnitude_xyz_2</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_phi_magnitude_xyz_2(phi_gradient_xy, ellipses.elevation_gradient)
+    (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>)                <span class="org-operator">=</span> phi_gradient_xy_unlimited
+    <span class="org-variable-name">dphi_dx_limited</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(<span class="org-builtin">max</span>(dphi_dx, <span class="org-operator">-</span>10.0), 10.0) <span class="org-comment-delimiter"># </span><span class="org-comment">limited to [-10,10]</span>
+    <span class="org-variable-name">dphi_dy_limited</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(<span class="org-builtin">max</span>(dphi_dy, <span class="org-operator">-</span>10.0), 10.0) <span class="org-comment-delimiter"># </span><span class="org-comment">limited to [-10,10]</span>
+    <span class="org-variable-name">phi_gradient_xy_limited</span>: vec_xy   <span class="org-operator">=</span> (dphi_dx_limited, dphi_dy_limited)
+
+    <span class="org-variable-name">phi_magnitude_xyz_2</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_phi_magnitude_xyz_2(phi_gradient_xy_limited, ellipses.elevation_gradient)
     <span class="org-variable-name">surface_dphi_dt</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> dphi_dt_from_partialed_wavelet(ellipses.surface_wavelet,
-                                                                   phi_gradient_xy,
+                                                                   phi_gradient_xy_limited,
                                                                    phi_magnitude_xyz_2)
     <span class="org-keyword">if</span> phi_aware_crowning_check(phi_magnitude_xyz_2, surface_dphi_dt, ellipses.crowning_spread_rate):
         <span class="org-variable-name">crown_dphi_dt</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> dphi_dt_from_partialed_wavelet(ellipses.crown_wavelet,
-                                                                 phi_gradient_xy,
+                                                                 phi_gradient_xy_limited,
                                                                  phi_magnitude_xyz_2)
         <span class="org-keyword">return</span> <span class="org-builtin">min</span>(surface_dphi_dt, crown_dphi_dt) <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: dphi_dt &lt;= 0</span>
     <span class="org-keyword">else</span>:
@@ -11921,6 +11926,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-variable-name">tca_old</span>         : TrackedCellsArrays     <span class="org-operator">=</span> sim_state[<span class="org-string">"_tracked_cells_arrays_old"</span>]
     <span class="org-variable-name">spot_ignitions</span>  : SortedDict[<span class="org-builtin">float</span>, <span class="org-builtin">set</span>] <span class="org-operator">=</span> sim_state[<span class="org-string">"spot_ignitions"</span>]
     <span class="org-variable-name">random_generator</span>: BufferedRandGen        <span class="org-operator">=</span> sim_state[<span class="org-string">"random_generator"</span>]
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Reinitialize the phi field</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">reinitialize_phi_field(phi_matrix, phi_star_matrix, tracked_cells)</span>
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Insert missing tracked cells</span>
     sync_tracked_cells_arrays(spread_inputs, fb_opts, tracked_cells, tca_old, tca)

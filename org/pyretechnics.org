@@ -9713,20 +9713,25 @@ def phi_aware_crowning_check(phi_magnitude_xyz_2 : cy.float,
 # NOTE: Changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.
 @cy.cfunc
 @cy.exceptval(check=False)
-def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy: vec_xy) -> cy.float:
+def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: vec_xy) -> cy.float:
     """
     Calculates the dphi/dt (a negative number in phi/min) of the combined surface and crown elliptical wavelets.
 
     NOTE: The reason for computing and returning only dphi/dt is efficiency.
           Nothing else is needed in the front-propagating tight loop that iterates over tracked cells.
     """
-    phi_magnitude_xyz_2: cy.float = calc_phi_magnitude_xyz_2(phi_gradient_xy, ellipses.elevation_gradient)
+    (dphi_dx, dphi_dy)                = phi_gradient_xy_unlimited
+    dphi_dx_limited        : cy.float = min(max(dphi_dx, -10.0), 10.0) # limited to [-10,10]
+    dphi_dy_limited        : cy.float = min(max(dphi_dy, -10.0), 10.0) # limited to [-10,10]
+    phi_gradient_xy_limited: vec_xy   = (dphi_dx_limited, dphi_dy_limited)
+
+    phi_magnitude_xyz_2: cy.float = calc_phi_magnitude_xyz_2(phi_gradient_xy_limited, ellipses.elevation_gradient)
     surface_dphi_dt    : cy.float = dphi_dt_from_partialed_wavelet(ellipses.surface_wavelet,
-                                                                   phi_gradient_xy,
+                                                                   phi_gradient_xy_limited,
                                                                    phi_magnitude_xyz_2)
     if phi_aware_crowning_check(phi_magnitude_xyz_2, surface_dphi_dt, ellipses.crowning_spread_rate):
         crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ellipses.crown_wavelet,
-                                                                 phi_gradient_xy,
+                                                                 phi_gradient_xy_limited,
                                                                  phi_magnitude_xyz_2)
         return min(surface_dphi_dt, crown_dphi_dt) # NOTE: dphi_dt <= 0
     else:
@@ -10947,6 +10952,9 @@ def spread_one_timestep(sim_state    : dict,
     tca_old         : TrackedCellsArrays     = sim_state["_tracked_cells_arrays_old"]
     spot_ignitions  : SortedDict[float, set] = sim_state["spot_ignitions"]
     random_generator: BufferedRandGen        = sim_state["random_generator"]
+
+    # FIXME: Reinitialize the phi field
+    # reinitialize_phi_field(phi_matrix, phi_star_matrix, tracked_cells)
 
     # Insert missing tracked cells
     sync_tracked_cells_arrays(spread_inputs, fb_opts, tracked_cells, tca_old, tca)
