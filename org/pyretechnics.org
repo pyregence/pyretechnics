@@ -9720,10 +9720,11 @@ def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: v
     NOTE: The reason for computing and returning only dphi/dt is efficiency.
           Nothing else is needed in the front-propagating tight loop that iterates over tracked cells.
     """
-    (dphi_dx, dphi_dy)                = phi_gradient_xy_unlimited
-    dphi_dx_limited        : cy.float = min(max(dphi_dx, -10.0), 10.0) # limited to [-10,10]
-    dphi_dy_limited        : cy.float = min(max(dphi_dy, -10.0), 10.0) # limited to [-10,10]
-    phi_gradient_xy_limited: vec_xy   = (dphi_dx_limited, dphi_dy_limited)
+    phi_gradient_xy_limited: vec_xy = phi_gradient_xy_unlimited
+    # (dphi_dx, dphi_dy)                = phi_gradient_xy_unlimited
+    # dphi_dx_limited        : cy.float = min(max(dphi_dx, -10.0), 10.0) # limited to [-10,10]
+    # dphi_dy_limited        : cy.float = min(max(dphi_dy, -10.0), 10.0) # limited to [-10,10]
+    # phi_gradient_xy_limited: vec_xy   = (dphi_dx_limited, dphi_dy_limited)
 
     phi_magnitude_xyz_2: cy.float = calc_phi_magnitude_xyz_2(phi_gradient_xy_limited, ellipses.elevation_gradient)
     surface_dphi_dt    : cy.float = dphi_dt_from_partialed_wavelet(ellipses.surface_wavelet,
@@ -11258,19 +11259,23 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
     # Spread the fire until an exit condition is reached
     remaining_time_in_simulation: cy.float = max_stop_time - start_time
     early_exit_threshold        : cy.float = 1.0 / 60.0 # 1 second
-    while((remaining_time_in_simulation > early_exit_threshold)       # 1. There is still time left in the simulation
-          and (nbt.nonempty_tracked_cells(tracked_cells)              # 2. There are burning cells on the grid
-               or len(sim_state["spot_ignitions"]) > 0)):             # 3. There are embers waiting to catch fire
+    stop_time                   : cy.float = -1.0
+    while((remaining_time_in_simulation > early_exit_threshold) # 1. There is still time left in the simulation
+          and (nbt.nonempty_tracked_cells(tracked_cells)        # 2. There are burning cells on the grid
+               or len(sim_state["spot_ignitions"]) > 0)         # 3. There are embers waiting to catch fire
+          and (start_time != stop_time)):                       # 4. Not caught in a zero length timestep loop
         # Spread fire one timestep
+        start_time                   = sim_state["simulation_time"]
         sim_state                    = spread_one_timestep(sim_state,
                                                            spread_inputs,
                                                            fb_opts,
                                                            remaining_time_in_simulation)
-        remaining_time_in_simulation = max_stop_time - sim_state["simulation_time"]
+        stop_time                    = sim_state["simulation_time"]
+        remaining_time_in_simulation = max_stop_time - stop_time
 
     # Determine the stop_condition
-    stop_condition: str = ("max duration reached"
-                           if remaining_time_in_simulation <= early_exit_threshold
+    stop_condition: str = ("max duration reached" if (remaining_time_in_simulation <= early_exit_threshold)
+                           else "zero length timestep" if (start_time == stop_time)
                            else "no burnable cells")
 
     # Return the final simulation results

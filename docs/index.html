@@ -10694,10 +10694,11 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    NOTE: The reason for computing and returning only dphi/dt is efficiency.</span>
 <span class="org-doc">          Nothing else is needed in the front-propagating tight loop that iterates over tracked cells.</span>
 <span class="org-doc">    """</span>
-    (<span class="org-variable-name">dphi_dx</span>, <span class="org-variable-name">dphi_dy</span>)                <span class="org-operator">=</span> phi_gradient_xy_unlimited
-    <span class="org-variable-name">dphi_dx_limited</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(<span class="org-builtin">max</span>(dphi_dx, <span class="org-operator">-</span>10.0), 10.0) <span class="org-comment-delimiter"># </span><span class="org-comment">limited to [-10,10]</span>
-    <span class="org-variable-name">dphi_dy_limited</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-builtin">min</span>(<span class="org-builtin">max</span>(dphi_dy, <span class="org-operator">-</span>10.0), 10.0) <span class="org-comment-delimiter"># </span><span class="org-comment">limited to [-10,10]</span>
-    <span class="org-variable-name">phi_gradient_xy_limited</span>: vec_xy   <span class="org-operator">=</span> (dphi_dx_limited, dphi_dy_limited)
+    <span class="org-variable-name">phi_gradient_xy_limited</span>: vec_xy <span class="org-operator">=</span> phi_gradient_xy_unlimited
+    <span class="org-comment-delimiter"># </span><span class="org-comment">(dphi_dx, dphi_dy)                = phi_gradient_xy_unlimited</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">dphi_dx_limited        : cy.float = min(max(dphi_dx, -10.0), 10.0) # limited to [-10,10]</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">dphi_dy_limited        : cy.float = min(max(dphi_dy, -10.0), 10.0) # limited to [-10,10]</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">phi_gradient_xy_limited: vec_xy   = (dphi_dx_limited, dphi_dy_limited)</span>
 
     <span class="org-variable-name">phi_magnitude_xyz_2</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> calc_phi_magnitude_xyz_2(phi_gradient_xy_limited, ellipses.elevation_gradient)
     <span class="org-variable-name">surface_dphi_dt</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> dphi_dt_from_partialed_wavelet(ellipses.surface_wavelet,
@@ -12232,19 +12233,23 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-comment-delimiter"># </span><span class="org-comment">Spread the fire until an exit condition is reached</span>
     <span class="org-variable-name">remaining_time_in_simulation</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> max_stop_time <span class="org-operator">-</span> start_time
     <span class="org-variable-name">early_exit_threshold</span>        : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1.0 <span class="org-operator">/</span> 60.0 <span class="org-comment-delimiter"># </span><span class="org-comment">1 second</span>
-    <span class="org-keyword">while</span>((remaining_time_in_simulation <span class="org-operator">&gt;</span> early_exit_threshold)       <span class="org-comment-delimiter"># </span><span class="org-comment">1. There is still time left in the simulation</span>
-          <span class="org-keyword">and</span> (nbt.nonempty_tracked_cells(tracked_cells)              <span class="org-comment-delimiter"># </span><span class="org-comment">2. There are burning cells on the grid</span>
-               <span class="org-keyword">or</span> <span class="org-builtin">len</span>(sim_state[<span class="org-string">"spot_ignitions"</span>]) <span class="org-operator">&gt;</span> 0)):             <span class="org-comment-delimiter"># </span><span class="org-comment">3. There are embers waiting to catch fire</span>
+    <span class="org-variable-name">stop_time</span>                   : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+    <span class="org-keyword">while</span>((remaining_time_in_simulation <span class="org-operator">&gt;</span> early_exit_threshold) <span class="org-comment-delimiter"># </span><span class="org-comment">1. There is still time left in the simulation</span>
+          <span class="org-keyword">and</span> (nbt.nonempty_tracked_cells(tracked_cells)        <span class="org-comment-delimiter"># </span><span class="org-comment">2. There are burning cells on the grid</span>
+               <span class="org-keyword">or</span> <span class="org-builtin">len</span>(sim_state[<span class="org-string">"spot_ignitions"</span>]) <span class="org-operator">&gt;</span> 0)         <span class="org-comment-delimiter"># </span><span class="org-comment">3. There are embers waiting to catch fire</span>
+          <span class="org-keyword">and</span> (start_time <span class="org-operator">!=</span> stop_time)):                       <span class="org-comment-delimiter"># </span><span class="org-comment">4. Not caught in a zero length timestep loop</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire one timestep</span>
+        <span class="org-variable-name">start_time</span>                   <span class="org-operator">=</span> sim_state[<span class="org-string">"simulation_time"</span>]
         <span class="org-variable-name">sim_state</span>                    <span class="org-operator">=</span> spread_one_timestep(sim_state,
                                                            spread_inputs,
                                                            fb_opts,
                                                            remaining_time_in_simulation)
-        <span class="org-variable-name">remaining_time_in_simulation</span> <span class="org-operator">=</span> max_stop_time <span class="org-operator">-</span> sim_state[<span class="org-string">"simulation_time"</span>]
+        <span class="org-variable-name">stop_time</span>                    <span class="org-operator">=</span> sim_state[<span class="org-string">"simulation_time"</span>]
+        <span class="org-variable-name">remaining_time_in_simulation</span> <span class="org-operator">=</span> max_stop_time <span class="org-operator">-</span> stop_time
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Determine the stop_condition</span>
-    <span class="org-variable-name">stop_condition</span>: <span class="org-builtin">str</span> <span class="org-operator">=</span> (<span class="org-string">"max duration reached"</span>
-                           <span class="org-keyword">if</span> remaining_time_in_simulation <span class="org-operator">&lt;=</span> early_exit_threshold
+    <span class="org-variable-name">stop_condition</span>: <span class="org-builtin">str</span> <span class="org-operator">=</span> (<span class="org-string">"max duration reached"</span> <span class="org-keyword">if</span> (remaining_time_in_simulation <span class="org-operator">&lt;=</span> early_exit_threshold)
+                           <span class="org-keyword">else</span> <span class="org-string">"zero length timestep"</span> <span class="org-keyword">if</span> (start_time <span class="org-operator">==</span> stop_time)
                            <span class="org-keyword">else</span> <span class="org-string">"no burnable cells"</span>)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Return the final simulation results</span>
