@@ -1,3 +1,16 @@
+# Version 2025.6.3
+
+## Changes for Developers
+- Upgraded to the latest Guix version (newer `python`, `setuptools`, `pkginfo`, and `numpy`).
+- Built a custom `rasterio` package that depends on `cython3`.
+- Pinned Python dependency versions in `pyproject.toml` to match `requirements.txt` and `guix.scm`.
+- Exposed `$HOME/.pypirc` in the `$DEV_CONTAINER_SHELL` to enable the `make.sh upload-{test,}pypi` commands.
+- Set `$MPLCONFIGDIR` in the Guix `$DEV_CONTAINER_SHELL` to avoid `matplotlib` warnings.
+- Fixed linting errors in `org/pyretechnics.org`.
+
+## Changes for Users
+- Added an exit early from `spread_fire_with_phi_field` when a zero length timestep is encountered.
+
 # Version 2025.5.15
 
 ## Changes for Developers

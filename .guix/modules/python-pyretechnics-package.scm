@@ -111,7 +111,7 @@
 (define-public python-pyretechnics
   (package
    (name "python-pyretechnics")
-   (version "2025.5.15")
+   (version "2025.6.3")
    (source (local-file "../.."
                        "pyretechnics-checkout"
                        #:recursive? #t
