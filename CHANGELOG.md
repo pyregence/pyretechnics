@@ -1,3 +1,11 @@
+# Version 2025.6.13
+
+## Changes for Developers
+- Disabled bounds checking in `SpaceTimeCube.get*` functions.
+
+## Changes for Users
+- Fixed array index out-of-bounds error thrown by `is_frontier_cell` due to `is_burnable_cell` checks on neighboring cells.
+
 # Version 2025.6.3
 
 ## Changes for Developers
