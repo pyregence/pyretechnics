@@ -761,6 +761,8 @@ def opposite_phi_signs(phi_matrix: cy.float[:,::1], y1: pyidx, x1: pyidx, y2: py
 @cy.exceptval(check=False)
 def is_frontier_cell(phi_matrix     : cy.float[:,::1],
                      fuel_model_cube: ISpaceTimeCube,
+                     rows           : pyidx,
+                     cols           : pyidx,
                      t              : pyidx,
                      y              : pyidx,
                      x              : pyidx) -> cy.bint:
@@ -771,16 +773,24 @@ def is_frontier_cell(phi_matrix     : cy.float[:,::1],
     west_x : pyidx = x-1
     return ((
         # Check north
-        opposite_phi_signs(phi_matrix, y, x, north_y, x) and spot.is_burnable_cell(fuel_model_cube, t, north_y, x)
+        opposite_phi_signs(phi_matrix, y, x, north_y, x)
+        and spot.is_in_bounds(north_y, x, rows, cols)
+        and spot.is_burnable_cell(fuel_model_cube, t, north_y, x)
     ) or (
         # Check south
-        opposite_phi_signs(phi_matrix, y, x, south_y, x) and spot.is_burnable_cell(fuel_model_cube, t, south_y, x)
+        opposite_phi_signs(phi_matrix, y, x, south_y, x)
+        and spot.is_in_bounds(south_y, x, rows, cols)
+        and spot.is_burnable_cell(fuel_model_cube, t, south_y, x)
     ) or (
         # Check east
-        opposite_phi_signs(phi_matrix, y, x, y, east_x) and spot.is_burnable_cell(fuel_model_cube, t, y, east_x)
+        opposite_phi_signs(phi_matrix, y, x, y, east_x)
+        and spot.is_in_bounds(y, east_x, rows, cols)
+        and spot.is_burnable_cell(fuel_model_cube, t, y, east_x)
     ) or (
         # Check west
-        opposite_phi_signs(phi_matrix, y, x, y, west_x) and spot.is_burnable_cell(fuel_model_cube, t, y, west_x)
+        opposite_phi_signs(phi_matrix, y, x, y, west_x)
+        and spot.is_in_bounds(y, west_x, rows, cols)
+        and spot.is_burnable_cell(fuel_model_cube, t, y, west_x)
     )) and (
         # Is this cell burnable?
         spot.is_burnable_cell(fuel_model_cube, t, y, x)
@@ -802,7 +812,7 @@ def identify_all_frontier_cells(phi_matrix     : cy.float[:,::1],
     x             : pyidx
     for y in range(rows):
         for x in range(cols):
-            if is_frontier_cell(phi_matrix, fuel_model_cube, t, y, x):
+            if is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
                 frontier_cells.add(encode_cell_index(y, x))
     return frontier_cells
 
@@ -2112,6 +2122,8 @@ def route_cell_to_diff(frontier_cells_old: set,
                        frontier_removals : set,
                        phi_matrix        : cy.float[:,::1],
                        fuel_model_cube   : ISpaceTimeCube,
+                       rows              : pyidx,
+                       cols              : pyidx,
                        t                 : pyidx,
                        y                 : pyidx,
                        x                 : pyidx) -> cy.void:
@@ -2120,13 +2132,14 @@ def route_cell_to_diff(frontier_cells_old: set,
     mutating the sets `frontier_additions` and `frontier_removals` accordingly.
     Idempotent.
     """
-    encoded_cell_index: object = encode_cell_index(y, x)
-    if is_frontier_cell(phi_matrix, fuel_model_cube, t, y, x):
-        if not (encoded_cell_index in frontier_cells_old):
-            frontier_additions.add(encoded_cell_index)
-    else:
-        if (encoded_cell_index in frontier_cells_old):
-            frontier_removals.add(encoded_cell_index)
+    if spot.is_in_bounds(y, x, rows, cols):
+        encoded_cell_index: object = encode_cell_index(y, x)
+        if is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
+            if not (encoded_cell_index in frontier_cells_old):
+                frontier_additions.add(encoded_cell_index)
+        else:
+            if (encoded_cell_index in frontier_cells_old):
+                frontier_removals.add(encoded_cell_index)
 
 
 @cy.cfunc
@@ -2135,6 +2148,8 @@ def diff_frontier_cells(frontier_cells_old  : set,
                         spot_ignited_cells  : list[BurnedCellInfo],
                         phi_matrix          : cy.float[:,::1],
                         fuel_model_cube     : ISpaceTimeCube,
+                        rows                : pyidx,
+                        cols                : pyidx,
                         t                   : pyidx) -> tuple[set, set]:
     """
     Computes the bi-directional set difference between the old frontier cells and the new frontier cells,
@@ -2158,6 +2173,8 @@ def diff_frontier_cells(frontier_cells_old  : set,
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y,
                                x)
@@ -2166,6 +2183,8 @@ def diff_frontier_cells(frontier_cells_old  : set,
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y-1,
                                x)
@@ -2174,6 +2193,8 @@ def diff_frontier_cells(frontier_cells_old  : set,
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y+1,
                                x)
@@ -2182,6 +2203,8 @@ def diff_frontier_cells(frontier_cells_old  : set,
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y,
                                x-1)
@@ -2190,6 +2213,8 @@ def diff_frontier_cells(frontier_cells_old  : set,
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y,
                                x+1)
@@ -2296,6 +2321,8 @@ def spread_one_timestep(sim_state    : dict,
                                                                     spot_ignited_cells,
                                                                     phi_matrix,
                                                                     spread_inputs.fuel_model,
+                                                                    spread_inputs.rows,
+                                                                    spread_inputs.cols,
                                                                     int(stop_time // spread_inputs.band_duration))
     frontier_additions: set                   = frontier_diff[0]
     frontier_removals : set                   = frontier_diff[1]

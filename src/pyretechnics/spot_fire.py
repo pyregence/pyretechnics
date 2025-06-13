@@ -396,6 +396,7 @@ def is_in_bounds(y: pyidx, x: pyidx, rows: pyidx, cols: pyidx) -> cy.bint:
     return (y >= 0) and (x >= 0) and (y < rows) and (x < cols)
 
 
+# FIXME: Memoize this function with a 2D (y,x) array cache
 @cy.cfunc
 @cy.exceptval(check=False)
 def is_burnable_cell(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx) -> cy.bint:

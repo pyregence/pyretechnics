@@ -84,6 +84,8 @@
 # cdef bint is_frontier_cell(
 #     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
+#     pyidx rows,
+#     pyidx cols,
 #     pyidx t,
 #     pyidx y,
 #     pyidx x,
@@ -267,6 +269,8 @@
 #     set frontier_removals,
 #     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
+#     pyidx rows,
+#     pyidx cols,
 #     pyidx t,
 #     pyidx y,
 #     pyidx x,
@@ -277,6 +281,8 @@
 #     list[BurnedCellInfo] spot_ignited_cells,
 #     float[:,::1] phi_matrix,
 #     ISpaceTimeCube fuel_model_cube,
+#     pyidx rows,
+#     pyidx cols,
 #     pyidx t,
 #     )
 # cdef set apply_frontier_diff(set frontier_cells_old, set frontier_additions, set frontier_removals)

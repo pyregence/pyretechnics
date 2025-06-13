@@ -798,7 +798,7 @@ polymorphism over these two child classes.
 <pre class="src src-python" id="ispace-time-cube-class"><span class="org-type">@cy.cclass</span>
 <span class="org-keyword">class</span> <span class="org-type">ISpaceTimeCube</span>:
     <span class="org-type">@cy.cfunc</span>
-    <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">@cy.exceptval(check=False)</span>
     <span class="org-keyword">def</span> <span class="org-function-name">get</span>(<span class="org-keyword">self</span>, t: pyidx, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
         <span class="org-keyword">pass</span>
 </pre>
@@ -968,7 +968,7 @@ constant input dimensions.
 
 
     <span class="org-type">@cy.ccall</span>
-    <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">@cy.exceptval(check=False)</span>
     <span class="org-type">@cy.boundscheck</span>(<span class="org-constant">True</span>)
     <span class="org-keyword">def</span> <span class="org-function-name">get</span>(<span class="org-keyword">self</span>, t: pyidx, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
         <span class="org-doc">"""</span>
@@ -1332,7 +1332,7 @@ extents and/or finer resolutions than have been used previously.
 
 
     <span class="org-type">@cy.ccall</span>
-    <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">@cy.exceptval(check=False)</span>
     <span class="org-keyword">def</span> <span class="org-function-name">get</span>(<span class="org-keyword">self</span>, t: pyidx, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
         <span class="org-doc">"""</span>
 <span class="org-doc">        Return the scalar value at index (t,y,x) by translating these cube coordinates</span>
@@ -7282,6 +7282,7 @@ spot fires will be ignited.
     <span class="org-keyword">return</span> (y <span class="org-operator">&gt;=</span> 0) <span class="org-keyword">and</span> (x <span class="org-operator">&gt;=</span> 0) <span class="org-keyword">and</span> (y <span class="org-operator">&lt;</span> rows) <span class="org-keyword">and</span> (x <span class="org-operator">&lt;</span> cols)
 
 
+<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Memoize this function with a 2D (y,x) array cache</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">is_burnable_cell</span>(fuel_model_cube: ISpaceTimeCube, t: pyidx, y: pyidx, x: pyidx) <span class="org-operator">-&gt;</span> cy.bint:
@@ -10403,6 +10404,8 @@ near it, and decrement their tracking counter by 1. Upon reaching
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">is_frontier_cell</span>(phi_matrix     : cy.<span class="org-builtin">float</span>[:,::1],
                      fuel_model_cube: ISpaceTimeCube,
+                     rows           : pyidx,
+                     cols           : pyidx,
                      t              : pyidx,
                      y              : pyidx,
                      x              : pyidx) <span class="org-operator">-&gt;</span> cy.bint:
@@ -10413,16 +10416,24 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-variable-name">west_x</span> : pyidx <span class="org-operator">=</span> x<span class="org-operator">-</span>1
     <span class="org-keyword">return</span> ((
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check north</span>
-        opposite_phi_signs(phi_matrix, y, x, north_y, x) <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, north_y, x)
+        opposite_phi_signs(phi_matrix, y, x, north_y, x)
+        <span class="org-keyword">and</span> spot.is_in_bounds(north_y, x, rows, cols)
+        <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, north_y, x)
     ) <span class="org-keyword">or</span> (
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check south</span>
-        opposite_phi_signs(phi_matrix, y, x, south_y, x) <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, south_y, x)
+        opposite_phi_signs(phi_matrix, y, x, south_y, x)
+        <span class="org-keyword">and</span> spot.is_in_bounds(south_y, x, rows, cols)
+        <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, south_y, x)
     ) <span class="org-keyword">or</span> (
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check east</span>
-        opposite_phi_signs(phi_matrix, y, x, y, east_x) <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, y, east_x)
+        opposite_phi_signs(phi_matrix, y, x, y, east_x)
+        <span class="org-keyword">and</span> spot.is_in_bounds(y, east_x, rows, cols)
+        <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, y, east_x)
     ) <span class="org-keyword">or</span> (
         <span class="org-comment-delimiter"># </span><span class="org-comment">Check west</span>
-        opposite_phi_signs(phi_matrix, y, x, y, west_x) <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, y, west_x)
+        opposite_phi_signs(phi_matrix, y, x, y, west_x)
+        <span class="org-keyword">and</span> spot.is_in_bounds(y, west_x, rows, cols)
+        <span class="org-keyword">and</span> spot.is_burnable_cell(fuel_model_cube, t, y, west_x)
     )) <span class="org-keyword">and</span> (
         <span class="org-comment-delimiter"># </span><span class="org-comment">Is this cell burnable?</span>
         spot.is_burnable_cell(fuel_model_cube, t, y, x)
@@ -10444,7 +10455,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
     x             : pyidx
     <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
         <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
-            <span class="org-keyword">if</span> is_frontier_cell(phi_matrix, fuel_model_cube, t, y, x):
+            <span class="org-keyword">if</span> is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
                 frontier_cells.add(encode_cell_index(y, x))
     <span class="org-keyword">return</span> frontier_cells
 
@@ -11790,6 +11801,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                        frontier_removals : <span class="org-builtin">set</span>,
                        phi_matrix        : cy.<span class="org-builtin">float</span>[:,::1],
                        fuel_model_cube   : ISpaceTimeCube,
+                       rows              : pyidx,
+                       cols              : pyidx,
                        t                 : pyidx,
                        y                 : pyidx,
                        x                 : pyidx) <span class="org-operator">-&gt;</span> cy.void:
@@ -11798,13 +11811,14 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    mutating the sets `frontier_additions` and `frontier_removals` accordingly.</span>
 <span class="org-doc">    Idempotent.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">encoded_cell_index</span>: <span class="org-builtin">object</span> <span class="org-operator">=</span> encode_cell_index(y, x)
-    <span class="org-keyword">if</span> is_frontier_cell(phi_matrix, fuel_model_cube, t, y, x):
-        <span class="org-keyword">if</span> <span class="org-keyword">not</span> (encoded_cell_index <span class="org-keyword">in</span> frontier_cells_old):
-            frontier_additions.add(encoded_cell_index)
-    <span class="org-keyword">else</span>:
-        <span class="org-keyword">if</span> (encoded_cell_index <span class="org-keyword">in</span> frontier_cells_old):
-            frontier_removals.add(encoded_cell_index)
+    <span class="org-keyword">if</span> spot.is_in_bounds(y, x, rows, cols):
+        <span class="org-variable-name">encoded_cell_index</span>: <span class="org-builtin">object</span> <span class="org-operator">=</span> encode_cell_index(y, x)
+        <span class="org-keyword">if</span> is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
+            <span class="org-keyword">if</span> <span class="org-keyword">not</span> (encoded_cell_index <span class="org-keyword">in</span> frontier_cells_old):
+                frontier_additions.add(encoded_cell_index)
+        <span class="org-keyword">else</span>:
+            <span class="org-keyword">if</span> (encoded_cell_index <span class="org-keyword">in</span> frontier_cells_old):
+                frontier_removals.add(encoded_cell_index)
 
 
 <span class="org-type">@cy.cfunc</span>
@@ -11813,6 +11827,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                         spot_ignited_cells  : <span class="org-builtin">list</span>[BurnedCellInfo],
                         phi_matrix          : cy.<span class="org-builtin">float</span>[:,::1],
                         fuel_model_cube     : ISpaceTimeCube,
+                        rows                : pyidx,
+                        cols                : pyidx,
                         t                   : pyidx) <span class="org-operator">-&gt;</span> <span class="org-builtin">tuple</span>[<span class="org-builtin">set</span>, <span class="org-builtin">set</span>]:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Computes the bi-directional set difference between the old frontier cells and the new frontier cells,</span>
@@ -11836,6 +11852,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y,
                                x)
@@ -11844,6 +11862,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y<span class="org-operator">-</span>1,
                                x)
@@ -11852,6 +11872,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y<span class="org-operator">+</span>1,
                                x)
@@ -11860,6 +11882,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y,
                                x<span class="org-operator">-</span>1)
@@ -11868,6 +11892,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                frontier_removals,
                                phi_matrix,
                                fuel_model_cube,
+                               rows,
+                               cols,
                                t,
                                y,
                                x<span class="org-operator">+</span>1)
@@ -11974,6 +12000,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                     spot_ignited_cells,
                                                                     phi_matrix,
                                                                     spread_inputs.fuel_model,
+                                                                    spread_inputs.rows,
+                                                                    spread_inputs.cols,
                                                                     <span class="org-builtin">int</span>(stop_time <span class="org-operator">//</span> spread_inputs.band_duration))
     <span class="org-variable-name">frontier_additions</span>: <span class="org-builtin">set</span>                   <span class="org-operator">=</span> frontier_diff[0]
     <span class="org-variable-name">frontier_removals</span> : <span class="org-builtin">set</span>                   <span class="org-operator">=</span> frontier_diff[1]
@@ -15207,7 +15235,7 @@ cdef np.ndarray stretch_array(np.ndarray old_array, <span class="org-builtin">in
 cdef np.ndarray maybe_repeat_array(np.ndarray maybe_array, (pyidx, <span class="org-builtin">float</span>) axis_repetitions)
 
 cdef <span class="org-keyword">class</span> <span class="org-type">ISpaceTimeCube</span>:
-    cdef <span class="org-builtin">float</span> get(ISpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
+    cdef <span class="org-builtin">float</span> get(ISpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) <span class="org-comment-delimiter"># </span><span class="org-comment">noexcept</span>
 
 cdef <span class="org-keyword">class</span> <span class="org-type">SpaceTimeCube</span>(ISpaceTimeCube):
     cdef public <span class="org-builtin">int</span> ndim
@@ -15219,7 +15247,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">SpaceTimeCube
     cdef public <span class="org-builtin">float</span> x_repetitions
     <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: We use const (read-only MemoryView) so that Cython will accept read-only arrays, which is required for shared-memory parallelism.</span>
     cdef public const <span class="org-builtin">float</span>[:,:,::1] data
-    cpdef <span class="org-builtin">float</span> get(SpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef <span class="org-builtin">float</span> get(SpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) <span class="org-comment-delimiter"># </span><span class="org-comment">noexcept</span>
     cpdef np.ndarray getTimeSeries(SpaceTimeCube <span class="org-keyword">self</span>, <span class="org-builtin">object</span> t_range, pyidx y, pyidx x)
     cpdef np.ndarray getSpatialPlane(SpaceTimeCube <span class="org-keyword">self</span>, pyidx t, <span class="org-builtin">object</span> y_range, <span class="org-builtin">object</span> x_range)
     cpdef np.ndarray getSubcube(SpaceTimeCube <span class="org-keyword">self</span>, <span class="org-builtin">object</span> t_range, <span class="org-builtin">object</span> y_range, <span class="org-builtin">object</span> x_range)
@@ -15240,7 +15268,7 @@ cdef <span class="org-keyword">class</span> <span class="org-type">LazySpaceTime
         pyidx cache_y,
         pyidx cache_x,
         )
-    cpdef <span class="org-builtin">float</span> get(LazySpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) noexcept
+    cpdef <span class="org-builtin">float</span> get(LazySpaceTimeCube <span class="org-keyword">self</span>, pyidx t, pyidx y, pyidx x) <span class="org-comment-delimiter"># </span><span class="org-comment">noexcept</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">def getTimeSeries(self, t_range, y, x)</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">def getSpatialPlane(self, t, y_range, x_range)</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">def getSubcube(self, t_range, y_range, x_range)</span>
@@ -15794,6 +15822,8 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef bint is_frontier_cell(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx rows,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx y,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx x,</span>
@@ -15977,6 +16007,8 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">set frontier_removals,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx rows,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx y,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx x,</span>
@@ -15987,6 +16019,8 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">list[BurnedCellInfo] spot_ignited_cells,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float[:,::1] phi_matrix,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">ISpaceTimeCube fuel_model_cube,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx rows,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx t,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef set apply_frontier_diff(set frontier_cells_old, set frontier_additions, set frontier_removals)</span>
