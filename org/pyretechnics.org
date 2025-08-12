@@ -53,6 +53,31 @@ operating system. See [[file:../README.md][README.md]] for more details.
 [fn:lit-prog-wikipedia] https://en.wikipedia.org/wiki/Literate_programming
 [fn:guix-website] https://guix.gnu.org
 
+* FIXME missing sections
+
+A high-level overview.
+Must describe the main choices and tradeoffs of kinematic models like Pyretechnics.
+Right now the documentation is mostly a sequence of technical rabbit holes
+with no overarching narrative, ordered in a way that arguably makes more sense for compilers than humans;
+this makes for good reference material, but we need to help readers find their way into it,
+and make it easy for them to make sense of Pyretechnics without going into every detail of the code.
+
+A how-to section for the most common use cases.
+Right now, users find themselves having to scan the whole Table of Contents,
+most of which is implementation details they won't care about.
+
+A section that explains the calculation of front-normal spread rates
+and $d\varphi/dt$, as is done in =elliptical-wavelets.pdf=.
+This is needed because it's a nontrivial piece of math, and one that's novel compared to ELMFIRE.
+
+A section explaining 2nd-order Runge-Kutta integration and time-step calculation.
+
+A section explaining narrow-band tracking.
+
+Validation / verification experiments.
+
+
+
 * Data Model
   :PROPERTIES:
   :CUSTOM_ID: data-model
@@ -3875,6 +3900,21 @@ def calc_surface_fire_behavior_max(surface_fire_min      : FireBehaviorMin,
     :PROPERTIES:
     :CUSTOM_ID: surface-fire-behavior-in-any-direction
     :END:
+
+FIXME this section is incorrect, because the spread rates it computes are not front-normal spread rates.
+$R_s(\omega)$ as computed here is a 'radial' rate of spread; it's interesting in some ways,
+but not adequate for computing the fireline intensity.
+What's needed for computing the fireline intensity is the front-normal spread rate,
+i.e. the velocity at which the fire front advances in the direction perpendicular to itself.
+The correct formula for this is:
+
+\begin{equation}
+    R_s(\omega) = \frac{V_H - V_B}{2} \cos(\omega) + V_F \sqrt{1 + \left(\left(\frac{L}{W}\right)^2 - 1\right)\cos(\omega)^2}
+\end{equation}
+
+in which $V_H, V_B, V_F$ are the heading, backing, and flanking spread rates, respectively.
+Note that $V_F = (V_H + V_B)/(2 (L/W))$.
+
 
 Once we have calculated the maximum surface fire behavior values
 associated with a head fire, we can use the elliptical eccentricity
@@ -8408,6 +8448,10 @@ else:
     :CUSTOM_ID: the-$\phi$-field
     :END:
 
+FIXME I would suggest to mention that the level-set method consists of
+representing the fire front as the zero level set of $\phi$,
+and more precisely the burned region as $\phi \leq 0$.
+
 In this model, a continuous field called $\phi$ fills the simulation
 space and is used to track the progression of the fire front through
 space and time. Within Pyretechnics, the $\phi$ field is discretized
@@ -8425,6 +8469,9 @@ set to -1 and the remaining cells will have the value 1.
     :PROPERTIES:
     :CUSTOM_ID: fire-front-normal-vector
     :END:
+
+FIXME this section is obsolete. We don't need to compute the normal vector or azimuth.
+The code itself documents it as unused.
 
 In this fire spread algorithm, the fire front only propagates normal
 to itself. Given a $\phi$ raster, we can calculate the normal vector to
@@ -8567,6 +8614,10 @@ the following sections as $U$ with spatial components $U_x$ and $U_y$.
     :PROPERTIES:
     :CUSTOM_ID: numerical-solution-of-the-$\phi$-field-equation
     :END:
+
+FIXME this section should really be called "flux-limiting".
+It's far from covering all there is to say about the numerical solution.
+It should be presented as yielding a corrective multiplier on $(d \varphi / dt)$.
 
 In order to evolve the $\phi$ field through time and space, we must
 solve the following hyperbolic differential equation for the scalar
@@ -8957,6 +9008,9 @@ combined surface and crown fire behavior (as per section [[Combining
 Surface and Crown Fire Behavior]]) is returned. If no crown fire occurs,
 the surface fire behavior in the direction of the 3D $\phi$ gradient
 is returned.
+
+FIXME this code snippet has nothing to do with the above paragraph,
+it's just plumbing related to inputs and outputs.
 
 #+NAME: burn-cell-toward-phi-gradient
 #+begin_src python
@@ -9519,6 +9573,7 @@ def identify_tracked_cells(frontier_cells: set,
     :CUSTOM_ID: spread-phi-field
     :END:
 
+FIXME this might be the right place to describe the elliptical wavelets math.
 # TODO: Include Val's proof for late integration of the limited and unlimited phi gradients in dphi/dt.
 
 $\hat{\nabla} \varphi \cdot U = (\hat{\nabla} \varphi \cdot \frac{\ddot{\nabla} \varphi}{|\ddot{\nabla} \varphi|}) (\frac{\ddot{\nabla} \varphi}{|\ddot{\nabla} \varphi|}\cdot U) = (\hat{\nabla} \varphi \cdot \frac{\ddot{\nabla} \varphi}{|\ddot{\nabla} \varphi|^2}) (\ddot{\nabla} \varphi \cdot U)$
