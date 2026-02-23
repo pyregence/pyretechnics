@@ -49,13 +49,13 @@ Each of these commands will launch a Guix environment (similar to a Docker conta
 
 # Development Workflow
 
-If you want a persistent shell in the Guix environment, you can run `./make.sh shell`. You can think of this like running the `./activate.sh` script for a Python virtual environment or running `docker run -it some_container bash`. You can enter the same environment in a kernel isolated container with `./make.sh container-shell`. In either case, typing `exit` will leave this environment and return you to your original calling shell. Please note that you don't need to be in this Guix shell in order to do development work. It is simply provided as a convenience for developers who want to ensure reproducibility between their environment and the one in which the project's various build commands are run.
+If you want a persistent shell in the Guix environment, you can run `./make.sh shell`. You can think of this like running the `./activate.sh` script for a Python virtual environment or running `docker run -it some_container bash`. Typing `exit` will leave this environment and return you to your original calling shell. Please note that you don't need to be in this Guix shell in order to do development work. It is simply provided as a convenience for developers who want to ensure reproducibility between their environment and the one in which the project's various build commands are run.
 
 ## Without Emacs
 
 If you typically work outside of Emacs, your workflow is going to look like this:
 
-1. Open some `*.py` or `*.pxd` files in `src/` or `test/` in your editor, eval them, and make some edits. (Either connect to a Python process running under `./make.sh shell` or spin up a new Python virtual environment using `requirements.txt`.)
+1. Open some `*.py` or `*.pxd` files in `src/` or `test/` in your editor, eval them, and make some edits. (Either connect to a Python process running under `./make.sh shell` or spin up a new Python virtual environment using `requirements.txt` or `pyproject.toml`.)
 
 2. Run `./make.sh build-cython` to regenerate the `*.c`, `*.html`, and `*.so` files from your changed `*.py` and `*.pxd` files. These new files will appear under `src/pyretechnics/`, `src/build/`, `test/pyretechnics/`, and `test/build/`.
 
