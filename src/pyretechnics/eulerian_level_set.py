@@ -597,6 +597,7 @@ class SpreadState:
     Stores the stateful data associated with a fire spread simulation.
     """
     cube_shape        : tuple[pyidx, pyidx, pyidx]
+    simulation_time   : cy.float        # minutes
     phi               : cy.float[:,::1] # 2D float array of values in [-1,1]
     phi_star          : cy.float[:,::1] # 2D float array of values in [-1,1]
     fire_type         : cy.uchar[:,::1] # 2D byte array (0-3)
@@ -616,14 +617,41 @@ class SpreadState:
         # Create the initial 2D arrays
         # NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.
         self.cube_shape         = cube_shape
+        self.simulation_time    = -1.0
         self.phi                = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
         self.phi_star           = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
         self.fire_type          = np.zeros(grid_shape, dtype="uint8")
         self.spread_rate        = np.zeros(grid_shape, dtype="float32")
         self.spread_direction   = np.zeros(grid_shape, dtype="float32")
+        # self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32") ; FIXME: switch from 0 to np.nan
         self.fireline_intensity = np.zeros(grid_shape, dtype="float32")
         self.flame_length       = np.zeros(grid_shape, dtype="float32")
-        self.time_of_arrival    = np.full(grid_shape, -1.0, dtype="float32")
+        self.time_of_arrival    = np.full(grid_shape, np.nan, dtype="float32")
+
+
+    @cy.ccall
+    def set_start_time(self, start_time: cy.float) -> SpreadState:
+        # Ensure that simulation_time is only set once
+        if (self.simulation_time >= 0.0):
+            raise ValueError("The start_time can only be set once.")
+        # Ensure that start_time is defined and not negative
+        if start_time is None:
+            raise ValueError("The start_time cannot be None.")
+        if (start_time < 0.0):
+            raise ValueError("The start_time cannot be negative.")
+        # Set simulation_time
+        self.simulation_time = start_time
+        # Set time_of_arrival to start_time where phi < 0.0
+        rows: pyidx = self.cube_shape[1]
+        cols: pyidx = self.cube_shape[2]
+        y   : pyidx
+        x   : pyidx
+        for y in range(rows):
+            for x in range(cols):
+                if self.phi[2+y,2+x] < 0.0:
+                    self.time_of_arrival[y,x] = start_time
+        # Return the updated SpreadState object
+        return self
 
 
     @cy.ccall
@@ -631,9 +659,15 @@ class SpreadState:
         # Extract coords
         y: pyidx = ignited_cell[0]
         x: pyidx = ignited_cell[1]
+        # Verify that we aren't igniting already burned cells
+        if (self.phi[2+y,2+x] < 0.0):
+            raise ValueError(f"The cell ({y},{x}) is already ignited.")
         # Overwrite phi and phi_star state
         self.phi[2+y,2+x]      = -1.0
         self.phi_star[2+y,2+x] = -1.0
+        # Overwrite time_of_arrival state if simulation_time is set
+        if (self.simulation_time >= 0.0):
+            self.time_of_arrival[y,x] = self.simulation_time
         # Return the updated SpreadState object
         return self
 
@@ -647,11 +681,34 @@ class SpreadState:
         min_x: pyidx = lower_left_corner[1]
         max_y: pyidx = min_y + rows
         max_x: pyidx = min_x + cols
+        y    : pyidx
+        x    : pyidx
+        # Verify that we aren't igniting already burned cells
+        for y in range(rows):
+            for x in range(cols):
+                if ignition_matrix[y,x] < 0.0 and self.phi[2+min_y+y,2+min_x+x] < 0.0:
+                    raise ValueError(f"Some cells in the range [{2+min_y}:{2+max_y},{2+min_x}:{2+max_x}] are already ignited.")
         # Overwrite phi and phi_star state
-        self.phi[2+min_y:2+max_y,2+min_x:2+max_x]      = ignition_matrix
-        self.phi_star[2+min_y:2+max_y,2+min_x:2+max_x] = ignition_matrix
+        for y in range(rows):
+            for x in range(cols):
+                if ignition_matrix[y,x] < 0.0:
+                    self.phi[2+min_y+y,2+min_x+x]      = ignition_matrix[y,x]
+                    self.phi_star[2+min_y+y,2+min_x+x] = ignition_matrix[y,x]
+                    # Overwrite time_of_arrival state if simulation_time is set
+                    if self.simulation_time >= 0.0:
+                        self.time_of_arrival[min_y+y,min_x+x] = self.simulation_time
         # Return the updated SpreadState object
         return self
+
+
+    @cy.ccall
+    def get_cube_shape(self) -> tuple[pyidx, pyidx, pyidx]:
+        return self.cube_shape
+
+
+    @cy.ccall
+    def get_simulation_time(self) -> cy.float:
+        return self.simulation_time
 
 
     @cy.ccall
@@ -712,7 +769,8 @@ class SpreadState:
         # Create an empty SpreadState object
         new_spread_state: SpreadState = SpreadState.__new__(SpreadState, self.cube_shape)
         # Initialize its fields with copies of the base object's fields
-        new_spread_state.cube_shape         = self.cube_shape # tuples are immutable
+        new_spread_state.cube_shape         = self.cube_shape      # tuples are immutable
+        new_spread_state.simulation_time    = self.simulation_time # floats are immutable
         new_spread_state.phi                = np.copy(self.phi)
         new_spread_state.phi_star           = np.copy(self.phi_star)
         new_spread_state.fire_type          = np.copy(self.fire_type)
@@ -2334,6 +2392,9 @@ def spread_one_timestep(sim_state    : dict,
                                                                                         frontier_removals,
                                                                                         fb_opts.buffer_width)
 
+    # Update the spread_state's simulation_time
+    spread_state.simulation_time = stop_time
+
     # Return the updated world state
     # NOTE: We are intentionally swapping the tracked_cells_arrays
     return {
@@ -2438,7 +2499,7 @@ def check_start_and_stop_times(start_time   : cy.float,
 def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube],
                                spread_state          : SpreadState,
                                cube_resolution       : tuple[cy.float, cy.float, cy.float],
-                               start_time            : cy.float,
+                               start_time            : float|None             = None,
                                max_duration          : float|None             = None,
                                max_cells_per_timestep: cy.float               = 0.4,
                                buffer_width          : pyidx                  = 3,
@@ -2474,7 +2535,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
       - band_duration                 :: minutes
       - cell_height                   :: meters
       - cell_width                    :: meters
-    - start_time                   :: minutes (from the start of the space_time_cube's temporal origin)
+    - start_time                   :: minutes from the start of the space_time_cube's temporal origin (Optional)
     - max_duration                 :: minutes (Optional)
     - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)
     - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)
@@ -2527,6 +2588,19 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
                                      band_duration,
                                      cell_height,
                                      cell_width)
+
+    # Match start_time to spread_state.simulation_time
+    if start_time:
+        if (spread_state.simulation_time == -1.0):
+            spread_state = spread_state.set_start_time(start_time)
+        else:
+            if (start_time != spread_state.simulation_time):
+                raise ValueError("The start_time does not match the spread_state's simulation_time.")
+    else:
+        if (spread_state.simulation_time == -1.0):
+            raise ValueError("No start_time provided.")
+        else:
+            start_time = spread_state.simulation_time
 
     # Calculate the cube duration and max stop time
     cube_duration: cy.float = bands * band_duration

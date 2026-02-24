@@ -10160,6 +10160,7 @@ is returned.
 <span class="org-doc">    Stores the stateful data associated with a fire spread simulation.</span>
 <span class="org-doc">    """</span>
     cube_shape        : <span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx]
+    simulation_time   : cy.<span class="org-builtin">float</span>        <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
     phi               : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
     phi_star          : cy.<span class="org-builtin">float</span>[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D float array of values in [-1,1]</span>
     fire_type         : cy.uchar[:,::1] <span class="org-comment-delimiter"># </span><span class="org-comment">2D byte array (0-3)</span>
@@ -10179,14 +10180,41 @@ is returned.
         <span class="org-comment-delimiter"># </span><span class="org-comment">Create the initial 2D arrays</span>
         <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.</span>
         <span class="org-keyword">self</span>.<span class="org-variable-name">cube_shape</span>         <span class="org-operator">=</span> cube_shape
+        <span class="org-keyword">self</span>.<span class="org-variable-name">simulation_time</span>    <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
         <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>                <span class="org-operator">=</span> np.ones((grid_rows <span class="org-operator">+</span> 4, grid_cols <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>           <span class="org-operator">=</span> np.ones((grid_rows <span class="org-operator">+</span> 4, grid_cols <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">fire_type</span>          <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">spread_rate</span>        <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">spread_direction</span>   <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32") ; FIXME: switch from 0 to np.nan</span>
         <span class="org-keyword">self</span>.<span class="org-variable-name">fireline_intensity</span> <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">flame_length</span>       <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-        <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.full(grid_shape, <span class="org-operator">-</span>1.0, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+        <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.full(grid_shape, np.nan, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">set_start_time</span>(<span class="org-keyword">self</span>, start_time: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> SpreadState:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that simulation_time is only set once</span>
+        <span class="org-keyword">if</span> (<span class="org-keyword">self</span>.simulation_time <span class="org-operator">&gt;=</span> 0.0):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The start_time can only be set once."</span>)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that start_time is defined and not negative</span>
+        <span class="org-keyword">if</span> start_time <span class="org-keyword">is</span> <span class="org-constant">None</span>:
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The start_time cannot be None."</span>)
+        <span class="org-keyword">if</span> (start_time <span class="org-operator">&lt;</span> 0.0):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The start_time cannot be negative."</span>)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Set simulation_time</span>
+        <span class="org-keyword">self</span>.<span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> start_time
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Set time_of_arrival to start_time where phi &lt; 0.0</span>
+        <span class="org-variable-name">rows</span>: pyidx <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape[1]
+        <span class="org-variable-name">cols</span>: pyidx <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape[2]
+        y   : pyidx
+        x   : pyidx
+        <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
+            <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
+                <span class="org-keyword">if</span> <span class="org-keyword">self</span>.phi[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x] <span class="org-operator">&lt;</span> 0.0:
+                    <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> start_time
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated SpreadState object</span>
+        <span class="org-keyword">return</span> <span class="org-keyword">self</span>
 
 
     <span class="org-type">@cy.ccall</span>
@@ -10194,9 +10222,15 @@ is returned.
         <span class="org-comment-delimiter"># </span><span class="org-comment">Extract coords</span>
         <span class="org-variable-name">y</span>: pyidx <span class="org-operator">=</span> ignited_cell[0]
         <span class="org-variable-name">x</span>: pyidx <span class="org-operator">=</span> ignited_cell[1]
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Verify that we aren't igniting already burned cells</span>
+        <span class="org-keyword">if</span> (<span class="org-keyword">self</span>.phi[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x] <span class="org-operator">&lt;</span> 0.0):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(f<span class="org-string">"The cell (</span>{y}<span class="org-string">,</span>{x}<span class="org-string">) is already ignited."</span>)
         <span class="org-comment-delimiter"># </span><span class="org-comment">Overwrite phi and phi_star state</span>
         <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x]      <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
         <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Overwrite time_of_arrival state if simulation_time is set</span>
+        <span class="org-keyword">if</span> (<span class="org-keyword">self</span>.simulation_time <span class="org-operator">&gt;=</span> 0.0):
+            <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> <span class="org-keyword">self</span>.simulation_time
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated SpreadState object</span>
         <span class="org-keyword">return</span> <span class="org-keyword">self</span>
 
@@ -10210,11 +10244,34 @@ is returned.
         <span class="org-variable-name">min_x</span>: pyidx <span class="org-operator">=</span> lower_left_corner[1]
         <span class="org-variable-name">max_y</span>: pyidx <span class="org-operator">=</span> min_y <span class="org-operator">+</span> rows
         <span class="org-variable-name">max_x</span>: pyidx <span class="org-operator">=</span> min_x <span class="org-operator">+</span> cols
+        y    : pyidx
+        x    : pyidx
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Verify that we aren't igniting already burned cells</span>
+        <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
+            <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
+                <span class="org-keyword">if</span> ignition_matrix[y,x] <span class="org-operator">&lt;</span> 0.0 <span class="org-keyword">and</span> <span class="org-keyword">self</span>.phi[2<span class="org-operator">+</span>min_y<span class="org-operator">+</span>y,2<span class="org-operator">+</span>min_x<span class="org-operator">+</span>x] <span class="org-operator">&lt;</span> 0.0:
+                    <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(f<span class="org-string">"Some cells in the range [</span>{2<span class="org-operator">+</span>min_y}<span class="org-string">:</span>{2<span class="org-operator">+</span>max_y}<span class="org-string">,</span>{2<span class="org-operator">+</span>min_x}<span class="org-string">:</span>{2<span class="org-operator">+</span>max_x}<span class="org-string">] are already ignited."</span>)
         <span class="org-comment-delimiter"># </span><span class="org-comment">Overwrite phi and phi_star state</span>
-        <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>[2<span class="org-operator">+</span>min_y:2<span class="org-operator">+</span>max_y,2<span class="org-operator">+</span>min_x:2<span class="org-operator">+</span>max_x]      <span class="org-operator">=</span> ignition_matrix
-        <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>[2<span class="org-operator">+</span>min_y:2<span class="org-operator">+</span>max_y,2<span class="org-operator">+</span>min_x:2<span class="org-operator">+</span>max_x] <span class="org-operator">=</span> ignition_matrix
+        <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(rows):
+            <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(cols):
+                <span class="org-keyword">if</span> ignition_matrix[y,x] <span class="org-operator">&lt;</span> 0.0:
+                    <span class="org-keyword">self</span>.<span class="org-variable-name">phi</span>[2<span class="org-operator">+</span>min_y<span class="org-operator">+</span>y,2<span class="org-operator">+</span>min_x<span class="org-operator">+</span>x]      <span class="org-operator">=</span> ignition_matrix[y,x]
+                    <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>[2<span class="org-operator">+</span>min_y<span class="org-operator">+</span>y,2<span class="org-operator">+</span>min_x<span class="org-operator">+</span>x] <span class="org-operator">=</span> ignition_matrix[y,x]
+                    <span class="org-comment-delimiter"># </span><span class="org-comment">Overwrite time_of_arrival state if simulation_time is set</span>
+                    <span class="org-keyword">if</span> <span class="org-keyword">self</span>.simulation_time <span class="org-operator">&gt;=</span> 0.0:
+                        <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>[min_y<span class="org-operator">+</span>y,min_x<span class="org-operator">+</span>x] <span class="org-operator">=</span> <span class="org-keyword">self</span>.simulation_time
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated SpreadState object</span>
         <span class="org-keyword">return</span> <span class="org-keyword">self</span>
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">get_cube_shape</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx]:
+        <span class="org-keyword">return</span> <span class="org-keyword">self</span>.cube_shape
+
+
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">get_simulation_time</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+        <span class="org-keyword">return</span> <span class="org-keyword">self</span>.simulation_time
 
 
     <span class="org-type">@cy.ccall</span>
@@ -10275,7 +10332,8 @@ is returned.
         <span class="org-comment-delimiter"># </span><span class="org-comment">Create an empty SpreadState object</span>
         <span class="org-variable-name">new_spread_state</span>: SpreadState <span class="org-operator">=</span> SpreadState.__new__(SpreadState, <span class="org-keyword">self</span>.cube_shape)
         <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize its fields with copies of the base object's fields</span>
-        new_spread_state.<span class="org-variable-name">cube_shape</span>         <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape <span class="org-comment-delimiter"># </span><span class="org-comment">tuples are immutable</span>
+        new_spread_state.<span class="org-variable-name">cube_shape</span>         <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape      <span class="org-comment-delimiter"># </span><span class="org-comment">tuples are immutable</span>
+        new_spread_state.<span class="org-variable-name">simulation_time</span>    <span class="org-operator">=</span> <span class="org-keyword">self</span>.simulation_time <span class="org-comment-delimiter"># </span><span class="org-comment">floats are immutable</span>
         new_spread_state.<span class="org-variable-name">phi</span>                <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.phi)
         new_spread_state.<span class="org-variable-name">phi_star</span>           <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.phi_star)
         new_spread_state.<span class="org-variable-name">fire_type</span>          <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.fire_type)
@@ -12009,6 +12067,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                                                                         frontier_removals,
                                                                                         fb_opts.buffer_width)
 
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Update the spread_state's simulation_time</span>
+    spread_state.<span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> stop_time
+
     <span class="org-comment-delimiter"># </span><span class="org-comment">Return the updated world state</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: We are intentionally swapping the tracked_cells_arrays</span>
     <span class="org-keyword">return</span> {
@@ -12113,7 +12174,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-keyword">def</span> <span class="org-function-name">spread_fire_with_phi_field</span>(space_time_cubes      : <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, ISpaceTimeCube],
                                spread_state          : SpreadState,
                                cube_resolution       : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>],
-                               start_time            : cy.<span class="org-builtin">float</span>,
+                               start_time            : <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span>             <span class="org-operator">=</span> <span class="org-constant">None</span>,
                                max_duration          : <span class="org-builtin">float</span><span class="org-operator">|</span><span class="org-constant">None</span>             <span class="org-operator">=</span> <span class="org-constant">None</span>,
                                max_cells_per_timestep: cy.<span class="org-builtin">float</span>               <span class="org-operator">=</span> 0.4,
                                buffer_width          : pyidx                  <span class="org-operator">=</span> 3,
@@ -12149,7 +12210,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">      - band_duration                 :: minutes</span>
 <span class="org-doc">      - cell_height                   :: meters</span>
 <span class="org-doc">      - cell_width                    :: meters</span>
-<span class="org-doc">    - start_time                   :: minutes (from the start of the space_time_cube's temporal origin)</span>
+<span class="org-doc">    - start_time                   :: minutes from the start of the space_time_cube's temporal origin (Optional)</span>
 <span class="org-doc">    - max_duration                 :: minutes (Optional)</span>
 <span class="org-doc">    - max_cells_per_timestep       :: max number of cells the fire front can travel in one timestep (Optional)</span>
 <span class="org-doc">    - buffer_width                 :: Chebyshev distance from frontier cells to include in tracked cells (Optional)</span>
@@ -12202,6 +12263,19 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
                                      band_duration,
                                      cell_height,
                                      cell_width)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Match start_time to spread_state.simulation_time</span>
+    <span class="org-keyword">if</span> start_time:
+        <span class="org-keyword">if</span> (spread_state.simulation_time <span class="org-operator">==</span> <span class="org-operator">-</span>1.0):
+            <span class="org-variable-name">spread_state</span> <span class="org-operator">=</span> spread_state.set_start_time(start_time)
+        <span class="org-keyword">else</span>:
+            <span class="org-keyword">if</span> (start_time <span class="org-operator">!=</span> spread_state.simulation_time):
+                <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The start_time does not match the spread_state's simulation_time."</span>)
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">if</span> (spread_state.simulation_time <span class="org-operator">==</span> <span class="org-operator">-</span>1.0):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"No start_time provided."</span>)
+        <span class="org-keyword">else</span>:
+            <span class="org-variable-name">start_time</span> <span class="org-operator">=</span> spread_state.simulation_time
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the cube duration and max stop time</span>
     <span class="org-variable-name">cube_duration</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> bands <span class="org-operator">*</span> band_duration
@@ -12371,6 +12445,9 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
 <span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 8 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
+<span class="org-comment-delimiter"># </span><span class="org-comment">Embed the start time in the SpreadState object</span>
+spread_state.set_start_time(start_time)
+
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -12510,8 +12587,10 @@ Time of Arrival (minutes)
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">save_matrix_as_contours</span>(matrix, title, filename, levels<span class="org-operator">=</span><span class="org-constant">None</span>):
+    <span class="org-variable-name">nan_masked_matrix</span> <span class="org-operator">=</span> matrix.copy()
+    <span class="org-variable-name">nan_masked_matrix</span>[np.isnan(nan_masked_matrix)] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
     <span class="org-variable-name">fig</span>, <span class="org-variable-name">ax</span> <span class="org-operator">=</span> plt.subplots()
-    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(matrix, levels<span class="org-operator">=</span>levels)
+    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(nan_masked_matrix, levels<span class="org-operator">=</span>levels)
     ax.clabel(cs, inline<span class="org-operator">=</span><span class="org-constant">True</span>, fontsize<span class="org-operator">=</span>10)
     ax.set_aspect(<span class="org-string">'equal'</span>, <span class="org-string">'box'</span>)
     ax.set_title(title)
@@ -12704,6 +12783,9 @@ Time of Arrival (minutes)
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
 <span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 8 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Embed the start time in the SpreadState object</span>
+spread_state.set_start_time(start_time)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the spotting parameters</span>
@@ -12930,8 +13012,10 @@ Future Spot Ignitions:
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">save_matrix_as_contours</span>(matrix, title, filename, levels<span class="org-operator">=</span><span class="org-constant">None</span>):
+    <span class="org-variable-name">nan_masked_matrix</span> <span class="org-operator">=</span> matrix.copy()
+    <span class="org-variable-name">nan_masked_matrix</span>[np.isnan(nan_masked_matrix)] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
     <span class="org-variable-name">fig</span>, <span class="org-variable-name">ax</span> <span class="org-operator">=</span> plt.subplots()
-    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(matrix, levels<span class="org-operator">=</span>levels)
+    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(nan_masked_matrix, levels<span class="org-operator">=</span>levels)
     ax.clabel(cs, inline<span class="org-operator">=</span><span class="org-constant">True</span>, fontsize<span class="org-operator">=</span>10)
     ax.set_aspect(<span class="org-string">'equal'</span>, <span class="org-string">'box'</span>)
     ax.set_title(title)
@@ -13121,6 +13205,9 @@ Future Spot Ignitions:
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">8 hours</span>
 <span class="org-variable-name">max_duration</span> <span class="org-operator">=</span> 8 <span class="org-operator">*</span> 60 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Embed the start time in the SpreadState object</span>
+spread_state.set_start_time(start_time)
 
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Spread fire from the start time for the max duration</span>
@@ -13408,8 +13495,10 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">save_matrix_as_contours</span>(matrix, title, filename, levels<span class="org-operator">=</span><span class="org-constant">None</span>):
+    <span class="org-variable-name">nan_masked_matrix</span> <span class="org-operator">=</span> matrix.copy()
+    <span class="org-variable-name">nan_masked_matrix</span>[np.isnan(nan_masked_matrix)] <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
     <span class="org-variable-name">fig</span>, <span class="org-variable-name">ax</span> <span class="org-operator">=</span> plt.subplots()
-    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(matrix, levels<span class="org-operator">=</span>levels)
+    <span class="org-variable-name">cs</span>      <span class="org-operator">=</span> ax.contour(nan_masked_matrix, levels<span class="org-operator">=</span>levels)
     ax.clabel(cs, inline<span class="org-operator">=</span><span class="org-constant">True</span>, fontsize<span class="org-operator">=</span>10)
     ax.set_aspect(<span class="org-string">'equal'</span>, <span class="org-string">'box'</span>)
     ax.set_title(title)
@@ -15795,6 +15884,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef class SpreadState:</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef (pyidx, pyidx, pyidx) cube_shape</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float simulation_time</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] phi</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] phi_star</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef unsigned char[:,::1] fire_type</span>
@@ -15803,12 +15893,15 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] fireline_intensity</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] flame_length</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cdef float[:,::1] time_of_arrival</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState set_start_time(SpreadState self, float start_time)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState ignite_cell(SpreadState self, coord_yx ignited_cell)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState ignite_cells(</span>
 <span class="org-comment-delimiter">#         </span><span class="org-comment">SpreadState self,</span>
 <span class="org-comment-delimiter">#         </span><span class="org-comment">coord_yx lower_left_corner,</span>
 <span class="org-comment-delimiter">#         </span><span class="org-comment">float[:,::1] ignition_matrix,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef (pyidx, pyidx, pyidx) get_cube_shape(SpreadState self)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef float get_simulation_time(SpreadState self)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef dict get_burned_matrices(SpreadState self, list layers=?)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef dict get_full_matrices(SpreadState self, list layers=?)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState copy(SpreadState self)</span>
@@ -16048,7 +16141,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">dict[str, ISpaceTimeCube] space_time_cubes,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadState spread_state,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">(float, float, float) cube_resolution,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">float start_time,</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">float start_time=?,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">object max_duration=?,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">float max_cells_per_timestep=?,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx buffer_width=?,</span>
