@@ -8284,7 +8284,7 @@ surface fire behavior is returned.
 
     <span class="org-variable-name">fire_type_matrix</span>          : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
     <span class="org-variable-name">spread_rate_matrix</span>        : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">spread_direction_matrix</span>   : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">spread_direction_matrix</span>   : ndarray         <span class="org-operator">=</span> np.full(grid_shape, np.nan, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">fireline_intensity_matrix</span> : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">flame_length_matrix</span>       : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">fire_type_memview</span>         : cy.uchar[:,::1] <span class="org-operator">=</span> fire_type_matrix
@@ -8632,7 +8632,7 @@ azimuth direction is returned.
 
     <span class="org-variable-name">fire_type_matrix</span>          : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
     <span class="org-variable-name">spread_rate_matrix</span>        : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-    <span class="org-variable-name">spread_direction_matrix</span>   : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
+    <span class="org-variable-name">spread_direction_matrix</span>   : ndarray         <span class="org-operator">=</span> np.full(grid_shape, np.nan, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">fireline_intensity_matrix</span> : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">flame_length_matrix</span>       : ndarray         <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
     <span class="org-variable-name">fire_type_memview</span>         : cy.uchar[:,::1] <span class="org-operator">=</span> fire_type_matrix
@@ -10185,8 +10185,7 @@ is returned.
         <span class="org-keyword">self</span>.<span class="org-variable-name">phi_star</span>           <span class="org-operator">=</span> np.ones((grid_rows <span class="org-operator">+</span> 4, grid_cols <span class="org-operator">+</span> 4), dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">fire_type</span>          <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"uint8"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">spread_rate</span>        <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-        <span class="org-keyword">self</span>.<span class="org-variable-name">spread_direction</span>   <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
-        <span class="org-comment-delimiter"># </span><span class="org-comment">self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32") ; FIXME: switch from 0 to np.nan</span>
+        <span class="org-keyword">self</span>.<span class="org-variable-name">spread_direction</span>   <span class="org-operator">=</span> np.full(grid_shape, np.nan, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">fireline_intensity</span> <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">flame_length</span>       <span class="org-operator">=</span> np.zeros(grid_shape, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
         <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.full(grid_shape, np.nan, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)

@@ -7353,7 +7353,7 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
 
     fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
     spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.full(grid_shape, np.nan, dtype="float32")
     fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
     flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
@@ -7699,7 +7699,7 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
 
     fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
     spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.full(grid_shape, np.nan, dtype="float32")
     fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
     flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
@@ -9222,8 +9222,7 @@ class SpreadState:
         self.phi_star           = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
         self.fire_type          = np.zeros(grid_shape, dtype="uint8")
         self.spread_rate        = np.zeros(grid_shape, dtype="float32")
-        self.spread_direction   = np.zeros(grid_shape, dtype="float32")
-        # self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32") ; FIXME: switch from 0 to np.nan
+        self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32")
         self.fireline_intensity = np.zeros(grid_shape, dtype="float32")
         self.flame_length       = np.zeros(grid_shape, dtype="float32")
         self.time_of_arrival    = np.full(grid_shape, np.nan, dtype="float32")

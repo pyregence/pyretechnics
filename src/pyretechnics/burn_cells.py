@@ -319,7 +319,7 @@ def burn_all_cells_as_head_fire(space_time_cubes      : dict[str, ISpaceTimeCube
 
     fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
     spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.full(grid_shape, np.nan, dtype="float32")
     fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
     flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
@@ -643,7 +643,7 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
 
     fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
     spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
-    spread_direction_matrix   : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.full(grid_shape, np.nan, dtype="float32")
     fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
     flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
     fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix

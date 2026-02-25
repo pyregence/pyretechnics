@@ -622,8 +622,7 @@ class SpreadState:
         self.phi_star           = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
         self.fire_type          = np.zeros(grid_shape, dtype="uint8")
         self.spread_rate        = np.zeros(grid_shape, dtype="float32")
-        self.spread_direction   = np.zeros(grid_shape, dtype="float32")
-        # self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32") ; FIXME: switch from 0 to np.nan
+        self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32")
         self.fireline_intensity = np.zeros(grid_shape, dtype="float32")
         self.flame_length       = np.zeros(grid_shape, dtype="float32")
         self.time_of_arrival    = np.full(grid_shape, np.nan, dtype="float32")
