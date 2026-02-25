@@ -780,6 +780,37 @@ class SpreadState:
         new_spread_state.time_of_arrival    = np.copy(self.time_of_arrival)
         # Return the initialized SpreadState object
         return new_spread_state
+
+
+    @cy.ccall
+    def rewind_to_time(self, simulation_time: cy.float) -> SpreadState:
+        # Ensure that simulation_time is defined, not negative, and less than self.simulation_time
+        if simulation_time is None:
+            raise ValueError("The simulation_time cannot be None.")
+        if (simulation_time < 0.0):
+            raise ValueError("The simulation_time cannot be negative.")
+        if (simulation_time >= self.simulation_time):
+            raise ValueError("The simulation_time must be less than the SpreadState's current simulation_time.")
+        # Set simulation_time
+        self.simulation_time = simulation_time
+        # Reset all arrays to their default values where time_of_arrival > simulation_time
+        rows: pyidx = self.cube_shape[1]
+        cols: pyidx = self.cube_shape[2]
+        y   : pyidx
+        x   : pyidx
+        for y in range(rows):
+            for x in range(cols):
+                if self.time_of_arrival[y,x] > simulation_time:
+                    self.phi[y,x]                = 1.0
+                    self.phi_star[y,x]           = 1.0
+                    self.fire_type[y,x]          = 0
+                    self.spread_rate[y,x]        = 0.0
+                    self.spread_direction[y,x]   = np.nan
+                    self.fireline_intensity[y,x] = 0.0
+                    self.flame_length[y,x]       = 0.0
+                    self.time_of_arrival[y,x]    = np.nan
+        # Return the updated SpreadState object
+        return self
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
 @cy.cfunc
