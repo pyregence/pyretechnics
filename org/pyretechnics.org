@@ -9228,6 +9228,7 @@ class SpreadState:
         self.time_of_arrival    = np.full(grid_shape, np.nan, dtype="float32")
 
 
+    # TODO: Use the cube_resolution to validate that the start_time is acceptable.
     @cy.ccall
     def set_start_time(self, start_time: cy.float) -> SpreadState:
         # Ensure that simulation_time is only set once
@@ -9378,6 +9379,50 @@ class SpreadState:
         new_spread_state.fireline_intensity = np.copy(self.fireline_intensity)
         new_spread_state.flame_length       = np.copy(self.flame_length)
         new_spread_state.time_of_arrival    = np.copy(self.time_of_arrival)
+        # Return the initialized SpreadState object
+        return new_spread_state
+
+
+    # TODO: Only throw an error if the SpreadState's burned cells won't fit in the new extent.
+    # TODO: Use the cube_resolution to validate that the simulation_time_offset is acceptable.
+    @cy.ccall
+    def change_cube_extent(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
+                           simulation_time_offset: cy.float) -> SpreadState:
+        # Extract coords
+        new_rows : pyidx = new_cube_shape[1]
+        new_cols : pyidx = new_cube_shape[2]
+        base_rows: pyidx = self.cube_shape[1]
+        base_cols: pyidx = self.cube_shape[2]
+        min_y    : pyidx = lower_left_corner_offset[0]
+        min_x    : pyidx = lower_left_corner_offset[1]
+        max_y    : pyidx = min_y + base_rows
+        max_x    : pyidx = min_x + base_cols
+        y        : pyidx
+        x        : pyidx
+        y_base   : pyidx
+        x_base   : pyidx
+        # Check bounds and throw an error if the new extent can't contain the base extent
+        if (new_rows < base_rows or new_cols < base_cols):
+            raise ValueError("The new extent is too small to contain the base SpreadState data.")
+        # Create an empty SpreadState object
+        new_spread_state: SpreadState = SpreadState(new_cube_shape)
+        # Set its simulation_time
+        new_spread_state.simulation_time = self.simulation_time + simulation_time_offset
+        # Initialize its fields by copying the base object's fields to the offset positions
+        for y in range(min_y, max_y):
+            for x in range(min_x, max_x):
+                # Calculate base object indices
+                y_base = y - min_y
+                x_base = x - min_x
+                # Update the arrays
+                new_spread_state.phi[2+y,2+x]            = self.phi[2+y_base,2+x_base]
+                new_spread_state.phi_star[2+y,2+x]       = self.phi_star[2+y_base,2+x_base]
+                new_spread_state.fire_type[y,x]          = self.fire_type[y_base,x_base]
+                new_spread_state.spread_rate[y,x]        = self.spread_rate[y_base,x_base]
+                new_spread_state.spread_direction[y,x]   = self.spread_direction[y_base,x_base]
+                new_spread_state.fireline_intensity[y,x] = self.fireline_intensity[y_base,x_base]
+                new_spread_state.flame_length[y,x]       = self.flame_length[y_base,x_base]
+                new_spread_state.time_of_arrival[y,x]    = self.time_of_arrival[y_base,x_base]
         # Return the initialized SpreadState object
         return new_spread_state
 
@@ -15581,6 +15626,12 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     cpdef dict get_burned_matrices(SpreadState self, list layers=?)
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 #     cpdef SpreadState copy(SpreadState self)
+#     cpdef SpreadState change_cube_extent(
+#           SpreadState self,
+#           (pyidx, pyidx, pyidx) new_cube_shape,
+#           coord_yx lower_left_corner_offset,
+#           float simulation_time_offset,
+#           )
 #     cpdef SpreadState rewind_to_time(SpreadState self, float simulation_time)
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept

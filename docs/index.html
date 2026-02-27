@@ -10191,6 +10191,7 @@ is returned.
         <span class="org-keyword">self</span>.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.full(grid_shape, np.nan, dtype<span class="org-operator">=</span><span class="org-string">"float32"</span>)
 
 
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Use the cube_resolution to validate that the start_time is acceptable.</span>
     <span class="org-type">@cy.ccall</span>
     <span class="org-keyword">def</span> <span class="org-function-name">set_start_time</span>(<span class="org-keyword">self</span>, start_time: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> SpreadState:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Ensure that simulation_time is only set once</span>
@@ -10341,6 +10342,50 @@ is returned.
         new_spread_state.<span class="org-variable-name">fireline_intensity</span> <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.fireline_intensity)
         new_spread_state.<span class="org-variable-name">flame_length</span>       <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.flame_length)
         new_spread_state.<span class="org-variable-name">time_of_arrival</span>    <span class="org-operator">=</span> np.copy(<span class="org-keyword">self</span>.time_of_arrival)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Return the initialized SpreadState object</span>
+        <span class="org-keyword">return</span> new_spread_state
+
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Only throw an error if the SpreadState's burned cells won't fit in the new extent.</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Use the cube_resolution to validate that the simulation_time_offset is acceptable.</span>
+    <span class="org-type">@cy.ccall</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">change_cube_extent</span>(<span class="org-keyword">self</span>, new_cube_shape: <span class="org-builtin">tuple</span>[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
+                           simulation_time_offset: cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> SpreadState:
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Extract coords</span>
+        <span class="org-variable-name">new_rows</span> : pyidx <span class="org-operator">=</span> new_cube_shape[1]
+        <span class="org-variable-name">new_cols</span> : pyidx <span class="org-operator">=</span> new_cube_shape[2]
+        <span class="org-variable-name">base_rows</span>: pyidx <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape[1]
+        <span class="org-variable-name">base_cols</span>: pyidx <span class="org-operator">=</span> <span class="org-keyword">self</span>.cube_shape[2]
+        <span class="org-variable-name">min_y</span>    : pyidx <span class="org-operator">=</span> lower_left_corner_offset[0]
+        <span class="org-variable-name">min_x</span>    : pyidx <span class="org-operator">=</span> lower_left_corner_offset[1]
+        <span class="org-variable-name">max_y</span>    : pyidx <span class="org-operator">=</span> min_y <span class="org-operator">+</span> base_rows
+        <span class="org-variable-name">max_x</span>    : pyidx <span class="org-operator">=</span> min_x <span class="org-operator">+</span> base_cols
+        y        : pyidx
+        x        : pyidx
+        y_base   : pyidx
+        x_base   : pyidx
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Check bounds and throw an error if the new extent can't contain the base extent</span>
+        <span class="org-keyword">if</span> (new_rows <span class="org-operator">&lt;</span> base_rows <span class="org-keyword">or</span> new_cols <span class="org-operator">&lt;</span> base_cols):
+            <span class="org-keyword">raise</span> <span class="org-type">ValueError</span>(<span class="org-string">"The new extent is too small to contain the base SpreadState data."</span>)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Create an empty SpreadState object</span>
+        <span class="org-variable-name">new_spread_state</span>: SpreadState <span class="org-operator">=</span> SpreadState(new_cube_shape)
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Set its simulation_time</span>
+        new_spread_state.<span class="org-variable-name">simulation_time</span> <span class="org-operator">=</span> <span class="org-keyword">self</span>.simulation_time <span class="org-operator">+</span> simulation_time_offset
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Initialize its fields by copying the base object's fields to the offset positions</span>
+        <span class="org-keyword">for</span> y <span class="org-keyword">in</span> <span class="org-builtin">range</span>(min_y, max_y):
+            <span class="org-keyword">for</span> x <span class="org-keyword">in</span> <span class="org-builtin">range</span>(min_x, max_x):
+                <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate base object indices</span>
+                <span class="org-variable-name">y_base</span> <span class="org-operator">=</span> y <span class="org-operator">-</span> min_y
+                <span class="org-variable-name">x_base</span> <span class="org-operator">=</span> x <span class="org-operator">-</span> min_x
+                <span class="org-comment-delimiter"># </span><span class="org-comment">Update the arrays</span>
+                new_spread_state.<span class="org-variable-name">phi</span>[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x]            <span class="org-operator">=</span> <span class="org-keyword">self</span>.phi[2<span class="org-operator">+</span>y_base,2<span class="org-operator">+</span>x_base]
+                new_spread_state.<span class="org-variable-name">phi_star</span>[2<span class="org-operator">+</span>y,2<span class="org-operator">+</span>x]       <span class="org-operator">=</span> <span class="org-keyword">self</span>.phi_star[2<span class="org-operator">+</span>y_base,2<span class="org-operator">+</span>x_base]
+                new_spread_state.<span class="org-variable-name">fire_type</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]          <span class="org-operator">=</span> <span class="org-keyword">self</span>.fire_type[y_base,x_base]
+                new_spread_state.<span class="org-variable-name">spread_rate</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]        <span class="org-operator">=</span> <span class="org-keyword">self</span>.spread_rate[y_base,x_base]
+                new_spread_state.<span class="org-variable-name">spread_direction</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]   <span class="org-operator">=</span> <span class="org-keyword">self</span>.spread_direction[y_base,x_base]
+                new_spread_state.<span class="org-variable-name">fireline_intensity</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> <span class="org-keyword">self</span>.fireline_intensity[y_base,x_base]
+                new_spread_state.<span class="org-variable-name">flame_length</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]       <span class="org-operator">=</span> <span class="org-keyword">self</span>.flame_length[y_base,x_base]
+                new_spread_state.<span class="org-variable-name">time_of_arrival</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>]    <span class="org-operator">=</span> <span class="org-keyword">self</span>.time_of_arrival[y_base,x_base]
         <span class="org-comment-delimiter"># </span><span class="org-comment">Return the initialized SpreadState object</span>
         <span class="org-keyword">return</span> new_spread_state
 
@@ -15935,6 +15980,12 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef dict get_burned_matrices(SpreadState self, list layers=?)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef dict get_full_matrices(SpreadState self, list layers=?)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState copy(SpreadState self)</span>
+<span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState change_cube_extent(</span>
+<span class="org-comment-delimiter">#           </span><span class="org-comment">SpreadState self,</span>
+<span class="org-comment-delimiter">#           </span><span class="org-comment">(pyidx, pyidx, pyidx) new_cube_shape,</span>
+<span class="org-comment-delimiter">#           </span><span class="org-comment">coord_yx lower_left_corner_offset,</span>
+<span class="org-comment-delimiter">#           </span><span class="org-comment">float simulation_time_offset,</span>
+<span class="org-comment-delimiter">#           </span><span class="org-comment">)</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">cpdef SpreadState rewind_to_time(SpreadState self, float simulation_time)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef object encode_cell_index(pyidx y, pyidx x)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept</span>

@@ -82,6 +82,12 @@
 #     cpdef dict get_burned_matrices(SpreadState self, list layers=?)
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 #     cpdef SpreadState copy(SpreadState self)
+#     cpdef SpreadState change_cube_extent(
+#           SpreadState self,
+#           (pyidx, pyidx, pyidx) new_cube_shape,
+#           coord_yx lower_left_corner_offset,
+#           float simulation_time_offset,
+#           )
 #     cpdef SpreadState rewind_to_time(SpreadState self, float simulation_time)
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept
