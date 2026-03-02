@@ -783,7 +783,8 @@ class SpreadState:
         return new_spread_state
 
 
-    # TODO: Only throw an error if the SpreadState's burned cells won't fit in the new extent.
+    # TODO: Calculate the min/max time_of_arrival, and use the cube_resolution to determine whether the base
+    # temporal extent will fit in the new temporal extent.
     @cy.ccall
     def copy_with_new_extent(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
                              simulation_time_offset: cy.float) -> SpreadState:
@@ -792,27 +793,48 @@ class SpreadState:
         new_cols : pyidx = new_cube_shape[2]
         base_rows: pyidx = self.cube_shape[1]
         base_cols: pyidx = self.cube_shape[2]
-        min_y    : pyidx = lower_left_corner_offset[0]
-        min_x    : pyidx = lower_left_corner_offset[1]
-        max_y    : pyidx = min_y + base_rows
-        max_x    : pyidx = min_x + base_cols
-        y        : pyidx
-        x        : pyidx
-        y_base   : pyidx
-        x_base   : pyidx
-        # Check bounds and throw an error if the new extent can't contain the base extent
-        if (new_rows < base_rows or new_cols < base_cols):
+        y_offset : pyidx = lower_left_corner_offset[0]
+        x_offset : pyidx = lower_left_corner_offset[1]
+        # Calculate the extent of the burned cells within the base SpreadState object
+        min_burned_y: pyidx = base_rows
+        max_burned_y: pyidx = -1
+        min_burned_x: pyidx = base_cols
+        max_burned_x: pyidx = -1
+        y           : pyidx
+        x           : pyidx
+        for y in range(base_rows):
+            for x in range(base_cols):
+                if self.fire_type[y,x] > 0:
+                    min_burned_y = min(y, min_burned_y)
+                    max_burned_y = max(y, max_burned_y)
+                    min_burned_x = min(x, min_burned_x)
+                    max_burned_x = max(x, max_burned_x)
+        # Throw an error if there are no burned cells
+        if (max_burned_y == -1):
+            raise ValueError("The base SpreadState object contains no burned cells. You should make a new SpreadState object instead.")
+        # Find the range of the burned cells within the new extent
+        new_min_burned_y: pyidx = y_offset + min_burned_y
+        new_max_burned_y: pyidx = y_offset + max_burned_y
+        new_min_burned_x: pyidx = x_offset + min_burned_x
+        new_max_burned_x: pyidx = x_offset + max_burned_x
+        # Check bounds and throw an error if the new extent can't contain the burned cells
+        if (new_min_burned_y < 0 or
+            new_min_burned_x < 0 or
+            new_max_burned_y > new_rows  or
+            new_max_burned_x > new_cols):
             raise ValueError("The new extent is too small to contain the base SpreadState data.")
         # Create an empty SpreadState object
         new_spread_state: SpreadState = SpreadState(new_cube_shape)
         # Set its simulation_time
         new_spread_state.simulation_time = self.simulation_time + simulation_time_offset
         # Initialize its fields by copying the base object's fields to the offset positions
-        for y in range(min_y, max_y):
-            for x in range(min_x, max_x):
+        y_base: pyidx
+        x_base: pyidx
+        for y in range(new_min_burned_y, new_max_burned_y):
+            for x in range(new_min_burned_x, new_max_burned_x):
                 # Calculate base object indices
-                y_base = y - min_y
-                x_base = x - min_x
+                y_base = y - y_offset
+                x_base = x - x_offset
                 # Update the arrays
                 new_spread_state.phi[2+y,2+x]            = self.phi[2+y_base,2+x_base]
                 new_spread_state.phi_star[2+y,2+x]       = self.phi_star[2+y_base,2+x_base]
