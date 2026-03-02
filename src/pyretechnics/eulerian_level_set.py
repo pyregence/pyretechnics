@@ -784,10 +784,9 @@ class SpreadState:
 
 
     # TODO: Only throw an error if the SpreadState's burned cells won't fit in the new extent.
-    # TODO: Use the cube_resolution to validate that the simulation_time_offset is acceptable.
     @cy.ccall
-    def change_cube_extent(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
-                           simulation_time_offset: cy.float) -> SpreadState:
+    def copy_with_new_extent(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
+                             simulation_time_offset: cy.float) -> SpreadState:
         # Extract coords
         new_rows : pyidx = new_cube_shape[1]
         new_cols : pyidx = new_cube_shape[2]

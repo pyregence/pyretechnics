@@ -82,7 +82,7 @@
 #     cpdef dict get_burned_matrices(SpreadState self, list layers=?)
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 #     cpdef SpreadState copy(SpreadState self)
-#     cpdef SpreadState change_cube_extent(
+#     cpdef SpreadState copy_with_new_extent(
 #           SpreadState self,
 #           (pyidx, pyidx, pyidx) new_cube_shape,
 #           coord_yx lower_left_corner_offset,
