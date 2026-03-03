@@ -327,7 +327,7 @@
 # cpdef dict[str, object] spread_fire_with_phi_field(
 #     dict[str, ISpaceTimeCube] space_time_cubes,
 #     SpreadState spread_state,
-#     (float, float, float) cube_resolution,
+#     (float, float, float) cube_resolution=?,
 #     object start_time=?,
 #     object max_duration=?,
 #     float max_cells_per_timestep=?,

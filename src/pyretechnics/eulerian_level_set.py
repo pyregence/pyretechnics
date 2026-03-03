@@ -2653,17 +2653,17 @@ def check_start_and_stop_times(start_time   : cy.float,
 @cy.ccall
 def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube],
                                spread_state          : SpreadState,
-                               cube_resolution       : tuple[cy.float, cy.float, cy.float],
-                               start_time            : float|None             = None,
-                               max_duration          : float|None             = None,
-                               max_cells_per_timestep: cy.float               = 0.4,
-                               buffer_width          : pyidx                  = 3,
-                               use_wind_limit        : cy.bint                = True,
-                               surface_lw_ratio_model: str                    = "behave",
-                               crown_max_lw_ratio    : cy.float               = 1e10,
-                               spot_ignitions        : dict[float, set]       = {},
-                               spot_config           : dict[str, object]|None = None,
-                               cube_refresh_rates    : dict[str, float]       = {}) -> dict[str, object]:
+                               cube_resolution       : tuple[float, float, float]|None = None,
+                               start_time            : float|None                      = None,
+                               max_duration          : float|None                      = None,
+                               max_cells_per_timestep: cy.float                        = 0.4,
+                               buffer_width          : pyidx                           = 3,
+                               use_wind_limit        : cy.bint                         = True,
+                               surface_lw_ratio_model: str                             = "behave",
+                               crown_max_lw_ratio    : cy.float                        = 1e10,
+                               spot_ignitions        : dict[float, set]                = {},
+                               spot_config           : dict[str, object]|None          = None,
+                               cube_refresh_rates    : dict[str, float]                = {}) -> dict[str, object]:
     """
     Given these inputs:
     - space_time_cubes             :: dictionary of ISpaceTimeCube objects with these cell types
@@ -2728,6 +2728,19 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
     bands          : pyidx                      = cube_shape[0]
     rows           : pyidx                      = cube_shape[1]
     cols           : pyidx                      = cube_shape[2]
+
+    # Match cube_resolution to spread_state.cube_resolution
+    if cube_resolution:
+        if (spread_state.cube_resolution == (0.0, 0.0, 0.0)):
+            spread_state = spread_state.set_resolution(cube_resolution)
+        else:
+            if (cube_resolution != spread_state.cube_resolution):
+                raise ValueError("The cube_resolution does not match the spread_state's cube_resolution.")
+    else:
+        if (spread_state.cube_resolution == (0.0, 0.0, 0.0)):
+            raise ValueError("No cube_resolution provided.")
+        else:
+            cube_resolution = spread_state.cube_resolution
 
     # Extract simulation resolutions
     band_duration: cy.float = cube_resolution[0]
