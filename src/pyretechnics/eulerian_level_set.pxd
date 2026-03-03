@@ -61,6 +61,7 @@
 # cdef SpreadBehavior unburned_SpreadBehavior(vec_xy elevation_gradient, vec_xyz phi_gradient_xyz) noexcept
 # cdef class SpreadState:
 #     cdef (pyidx, pyidx, pyidx) cube_shape
+#     cdef (float, float, float) cube_resolution
 #     cdef float simulation_time
 #     cdef float[:,::1] phi
 #     cdef float[:,::1] phi_star
@@ -70,6 +71,7 @@
 #     cdef float[:,::1] fireline_intensity
 #     cdef float[:,::1] flame_length
 #     cdef float[:,::1] time_of_arrival
+#     cpdef SpreadState set_resolution(SpreadState self, (float, float, float) cube_resolution)
 #     cpdef SpreadState set_start_time(SpreadState self, float start_time)
 #     cpdef SpreadState ignite_cell(SpreadState self, coord_yx ignited_cell)
 #     cpdef SpreadState ignite_cells(
@@ -78,11 +80,12 @@
 #         float[:,::1] ignition_matrix,
 #     )
 #     cpdef (pyidx, pyidx, pyidx) get_cube_shape(SpreadState self)
+#     cpdef (float, float, float) get_cube_resolution(SpreadState self)
 #     cpdef float get_simulation_time(SpreadState self)
 #     cpdef dict get_burned_matrices(SpreadState self, list layers=?)
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 #     cpdef SpreadState copy(SpreadState self)
-#     cpdef SpreadState copy_with_new_extent(
+#     cpdef SpreadState copy_with_new_shape(
 #           SpreadState self,
 #           (pyidx, pyidx, pyidx) new_cube_shape,
 #           coord_yx lower_left_corner_offset,
@@ -325,7 +328,7 @@
 #     dict[str, ISpaceTimeCube] space_time_cubes,
 #     SpreadState spread_state,
 #     (float, float, float) cube_resolution,
-#     float start_time=?,
+#     object start_time=?,
 #     object max_duration=?,
 #     float max_cells_per_timestep=?,
 #     pyidx buffer_width=?,

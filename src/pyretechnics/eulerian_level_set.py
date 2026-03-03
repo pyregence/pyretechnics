@@ -597,6 +597,7 @@ class SpreadState:
     Stores the stateful data associated with a fire spread simulation.
     """
     cube_shape        : tuple[pyidx, pyidx, pyidx]
+    cube_resolution   : tuple[cy.float, cy.float, cy.float]
     simulation_time   : cy.float        # minutes
     phi               : cy.float[:,::1] # 2D float array of values in [-1,1]
     phi_star          : cy.float[:,::1] # 2D float array of values in [-1,1]
@@ -608,18 +609,25 @@ class SpreadState:
     time_of_arrival   : cy.float[:,::1] # 2D float array (min)
 
 
-    # TODO: Initialize output matrices to NaN if possible
     def __init__(self, cube_shape: tuple[pyidx, pyidx, pyidx]) -> cy.void:
-        # Extract the grid_shape from the cube_shape
-        grid_rows : pyidx               = cube_shape[1]
-        grid_cols : pyidx               = cube_shape[2]
-        grid_shape: tuple[pyidx, pyidx] = (grid_rows, grid_cols)
+        # Ensure that cube_shape contains 3 values or throw an error
+        if len(cube_shape) != 3:
+            raise ValueError("The cube_shape must contain exactly three values.")
+        # Unpack the cube_shape values
+        bands: pyidx                    = cube_shape[0]
+        rows : pyidx                    = cube_shape[1]
+        cols : pyidx                    = cube_shape[2]
+        grid_shape: tuple[pyidx, pyidx] = (rows, cols)
+        # Ensure that cube_shape only contains positive numbers or throw an error
+        if not(bands > 0 and rows > 0 and cols > 0):
+            raise ValueError("The cube_shape must contain only positive numbers.")
         # Create the initial 2D arrays
         # NOTE: The phi matrix is padded by 2 cells on each side to avoid the cost of checking bounds.
         self.cube_shape         = cube_shape
+        self.cube_resolution    = (0.0, 0.0, 0.0)
         self.simulation_time    = -1.0
-        self.phi                = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
-        self.phi_star           = np.ones((grid_rows + 4, grid_cols + 4), dtype="float32")
+        self.phi                = np.ones((rows + 4, cols + 4), dtype="float32")
+        self.phi_star           = np.ones((rows + 4, cols + 4), dtype="float32")
         self.fire_type          = np.zeros(grid_shape, dtype="uint8")
         self.spread_rate        = np.zeros(grid_shape, dtype="float32")
         self.spread_direction   = np.full(grid_shape, np.nan, dtype="float32")
@@ -628,7 +636,31 @@ class SpreadState:
         self.time_of_arrival    = np.full(grid_shape, np.nan, dtype="float32")
 
 
-    # TODO: Use the cube_resolution to validate that the start_time is acceptable.
+    @cy.ccall
+    def set_resolution(self, cube_resolution: tuple[cy.float, cy.float, cy.float]) -> SpreadState:
+        # Ensure that cube_resolution is only set once
+        if (self.cube_resolution != (0.0, 0.0, 0.0)):
+            raise ValueError("The cube_resolution can only be set once.")
+        # Ensure that cube_resolution contains 3 values or throw an error
+        if len(cube_resolution) != 3:
+            raise ValueError("The cube_resolution must contain exactly three values.")
+        # Unpack the cube_resolution values
+        band_duration: cy.float = cube_resolution[0]
+        cell_height  : cy.float = cube_resolution[1]
+        cell_width   : cy.float = cube_resolution[2]
+        # Ensure that cube_resolution only contains positive numbers or throw an error
+        if not(band_duration > 0.0 and cell_height > 0.0 and cell_width > 0.0):
+            raise ValueError("The cube_resolution must contain only positive numbers.")
+        # Use the simulation_time and cube_shape to validate that the cube_resolution is acceptable
+        if (self.simulation_time >= 0.0 and
+            self.simulation_time >= band_duration * self.cube_shape[0]):
+            raise ValueError("The start_time exceeds the temporal extent of the SpreadState object.")
+        # Set cube_resolution
+        self.cube_resolution = cube_resolution
+        # Return the updated SpreadState object
+        return self
+
+
     @cy.ccall
     def set_start_time(self, start_time: cy.float) -> SpreadState:
         # Ensure that simulation_time is only set once
@@ -639,6 +671,10 @@ class SpreadState:
             raise ValueError("The start_time cannot be None.")
         if (start_time < 0.0):
             raise ValueError("The start_time cannot be negative.")
+        # Use the cube_shape and cube_resolution to validate that the start_time is in range
+        if (self.cube_resolution[0] != 0.0 and
+            start_time >= self.cube_resolution[0] * self.cube_shape[0]):
+            raise ValueError("The start_time exceeds the temporal extent of the SpreadState object.")
         # Set simulation_time
         self.simulation_time = start_time
         # Set time_of_arrival to start_time where phi < 0.0
@@ -707,6 +743,10 @@ class SpreadState:
 
 
     @cy.ccall
+    def get_cube_resolution(self) -> tuple[cy.float, cy.float, cy.float]:
+        return self.cube_resolution
+
+    @cy.ccall
     def get_simulation_time(self) -> cy.float:
         return self.simulation_time
 
@@ -770,6 +810,7 @@ class SpreadState:
         new_spread_state: SpreadState = SpreadState.__new__(SpreadState, self.cube_shape)
         # Initialize its fields with copies of the base object's fields
         new_spread_state.cube_shape         = self.cube_shape      # tuples are immutable
+        new_spread_state.cube_resolution    = self.cube_resolution # tuples are immutable
         new_spread_state.simulation_time    = self.simulation_time # floats are immutable
         new_spread_state.phi                = np.copy(self.phi)
         new_spread_state.phi_star           = np.copy(self.phi_star)
@@ -783,50 +824,68 @@ class SpreadState:
         return new_spread_state
 
 
-    # TODO: Calculate the min/max time_of_arrival, and use the cube_resolution to determine whether the base
-    # temporal extent will fit in the new temporal extent.
+    # TODO: Allow for a new resolution to be used (should this be a separate function?)
     @cy.ccall
-    def copy_with_new_extent(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
-                             simulation_time_offset: cy.float) -> SpreadState:
+    def copy_with_new_shape(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
+                            simulation_time_offset: cy.float) -> SpreadState:
         # Extract coords
-        new_rows : pyidx = new_cube_shape[1]
-        new_cols : pyidx = new_cube_shape[2]
-        base_rows: pyidx = self.cube_shape[1]
-        base_cols: pyidx = self.cube_shape[2]
-        y_offset : pyidx = lower_left_corner_offset[0]
-        x_offset : pyidx = lower_left_corner_offset[1]
+        base_bands        : pyidx    = self.cube_shape[0]
+        base_rows         : pyidx    = self.cube_shape[1]
+        base_cols         : pyidx    = self.cube_shape[2]
+        new_bands         : pyidx    = new_cube_shape[0]
+        new_rows          : pyidx    = new_cube_shape[1]
+        new_cols          : pyidx    = new_cube_shape[2]
+        y_offset          : pyidx    = lower_left_corner_offset[0]
+        x_offset          : pyidx    = lower_left_corner_offset[1]
+        base_band_duration: cy.float = self.cube_resolution[0]
         # Calculate the extent of the burned cells within the base SpreadState object
-        min_burned_y: pyidx = base_rows
-        max_burned_y: pyidx = -1
-        min_burned_x: pyidx = base_cols
-        max_burned_x: pyidx = -1
+        min_toa     : cy.float = base_bands * base_band_duration
+        max_toa     : cy.float = -1.0
+        min_burned_y: pyidx    = base_rows
+        max_burned_y: pyidx    = -1
+        min_burned_x: pyidx    = base_cols
+        max_burned_x: pyidx    = -1
+        toa         : cy.float
         y           : pyidx
         x           : pyidx
         for y in range(base_rows):
             for x in range(base_cols):
                 if self.fire_type[y,x] > 0:
+                    toa          = self.time_of_arrival[y,x]
+                    min_toa      = min(toa, min_toa)
+                    max_toa      = max(toa, max_toa)
                     min_burned_y = min(y, min_burned_y)
                     max_burned_y = max(y, max_burned_y)
                     min_burned_x = min(x, min_burned_x)
                     max_burned_x = max(x, max_burned_x)
         # Throw an error if there are no burned cells
-        if (max_burned_y == -1):
+        if (max_toa == -1.0):
             raise ValueError("The base SpreadState object contains no burned cells. You should make a new SpreadState object instead.")
-        # Find the range of the burned cells within the new extent
-        new_min_burned_y: pyidx = y_offset + min_burned_y
-        new_max_burned_y: pyidx = y_offset + max_burned_y
-        new_min_burned_x: pyidx = x_offset + min_burned_x
-        new_max_burned_x: pyidx = x_offset + max_burned_x
-        # Check bounds and throw an error if the new extent can't contain the burned cells
-        if (new_min_burned_y < 0 or
+        # Find the range of the burned cells within the new shape
+        new_min_toa     : cy.float = simulation_time_offset + min_toa
+        new_max_toa     : cy.float = simulation_time_offset + max_toa
+        new_min_burned_y: pyidx    = y_offset + min_burned_y
+        new_max_burned_y: pyidx    = y_offset + max_burned_y
+        new_min_burned_x: pyidx    = x_offset + min_burned_x
+        new_max_burned_x: pyidx    = x_offset + max_burned_x
+        # Check bounds and throw an error if the new shape can't contain the burned cells
+        if (new_min_toa      < 0.0 or
+            new_min_burned_y < 0 or
             new_min_burned_x < 0 or
-            new_max_burned_y > new_rows  or
-            new_max_burned_x > new_cols):
-            raise ValueError("The new extent is too small to contain the base SpreadState data.")
+            new_max_toa      >= new_bands * base_band_duration or
+            new_max_burned_y >= new_rows  or
+            new_max_burned_x >= new_cols):
+            raise ValueError("The new shape is too small to contain the burned cells from the base SpreadState object.")
+        # Use the new_bands and base_band_duration to validate that the new_simulation_time is in range
+        new_simulation_time: cy.float = simulation_time_offset + self.simulation_time
+        if (new_simulation_time >= new_bands * base_band_duration):
+            raise ValueError("The new simulation_time exceeds the temporal extent of the new SpreadState object.")
         # Create an empty SpreadState object
         new_spread_state: SpreadState = SpreadState(new_cube_shape)
+        # Set its cube_resolution
+        new_spread_state.cube_resolution = self.cube_resolution
         # Set its simulation_time
-        new_spread_state.simulation_time = self.simulation_time + simulation_time_offset
+        new_spread_state.simulation_time = new_simulation_time
         # Initialize its fields by copying the base object's fields to the offset positions
         y_base: pyidx
         x_base: pyidx
