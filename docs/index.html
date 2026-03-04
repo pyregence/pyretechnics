@@ -251,7 +251,7 @@ org_html_manager.setup();  // activate after the parameters are set
 <div id="content" class="content">
 <h1 class="title">The Pyretechnics Fire Behavior Library
 <br>
-<span class="subtitle">Copyright © 2023-2025 Spatial Informatics Group, LLC</span>
+<span class="subtitle">Copyright © 2023-2026 Spatial Informatics Group, LLC</span>
 </h1>
 <div id="table-of-contents" role="doc-toc">
 <h2>Table of Contents</h2>
@@ -1840,6 +1840,115 @@ Subcube from Spatio-Temporal Data: Wind Speed
 </pre>
 </div>
 </li>
+
+<li><a id="stc-plot-a-subcube-within-a-space-time-region"></a>Plot a Subcube within a Space-Time Region<br>
+<div class="outline-text-5" id="text-stc-plot-a-subcube-within-a-space-time-region">
+<div class="org-src-container">
+<pre class="src src-python" id="space-time-cube-plot-subcube"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
+<span class="org-keyword">from</span> mpl_toolkits.mplot3d <span class="org-keyword">import</span> Axes3D
+<span class="org-keyword">from</span> matplotlib.colors <span class="org-keyword">import</span> Normalize
+
+<span class="org-keyword">def</span> <span class="org-function-name">save_3d_voxel_plot</span>(data, filename, title, colormap<span class="org-operator">=</span><span class="org-string">"viridis"</span>, min_threshold<span class="org-operator">=-</span>1e6, max_threshold<span class="org-operator">=</span>1e6):
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Transpose to (X, Y, T)</span>
+    <span class="org-variable-name">data_transposed</span> <span class="org-operator">=</span> np.transpose(data, (2, 1, 0))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Define the colormap from gray to green</span>
+    <span class="org-variable-name">cmap</span> <span class="org-operator">=</span> plt.get_cmap(colormap)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a Normalize instance to scale the data to [0, 1]</span>
+    <span class="org-variable-name">norm</span> <span class="org-operator">=</span> Normalize(vmin<span class="org-operator">=</span>np.<span class="org-builtin">min</span>(data_transposed), vmax<span class="org-operator">=</span>np.<span class="org-builtin">max</span>(data_transposed))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a boolean array to indicate where the voxels should be filled</span>
+    <span class="org-variable-name">threshold</span> <span class="org-operator">=</span> <span class="org-operator">-</span>1.0
+    <span class="org-variable-name">voxels</span> <span class="org-operator">=</span> (min_threshold <span class="org-operator">&lt;=</span> data_transposed) <span class="org-operator">&amp;</span> (data_transposed <span class="org-operator">&lt;</span> max_threshold)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create an array for colors, initialized with a transparent color or any default</span>
+    <span class="org-variable-name">colors</span> <span class="org-operator">=</span> np.empty(data_transposed.shape <span class="org-operator">+</span> (4,), dtype<span class="org-operator">=</span><span class="org-builtin">float</span>)  <span class="org-comment-delimiter"># </span><span class="org-comment">ARGB (4 channels)</span>
+    <span class="org-variable-name">colors</span>[..., :] <span class="org-operator">=</span> 0  <span class="org-comment-delimiter"># </span><span class="org-comment">Set all colors to transparent</span>
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Apply normalized color values where voxels are True</span>
+    <span class="org-variable-name">colors</span>[voxels] <span class="org-operator">=</span> cmap(norm(data_transposed[voxels]))  <span class="org-comment-delimiter"># </span><span class="org-comment">Use normalized values to get colors</span>
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a 3D plot</span>
+    <span class="org-variable-name">fig</span> <span class="org-operator">=</span> plt.figure()
+    <span class="org-variable-name">ax</span> <span class="org-operator">=</span> fig.add_subplot(111, projection<span class="org-operator">=</span><span class="org-string">"3d"</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Plot the voxels with the appropriate facecolors</span>
+    ax.voxels(voxels, facecolors<span class="org-operator">=</span>colors, edgecolors<span class="org-operator">=</span><span class="org-string">"k"</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create the colorbar, using the same normalization</span>
+    <span class="org-variable-name">cbar</span> <span class="org-operator">=</span> plt.colorbar(plt.cm.ScalarMappable(cmap<span class="org-operator">=</span>cmap, norm<span class="org-operator">=</span>norm), ax<span class="org-operator">=</span>ax)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Add a title and save the file</span>
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close(<span class="org-string">"all"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Specify Subcube Shape</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+
+<span class="org-variable-name">band_range</span> <span class="org-operator">=</span> (36,60)
+<span class="org-variable-name">row_range</span>  <span class="org-operator">=</span> (95,105)
+<span class="org-variable-name">col_range</span>  <span class="org-operator">=</span> (95,105)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Constant Data: foliar moisture = 70% everywhere</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+
+<span class="org-variable-name">constant_subcube</span> <span class="org-operator">=</span> constant_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(constant_subcube, <span class="org-string">"org/pics/example_constant_subcube.png"</span>, <span class="org-string">"Foliar Moisture"</span>, colormap<span class="org-operator">=</span><span class="org-string">"plasma"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Temporal Data: 24-hour burn period with ramp up and ramp down for 10 days</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+
+<span class="org-variable-name">time_series_subcube</span> <span class="org-operator">=</span> time_series_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(time_series_subcube, <span class="org-string">"org/pics/example_time_series_subcube.png"</span>, <span class="org-string">"Burn Period Spread Rate Adjustment"</span>, colormap<span class="org-operator">=</span><span class="org-string">"magma"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Spatial Data: 2D elevation raster with 1000 (30m) x 1000 (30m) cells</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+
+<span class="org-variable-name">spatial_subcube</span> <span class="org-operator">=</span> spatial_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(spatial_subcube, <span class="org-string">"org/pics/example_spatial_subcube.png"</span>, <span class="org-string">"Elevation"</span>, colormap<span class="org-operator">=</span><span class="org-string">"magma"</span>)
+
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">Spatio-Temporal Data: 3D daily max wind speed raster with 10 (days) x 100 (300m) x 100 (300m) cells</span>
+<span class="org-comment-delimiter">#</span><span class="org-comment">=====================================================================================================</span>
+
+<span class="org-variable-name">spatiotemporal_subcube</span> <span class="org-operator">=</span> spatiotemporal_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(spatiotemporal_subcube, <span class="org-string">"org/pics/example_spatiotemporal_subcube.png"</span>, <span class="org-string">"Wind Speed"</span>, colormap<span class="org-operator">=</span><span class="org-string">"autumn"</span>)
+</pre>
+</div>
+
+<table id="space-time-cube-plot-subcube-results">
+<caption class="t-above"><span class="table-number">Table 1:</span> Example Subcube Plots of Constant, Time Series, Spatial, and Spatio-Temporal Space-Time Cubes</caption>
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><img src="pics/example_constant_subcube.png" alt="example_constant_subcube.png"></td>
+<td class="org-left"><img src="pics/example_time_series_subcube.png" alt="example_time_series_subcube.png"></td>
+</tr>
+
+<tr>
+<td class="org-left"><img src="pics/example_spatial_subcube.png" alt="example_spatial_subcube.png"></td>
+<td class="org-left"><img src="pics/example_spatiotemporal_subcube.png" alt="example_spatiotemporal_subcube.png"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
 </ol>
 </div>
 
@@ -2293,11 +2402,11 @@ cope with this, fuels are classified into categories called "fuel
 models" which share similar burning characteristics. Each fuel model
 is then assigned a set of representative values for each of the
 thermally relevant physical properties shown in Table
-<a href="#tab:fuel-model-properties">1</a>.
+<a href="#tab:fuel-model-properties">2</a>.
 </p>
 
 <table id="tab:fuel-model-properties">
-<caption class="t-above"><span class="table-number">Table 1:</span> Physical properties assigned to each fuel model</caption>
+<caption class="t-above"><span class="table-number">Table 2:</span> Physical properties assigned to each fuel model</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -2509,7 +2618,7 @@ Although this compact data structure contains all the properties that
 vary by fuel model (i.e., \(\delta\), \(w_o\), \(\sigma\),
 \(M_{x-\text{dead}}\), \(h\)), several of their values need to be
 multiplied by a coefficient to make their units match those listed in
-Table <a href="#tab:fuel-model-properties">1</a>. We also need to add in the missing
+Table <a href="#tab:fuel-model-properties">2</a>. We also need to add in the missing
 \(\rho_p\), \(S_T\), and \(S_e\) values, which are constant across all of
 these fuel models, and to expand those properties whose values may
 vary by size class into lists with the following encoding:
@@ -3326,11 +3435,11 @@ is described by the following formula:
 
 <p>
 where these terms have the meanings shown in Table
-<a href="#tab:fire-spread-inputs">2</a>.
+<a href="#tab:fire-spread-inputs">3</a>.
 </p>
 
 <table id="tab:fire-spread-inputs">
-<caption class="t-above"><span class="table-number">Table 2:</span> Inputs to Rothermel's surface fire rate of spread equation</caption>
+<caption class="t-above"><span class="table-number">Table 3:</span> Inputs to Rothermel's surface fire rate of spread equation</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -6592,11 +6701,11 @@ the distribution and the fireline intensity \(I\) and wind speed \(U\):
 
 <p>
 in which \(\Delta_1, e_I, e_U, r_\frac{V}{E}\) are configured by the
-keys shown in table <a href="#tab:spotting-elmfire-params">3</a>.
+keys shown in table <a href="#tab:spotting-elmfire-params">4</a>.
 </p>
 
 <table id="tab:spotting-elmfire-params">
-<caption class="t-above"><span class="table-number">Table 3:</span> Spotting parameters for the downwind distribution per the ELMFIRE model</caption>
+<caption class="t-above"><span class="table-number">Table 4:</span> Spotting parameters for the downwind distribution per the ELMFIRE model</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -6787,11 +6896,11 @@ formula for \(\sigma_Y\):
 \end{align}
 
 <p>
-Typical values are shown in table <a href="#tab:himoto2005-example-values">4</a>.
+Typical values are shown in table <a href="#tab:himoto2005-example-values">5</a>.
 </p>
 
 <table id="tab:himoto2005-example-values">
-<caption class="t-above"><span class="table-number">Table 4:</span> Typical values for \(\vec{\Delta}\) distribution characteristics derived from Himoto2005</caption>
+<caption class="t-above"><span class="table-number">Table 5:</span> Typical values for \(\vec{\Delta}\) distribution characteristics derived from Himoto2005</caption>
 
 <colgroup>
 <col  class="org-right">
@@ -7619,7 +7728,7 @@ Several spotting parameters can be adjusted by the user:
 </p>
 
 <table id="tab:spotting-parameters">
-<caption class="t-above"><span class="table-number">Table 5:</span> User adjustable spotting parameters</caption>
+<caption class="t-above"><span class="table-number">Table 6:</span> User adjustable spotting parameters</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -12839,7 +12948,7 @@ Time of Arrival (minutes)
 </div>
 
 <table id="fire-behavior-matplotlib-heatmaps">
-<caption class="t-above"><span class="table-number">Table 6:</span> Fire behavior attributes after 8 hours of spread</caption>
+<caption class="t-above"><span class="table-number">Table 7:</span> Fire behavior attributes after 8 hours of spread</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13264,7 +13373,7 @@ Future Spot Ignitions:
 </div>
 
 <table id="spot-fire-behavior-matplotlib-heatmaps">
-<caption class="t-above"><span class="table-number">Table 7:</span> Fire behavior attributes after 8 hours of spread with spotting enabled</caption>
+<caption class="t-above"><span class="table-number">Table 8:</span> Fire behavior attributes after 8 hours of spread with spotting enabled</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13819,7 +13928,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </div>
 
 <table id="fuel-model-matplotlib-heatmaps-forked">
-<caption class="t-above"><span class="table-number">Table 8:</span> Fuel model [Left: Main, Right: Fork]</caption>
+<caption class="t-above"><span class="table-number">Table 9:</span> Fuel model [Left: Main, Right: Fork]</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13835,7 +13944,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </table>
 
 <table id="fire-behavior-matplotlib-heatmaps-forked">
-<caption class="t-above"><span class="table-number">Table 9:</span> Fire behavior attributes after 12 hours of spread [Left: Main, Right: Fork]</caption>
+<caption class="t-above"><span class="table-number">Table 10:</span> Fire behavior attributes after 12 hours of spread [Left: Main, Right: Fork]</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13876,7 +13985,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </table>
 
 <table id="time-of-arrival-matplotlib-countours-forked">
-<caption class="t-above"><span class="table-number">Table 10:</span> Time of arrival with hourly perimeters [Left: Main, Right: Fork]</caption>
+<caption class="t-above"><span class="table-number">Table 11:</span> Time of arrival with hourly perimeters [Left: Main, Right: Fork]</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -14814,11 +14923,11 @@ of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
 provided by the US LANDFIRE program<sup><a id="fnr.3.100" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> (see table
-<a href="#tab:landfire-layers">11</a> for details).
+<a href="#tab:landfire-layers">12</a> for details).
 </p>
 
 <table id="tab:landfire-layers">
-<caption class="t-above"><span class="table-number">Table 11:</span> 2022 LANDFIRE Raster Layers</caption>
+<caption class="t-above"><span class="table-number">Table 12:</span> 2022 LANDFIRE Raster Layers</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -15076,7 +15185,7 @@ these keys:
 <div class="outline-text-4" id="text-converting-landfire-units-and-datatypes">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table <a href="#tab:landfire-layers">11</a>. In order to make them match those required
+Table <a href="#tab:landfire-layers">12</a>. In order to make them match those required
 by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 </p>

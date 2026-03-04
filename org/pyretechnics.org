@@ -1394,6 +1394,102 @@ Subcube from Spatio-Temporal Data: Wind Speed
   [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]]]
 #+end_example
 
+**** Plot a Subcube within a Space-Time Region
+     :PROPERTIES:
+     :CUSTOM_ID: stc-plot-a-subcube-within-a-space-time-region
+     :END:
+
+#+NAME: space-time-cube-plot-subcube
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.colors import Normalize
+
+def save_3d_voxel_plot(data, filename, title, colormap="viridis", min_threshold=-1e6, max_threshold=1e6):
+    # Transpose to (X, Y, T)
+    data_transposed = np.transpose(data, (2, 1, 0))
+
+    # Define the colormap from gray to green
+    cmap = plt.get_cmap(colormap)
+
+    # Create a Normalize instance to scale the data to [0, 1]
+    norm = Normalize(vmin=np.min(data_transposed), vmax=np.max(data_transposed))
+
+    # Create a boolean array to indicate where the voxels should be filled
+    threshold = -1.0
+    voxels = (min_threshold <= data_transposed) & (data_transposed < max_threshold)
+
+    # Create an array for colors, initialized with a transparent color or any default
+    colors = np.empty(data_transposed.shape + (4,), dtype=float)  # ARGB (4 channels)
+    colors[..., :] = 0  # Set all colors to transparent
+
+    # Apply normalized color values where voxels are True
+    colors[voxels] = cmap(norm(data_transposed[voxels]))  # Use normalized values to get colors
+
+    # Create a 3D plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Plot the voxels with the appropriate facecolors
+    ax.voxels(voxels, facecolors=colors, edgecolors="k")
+
+    # Create the colorbar, using the same normalization
+    cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax)
+
+    # Add a title and save the file
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+#=====================================================================================================
+# Specify Subcube Shape
+#=====================================================================================================
+
+band_range = (36,60)
+row_range  = (95,105)
+col_range  = (95,105)
+
+#=====================================================================================================
+# Constant Data: foliar moisture = 70% everywhere
+#=====================================================================================================
+
+constant_subcube = constant_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(constant_subcube, "org/pics/example_constant_subcube.png", "Foliar Moisture", colormap="plasma")
+
+#=====================================================================================================
+# Temporal Data: 24-hour burn period with ramp up and ramp down for 10 days
+#=====================================================================================================
+
+time_series_subcube = time_series_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(time_series_subcube, "org/pics/example_time_series_subcube.png", "Burn Period Spread Rate Adjustment", colormap="magma")
+
+#=====================================================================================================
+# Spatial Data: 2D elevation raster with 1000 (30m) x 1000 (30m) cells
+#=====================================================================================================
+
+spatial_subcube = spatial_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(spatial_subcube, "org/pics/example_spatial_subcube.png", "Elevation", colormap="magma")
+
+#=====================================================================================================
+# Spatio-Temporal Data: 3D daily max wind speed raster with 10 (days) x 100 (300m) x 100 (300m) cells
+#=====================================================================================================
+
+spatiotemporal_subcube = spatiotemporal_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(spatiotemporal_subcube, "org/pics/example_spatiotemporal_subcube.png", "Wind Speed", colormap="autumn")
+#+end_src
+
+#+NAME: space-time-cube-plot-subcube-results
+#+caption: Example Subcube Plots of Constant, Time Series, Spatial, and Spatio-Temporal Space-Time Cubes
+|----------------------------------------+----------------------------------------------|
+| file:pics/example_constant_subcube.png | file:pics/example_time_series_subcube.png    |
+| file:pics/example_spatial_subcube.png  | file:pics/example_spatiotemporal_subcube.png |
+|----------------------------------------+----------------------------------------------|
+
 *** How to Use LazySpaceTimeCube
     :PROPERTIES:
     :CUSTOM_ID: how-to-use-lazyspacetimecube
