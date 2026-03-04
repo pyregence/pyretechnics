@@ -312,7 +312,7 @@ files within this repository.
 <a id="license"></a>
 ## License
 
-Copyright © 2023-2025 Spatial Informatics Group, LLC.
+Copyright © 2023-2026 Spatial Informatics Group, LLC.
 
 Pyretechnics is distributed by Spatial Informatics Group, LLC. under
 the terms of the Eclipse Public License version 2.0 (EPLv2). See
