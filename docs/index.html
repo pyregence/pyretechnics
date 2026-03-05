@@ -10459,7 +10459,7 @@ is returned.
     <span class="org-keyword">def</span> <span class="org-function-name">get_full_matrices</span>(<span class="org-keyword">self</span>, layers: <span class="org-builtin">list</span>[<span class="org-builtin">str</span>]<span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Prepare the 2D arrays in a dict</span>
         <span class="org-variable-name">available_matrices</span>: <span class="org-builtin">dict</span>[<span class="org-builtin">str</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> {
-            <span class="org-string">"phi"</span>               : np.asarray(<span class="org-keyword">self</span>.phi),
+            <span class="org-string">"phi"</span>               : np.asarray(<span class="org-keyword">self</span>.phi[2:<span class="org-operator">-</span>2,2:<span class="org-operator">-</span>2]), <span class="org-comment-delimiter"># </span><span class="org-comment">Trim off the 2 cell buffer</span>
             <span class="org-string">"fire_type"</span>         : np.asarray(<span class="org-keyword">self</span>.fire_type),
             <span class="org-string">"spread_rate"</span>       : np.asarray(<span class="org-keyword">self</span>.spread_rate),
             <span class="org-string">"spread_direction"</span>  : np.asarray(<span class="org-keyword">self</span>.spread_direction),
@@ -12824,7 +12824,7 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -0.92554456, 'Max': 1.0, 'Mean': 0.9133916, 'Stdev': 0.3737736}
+{'Min': -0.92554456, 'Max': 1.0, 'Mean': 0.9063243, 'Stdev': 0.3878721}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -12979,6 +12979,151 @@ Time of Arrival (minutes)
 </p>
 <p><span class="figure-number">Figure 4: </span>Time of arrival with hourly perimeters</p>
 </div>
+</div>
+</li>
+
+<li><a id="create-3d-plots-of-the-spread-state"></a>Create 3D Plots of the Spread State<br>
+<div class="outline-text-5" id="text-create-3d-plots-of-the-spread-state">
+<div class="org-src-container">
+<pre class="src src-python" id="run-spread-fire-with-phi-field-3d-plots"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
+<span class="org-keyword">from</span> mpl_toolkits.mplot3d <span class="org-keyword">import</span> Axes3D
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">save_3d_voxel_plot</span>(time_of_arrival_matrix, fire_behavior_matrix, filename, title, units, colors,
+                       vmin<span class="org-operator">=</span><span class="org-constant">None</span>, vmax<span class="org-operator">=</span><span class="org-constant">None</span>, ticks<span class="org-operator">=</span><span class="org-constant">None</span>):
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Get the dimensions of the arrays</span>
+    (<span class="org-variable-name">M</span>, <span class="org-variable-name">N</span>) <span class="org-operator">=</span> fire_behavior_matrix.shape
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a grid of (X, Y) coordinates</span>
+    (<span class="org-variable-name">X</span>, <span class="org-variable-name">Y</span>) <span class="org-operator">=</span> np.meshgrid(np.arange(N), np.arange(M))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Flatten the matrices for 3D plotting</span>
+    <span class="org-variable-name">X_flat</span> <span class="org-operator">=</span> X.flatten()
+    <span class="org-variable-name">Y_flat</span> <span class="org-operator">=</span> Y.flatten()
+    <span class="org-variable-name">Z_flat</span> <span class="org-operator">=</span> time_of_arrival_matrix.flatten()
+    <span class="org-variable-name">V_flat</span> <span class="org-operator">=</span> fire_behavior_matrix.flatten()
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Filter out the non-burned areas (assuming non-positive values mean no fire)</span>
+    <span class="org-variable-name">mask</span> <span class="org-operator">=</span> <span class="org-operator">~</span>np.isnan(Z_flat)
+    <span class="org-variable-name">X_burned</span> <span class="org-operator">=</span> X_flat[mask]
+    <span class="org-variable-name">Y_burned</span> <span class="org-operator">=</span> Y_flat[mask]
+    <span class="org-variable-name">Z_burned</span> <span class="org-operator">=</span> Z_flat[mask]
+    <span class="org-variable-name">V_burned</span> <span class="org-operator">=</span> V_flat[mask]
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Set up the figure and 3D axis</span>
+    <span class="org-variable-name">fig</span> <span class="org-operator">=</span> plt.figure()
+    <span class="org-variable-name">ax</span> <span class="org-operator">=</span> fig.add_subplot(111, projection<span class="org-operator">=</span><span class="org-string">'3d'</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Create a scatter plot</span>
+    <span class="org-variable-name">sc</span> <span class="org-operator">=</span> ax.scatter(X_burned, Y_burned, Z_burned, c<span class="org-operator">=</span>V_burned, cmap<span class="org-operator">=</span>colors, marker<span class="org-operator">=</span><span class="org-string">'o'</span>, vmin<span class="org-operator">=</span>vmin, vmax<span class="org-operator">=</span>vmax)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Add color bar to indicate fire intensity</span>
+    <span class="org-variable-name">cbar</span> <span class="org-operator">=</span> plt.colorbar(sc, ax<span class="org-operator">=</span>ax, shrink<span class="org-operator">=</span>0.8, pad<span class="org-operator">=</span>0.15, orientation<span class="org-operator">=</span><span class="org-string">"vertical"</span>, ticks<span class="org-operator">=</span>ticks)
+    cbar.set_label(units)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Set labels</span>
+    ax.set_xlabel(<span class="org-string">'X axis'</span>)
+    ax.set_ylabel(<span class="org-string">'Y axis'</span>)
+    ax.set_zlabel(<span class="org-string">'Time of Arrival'</span>)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Add a title and save the file</span>
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close(<span class="org-string">"all"</span>)
+
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"</span>
+<span class="org-variable-name">heatmap_configs</span> <span class="org-operator">=</span> [
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"phi"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"plasma"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"phi &lt;= 0: burned, phi &gt; 0: unburned"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Phi"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_phi_cube.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fire_type"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"0=unburned, 1=surface, 2=passive_crown, 3=active_crown"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Fire Type"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fire_type_cube.png"</span>,
+        <span class="org-string">"vmin"</span>    : 0,
+        <span class="org-string">"vmax"</span>    : 3,
+        <span class="org-string">"ticks"</span>   : [0,1,2,3],
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_rate"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"m/min"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Spread Rate"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_rate_cube.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"spread_direction"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"viridis"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"degrees clockwise from North"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Spread Direction"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_spread_direction_cube.png"</span>,
+        <span class="org-string">"vmin"</span>    : 0,
+        <span class="org-string">"vmax"</span>    : 360,
+        <span class="org-string">"ticks"</span>   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"fireline_intensity"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"kW/m"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Fireline Intensity"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_fireline_intensity_cube.png"</span>,
+    },
+    {
+        <span class="org-string">"matrix"</span>  : output_matrices[<span class="org-string">"flame_length"</span>],
+        <span class="org-string">"colors"</span>  : <span class="org-string">"hot"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"meters"</span>,
+        <span class="org-string">"title"</span>   : <span class="org-string">"Flame Length"</span>,
+        <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/els_flame_length_cube.png"</span>,
+    },
+]
+
+
+<span class="org-keyword">for</span> heatmap_config <span class="org-keyword">in</span> heatmap_configs:
+    save_3d_voxel_plot(output_matrices[<span class="org-string">"time_of_arrival"</span>],
+                       heatmap_config[<span class="org-string">"matrix"</span>],
+                       heatmap_config[<span class="org-string">"filename"</span>],
+                       heatmap_config[<span class="org-string">"title"</span>],
+                       heatmap_config[<span class="org-string">"units"</span>],
+                       heatmap_config[<span class="org-string">"colors"</span>],
+                       heatmap_config.get(<span class="org-string">"vmin"</span>),
+                       heatmap_config.get(<span class="org-string">"vmax"</span>),
+                       heatmap_config.get(<span class="org-string">"ticks"</span>))
+</pre>
+</div>
+
+<table id="fire-behavior-matplotlib-heatmap-cubes">
+<caption class="t-above"><span class="table-number">Table 8:</span> 3D fire behavior shapes after 8 hours of spread</caption>
+
+<colgroup>
+<col  class="org-left">
+
+<col  class="org-left">
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left"><img src="pics/els_phi_cube.png" alt="els_phi_cube.png"></td>
+<td class="org-left"><img src="pics/els_fire_type_cube.png" alt="els_fire_type_cube.png"></td>
+</tr>
+
+<tr>
+<td class="org-left"><img src="pics/els_spread_rate_cube.png" alt="els_spread_rate_cube.png"></td>
+<td class="org-left"><img src="pics/els_spread_direction_cube.png" alt="els_spread_direction_cube.png"></td>
+</tr>
+
+<tr>
+<td class="org-left"><img src="pics/els_fireline_intensity_cube.png" alt="els_fireline_intensity_cube.png"></td>
+<td class="org-left"><img src="pics/els_flame_length_cube.png" alt="els_flame_length_cube.png"></td>
+</tr>
+</tbody>
+</table>
 </div>
 </li>
 </ol>
@@ -13185,7 +13330,7 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-{'Min': -1.0, 'Max': 1.0, 'Mean': 0.73481274, 'Stdev': 0.6118095}
+{'Min': -1.0, 'Max': 1.0, 'Mean': 0.71317345, 'Stdev': 0.63138574}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -13373,7 +13518,7 @@ Future Spot Ignitions:
 </div>
 
 <table id="spot-fire-behavior-matplotlib-heatmaps">
-<caption class="t-above"><span class="table-number">Table 8:</span> Fire behavior attributes after 8 hours of spread with spotting enabled</caption>
+<caption class="t-above"><span class="table-number">Table 9:</span> Fire behavior attributes after 8 hours of spread with spotting enabled</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13725,8 +13870,8 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi &lt;= 0: burned, phi &gt; 0: unburned
-Main: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.8109577, 'Stdev': 0.542039}
-Fork: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.8146855, 'Stdev': 0.538873}
+Main: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.7955318, 'Stdev': 0.56091595}
+Fork: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.7995638, 'Stdev': 0.5577172}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -13928,7 +14073,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </div>
 
 <table id="fuel-model-matplotlib-heatmaps-forked">
-<caption class="t-above"><span class="table-number">Table 9:</span> Fuel model [Left: Main, Right: Fork]</caption>
+<caption class="t-above"><span class="table-number">Table 10:</span> Fuel model [Left: Main, Right: Fork]</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13944,7 +14089,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </table>
 
 <table id="fire-behavior-matplotlib-heatmaps-forked">
-<caption class="t-above"><span class="table-number">Table 10:</span> Fire behavior attributes after 12 hours of spread [Left: Main, Right: Fork]</caption>
+<caption class="t-above"><span class="table-number">Table 11:</span> Fire behavior attributes after 12 hours of spread [Left: Main, Right: Fork]</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -13985,7 +14130,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </table>
 
 <table id="time-of-arrival-matplotlib-countours-forked">
-<caption class="t-above"><span class="table-number">Table 11:</span> Time of arrival with hourly perimeters [Left: Main, Right: Fork]</caption>
+<caption class="t-above"><span class="table-number">Table 12:</span> Time of arrival with hourly perimeters [Left: Main, Right: Fork]</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -14923,11 +15068,11 @@ of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
 provided by the US LANDFIRE program<sup><a id="fnr.3.100" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> (see table
-<a href="#tab:landfire-layers">12</a> for details).
+<a href="#tab:landfire-layers">13</a> for details).
 </p>
 
 <table id="tab:landfire-layers">
-<caption class="t-above"><span class="table-number">Table 12:</span> 2022 LANDFIRE Raster Layers</caption>
+<caption class="t-above"><span class="table-number">Table 13:</span> 2022 LANDFIRE Raster Layers</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -15185,7 +15330,7 @@ these keys:
 <div class="outline-text-4" id="text-converting-landfire-units-and-datatypes">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table <a href="#tab:landfire-layers">12</a>. In order to make them match those required
+Table <a href="#tab:landfire-layers">13</a>. In order to make them match those required
 by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 </p>

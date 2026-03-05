@@ -787,7 +787,7 @@ class SpreadState:
     def get_full_matrices(self, layers: list[str]|None = None) -> dict:
         # Prepare the 2D arrays in a dict
         available_matrices: dict[str, ndarray] = {
-            "phi"               : np.asarray(self.phi),
+            "phi"               : np.asarray(self.phi[2:-2,2:-2]), # Trim off the 2 cell buffer
             "fire_type"         : np.asarray(self.fire_type),
             "spread_rate"       : np.asarray(self.spread_rate),
             "spread_direction"  : np.asarray(self.spread_direction),

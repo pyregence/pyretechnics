@@ -9483,7 +9483,7 @@ class SpreadState:
     def get_full_matrices(self, layers: list[str]|None = None) -> dict:
         # Prepare the 2D arrays in a dict
         available_matrices: dict[str, ndarray] = {
-            "phi"               : np.asarray(self.phi),
+            "phi"               : np.asarray(self.phi[2:-2,2:-2]), # Trim off the 2 cell buffer
             "fire_type"         : np.asarray(self.fire_type),
             "spread_rate"       : np.asarray(self.spread_rate),
             "spread_direction"  : np.asarray(self.spread_direction),
@@ -11841,7 +11841,7 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -0.92554456, 'Max': 1.0, 'Mean': 0.9133916, 'Stdev': 0.3737736}
+{'Min': -0.92554456, 'Max': 1.0, 'Mean': 0.9063243, 'Stdev': 0.3878721}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -12034,13 +12034,13 @@ def save_3d_voxel_plot(time_of_arrival_matrix, fire_behavior_matrix, filename, t
 
 # See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
 heatmap_configs = [
-    # {
-    #     "matrix"  : output_matrices["phi"],
-    #     "colors"  : "plasma",
-    #     "units"   : "phi <= 0: burned, phi > 0: unburned",
-    #     "title"   : "Phi",
-    #     "filename": "org/pics/els_phi_cube.png",
-    # },
+    {
+        "matrix"  : output_matrices["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "org/pics/els_phi_cube.png",
+    },
     {
         "matrix"  : output_matrices["fire_type"],
         "colors"  : "viridis",
@@ -12311,7 +12311,7 @@ Stop Time: 2550.0 (minutes)
 Stop Condition: max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-{'Min': -1.0, 'Max': 1.0, 'Mean': 0.73481274, 'Stdev': 0.6118095}
+{'Min': -1.0, 'Max': 1.0, 'Mean': 0.71317345, 'Stdev': 0.63138574}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
@@ -12833,8 +12833,8 @@ Stop Condition (Main): max duration reached
 Stop Condition (Fork): max duration reached
 
 Phi (phi <= 0: burned, phi > 0: unburned
-Main: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.8109577, 'Stdev': 0.542039}
-Fork: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.8146855, 'Stdev': 0.538873}
+Main: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.7955318, 'Stdev': 0.56091595}
+Fork: {'Min': -0.92529535, 'Max': 1.0, 'Mean': 0.7995638, 'Stdev': 0.5577172}
 
 Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 Main: {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
