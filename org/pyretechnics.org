@@ -12729,11 +12729,11 @@ for heatmap_config in heatmap_configs:
 
 #+NAME: spot-fire-behavior-matplotlib-heatmap-cubes
 #+caption: 3D fire behavior shapes after 8 hours of spread
-|-----------------------------------------------------+---------------------------------------------------|
-| file:pics/els_spot_spot_phi_cube.png                | file:pics/els_spot_spot_fire_type_cube.png        |
-| file:pics/els_spot_spot_spread_rate_cube.png        | file:pics/els_spot_spot_spread_direction_cube.png |
-| file:pics/els_spot_spot_fireline_intensity_cube.png | file:pics/els_spot_spot_flame_length_cube.png     |
-|-----------------------------------------------------+---------------------------------------------------|
+|------------------------------------------------+----------------------------------------------|
+| file:pics/els_spot_phi_cube.png                | file:pics/els_spot_fire_type_cube.png        |
+| file:pics/els_spot_spread_rate_cube.png        | file:pics/els_spot_spread_direction_cube.png |
+| file:pics/els_spot_fireline_intensity_cube.png | file:pics/els_spot_flame_length_cube.png     |
+|------------------------------------------------+----------------------------------------------|
 
 *** How to Spread a Fire, Pause, Fork, and Continue
     :PROPERTIES:
