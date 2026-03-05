@@ -1892,6 +1892,102 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
   [34. 34. 34. 34. 34. 37. 37. 37. 37. 37.]]]
 #+end_example
 
+**** Plot a Subcube within a Space-Time Region
+     :PROPERTIES:
+     :CUSTOM_ID: lazy-stc-plot-a-subcube-within-a-space-time-region
+     :END:
+
+#+NAME: lazy-space-time-cube-plot-subcube
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.colors import Normalize
+
+def save_3d_voxel_plot(data, filename, title, colormap="viridis", min_threshold=-1e6, max_threshold=1e6):
+    # Transpose to (X, Y, T)
+    data_transposed = np.transpose(data, (2, 1, 0))
+
+    # Define the colormap from gray to green
+    cmap = plt.get_cmap(colormap)
+
+    # Create a Normalize instance to scale the data to [0, 1]
+    norm = Normalize(vmin=np.min(data_transposed), vmax=np.max(data_transposed))
+
+    # Create a boolean array to indicate where the voxels should be filled
+    threshold = -1.0
+    voxels = (min_threshold <= data_transposed) & (data_transposed < max_threshold)
+
+    # Create an array for colors, initialized with a transparent color or any default
+    colors = np.empty(data_transposed.shape + (4,), dtype=float)  # ARGB (4 channels)
+    colors[..., :] = 0  # Set all colors to transparent
+
+    # Apply normalized color values where voxels are True
+    colors[voxels] = cmap(norm(data_transposed[voxels]))  # Use normalized values to get colors
+
+    # Create a 3D plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Plot the voxels with the appropriate facecolors
+    ax.voxels(voxels, facecolors=colors, edgecolors="k")
+
+    # Create the colorbar, using the same normalization
+    cbar = plt.colorbar(plt.cm.ScalarMappable(cmap=cmap, norm=norm), ax=ax)
+
+    # Add a title and save the file
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+#=====================================================================================================
+# Specify Subcube Shape
+#=====================================================================================================
+
+band_range = (36,60)
+row_range  = (95,105)
+col_range  = (95,105)
+
+#=====================================================================================================
+# Constant Data: foliar moisture = 70% everywhere
+#=====================================================================================================
+
+constant_subcube = constant_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(constant_subcube, "org/pics/example_lazy_constant_subcube.png", "Foliar Moisture", colormap="plasma")
+
+#=====================================================================================================
+# Temporal Data: 24-hour burn period with ramp up and ramp down for 10 days
+#=====================================================================================================
+
+time_series_subcube = time_series_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(time_series_subcube, "org/pics/example_lazy_time_series_subcube.png", "Burn Period Spread Rate Adjustment", colormap="magma")
+
+#=====================================================================================================
+# Spatial Data: 2D elevation raster with 1000 (30m) x 1000 (30m) cells
+#=====================================================================================================
+
+spatial_subcube = spatial_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(spatial_subcube, "org/pics/example_lazy_spatial_subcube.png", "Elevation", colormap="magma")
+
+#=====================================================================================================
+# Spatio-Temporal Data: 3D daily max wind speed raster with 10 (days) x 100 (300m) x 100 (300m) cells
+#=====================================================================================================
+
+spatiotemporal_subcube = spatiotemporal_cube.getSubcube(band_range, row_range, col_range)
+
+save_3d_voxel_plot(spatiotemporal_subcube, "org/pics/example_lazy_spatiotemporal_subcube.png", "Wind Speed", colormap="autumn")
+#+end_src
+
+#+NAME: space-time-cube-plot-subcube-results
+#+caption: Example Subcube Plots of Constant, Time Series, Spatial, and Spatio-Temporal Space-Time Cubes
+|---------------------------------------------+---------------------------------------------------|
+| file:pics/example_lazy_constant_subcube.png | file:pics/example_lazy_time_series_subcube.png    |
+| file:pics/example_lazy_spatial_subcube.png  | file:pics/example_lazy_spatiotemporal_subcube.png |
+|---------------------------------------------+---------------------------------------------------|
+
 * [WIP] Fire Behavior Model :noexport:
   :PROPERTIES:
   :CUSTOM_ID: [wip]-fire-behavior-model
@@ -12511,6 +12607,134 @@ for contour_config in contour_configs:
 #+caption: Time of arrival with hourly perimeters with spotting enabled
 file:pics/els_spot_time_of_arrival.png
 
+**** Create 3D Plots of the Spread State with Spotting Enabled
+     :PROPERTIES:
+     :CUSTOM_ID: create-3d-plots-of-the-spread-state-with-spotting-enabled
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-with-spotting-3d-plots
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+
+def save_3d_voxel_plot(time_of_arrival_matrix, fire_behavior_matrix, filename, title, units, colors,
+                       vmin=None, vmax=None, ticks=None):
+    # Get the dimensions of the arrays
+    (M, N) = fire_behavior_matrix.shape
+
+    # Create a grid of (X, Y) coordinates
+    (X, Y) = np.meshgrid(np.arange(N), np.arange(M))
+
+    # Flatten the matrices for 3D plotting
+    X_flat = X.flatten()
+    Y_flat = Y.flatten()
+    Z_flat = time_of_arrival_matrix.flatten()
+    V_flat = fire_behavior_matrix.flatten()
+
+    # Filter out the non-burned areas (assuming non-positive values mean no fire)
+    mask = ~np.isnan(Z_flat)
+    X_burned = X_flat[mask]
+    Y_burned = Y_flat[mask]
+    Z_burned = Z_flat[mask]
+    V_burned = V_flat[mask]
+
+    # Set up the figure and 3D axis
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Create a scatter plot
+    sc = ax.scatter(X_burned, Y_burned, Z_burned, c=V_burned, cmap=colors, marker='o', vmin=vmin, vmax=vmax)
+
+    # Add color bar to indicate fire intensity
+    cbar = plt.colorbar(sc, ax=ax, shrink=0.8, pad=0.15, orientation="vertical", ticks=ticks)
+    cbar.set_label(units)
+
+    # Set labels
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Time of Arrival')
+
+    # Add a title and save the file
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+heatmap_configs = [
+    {
+        "matrix"  : output_matrices["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "org/pics/els_spot_phi_cube.png",
+    },
+    {
+        "matrix"  : output_matrices["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "org/pics/els_spot_fire_type_cube.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
+    },
+    {
+        "matrix"  : output_matrices["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "org/pics/els_spot_spread_rate_cube.png",
+    },
+    {
+        "matrix"  : output_matrices["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "org/pics/els_spot_spread_direction_cube.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        "matrix"  : output_matrices["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "org/pics/els_spot_fireline_intensity_cube.png",
+    },
+    {
+        "matrix"  : output_matrices["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "org/pics/els_spot_flame_length_cube.png",
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_3d_voxel_plot(output_matrices["time_of_arrival"],
+                       heatmap_config["matrix"],
+                       heatmap_config["filename"],
+                       heatmap_config["title"],
+                       heatmap_config["units"],
+                       heatmap_config["colors"],
+                       heatmap_config.get("vmin"),
+                       heatmap_config.get("vmax"),
+                       heatmap_config.get("ticks"))
+#+end_src
+
+#+NAME: spot-fire-behavior-matplotlib-heatmap-cubes
+#+caption: 3D fire behavior shapes after 8 hours of spread
+|-----------------------------------------------------+---------------------------------------------------|
+| file:pics/els_spot_spot_phi_cube.png                | file:pics/els_spot_spot_fire_type_cube.png        |
+| file:pics/els_spot_spot_spread_rate_cube.png        | file:pics/els_spot_spot_spread_direction_cube.png |
+| file:pics/els_spot_spot_fireline_intensity_cube.png | file:pics/els_spot_spot_flame_length_cube.png     |
+|-----------------------------------------------------+---------------------------------------------------|
+
 *** How to Spread a Fire, Pause, Fork, and Continue
     :PROPERTIES:
     :CUSTOM_ID: how-to-spread-a-fire,-pause,-fork,-and-continue
@@ -13058,6 +13282,224 @@ for contour_config in contour_configs:
 |----------------------------------------+----------------------------------------|
 | file:pics/els_time_of_arrival_main.png | file:pics/els_time_of_arrival_fork.png |
 |----------------------------------------+----------------------------------------|
+
+**** Create 3D Plots of the Two Scenarios' Spread States
+     :PROPERTIES:
+     :CUSTOM_ID: create-3d-plots-of-the-two-scenarios'-spread-states
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-3d-plots-forked
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+
+def save_3d_voxel_plot(time_of_arrival_matrix, fire_behavior_matrix, filename, title, units, colors,
+                       vmin=None, vmax=None, ticks=None):
+    # Get the dimensions of the arrays
+    (M, N) = fire_behavior_matrix.shape
+
+    # Create a grid of (X, Y) coordinates
+    (X, Y) = np.meshgrid(np.arange(N), np.arange(M))
+
+    # Flatten the matrices for 3D plotting
+    X_flat = X.flatten()
+    Y_flat = Y.flatten()
+    Z_flat = time_of_arrival_matrix.flatten()
+    V_flat = fire_behavior_matrix.flatten()
+
+    # Filter out the non-burned areas (assuming non-positive values mean no fire)
+    mask = ~np.isnan(Z_flat)
+    X_burned = X_flat[mask]
+    Y_burned = Y_flat[mask]
+    Z_burned = Z_flat[mask]
+    V_burned = V_flat[mask]
+
+    # Set up the figure and 3D axis
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Create a scatter plot
+    sc = ax.scatter(X_burned, Y_burned, Z_burned, c=V_burned, cmap=colors, marker='o', vmin=vmin, vmax=vmax)
+
+    # Add color bar to indicate fire intensity
+    cbar = plt.colorbar(sc, ax=ax, shrink=0.8, pad=0.15, orientation="vertical", ticks=ticks)
+    cbar.set_label(units)
+
+    # Set labels
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Time of Arrival')
+
+    # Add a title and save the file
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+heatmap_configs = [
+    {
+        "matrix"  : space_time_cubes["fuel_model"].getSpatialPlane(0, None, None),
+        "colors"  : "viridis_r",
+        "units"   : "fuel model number: 91-204",
+        "title"   : "Fuel Model",
+        "filename": "org/pics/els_fuel_model_main_cube.png",
+        "vmin"    : 91,
+        "vmax"    : 204,
+    },
+    {
+        "matrix"  : output_matrices["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "org/pics/els_phi_main_cube.png",
+    },
+    {
+        "matrix"  : output_matrices["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "org/pics/els_fire_type_main_cube.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
+    },
+    {
+        "matrix"  : output_matrices["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "org/pics/els_spread_rate_main_cube.png",
+    },
+    {
+        "matrix"  : output_matrices["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "org/pics/els_spread_direction_main_cube.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        "matrix"  : output_matrices["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "org/pics/els_fireline_intensity_main_cube.png",
+    },
+    {
+        "matrix"  : output_matrices["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "org/pics/els_flame_length_main_cube.png",
+    },
+]
+
+
+heatmap_configs_fork = [
+    {
+        "matrix"  : space_time_cubes_fork["fuel_model"].getSpatialPlane(0, None, None),
+        "colors"  : "viridis_r",
+        "units"   : "fuel model number: 91-204",
+        "title"   : "Fuel Model",
+        "filename": "org/pics/els_fuel_model_fork_cube.png",
+        "vmin"    : 91,
+        "vmax"    : 204,
+    },
+    {
+        "matrix"  : output_matrices_fork["phi"],
+        "colors"  : "plasma",
+        "units"   : "phi <= 0: burned, phi > 0: unburned",
+        "title"   : "Phi",
+        "filename": "org/pics/els_phi_fork_cube.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["fire_type"],
+        "colors"  : "viridis",
+        "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+        "title"   : "Fire Type",
+        "filename": "org/pics/els_fire_type_fork_cube.png",
+        "vmin"    : 0,
+        "vmax"    : 3,
+        "ticks"   : [0,1,2,3],
+    },
+    {
+        "matrix"  : output_matrices_fork["spread_rate"],
+        "colors"  : "hot",
+        "units"   : "m/min",
+        "title"   : "Spread Rate",
+        "filename": "org/pics/els_spread_rate_fork_cube.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["spread_direction"],
+        "colors"  : "viridis",
+        "units"   : "degrees clockwise from North",
+        "title"   : "Spread Direction",
+        "filename": "org/pics/els_spread_direction_fork_cube.png",
+        "vmin"    : 0,
+        "vmax"    : 360,
+        "ticks"   : [0,45,90,135,180,225,270,315,360]
+    },
+    {
+        "matrix"  : output_matrices_fork["fireline_intensity"],
+        "colors"  : "hot",
+        "units"   : "kW/m",
+        "title"   : "Fireline Intensity",
+        "filename": "org/pics/els_fireline_intensity_fork_cube.png",
+    },
+    {
+        "matrix"  : output_matrices_fork["flame_length"],
+        "colors"  : "hot",
+        "units"   : "meters",
+        "title"   : "Flame Length",
+        "filename": "org/pics/els_flame_length_fork_cube.png",
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_3d_voxel_plot(output_matrices["time_of_arrival"],
+                       heatmap_config["matrix"],
+                       heatmap_config["filename"],
+                       heatmap_config["title"],
+                       heatmap_config["units"],
+                       heatmap_config["colors"],
+                       heatmap_config.get("vmin"),
+                       heatmap_config.get("vmax"),
+                       heatmap_config.get("ticks"))
+
+for heatmap_config in heatmap_configs_fork:
+    save_3d_voxel_plot(output_matrices_fork["time_of_arrival"],
+                       heatmap_config["matrix"],
+                       heatmap_config["filename"],
+                       heatmap_config["title"],
+                       heatmap_config["units"],
+                       heatmap_config["colors"],
+                       heatmap_config.get("vmin"),
+                       heatmap_config.get("vmax"),
+                       heatmap_config.get("ticks"))
+#+end_src
+
+#+NAME: fuel-model-matplotlib-3d-heatmaps-forked
+#+caption: 3D fuel model [Left: Main, Right: Fork]
+|----------------------------------------+----------------------------------------|
+| file:pics/els_fuel_model_main_cube.png | file:pics/els_fuel_model_fork_cube.png |
+|----------------------------------------+----------------------------------------|
+
+#+NAME: fire-behavior-matplotlib-3d-heatmaps-forked
+#+caption: 3D fire behavior shapes after 12 hours of spread [Left: Main, Right: Fork]
+|------------------------------------------------+------------------------------------------------|
+| file:pics/els_phi_main_cube.png                | file:pics/els_phi_fork_cube.png                |
+| file:pics/els_fire_type_main_cube.png          | file:pics/els_fire_type_fork_cube.png          |
+| file:pics/els_spread_rate_main_cube.png        | file:pics/els_spread_rate_fork_cube.png        |
+| file:pics/els_spread_direction_main_cube.png   | file:pics/els_spread_direction_fork_cube.png   |
+| file:pics/els_fireline_intensity_main_cube.png | file:pics/els_fireline_intensity_fork_cube.png |
+| file:pics/els_flame_length_main_cube.png       | file:pics/els_flame_length_fork_cube.png       |
+|------------------------------------------------+------------------------------------------------|
 
 * [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
   :PROPERTIES:
