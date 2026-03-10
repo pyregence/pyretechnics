@@ -10905,42 +10905,26 @@ near it, and decrement their tracking counter by 1. Upon reaching
     <span class="org-keyword">return</span> tracked_cells
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: Using an Extension Type here instead of a struct because it's</span>
-<span class="org-comment-delimiter">#       </span><span class="org-comment">convenient to store in Python data structures like lists and dicts.</span>
-<span class="org-type">@cy.cclass</span>
-<span class="org-keyword">class</span> <span class="org-type">FrontierCellInfo</span>:
-    <span class="org-doc">"""</span>
-<span class="org-doc">    This data structure simply records information about a frontier cell.</span>
-<span class="org-doc">    """</span>
-    cell_index: coord_yx
-    is_burned : cy.bint
-
-
 <span class="org-type">@cy.cfunc</span>
-<span class="org-keyword">def</span> <span class="org-function-name">new_FrontierCellInfo</span>(cell_index: coord_yx,
-                         is_burned : cy.bint) <span class="org-operator">-&gt;</span> FrontierCellInfo:
-    <span class="org-variable-name">ret</span>: FrontierCellInfo <span class="org-operator">=</span> FrontierCellInfo()
-    ret.<span class="org-variable-name">cell_index</span>        <span class="org-operator">=</span> cell_index
-    ret.<span class="org-variable-name">is_burned</span>         <span class="org-operator">=</span> is_burned
-    <span class="org-keyword">return</span> ret
-
-
-<span class="org-type">@cy.cfunc</span>
-<span class="org-keyword">def</span> <span class="org-function-name">decode_frontier_cells</span>(frontier_cells: <span class="org-builtin">set</span>, phi_matrix: cy.<span class="org-builtin">float</span>[:,::1]) <span class="org-operator">-&gt;</span> <span class="org-builtin">list</span>[FrontierCellInfo]:
-    <span class="org-variable-name">frontier_cells_decoded</span>: <span class="org-builtin">list</span>[FrontierCellInfo] <span class="org-operator">=</span> []
-    encoded_cell_index    : <span class="org-builtin">object</span>
-    cell_index            : coord_yx
-    y                     : pyidx
-    x                     : pyidx
+<span class="org-keyword">def</span> <span class="org-function-name">decode_frontier_cells</span>(frontier_cells: <span class="org-builtin">set</span>, phi_matrix: cy.<span class="org-builtin">float</span>[:,::1]) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
+    <span class="org-variable-name">frontier_cells_burned</span>  : <span class="org-builtin">list</span>[coord_yx] <span class="org-operator">=</span> []
+    <span class="org-variable-name">frontier_cells_unburned</span>: <span class="org-builtin">list</span>[coord_yx] <span class="org-operator">=</span> []
+    encoded_cell_index     : <span class="org-builtin">object</span>
+    cell_index             : coord_yx
+    y                      : pyidx
+    x                      : pyidx
     <span class="org-keyword">for</span> encoded_cell_index <span class="org-keyword">in</span> frontier_cells:
         <span class="org-variable-name">cell_index</span> <span class="org-operator">=</span> decode_cell_index(encoded_cell_index)
         <span class="org-variable-name">y</span>          <span class="org-operator">=</span> cell_index[0]
         <span class="org-variable-name">x</span>          <span class="org-operator">=</span> cell_index[1]
-        frontier_cells_decoded.append(
-            new_FrontierCellInfo(cell_index <span class="org-operator">=</span> cell_index,
-                                 is_burned  <span class="org-operator">=</span> phi_matrix[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>x] <span class="org-operator">&lt;</span> 0.0)
-        )
-    <span class="org-keyword">return</span> frontier_cells_decoded
+        <span class="org-keyword">if</span> (phi_matrix[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>x] <span class="org-operator">&lt;</span> 0.0):
+            frontier_cells_burned.append(cell_index)
+        <span class="org-keyword">else</span>:
+            frontier_cells_unburned.append(cell_index)
+    <span class="org-keyword">return</span> {
+        <span class="org-string">"burned_cells"</span>  : frontier_cells_burned,
+        <span class="org-string">"unburned_cells"</span>: frontier_cells_unburned,
+    }
 </pre>
 </div>
 </div>
@@ -16908,14 +16892,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <span class="org-comment-delimiter">#     </span><span class="org-comment">pyidx cols,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">cdef class FrontierCellInfo:</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef coord_yx cell_index</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">cdef bint is_burned</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">cdef FrontierCellInfo new_FrontierCellInfo(</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">coord_yx cell_index,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">bint is_burned,</span>
-<span class="org-comment-delimiter">#     </span><span class="org-comment">)</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">cdef list[FrontierCellInfo] decode_frontier_cells(set frontier_cells, float[:,::1] phi_matrix)</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">cdef dict decode_frontier_cells(set frontier_cells, float[:,::1] phi_matrix)</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">cdef void spot_from_burned_cell(</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">SpreadInputs spread_inputs,</span>
 <span class="org-comment-delimiter">#     </span><span class="org-comment">unsigned char[:,::1] fire_type_matrix,</span>

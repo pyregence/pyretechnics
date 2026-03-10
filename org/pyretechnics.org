@@ -9919,42 +9919,26 @@ def identify_tracked_cells(frontier_cells: set,
     return tracked_cells
 
 
-# NOTE: Using an Extension Type here instead of a struct because it's
-#       convenient to store in Python data structures like lists and dicts.
-@cy.cclass
-class FrontierCellInfo:
-    """
-    This data structure simply records information about a frontier cell.
-    """
-    cell_index: coord_yx
-    is_burned : cy.bint
-
-
 @cy.cfunc
-def new_FrontierCellInfo(cell_index: coord_yx,
-                         is_burned : cy.bint) -> FrontierCellInfo:
-    ret: FrontierCellInfo = FrontierCellInfo()
-    ret.cell_index        = cell_index
-    ret.is_burned         = is_burned
-    return ret
-
-
-@cy.cfunc
-def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> list[FrontierCellInfo]:
-    frontier_cells_decoded: list[FrontierCellInfo] = []
-    encoded_cell_index    : object
-    cell_index            : coord_yx
-    y                     : pyidx
-    x                     : pyidx
+def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
+    frontier_cells_burned  : list[coord_yx] = []
+    frontier_cells_unburned: list[coord_yx] = []
+    encoded_cell_index     : object
+    cell_index             : coord_yx
+    y                      : pyidx
+    x                      : pyidx
     for encoded_cell_index in frontier_cells:
         cell_index = decode_cell_index(encoded_cell_index)
         y          = cell_index[0]
         x          = cell_index[1]
-        frontier_cells_decoded.append(
-            new_FrontierCellInfo(cell_index = cell_index,
-                                 is_burned  = phi_matrix[2+y, 2+x] < 0.0)
-        )
-    return frontier_cells_decoded
+        if (phi_matrix[2+y, 2+x] < 0.0):
+            frontier_cells_burned.append(cell_index)
+        else:
+            frontier_cells_unburned.append(cell_index)
+    return {
+        "burned_cells"  : frontier_cells_burned,
+        "unburned_cells": frontier_cells_unburned,
+    }
 #+end_src
 
 *** Spread Phi Field
@@ -16455,14 +16439,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     pyidx cols,
 #     )
 # cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)
-# cdef class FrontierCellInfo:
-#     cdef coord_yx cell_index
-#     cdef bint is_burned
-# cdef FrontierCellInfo new_FrontierCellInfo(
-#     coord_yx cell_index,
-#     bint is_burned,
-#     )
-# cdef list[FrontierCellInfo] decode_frontier_cells(set frontier_cells, float[:,::1] phi_matrix)
+# cdef dict decode_frontier_cells(set frontier_cells, float[:,::1] phi_matrix)
 # cdef void spot_from_burned_cell(
 #     SpreadInputs spread_inputs,
 #     unsigned char[:,::1] fire_type_matrix,
