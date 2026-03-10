@@ -1046,6 +1046,44 @@ def identify_tracked_cells(frontier_cells: set,
         (y, x) = decode_cell_index(encoded_cell_index)
         nbt.inc_square_around(tracked_cells, y, x, buffer_width)
     return tracked_cells
+
+
+# NOTE: Using an Extension Type here instead of a struct because it's
+#       convenient to store in Python data structures like lists and dicts.
+@cy.cclass
+class FrontierCellInfo:
+    """
+    This data structure simply records information about a frontier cell.
+    """
+    cell_index: coord_yx
+    is_burned : cy.bint
+
+
+@cy.cfunc
+def new_FrontierCellInfo(cell_index: coord_yx,
+                         is_burned : cy.bint) -> FrontierCellInfo:
+    ret: FrontierCellInfo = FrontierCellInfo()
+    ret.cell_index        = cell_index
+    ret.is_burned         = is_burned
+    return ret
+
+
+@cy.cfunc
+def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> list[FrontierCellInfo]:
+    frontier_cells_decoded: list[FrontierCellInfo] = []
+    encoded_cell_index    : object
+    cell_index            : coord_yx
+    y                     : pyidx
+    x                     : pyidx
+    for encoded_cell_index in frontier_cells:
+        cell_index = decode_cell_index(encoded_cell_index)
+        y          = cell_index[0]
+        x          = cell_index[1]
+        frontier_cells_decoded.append(
+            new_FrontierCellInfo(cell_index = cell_index,
+                                 is_burned  = phi_matrix[2+y, 2+x] < 0.0)
+        )
+    return frontier_cells_decoded
 # phi-field-perimeter-tracking ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 # TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
@@ -2844,11 +2882,13 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
                            else "no burnable cells")
 
     # Return the final simulation results
+    spread_state = sim_state["spread_state"]
     return {
         "stop_time"        : sim_state["simulation_time"],
         "stop_condition"   : stop_condition,
-        "spread_state"     : sim_state["spread_state"],
+        "spread_state"     : spread_state,
         "num_tracked_cells": tracked_cells.num_tracked_cells,
+        "frontier_cells"   : decode_frontier_cells(sim_state["frontier_cells"], spread_state.phi),
     } | ({
         "spot_ignitions"  : sim_state["spot_ignitions"],
         "random_generator": sim_state["random_generator"],

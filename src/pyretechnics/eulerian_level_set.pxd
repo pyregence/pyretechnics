@@ -112,6 +112,14 @@
 #     pyidx cols,
 #     )
 # cdef NarrowBandTracker identify_tracked_cells(set frontier_cells, pyidx buffer_width, pyidx rows, pyidx cols)
+# cdef class FrontierCellInfo:
+#     cdef coord_yx cell_index
+#     cdef bint is_burned
+# cdef FrontierCellInfo new_FrontierCellInfo(
+#     coord_yx cell_index,
+#     bint is_burned,
+#     )
+# cdef list[FrontierCellInfo] decode_frontier_cells(set frontier_cells, float[:,::1] phi_matrix)
 # cdef void spot_from_burned_cell(
 #     SpreadInputs spread_inputs,
 #     unsigned char[:,::1] fire_type_matrix,
