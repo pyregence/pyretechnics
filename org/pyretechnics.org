@@ -13538,6 +13538,9 @@ for heatmap_config in heatmap_configs_fork:
    :END:
 
 *** Ordering the Frontier Cells
+    :PROPERTIES:
+    :CUSTOM_ID: ordering-the-frontier-cells
+    :END:
 
 |---+---+---+---+---+---+---+---+---+---+---|
 | 9 |   |   |   |   |   |   |   |   |   |   |
@@ -13799,6 +13802,9 @@ def order_frontier_cells(frontier_cells):
    :END:
 
 *** How to Order the Frontier Cells
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-order-the-frontier-cells
+    :END:
 
 #+NAME: order-frontier-cells-simple-ellipse
 #+begin_src python :results silent
@@ -13849,17 +13855,13 @@ unordered_matrix = np.zeros((100,100), dtype=np.int8)
 ordered_matrix   = np.zeros((100,100), dtype=np.int8)
 
 
-burned_cells_list   = list(burned_cells)
-unburned_cells_list = list(unburned_cells)
-
-
-for i in range(len(burned_cells_list)):
-    (y, x) = burned_cells_list[i]
+for i in range(len(burned_cells)):
+    (y, x) = burned_cells[i]
     unordered_matrix[y,x] = -i-1
 
 
-for i in range(len(unburned_cells_list)):
-    (y, x) = unburned_cells_list[i]
+for i in range(len(unburned_cells)):
+    (y, x) = unburned_cells[i]
     unordered_matrix[y,x] = i+1
 
 
@@ -13886,14 +13888,14 @@ heatmap_configs = [
     {
         "matrix"  : unordered_matrix,
         "colors"  : "autumn",
-        "units"   : "cell order",
+        "units"   : "cell order (< 0: burned, > 0: unburned)",
         "title"   : "Cell Order in Unordered Frontier Cells",
         "filename": "org/pics/unordered_frontier_cells.png",
     },
     {
         "matrix"  : ordered_matrix,
         "colors"  : "autumn",
-        "units"   : "cell order",
+        "units"   : "cell order (< 0: burned, > 0: unburned)",
         "title"   : "Cell Order in Ordered Frontier Cells",
         "filename": "org/pics/ordered_frontier_cells.png",
     },
@@ -13902,13 +13904,6 @@ heatmap_configs = [
 
 for heatmap_config in heatmap_configs:
     save_matrix_as_heatmap(**heatmap_config)
-
-
-def build_fire_lines(boundary_cells):
-    """
-    Takes the boundary_cells and the fuel_model array and mutates the fuel_model array by adding nonburnable cells.
-    """
-    return []
 #+end_src
 
 #+NAME: order-frontier-cells-simple-ellipse-heatmaps

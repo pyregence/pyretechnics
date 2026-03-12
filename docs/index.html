@@ -428,12 +428,12 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#for-developers-suppression">10.1. For Developers</a>
 <ul>
-<li><a href="#orgc7dd220">10.1.1. Ordering the Frontier Cells</a></li>
+<li><a href="#ordering-the-frontier-cells">10.1.1. Ordering the Frontier Cells</a></li>
 </ul>
 </li>
 <li><a href="#for-users-suppression">10.2. For Users</a>
 <ul>
-<li><a href="#org69fdf3a">10.2.1. How to Order the Frontier Cells</a></li>
+<li><a href="#how-to-order-the-frontier-cells">10.2.1. How to Order the Frontier Cells</a></li>
 </ul>
 </li>
 </ul>
@@ -14709,9 +14709,9 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <div class="outline-text-3" id="text-for-developers-suppression">
 </div>
 
-<div id="outline-container-orgc7dd220" class="outline-4">
-<h4 id="orgc7dd220"><span class="section-number-4">10.1.1.</span> Ordering the Frontier Cells</h4>
-<div class="outline-text-4" id="text-10-1-1">
+<div id="outline-container-ordering-the-frontier-cells" class="outline-4">
+<h4 id="ordering-the-frontier-cells"><span class="section-number-4">10.1.1.</span> Ordering the Frontier Cells</h4>
+<div class="outline-text-4" id="text-ordering-the-frontier-cells">
 <table>
 
 
@@ -15140,9 +15140,9 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <div class="outline-text-3" id="text-for-users-suppression">
 </div>
 
-<div id="outline-container-org69fdf3a" class="outline-4">
-<h4 id="org69fdf3a"><span class="section-number-4">10.2.1.</span> How to Order the Frontier Cells</h4>
-<div class="outline-text-4" id="text-10-2-1">
+<div id="outline-container-how-to-order-the-frontier-cells" class="outline-4">
+<h4 id="how-to-order-the-frontier-cells"><span class="section-number-4">10.2.1.</span> How to Order the Frontier Cells</h4>
+<div class="outline-text-4" id="text-how-to-order-the-frontier-cells">
 <div class="org-src-container">
 <pre class="src src-python" id="order-frontier-cells-simple-ellipse"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
@@ -15191,17 +15191,13 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <span class="org-variable-name">ordered_matrix</span>   <span class="org-operator">=</span> np.zeros((100,100), dtype<span class="org-operator">=</span>np.int8)
 
 
-<span class="org-variable-name">burned_cells_list</span>   <span class="org-operator">=</span> <span class="org-builtin">list</span>(burned_cells)
-<span class="org-variable-name">unburned_cells_list</span> <span class="org-operator">=</span> <span class="org-builtin">list</span>(unburned_cells)
-
-
-<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(burned_cells_list)):
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> burned_cells_list[i]
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(burned_cells)):
+    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> burned_cells[i]
     <span class="org-variable-name">unordered_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> <span class="org-operator">-</span>i<span class="org-operator">-</span>1
 
 
-<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(unburned_cells_list)):
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> unburned_cells_list[i]
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(unburned_cells)):
+    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> unburned_cells[i]
     <span class="org-variable-name">unordered_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> i<span class="org-operator">+</span>1
 
 
@@ -15228,14 +15224,14 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     {
         <span class="org-string">"matrix"</span>  : unordered_matrix,
         <span class="org-string">"colors"</span>  : <span class="org-string">"autumn"</span>,
-        <span class="org-string">"units"</span>   : <span class="org-string">"cell order"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"cell order (&lt; 0: burned, &gt; 0: unburned)"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Cell Order in Unordered Frontier Cells"</span>,
         <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/unordered_frontier_cells.png"</span>,
     },
     {
         <span class="org-string">"matrix"</span>  : ordered_matrix,
         <span class="org-string">"colors"</span>  : <span class="org-string">"autumn"</span>,
-        <span class="org-string">"units"</span>   : <span class="org-string">"cell order"</span>,
+        <span class="org-string">"units"</span>   : <span class="org-string">"cell order (&lt; 0: burned, &gt; 0: unburned)"</span>,
         <span class="org-string">"title"</span>   : <span class="org-string">"Cell Order in Ordered Frontier Cells"</span>,
         <span class="org-string">"filename"</span>: <span class="org-string">"org/pics/ordered_frontier_cells.png"</span>,
     },
@@ -15244,13 +15240,6 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 <span class="org-keyword">for</span> heatmap_config <span class="org-keyword">in</span> heatmap_configs:
     save_matrix_as_heatmap(<span class="org-operator">**</span>heatmap_config)
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">build_fire_lines</span>(boundary_cells):
-    <span class="org-doc">"""</span>
-<span class="org-doc">    Takes the boundary_cells and the fuel_model array and mutates the fuel_model array by adding nonburnable cells.</span>
-<span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> []
 </pre>
 </div>
 
