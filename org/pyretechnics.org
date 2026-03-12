@@ -13525,9 +13525,9 @@ for heatmap_config in heatmap_configs_fork:
 | file:pics/els_flame_length_main_cube.png       | file:pics/els_flame_length_fork_cube.png       |
 |------------------------------------------------+------------------------------------------------|
 
-* [WIP] Fire Suppression Algorithms (pyretechnics.suppression) :noexport:
+* Fire Suppression Techniques (pyretechnics.suppression)
   :PROPERTIES:
-  :CUSTOM_ID: [wip]-fire-suppression-algorithms-(pyretechnics.suppression)
+  :CUSTOM_ID: fire-suppression-techniques-(pyretechnics.suppression)
   :END:
 ** For Developers
    :PROPERTIES:
@@ -13537,6 +13537,259 @@ for heatmap_config in heatmap_configs_fork:
    :header-args:python+: :exports code
    :END:
 
+*** Ordering the Frontier Cells
+
+|---+---+---+---+---+---+---+---+---+---+---|
+| 9 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 8 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 7 |   |   |   |   |   | X | X |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 6 |   |   |   |   | X | X | X |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 5 |   |   |   | X | X | X | X |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 4 |   |   |   | X | X | X | X |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 3 |   |   |   | X | X | X |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 2 |   |   |   | X | X |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 1 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 0 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+|   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---+---+---+---+---+---+---+---+---+---+---|
+
+#+NAME: order-frontier-cells
+#+begin_src python
+def get_ordered_sides(cell_index, is_burned):
+    y     = cell_index[0]
+    x     = cell_index[1]
+    north = y + 0.5
+    south = y - 0.5
+    east  = x + 0.5
+    west  = x - 0.5
+
+    # Define cell sides as (y1,x1,y2,x2) where (y1,x1) and (y2,x2) are cell corners and (y1,x1)->(y2,x2)
+    # is a directional cell side with an unburned cell to the left and a burned cell to the right.
+    if is_burned:
+        # Clockwise
+        north_side = (north, west, north, east)
+        east_side  = (north, east, south, east)
+        south_side = (south, east, south, west)
+        west_side  = (south, west, north, west)
+    else:
+        # Counterclockwise
+        north_side = (north, east, north, west)
+        west_side  = (north, west, south, west)
+        south_side = (south, west, south, east)
+        east_side  = (south, east, north, east)
+
+    return {north_side, east_side, south_side, west_side}
+
+
+def get_frontier_sides(frontier_cells):
+    burned_cells        = frontier_cells["burned_cells"]
+    unburned_cells      = frontier_cells["unburned_cells"]
+    burned_cell_sides   = set()
+    unburned_cell_sides = set()
+
+    for cell in burned_cells:
+        burned_cell_sides.update(get_ordered_sides(cell, True))
+
+    for cell in unburned_cells:
+        unburned_cell_sides.update(get_ordered_sides(cell, False))
+
+    frontier_sides = set.intersection(burned_cell_sides, unburned_cell_sides)
+
+    return frontier_sides
+
+
+def get_frontier_corner_graph(frontier_sides):
+    frontier_corner_graph = {}
+
+    for side in frontier_sides:
+        (y1, x1, y2, x2) = side
+        corner1          = (y1, x1)
+        corner2          = (y2, x2)
+        # NOTE: If corner1 has multiple corner2 values, we retain both.
+        prev_corner2 = frontier_corner_graph.get(corner1)
+        if prev_corner2:
+            frontier_corner_graph[corner1] = [prev_corner2, corner2]
+        else:
+            frontier_corner_graph[corner1] = corner2
+
+    return frontier_corner_graph
+
+
+# TODO: Remove debugging print statements
+def group_corners_by_type(frontier_corner_graph):
+    parent_corners = set(frontier_corner_graph.keys())
+    child_corners  = set()
+    for corner in frontier_corner_graph.values():
+        if isinstance(corner, list):
+            child_corners.update(corner)
+        else:
+            child_corners.add(corner)
+    root_corners = set.difference(parent_corners, child_corners)
+    leaf_corners = set.difference(child_corners, parent_corners)
+
+    if len(root_corners) == 0:
+        if len(leaf_corners) == 0:
+            # Begin anywhere and traverse one or more cycles
+            print("Only cycles detected.")
+        else:
+            # Begin anywhere and traverse one or more cycles with one or more branching nodes that terminate on leaves
+            print("No roots but some trailing leaves exist.")
+    else:
+        if len(leaf_corners) == 0:
+            # Begin on roots and traverse one or more cycles with branching nodes that continue the cycles
+            print("No leaves but some trailing roots exist.")
+        else:
+            # Begin on roots and traverse one or more cycles with one or more branching nodes that terminate on leaves
+            print("Both roots and leaves detected.")
+
+    return {
+        "parent_corners": parent_corners,
+        "child_corners" : child_corners,
+        "root_corners"  : root_corners,
+        "leaf_corners"  : leaf_corners,
+    }
+
+
+def get_side_direction(corner1, corner2):
+    (y1, x1) = corner1
+    (y2, x2) = corner2
+    if y1 == y2:
+        if x2 > x1:
+            return "east"
+        else:
+            return "west"
+    else:
+        if y2 > y1:
+            return "north"
+        else:
+            return "south"
+
+
+get_left_direction = {
+    "north": "west",
+    "east" : "north",
+    "south": "east",
+    "west" : "south",
+}
+
+
+def iterative_graph_traversal(frontier_corner_graph, root_corner):
+    corner_sequence    = [root_corner]
+    visited_corners    = set(corner_sequence)
+    grandparent_corner = None
+    parent_corner      = root_corner
+    child_corner       = frontier_corner_graph.get(parent_corner)
+    while(child_corner and child_corner not in visited_corners):
+        if isinstance(child_corner, list):
+            (child_corner1, child_corner2) = child_corner
+            if grandparent_corner is None:
+                # NOTE: Only happens if the root_corner branches toward two child_corners (should be rare).
+                # Use child_corner1 in the absence of better information
+                corner_sequence.append(child_corner1)
+                visited_corners.add(child_corner1)
+                grandparent_corner = parent_corner
+                parent_corner      = child_corner1
+                child_corner       = frontier_corner_graph.get(parent_corner)
+            else:
+                # NOTE: Prefer a left turn over a right turn as this should increase polygon convexity
+                #       since we are traversing the frontier in a clockwise direction.
+                incoming_direction      = get_side_direction(grandparent_corner, parent_corner)
+                outgoing_direction1     = get_side_direction(parent_corner, child_corner1)
+                outgoing_direction2     = get_side_direction(parent_corner, child_corner2)
+                outgoing_left_direction = get_left_direction(incoming_direction)
+                if outgoing_left_direction == outgoing_direction1:
+                    # Use child_corner1
+                    corner_sequence.append(child_corner1)
+                    visited_corners.add(child_corner1)
+                    grandparent_corner = parent_corner
+                    parent_corner      = child_corner1
+                    child_corner       = frontier_corner_graph.get(parent_corner)
+                else:
+                    # Use child_corner2
+                    corner_sequence.append(child_corner2)
+                    visited_corners.add(child_corner2)
+                    grandparent_corner = parent_corner
+                    parent_corner      = child_corner2
+                    child_corner       = frontier_corner_graph.get(parent_corner)
+        else:
+            corner_sequence.append(child_corner)
+            visited_corners.add(child_corner)
+            grandparent_corner = parent_corner
+            parent_corner      = child_corner
+            child_corner       = frontier_corner_graph.get(parent_corner)
+    if (child_corner and child_corner in visited_corners):
+        # Ended on a cycle, so add it to corner_sequence
+        corner_sequence.append(child_corner)
+    return corner_sequence
+
+
+def corners_to_ordered_frontier_cells(corner_sequence):
+    burned_cells   = []
+    unburned_cells = []
+    parent_corner  = corner_sequence[0]
+    for child_corner in corner_sequence[1:]:
+        (y1, x1)  = parent_corner
+        (y2, x2)  = child_corner
+        direction = get_side_direction(parent_corner, child_corner)
+        if direction == "north":
+            y         = int(y1 + 0.5)
+            x_left    = int(x1 - 0.5)
+            x_right   = int(x1 + 0.5)
+            east_cell = (y, x_right)
+            west_cell = (y, x_left)
+            burned_cells.append(east_cell)
+            unburned_cells.append(west_cell)
+        elif direction == "east":
+            y_up       = int(y1 + 0.5)
+            y_down     = int(y1 - 0.5)
+            x          = int(x1 + 0.5)
+            north_cell = (y_up  , x)
+            south_cell = (y_down, x)
+            burned_cells.append(south_cell)
+            unburned_cells.append(north_cell)
+        elif direction == "south":
+            y         = int(y2 + 0.5)
+            x_left    = int(x1 - 0.5)
+            x_right   = int(x1 + 0.5)
+            east_cell = (y, x_right)
+            west_cell = (y, x_left)
+            burned_cells.append(west_cell)
+            unburned_cells.append(east_cell)
+        else: # direction == "west"
+            y_up       = int(y1 + 0.5)
+            y_down     = int(y1 - 0.5)
+            x          = int(x2 + 0.5)
+            north_cell = (y_up  , x)
+            south_cell = (y_down, x)
+            burned_cells.append(north_cell)
+            unburned_cells.append(south_cell)
+        parent_corner = child_corner
+    return {
+        "burned_cells"  : burned_cells,
+        "unburned_cells": unburned_cells,
+    }
+
+
+def order_frontier_cells(frontier_cells):
+    frontier_sides         = get_frontier_sides(frontier_cells)
+    frontier_corner_graph  = get_frontier_corner_graph(frontier_sides)
+    corner_info            = group_corners_by_type(frontier_corner_graph)
+    corner_sequence        = iterative_graph_traversal(frontier_corner_graph, list(corner_info["parent_corners"])[0]) # FIXME: Explore all paths from the root_corners until all corners have been visited. Return a list of lists.
+    ordered_frontier_cells = corners_to_ordered_frontier_cells(corner_sequence)
+
+    return ordered_frontier_cells
+#+end_src
+
 ** For Users
    :PROPERTIES:
    :CUSTOM_ID: for-users-suppression
@@ -13544,6 +13797,125 @@ for heatmap_config in heatmap_configs_fork:
    :header-args:python+: :results output replace
    :header-args:python+: :exports both
    :END:
+
+*** How to Order the Frontier Cells
+
+#+NAME: order-frontier-cells-simple-ellipse
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from pyretechnics.suppression import order_frontier_cells
+
+# NOTE: This is how you normally extract the frontier cells from a fire spread simulation:
+#
+# fire_spread_results = els.spread_fire_with_phi_field(...)
+# frontier_cells      = fire_spread_results["frontier_cells"]
+# burned_cells        = frontier_cells["burned_cells"]
+# unburned_cells      = frontier_cells["unburned_cells"]
+
+# Define some example values for algorithm testing
+burned_cells   = [(53, 47), (51, 47), (55, 46), (54, 46), (47, 51), (47, 52), (47, 54), (47, 56), (48, 58), (47, 55),
+                  (50, 61), (47, 57), (70, 54), (71, 55), (53, 65), (56, 67), (59, 68), (65, 70), (66, 70), (67, 70),
+                  (68, 70), (73, 68), (72, 69), (63, 70), (60, 47), (59, 47), (57, 46), (52, 47), (56, 46), (61, 47),
+                  (58, 47), (50, 47), (63, 48), (62, 48), (49, 48), (65, 49), (48, 49), (64, 49), (48, 50), (66, 50),
+                  (67, 51), (68, 52), (47, 53), (69, 53), (71, 56), (72, 57), (72, 58), (48, 59), (73, 59), (49, 60),
+                  (73, 60), (73, 61), (50, 62), (74, 62), (51, 63), (74, 63), (52, 64), (74, 64), (54, 65), (74, 65),
+                  (55, 66), (74, 66), (57, 67), (73, 67), (58, 68), (62, 69), (61, 69), (60, 69), (64, 70), (69, 70),
+                  (70, 70), (71, 70)]
+
+
+unburned_cells = [(56, 45), (53, 46), (46, 52), (46, 53), (46, 54), (46, 55), (75, 65), (58, 69), (67, 71), (68, 71),
+                  (64, 71), (65, 71), (51, 46), (49, 47), (64, 48), (55, 45), (54, 45), (57, 45), (60, 46), (52, 46),
+                  (61, 46), (58, 46), (62, 47), (59, 46), (50, 46), (65, 48), (63, 47), (48, 48), (66, 49), (67, 50),
+                  (47, 49), (47, 50), (46, 51), (68, 51), (69, 52), (70, 53), (71, 54), (72, 55), (46, 56), (72, 56),
+                  (73, 57), (46, 57), (47, 58), (73, 58), (47, 59), (74, 59), (48, 60), (74, 60), (49, 61), (74, 61),
+                  (49, 62), (75, 62), (50, 63), (75, 63), (51, 64), (75, 64), (52, 65), (75, 66), (54, 66), (53, 66),
+                  (55, 67), (74, 67), (57, 68), (56, 68), (74, 68), (73, 69), (59, 69), (60, 70), (72, 70), (62, 70),
+                  (61, 70), (66, 71), (69, 71), (70, 71), (63, 71), (71, 71)]
+
+
+frontier_cells = {
+    "burned_cells"  : burned_cells,
+    "unburned_cells": unburned_cells,
+}
+
+
+ordered_frontier_cells = order_frontier_cells(frontier_cells)
+ordered_burned_cells   = ordered_frontier_cells["burned_cells"]
+ordered_unburned_cells = ordered_frontier_cells["unburned_cells"]
+
+
+unordered_matrix = np.zeros((100,100), dtype=np.int8)
+ordered_matrix   = np.zeros((100,100), dtype=np.int8)
+
+
+burned_cells_list   = list(burned_cells)
+unburned_cells_list = list(unburned_cells)
+
+
+for i in range(len(burned_cells_list)):
+    (y, x) = burned_cells_list[i]
+    unordered_matrix[y,x] = -i-1
+
+
+for i in range(len(unburned_cells_list)):
+    (y, x) = unburned_cells_list[i]
+    unordered_matrix[y,x] = i+1
+
+
+for i in range(len(ordered_burned_cells)):
+    (y, x) = ordered_burned_cells[i]
+    ordered_matrix[y,x] = -i-1
+
+
+for i in range(len(ordered_unburned_cells)):
+    (y, x) = ordered_unburned_cells[i]
+    ordered_matrix[y,x] = i+1
+
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+heatmap_configs = [
+    {
+        "matrix"  : unordered_matrix,
+        "colors"  : "autumn",
+        "units"   : "cell order",
+        "title"   : "Cell Order in Unordered Frontier Cells",
+        "filename": "org/pics/unordered_frontier_cells.png",
+    },
+    {
+        "matrix"  : ordered_matrix,
+        "colors"  : "autumn",
+        "units"   : "cell order",
+        "title"   : "Cell Order in Ordered Frontier Cells",
+        "filename": "org/pics/ordered_frontier_cells.png",
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_matrix_as_heatmap(**heatmap_config)
+
+
+def build_fire_lines(boundary_cells):
+    """
+    Takes the boundary_cells and the fuel_model array and mutates the fuel_model array by adding nonburnable cells.
+    """
+    return []
+#+end_src
+
+#+NAME: order-frontier-cells-simple-ellipse-heatmaps
+#+caption: Frontier Cells Before and After Ordering
+|----------------------------------------+--------------------------------------|
+| file:pics/unordered_frontier_cells.png | file:pics/ordered_frontier_cells.png |
+|----------------------------------------+--------------------------------------|
 
 * [WIP] Urban Spread Algorithms :noexport:
   :PROPERTIES:
