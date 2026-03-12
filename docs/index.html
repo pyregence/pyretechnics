@@ -14966,7 +14966,6 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-keyword">return</span> frontier_corner_graph
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Remove debugging print statements</span>
 <span class="org-keyword">def</span> <span class="org-function-name">group_corners_by_type</span>(frontier_corner_graph):
     <span class="org-variable-name">parent_corners</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>(frontier_corner_graph.keys())
     <span class="org-variable-name">child_corners</span>  <span class="org-operator">=</span> <span class="org-builtin">set</span>()
@@ -14977,22 +14976,6 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
             child_corners.add(corner)
     <span class="org-variable-name">root_corners</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>.difference(parent_corners, child_corners)
     <span class="org-variable-name">leaf_corners</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>.difference(child_corners, parent_corners)
-
-    <span class="org-keyword">if</span> <span class="org-builtin">len</span>(root_corners) <span class="org-operator">==</span> 0:
-        <span class="org-keyword">if</span> <span class="org-builtin">len</span>(leaf_corners) <span class="org-operator">==</span> 0:
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Begin anywhere and traverse one or more cycles</span>
-            <span class="org-builtin">print</span>(<span class="org-string">"Only cycles detected."</span>)
-        <span class="org-keyword">else</span>:
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Begin anywhere and traverse one or more cycles with one or more branching nodes that terminate on leaves</span>
-            <span class="org-builtin">print</span>(<span class="org-string">"No roots but some trailing leaves exist."</span>)
-    <span class="org-keyword">else</span>:
-        <span class="org-keyword">if</span> <span class="org-builtin">len</span>(leaf_corners) <span class="org-operator">==</span> 0:
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Begin on roots and traverse one or more cycles with branching nodes that continue the cycles</span>
-            <span class="org-builtin">print</span>(<span class="org-string">"No leaves but some trailing roots exist."</span>)
-        <span class="org-keyword">else</span>:
-            <span class="org-comment-delimiter"># </span><span class="org-comment">Begin on roots and traverse one or more cycles with one or more branching nodes that terminate on leaves</span>
-            <span class="org-builtin">print</span>(<span class="org-string">"Both roots and leaves detected."</span>)
-
     <span class="org-keyword">return</span> {
         <span class="org-string">"parent_corners"</span>: parent_corners,
         <span class="org-string">"child_corners"</span> : child_corners,
@@ -15125,8 +15108,22 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-variable-name">frontier_sides</span>         <span class="org-operator">=</span> get_frontier_sides(frontier_cells)
     <span class="org-variable-name">frontier_corner_graph</span>  <span class="org-operator">=</span> get_frontier_corner_graph(frontier_sides)
     <span class="org-variable-name">corner_info</span>            <span class="org-operator">=</span> group_corners_by_type(frontier_corner_graph)
-    <span class="org-variable-name">corner_sequence</span>        <span class="org-operator">=</span> iterative_graph_traversal(frontier_corner_graph, <span class="org-builtin">list</span>(corner_info[<span class="org-string">"parent_corners"</span>])[0]) <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Explore all paths from the root_corners until all corners have been visited. Return a list of lists.</span>
-    <span class="org-variable-name">ordered_frontier_cells</span> <span class="org-operator">=</span> corners_to_ordered_frontier_cells(corner_sequence)
+    <span class="org-variable-name">ordered_frontier_cells</span> <span class="org-operator">=</span> []
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Process all linestrings</span>
+    <span class="org-keyword">for</span> root_corner <span class="org-keyword">in</span> corner_info[<span class="org-string">"root_corners"</span>]:
+        <span class="org-variable-name">corner_sequence</span> <span class="org-operator">=</span> iterative_graph_traversal(frontier_corner_graph, root_corner)
+        <span class="org-keyword">for</span> corner <span class="org-keyword">in</span> corner_sequence:
+            frontier_corner_graph.pop(corner, <span class="org-constant">None</span>)
+        ordered_frontier_cells.append(corners_to_ordered_frontier_cells(corner_sequence))
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Process all rings</span>
+    <span class="org-keyword">while</span>(<span class="org-builtin">len</span>(frontier_corner_graph) <span class="org-operator">&gt;</span> 0):
+        <span class="org-variable-name">parent_corner</span>   <span class="org-operator">=</span> <span class="org-builtin">next</span>(<span class="org-builtin">iter</span>(frontier_corner_graph))
+        <span class="org-variable-name">corner_sequence</span> <span class="org-operator">=</span> iterative_graph_traversal(frontier_corner_graph, parent_corner)
+        <span class="org-keyword">for</span> corner <span class="org-keyword">in</span> corner_sequence:
+            frontier_corner_graph.pop(corner, <span class="org-constant">None</span>)
+        ordered_frontier_cells.append(corners_to_ordered_frontier_cells(corner_sequence))
 
     <span class="org-keyword">return</span> ordered_frontier_cells
 </pre>
@@ -15183,8 +15180,8 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 
 <span class="org-variable-name">ordered_frontier_cells</span> <span class="org-operator">=</span> order_frontier_cells(frontier_cells)
-<span class="org-variable-name">ordered_burned_cells</span>   <span class="org-operator">=</span> ordered_frontier_cells[<span class="org-string">"burned_cells"</span>]
-<span class="org-variable-name">ordered_unburned_cells</span> <span class="org-operator">=</span> ordered_frontier_cells[<span class="org-string">"unburned_cells"</span>]
+<span class="org-variable-name">ordered_burned_cells</span>   <span class="org-operator">=</span> ordered_frontier_cells[0][<span class="org-string">"burned_cells"</span>]
+<span class="org-variable-name">ordered_unburned_cells</span> <span class="org-operator">=</span> ordered_frontier_cells[0][<span class="org-string">"unburned_cells"</span>]
 
 
 <span class="org-variable-name">unordered_matrix</span> <span class="org-operator">=</span> np.zeros((100,100), dtype<span class="org-operator">=</span>np.int8)

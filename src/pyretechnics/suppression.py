@@ -59,7 +59,6 @@ def get_frontier_corner_graph(frontier_sides):
     return frontier_corner_graph
 
 
-# TODO: Remove debugging print statements
 def group_corners_by_type(frontier_corner_graph):
     parent_corners = set(frontier_corner_graph.keys())
     child_corners  = set()
@@ -70,22 +69,6 @@ def group_corners_by_type(frontier_corner_graph):
             child_corners.add(corner)
     root_corners = set.difference(parent_corners, child_corners)
     leaf_corners = set.difference(child_corners, parent_corners)
-
-    if len(root_corners) == 0:
-        if len(leaf_corners) == 0:
-            # Begin anywhere and traverse one or more cycles
-            print("Only cycles detected.")
-        else:
-            # Begin anywhere and traverse one or more cycles with one or more branching nodes that terminate on leaves
-            print("No roots but some trailing leaves exist.")
-    else:
-        if len(leaf_corners) == 0:
-            # Begin on roots and traverse one or more cycles with branching nodes that continue the cycles
-            print("No leaves but some trailing roots exist.")
-        else:
-            # Begin on roots and traverse one or more cycles with one or more branching nodes that terminate on leaves
-            print("Both roots and leaves detected.")
-
     return {
         "parent_corners": parent_corners,
         "child_corners" : child_corners,
@@ -218,8 +201,22 @@ def order_frontier_cells(frontier_cells):
     frontier_sides         = get_frontier_sides(frontier_cells)
     frontier_corner_graph  = get_frontier_corner_graph(frontier_sides)
     corner_info            = group_corners_by_type(frontier_corner_graph)
-    corner_sequence        = iterative_graph_traversal(frontier_corner_graph, list(corner_info["parent_corners"])[0]) # FIXME: Explore all paths from the root_corners until all corners have been visited. Return a list of lists.
-    ordered_frontier_cells = corners_to_ordered_frontier_cells(corner_sequence)
+    ordered_frontier_cells = []
+
+    # Process all linestrings
+    for root_corner in corner_info["root_corners"]:
+        corner_sequence = iterative_graph_traversal(frontier_corner_graph, root_corner)
+        for corner in corner_sequence:
+            frontier_corner_graph.pop(corner, None)
+        ordered_frontier_cells.append(corners_to_ordered_frontier_cells(corner_sequence))
+
+    # Process all rings
+    while(len(frontier_corner_graph) > 0):
+        parent_corner   = next(iter(frontier_corner_graph))
+        corner_sequence = iterative_graph_traversal(frontier_corner_graph, parent_corner)
+        for corner in corner_sequence:
+            frontier_corner_graph.pop(corner, None)
+        ordered_frontier_cells.append(corners_to_ordered_frontier_cells(corner_sequence))
 
     return ordered_frontier_cells
 # order-frontier-cells ends here
