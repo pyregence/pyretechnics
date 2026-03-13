@@ -224,13 +224,8 @@ def order_frontier_cells(frontier_cells):
 import numpy as np
 
 
-# NOTE : max_suppression_length should be expressed in cell side lengths
-def select_frontier_cells_for_suppression(ordered_frontier_cells, scoring_function, max_suppression_length):
-    if max_suppression_length < 1.0:
-        raise ValueError("The max_suppression_length must be at least 1.0 in order to be able "
-                         + " to suppress at least one frontier cell.")
-
-    selected_frontier_cells = []
+def score_frontier_cells(ordered_frontier_cells, scoring_function):
+    frontier_cell_scores = []
 
     for frontier in ordered_frontier_cells:
         burned_cells           = frontier["burned_cells"]
@@ -255,9 +250,33 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, scoring_functi
             if unburned_cells[i] == unburned_cells[i-1]:
                 distances[i] = half_diagonal_distance
 
-        if unburned_cells[-1] == unburned_cells[0]:
-            distances[-1] = half_diagonal_distance
-            distances[0]  = half_diagonal_distance
+        if unburned_cells[frontier_length-1] == unburned_cells[0]:
+            distances[frontier_length-1] = half_diagonal_distance
+            distances[0]                 = half_diagonal_distance
+
+        frontier_cell_scores.append({
+            "scores"   : scores,
+            "distances": distances,
+        })
+
+    return frontier_cell_scores
+
+
+# NOTE: max_suppression_length should be expressed in cell side lengths
+def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
+    if max_suppression_length < 1.0:
+        raise ValueError("The max_suppression_length must be at least 1.0 in order to be able "
+                         + " to suppress at least one frontier cell.")
+
+    selected_frontier_cells = []
+
+    for i in range(len(ordered_frontier_cells)):
+        frontier        = ordered_frontier_cells[i]
+        unburned_cells  = frontier["unburned_cells"]
+        frontier_length = len(unburned_cells)
+        frontier_scores = frontier_cell_scores[i]
+        scores          = frontier_scores["scores"]
+        distances       = frontier_scores["distances"]
 
         # Use a moving window to find the sequence of frontier cells with the maximum total score
         # whose total frontier length is less than or equal to max_suppression_length.
@@ -271,16 +290,10 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, scoring_functi
 
         while(stop_idx < frontier_length):
             # Expand the moving window until we reach max_suppression_length or the end of the frontier
-            while(suppression_length < max_suppression_length and stop_idx < frontier_length):
+            while(stop_idx < frontier_length and suppression_length + distances[stop_idx] < max_suppression_length):
                 path_score         += scores[stop_idx]
                 suppression_length += distances[stop_idx]
                 stop_idx           += 1
-
-            # Backtrack one step if we overshot max_suppression_length
-            if suppression_length > max_suppression_length:
-                stop_idx           -= 1
-                path_score         -= scores[stop_idx]
-                suppression_length -= distances[stop_idx]
 
             # Record this path's info if its score is the highest one that we've seen yet
             if path_score > best_path_score:
