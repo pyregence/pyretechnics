@@ -12888,16 +12888,16 @@ spread_state_fork     = spread_state.copy()     # deep copy
 # Add a non-burnable fire-break to the forked space_time_cubes fuel model
 #============================================================================================
 
-# Extract 2D array of fuel_model values at the cube's spatial dimensions (100 x 100)
-fuel_model_grid_ro = space_time_cubes["fuel_model"].getSpatialPlane(0, None, None) # read-only
-fuel_model_grid    = np.copy(fuel_model_grid_ro)                                   # writable
+# Extract a 2D array of fuel_model values at the cube's spatial dimensions (100 x 100)
+fuel_model_matrix_ro = space_time_cubes["fuel_model"].getSpatialPlane(0, None, None) # read-only
+fuel_model_matrix    = np.copy(fuel_model_matrix_ro)                                 # writable
 
 # Add a non-burnable fire-break in the northeastern corner of the grid
 (ys, xs) = np.diag_indices(40)
-fuel_model_grid[60:,60:][(list(reversed(ys)), xs)] = 91 # NB1
+fuel_model_matrix[60:,60:][(list(reversed(ys)), xs)] = 91 # NB1
 
 # Replace the old fuel_model cube with a new fire-break-containing cube
-space_time_cubes_fork["fuel_model"] = SpaceTimeCube(cube_shape, fuel_model_grid)
+space_time_cubes_fork["fuel_model"] = SpaceTimeCube(cube_shape, fuel_model_matrix)
 
 #============================================================================================
 # Run both simulations for another 4 hours
@@ -13795,6 +13795,7 @@ def order_frontier_cells(frontier_cells):
     :CUSTOM_ID: selecting-frontier-cells-for-suppression
     :END:
 
+#+NAME: select-frontier-cells-for-suppression
 #+begin_src python
 import numpy as np
 
@@ -13837,6 +13838,7 @@ def score_frontier_cells(ordered_frontier_cells, scoring_function):
     return frontier_cell_scores
 
 
+# FIXME: This should be selecting a single best choice from all of the perimeters.
 # NOTE: max_suppression_length should be expressed in cell side lengths
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
     if max_suppression_length < 1.0:
@@ -16061,15 +16063,6 @@ savefig(title="Max Flame Length", layer="max_flame_length", units="m", colors="h
 | file:pics/worcester_max_spread_rate.png        | file:pics/worcester_max_spread_direction.png |
 | file:pics/worcester_max_fireline_intensity.png | file:pics/worcester_max_flame_length.png     |
 |------------------------------------------------+----------------------------------------------|
-
-# #+begin_src python
-# frq, edges = np.histogram(copy)
-# fig, ax = plt.subplots()
-# ax.bar(edges[:-1], frq, width=np.diff(edges), edgecolor="black", align="edge")
-# plt.savefig("pics/worcester_max_spread_rate_diff.png")
-# #+end_src
-
-Layer Disagreement: [-10.93608, 8.9857025] inches/min
 
 ** Cython PXD Files
    :PROPERTIES:
