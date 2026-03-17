@@ -14309,7 +14309,7 @@ for spread_phase in range(1,13):
 | file:pics/suppressed_flame_length_07.png | file:pics/suppressed_fuel_model_07.png |
 | file:pics/suppressed_flame_length_08.png | file:pics/suppressed_fuel_model_08.png |
 | file:pics/suppressed_flame_length_09.png | file:pics/suppressed_fuel_model_09.png |
-| file:pics/suppressed_flame_length_10.png | file:pics/suppressed_fuel_model_19.png |
+| file:pics/suppressed_flame_length_10.png | file:pics/suppressed_fuel_model_10.png |
 | file:pics/suppressed_flame_length_11.png | file:pics/suppressed_fuel_model_11.png |
 | file:pics/suppressed_flame_length_12.png | file:pics/suppressed_fuel_model_12.png |
 |------------------------------------------+----------------------------------------|
