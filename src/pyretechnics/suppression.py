@@ -106,6 +106,7 @@ def iterative_graph_traversal(frontier_corner_graph, root_corner):
     grandparent_corner = None
     parent_corner      = root_corner
     child_corner       = frontier_corner_graph.get(parent_corner)
+    # FIXME: Cannot use "not in" when child_corner is a list
     while(child_corner and child_corner not in visited_corners):
         if isinstance(child_corner, list):
             (child_corner1, child_corner2) = child_corner
@@ -220,7 +221,7 @@ def order_frontier_cells(frontier_cells):
 
     return ordered_frontier_cells
 # order-frontier-cells ends here
-# [[file:../../org/pyretechnics.org::#selecting-frontier-cells-for-suppression][Selecting Frontier Cells for Suppression:1]]
+# [[file:../../org/pyretechnics.org::select-frontier-cells-for-suppression][select-frontier-cells-for-suppression]]
 import numpy as np
 
 
@@ -262,6 +263,7 @@ def score_frontier_cells(ordered_frontier_cells, scoring_function):
     return frontier_cell_scores
 
 
+# FIXME: This should be selecting a single best choice from all of the perimeters.
 # NOTE: max_suppression_length should be expressed in cell side lengths
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
     if max_suppression_length < 1.0:
@@ -309,4 +311,49 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
         selected_frontier_cells.append(unburned_cells[best_start_idx:best_stop_idx])
 
     return selected_frontier_cells
-# Selecting Frontier Cells for Suppression:1 ends here
+# select-frontier-cells-for-suppression ends here
+# [[file:../../org/pyretechnics.org::build-firelines][build-firelines]]
+# FIXME: Use fireline_construction_rate_function and max_construction_time instead of max_suppression_length
+def build_firelines(fuel_model_matrix, frontier_cells, suppression_priority_function, max_suppression_length):
+    # Order the frontier cells into a list of independent, spatially contiguous perimeters
+    ordered_frontier_cells = order_frontier_cells(frontier_cells)
+
+    # Assign suppression priority and distance scores to each perimeter
+    frontier_cell_scores = score_frontier_cells(ordered_frontier_cells, suppression_priority_function)
+
+    # Select cells to suppress for each perimeter
+    selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
+                                                                    frontier_cell_scores,
+                                                                    max_suppression_length)
+
+    # Change the values in fuel_model_matrix to non-burnable for all selected_frontier_cells
+    for fireline in selected_frontier_cells:
+        for cell in fireline:
+            (y, x)                 = cell
+            fuel_model_matrix[y,x] = 91 # non-burnable
+
+    return fuel_model_matrix
+# build-firelines ends here
+# [[file:../../org/pyretechnics.org::example-suppression-priority-functions][example-suppression-priority-functions]]
+import numpy as np
+
+
+def make_sdi_suppression_priority_fn(sdi_matrix):
+    # FIXME: Make this take a dictionary of 2D arrays
+    max_sdi = np.max(sdi_matrix) + 1.0
+    def sdi_suppression_priority(burned_cell, unburned_cell):
+        (y, x) = unburned_cell
+        return max_sdi - sdi_matrix[y,x]
+
+    return sdi_suppression_priority
+
+
+def make_flame_length_suppression_priority_fn(flame_length_matrix):
+    # FIXME: Make this take a dictionary of 2D arrays
+    max_flame_length = np.max(flame_length_matrix) + 1.0
+    def flame_length_suppression_priority(burned_cell, unburned_cell):
+        (y, x) = burned_cell
+        return max_flame_length - flame_length_matrix[y,x]
+
+    return flame_length_suppression_priority
+# example-suppression-priority-functions ends here

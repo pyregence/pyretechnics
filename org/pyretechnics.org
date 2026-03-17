@@ -13675,6 +13675,7 @@ def iterative_graph_traversal(frontier_corner_graph, root_corner):
     grandparent_corner = None
     parent_corner      = root_corner
     child_corner       = frontier_corner_graph.get(parent_corner)
+    # FIXME: Cannot use "not in" when child_corner is a list
     while(child_corner and child_corner not in visited_corners):
         if isinstance(child_corner, list):
             (child_corner1, child_corner2) = child_corner
@@ -13888,6 +13889,65 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
     return selected_frontier_cells
 #+end_src
 
+*** Suppressing Frontier Cells
+    :PROPERTIES:
+    :CUSTOM_ID: suppressing-frontier-cells
+    :END:
+
+#+NAME: build-firelines
+#+begin_src python
+# FIXME: Use fireline_construction_rate_function and max_construction_time instead of max_suppression_length
+def build_firelines(fuel_model_matrix, frontier_cells, suppression_priority_function, max_suppression_length):
+    # Order the frontier cells into a list of independent, spatially contiguous perimeters
+    ordered_frontier_cells = order_frontier_cells(frontier_cells)
+
+    # Assign suppression priority and distance scores to each perimeter
+    frontier_cell_scores = score_frontier_cells(ordered_frontier_cells, suppression_priority_function)
+
+    # Select cells to suppress for each perimeter
+    selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
+                                                                    frontier_cell_scores,
+                                                                    max_suppression_length)
+
+    # Change the values in fuel_model_matrix to non-burnable for all selected_frontier_cells
+    for fireline in selected_frontier_cells:
+        for cell in fireline:
+            (y, x)                 = cell
+            fuel_model_matrix[y,x] = 91 # non-burnable
+
+    return fuel_model_matrix
+#+end_src
+
+*** Example Suppression Priority Functions
+    :PROPERTIES:
+    :CUSTOM_ID: example-suppression-priority-functions
+    :END:
+
+#+NAME: example-suppression-priority-functions
+#+begin_src python
+import numpy as np
+
+
+def make_sdi_suppression_priority_fn(sdi_matrix):
+    # FIXME: Make this take a dictionary of 2D arrays
+    max_sdi = np.max(sdi_matrix) + 1.0
+    def sdi_suppression_priority(burned_cell, unburned_cell):
+        (y, x) = unburned_cell
+        return max_sdi - sdi_matrix[y,x]
+
+    return sdi_suppression_priority
+
+
+def make_flame_length_suppression_priority_fn(flame_length_matrix):
+    # FIXME: Make this take a dictionary of 2D arrays
+    max_flame_length = np.max(flame_length_matrix) + 1.0
+    def flame_length_suppression_priority(burned_cell, unburned_cell):
+        (y, x) = burned_cell
+        return max_flame_length - flame_length_matrix[y,x]
+
+    return flame_length_suppression_priority
+#+end_src
+
 ** For Users
    :PROPERTIES:
    :CUSTOM_ID: for-users-suppression
@@ -14063,6 +14123,196 @@ for heatmap_config in heatmap_configs:
 |-------------------------------------+---------------------------------------+---------------------------------------|
 | file:pics/scored_frontier_cells.png | file:pics/measured_frontier_cells.png | file:pics/selected_frontier_cells.png |
 |-------------------------------------+---------------------------------------+---------------------------------------|
+
+*** How to Suppress Cells by Building Firelines
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-suppress-cells-by-building-firelines
+    :END:
+
+#+NAME: suppress-cells-by-building-firelines
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+import pyretechnics.eulerian_level_set as els
+from pyretechnics.space_time_cube import SpaceTimeCube
+from pyretechnics.suppression import build_firelines, make_flame_length_suppression_priority_fn
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    240, # bands: 10 days @ 1 hour/band
+    100, # rows:  3 km @ 30 meters/row
+    100, # cols:  3 km @ 30 meters/col
+)
+
+#============================================================================================
+# Specify the SpaceTimeCube resolution
+#============================================================================================
+
+cube_resolution = (
+    60, # band_duration: minutes
+    30, # cell_height:   meters
+    30, # cell_width:    meters
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Create a SpreadState object and specify a point ignition location (y, x)
+#============================================================================================
+
+spread_state = els.SpreadState(cube_shape).set_resolution(cube_resolution)
+
+spread_state.ignite_cell((20,20))
+
+#============================================================================================
+# Set the start time of the simulation
+#============================================================================================
+
+# Day 2 @ 10:30am
+start_time = (24 * 60) + (10 * 60) + 30 # minutes
+
+# Embed the start time in the SpreadState object
+spread_state.set_start_time(start_time)
+
+#============================================================================================
+# Prepare suppression parameters
+#============================================================================================
+
+# Extract a 2D array of fuel_model values at the cube's spatial dimensions (100 x 100)
+fuel_model_matrix_ro = space_time_cubes["fuel_model"].getSpatialPlane(0, None, None) # read-only
+fuel_model_matrix    = np.copy(fuel_model_matrix_ro)                                 # writable
+
+# Extract the flame_length_matrix from the SpreadState object
+output_matrices     = spread_state.get_full_matrices(layers=["flame_length"])
+flame_length_matrix = output_matrices["flame_length"]
+
+# Define suppression_priority_function and max_suppression_length
+suppression_priority_function = make_flame_length_suppression_priority_fn(flame_length_matrix)
+max_suppression_length        = 18.0 # cell sides
+
+#============================================================================================
+# Define visualization helper functions
+#============================================================================================
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+def make_heatmap_configs(spread_phase):
+    return [
+        {
+            "matrix"  : fuel_model_matrix,
+            "colors"  : "viridis_r",
+            "units"   : "fuel model number: 91-204",
+            "title"   : "Fuel Model",
+            "filename": f"org/pics/suppressed_fuel_model_{spread_phase:0>2}.png",
+            "vmin"    : 91,
+            "vmax"    : 204,
+        },
+        {
+            "matrix"  : flame_length_matrix,
+            "colors"  : "hot",
+            "units"   : "meters",
+            "title"   : "Flame Length",
+            "filename": f"org/pics/suppressed_flame_length_{spread_phase:0>2}.png",
+        },
+    ]
+
+#============================================================================================
+# Spread the fire for 24 hours, stopping every 2 hours to apply suppression effects
+#============================================================================================
+
+# Phase Duration: 2 hours
+max_phase_duration = 2 * 60 # minutes
+
+for spread_phase in range(1,13):
+
+    #============================================================================================
+    # Spread fire from the start time for the max phase_duration
+    #============================================================================================
+
+    fire_spread_results = els.spread_fire_with_phi_field(space_time_cubes,
+                                                         spread_state,
+                                                         max_duration=max_phase_duration)
+
+    #============================================================================================
+    # Extract the frontier_cells from fire_spread_results
+    #============================================================================================
+
+    frontier_cells = fire_spread_results["frontier_cells"]
+
+    #============================================================================================
+    # Select the contiguous stretch of the active fire perimeter with the highest total
+    # suppression priority within length max_suppression_length and set all of its unburned
+    # cells to a non-burnable value in fuel_model_matrix
+    #============================================================================================
+
+    fuel_model_matrix = build_firelines(fuel_model_matrix,
+                                        frontier_cells,
+                                        suppression_priority_function,
+                                        max_suppression_length)
+
+    #============================================================================================
+    # Replace the old fuel_model cube with a new fire-break-containing cube
+    #============================================================================================
+
+    space_time_cubes["fuel_model"] = SpaceTimeCube(cube_shape, fuel_model_matrix)
+
+    #============================================================================================
+    # Create images of the suppressed fire spread
+    #============================================================================================
+
+    for heatmap_config in make_heatmap_configs(spread_phase):
+        save_matrix_as_heatmap(**heatmap_config)
+#+end_src
+
+#+NAME: suppress-cells-by-building-firelines-heatmaps
+#+caption: Flame Length Evolution over 24 Hours with Suppression Applied Every 2 Hours (Firelines Shown on the Right)
+|------------------------------------------+----------------------------------------|
+| file:pics/suppressed_flame_length_01.png | file:pics/suppressed_fuel_model_01.png |
+| file:pics/suppressed_flame_length_02.png | file:pics/suppressed_fuel_model_02.png |
+| file:pics/suppressed_flame_length_03.png | file:pics/suppressed_fuel_model_03.png |
+| file:pics/suppressed_flame_length_04.png | file:pics/suppressed_fuel_model_04.png |
+| file:pics/suppressed_flame_length_05.png | file:pics/suppressed_fuel_model_05.png |
+| file:pics/suppressed_flame_length_06.png | file:pics/suppressed_fuel_model_06.png |
+| file:pics/suppressed_flame_length_07.png | file:pics/suppressed_fuel_model_07.png |
+| file:pics/suppressed_flame_length_08.png | file:pics/suppressed_fuel_model_08.png |
+| file:pics/suppressed_flame_length_09.png | file:pics/suppressed_fuel_model_09.png |
+| file:pics/suppressed_flame_length_10.png | file:pics/suppressed_fuel_model_19.png |
+| file:pics/suppressed_flame_length_11.png | file:pics/suppressed_fuel_model_11.png |
+| file:pics/suppressed_flame_length_12.png | file:pics/suppressed_fuel_model_12.png |
+|------------------------------------------+----------------------------------------|
 
 * [WIP] Urban Spread Algorithms :noexport:
   :PROPERTIES:
