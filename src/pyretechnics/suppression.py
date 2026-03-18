@@ -100,14 +100,20 @@ get_left_direction = {
 }
 
 
+def visited_corner_before(corner, visited_corners):
+    if isinstance(corner, list):
+        return False
+    else:
+        return corner in visited_corners
+
+
 def iterative_graph_traversal(frontier_corner_graph, root_corner):
     corner_sequence    = [root_corner]
     visited_corners    = set(corner_sequence)
     grandparent_corner = None
     parent_corner      = root_corner
     child_corner       = frontier_corner_graph.get(parent_corner)
-    # FIXME: Cannot use "not in" when child_corner is a list
-    while(child_corner and child_corner not in visited_corners):
+    while(child_corner and not visited_corner_before(child_corner, visited_corners)):
         if isinstance(child_corner, list):
             (child_corner1, child_corner2) = child_corner
             if grandparent_corner is None:
@@ -124,7 +130,7 @@ def iterative_graph_traversal(frontier_corner_graph, root_corner):
                 incoming_direction      = get_side_direction(grandparent_corner, parent_corner)
                 outgoing_direction1     = get_side_direction(parent_corner, child_corner1)
                 outgoing_direction2     = get_side_direction(parent_corner, child_corner2)
-                outgoing_left_direction = get_left_direction(incoming_direction)
+                outgoing_left_direction = get_left_direction[incoming_direction]
                 if outgoing_left_direction == outgoing_direction1:
                     # Use child_corner1
                     corner_sequence.append(child_corner1)
@@ -145,7 +151,7 @@ def iterative_graph_traversal(frontier_corner_graph, root_corner):
             grandparent_corner = parent_corner
             parent_corner      = child_corner
             child_corner       = frontier_corner_graph.get(parent_corner)
-    if (child_corner and child_corner in visited_corners):
+    if (child_corner and visited_corner_before(child_corner, visited_corners)):
         # Ended on a cycle, so add it to corner_sequence
         corner_sequence.append(child_corner)
     return corner_sequence

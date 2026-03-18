@@ -15011,14 +15011,20 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 }
 
 
+<span class="org-keyword">def</span> <span class="org-function-name">visited_corner_before</span>(corner, visited_corners):
+    <span class="org-keyword">if</span> <span class="org-builtin">isinstance</span>(corner, <span class="org-builtin">list</span>):
+        <span class="org-keyword">return</span> <span class="org-constant">False</span>
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">return</span> corner <span class="org-keyword">in</span> visited_corners
+
+
 <span class="org-keyword">def</span> <span class="org-function-name">iterative_graph_traversal</span>(frontier_corner_graph, root_corner):
     <span class="org-variable-name">corner_sequence</span>    <span class="org-operator">=</span> [root_corner]
     <span class="org-variable-name">visited_corners</span>    <span class="org-operator">=</span> <span class="org-builtin">set</span>(corner_sequence)
     <span class="org-variable-name">grandparent_corner</span> <span class="org-operator">=</span> <span class="org-constant">None</span>
     <span class="org-variable-name">parent_corner</span>      <span class="org-operator">=</span> root_corner
     <span class="org-variable-name">child_corner</span>       <span class="org-operator">=</span> frontier_corner_graph.get(parent_corner)
-    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Cannot use "not in" when child_corner is a list</span>
-    <span class="org-keyword">while</span>(child_corner <span class="org-keyword">and</span> child_corner <span class="org-keyword">not</span> <span class="org-keyword">in</span> visited_corners):
+    <span class="org-keyword">while</span>(child_corner <span class="org-keyword">and</span> <span class="org-keyword">not</span> visited_corner_before(child_corner, visited_corners)):
         <span class="org-keyword">if</span> <span class="org-builtin">isinstance</span>(child_corner, <span class="org-builtin">list</span>):
             (<span class="org-variable-name">child_corner1</span>, <span class="org-variable-name">child_corner2</span>) <span class="org-operator">=</span> child_corner
             <span class="org-keyword">if</span> grandparent_corner <span class="org-keyword">is</span> <span class="org-constant">None</span>:
@@ -15035,7 +15041,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
                 <span class="org-variable-name">incoming_direction</span>      <span class="org-operator">=</span> get_side_direction(grandparent_corner, parent_corner)
                 <span class="org-variable-name">outgoing_direction1</span>     <span class="org-operator">=</span> get_side_direction(parent_corner, child_corner1)
                 <span class="org-variable-name">outgoing_direction2</span>     <span class="org-operator">=</span> get_side_direction(parent_corner, child_corner2)
-                <span class="org-variable-name">outgoing_left_direction</span> <span class="org-operator">=</span> get_left_direction(incoming_direction)
+                <span class="org-variable-name">outgoing_left_direction</span> <span class="org-operator">=</span> get_left_direction[incoming_direction]
                 <span class="org-keyword">if</span> outgoing_left_direction <span class="org-operator">==</span> outgoing_direction1:
                     <span class="org-comment-delimiter"># </span><span class="org-comment">Use child_corner1</span>
                     corner_sequence.append(child_corner1)
@@ -15056,7 +15062,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
             <span class="org-variable-name">grandparent_corner</span> <span class="org-operator">=</span> parent_corner
             <span class="org-variable-name">parent_corner</span>      <span class="org-operator">=</span> child_corner
             <span class="org-variable-name">child_corner</span>       <span class="org-operator">=</span> frontier_corner_graph.get(parent_corner)
-    <span class="org-keyword">if</span> (child_corner <span class="org-keyword">and</span> child_corner <span class="org-keyword">in</span> visited_corners):
+    <span class="org-keyword">if</span> (child_corner <span class="org-keyword">and</span> visited_corner_before(child_corner, visited_corners)):
         <span class="org-comment-delimiter"># </span><span class="org-comment">Ended on a cycle, so add it to corner_sequence</span>
         corner_sequence.append(child_corner)
     <span class="org-keyword">return</span> corner_sequence
