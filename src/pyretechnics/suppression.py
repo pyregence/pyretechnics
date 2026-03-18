@@ -269,7 +269,6 @@ def score_frontier_cells(ordered_frontier_cells, scoring_function):
     return frontier_cell_scores
 
 
-# FIXME: This should be selecting a single best choice from all of the perimeters.
 # NOTE: max_suppression_length should be expressed in cell side lengths
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
     if max_suppression_length < 1.0:
@@ -277,6 +276,7 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
                          + " to suppress at least one frontier cell.")
 
     selected_frontier_cells = []
+    top_path_score          = 0.0
 
     for i in range(len(ordered_frontier_cells)):
         frontier        = ordered_frontier_cells[i]
@@ -314,7 +314,9 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
             suppression_length -= distances[start_idx]
             start_idx          += 1
 
-        selected_frontier_cells.append(unburned_cells[best_start_idx:best_stop_idx])
+        if best_path_score > top_path_score:
+            top_path_score          = best_path_score
+            selected_frontier_cells = unburned_cells[best_start_idx:best_stop_idx]
 
     return selected_frontier_cells
 # select-frontier-cells-for-suppression ends here
@@ -333,10 +335,9 @@ def build_firelines(fuel_model_matrix, frontier_cells, suppression_priority_func
                                                                     max_suppression_length)
 
     # Change the values in fuel_model_matrix to non-burnable for all selected_frontier_cells
-    for fireline in selected_frontier_cells:
-        for cell in fireline:
-            (y, x)                 = cell
-            fuel_model_matrix[y,x] = 91 # non-burnable
+    for cell in selected_frontier_cells:
+        (y, x)                 = cell
+        fuel_model_matrix[y,x] = 91 # non-burnable
 
     return fuel_model_matrix
 # build-firelines ends here

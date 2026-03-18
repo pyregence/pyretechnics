@@ -15187,7 +15187,6 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-keyword">return</span> frontier_cell_scores
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: This should be selecting a single best choice from all of the perimeters.</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: max_suppression_length should be expressed in cell side lengths</span>
 <span class="org-keyword">def</span> <span class="org-function-name">select_frontier_cells_for_suppression</span>(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
     <span class="org-keyword">if</span> max_suppression_length <span class="org-operator">&lt;</span> 1.0:
@@ -15195,6 +15194,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
                          <span class="org-operator">+</span> <span class="org-string">" to suppress at least one frontier cell."</span>)
 
     <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> []
+    <span class="org-variable-name">top_path_score</span>          <span class="org-operator">=</span> 0.0
 
     <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(ordered_frontier_cells)):
         <span class="org-variable-name">frontier</span>        <span class="org-operator">=</span> ordered_frontier_cells[i]
@@ -15232,7 +15232,9 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
             <span class="org-variable-name">suppression_length</span> <span class="org-operator">-=</span> distances[start_idx]
             <span class="org-variable-name">start_idx</span>          <span class="org-operator">+=</span> 1
 
-        selected_frontier_cells.append(unburned_cells[best_start_idx:best_stop_idx])
+        <span class="org-keyword">if</span> best_path_score <span class="org-operator">&gt;</span> top_path_score:
+            <span class="org-variable-name">top_path_score</span>          <span class="org-operator">=</span> best_path_score
+            <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> unburned_cells[best_start_idx:best_stop_idx]
 
     <span class="org-keyword">return</span> selected_frontier_cells
 </pre>
@@ -15258,10 +15260,9 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
                                                                     max_suppression_length)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Change the values in fuel_model_matrix to non-burnable for all selected_frontier_cells</span>
-    <span class="org-keyword">for</span> fireline <span class="org-keyword">in</span> selected_frontier_cells:
-        <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> fireline:
-            (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                 <span class="org-operator">=</span> cell
-            <span class="org-variable-name">fuel_model_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> 91 <span class="org-comment-delimiter"># </span><span class="org-comment">non-burnable</span>
+    <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> selected_frontier_cells:
+        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                 <span class="org-operator">=</span> cell
+        <span class="org-variable-name">fuel_model_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> 91 <span class="org-comment-delimiter"># </span><span class="org-comment">non-burnable</span>
 
     <span class="org-keyword">return</span> fuel_model_matrix
 </pre>
@@ -15402,7 +15403,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">selected_matrix - part 2</span>
-<span class="org-keyword">for</span> (y, x) <span class="org-keyword">in</span> selected_frontier_cells[0]:
+<span class="org-keyword">for</span> (y, x) <span class="org-keyword">in</span> selected_frontier_cells:
     <span class="org-variable-name">selected_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> 2
 
 
@@ -15460,7 +15461,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </div>
 
 <table id="order-frontier-cells-simple-ellipse-heatmaps">
-<caption class="t-above"><span class="table-number">Table 17:</span> Frontier Cells Before and After Ordering</caption>
+<caption class="t-above"><span class="table-number">Table 17:</span> Frontier cells before and after ordering</caption>
 
 <colgroup>
 <col  class="org-left">
@@ -15475,12 +15476,10 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </tbody>
 </table>
 
-<table id="select-frontier-cells-simple-ellipse-heatmaps">
-<caption class="t-above"><span class="table-number">Table 18:</span> Frontier Cells Selected by Best Combined Suppression Score</caption>
+<table id="score-frontier-cells-simple-ellipse-heatmaps">
+<caption class="t-above"><span class="table-number">Table 18:</span> Frontier cells' suppression priority scores and fireline construction lengths</caption>
 
 <colgroup>
-<col  class="org-left">
-
 <col  class="org-left">
 
 <col  class="org-left">
@@ -15489,10 +15488,16 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <tr>
 <td class="org-left"><img src="pics/scored_frontier_cells.png" alt="scored_frontier_cells.png"></td>
 <td class="org-left"><img src="pics/measured_frontier_cells.png" alt="measured_frontier_cells.png"></td>
-<td class="org-left"><img src="pics/selected_frontier_cells.png" alt="selected_frontier_cells.png"></td>
 </tr>
 </tbody>
 </table>
+
+
+<div id="select-frontier-cells-simple-ellipse-heatmaps" class="figure">
+<p><img src="pics/selected_frontier_cells.png" alt="selected_frontier_cells.png">
+</p>
+<p><span class="figure-number">Figure 6: </span>Frontier cells selected by best combined suppression score</p>
+</div>
 </div>
 </div>
 
@@ -15668,7 +15673,7 @@ spread_state.set_start_time(start_time)
 </div>
 
 <table id="suppress-cells-by-building-firelines-heatmaps">
-<caption class="t-above"><span class="table-number">Table 19:</span> Flame Length Evolution over 24 Hours with Suppression Applied Every 2 Hours (Firelines Shown on the Right)</caption>
+<caption class="t-above"><span class="table-number">Table 19:</span> Flame length evolution over 24 Hours with suppression applied every 2 hours (firelines shown on the right)</caption>
 
 <colgroup>
 <col  class="org-left">

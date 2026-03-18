@@ -13845,7 +13845,6 @@ def score_frontier_cells(ordered_frontier_cells, scoring_function):
     return frontier_cell_scores
 
 
-# FIXME: This should be selecting a single best choice from all of the perimeters.
 # NOTE: max_suppression_length should be expressed in cell side lengths
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
     if max_suppression_length < 1.0:
@@ -13853,6 +13852,7 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
                          + " to suppress at least one frontier cell.")
 
     selected_frontier_cells = []
+    top_path_score          = 0.0
 
     for i in range(len(ordered_frontier_cells)):
         frontier        = ordered_frontier_cells[i]
@@ -13890,7 +13890,9 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
             suppression_length -= distances[start_idx]
             start_idx          += 1
 
-        selected_frontier_cells.append(unburned_cells[best_start_idx:best_stop_idx])
+        if best_path_score > top_path_score:
+            top_path_score          = best_path_score
+            selected_frontier_cells = unburned_cells[best_start_idx:best_stop_idx]
 
     return selected_frontier_cells
 #+end_src
@@ -13916,10 +13918,9 @@ def build_firelines(fuel_model_matrix, frontier_cells, suppression_priority_func
                                                                     max_suppression_length)
 
     # Change the values in fuel_model_matrix to non-burnable for all selected_frontier_cells
-    for fireline in selected_frontier_cells:
-        for cell in fireline:
-            (y, x)                 = cell
-            fuel_model_matrix[y,x] = 91 # non-burnable
+    for cell in selected_frontier_cells:
+        (y, x)                 = cell
+        fuel_model_matrix[y,x] = 91 # non-burnable
 
     return fuel_model_matrix
 #+end_src
@@ -14062,7 +14063,7 @@ for (y, x) in ordered_unburned_cells:
 
 
 # selected_matrix - part 2
-for (y, x) in selected_frontier_cells[0]:
+for (y, x) in selected_frontier_cells:
     selected_matrix[y,x] = 2
 
 
@@ -14119,16 +14120,20 @@ for heatmap_config in heatmap_configs:
 #+end_src
 
 #+NAME: order-frontier-cells-simple-ellipse-heatmaps
-#+caption: Frontier Cells Before and After Ordering
+#+caption: Frontier cells before and after ordering
 |----------------------------------------+--------------------------------------|
 | file:pics/unordered_frontier_cells.png | file:pics/ordered_frontier_cells.png |
 |----------------------------------------+--------------------------------------|
 
+#+NAME: score-frontier-cells-simple-ellipse-heatmaps
+#+caption: Frontier cells' suppression priority scores and fireline construction lengths
+|-------------------------------------+---------------------------------------|
+| file:pics/scored_frontier_cells.png | file:pics/measured_frontier_cells.png |
+|-------------------------------------+---------------------------------------|
+
 #+NAME: select-frontier-cells-simple-ellipse-heatmaps
-#+caption: Frontier Cells Selected by Best Combined Suppression Score
-|-------------------------------------+---------------------------------------+---------------------------------------|
-| file:pics/scored_frontier_cells.png | file:pics/measured_frontier_cells.png | file:pics/selected_frontier_cells.png |
-|-------------------------------------+---------------------------------------+---------------------------------------|
+#+caption: Frontier cells selected by best combined suppression score
+file:pics/selected_frontier_cells.png
 
 *** How to Suppress Cells by Building Firelines
     :PROPERTIES:
@@ -14304,7 +14309,7 @@ for spread_phase in range(1,13):
 #+end_src
 
 #+NAME: suppress-cells-by-building-firelines-heatmaps
-#+caption: Flame Length Evolution over 24 Hours with Suppression Applied Every 2 Hours (Firelines Shown on the Right)
+#+caption: Flame length evolution over 24 Hours with suppression applied every 2 hours (firelines shown on the right)
 |------------------------------------------+----------------------------------------|
 | file:pics/suppressed_flame_length_01.png | file:pics/suppressed_fuel_model_01.png |
 | file:pics/suppressed_flame_length_02.png | file:pics/suppressed_fuel_model_02.png |
