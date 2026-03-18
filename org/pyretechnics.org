@@ -13804,27 +13804,45 @@ def order_frontier_cells(frontier_cells):
 
 #+NAME: select-frontier-cells-for-suppression
 #+begin_src python
+from math import sqrt
 import numpy as np
 
 
-def score_frontier_cells(ordered_frontier_cells, scoring_function):
-    frontier_cell_scores = []
+def score_frontier_cells(ordered_frontier_cells, cell_height, cell_width,
+                         suppression_priority_function, fireline_construction_rate_function):
+    frontier_cell_scores   = []
+    half_diagonal_distance = sqrt(cell_height * cell_height + cell_width * cell_width)/2.0
 
     for frontier in ordered_frontier_cells:
-        burned_cells           = frontier["burned_cells"]
-        unburned_cells         = frontier["unburned_cells"]
-        frontier_length        = len(burned_cells)
-        scores                 = np.zeros(frontier_length)
-        distances              = np.ones(frontier_length)
-        half_diagonal_distance = 0.7071 # approximately math.sqrt(2)/2
+        burned_cells    = frontier["burned_cells"]
+        unburned_cells  = frontier["unburned_cells"]
+        frontier_length = len(burned_cells)
+        scores          = np.zeros(frontier_length)
+        rates           = np.zeros(frontier_length)
+        distances       = np.zeros(frontier_length)
+        times           = np.zeros(frontier_length)
 
-        # Score each cell pair
+        # Calculate the suppression priority of each cell pair
         for i in range(frontier_length):
-            scores[i] = scoring_function(burned_cells[i], unburned_cells[i])
+            scores[i] = suppression_priority_function(burned_cells[i], unburned_cells[i])
 
-        # Calculate the distances along the frontier
-        # NOTE: If two cell pairs share the same unburned cell, we reduce their respective distances
-        #       such that their sum will equal the length of a diagonal line across the unburned cell.
+        # Calculate the fireline construction rate of each cell pair
+        for i in range(frontier_length):
+            rates[i] = fireline_construction_rate_function(burned_cells[i], unburned_cells[i])
+
+        # Calculate the frontier length between each cell pair
+        for i in range(frontier_length):
+            (y0, x0) = burned_cells[i]
+            (y1, x1) = unburned_cells[i]
+            if (y0 == y1):
+                # vertical cell side
+                distances[i] = cell_height
+            else:
+                # horizonal cell side
+                distances[i] = cell_width
+
+        # If two cell pairs share the same unburned cell, we reduce their respective distances
+        # such that their sum will equal the length of a diagonal line across the unburned cell
         for i in range(frontier_length - 1):
             if unburned_cells[i] == unburned_cells[i+1]:
                 distances[i] = half_diagonal_distance
@@ -13837,20 +13855,21 @@ def score_frontier_cells(ordered_frontier_cells, scoring_function):
             distances[frontier_length-1] = half_diagonal_distance
             distances[0]                 = half_diagonal_distance
 
+        # Calculate the fireline construction times between each cell pair
+        for i in range(frontier_length):
+            times[i] = distances[i] / rates[i]
+
         frontier_cell_scores.append({
             "scores"   : scores,
+            "rates"    : rates,
             "distances": distances,
+            "times"    : times,
         })
 
     return frontier_cell_scores
 
 
-# NOTE: max_suppression_length should be expressed in cell side lengths
-def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_suppression_length):
-    if max_suppression_length < 1.0:
-        raise ValueError("The max_suppression_length must be at least 1.0 in order to be able "
-                         + " to suppress at least one frontier cell.")
-
+def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_construction_time):
     selected_frontier_cells = []
     top_path_score          = 0.0
 
@@ -13860,24 +13879,24 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
         frontier_length = len(unburned_cells)
         frontier_scores = frontier_cell_scores[i]
         scores          = frontier_scores["scores"]
-        distances       = frontier_scores["distances"]
+        times           = frontier_scores["times"]
 
         # Use a moving window to find the sequence of frontier cells with the maximum total score
-        # whose total frontier length is less than or equal to max_suppression_length.
-        start_idx          = 0
-        stop_idx           = 0
-        path_score         = 0.0
-        suppression_length = 0.0
-        best_start_idx     = 0
-        best_stop_idx      = 0
-        best_path_score    = 0.0
+        # whose total frontier length can be contained within max_construction_time
+        start_idx         = 0
+        stop_idx          = 0
+        path_score        = 0.0
+        construction_time = 0.0
+        best_start_idx    = 0
+        best_stop_idx     = 0
+        best_path_score   = 0.0
 
         while(stop_idx < frontier_length):
-            # Expand the moving window until we reach max_suppression_length or the end of the frontier
-            while(stop_idx < frontier_length and suppression_length + distances[stop_idx] < max_suppression_length):
-                path_score         += scores[stop_idx]
-                suppression_length += distances[stop_idx]
-                stop_idx           += 1
+            # Expand the moving window until we reach max_construction_time or the end of the frontier
+            while(stop_idx < frontier_length and construction_time + times[stop_idx] < max_construction_time):
+                path_score        += scores[stop_idx]
+                construction_time += times[stop_idx]
+                stop_idx          += 1
 
             # Record this path's info if its score is the highest one that we've seen yet
             if path_score > best_path_score:
@@ -13886,9 +13905,13 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
                 best_path_score = path_score
 
             # Shift the moving window forward by one step
-            path_score         -= scores[start_idx]
-            suppression_length -= distances[start_idx]
-            start_idx          += 1
+            path_score        -= scores[start_idx]
+            construction_time -= times[start_idx]
+            start_idx         += 1
+
+            # Detect if stop_idx is not moving forward and jump over the cell that is blocking fireline growth
+            if start_idx > stop_idx:
+                stop_idx = start_idx
 
         if best_path_score > top_path_score:
             top_path_score          = best_path_score
@@ -13904,23 +13927,27 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
 
 #+NAME: build-firelines
 #+begin_src python
-# FIXME: Use fireline_construction_rate_function and max_construction_time instead of max_suppression_length
-def build_firelines(fuel_model_matrix, frontier_cells, suppression_priority_function, max_suppression_length):
+def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width, suppression_priority_function,
+                    fireline_construction_rate_function, max_construction_time, nonburnable_fuel_model=91):
     # Order the frontier cells into a list of independent, spatially contiguous perimeters
     ordered_frontier_cells = order_frontier_cells(frontier_cells)
 
-    # Assign suppression priority and distance scores to each perimeter
-    frontier_cell_scores = score_frontier_cells(ordered_frontier_cells, suppression_priority_function)
+    # Assign suppression priorities and fireline construction times to each perimeter's cells
+    frontier_cell_scores = score_frontier_cells(ordered_frontier_cells,
+                                                cell_height,
+                                                cell_width,
+                                                suppression_priority_function,
+                                                fireline_construction_rate_function)
 
     # Select cells to suppress for each perimeter
     selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                     frontier_cell_scores,
-                                                                    max_suppression_length)
+                                                                    max_construction_time)
 
-    # Change the values in fuel_model_matrix to non-burnable for all selected_frontier_cells
+    # Change the values in fuel_model_matrix to nonburnable_fuel_model for all selected_frontier_cells
     for cell in selected_frontier_cells:
         (y, x)                 = cell
-        fuel_model_matrix[y,x] = 91 # non-burnable
+        fuel_model_matrix[y,x] = nonburnable_fuel_model
 
     return fuel_model_matrix
 #+end_src
@@ -14008,20 +14035,32 @@ frontier_cells = {
 }
 
 
+cell_height                         = 30.0                          # meters
+cell_width                          = 30.0                          # meters
+suppression_priority_function       = lambda burned, unburned: 5.0  # unitless
+fireline_construction_rate_function = lambda burned, unburned: 30.0 # m/min
+max_construction_time               = 10.0                          # minutes
+
 ordered_frontier_cells  = order_frontier_cells(frontier_cells)
 ordered_burned_cells    = ordered_frontier_cells[0]["burned_cells"]
 ordered_unburned_cells  = ordered_frontier_cells[0]["unburned_cells"]
 frontier_length         = len(ordered_unburned_cells)
-frontier_cell_scores    = score_frontier_cells(ordered_frontier_cells, lambda x, y: 5.0)
+frontier_cell_scores    = score_frontier_cells(ordered_frontier_cells,
+                                               cell_height,
+                                               cell_width,
+                                               suppression_priority_function,
+                                               fireline_construction_rate_function)
 frontier_scores         = frontier_cell_scores[0]["scores"]
-frontier_distances      = frontier_cell_scores[0]["distances"]
-selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, 10.0)
+frontier_times          = frontier_cell_scores[0]["times"]
+selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
+                                                                frontier_cell_scores,
+                                                                max_construction_time)
 
 
 unordered_matrix = np.zeros((100,100), dtype=np.int8)
 ordered_matrix   = np.zeros((100,100), dtype=np.int8)
 score_matrix     = np.zeros((100,100), dtype=np.float32)
-distance_matrix  = np.zeros((100,100), dtype=np.float32)
+time_matrix      = np.zeros((100,100), dtype=np.float32)
 selected_matrix  = np.zeros((100,100), dtype=np.int8)
 
 
@@ -14051,10 +14090,10 @@ for i in range(frontier_length):
     score_matrix[y,x] += frontier_scores[i]
 
 
-# distance_matrix
+# time_matrix
 for i in range(frontier_length):
     (y, x) = ordered_unburned_cells[i]
-    distance_matrix[y,x] += frontier_distances[i]
+    time_matrix[y,x] += frontier_times[i]
 
 
 # selected_matrix - part 1
@@ -14099,10 +14138,10 @@ heatmap_configs = [
         "filename": "org/pics/scored_frontier_cells.png",
     },
     {
-        "matrix"  : distance_matrix,
+        "matrix"  : time_matrix,
         "colors"  : "autumn",
-        "units"   : "cell side lengths",
-        "title"   : "Frontier Length",
+        "units"   : "minutes",
+        "title"   : "Fireline Construction Time",
         "filename": "org/pics/measured_frontier_cells.png",
     },
     {
@@ -14126,7 +14165,7 @@ for heatmap_config in heatmap_configs:
 |----------------------------------------+--------------------------------------|
 
 #+NAME: score-frontier-cells-simple-ellipse-heatmaps
-#+caption: Frontier cells' suppression priority scores and fireline construction lengths
+#+caption: Frontier cells' suppression priority scores and fireline construction times
 |-------------------------------------+---------------------------------------|
 | file:pics/scored_frontier_cells.png | file:pics/measured_frontier_cells.png |
 |-------------------------------------+---------------------------------------|
@@ -14222,9 +14261,14 @@ fuel_model_matrix    = np.copy(fuel_model_matrix_ro)                            
 output_matrices     = spread_state.get_full_matrices(layers=["flame_length"])
 flame_length_matrix = output_matrices["flame_length"]
 
-# Define suppression_priority_function and max_suppression_length
-suppression_priority_function = make_flame_length_suppression_priority_fn(flame_length_matrix)
-max_suppression_length        = 18.0 # cell sides
+# Define suppression_priority_function, fireline_construction_rate_function, and max_construction_time
+suppression_priority_function       = make_flame_length_suppression_priority_fn(flame_length_matrix)
+fireline_construction_rate_function = lambda burned, unburned: 30.0 # m/min
+max_construction_time               = 18.0 # minutes
+
+# Specify the cell dimensions
+cell_height = cube_resolution[1] # meters
+cell_width  = cube_resolution[2] # meters
 
 #============================================================================================
 # Define visualization helper functions
@@ -14291,8 +14335,11 @@ for spread_phase in range(1,13):
 
     fuel_model_matrix = build_firelines(fuel_model_matrix,
                                         frontier_cells,
+                                        cell_height,
+                                        cell_width,
                                         suppression_priority_function,
-                                        max_suppression_length)
+                                        fireline_construction_rate_function,
+                                        max_construction_time)
 
     #============================================================================================
     # Replace the old fuel_model cube with a new fire-break-containing cube
@@ -14534,7 +14581,7 @@ simulation from the output =simulation_clock= until the next stop
 condition is met. Here is an example of how to do this.
 
 #+NAME: play-pause-continue-workflow
-#+begin_src python
+#+begin_src python :eval no
 import numpy as np
 
 #=======================================================
