@@ -14309,7 +14309,7 @@ for spread_phase in range(1,13):
 #+end_src
 
 #+NAME: suppress-cells-by-building-firelines-heatmaps
-#+caption: Flame length evolution over 24 Hours with suppression applied every 2 hours (firelines shown on the right)
+#+caption: Flame length evolution over 24 hours with suppression applied every 2 hours (Firelines shown on the right)
 |------------------------------------------+----------------------------------------|
 | file:pics/suppressed_flame_length_01.png | file:pics/suppressed_fuel_model_01.png |
 | file:pics/suppressed_flame_length_02.png | file:pics/suppressed_fuel_model_02.png |
