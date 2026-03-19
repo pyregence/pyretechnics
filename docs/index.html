@@ -428,10 +428,11 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#for-developers-suppression">10.1. For Developers</a>
 <ul>
-<li><a href="#ordering-the-frontier-cells">10.1.1. Ordering the Frontier Cells</a></li>
-<li><a href="#selecting-frontier-cells-for-suppression">10.1.2. Selecting Frontier Cells for Suppression</a></li>
-<li><a href="#suppressing-frontier-cells">10.1.3. Suppressing Frontier Cells</a></li>
-<li><a href="#example-suppression-priority-functions">10.1.4. Example Suppression Priority Functions</a></li>
+<li><a href="#module-imports-suppression">10.1.1. Module Imports</a></li>
+<li><a href="#ordering-the-frontier-cells">10.1.2. Ordering the Frontier Cells</a></li>
+<li><a href="#selecting-frontier-cells-for-suppression">10.1.3. Selecting Frontier Cells for Suppression</a></li>
+<li><a href="#suppressing-frontier-cells">10.1.4. Suppressing Frontier Cells</a></li>
+<li><a href="#example-suppression-priority-functions">10.1.5. Example Suppression Priority Functions</a></li>
 </ul>
 </li>
 <li><a href="#for-users-suppression">10.2. For Users</a>
@@ -10925,23 +10926,35 @@ near it, and decrement their tracking counter by 1. Upon reaching
 
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">decode_frontier_cells</span>(frontier_cells: <span class="org-builtin">set</span>, phi_matrix: cy.<span class="org-builtin">float</span>[:,::1]) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
-    <span class="org-variable-name">frontier_cells_burned</span>  : <span class="org-builtin">list</span>[coord_yx] <span class="org-operator">=</span> []
-    <span class="org-variable-name">frontier_cells_unburned</span>: <span class="org-builtin">list</span>[coord_yx] <span class="org-operator">=</span> []
-    encoded_cell_index     : <span class="org-builtin">object</span>
-    cell_index             : coord_yx
-    y                      : pyidx
-    x                      : pyidx
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Group the frontier_cells into burned and unburned lists</span>
+    <span class="org-variable-name">burned_ys</span>         : <span class="org-builtin">list</span>[pyidx] <span class="org-operator">=</span> []
+    <span class="org-variable-name">burned_xs</span>         : <span class="org-builtin">list</span>[pyidx] <span class="org-operator">=</span> []
+    <span class="org-variable-name">unburned_ys</span>       : <span class="org-builtin">list</span>[pyidx] <span class="org-operator">=</span> []
+    <span class="org-variable-name">unburned_xs</span>       : <span class="org-builtin">list</span>[pyidx] <span class="org-operator">=</span> []
+    encoded_cell_index: <span class="org-builtin">object</span>
+    cell_index        : coord_yx
+    y                 : pyidx
+    x                 : pyidx
     <span class="org-keyword">for</span> encoded_cell_index <span class="org-keyword">in</span> frontier_cells:
         <span class="org-variable-name">cell_index</span> <span class="org-operator">=</span> decode_cell_index(encoded_cell_index)
         <span class="org-variable-name">y</span>          <span class="org-operator">=</span> cell_index[0]
         <span class="org-variable-name">x</span>          <span class="org-operator">=</span> cell_index[1]
         <span class="org-keyword">if</span> (phi_matrix[2<span class="org-operator">+</span>y, 2<span class="org-operator">+</span>x] <span class="org-operator">&lt;</span> 0.0):
-            frontier_cells_burned.append(cell_index)
+            burned_ys.append(y)
+            burned_xs.append(x)
         <span class="org-keyword">else</span>:
-            frontier_cells_unburned.append(cell_index)
+            unburned_ys.append(y)
+            unburned_xs.append(x)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Return a dictionary of 2D Numpy array indices</span>
     <span class="org-keyword">return</span> {
-        <span class="org-string">"burned_cells"</span>  : frontier_cells_burned,
-        <span class="org-string">"unburned_cells"</span>: frontier_cells_unburned,
+        <span class="org-string">"burned_cells"</span>: (
+            np.asarray(burned_ys, dtype<span class="org-operator">=</span>np.int32),
+            np.asarray(burned_xs, dtype<span class="org-operator">=</span>np.int32)
+        ),
+        <span class="org-string">"unburned_cells"</span>: (
+            np.asarray(unburned_ys, dtype<span class="org-operator">=</span>np.int32),
+            np.asarray(unburned_xs, dtype<span class="org-operator">=</span>np.int32)
+        ),
     }
 </pre>
 </div>
@@ -12649,6 +12662,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    - stop_condition    :: "max duration reached" or "no burnable cells"</span>
 <span class="org-doc">    - spread_state      :: SpreadState object whose spatial dimensions match the space_time_cubes</span>
 <span class="org-doc">    - num_tracked_cells :: number of cells in the narrow band at stop_time</span>
+<span class="org-doc">    - frontier_cells    :: dictionary of (burned_cells|unburned_cells -&gt; 2D Numpy array indices)</span>
 <span class="org-doc">    - spot_ignitions    :: dictionary of (ignition_time -&gt; ignited_cells) (only included when spotting is used)</span>
 <span class="org-doc">    - random_generator  :: BufferedRandGen object (only included when spotting is used)</span>
 <span class="org-doc">    """</span>
@@ -14713,8 +14727,28 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <div class="outline-text-3" id="text-for-developers-suppression">
 </div>
 
+<div id="outline-container-module-imports-suppression" class="outline-4">
+<h4 id="module-imports-suppression"><span class="section-number-4">10.1.1.</span> Module Imports</h4>
+<div class="outline-text-4" id="text-module-imports-suppression">
+<div class="org-src-container">
+<pre class="src src-python" id="suppression-imports"><span class="org-keyword">import</span> cython
+<span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
+<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<span class="org-keyword">if</span> cython.compiled:
+    <span class="org-keyword">from</span> cython.cimports.numpy <span class="org-keyword">import</span> ndarray
+    <span class="org-keyword">from</span> cython.cimports.libc.math <span class="org-keyword">import</span> sqrt
+    <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx
+<span class="org-keyword">else</span>:
+    <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> ndarray
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
+    <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx
+</pre>
+</div>
+</div>
+</div>
+
 <div id="outline-container-ordering-the-frontier-cells" class="outline-4">
-<h4 id="ordering-the-frontier-cells"><span class="section-number-4">10.1.1.</span> Ordering the Frontier Cells</h4>
+<h4 id="ordering-the-frontier-cells"><span class="section-number-4">10.1.2.</span> Ordering the Frontier Cells</h4>
 <div class="outline-text-4" id="text-ordering-the-frontier-cells">
 <table>
 
@@ -14910,45 +14944,47 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </table>
 
 <div class="org-src-container">
-<pre class="src src-python" id="order-frontier-cells"><span class="org-keyword">def</span> <span class="org-function-name">get_ordered_sides</span>(cell_index, is_burned):
-    <span class="org-variable-name">y</span>     <span class="org-operator">=</span> cell_index[0]
-    <span class="org-variable-name">x</span>     <span class="org-operator">=</span> cell_index[1]
-    <span class="org-variable-name">north</span> <span class="org-operator">=</span> y <span class="org-operator">+</span> 0.5
-    <span class="org-variable-name">south</span> <span class="org-operator">=</span> y <span class="org-operator">-</span> 0.5
-    <span class="org-variable-name">east</span>  <span class="org-operator">=</span> x <span class="org-operator">+</span> 0.5
-    <span class="org-variable-name">west</span>  <span class="org-operator">=</span> x <span class="org-operator">-</span> 0.5
+<pre class="src src-python" id="order-frontier-cells"><span class="org-keyword">def</span> <span class="org-function-name">get_ordered_sides</span>(y: cy.<span class="org-builtin">int</span>, x: cy.<span class="org-builtin">int</span>, is_burned: cy.bint) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
+    <span class="org-variable-name">north</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> y <span class="org-operator">+</span> 0.5
+    <span class="org-variable-name">south</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> y <span class="org-operator">-</span> 0.5
+    <span class="org-variable-name">east</span> : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> x <span class="org-operator">+</span> 0.5
+    <span class="org-variable-name">west</span> : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> x <span class="org-operator">-</span> 0.5
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Define cell sides as (y1,x1,y2,x2) where (y1,x1) and (y2,x2) are cell corners and (y1,x1)-&gt;(y2,x2)</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">is a directional cell side with an unburned cell to the left and a burned cell to the right.</span>
     <span class="org-keyword">if</span> is_burned:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Clockwise</span>
-        <span class="org-variable-name">north_side</span> <span class="org-operator">=</span> (north, west, north, east)
-        <span class="org-variable-name">east_side</span>  <span class="org-operator">=</span> (north, east, south, east)
-        <span class="org-variable-name">south_side</span> <span class="org-operator">=</span> (south, east, south, west)
-        <span class="org-variable-name">west_side</span>  <span class="org-operator">=</span> (south, west, north, west)
+        <span class="org-variable-name">north_side</span>: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (north, west, north, east)
+        <span class="org-variable-name">east_side</span> : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (north, east, south, east)
+        <span class="org-variable-name">south_side</span>: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (south, east, south, west)
+        <span class="org-variable-name">west_side</span> : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (south, west, north, west)
     <span class="org-keyword">else</span>:
         <span class="org-comment-delimiter"># </span><span class="org-comment">Counterclockwise</span>
-        <span class="org-variable-name">north_side</span> <span class="org-operator">=</span> (north, east, north, west)
-        <span class="org-variable-name">west_side</span>  <span class="org-operator">=</span> (north, west, south, west)
-        <span class="org-variable-name">south_side</span> <span class="org-operator">=</span> (south, west, south, east)
-        <span class="org-variable-name">east_side</span>  <span class="org-operator">=</span> (south, east, north, east)
+        <span class="org-variable-name">north_side</span>: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (north, east, north, west)
+        <span class="org-variable-name">west_side</span> : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (north, west, south, west)
+        <span class="org-variable-name">south_side</span>: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (south, west, south, east)
+        <span class="org-variable-name">east_side</span> : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> (south, east, north, east)
 
     <span class="org-keyword">return</span> {north_side, east_side, south_side, west_side}
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">get_frontier_sides</span>(frontier_cells):
-    <span class="org-variable-name">burned_cells</span>        <span class="org-operator">=</span> frontier_cells[<span class="org-string">"burned_cells"</span>]
-    <span class="org-variable-name">unburned_cells</span>      <span class="org-operator">=</span> frontier_cells[<span class="org-string">"unburned_cells"</span>]
-    <span class="org-variable-name">burned_cell_sides</span>   <span class="org-operator">=</span> <span class="org-builtin">set</span>()
-    <span class="org-variable-name">unburned_cell_sides</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>()
+<span class="org-keyword">def</span> <span class="org-function-name">get_frontier_sides</span>(frontier_cells: <span class="org-builtin">dict</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">set</span>:
+    <span class="org-variable-name">burned_cells</span>       : <span class="org-builtin">tuple</span>[<span class="org-variable-name">ndarray</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> frontier_cells[<span class="org-string">"burned_cells"</span>]
+    <span class="org-variable-name">unburned_cells</span>     : <span class="org-builtin">tuple</span>[<span class="org-variable-name">ndarray</span>, <span class="org-variable-name">ndarray</span>] <span class="org-operator">=</span> frontier_cells[<span class="org-string">"unburned_cells"</span>]
+    <span class="org-variable-name">burned_ys</span>          : cy.<span class="org-builtin">int</span>[::1]             <span class="org-operator">=</span> burned_cells[0]
+    <span class="org-variable-name">burned_xs</span>          : cy.<span class="org-builtin">int</span>[::1]             <span class="org-operator">=</span> burned_cells[1]
+    <span class="org-variable-name">unburned_ys</span>        : cy.<span class="org-builtin">int</span>[::1]             <span class="org-operator">=</span> unburned_cells[0]
+    <span class="org-variable-name">unburned_xs</span>        : cy.<span class="org-builtin">int</span>[::1]             <span class="org-operator">=</span> unburned_cells[1]
+    <span class="org-variable-name">burned_cell_sides</span>  : <span class="org-builtin">set</span>                     <span class="org-operator">=</span> <span class="org-builtin">set</span>()
+    <span class="org-variable-name">unburned_cell_sides</span>: <span class="org-builtin">set</span>                     <span class="org-operator">=</span> <span class="org-builtin">set</span>()
+    i                  : pyidx
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(burned_ys)):
+        burned_cell_sides.update(get_ordered_sides(burned_ys[i], burned_xs[i], <span class="org-constant">True</span>))
 
-    <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> burned_cells:
-        burned_cell_sides.update(get_ordered_sides(cell, <span class="org-constant">True</span>))
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(unburned_ys)):
+        unburned_cell_sides.update(get_ordered_sides(unburned_ys[i], unburned_xs[i], <span class="org-constant">False</span>))
 
-    <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> unburned_cells:
-        unburned_cell_sides.update(get_ordered_sides(cell, <span class="org-constant">False</span>))
-
-    <span class="org-variable-name">frontier_sides</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>.intersection(burned_cell_sides, unburned_cell_sides)
+    <span class="org-variable-name">frontier_sides</span>: <span class="org-builtin">set</span> <span class="org-operator">=</span> <span class="org-builtin">set</span>.intersection(burned_cell_sides, unburned_cell_sides)
 
     <span class="org-keyword">return</span> frontier_sides
 
@@ -15068,50 +15104,62 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
     <span class="org-keyword">return</span> corner_sequence
 
 
-<span class="org-keyword">def</span> <span class="org-function-name">corners_to_ordered_frontier_cells</span>(corner_sequence):
-    <span class="org-variable-name">burned_cells</span>   <span class="org-operator">=</span> []
-    <span class="org-variable-name">unburned_cells</span> <span class="org-operator">=</span> []
-    <span class="org-variable-name">parent_corner</span>  <span class="org-operator">=</span> corner_sequence[0]
-    <span class="org-keyword">for</span> child_corner <span class="org-keyword">in</span> corner_sequence[1:]:
-        (<span class="org-variable-name">y1</span>, <span class="org-variable-name">x1</span>)  <span class="org-operator">=</span> parent_corner
-        (<span class="org-variable-name">y2</span>, <span class="org-variable-name">x2</span>)  <span class="org-operator">=</span> child_corner
-        <span class="org-variable-name">direction</span> <span class="org-operator">=</span> get_side_direction(parent_corner, child_corner)
+<span class="org-keyword">def</span> <span class="org-function-name">corners_to_ordered_frontier_cells</span>(corner_sequence: <span class="org-builtin">list</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
+    <span class="org-variable-name">num_sides</span>  : cy.<span class="org-builtin">int</span>      <span class="org-operator">=</span> <span class="org-builtin">len</span>(corner_sequence) <span class="org-operator">-</span> 1
+    <span class="org-variable-name">burned_ys</span>  : cy.<span class="org-builtin">int</span>[::1] <span class="org-operator">=</span> np.zeros(num_sides, dtype<span class="org-operator">=</span>np.int32)
+    <span class="org-variable-name">burned_xs</span>  : cy.<span class="org-builtin">int</span>[::1] <span class="org-operator">=</span> np.zeros(num_sides, dtype<span class="org-operator">=</span>np.int32)
+    <span class="org-variable-name">unburned_ys</span>: cy.<span class="org-builtin">int</span>[::1] <span class="org-operator">=</span> np.zeros(num_sides, dtype<span class="org-operator">=</span>np.int32)
+    <span class="org-variable-name">unburned_xs</span>: cy.<span class="org-builtin">int</span>[::1] <span class="org-operator">=</span> np.zeros(num_sides, dtype<span class="org-operator">=</span>np.int32)
+    i          : pyidx
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_sides):
+        <span class="org-variable-name">parent_corner</span>: <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> corner_sequence[i]
+        <span class="org-variable-name">child_corner</span> : <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>] <span class="org-operator">=</span> corner_sequence[i<span class="org-operator">+</span>1]
+        <span class="org-variable-name">y1</span>           : cy.<span class="org-builtin">float</span>                  <span class="org-operator">=</span> parent_corner[0]
+        <span class="org-variable-name">x1</span>           : cy.<span class="org-builtin">float</span>                  <span class="org-operator">=</span> parent_corner[1]
+        <span class="org-variable-name">y2</span>           : cy.<span class="org-builtin">float</span>                  <span class="org-operator">=</span> child_corner[0]
+        <span class="org-variable-name">x2</span>           : cy.<span class="org-builtin">float</span>                  <span class="org-operator">=</span> child_corner[1]
+        <span class="org-variable-name">direction</span>    : <span class="org-builtin">str</span>                       <span class="org-operator">=</span> get_side_direction(parent_corner, child_corner)
+        y            : cy.<span class="org-builtin">int</span>
+        y_up         : cy.<span class="org-builtin">int</span>
+        y_down       : cy.<span class="org-builtin">int</span>
+        x            : cy.<span class="org-builtin">int</span>
+        x_left       : cy.<span class="org-builtin">int</span>
+        x_right      : cy.<span class="org-builtin">int</span>
         <span class="org-keyword">if</span> direction <span class="org-operator">==</span> <span class="org-string">"north"</span>:
-            <span class="org-variable-name">y</span>         <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">x_left</span>    <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">-</span> 0.5)
-            <span class="org-variable-name">x_right</span>   <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">east_cell</span> <span class="org-operator">=</span> (y, x_right)
-            <span class="org-variable-name">west_cell</span> <span class="org-operator">=</span> (y, x_left)
-            burned_cells.append(east_cell)
-            unburned_cells.append(west_cell)
+            <span class="org-variable-name">y</span>              <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">x_left</span>         <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">-</span> 0.5)
+            <span class="org-variable-name">x_right</span>        <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">burned_ys</span>[i]   <span class="org-operator">=</span> y             <span class="org-comment-delimiter"># </span><span class="org-comment">east_cell</span>
+            <span class="org-variable-name">burned_xs</span>[i]   <span class="org-operator">=</span> x_right       <span class="org-comment-delimiter"># </span><span class="org-comment">east_cell</span>
+            <span class="org-variable-name">unburned_ys</span>[i] <span class="org-operator">=</span> y             <span class="org-comment-delimiter"># </span><span class="org-comment">west_cell</span>
+            <span class="org-variable-name">unburned_xs</span>[i] <span class="org-operator">=</span> x_left        <span class="org-comment-delimiter"># </span><span class="org-comment">west_cell</span>
         <span class="org-keyword">elif</span> direction <span class="org-operator">==</span> <span class="org-string">"east"</span>:
-            <span class="org-variable-name">y_up</span>       <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">y_down</span>     <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">-</span> 0.5)
-            <span class="org-variable-name">x</span>          <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">north_cell</span> <span class="org-operator">=</span> (y_up  , x)
-            <span class="org-variable-name">south_cell</span> <span class="org-operator">=</span> (y_down, x)
-            burned_cells.append(south_cell)
-            unburned_cells.append(north_cell)
+            <span class="org-variable-name">y_up</span>           <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">y_down</span>         <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">-</span> 0.5)
+            <span class="org-variable-name">x</span>              <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">burned_ys</span>[i]   <span class="org-operator">=</span> y_down        <span class="org-comment-delimiter"># </span><span class="org-comment">south_cell</span>
+            <span class="org-variable-name">burned_xs</span>[i]   <span class="org-operator">=</span> x             <span class="org-comment-delimiter"># </span><span class="org-comment">south_cell</span>
+            <span class="org-variable-name">unburned_ys</span>[i] <span class="org-operator">=</span> y_up          <span class="org-comment-delimiter"># </span><span class="org-comment">north_cell</span>
+            <span class="org-variable-name">unburned_xs</span>[i] <span class="org-operator">=</span> x             <span class="org-comment-delimiter"># </span><span class="org-comment">north_cell</span>
         <span class="org-keyword">elif</span> direction <span class="org-operator">==</span> <span class="org-string">"south"</span>:
-            <span class="org-variable-name">y</span>         <span class="org-operator">=</span> <span class="org-builtin">int</span>(y2 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">x_left</span>    <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">-</span> 0.5)
-            <span class="org-variable-name">x_right</span>   <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">east_cell</span> <span class="org-operator">=</span> (y, x_right)
-            <span class="org-variable-name">west_cell</span> <span class="org-operator">=</span> (y, x_left)
-            burned_cells.append(west_cell)
-            unburned_cells.append(east_cell)
+            <span class="org-variable-name">y</span>              <span class="org-operator">=</span> <span class="org-builtin">int</span>(y2 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">x_left</span>         <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">-</span> 0.5)
+            <span class="org-variable-name">x_right</span>        <span class="org-operator">=</span> <span class="org-builtin">int</span>(x1 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">burned_ys</span>[i]   <span class="org-operator">=</span> y             <span class="org-comment-delimiter"># </span><span class="org-comment">west_cell</span>
+            <span class="org-variable-name">burned_xs</span>[i]   <span class="org-operator">=</span> x_left        <span class="org-comment-delimiter"># </span><span class="org-comment">west_cell</span>
+            <span class="org-variable-name">unburned_ys</span>[i] <span class="org-operator">=</span> y             <span class="org-comment-delimiter"># </span><span class="org-comment">east_cell</span>
+            <span class="org-variable-name">unburned_xs</span>[i] <span class="org-operator">=</span> x_right       <span class="org-comment-delimiter"># </span><span class="org-comment">east_cell</span>
         <span class="org-keyword">else</span>: <span class="org-comment-delimiter"># </span><span class="org-comment">direction == "west"</span>
-            <span class="org-variable-name">y_up</span>       <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">y_down</span>     <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">-</span> 0.5)
-            <span class="org-variable-name">x</span>          <span class="org-operator">=</span> <span class="org-builtin">int</span>(x2 <span class="org-operator">+</span> 0.5)
-            <span class="org-variable-name">north_cell</span> <span class="org-operator">=</span> (y_up  , x)
-            <span class="org-variable-name">south_cell</span> <span class="org-operator">=</span> (y_down, x)
-            burned_cells.append(north_cell)
-            unburned_cells.append(south_cell)
-        <span class="org-variable-name">parent_corner</span> <span class="org-operator">=</span> child_corner
+            <span class="org-variable-name">y_up</span>           <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">y_down</span>         <span class="org-operator">=</span> <span class="org-builtin">int</span>(y1 <span class="org-operator">-</span> 0.5)
+            <span class="org-variable-name">x</span>              <span class="org-operator">=</span> <span class="org-builtin">int</span>(x2 <span class="org-operator">+</span> 0.5)
+            <span class="org-variable-name">burned_ys</span>[i]   <span class="org-operator">=</span> y_up          <span class="org-comment-delimiter"># </span><span class="org-comment">north_cell</span>
+            <span class="org-variable-name">burned_xs</span>[i]   <span class="org-operator">=</span> x             <span class="org-comment-delimiter"># </span><span class="org-comment">north_cell</span>
+            <span class="org-variable-name">unburned_ys</span>[i] <span class="org-operator">=</span> y_down        <span class="org-comment-delimiter"># </span><span class="org-comment">south_cell</span>
+            <span class="org-variable-name">unburned_xs</span>[i] <span class="org-operator">=</span> x             <span class="org-comment-delimiter"># </span><span class="org-comment">south_cell</span>
     <span class="org-keyword">return</span> {
-        <span class="org-string">"burned_cells"</span>  : burned_cells,
-        <span class="org-string">"unburned_cells"</span>: unburned_cells,
+        <span class="org-string">"burned_cells"</span>  : (burned_ys, burned_xs),
+        <span class="org-string">"unburned_cells"</span>: (unburned_ys, unburned_xs),
     }
 
 
@@ -15143,63 +15191,62 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </div>
 
 <div id="outline-container-selecting-frontier-cells-for-suppression" class="outline-4">
-<h4 id="selecting-frontier-cells-for-suppression"><span class="section-number-4">10.1.2.</span> Selecting Frontier Cells for Suppression</h4>
+<h4 id="selecting-frontier-cells-for-suppression"><span class="section-number-4">10.1.3.</span> Selecting Frontier Cells for Suppression</h4>
 <div class="outline-text-4" id="text-selecting-frontier-cells-for-suppression">
 <div class="org-src-container">
-<pre class="src src-python" id="select-frontier-cells-for-suppression"><span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt
-<span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
+<pre class="src src-python" id="select-frontier-cells-for-suppression"><span class="org-keyword">def</span> <span class="org-function-name">get_frontier_distances</span>(frontier, cell_height, cell_width):
+    <span class="org-variable-name">burned_cells</span>           <span class="org-operator">=</span> frontier[<span class="org-string">"burned_cells"</span>]
+    <span class="org-variable-name">burned_ys</span>              <span class="org-operator">=</span> burned_cells[0]
+    <span class="org-variable-name">burned_xs</span>              <span class="org-operator">=</span> burned_cells[1]
+    <span class="org-variable-name">unburned_cells</span>         <span class="org-operator">=</span> frontier[<span class="org-string">"unburned_cells"</span>]
+    <span class="org-variable-name">unburned_ys</span>            <span class="org-operator">=</span> unburned_cells[0]
+    <span class="org-variable-name">unburned_xs</span>            <span class="org-operator">=</span> unburned_cells[1]
+    <span class="org-variable-name">frontier_length</span>        <span class="org-operator">=</span> <span class="org-builtin">len</span>(burned_ys)
+    <span class="org-variable-name">distances</span>              <span class="org-operator">=</span> np.zeros(frontier_length, dtype<span class="org-operator">=</span>np.float32)
+    <span class="org-variable-name">half_diagonal_distance</span> <span class="org-operator">=</span> sqrt(cell_height <span class="org-operator">*</span> cell_height <span class="org-operator">+</span> cell_width <span class="org-operator">*</span> cell_width)<span class="org-operator">/</span>2.0
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the frontier length between each cell pair</span>
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
+        <span class="org-keyword">if</span> (burned_ys[i] <span class="org-operator">==</span> unburned_ys[i]):
+            <span class="org-comment-delimiter"># </span><span class="org-comment">vertical cell side</span>
+            <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> cell_height
+        <span class="org-keyword">else</span>:
+            <span class="org-comment-delimiter"># </span><span class="org-comment">horizonal cell side</span>
+            <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> cell_width
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">If two cell pairs share the same unburned cell, we reduce their respective distances</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">such that their sum will equal the length of a diagonal line across the unburned cell</span>
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length <span class="org-operator">-</span> 1):
+        <span class="org-keyword">if</span> unburned_ys[i] <span class="org-operator">==</span> unburned_ys[i<span class="org-operator">+</span>1] <span class="org-keyword">and</span> unburned_xs[i] <span class="org-operator">==</span> unburned_xs[i<span class="org-operator">+</span>1]:
+            <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> half_diagonal_distance
+
+    <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(1, frontier_length):
+        <span class="org-keyword">if</span> unburned_ys[i] <span class="org-operator">==</span> unburned_ys[i<span class="org-operator">-</span>1] <span class="org-keyword">and</span> unburned_xs[i] <span class="org-operator">==</span> unburned_xs[i<span class="org-operator">-</span>1]:
+            <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> half_diagonal_distance
+
+    <span class="org-keyword">if</span> unburned_ys[frontier_length<span class="org-operator">-</span>1] <span class="org-operator">==</span> unburned_ys[0] <span class="org-keyword">and</span> unburned_xs[frontier_length<span class="org-operator">-</span>1] <span class="org-operator">==</span> unburned_xs[0]:
+        <span class="org-variable-name">distances</span>[frontier_length<span class="org-operator">-</span>1] <span class="org-operator">=</span> half_diagonal_distance
+        <span class="org-variable-name">distances</span>[0]                 <span class="org-operator">=</span> half_diagonal_distance
+
+    <span class="org-keyword">return</span> distances
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">score_frontier_cells</span>(ordered_frontier_cells, cell_height, cell_width,
                          suppression_priority_function, fireline_construction_rate_function):
     <span class="org-variable-name">frontier_cell_scores</span>   <span class="org-operator">=</span> []
-    <span class="org-variable-name">half_diagonal_distance</span> <span class="org-operator">=</span> sqrt(cell_height <span class="org-operator">*</span> cell_height <span class="org-operator">+</span> cell_width <span class="org-operator">*</span> cell_width)<span class="org-operator">/</span>2.0
 
     <span class="org-keyword">for</span> frontier <span class="org-keyword">in</span> ordered_frontier_cells:
-        <span class="org-variable-name">burned_cells</span>    <span class="org-operator">=</span> frontier[<span class="org-string">"burned_cells"</span>]
-        <span class="org-variable-name">unburned_cells</span>  <span class="org-operator">=</span> frontier[<span class="org-string">"unburned_cells"</span>]
-        <span class="org-variable-name">frontier_length</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(burned_cells)
-        <span class="org-variable-name">scores</span>          <span class="org-operator">=</span> np.zeros(frontier_length)
-        <span class="org-variable-name">rates</span>           <span class="org-operator">=</span> np.zeros(frontier_length)
-        <span class="org-variable-name">distances</span>       <span class="org-operator">=</span> np.zeros(frontier_length)
-        <span class="org-variable-name">times</span>           <span class="org-operator">=</span> np.zeros(frontier_length)
-
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the suppression priority of each cell pair</span>
-        <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-            <span class="org-variable-name">scores</span>[i] <span class="org-operator">=</span> suppression_priority_function(burned_cells[i], unburned_cells[i])
+        <span class="org-variable-name">scores</span> <span class="org-operator">=</span> suppression_priority_function(frontier)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fireline construction rate of each cell pair</span>
-        <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-            <span class="org-variable-name">rates</span>[i] <span class="org-operator">=</span> fireline_construction_rate_function(burned_cells[i], unburned_cells[i])
+        <span class="org-variable-name">rates</span> <span class="org-operator">=</span> fireline_construction_rate_function(frontier)
 
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the frontier length between each cell pair</span>
-        <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-            (<span class="org-variable-name">y0</span>, <span class="org-variable-name">x0</span>) <span class="org-operator">=</span> burned_cells[i]
-            (<span class="org-variable-name">y1</span>, <span class="org-variable-name">x1</span>) <span class="org-operator">=</span> unburned_cells[i]
-            <span class="org-keyword">if</span> (y0 <span class="org-operator">==</span> y1):
-                <span class="org-comment-delimiter"># </span><span class="org-comment">vertical cell side</span>
-                <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> cell_height
-            <span class="org-keyword">else</span>:
-                <span class="org-comment-delimiter"># </span><span class="org-comment">horizonal cell side</span>
-                <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> cell_width
-
-        <span class="org-comment-delimiter"># </span><span class="org-comment">If two cell pairs share the same unburned cell, we reduce their respective distances</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">such that their sum will equal the length of a diagonal line across the unburned cell</span>
-        <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length <span class="org-operator">-</span> 1):
-            <span class="org-keyword">if</span> unburned_cells[i] <span class="org-operator">==</span> unburned_cells[i<span class="org-operator">+</span>1]:
-                <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> half_diagonal_distance
-
-        <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(1, frontier_length):
-            <span class="org-keyword">if</span> unburned_cells[i] <span class="org-operator">==</span> unburned_cells[i<span class="org-operator">-</span>1]:
-                <span class="org-variable-name">distances</span>[i] <span class="org-operator">=</span> half_diagonal_distance
-
-        <span class="org-keyword">if</span> unburned_cells[frontier_length<span class="org-operator">-</span>1] <span class="org-operator">==</span> unburned_cells[0]:
-            <span class="org-variable-name">distances</span>[frontier_length<span class="org-operator">-</span>1] <span class="org-operator">=</span> half_diagonal_distance
-            <span class="org-variable-name">distances</span>[0]                 <span class="org-operator">=</span> half_diagonal_distance
+        <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fireline length required for each cell pair</span>
+        <span class="org-variable-name">distances</span> <span class="org-operator">=</span> get_frontier_distances(frontier, cell_height, cell_width)
 
         <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate the fireline construction times between each cell pair</span>
-        <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-            <span class="org-variable-name">times</span>[i] <span class="org-operator">=</span> distances[i] <span class="org-operator">/</span> rates[i]
+        <span class="org-variable-name">times</span> <span class="org-operator">=</span> distances <span class="org-operator">/</span> rates
 
         frontier_cell_scores.append({
             <span class="org-string">"scores"</span>   : scores,
@@ -15212,13 +15259,15 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">select_frontier_cells_for_suppression</span>(ordered_frontier_cells, frontier_cell_scores, max_construction_time):
-    <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> []
+    <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> ()
     <span class="org-variable-name">top_path_score</span>          <span class="org-operator">=</span> 0.0
 
     <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(ordered_frontier_cells)):
         <span class="org-variable-name">frontier</span>        <span class="org-operator">=</span> ordered_frontier_cells[i]
         <span class="org-variable-name">unburned_cells</span>  <span class="org-operator">=</span> frontier[<span class="org-string">"unburned_cells"</span>]
-        <span class="org-variable-name">frontier_length</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(unburned_cells)
+        <span class="org-variable-name">unburned_ys</span>     <span class="org-operator">=</span> unburned_cells[0]
+        <span class="org-variable-name">unburned_xs</span>     <span class="org-operator">=</span> unburned_cells[1]
+        <span class="org-variable-name">frontier_length</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(unburned_ys)
         <span class="org-variable-name">frontier_scores</span> <span class="org-operator">=</span> frontier_cell_scores[i]
         <span class="org-variable-name">scores</span>          <span class="org-operator">=</span> frontier_scores[<span class="org-string">"scores"</span>]
         <span class="org-variable-name">times</span>           <span class="org-operator">=</span> frontier_scores[<span class="org-string">"times"</span>]
@@ -15257,7 +15306,9 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
         <span class="org-keyword">if</span> best_path_score <span class="org-operator">&gt;</span> top_path_score:
             <span class="org-variable-name">top_path_score</span>          <span class="org-operator">=</span> best_path_score
-            <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> unburned_cells[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_ys</span>             <span class="org-operator">=</span> unburned_ys[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_xs</span>             <span class="org-operator">=</span> unburned_xs[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> (selected_ys, selected_xs)
 
     <span class="org-keyword">return</span> selected_frontier_cells
 </pre>
@@ -15266,7 +15317,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </div>
 
 <div id="outline-container-suppressing-frontier-cells" class="outline-4">
-<h4 id="suppressing-frontier-cells"><span class="section-number-4">10.1.3.</span> Suppressing Frontier Cells</h4>
+<h4 id="suppressing-frontier-cells"><span class="section-number-4">10.1.4.</span> Suppressing Frontier Cells</h4>
 <div class="outline-text-4" id="text-suppressing-frontier-cells">
 <div class="org-src-container">
 <pre class="src src-python" id="build-firelines"><span class="org-keyword">def</span> <span class="org-function-name">build_firelines</span>(fuel_model_matrix, frontier_cells, cell_height, cell_width, suppression_priority_function,
@@ -15287,9 +15338,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
                                                                     max_construction_time)
 
     <span class="org-comment-delimiter"># </span><span class="org-comment">Change the values in fuel_model_matrix to nonburnable_fuel_model for all selected_frontier_cells</span>
-    <span class="org-keyword">for</span> cell <span class="org-keyword">in</span> selected_frontier_cells:
-        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>)                 <span class="org-operator">=</span> cell
-        <span class="org-variable-name">fuel_model_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> nonburnable_fuel_model
+    <span class="org-variable-name">fuel_model_matrix</span>[selected_frontier_cells] <span class="org-operator">=</span> nonburnable_fuel_model
 
     <span class="org-keyword">return</span> fuel_model_matrix
 </pre>
@@ -15298,28 +15347,23 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </div>
 
 <div id="outline-container-example-suppression-priority-functions" class="outline-4">
-<h4 id="example-suppression-priority-functions"><span class="section-number-4">10.1.4.</span> Example Suppression Priority Functions</h4>
+<h4 id="example-suppression-priority-functions"><span class="section-number-4">10.1.5.</span> Example Suppression Priority Functions</h4>
 <div class="outline-text-4" id="text-example-suppression-priority-functions">
 <div class="org-src-container">
-<pre class="src src-python" id="example-suppression-priority-functions"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
-
-
-<span class="org-keyword">def</span> <span class="org-function-name">make_sdi_suppression_priority_fn</span>(sdi_matrix):
-    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Make this take a dictionary of 2D arrays</span>
+<pre class="src src-python" id="example-suppression-priority-functions"><span class="org-keyword">def</span> <span class="org-function-name">make_sdi_suppression_priority_fn</span>(sdi_matrix):
     <span class="org-variable-name">max_sdi</span> <span class="org-operator">=</span> np.<span class="org-builtin">max</span>(sdi_matrix) <span class="org-operator">+</span> 1.0
-    <span class="org-keyword">def</span> <span class="org-function-name">sdi_suppression_priority</span>(burned_cell, unburned_cell):
-        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> unburned_cell
-        <span class="org-keyword">return</span> max_sdi <span class="org-operator">-</span> sdi_matrix[y,x]
+
+    <span class="org-keyword">def</span> <span class="org-function-name">sdi_suppression_priority</span>(frontier):
+        <span class="org-keyword">return</span> max_sdi <span class="org-operator">-</span> sdi_matrix[frontier[<span class="org-string">"unburned_cells"</span>]]
 
     <span class="org-keyword">return</span> sdi_suppression_priority
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">make_flame_length_suppression_priority_fn</span>(flame_length_matrix):
-    <span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Make this take a dictionary of 2D arrays</span>
     <span class="org-variable-name">max_flame_length</span> <span class="org-operator">=</span> np.<span class="org-builtin">max</span>(flame_length_matrix) <span class="org-operator">+</span> 1.0
-    <span class="org-keyword">def</span> <span class="org-function-name">flame_length_suppression_priority</span>(burned_cell, unburned_cell):
-        (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> burned_cell
-        <span class="org-keyword">return</span> max_flame_length <span class="org-operator">-</span> flame_length_matrix[y,x]
+
+    <span class="org-keyword">def</span> <span class="org-function-name">flame_length_suppression_priority</span>(frontier):
+        <span class="org-keyword">return</span> max_flame_length <span class="org-operator">-</span> flame_length_matrix[frontier[<span class="org-string">"burned_cells"</span>]]
 
     <span class="org-keyword">return</span> flame_length_suppression_priority
 </pre>
@@ -15349,42 +15393,42 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <span class="org-comment-delimiter"># </span><span class="org-comment">unburned_cells      = frontier_cells["unburned_cells"]</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Define some example values for algorithm testing</span>
-<span class="org-variable-name">burned_cells</span>   <span class="org-operator">=</span> [(53, 47), (51, 47), (55, 46), (54, 46), (47, 51), (47, 52), (47, 54), (47, 56), (48, 58), (47, 55),
-                  (50, 61), (47, 57), (70, 54), (71, 55), (53, 65), (56, 67), (59, 68), (65, 70), (66, 70), (67, 70),
-                  (68, 70), (73, 68), (72, 69), (63, 70), (60, 47), (59, 47), (57, 46), (52, 47), (56, 46), (61, 47),
-                  (58, 47), (50, 47), (63, 48), (62, 48), (49, 48), (65, 49), (48, 49), (64, 49), (48, 50), (66, 50),
-                  (67, 51), (68, 52), (47, 53), (69, 53), (71, 56), (72, 57), (72, 58), (48, 59), (73, 59), (49, 60),
-                  (73, 60), (73, 61), (50, 62), (74, 62), (51, 63), (74, 63), (52, 64), (74, 64), (54, 65), (74, 65),
-                  (55, 66), (74, 66), (57, 67), (73, 67), (58, 68), (62, 69), (61, 69), (60, 69), (64, 70), (69, 70),
-                  (70, 70), (71, 70)]
-
-
-<span class="org-variable-name">unburned_cells</span> <span class="org-operator">=</span> [(56, 45), (53, 46), (46, 52), (46, 53), (46, 54), (46, 55), (75, 65), (58, 69), (67, 71), (68, 71),
-                  (64, 71), (65, 71), (51, 46), (49, 47), (64, 48), (55, 45), (54, 45), (57, 45), (60, 46), (52, 46),
-                  (61, 46), (58, 46), (62, 47), (59, 46), (50, 46), (65, 48), (63, 47), (48, 48), (66, 49), (67, 50),
-                  (47, 49), (47, 50), (46, 51), (68, 51), (69, 52), (70, 53), (71, 54), (72, 55), (46, 56), (72, 56),
-                  (73, 57), (46, 57), (47, 58), (73, 58), (47, 59), (74, 59), (48, 60), (74, 60), (49, 61), (74, 61),
-                  (49, 62), (75, 62), (50, 63), (75, 63), (51, 64), (75, 64), (52, 65), (75, 66), (54, 66), (53, 66),
-                  (55, 67), (74, 67), (57, 68), (56, 68), (74, 68), (73, 69), (59, 69), (60, 70), (72, 70), (62, 70),
-                  (61, 70), (66, 71), (69, 71), (70, 71), (63, 71), (71, 71)]
-
-
+<span class="org-variable-name">burned_ys</span>      <span class="org-operator">=</span> [53, 51, 55, 54, 47, 47, 47, 47, 48, 47, 50, 47, 70, 71, 53, 56, 59, 65, 66, 67, 68, 73, 72, 63,
+                  60, 59, 57, 52, 56, 61, 58, 50, 63, 62, 49, 65, 48, 64, 48, 66, 67, 68, 47, 69, 71, 72, 72, 48,
+                  73, 49, 73, 73, 50, 74, 51, 74, 52, 74, 54, 74, 55, 74, 57, 73, 58, 62, 61, 60, 64, 69, 70, 71]
+<span class="org-variable-name">burned_xs</span>      <span class="org-operator">=</span> [47, 47, 46, 46, 51, 52, 54, 56, 58, 55, 61, 57, 54, 55, 65, 67, 68, 70, 70, 70, 70, 68, 69, 70,
+                  47, 47, 46, 47, 46, 47, 47, 47, 48, 48, 48, 49, 49, 49, 50, 50, 51, 52, 53, 53, 56, 57, 58, 59,
+                  59, 60, 60, 61, 62, 62, 63, 63, 64, 64, 65, 65, 66, 66, 67, 67, 68, 69, 69, 69, 70, 70, 70, 70]
+<span class="org-variable-name">unburned_ys</span>    <span class="org-operator">=</span> [56, 53, 46, 46, 46, 46, 75, 58, 67, 68, 64, 65, 51, 49, 64, 55, 54, 57, 60, 52, 61, 58, 62, 59,
+                  50, 65, 63, 48, 66, 67, 47, 47, 46, 68, 69, 70, 71, 72, 46, 72, 73, 46, 47, 73, 47, 74, 48, 74,
+                  49, 74, 49, 75, 50, 75, 51, 75, 52, 75, 54, 53, 55, 74, 57, 56, 74, 73, 59, 60, 72, 62, 61, 66,
+                  69, 70, 63, 71]
+<span class="org-variable-name">unburned_xs</span>    <span class="org-operator">=</span> [45, 46, 52, 53, 54, 55, 65, 69, 71, 71, 71, 71, 46, 47, 48, 45, 45, 45, 46, 46, 46, 46, 47, 46,
+                  46, 48, 47, 48, 49, 50, 49, 50, 51, 51, 52, 53, 54, 55, 56, 56, 57, 57, 58, 58, 59, 59, 60, 60,
+                  61, 61, 62, 62, 63, 63, 64, 64, 65, 66, 66, 66, 67, 67, 68, 68, 68, 69, 69, 70, 70, 70, 70, 71,
+                  71, 71, 71, 71]
 <span class="org-variable-name">frontier_cells</span> <span class="org-operator">=</span> {
-    <span class="org-string">"burned_cells"</span>  : burned_cells,
-    <span class="org-string">"unburned_cells"</span>: unburned_cells,
+    <span class="org-string">"burned_cells"</span>  : (np.asarray(burned_ys  , dtype<span class="org-operator">=</span>np.int32), np.asarray(burned_xs  , dtype<span class="org-operator">=</span>np.int32)),
+    <span class="org-string">"unburned_cells"</span>: (np.asarray(unburned_ys, dtype<span class="org-operator">=</span>np.int32), np.asarray(unburned_xs, dtype<span class="org-operator">=</span>np.int32)),
 }
 
 
-<span class="org-variable-name">cell_height</span>                         <span class="org-operator">=</span> 30.0                          <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-<span class="org-variable-name">cell_width</span>                          <span class="org-operator">=</span> 30.0                          <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-<span class="org-variable-name">suppression_priority_function</span>       <span class="org-operator">=</span> <span class="org-keyword">lambda</span> burned, unburned: 5.0  <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
-<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> burned, unburned: 30.0 <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
-<span class="org-variable-name">max_construction_time</span>               <span class="org-operator">=</span> 10.0                          <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">cell_height</span>                         <span class="org-operator">=</span> 30.0                                                             <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+<span class="org-variable-name">cell_width</span>                          <span class="org-operator">=</span> 30.0                                                             <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+<span class="org-variable-name">suppression_priority_function</span>       <span class="org-operator">=</span> <span class="org-keyword">lambda</span> frontier: np.full(<span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0]), 5.0)  <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
+<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> frontier: np.full(<span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0]), 30.0) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+<span class="org-variable-name">max_construction_time</span>               <span class="org-operator">=</span> 10.0                                                             <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+
 
 <span class="org-variable-name">ordered_frontier_cells</span>  <span class="org-operator">=</span> order_frontier_cells(frontier_cells)
-<span class="org-variable-name">ordered_burned_cells</span>    <span class="org-operator">=</span> ordered_frontier_cells[0][<span class="org-string">"burned_cells"</span>]
-<span class="org-variable-name">ordered_unburned_cells</span>  <span class="org-operator">=</span> ordered_frontier_cells[0][<span class="org-string">"unburned_cells"</span>]
-<span class="org-variable-name">frontier_length</span>         <span class="org-operator">=</span> <span class="org-builtin">len</span>(ordered_unburned_cells)
+<span class="org-variable-name">first_frontier</span>          <span class="org-operator">=</span> ordered_frontier_cells[0]
+<span class="org-variable-name">ordered_burned_cells</span>    <span class="org-operator">=</span> first_frontier[<span class="org-string">"burned_cells"</span>]
+<span class="org-variable-name">ordered_burned_ys</span>       <span class="org-operator">=</span> ordered_burned_cells[0]
+<span class="org-variable-name">ordered_burned_xs</span>       <span class="org-operator">=</span> ordered_burned_cells[1]
+<span class="org-variable-name">ordered_unburned_cells</span>  <span class="org-operator">=</span> first_frontier[<span class="org-string">"unburned_cells"</span>]
+<span class="org-variable-name">ordered_unburned_ys</span>     <span class="org-operator">=</span> ordered_unburned_cells[0]
+<span class="org-variable-name">ordered_unburned_xs</span>     <span class="org-operator">=</span> ordered_unburned_cells[1]
+<span class="org-variable-name">frontier_length</span>         <span class="org-operator">=</span> <span class="org-builtin">len</span>(ordered_unburned_ys)
 <span class="org-variable-name">frontier_cell_scores</span>    <span class="org-operator">=</span> score_frontier_cells(ordered_frontier_cells,
                                                cell_height,
                                                cell_width,
@@ -15395,6 +15439,8 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                 frontier_cell_scores,
                                                                 max_construction_time)
+<span class="org-variable-name">selected_ys</span>             <span class="org-operator">=</span> selected_frontier_cells[0]
+<span class="org-variable-name">selected_xs</span>             <span class="org-operator">=</span> selected_frontier_cells[1]
 
 
 <span class="org-variable-name">unordered_matrix</span> <span class="org-operator">=</span> np.zeros((100,100), dtype<span class="org-operator">=</span>np.int8)
@@ -15405,44 +15451,54 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">unordered_matrix - part 1</span>
-<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(burned_cells)):
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> burned_cells[i]
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(burned_ys)):
+    <span class="org-variable-name">y</span> <span class="org-operator">=</span> burned_ys[i]
+    <span class="org-variable-name">x</span> <span class="org-operator">=</span> burned_xs[i]
     <span class="org-variable-name">unordered_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> <span class="org-operator">-</span>i<span class="org-operator">-</span>1
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">unordered_matrix - part 2</span>
-<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(unburned_cells)):
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> unburned_cells[i]
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(unburned_ys)):
+    <span class="org-variable-name">y</span> <span class="org-operator">=</span> unburned_ys[i]
+    <span class="org-variable-name">x</span> <span class="org-operator">=</span> unburned_xs[i]
     <span class="org-variable-name">unordered_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> i<span class="org-operator">+</span>1
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">ordered_matrix</span>
 <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-    (<span class="org-variable-name">y1</span>, <span class="org-variable-name">x1</span>) <span class="org-operator">=</span> ordered_burned_cells[i]
-    (<span class="org-variable-name">y2</span>, <span class="org-variable-name">x2</span>) <span class="org-operator">=</span> ordered_unburned_cells[i]
+    <span class="org-variable-name">y1</span> <span class="org-operator">=</span> ordered_burned_ys[i]
+    <span class="org-variable-name">x1</span> <span class="org-operator">=</span> ordered_burned_xs[i]
+    <span class="org-variable-name">y2</span> <span class="org-operator">=</span> ordered_unburned_ys[i]
+    <span class="org-variable-name">x2</span> <span class="org-operator">=</span> ordered_unburned_xs[i]
     <span class="org-variable-name">ordered_matrix</span>[<span class="org-variable-name">y1</span>,<span class="org-variable-name">x1</span>] <span class="org-operator">=</span> <span class="org-operator">-</span>i<span class="org-operator">-</span>1
     <span class="org-variable-name">ordered_matrix</span>[<span class="org-variable-name">y2</span>,<span class="org-variable-name">x2</span>] <span class="org-operator">=</span> i<span class="org-operator">+</span>1
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">score_matrix</span>
 <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> ordered_unburned_cells[i]
+    <span class="org-variable-name">y</span> <span class="org-operator">=</span> ordered_unburned_ys[i]
+    <span class="org-variable-name">x</span> <span class="org-operator">=</span> ordered_unburned_xs[i]
     <span class="org-variable-name">score_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">+=</span> frontier_scores[i]
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">time_matrix</span>
 <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
-    (<span class="org-variable-name">y</span>, <span class="org-variable-name">x</span>) <span class="org-operator">=</span> ordered_unburned_cells[i]
+    <span class="org-variable-name">y</span> <span class="org-operator">=</span> ordered_unburned_ys[i]
+    <span class="org-variable-name">x</span> <span class="org-operator">=</span> ordered_unburned_xs[i]
     <span class="org-variable-name">time_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">+=</span> frontier_times[i]
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">selected_matrix - part 1</span>
-<span class="org-keyword">for</span> (y, x) <span class="org-keyword">in</span> ordered_unburned_cells:
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(frontier_length):
+    <span class="org-variable-name">y</span> <span class="org-operator">=</span> ordered_unburned_ys[i]
+    <span class="org-variable-name">x</span> <span class="org-operator">=</span> ordered_unburned_xs[i]
     <span class="org-variable-name">selected_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> 1
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">selected_matrix - part 2</span>
-<span class="org-keyword">for</span> (y, x) <span class="org-keyword">in</span> selected_frontier_cells:
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(selected_ys)):
+    <span class="org-variable-name">y</span> <span class="org-operator">=</span> selected_ys[i]
+    <span class="org-variable-name">x</span> <span class="org-operator">=</span> selected_xs[i]
     <span class="org-variable-name">selected_matrix</span>[<span class="org-variable-name">y</span>,<span class="org-variable-name">x</span>] <span class="org-operator">=</span> 2
 
 
@@ -15626,7 +15682,7 @@ spread_state.set_start_time(start_time)
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Define suppression_priority_function, fireline_construction_rate_function, and max_construction_time</span>
 <span class="org-variable-name">suppression_priority_function</span>       <span class="org-operator">=</span> make_flame_length_suppression_priority_fn(flame_length_matrix)
-<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> burned, unburned: 30.0 <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> frontier: np.full(<span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0]), 30.0) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
 <span class="org-variable-name">max_construction_time</span>               <span class="org-operator">=</span> 18.0 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the cell dimensions</span>

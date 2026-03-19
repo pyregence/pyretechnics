@@ -1050,23 +1050,35 @@ def identify_tracked_cells(frontier_cells: set,
 
 @cy.cfunc
 def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
-    frontier_cells_burned  : list[coord_yx] = []
-    frontier_cells_unburned: list[coord_yx] = []
-    encoded_cell_index     : object
-    cell_index             : coord_yx
-    y                      : pyidx
-    x                      : pyidx
+    # Group the frontier_cells into burned and unburned lists
+    burned_ys         : list[pyidx] = []
+    burned_xs         : list[pyidx] = []
+    unburned_ys       : list[pyidx] = []
+    unburned_xs       : list[pyidx] = []
+    encoded_cell_index: object
+    cell_index        : coord_yx
+    y                 : pyidx
+    x                 : pyidx
     for encoded_cell_index in frontier_cells:
         cell_index = decode_cell_index(encoded_cell_index)
         y          = cell_index[0]
         x          = cell_index[1]
         if (phi_matrix[2+y, 2+x] < 0.0):
-            frontier_cells_burned.append(cell_index)
+            burned_ys.append(y)
+            burned_xs.append(x)
         else:
-            frontier_cells_unburned.append(cell_index)
+            unburned_ys.append(y)
+            unburned_xs.append(x)
+    # Return a dictionary of 2D Numpy array indices
     return {
-        "burned_cells"  : frontier_cells_burned,
-        "unburned_cells": frontier_cells_unburned,
+        "burned_cells": (
+            np.asarray(burned_ys, dtype=np.int32),
+            np.asarray(burned_xs, dtype=np.int32)
+        ),
+        "unburned_cells": (
+            np.asarray(unburned_ys, dtype=np.int32),
+            np.asarray(unburned_xs, dtype=np.int32)
+        ),
     }
 # phi-field-perimeter-tracking ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
@@ -2738,6 +2750,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
     - stop_condition    :: "max duration reached" or "no burnable cells"
     - spread_state      :: SpreadState object whose spatial dimensions match the space_time_cubes
     - num_tracked_cells :: number of cells in the narrow band at stop_time
+    - frontier_cells    :: dictionary of (burned_cells|unburned_cells -> 2D Numpy array indices)
     - spot_ignitions    :: dictionary of (ignition_time -> ignited_cells) (only included when spotting is used)
     - random_generator  :: BufferedRandGen object (only included when spotting is used)
     """

@@ -1,43 +1,58 @@
+# [[file:../../org/pyretechnics.org::suppression-imports][suppression-imports]]
+import cython
+import cython as cy
+import numpy as np
+if cython.compiled:
+    from cython.cimports.numpy import ndarray
+    from cython.cimports.libc.math import sqrt
+    from cython.cimports.pyretechnics.cy_types import pyidx
+else:
+    from numpy import ndarray
+    from math import sqrt
+    from pyretechnics.py_types import pyidx
+# suppression-imports ends here
 # [[file:../../org/pyretechnics.org::order-frontier-cells][order-frontier-cells]]
-def get_ordered_sides(cell_index, is_burned):
-    y     = cell_index[0]
-    x     = cell_index[1]
-    north = y + 0.5
-    south = y - 0.5
-    east  = x + 0.5
-    west  = x - 0.5
+def get_ordered_sides(y: cy.int, x: cy.int, is_burned: cy.bint) -> set:
+    north: cy.float = y + 0.5
+    south: cy.float = y - 0.5
+    east : cy.float = x + 0.5
+    west : cy.float = x - 0.5
 
     # Define cell sides as (y1,x1,y2,x2) where (y1,x1) and (y2,x2) are cell corners and (y1,x1)->(y2,x2)
     # is a directional cell side with an unburned cell to the left and a burned cell to the right.
     if is_burned:
         # Clockwise
-        north_side = (north, west, north, east)
-        east_side  = (north, east, south, east)
-        south_side = (south, east, south, west)
-        west_side  = (south, west, north, west)
+        north_side: tuple[cy.float, cy.float, cy.float, cy.float] = (north, west, north, east)
+        east_side : tuple[cy.float, cy.float, cy.float, cy.float] = (north, east, south, east)
+        south_side: tuple[cy.float, cy.float, cy.float, cy.float] = (south, east, south, west)
+        west_side : tuple[cy.float, cy.float, cy.float, cy.float] = (south, west, north, west)
     else:
         # Counterclockwise
-        north_side = (north, east, north, west)
-        west_side  = (north, west, south, west)
-        south_side = (south, west, south, east)
-        east_side  = (south, east, north, east)
+        north_side: tuple[cy.float, cy.float, cy.float, cy.float] = (north, east, north, west)
+        west_side : tuple[cy.float, cy.float, cy.float, cy.float] = (north, west, south, west)
+        south_side: tuple[cy.float, cy.float, cy.float, cy.float] = (south, west, south, east)
+        east_side : tuple[cy.float, cy.float, cy.float, cy.float] = (south, east, north, east)
 
     return {north_side, east_side, south_side, west_side}
 
 
-def get_frontier_sides(frontier_cells):
-    burned_cells        = frontier_cells["burned_cells"]
-    unburned_cells      = frontier_cells["unburned_cells"]
-    burned_cell_sides   = set()
-    unburned_cell_sides = set()
+def get_frontier_sides(frontier_cells: dict) -> set:
+    burned_cells       : tuple[ndarray, ndarray] = frontier_cells["burned_cells"]
+    unburned_cells     : tuple[ndarray, ndarray] = frontier_cells["unburned_cells"]
+    burned_ys          : cy.int[::1]             = burned_cells[0]
+    burned_xs          : cy.int[::1]             = burned_cells[1]
+    unburned_ys        : cy.int[::1]             = unburned_cells[0]
+    unburned_xs        : cy.int[::1]             = unburned_cells[1]
+    burned_cell_sides  : set                     = set()
+    unburned_cell_sides: set                     = set()
+    i                  : pyidx
+    for i in range(len(burned_ys)):
+        burned_cell_sides.update(get_ordered_sides(burned_ys[i], burned_xs[i], True))
 
-    for cell in burned_cells:
-        burned_cell_sides.update(get_ordered_sides(cell, True))
+    for i in range(len(unburned_ys)):
+        unburned_cell_sides.update(get_ordered_sides(unburned_ys[i], unburned_xs[i], False))
 
-    for cell in unburned_cells:
-        unburned_cell_sides.update(get_ordered_sides(cell, False))
-
-    frontier_sides = set.intersection(burned_cell_sides, unburned_cell_sides)
+    frontier_sides: set = set.intersection(burned_cell_sides, unburned_cell_sides)
 
     return frontier_sides
 
@@ -157,50 +172,62 @@ def iterative_graph_traversal(frontier_corner_graph, root_corner):
     return corner_sequence
 
 
-def corners_to_ordered_frontier_cells(corner_sequence):
-    burned_cells   = []
-    unburned_cells = []
-    parent_corner  = corner_sequence[0]
-    for child_corner in corner_sequence[1:]:
-        (y1, x1)  = parent_corner
-        (y2, x2)  = child_corner
-        direction = get_side_direction(parent_corner, child_corner)
+def corners_to_ordered_frontier_cells(corner_sequence: list) -> dict:
+    num_sides  : cy.int      = len(corner_sequence) - 1
+    burned_ys  : cy.int[::1] = np.zeros(num_sides, dtype=np.int32)
+    burned_xs  : cy.int[::1] = np.zeros(num_sides, dtype=np.int32)
+    unburned_ys: cy.int[::1] = np.zeros(num_sides, dtype=np.int32)
+    unburned_xs: cy.int[::1] = np.zeros(num_sides, dtype=np.int32)
+    i          : pyidx
+    for i in range(num_sides):
+        parent_corner: tuple[cy.float, cy.float] = corner_sequence[i]
+        child_corner : tuple[cy.float, cy.float] = corner_sequence[i+1]
+        y1           : cy.float                  = parent_corner[0]
+        x1           : cy.float                  = parent_corner[1]
+        y2           : cy.float                  = child_corner[0]
+        x2           : cy.float                  = child_corner[1]
+        direction    : str                       = get_side_direction(parent_corner, child_corner)
+        y            : cy.int
+        y_up         : cy.int
+        y_down       : cy.int
+        x            : cy.int
+        x_left       : cy.int
+        x_right      : cy.int
         if direction == "north":
-            y         = int(y1 + 0.5)
-            x_left    = int(x1 - 0.5)
-            x_right   = int(x1 + 0.5)
-            east_cell = (y, x_right)
-            west_cell = (y, x_left)
-            burned_cells.append(east_cell)
-            unburned_cells.append(west_cell)
+            y              = int(y1 + 0.5)
+            x_left         = int(x1 - 0.5)
+            x_right        = int(x1 + 0.5)
+            burned_ys[i]   = y             # east_cell
+            burned_xs[i]   = x_right       # east_cell
+            unburned_ys[i] = y             # west_cell
+            unburned_xs[i] = x_left        # west_cell
         elif direction == "east":
-            y_up       = int(y1 + 0.5)
-            y_down     = int(y1 - 0.5)
-            x          = int(x1 + 0.5)
-            north_cell = (y_up  , x)
-            south_cell = (y_down, x)
-            burned_cells.append(south_cell)
-            unburned_cells.append(north_cell)
+            y_up           = int(y1 + 0.5)
+            y_down         = int(y1 - 0.5)
+            x              = int(x1 + 0.5)
+            burned_ys[i]   = y_down        # south_cell
+            burned_xs[i]   = x             # south_cell
+            unburned_ys[i] = y_up          # north_cell
+            unburned_xs[i] = x             # north_cell
         elif direction == "south":
-            y         = int(y2 + 0.5)
-            x_left    = int(x1 - 0.5)
-            x_right   = int(x1 + 0.5)
-            east_cell = (y, x_right)
-            west_cell = (y, x_left)
-            burned_cells.append(west_cell)
-            unburned_cells.append(east_cell)
+            y              = int(y2 + 0.5)
+            x_left         = int(x1 - 0.5)
+            x_right        = int(x1 + 0.5)
+            burned_ys[i]   = y             # west_cell
+            burned_xs[i]   = x_left        # west_cell
+            unburned_ys[i] = y             # east_cell
+            unburned_xs[i] = x_right       # east_cell
         else: # direction == "west"
-            y_up       = int(y1 + 0.5)
-            y_down     = int(y1 - 0.5)
-            x          = int(x2 + 0.5)
-            north_cell = (y_up  , x)
-            south_cell = (y_down, x)
-            burned_cells.append(north_cell)
-            unburned_cells.append(south_cell)
-        parent_corner = child_corner
+            y_up           = int(y1 + 0.5)
+            y_down         = int(y1 - 0.5)
+            x              = int(x2 + 0.5)
+            burned_ys[i]   = y_up          # north_cell
+            burned_xs[i]   = x             # north_cell
+            unburned_ys[i] = y_down        # south_cell
+            unburned_xs[i] = x             # south_cell
     return {
-        "burned_cells"  : burned_cells,
-        "unburned_cells": unburned_cells,
+        "burned_cells"  : (burned_ys, burned_xs),
+        "unburned_cells": (unburned_ys, unburned_xs),
     }
 
 
@@ -228,60 +255,59 @@ def order_frontier_cells(frontier_cells):
     return ordered_frontier_cells
 # order-frontier-cells ends here
 # [[file:../../org/pyretechnics.org::select-frontier-cells-for-suppression][select-frontier-cells-for-suppression]]
-from math import sqrt
-import numpy as np
+def get_frontier_distances(frontier, cell_height, cell_width):
+    burned_cells           = frontier["burned_cells"]
+    burned_ys              = burned_cells[0]
+    burned_xs              = burned_cells[1]
+    unburned_cells         = frontier["unburned_cells"]
+    unburned_ys            = unburned_cells[0]
+    unburned_xs            = unburned_cells[1]
+    frontier_length        = len(burned_ys)
+    distances              = np.zeros(frontier_length, dtype=np.float32)
+    half_diagonal_distance = sqrt(cell_height * cell_height + cell_width * cell_width)/2.0
+
+    # Calculate the frontier length between each cell pair
+    for i in range(frontier_length):
+        if (burned_ys[i] == unburned_ys[i]):
+            # vertical cell side
+            distances[i] = cell_height
+        else:
+            # horizonal cell side
+            distances[i] = cell_width
+
+    # If two cell pairs share the same unburned cell, we reduce their respective distances
+    # such that their sum will equal the length of a diagonal line across the unburned cell
+    for i in range(frontier_length - 1):
+        if unburned_ys[i] == unburned_ys[i+1] and unburned_xs[i] == unburned_xs[i+1]:
+            distances[i] = half_diagonal_distance
+
+    for i in range(1, frontier_length):
+        if unburned_ys[i] == unburned_ys[i-1] and unburned_xs[i] == unburned_xs[i-1]:
+            distances[i] = half_diagonal_distance
+
+    if unburned_ys[frontier_length-1] == unburned_ys[0] and unburned_xs[frontier_length-1] == unburned_xs[0]:
+        distances[frontier_length-1] = half_diagonal_distance
+        distances[0]                 = half_diagonal_distance
+
+    return distances
 
 
 def score_frontier_cells(ordered_frontier_cells, cell_height, cell_width,
                          suppression_priority_function, fireline_construction_rate_function):
     frontier_cell_scores   = []
-    half_diagonal_distance = sqrt(cell_height * cell_height + cell_width * cell_width)/2.0
 
     for frontier in ordered_frontier_cells:
-        burned_cells    = frontier["burned_cells"]
-        unburned_cells  = frontier["unburned_cells"]
-        frontier_length = len(burned_cells)
-        scores          = np.zeros(frontier_length)
-        rates           = np.zeros(frontier_length)
-        distances       = np.zeros(frontier_length)
-        times           = np.zeros(frontier_length)
-
         # Calculate the suppression priority of each cell pair
-        for i in range(frontier_length):
-            scores[i] = suppression_priority_function(burned_cells[i], unburned_cells[i])
+        scores = suppression_priority_function(frontier)
 
         # Calculate the fireline construction rate of each cell pair
-        for i in range(frontier_length):
-            rates[i] = fireline_construction_rate_function(burned_cells[i], unburned_cells[i])
+        rates = fireline_construction_rate_function(frontier)
 
-        # Calculate the frontier length between each cell pair
-        for i in range(frontier_length):
-            (y0, x0) = burned_cells[i]
-            (y1, x1) = unburned_cells[i]
-            if (y0 == y1):
-                # vertical cell side
-                distances[i] = cell_height
-            else:
-                # horizonal cell side
-                distances[i] = cell_width
-
-        # If two cell pairs share the same unburned cell, we reduce their respective distances
-        # such that their sum will equal the length of a diagonal line across the unburned cell
-        for i in range(frontier_length - 1):
-            if unburned_cells[i] == unburned_cells[i+1]:
-                distances[i] = half_diagonal_distance
-
-        for i in range(1, frontier_length):
-            if unburned_cells[i] == unburned_cells[i-1]:
-                distances[i] = half_diagonal_distance
-
-        if unburned_cells[frontier_length-1] == unburned_cells[0]:
-            distances[frontier_length-1] = half_diagonal_distance
-            distances[0]                 = half_diagonal_distance
+        # Calculate the fireline length required for each cell pair
+        distances = get_frontier_distances(frontier, cell_height, cell_width)
 
         # Calculate the fireline construction times between each cell pair
-        for i in range(frontier_length):
-            times[i] = distances[i] / rates[i]
+        times = distances / rates
 
         frontier_cell_scores.append({
             "scores"   : scores,
@@ -294,13 +320,15 @@ def score_frontier_cells(ordered_frontier_cells, cell_height, cell_width,
 
 
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_construction_time):
-    selected_frontier_cells = []
+    selected_frontier_cells = ()
     top_path_score          = 0.0
 
     for i in range(len(ordered_frontier_cells)):
         frontier        = ordered_frontier_cells[i]
         unburned_cells  = frontier["unburned_cells"]
-        frontier_length = len(unburned_cells)
+        unburned_ys     = unburned_cells[0]
+        unburned_xs     = unburned_cells[1]
+        frontier_length = len(unburned_ys)
         frontier_scores = frontier_cell_scores[i]
         scores          = frontier_scores["scores"]
         times           = frontier_scores["times"]
@@ -339,7 +367,9 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
 
         if best_path_score > top_path_score:
             top_path_score          = best_path_score
-            selected_frontier_cells = unburned_cells[best_start_idx:best_stop_idx]
+            selected_ys             = unburned_ys[best_start_idx:best_stop_idx]
+            selected_xs             = unburned_xs[best_start_idx:best_stop_idx]
+            selected_frontier_cells = (selected_ys, selected_xs)
 
     return selected_frontier_cells
 # select-frontier-cells-for-suppression ends here
@@ -362,32 +392,25 @@ def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width, 
                                                                     max_construction_time)
 
     # Change the values in fuel_model_matrix to nonburnable_fuel_model for all selected_frontier_cells
-    for cell in selected_frontier_cells:
-        (y, x)                 = cell
-        fuel_model_matrix[y,x] = nonburnable_fuel_model
+    fuel_model_matrix[selected_frontier_cells] = nonburnable_fuel_model
 
     return fuel_model_matrix
 # build-firelines ends here
 # [[file:../../org/pyretechnics.org::example-suppression-priority-functions][example-suppression-priority-functions]]
-import numpy as np
-
-
 def make_sdi_suppression_priority_fn(sdi_matrix):
-    # FIXME: Make this take a dictionary of 2D arrays
     max_sdi = np.max(sdi_matrix) + 1.0
-    def sdi_suppression_priority(burned_cell, unburned_cell):
-        (y, x) = unburned_cell
-        return max_sdi - sdi_matrix[y,x]
+
+    def sdi_suppression_priority(frontier):
+        return max_sdi - sdi_matrix[frontier["unburned_cells"]]
 
     return sdi_suppression_priority
 
 
 def make_flame_length_suppression_priority_fn(flame_length_matrix):
-    # FIXME: Make this take a dictionary of 2D arrays
     max_flame_length = np.max(flame_length_matrix) + 1.0
-    def flame_length_suppression_priority(burned_cell, unburned_cell):
-        (y, x) = burned_cell
-        return max_flame_length - flame_length_matrix[y,x]
+
+    def flame_length_suppression_priority(frontier):
+        return max_flame_length - flame_length_matrix[frontier["burned_cells"]]
 
     return flame_length_suppression_priority
 # example-suppression-priority-functions ends here
