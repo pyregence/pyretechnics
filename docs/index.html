@@ -15748,8 +15748,8 @@ spread_state.set_start_time(start_time)
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Select the contiguous stretch of the active fire perimeter with the highest total</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">suppression priority within length max_suppression_length and set all of its unburned</span>
-    <span class="org-comment-delimiter"># </span><span class="org-comment">cells to a non-burnable value in fuel_model_matrix</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">suppression priority that can be contained within max_construction_time and set all</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">of its unburned cells to a non-burnable value in fuel_model_matrix</span>
     <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 
     <span class="org-variable-name">fuel_model_matrix</span> <span class="org-operator">=</span> build_firelines(fuel_model_matrix,

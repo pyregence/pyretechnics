@@ -14384,8 +14384,8 @@ for spread_phase in range(1,13):
 
     #============================================================================================
     # Select the contiguous stretch of the active fire perimeter with the highest total
-    # suppression priority within length max_suppression_length and set all of its unburned
-    # cells to a non-burnable value in fuel_model_matrix
+    # suppression priority that can be contained within max_construction_time and set all
+    # of its unburned cells to a non-burnable value in fuel_model_matrix
     #============================================================================================
 
     fuel_model_matrix = build_firelines(fuel_model_matrix,
