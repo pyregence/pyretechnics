@@ -13916,11 +13916,15 @@ def score_frontier_cells(ordered_frontier_cells, cell_height, cell_width,
 
 
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_construction_time):
-    selected_frontier_cells = ()
+    selected_burned_cells   = ()
+    selected_unburned_cells = ()
     top_path_score          = 0.0
 
     for i in range(len(ordered_frontier_cells)):
         frontier        = ordered_frontier_cells[i]
+        burned_cells    = frontier["burned_cells"]
+        burned_ys       = burned_cells[0]
+        burned_xs       = burned_cells[1]
         unburned_cells  = frontier["unburned_cells"]
         unburned_ys     = unburned_cells[0]
         unburned_xs     = unburned_cells[1]
@@ -13963,11 +13967,17 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
 
         if best_path_score > top_path_score:
             top_path_score          = best_path_score
-            selected_ys             = unburned_ys[best_start_idx:best_stop_idx]
-            selected_xs             = unburned_xs[best_start_idx:best_stop_idx]
-            selected_frontier_cells = (selected_ys, selected_xs)
+            selected_burned_ys      = burned_ys[best_start_idx:best_stop_idx]
+            selected_burned_xs      = burned_xs[best_start_idx:best_stop_idx]
+            selected_unburned_ys    = unburned_ys[best_start_idx:best_stop_idx]
+            selected_unburned_xs    = unburned_xs[best_start_idx:best_stop_idx]
+            selected_burned_cells   = (selected_burned_ys, selected_burned_xs)
+            selected_unburned_cells = (selected_unburned_ys, selected_unburned_xs)
 
-    return selected_frontier_cells
+    return {
+        "burned_cells"  : selected_burned_cells,
+        "unburned_cells": selected_unburned_cells,
+    }
 #+end_src
 
 *** Suppressing Frontier Cells
@@ -13977,8 +13987,18 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
 
 #+NAME: build-firelines
 #+begin_src python
-def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width, suppression_priority_function,
-                    fireline_construction_rate_function, max_construction_time, nonburnable_fuel_model=91):
+def make_constant_value_fn(value):
+
+    def constant_value(frontier):
+        frontier_length = len(frontier["burned_cells"][0])
+        return np.full(frontier_length, value)
+
+    return constant_value
+
+
+def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width,
+                    suppression_priority_function, fireline_construction_rate_function,
+                    max_construction_time, suppressed_fuel_model_function=make_constant_value_fn(91)):
     # Order the frontier cells into a list of independent, spatially contiguous perimeters
     ordered_frontier_cells = order_frontier_cells(frontier_cells)
 
@@ -13989,13 +14009,17 @@ def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width, 
                                                 suppression_priority_function,
                                                 fireline_construction_rate_function)
 
-    # Select cells to suppress for each perimeter
+    # Select the frontier segment with the highest suppression priority that can be
+    # contained within max_construction_time
     selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                     frontier_cell_scores,
                                                                     max_construction_time)
 
-    # Change the values in fuel_model_matrix to nonburnable_fuel_model for all selected_frontier_cells
-    fuel_model_matrix[selected_frontier_cells] = nonburnable_fuel_model
+    # Compute the new fuel model values in the suppressed cells
+    suppressed_fuel_models = suppressed_fuel_model_function(selected_frontier_cells)
+
+    # Change the values in fuel_model_matrix to these new suppressed values for all selected_frontier_cells
+    fuel_model_matrix[selected_frontier_cells["unburned_cells"]] = suppressed_fuel_models
 
     return fuel_model_matrix
 #+end_src
@@ -14042,7 +14066,8 @@ def make_flame_length_suppression_priority_fn(flame_length_matrix):
 #+begin_src python :results silent
 import numpy as np
 import matplotlib.pyplot as plt
-from pyretechnics.suppression import order_frontier_cells, score_frontier_cells, select_frontier_cells_for_suppression
+from pyretechnics.suppression import order_frontier_cells, score_frontier_cells, \
+    select_frontier_cells_for_suppression, make_constant_value_fn
 
 # NOTE: This is how you normally extract the frontier cells from a fire spread simulation:
 #
@@ -14072,11 +14097,11 @@ frontier_cells = {
 }
 
 
-cell_height                         = 30.0                                                             # meters
-cell_width                          = 30.0                                                             # meters
-suppression_priority_function       = lambda frontier: np.full(len(frontier["burned_cells"][0]), 5.0)  # unitless
-fireline_construction_rate_function = lambda frontier: np.full(len(frontier["burned_cells"][0]), 30.0) # m/min
-max_construction_time               = 10.0                                                             # minutes
+cell_height                         = 30.0                         # meters
+cell_width                          = 30.0                         # meters
+suppression_priority_function       = make_constant_value_fn(5.0)  # unitless
+fireline_construction_rate_function = make_constant_value_fn(30.0) # m/min
+max_construction_time               = 10.0                         # minutes
 
 
 ordered_frontier_cells  = order_frontier_cells(frontier_cells)
@@ -14098,8 +14123,9 @@ frontier_times          = frontier_cell_scores[0]["times"]
 selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                 frontier_cell_scores,
                                                                 max_construction_time)
-selected_ys             = selected_frontier_cells[0]
-selected_xs             = selected_frontier_cells[1]
+selected_unburned_cells = selected_frontier_cells["unburned_cells"]
+selected_ys             = selected_unburned_cells[0]
+selected_xs             = selected_unburned_cells[1]
 
 
 unordered_matrix = np.zeros((100,100), dtype=np.int8)
@@ -14240,8 +14266,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pyretechnics.eulerian_level_set as els
 from pyretechnics.space_time_cube import SpaceTimeCube
-from pyretechnics.suppression import build_firelines, make_flame_length_suppression_priority_fn
-
+from pyretechnics.suppression import build_firelines, make_flame_length_suppression_priority_fn, \
+    make_constant_value_fn
 #============================================================================================
 # Specify the SpaceTimeCube dimensions
 #============================================================================================
@@ -14318,8 +14344,11 @@ flame_length_matrix = output_matrices["flame_length"]
 
 # Define suppression_priority_function, fireline_construction_rate_function, and max_construction_time
 suppression_priority_function       = make_flame_length_suppression_priority_fn(flame_length_matrix)
-fireline_construction_rate_function = lambda frontier: np.full(len(frontier["burned_cells"][0]), 30.0) # m/min
+fireline_construction_rate_function = make_constant_value_fn(30.0) # m/min
 max_construction_time               = 18.0 # minutes
+
+# Define suppressed_fuel_model_function
+suppressed_fuel_model_function = make_constant_value_fn(91) # non-burnable
 
 # Specify the cell dimensions
 cell_height = cube_resolution[1] # meters
@@ -14394,7 +14423,8 @@ for spread_phase in range(1,13):
                                         cell_width,
                                         suppression_priority_function,
                                         fireline_construction_rate_function,
-                                        max_construction_time)
+                                        max_construction_time,
+                                        suppressed_fuel_model_function)
 
     #============================================================================================
     # Replace the old fuel_model cube with a new fire-break-containing cube

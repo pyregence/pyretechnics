@@ -320,11 +320,15 @@ def score_frontier_cells(ordered_frontier_cells, cell_height, cell_width,
 
 
 def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_scores, max_construction_time):
-    selected_frontier_cells = ()
+    selected_burned_cells   = ()
+    selected_unburned_cells = ()
     top_path_score          = 0.0
 
     for i in range(len(ordered_frontier_cells)):
         frontier        = ordered_frontier_cells[i]
+        burned_cells    = frontier["burned_cells"]
+        burned_ys       = burned_cells[0]
+        burned_xs       = burned_cells[1]
         unburned_cells  = frontier["unburned_cells"]
         unburned_ys     = unburned_cells[0]
         unburned_xs     = unburned_cells[1]
@@ -367,15 +371,31 @@ def select_frontier_cells_for_suppression(ordered_frontier_cells, frontier_cell_
 
         if best_path_score > top_path_score:
             top_path_score          = best_path_score
-            selected_ys             = unburned_ys[best_start_idx:best_stop_idx]
-            selected_xs             = unburned_xs[best_start_idx:best_stop_idx]
-            selected_frontier_cells = (selected_ys, selected_xs)
+            selected_burned_ys      = burned_ys[best_start_idx:best_stop_idx]
+            selected_burned_xs      = burned_xs[best_start_idx:best_stop_idx]
+            selected_unburned_ys    = unburned_ys[best_start_idx:best_stop_idx]
+            selected_unburned_xs    = unburned_xs[best_start_idx:best_stop_idx]
+            selected_burned_cells   = (selected_burned_ys, selected_burned_xs)
+            selected_unburned_cells = (selected_unburned_ys, selected_unburned_xs)
 
-    return selected_frontier_cells
+    return {
+        "burned_cells"  : selected_burned_cells,
+        "unburned_cells": selected_unburned_cells,
+    }
 # select-frontier-cells-for-suppression ends here
 # [[file:../../org/pyretechnics.org::build-firelines][build-firelines]]
-def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width, suppression_priority_function,
-                    fireline_construction_rate_function, max_construction_time, nonburnable_fuel_model=91):
+def make_constant_value_fn(value):
+
+    def constant_value(frontier):
+        frontier_length = len(frontier["burned_cells"][0])
+        return np.full(frontier_length, value)
+
+    return constant_value
+
+
+def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width,
+                    suppression_priority_function, fireline_construction_rate_function,
+                    max_construction_time, suppressed_fuel_model_function=make_constant_value_fn(91)):
     # Order the frontier cells into a list of independent, spatially contiguous perimeters
     ordered_frontier_cells = order_frontier_cells(frontier_cells)
 
@@ -386,13 +406,17 @@ def build_firelines(fuel_model_matrix, frontier_cells, cell_height, cell_width, 
                                                 suppression_priority_function,
                                                 fireline_construction_rate_function)
 
-    # Select cells to suppress for each perimeter
+    # Select the frontier segment with the highest suppression priority that can be
+    # contained within max_construction_time
     selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                     frontier_cell_scores,
                                                                     max_construction_time)
 
-    # Change the values in fuel_model_matrix to nonburnable_fuel_model for all selected_frontier_cells
-    fuel_model_matrix[selected_frontier_cells] = nonburnable_fuel_model
+    # Compute the new fuel model values in the suppressed cells
+    suppressed_fuel_models = suppressed_fuel_model_function(selected_frontier_cells)
+
+    # Change the values in fuel_model_matrix to these new suppressed values for all selected_frontier_cells
+    fuel_model_matrix[selected_frontier_cells["unburned_cells"]] = suppressed_fuel_models
 
     return fuel_model_matrix
 # build-firelines ends here

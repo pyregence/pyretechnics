@@ -15259,11 +15259,15 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
 
 <span class="org-keyword">def</span> <span class="org-function-name">select_frontier_cells_for_suppression</span>(ordered_frontier_cells, frontier_cell_scores, max_construction_time):
-    <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> ()
+    <span class="org-variable-name">selected_burned_cells</span>   <span class="org-operator">=</span> ()
+    <span class="org-variable-name">selected_unburned_cells</span> <span class="org-operator">=</span> ()
     <span class="org-variable-name">top_path_score</span>          <span class="org-operator">=</span> 0.0
 
     <span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(ordered_frontier_cells)):
         <span class="org-variable-name">frontier</span>        <span class="org-operator">=</span> ordered_frontier_cells[i]
+        <span class="org-variable-name">burned_cells</span>    <span class="org-operator">=</span> frontier[<span class="org-string">"burned_cells"</span>]
+        <span class="org-variable-name">burned_ys</span>       <span class="org-operator">=</span> burned_cells[0]
+        <span class="org-variable-name">burned_xs</span>       <span class="org-operator">=</span> burned_cells[1]
         <span class="org-variable-name">unburned_cells</span>  <span class="org-operator">=</span> frontier[<span class="org-string">"unburned_cells"</span>]
         <span class="org-variable-name">unburned_ys</span>     <span class="org-operator">=</span> unburned_cells[0]
         <span class="org-variable-name">unburned_xs</span>     <span class="org-operator">=</span> unburned_cells[1]
@@ -15306,11 +15310,17 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 
         <span class="org-keyword">if</span> best_path_score <span class="org-operator">&gt;</span> top_path_score:
             <span class="org-variable-name">top_path_score</span>          <span class="org-operator">=</span> best_path_score
-            <span class="org-variable-name">selected_ys</span>             <span class="org-operator">=</span> unburned_ys[best_start_idx:best_stop_idx]
-            <span class="org-variable-name">selected_xs</span>             <span class="org-operator">=</span> unburned_xs[best_start_idx:best_stop_idx]
-            <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> (selected_ys, selected_xs)
+            <span class="org-variable-name">selected_burned_ys</span>      <span class="org-operator">=</span> burned_ys[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_burned_xs</span>      <span class="org-operator">=</span> burned_xs[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_unburned_ys</span>    <span class="org-operator">=</span> unburned_ys[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_unburned_xs</span>    <span class="org-operator">=</span> unburned_xs[best_start_idx:best_stop_idx]
+            <span class="org-variable-name">selected_burned_cells</span>   <span class="org-operator">=</span> (selected_burned_ys, selected_burned_xs)
+            <span class="org-variable-name">selected_unburned_cells</span> <span class="org-operator">=</span> (selected_unburned_ys, selected_unburned_xs)
 
-    <span class="org-keyword">return</span> selected_frontier_cells
+    <span class="org-keyword">return</span> {
+        <span class="org-string">"burned_cells"</span>  : selected_burned_cells,
+        <span class="org-string">"unburned_cells"</span>: selected_unburned_cells,
+    }
 </pre>
 </div>
 </div>
@@ -15320,8 +15330,18 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <h4 id="suppressing-frontier-cells"><span class="section-number-4">10.1.4.</span> Suppressing Frontier Cells</h4>
 <div class="outline-text-4" id="text-suppressing-frontier-cells">
 <div class="org-src-container">
-<pre class="src src-python" id="build-firelines"><span class="org-keyword">def</span> <span class="org-function-name">build_firelines</span>(fuel_model_matrix, frontier_cells, cell_height, cell_width, suppression_priority_function,
-                    fireline_construction_rate_function, max_construction_time, nonburnable_fuel_model<span class="org-operator">=</span>91):
+<pre class="src src-python" id="build-firelines"><span class="org-keyword">def</span> <span class="org-function-name">make_constant_value_fn</span>(value):
+
+    <span class="org-keyword">def</span> <span class="org-function-name">constant_value</span>(frontier):
+        <span class="org-variable-name">frontier_length</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0])
+        <span class="org-keyword">return</span> np.full(frontier_length, value)
+
+    <span class="org-keyword">return</span> constant_value
+
+
+<span class="org-keyword">def</span> <span class="org-function-name">build_firelines</span>(fuel_model_matrix, frontier_cells, cell_height, cell_width,
+                    suppression_priority_function, fireline_construction_rate_function,
+                    max_construction_time, suppressed_fuel_model_function<span class="org-operator">=</span>make_constant_value_fn(91)):
     <span class="org-comment-delimiter"># </span><span class="org-comment">Order the frontier cells into a list of independent, spatially contiguous perimeters</span>
     <span class="org-variable-name">ordered_frontier_cells</span> <span class="org-operator">=</span> order_frontier_cells(frontier_cells)
 
@@ -15332,13 +15352,17 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
                                                 suppression_priority_function,
                                                 fireline_construction_rate_function)
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Select cells to suppress for each perimeter</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Select the frontier segment with the highest suppression priority that can be</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">contained within max_construction_time</span>
     <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                     frontier_cell_scores,
                                                                     max_construction_time)
 
-    <span class="org-comment-delimiter"># </span><span class="org-comment">Change the values in fuel_model_matrix to nonburnable_fuel_model for all selected_frontier_cells</span>
-    <span class="org-variable-name">fuel_model_matrix</span>[selected_frontier_cells] <span class="org-operator">=</span> nonburnable_fuel_model
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Compute the new fuel model values in the suppressed cells</span>
+    <span class="org-variable-name">suppressed_fuel_models</span> <span class="org-operator">=</span> suppressed_fuel_model_function(selected_frontier_cells)
+
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Change the values in fuel_model_matrix to these new suppressed values for all selected_frontier_cells</span>
+    fuel_model_matrix[selected_frontier_cells[<span class="org-string">"unburned_cells"</span>]] <span class="org-operator">=</span> suppressed_fuel_models
 
     <span class="org-keyword">return</span> fuel_model_matrix
 </pre>
@@ -15383,7 +15407,8 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <div class="org-src-container">
 <pre class="src src-python" id="select-frontier-cells-simple-ellipse"><span class="org-keyword">import</span> numpy <span class="org-keyword">as</span> np
 <span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
-<span class="org-keyword">from</span> pyretechnics.suppression <span class="org-keyword">import</span> order_frontier_cells, score_frontier_cells, select_frontier_cells_for_suppression
+<span class="org-keyword">from</span> pyretechnics.suppression <span class="org-keyword">import</span> order_frontier_cells, score_frontier_cells, \
+    select_frontier_cells_for_suppression, make_constant_value_fn
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: This is how you normally extract the frontier cells from a fire spread simulation:</span>
 <span class="org-comment-delimiter">#</span>
@@ -15413,11 +15438,11 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 }
 
 
-<span class="org-variable-name">cell_height</span>                         <span class="org-operator">=</span> 30.0                                                             <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-<span class="org-variable-name">cell_width</span>                          <span class="org-operator">=</span> 30.0                                                             <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
-<span class="org-variable-name">suppression_priority_function</span>       <span class="org-operator">=</span> <span class="org-keyword">lambda</span> frontier: np.full(<span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0]), 5.0)  <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
-<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> frontier: np.full(<span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0]), 30.0) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
-<span class="org-variable-name">max_construction_time</span>               <span class="org-operator">=</span> 10.0                                                             <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+<span class="org-variable-name">cell_height</span>                         <span class="org-operator">=</span> 30.0                         <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+<span class="org-variable-name">cell_width</span>                          <span class="org-operator">=</span> 30.0                         <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
+<span class="org-variable-name">suppression_priority_function</span>       <span class="org-operator">=</span> make_constant_value_fn(5.0)  <span class="org-comment-delimiter"># </span><span class="org-comment">unitless</span>
+<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> make_constant_value_fn(30.0) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+<span class="org-variable-name">max_construction_time</span>               <span class="org-operator">=</span> 10.0                         <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
 
 
 <span class="org-variable-name">ordered_frontier_cells</span>  <span class="org-operator">=</span> order_frontier_cells(frontier_cells)
@@ -15439,8 +15464,9 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <span class="org-variable-name">selected_frontier_cells</span> <span class="org-operator">=</span> select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                 frontier_cell_scores,
                                                                 max_construction_time)
-<span class="org-variable-name">selected_ys</span>             <span class="org-operator">=</span> selected_frontier_cells[0]
-<span class="org-variable-name">selected_xs</span>             <span class="org-operator">=</span> selected_frontier_cells[1]
+<span class="org-variable-name">selected_unburned_cells</span> <span class="org-operator">=</span> selected_frontier_cells[<span class="org-string">"unburned_cells"</span>]
+<span class="org-variable-name">selected_ys</span>             <span class="org-operator">=</span> selected_unburned_cells[0]
+<span class="org-variable-name">selected_xs</span>             <span class="org-operator">=</span> selected_unburned_cells[1]
 
 
 <span class="org-variable-name">unordered_matrix</span> <span class="org-operator">=</span> np.zeros((100,100), dtype<span class="org-operator">=</span>np.int8)
@@ -15604,8 +15630,8 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <span class="org-keyword">import</span> matplotlib.pyplot <span class="org-keyword">as</span> plt
 <span class="org-keyword">import</span> pyretechnics.eulerian_level_set <span class="org-keyword">as</span> els
 <span class="org-keyword">from</span> pyretechnics.space_time_cube <span class="org-keyword">import</span> SpaceTimeCube
-<span class="org-keyword">from</span> pyretechnics.suppression <span class="org-keyword">import</span> build_firelines, make_flame_length_suppression_priority_fn
-
+<span class="org-keyword">from</span> pyretechnics.suppression <span class="org-keyword">import</span> build_firelines, make_flame_length_suppression_priority_fn, \
+    make_constant_value_fn
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the SpaceTimeCube dimensions</span>
 <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
@@ -15682,8 +15708,11 @@ spread_state.set_start_time(start_time)
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Define suppression_priority_function, fireline_construction_rate_function, and max_construction_time</span>
 <span class="org-variable-name">suppression_priority_function</span>       <span class="org-operator">=</span> make_flame_length_suppression_priority_fn(flame_length_matrix)
-<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> frontier: np.full(<span class="org-builtin">len</span>(frontier[<span class="org-string">"burned_cells"</span>][0]), 30.0) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
+<span class="org-variable-name">fireline_construction_rate_function</span> <span class="org-operator">=</span> make_constant_value_fn(30.0) <span class="org-comment-delimiter"># </span><span class="org-comment">m/min</span>
 <span class="org-variable-name">max_construction_time</span>               <span class="org-operator">=</span> 18.0 <span class="org-comment-delimiter"># </span><span class="org-comment">minutes</span>
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Define suppressed_fuel_model_function</span>
+<span class="org-variable-name">suppressed_fuel_model_function</span> <span class="org-operator">=</span> make_constant_value_fn(91) <span class="org-comment-delimiter"># </span><span class="org-comment">non-burnable</span>
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">Specify the cell dimensions</span>
 <span class="org-variable-name">cell_height</span> <span class="org-operator">=</span> cube_resolution[1] <span class="org-comment-delimiter"># </span><span class="org-comment">meters</span>
@@ -15758,7 +15787,8 @@ spread_state.set_start_time(start_time)
                                         cell_width,
                                         suppression_priority_function,
                                         fireline_construction_rate_function,
-                                        max_construction_time)
+                                        max_construction_time,
+                                        suppressed_fuel_model_function)
 
     <span class="org-comment-delimiter">#</span><span class="org-comment">============================================================================================</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Replace the old fuel_model cube with a new fire-break-containing cube</span>
