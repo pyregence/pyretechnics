@@ -13575,30 +13575,6 @@ else:
     :CUSTOM_ID: ordering-the-frontier-cells
     :END:
 
-|---+---+---+---+---+---+---+---+---+---+---|
-| 9 |   |   |   |   |   |   |   |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 8 |   |   |   |   |   |   |   |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 7 |   |   |   |   |   | X | X |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 6 |   |   |   |   | X | X | X |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 5 |   |   |   | X | X | X | X |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 4 |   |   |   | X | X | X | X |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 3 |   |   |   | X | X | X |   |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 2 |   |   |   | X | X |   |   |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 1 |   |   |   |   |   |   |   |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-| 0 |   |   |   |   |   |   |   |   |   |   |
-|---+---+---+---+---+---+---+---+---+---+---|
-|   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
-|---+---+---+---+---+---+---+---+---+---+---|
-
 #+NAME: order-frontier-cells
 #+begin_src python
 def get_ordered_sides(y: cy.int, x: cy.int, is_burned: cy.bint) -> set:
@@ -14047,7 +14023,433 @@ def make_flame_length_suppression_priority_fn(flame_length_matrix):
     :CUSTOM_ID: how-to-select-frontier-cells-for-suppression
     :END:
 
+**** Example: Simple Elliptical Perimeter
+     :PROPERTIES:
+     :CUSTOM_ID: example-simple-elliptical-perimeter
+     :END:
+
+#+NAME: example-simple-elliptical-perimeter-figure
+#+caption: X = already burned, + = actively burning, . = unburned
+|---+---+---+---+---+---+---+---+---+---+---|
+| 9 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 8 |   |   |   |   |   | . | . |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 7 |   |   |   |   | . | + | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 6 |   |   |   | . | + | X | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 5 |   |   | . | + | X | X | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 4 |   |   | . | + | X | X | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 3 |   |   | . | + | X | + | . |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 2 |   |   | . | + | + | . |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 1 |   |   |   | . | . |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 0 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+|   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---+---+---+---+---+---+---+---+---+---+---|
+
 #+NAME: select-frontier-cells-simple-ellipse
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from pyretechnics.suppression import order_frontier_cells, score_frontier_cells, \
+    select_frontier_cells_for_suppression, make_constant_value_fn
+
+# NOTE: This is how you normally extract the frontier cells from a fire spread simulation:
+#
+# fire_spread_results = els.spread_fire_with_phi_field(...)
+# frontier_cells      = fire_spread_results["frontier_cells"]
+# burned_cells        = frontier_cells["burned_cells"]
+# unburned_cells      = frontier_cells["unburned_cells"]
+
+# Define some example values for algorithm testing
+burned_ys      = [7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2]
+burned_xs      = [5, 6, 4, 6, 3, 6, 3, 6, 3, 5, 3, 4]
+unburned_ys    = [8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1]
+unburned_xs    = [5, 6, 4, 7, 3, 7, 2, 7, 2, 7, 2, 6, 2, 5, 3, 4]
+frontier_cells = {
+    "burned_cells"  : (np.asarray(burned_ys  , dtype=np.int32), np.asarray(burned_xs  , dtype=np.int32)),
+    "unburned_cells": (np.asarray(unburned_ys, dtype=np.int32), np.asarray(unburned_xs, dtype=np.int32)),
+}
+
+
+cell_height                         = 30.0                        # meters
+cell_width                          = 30.0                        # meters
+suppression_priority_function       = make_constant_value_fn(5.0) # unitless
+fireline_construction_rate_function = make_constant_value_fn(3.0) # m/min
+max_construction_time               = 100.0                       # minutes
+
+
+ordered_frontier_cells  = order_frontier_cells(frontier_cells)
+frontier_cell_scores    = score_frontier_cells(ordered_frontier_cells,
+                                               cell_height,
+                                               cell_width,
+                                               suppression_priority_function,
+                                               fireline_construction_rate_function)
+selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
+                                                                frontier_cell_scores,
+                                                                max_construction_time)
+num_frontiers           = len(ordered_frontier_cells)
+
+
+unordered_matrix = np.zeros((10,10), dtype=np.int16)
+ordered_matrix   = np.zeros((10,10), dtype=np.int16)
+score_matrix     = np.zeros((10,10), dtype=np.float32)
+time_matrix      = np.zeros((10,10), dtype=np.float32)
+selected_matrix  = np.zeros((10,10), dtype=np.int16)
+
+
+# unordered_matrix - part 1
+for i in range(len(burned_ys)):
+    y = burned_ys[i]
+    x = burned_xs[i]
+    unordered_matrix[y,x] = -i-1
+
+
+# unordered_matrix - part 2
+for i in range(len(unburned_ys)):
+    y = unburned_ys[i]
+    x = unburned_xs[i]
+    unordered_matrix[y,x] = i+1
+
+
+# process each frontier
+for i in range(num_frontiers):
+    frontier               = ordered_frontier_cells[i]
+    ordered_burned_cells   = frontier["burned_cells"]
+    ordered_burned_ys      = ordered_burned_cells[0]
+    ordered_burned_xs      = ordered_burned_cells[1]
+    ordered_unburned_cells = frontier["unburned_cells"]
+    ordered_unburned_ys    = ordered_unburned_cells[0]
+    ordered_unburned_xs    = ordered_unburned_cells[1]
+    frontier_length        = len(ordered_unburned_ys)
+    frontier_scores        = frontier_cell_scores[i]["scores"]
+    frontier_times         = frontier_cell_scores[i]["times"]
+
+
+    # ordered_matrix
+    for j in range(frontier_length):
+        y1 = ordered_burned_ys[j]
+        x1 = ordered_burned_xs[j]
+        y2 = ordered_unburned_ys[j]
+        x2 = ordered_unburned_xs[j]
+        ordered_matrix[y1,x1] = -j-1
+        ordered_matrix[y2,x2] = j+1
+
+
+    # score_matrix
+    for j in range(frontier_length):
+        y = ordered_unburned_ys[j]
+        x = ordered_unburned_xs[j]
+        score_matrix[y,x] += frontier_scores[j]
+
+
+    # time_matrix
+    for j in range(frontier_length):
+        y = ordered_unburned_ys[j]
+        x = ordered_unburned_xs[j]
+        time_matrix[y,x] += frontier_times[j]
+
+
+    # selected_matrix - part 1
+    selected_matrix[ordered_unburned_cells] = 1
+
+
+# selected_matrix - part 2
+selected_unburned_cells = selected_frontier_cells["unburned_cells"]
+selected_matrix[selected_unburned_cells] = 2
+
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+heatmap_configs = [
+    {
+        "matrix"  : unordered_matrix,
+        "colors"  : "autumn",
+        "units"   : "cell order (< 0: burned, > 0: unburned)",
+        "title"   : "Cell Order in Unordered Frontier Cells",
+        "filename": "org/pics/unordered_frontier_cells_se.png",
+    },
+    {
+        "matrix"  : ordered_matrix,
+        "colors"  : "autumn",
+        "units"   : "cell order (< 0: burned, > 0: unburned)",
+        "title"   : "Cell Order in Ordered Frontier Cells",
+        "filename": "org/pics/ordered_frontier_cells_se.png",
+    },
+    {
+        "matrix"  : score_matrix,
+        "colors"  : "autumn",
+        "units"   : "suppression priority",
+        "title"   : "Suppression Priority Score",
+        "filename": "org/pics/scored_frontier_cells_se.png",
+    },
+    {
+        "matrix"  : time_matrix,
+        "colors"  : "autumn",
+        "units"   : "minutes",
+        "title"   : "Fireline Construction Time",
+        "filename": "org/pics/measured_frontier_cells_se.png",
+    },
+    {
+        "matrix"  : selected_matrix,
+        "colors"  : "autumn",
+        "units"   : "1 = not selected, 2 = selected",
+        "title"   : "Cells Selected for Suppression",
+        "filename": "org/pics/selected_frontier_cells_se.png",
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_matrix_as_heatmap(**heatmap_config)
+#+end_src
+
+#+NAME: order-frontier-cells-simple-ellipse-heatmaps
+#+caption: Frontier cells before and after ordering
+|-------------------------------------------+-----------------------------------------|
+| file:pics/unordered_frontier_cells_se.png | file:pics/ordered_frontier_cells_se.png |
+|-------------------------------------------+-----------------------------------------|
+
+#+NAME: score-frontier-cells-simple-ellipse-heatmaps
+#+caption: Frontier cells' suppression priority scores and fireline construction times
+|----------------------------------------+------------------------------------------|
+| file:pics/scored_frontier_cells_se.png | file:pics/measured_frontier_cells_se.png |
+|----------------------------------------+------------------------------------------|
+
+#+NAME: select-frontier-cells-simple-ellipse-heatmaps
+#+caption: Frontier cells selected by best combined suppression score
+file:pics/selected_frontier_cells_se.png
+
+**** Example: Elliptical Perimeter with an Existing (Backburn) Fireline
+     :PROPERTIES:
+     :CUSTOM_ID: example-elliptical-perimeter-with-an-existing-(backburn)-fireline
+     :END:
+
+#+NAME: example-elliptical-perimeter-with-an-existing-(backburn)-fireline-figure
+#+caption: X = already burned, + = actively burning, . = unburned
+|---+---+---+---+---+---+---+---+---+---+---|
+| 9 |   |   |   |   |   |   |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 8 |   |   |   |   |   | . | . |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 7 |   |   |   |   | . | + | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 6 |   |   |   | . | + | X | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 5 |   | . | . | + | X | X | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 4 | . | + | . | + | X | X | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 3 |   | . | + | X | X | + | . |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 2 |   |   | . | + | + | . |   |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 1 |   |   |   | . | . | + | . |   |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+| 0 |   |   |   |   |   | . | + | . |   |   |
+|---+---+---+---+---+---+---+---+---+---+---|
+|   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---+---+---+---+---+---+---+---+---+---+---|
+
+#+NAME: select-frontier-cells-ellipse-with-fireline
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from pyretechnics.suppression import order_frontier_cells, score_frontier_cells, \
+    select_frontier_cells_for_suppression, make_constant_value_fn
+
+# NOTE: This is how you normally extract the frontier cells from a fire spread simulation:
+#
+# fire_spread_results = els.spread_fire_with_phi_field(...)
+# frontier_cells      = fire_spread_results["frontier_cells"]
+# burned_cells        = frontier_cells["burned_cells"]
+# unburned_cells      = frontier_cells["unburned_cells"]
+
+burned_ys      = [7, 7, 6, 6, 5, 5, 4, 4, 4, 3, 3, 2, 2, 1, 0]
+burned_xs      = [5, 6, 4, 6, 3, 6, 1, 3, 6, 2, 5, 3, 4, 5, 6]
+unburned_ys    = [8, 8, 7, 7, 6, 6, 5, 5, 5, 4, 4, 4, 3, 3, 2, 2, 1, 1, 1, 0, 0]
+unburned_xs    = [5, 6, 4, 7, 3, 7, 1, 2, 7, 0, 2, 7, 1, 6, 2, 5, 3, 4, 6, 5, 7]
+frontier_cells = {
+    "burned_cells"  : (np.asarray(burned_ys  , dtype=np.int32), np.asarray(burned_xs  , dtype=np.int32)),
+    "unburned_cells": (np.asarray(unburned_ys, dtype=np.int32), np.asarray(unburned_xs, dtype=np.int32)),
+}
+
+
+cell_height                         = 30.0                        # meters
+cell_width                          = 30.0                        # meters
+suppression_priority_function       = make_constant_value_fn(5.0) # unitless
+fireline_construction_rate_function = make_constant_value_fn(3.0) # m/min
+max_construction_time               = 100.0                       # minutes
+
+
+ordered_frontier_cells  = order_frontier_cells(frontier_cells)
+frontier_cell_scores    = score_frontier_cells(ordered_frontier_cells,
+                                               cell_height,
+                                               cell_width,
+                                               suppression_priority_function,
+                                               fireline_construction_rate_function)
+selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
+                                                                frontier_cell_scores,
+                                                                max_construction_time)
+num_frontiers           = len(ordered_frontier_cells)
+
+
+unordered_matrix = np.zeros((10,10), dtype=np.int16)
+ordered_matrix   = np.zeros((10,10), dtype=np.int16)
+score_matrix     = np.zeros((10,10), dtype=np.float32)
+time_matrix      = np.zeros((10,10), dtype=np.float32)
+selected_matrix  = np.zeros((10,10), dtype=np.int16)
+
+
+# unordered_matrix - part 1
+for i in range(len(burned_ys)):
+    y = burned_ys[i]
+    x = burned_xs[i]
+    unordered_matrix[y,x] = -i-1
+
+
+# unordered_matrix - part 2
+for i in range(len(unburned_ys)):
+    y = unburned_ys[i]
+    x = unburned_xs[i]
+    unordered_matrix[y,x] = i+1
+
+
+# process each frontier
+for i in range(num_frontiers):
+    frontier               = ordered_frontier_cells[i]
+    ordered_burned_cells   = frontier["burned_cells"]
+    ordered_burned_ys      = ordered_burned_cells[0]
+    ordered_burned_xs      = ordered_burned_cells[1]
+    ordered_unburned_cells = frontier["unburned_cells"]
+    ordered_unburned_ys    = ordered_unburned_cells[0]
+    ordered_unburned_xs    = ordered_unburned_cells[1]
+    frontier_length        = len(ordered_unburned_ys)
+    frontier_scores        = frontier_cell_scores[i]["scores"]
+    frontier_times         = frontier_cell_scores[i]["times"]
+
+
+    # ordered_matrix
+    for j in range(frontier_length):
+        y1 = ordered_burned_ys[j]
+        x1 = ordered_burned_xs[j]
+        y2 = ordered_unburned_ys[j]
+        x2 = ordered_unburned_xs[j]
+        ordered_matrix[y1,x1] = -j-1
+        ordered_matrix[y2,x2] = j+1
+
+
+    # score_matrix
+    for j in range(frontier_length):
+        y = ordered_unburned_ys[j]
+        x = ordered_unburned_xs[j]
+        score_matrix[y,x] += frontier_scores[j]
+
+
+    # time_matrix
+    for j in range(frontier_length):
+        y = ordered_unburned_ys[j]
+        x = ordered_unburned_xs[j]
+        time_matrix[y,x] += frontier_times[j]
+
+
+    # selected_matrix - part 1
+    selected_matrix[ordered_unburned_cells] = 1
+
+
+# selected_matrix - part 2
+selected_unburned_cells = selected_frontier_cells["unburned_cells"]
+selected_matrix[selected_unburned_cells] = 2
+
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+heatmap_configs = [
+    {
+        "matrix"  : unordered_matrix,
+        "colors"  : "autumn",
+        "units"   : "cell order (< 0: burned, > 0: unburned)",
+        "title"   : "Cell Order in Unordered Frontier Cells",
+        "filename": "org/pics/unordered_frontier_cells_ewf.png",
+    },
+    {
+        "matrix"  : ordered_matrix,
+        "colors"  : "autumn",
+        "units"   : "cell order (< 0: burned, > 0: unburned)",
+        "title"   : "Cell Order in Ordered Frontier Cells",
+        "filename": "org/pics/ordered_frontier_cells_ewf.png",
+    },
+    {
+        "matrix"  : score_matrix,
+        "colors"  : "autumn",
+        "units"   : "suppression priority",
+        "title"   : "Suppression Priority Score",
+        "filename": "org/pics/scored_frontier_cells_ewf.png",
+    },
+    {
+        "matrix"  : time_matrix,
+        "colors"  : "autumn",
+        "units"   : "minutes",
+        "title"   : "Fireline Construction Time",
+        "filename": "org/pics/measured_frontier_cells_ewf.png",
+    },
+    {
+        "matrix"  : selected_matrix,
+        "colors"  : "autumn",
+        "units"   : "1 = not selected, 2 = selected",
+        "title"   : "Cells Selected for Suppression",
+        "filename": "org/pics/selected_frontier_cells_ewf.png",
+    },
+]
+
+
+for heatmap_config in heatmap_configs:
+    save_matrix_as_heatmap(**heatmap_config)
+#+end_src
+
+#+NAME: order-frontier-cells-ellipse-with-fireline-heatmaps
+#+caption: Frontier cells before and after ordering
+|--------------------------------------------+------------------------------------------|
+| file:pics/unordered_frontier_cells_ewf.png | file:pics/ordered_frontier_cells_ewf.png |
+|--------------------------------------------+------------------------------------------|
+
+#+NAME: score-frontier-cells-ellipse-with-fireline-heatmaps
+#+caption: Frontier cells' suppression priority scores and fireline construction times
+|-----------------------------------------+-------------------------------------------|
+| file:pics/scored_frontier_cells_ewf.png | file:pics/measured_frontier_cells_ewf.png |
+|-----------------------------------------+-------------------------------------------|
+
+#+NAME: select-frontier-cells-ellipse-with-fireline-heatmaps
+#+caption: Frontier cells selected by best combined suppression score
+file:pics/selected_frontier_cells_ewf.png
+
+**** Example: High-Resolution Elliptical Perimeter
+     :PROPERTIES:
+     :CUSTOM_ID: example-high-resolution-elliptical-perimeter
+     :END:
+
+#+NAME: select-frontier-cells-high-resolution-ellipse
 #+begin_src python :results silent
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14082,42 +14484,30 @@ frontier_cells = {
 }
 
 
-cell_height                         = 30.0                         # meters
-cell_width                          = 30.0                         # meters
-suppression_priority_function       = make_constant_value_fn(5.0)  # unitless
-fireline_construction_rate_function = make_constant_value_fn(30.0) # m/min
-max_construction_time               = 10.0                         # minutes
+cell_height                         = 30.0                        # meters
+cell_width                          = 30.0                        # meters
+suppression_priority_function       = make_constant_value_fn(5.0) # unitless
+fireline_construction_rate_function = make_constant_value_fn(3.0) # m/min
+max_construction_time               = 100.0                       # minutes
 
 
 ordered_frontier_cells  = order_frontier_cells(frontier_cells)
-first_frontier          = ordered_frontier_cells[0]
-ordered_burned_cells    = first_frontier["burned_cells"]
-ordered_burned_ys       = ordered_burned_cells[0]
-ordered_burned_xs       = ordered_burned_cells[1]
-ordered_unburned_cells  = first_frontier["unburned_cells"]
-ordered_unburned_ys     = ordered_unburned_cells[0]
-ordered_unburned_xs     = ordered_unburned_cells[1]
-frontier_length         = len(ordered_unburned_ys)
 frontier_cell_scores    = score_frontier_cells(ordered_frontier_cells,
                                                cell_height,
                                                cell_width,
                                                suppression_priority_function,
                                                fireline_construction_rate_function)
-frontier_scores         = frontier_cell_scores[0]["scores"]
-frontier_times          = frontier_cell_scores[0]["times"]
 selected_frontier_cells = select_frontier_cells_for_suppression(ordered_frontier_cells,
                                                                 frontier_cell_scores,
                                                                 max_construction_time)
-selected_unburned_cells = selected_frontier_cells["unburned_cells"]
-selected_ys             = selected_unburned_cells[0]
-selected_xs             = selected_unburned_cells[1]
+num_frontiers           = len(ordered_frontier_cells)
 
 
-unordered_matrix = np.zeros((100,100), dtype=np.int8)
-ordered_matrix   = np.zeros((100,100), dtype=np.int8)
+unordered_matrix = np.zeros((100,100), dtype=np.int16)
+ordered_matrix   = np.zeros((100,100), dtype=np.int16)
 score_matrix     = np.zeros((100,100), dtype=np.float32)
 time_matrix      = np.zeros((100,100), dtype=np.float32)
-selected_matrix  = np.zeros((100,100), dtype=np.int8)
+selected_matrix  = np.zeros((100,100), dtype=np.int16)
 
 
 # unordered_matrix - part 1
@@ -14134,42 +14524,51 @@ for i in range(len(unburned_ys)):
     unordered_matrix[y,x] = i+1
 
 
-# ordered_matrix
-for i in range(frontier_length):
-    y1 = ordered_burned_ys[i]
-    x1 = ordered_burned_xs[i]
-    y2 = ordered_unburned_ys[i]
-    x2 = ordered_unburned_xs[i]
-    ordered_matrix[y1,x1] = -i-1
-    ordered_matrix[y2,x2] = i+1
+# process each frontier
+for i in range(num_frontiers):
+    frontier               = ordered_frontier_cells[i]
+    ordered_burned_cells   = frontier["burned_cells"]
+    ordered_burned_ys      = ordered_burned_cells[0]
+    ordered_burned_xs      = ordered_burned_cells[1]
+    ordered_unburned_cells = frontier["unburned_cells"]
+    ordered_unburned_ys    = ordered_unburned_cells[0]
+    ordered_unburned_xs    = ordered_unburned_cells[1]
+    frontier_length        = len(ordered_unburned_ys)
+    frontier_scores        = frontier_cell_scores[i]["scores"]
+    frontier_times         = frontier_cell_scores[i]["times"]
 
 
-# score_matrix
-for i in range(frontier_length):
-    y = ordered_unburned_ys[i]
-    x = ordered_unburned_xs[i]
-    score_matrix[y,x] += frontier_scores[i]
+    # ordered_matrix
+    for j in range(frontier_length):
+        y1 = ordered_burned_ys[j]
+        x1 = ordered_burned_xs[j]
+        y2 = ordered_unburned_ys[j]
+        x2 = ordered_unburned_xs[j]
+        ordered_matrix[y1,x1] = -j-1
+        ordered_matrix[y2,x2] = j+1
 
 
-# time_matrix
-for i in range(frontier_length):
-    y = ordered_unburned_ys[i]
-    x = ordered_unburned_xs[i]
-    time_matrix[y,x] += frontier_times[i]
+    # score_matrix
+    for j in range(frontier_length):
+        y = ordered_unburned_ys[j]
+        x = ordered_unburned_xs[j]
+        score_matrix[y,x] += frontier_scores[j]
 
 
-# selected_matrix - part 1
-for i in range(frontier_length):
-    y = ordered_unburned_ys[i]
-    x = ordered_unburned_xs[i]
-    selected_matrix[y,x] = 1
+    # time_matrix
+    for j in range(frontier_length):
+        y = ordered_unburned_ys[j]
+        x = ordered_unburned_xs[j]
+        time_matrix[y,x] += frontier_times[j]
+
+
+    # selected_matrix - part 1
+    selected_matrix[ordered_unburned_cells] = 1
 
 
 # selected_matrix - part 2
-for i in range(len(selected_ys)):
-    y = selected_ys[i]
-    x = selected_xs[i]
-    selected_matrix[y,x] = 2
+selected_unburned_cells = selected_frontier_cells["unburned_cells"]
+selected_matrix[selected_unburned_cells] = 2
 
 
 def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
@@ -14224,19 +14623,19 @@ for heatmap_config in heatmap_configs:
     save_matrix_as_heatmap(**heatmap_config)
 #+end_src
 
-#+NAME: order-frontier-cells-simple-ellipse-heatmaps
+#+NAME: order-frontier-cells-high-resolution-ellipse-heatmaps
 #+caption: Frontier cells before and after ordering
 |----------------------------------------+--------------------------------------|
 | file:pics/unordered_frontier_cells.png | file:pics/ordered_frontier_cells.png |
 |----------------------------------------+--------------------------------------|
 
-#+NAME: score-frontier-cells-simple-ellipse-heatmaps
+#+NAME: score-frontier-cells-high-resolution-ellipse-heatmaps
 #+caption: Frontier cells' suppression priority scores and fireline construction times
 |-------------------------------------+---------------------------------------|
 | file:pics/scored_frontier_cells.png | file:pics/measured_frontier_cells.png |
 |-------------------------------------+---------------------------------------|
 
-#+NAME: select-frontier-cells-simple-ellipse-heatmaps
+#+NAME: select-frontier-cells-high-resolution-ellipse-heatmaps
 #+caption: Frontier cells selected by best combined suppression score
 file:pics/selected_frontier_cells.png
 
@@ -14329,8 +14728,8 @@ flame_length_matrix = output_matrices["flame_length"]
 
 # Define suppression_priority_function, fireline_construction_rate_function, and max_construction_time
 suppression_priority_function       = make_flame_length_suppression_priority_fn(flame_length_matrix)
-fireline_construction_rate_function = make_constant_value_fn(30.0) # m/min
-max_construction_time               = 18.0 # minutes
+fireline_construction_rate_function = make_constant_value_fn(3.0) # m/min
+max_construction_time               = 180.0 # minutes
 
 # Define suppressed_fuel_model_function
 suppressed_fuel_model_function = make_constant_value_fn(91) # non-burnable
