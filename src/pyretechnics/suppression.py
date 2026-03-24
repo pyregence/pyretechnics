@@ -115,27 +115,19 @@ get_left_direction = {
 }
 
 
-def visited_corner_before(corner, visited_corners):
-    if isinstance(corner, list):
-        return False
-    else:
-        return corner in visited_corners
-
-
 def iterative_graph_traversal(frontier_corner_graph, root_corner):
     corner_sequence    = [root_corner]
-    visited_corners    = set(corner_sequence)
     grandparent_corner = None
     parent_corner      = root_corner
     child_corner       = frontier_corner_graph.get(parent_corner)
-    while(child_corner and not visited_corner_before(child_corner, visited_corners)):
+    while(child_corner):
         if isinstance(child_corner, list):
             (child_corner1, child_corner2) = child_corner
             if grandparent_corner is None:
                 # NOTE: Only happens if the root_corner branches toward two child_corners (should be rare).
                 # Use child_corner1 in the absence of better information
                 corner_sequence.append(child_corner1)
-                visited_corners.add(child_corner1)
+                frontier_corner_graph[parent_corner] = child_corner2
                 grandparent_corner = parent_corner
                 parent_corner      = child_corner1
                 child_corner       = frontier_corner_graph.get(parent_corner)
@@ -149,26 +141,23 @@ def iterative_graph_traversal(frontier_corner_graph, root_corner):
                 if outgoing_left_direction == outgoing_direction1:
                     # Use child_corner1
                     corner_sequence.append(child_corner1)
-                    visited_corners.add(child_corner1)
+                    frontier_corner_graph[parent_corner] = child_corner2
                     grandparent_corner = parent_corner
                     parent_corner      = child_corner1
                     child_corner       = frontier_corner_graph.get(parent_corner)
                 else:
                     # Use child_corner2
                     corner_sequence.append(child_corner2)
-                    visited_corners.add(child_corner2)
+                    frontier_corner_graph[parent_corner] = child_corner1
                     grandparent_corner = parent_corner
                     parent_corner      = child_corner2
                     child_corner       = frontier_corner_graph.get(parent_corner)
         else:
             corner_sequence.append(child_corner)
-            visited_corners.add(child_corner)
+            frontier_corner_graph.pop(parent_corner)
             grandparent_corner = parent_corner
             parent_corner      = child_corner
             child_corner       = frontier_corner_graph.get(parent_corner)
-    if (child_corner and visited_corner_before(child_corner, visited_corners)):
-        # Ended on a cycle, so add it to corner_sequence
-        corner_sequence.append(child_corner)
     return corner_sequence
 
 
@@ -240,16 +229,12 @@ def order_frontier_cells(frontier_cells):
     # Process all linestrings
     for root_corner in corner_info["root_corners"]:
         corner_sequence = iterative_graph_traversal(frontier_corner_graph, root_corner)
-        for corner in corner_sequence:
-            frontier_corner_graph.pop(corner, None)
         ordered_frontier_cells.append(corners_to_ordered_frontier_cells(corner_sequence))
 
     # Process all rings
     while(len(frontier_corner_graph) > 0):
         parent_corner   = next(iter(frontier_corner_graph))
         corner_sequence = iterative_graph_traversal(frontier_corner_graph, parent_corner)
-        for corner in corner_sequence:
-            frontier_corner_graph.pop(corner, None)
         ordered_frontier_cells.append(corners_to_ordered_frontier_cells(corner_sequence))
 
     return ordered_frontier_cells
