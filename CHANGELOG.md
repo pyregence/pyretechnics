@@ -1,3 +1,49 @@
+# Version 2026.3.25
+
+## Changes for Developers
+- Updated DEVELOPMENT_HOWTO.md.
+- Updated the copyright dates to 2023-2026.
+
+## Changes for Users
+- Some new figures in the Literate Program:
+  - Added examples of how to make 3D plots of SpaceTimeCube and LazySpaceTimeCube objects.
+  - Added examples of how to make 3D plots of the SpreadState data.
+
+- Numerous enhancements to the `pyretechnics.eulerian_level_set.SpreadState` class:
+  - New functions:
+    - set_resolution
+    - set_start_time
+    - get_cube_shape
+    - get_resolution
+    - get_simulation_time
+    - copy_with_new_shape
+    - rewind_to_time
+  - More robust error checking to prevent improper time travel or ignition of already burned cells
+  - Less confusing outputs:
+    - `get_full_matrices` now trims off the 2 cell buffer from the `phi` matrix, so that it matches the other returned layers.
+    - `get_full_matrices` and `get_burned_matrices` now return `np.nan` in unburned cells of the `spread_direction` and `time_of_arrival` matrices.
+
+- Updates to `pyretechnics.eulerian_level_set.spread_fire_with_phi_field`:
+  - Some inputs are now optional if set on the `SpreadState` object:
+    - cube_resolution
+    - start_time
+  - The returned dictionary now includes a `"frontier_cells"` field that maps to a dict of `{"burned_cells": (ndarray, ndarray), "unburned_cells": (ndarray, ndarray)}`.
+
+- New highly configurable `pyretechnics.suppression` module documented in section "Fire Suppression Techniques":
+  - New functions:
+    - order_frontier_cells
+    - score_frontier_cells
+    - select_frontier_cells_for_suppression
+    - build_firelines
+    - make_constant_value_fn
+    - make_sdi_suppression_priority_fn
+    - make_flame_length_suppression_priority_fn
+  - Supports user-configuration via these functions and parameters:
+    - suppression_priority_function
+    - fireline_construction_rate_function
+    - max_construction_time
+    - suppressed_fuel_model_function
+
 # Version 2025.6.13
 
 ## Changes for Developers
