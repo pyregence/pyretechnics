@@ -678,3 +678,116 @@ def burn_all_cells_toward_azimuth(space_time_cubes      : dict[str, ISpaceTimeCu
         "flame_length"      : flame_length_matrix,
     }
 # burn-cells-toward-azimuth ends here
+# [[file:../../org/pyretechnics.org::burn-cells-by-time-of-arrival][burn-cells-by-time-of-arrival]]
+# TODO: Add an optional (dy,dx) offset to the ll_corner of the input matrices
+@cy.ccall
+def burn_cells_by_time_of_arrival(space_time_cubes      : dict[str, ISpaceTimeCube],
+                                  cube_resolution       : tuple[cy.float, cy.float, cy.float],
+                                  time_of_arrival_matrix: cy.float[:,::1],
+                                  use_wind_limit        : cy.bint = True,
+                                  surface_lw_ratio_model: str = "behave",
+                                  crown_max_lw_ratio    : cy.float = 1e10) -> dict:
+    """
+    Given these inputs:
+    - space_time_cubes             :: dictionary of (Lazy)SpaceTimeCube objects with these cell types
+      - slope                         :: rise/run
+      - aspect                        :: degrees clockwise from North
+      - fuel_model                    :: integer index in fm.fuel_model_table
+      - canopy_cover                  :: 0-1
+      - canopy_height                 :: m
+      - canopy_base_height            :: m
+      - canopy_bulk_density           :: kg/m^3
+      - wind_speed_10m                :: km/hr
+      - upwind_direction              :: degrees clockwise from North
+      - fuel_moisture_dead_1hr        :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_10hr       :: kg moisture/kg ovendry weight
+      - fuel_moisture_dead_100hr      :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_herbaceous :: kg moisture/kg ovendry weight
+      - fuel_moisture_live_woody      :: kg moisture/kg ovendry weight
+      - foliar_moisture               :: kg moisture/kg ovendry weight
+      - fuel_spread_adjustment        :: float >= 0.0 (Optional: defaults to 1.0)
+      - weather_spread_adjustment     :: float >= 0.0 (Optional: defaults to 1.0)
+    - cube_resolution              :: tuple with these fields
+      - band_duration                 :: minutes
+      - cell_height                   :: meters
+      - cell_width                    :: meters
+    - time_of_arrival_matrix       :: 2D float array (min)
+    - use_wind_limit               :: boolean (Optional)
+    - surface_lw_ratio_model       :: "rothermel" or "behave" (Optional)
+    - crown_max_lw_ratio           :: float > 0.0 (Optional)
+
+    return a dictionary with these keys:
+    - fire_type          :: 2D byte array (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
+    - spread_rate        :: 2D float array (m/min)
+    - spread_direction   :: 2D float array (degrees clockwise from North)
+    - fireline_intensity :: 2D float array (kW/m)
+    - flame_length       :: 2D float array (m)
+    """
+    slope_cube   : ISpaceTimeCube  = cy.cast(ISpaceTimeCube, space_time_cubes["slope"])
+    bands        : pyidx           = slope_cube.shape[0]
+    rows         : pyidx           = slope_cube.shape[1]
+    cols         : pyidx           = slope_cube.shape[2]
+    toa_rows     : pyidx           = time_of_arrival_matrix.shape[0]
+    toa_cols     : pyidx           = time_of_arrival_matrix.shape[1]
+    grid_shape   : tuple[int, int] = (rows, cols)
+    band_duration: cy.float        = cube_resolution[0]
+    max_bands    : pyidx           = int(np.max(time_of_arrival_matrix) / band_duration)
+
+    if (max_bands > bands):
+        raise ValueError("The time_of_arrival_matrix contains values that are out of range of the space_time_cubes.")
+
+    if (toa_rows > rows):
+        raise ValueError("The time_of_arrival_matrix rows are out of range of the space_time_cubes.")
+
+    if (toa_cols > cols):
+        raise ValueError("The time_of_arrival_matrix cols are out of range of the space_time_cubes.")
+
+    # Compute the gradient of the time_of_arrival_matrix
+    (dt_dy, dt_dx) = np.gradient(time_of_arrival_matrix)
+
+    # Allocate output matrices
+    fire_type_matrix          : ndarray         = np.zeros(grid_shape, dtype="uint8")
+    spread_rate_matrix        : ndarray         = np.zeros(grid_shape, dtype="float32")
+    spread_direction_matrix   : ndarray         = np.full(grid_shape, np.nan, dtype="float32")
+    fireline_intensity_matrix : ndarray         = np.zeros(grid_shape, dtype="float32")
+    flame_length_matrix       : ndarray         = np.zeros(grid_shape, dtype="float32")
+    fire_type_memview         : cy.uchar[:,::1] = fire_type_matrix
+    spread_rate_memview       : cy.float[:,::1] = spread_rate_matrix
+    spread_direction_memview  : cy.float[:,::1] = spread_direction_matrix
+    fireline_intensity_memview: cy.float[:,::1] = fireline_intensity_matrix
+    flame_length_memview      : cy.float[:,::1] = flame_length_matrix
+
+    t                    : pyidx
+    y                    : pyidx
+    x                    : pyidx
+    time_of_arrival      : cy.float
+    r                    : cy.float
+    azimuth              : cy.float
+    space_time_coordinate: coord_tyx
+    for y in range(toa_rows):
+        for x in range(toa_cols):
+            time_of_arrival = time_of_arrival_matrix[y,x] # min
+            if time_of_arrival >= 0.0:
+                t                              = int(time_of_arrival / band_duration)
+                space_time_coordinate          = (t, y, x)
+                (_r, azimuth)                  = conv.cartesian_to_azimuthal(dt_dx[y,x], dt_dy[y,x])
+                spread_behavior                = burn_cell_toward_azimuth(space_time_cubes,
+                                                                          space_time_coordinate,
+                                                                          azimuth,
+                                                                          use_wind_limit,
+                                                                          surface_lw_ratio_model,
+                                                                          crown_max_lw_ratio)
+                fire_type_memview[y,x]          = spread_behavior["fire_type"]
+                spread_rate_memview[y,x]        = spread_behavior["spread_rate"]
+                spread_direction_memview[y,x]   = vu.spread_direction_vector_to_angle(spread_behavior["spread_direction"])
+                fireline_intensity_memview[y,x] = spread_behavior["fireline_intensity"]
+                flame_length_memview[y,x]       = spread_behavior["flame_length"]
+
+    return {
+        "fire_type"         : fire_type_matrix,
+        "spread_rate"       : spread_rate_matrix,
+        "spread_direction"  : spread_direction_matrix,
+        "fireline_intensity": fireline_intensity_matrix,
+        "flame_length"      : flame_length_matrix,
+    }
+# burn-cells-by-time-of-arrival ends here

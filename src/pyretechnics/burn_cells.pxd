@@ -38,4 +38,13 @@ cpdef dict burn_all_cells_toward_azimuth(
     str surface_lw_ratio_model=?,
     float crown_max_lw_ratio=?,
     )
+
+cpdef dict burn_cells_by_time_of_arrival(
+    dict space_time_cubes,
+    (float, float, float) cube_resolution,
+    float[:,::1] time_of_arrival_matrix,
+    bint use_wind_limit=?,
+    str surface_lw_ratio_model=?,
+    float crown_max_lw_ratio=?,
+    )
 # burn-cells-pxd ends here
