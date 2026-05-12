@@ -1,3 +1,15 @@
+# Version 2026.5.12
+
+## Changes for Developers
+- Updated `setup.py` to include PXD files in the distribution tarball.
+
+## Changes for Users
+- Added section "Burn Cells by Time of Arrival"
+  - New function:
+    - burn_cells_by_time_of_arrival
+- Fixed a bug in `pyretechnics.eulerian_level_set.spread_fire_with_phi_field` that prevented users for setting `start_time = 0`.
+- Fixed a bug in `pyretechnics.load_landfire.maybe_resample_resolution` that made its optional resampling features work incorrectly.
+
 # Version 2026.3.25
 
 ## Changes for Developers
