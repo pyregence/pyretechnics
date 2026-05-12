@@ -1,6 +1,6 @@
 import os
 import numpy
-from setuptools import Extension, setup
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 from Cython.Build import cythonize
 
@@ -19,39 +19,48 @@ class custom_build_ext(build_ext):
     def build_extension(self, extension):
         if set_gcc_args:
             extension.extra_compile_args = [
-                  # Warnings
-                  "-Wall",
-                  "-Wno-maybe-uninitialized",
-                  "-Wno-unused-result",
-                  "-Wno-unused-function",
-                  "-Wsign-compare",
-                  # Optimization
-                  "-O3",
-                  "-fno-semantic-interposition",
-                  # Debugging
-                  "-g",
-                  "-DNDEBUG",
-                  "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
-                  # Code Generation
-                  "-fwrapv",
-                  "-fPIC",
+                # Warnings
+                "-Wall",
+                "-Wno-maybe-uninitialized",
+                "-Wno-unused-result",
+                "-Wno-unused-function",
+                "-Wsign-compare",
+                # Optimization
+                "-O3",
+                "-fno-semantic-interposition",
+                # Debugging
+                "-g",
+                "-DNDEBUG",
+                "-DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION",
+                # Code Generation
+                "-fwrapv",
+                "-fPIC",
             ]
         build_ext.build_extension(self, extension)
 
 extensions = [
-    Extension("*", ["src/pyretechnics/*.py"], include_dirs=[numpy.get_include()])
+    Extension("pyretechnics.*", ["src/pyretechnics/*.py"], include_dirs=[numpy.get_include()])
 ]
 
-setup(name="pyretechnics",
-      cmdclass={"build_ext": custom_build_ext},
-      ext_modules=cythonize(extensions,
-                            exclude="src/pyretechnics/py_types.py",
-                            annotate=True,
-                            compiler_directives={
-                                "language_level": "3",
-                                "profile": profile_cython,
-                                "initializedcheck": False,
-                                "cdivision": True,
-                                "wraparound": False,
-                                "boundscheck": False,
-                            }))
+setup(
+    name="pyretechnics",
+    version="2026.3.25",
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    cmdclass={"build_ext": custom_build_ext},
+    ext_modules=cythonize(extensions,
+                          exclude="src/pyretechnics/py_types.py",
+                          annotate=True,
+                          compiler_directives={
+                              "language_level": "3",
+                              "profile": profile_cython,
+                              "initializedcheck": False,
+                              "cdivision": True,
+                              "wraparound": False,
+                              "boundscheck": False,
+                          }),
+    package_data={
+        "pyretechnics": ["*.pxd", "*.py"],
+    },
+    include_package_data=True,
+)
