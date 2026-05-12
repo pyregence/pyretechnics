@@ -16543,12 +16543,14 @@ def raster_metadata(raster):
 
 # TODO: rasterio.open can also load chunks of a raster file: https://pypi.org/project/rasterio/
 def maybe_resample_resolution(resolution, divisor, resampling_policy):
-    if (resolution % divisor == 0):
+    if divisor == 1:
         return resolution
+    elif resolution % divisor == 0:
+        return int(resolution / divisor)
     elif resampling_policy == "always_upsample":
-        return divisor * (resolution // divisor + 1)
+        return int(resolution / divisor) + 1
     elif resampling_policy == "nearest_match":
-        return divisor * max(1, round(resolution / divisor))
+        return max(1, round(resolution / divisor))
     else:
         raise ValueError("The resampling_policy must be either 'always_upsample' or 'nearest_match'.")
 
