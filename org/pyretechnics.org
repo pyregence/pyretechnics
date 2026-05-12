@@ -11832,7 +11832,7 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
                                      cell_width)
 
     # Match start_time to spread_state.simulation_time
-    if start_time:
+    if start_time is not None:
         if (spread_state.simulation_time == -1.0):
             spread_state = spread_state.set_start_time(start_time)
         else:
