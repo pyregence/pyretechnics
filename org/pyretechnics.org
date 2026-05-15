@@ -13796,6 +13796,413 @@ for heatmap_config in heatmap_configs_fork:
 | file:pics/els_flame_length_main_cube.png       | file:pics/els_flame_length_fork_cube.png       |
 |------------------------------------------------+------------------------------------------------|
 
+*** How to Spread a Fire at Low Resolution and Upsample It to a Higher Resolution
+    :PROPERTIES:
+    :CUSTOM_ID: how-to-spread-a-fire-at-low-resolution-and-upsample-it-to-a-higher-resolution
+    :END:
+
+**** Configure and Run the Fire Spread Simulation at Low Resolution
+     :PROPERTIES:
+     :CUSTOM_ID: configure-and-run-the-fire-spread-simulation-at-low-resolution
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-at-low-res
+#+begin_src python :results silent
+import time
+import numpy as np
+from pyretechnics.space_time_cube import SpaceTimeCube
+import pyretechnics.eulerian_level_set as els
+
+#============================================================================================
+# Specify the SpaceTimeCube dimensions
+#============================================================================================
+
+cube_shape = (
+    60, # bands: 10 days @ 4 hour/band
+    50, # rows:  3 km @ 60 meters/row
+    50, # cols:  3 km @ 60 meters/col
+)
+
+#============================================================================================
+# Specify the SpaceTimeCube resolution
+#============================================================================================
+
+cube_resolution = (
+    240, # band_duration: minutes
+     60, # cell_height:   meters
+     60, # cell_width:    meters
+)
+
+#============================================================================================
+# Create an input dictionary of SpaceTimeCubes (using constant data for this example)
+#============================================================================================
+
+space_time_cubes = {
+    "slope"                        : SpaceTimeCube(cube_shape, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+#============================================================================================
+# Create a SpreadState object and specify a point ignition location (y, x)
+#============================================================================================
+
+spread_state = els.SpreadState(cube_shape).ignite_cell((25,25))
+
+#============================================================================================
+# Set the start time and max duration of the simulation
+#============================================================================================
+
+# Day 2 @ 10:30am
+start_time = (24 * 60) + (10 * 60) + 30 # minutes
+
+# 8 hours
+max_duration = 8 * 60 # minutes
+
+# Embed the start time in the SpreadState object
+spread_state.set_start_time(start_time)
+
+#============================================================================================
+# Spread fire from the start time for the max duration
+#============================================================================================
+
+runtime_start           = time.perf_counter()
+fire_spread_results     = els.spread_fire_with_phi_field(space_time_cubes,
+                                                         spread_state,
+                                                         cube_resolution,
+                                                         start_time,
+                                                         max_duration)
+runtime_stop            = time.perf_counter()
+stop_time               = fire_spread_results["stop_time"]      # minutes
+stop_condition          = fire_spread_results["stop_condition"] # "max duration reached" or "no burnable cells"
+spread_state            = fire_spread_results["spread_state"]   # updated SpreadState object (mutated from inputs)
+output_matrices_low_res = spread_state.get_full_matrices()
+
+#============================================================================================
+# Print out the acres burned, total runtime, and runtime per burned cell
+#============================================================================================
+
+num_burned_cells        = np.count_nonzero(output_matrices_low_res["fire_type"]) # cells
+acres_burned            = num_burned_cells / 1.125                       # acres
+simulation_runtime      = runtime_stop - runtime_start                   # seconds
+runtime_per_burned_cell = 1000.0 * simulation_runtime / num_burned_cells # ms/cell
+
+print("Acres Burned: " + str(acres_burned))
+print("Total Runtime: " + str(simulation_runtime) + " seconds")
+print("Runtime Per Burned Cell: " + str(runtime_per_burned_cell) + " ms/cell")
+#+end_src
+
+**** Upsample Low Resolution Results to a Higher Resolution
+     :PROPERTIES:
+     :CUSTOM_ID: upsample-low-resolution-results-to-a-higher-resolution
+     :END:
+
+#+NAME: upsample-low-res-results-to-high-res
+#+begin_src python :results silent
+from pyretechnics.space_time_cube import SpaceTimeCube
+
+cube_shape_high_res = (
+    240, # bands: 10 days @ 1 hour/band
+    100, # rows:  3 km @ 30 meters/row
+    100, # cols:  3 km @ 30 meters/col
+)
+
+space_time_cubes_high_res = {
+    "slope"                        : SpaceTimeCube(cube_shape_high_res, 0.8),   # rise/run
+    "aspect"                       : SpaceTimeCube(cube_shape_high_res, 225.0), # degrees clockwise from North
+    "fuel_model"                   : SpaceTimeCube(cube_shape_high_res, 101),   # integer index in fm.fuel_model_table
+    "canopy_cover"                 : SpaceTimeCube(cube_shape_high_res, 0.6),   # 0-1
+    "canopy_height"                : SpaceTimeCube(cube_shape_high_res, 30.0),  # m
+    "canopy_base_height"           : SpaceTimeCube(cube_shape_high_res, 3.0),   # m
+    "canopy_bulk_density"          : SpaceTimeCube(cube_shape_high_res, 0.3),   # kg/m^3
+    "wind_speed_10m"               : SpaceTimeCube(cube_shape_high_res, 30.0),  # km/hr
+    "upwind_direction"             : SpaceTimeCube(cube_shape_high_res, 180.0), # degrees clockwise from North
+    "fuel_moisture_dead_1hr"       : SpaceTimeCube(cube_shape_high_res, 0.05),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_10hr"      : SpaceTimeCube(cube_shape_high_res, 0.10),  # kg moisture/kg ovendry weight
+    "fuel_moisture_dead_100hr"     : SpaceTimeCube(cube_shape_high_res, 0.15),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_herbaceous": SpaceTimeCube(cube_shape_high_res, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_moisture_live_woody"     : SpaceTimeCube(cube_shape_high_res, 0.60),  # kg moisture/kg ovendry weight
+    "foliar_moisture"              : SpaceTimeCube(cube_shape_high_res, 0.90),  # kg moisture/kg ovendry weight
+    "fuel_spread_adjustment"       : SpaceTimeCube(cube_shape_high_res, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+    "weather_spread_adjustment"    : SpaceTimeCube(cube_shape_high_res, 1.0),   # float >= 0.0 (Optional: defaults to 1.0)
+}
+
+spread_state_high_res = spread_state.render_at_new_resolution(space_time_cubes_high_res)
+
+output_matrices_high_res = spread_state_high_res.get_full_matrices()
+#+end_src
+
+**** Create Images of the Output Matrices at Both Resolutions
+     :PROPERTIES:
+     :CUSTOM_ID: create-images-of-the-output-matrices-at-both-resolutions
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-images-both-resolutions
+#+begin_src python :results silent
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def save_matrix_as_heatmap(matrix, colors, units, title, filename, vmin=None, vmax=None, ticks=None):
+    image    = plt.imshow(matrix, origin="lower", cmap=colors, vmin=vmin, vmax=vmax)
+    colorbar = plt.colorbar(image, orientation="vertical", ticks=ticks)
+    colorbar.set_label(units)
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+def save_matrix_as_contours(matrix, title, filename, levels=None):
+    nan_masked_matrix = matrix.copy()
+    nan_masked_matrix[np.isnan(nan_masked_matrix)] = -1.0
+    fig, ax = plt.subplots()
+    cs      = ax.contour(nan_masked_matrix, levels=levels)
+    ax.clabel(cs, inline=True, fontsize=10)
+    ax.set_aspect('equal', 'box')
+    ax.set_title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+def get_heatmap_configs(output_matrices, file_suffix):
+    return [
+        {
+            "matrix"  : output_matrices["phi"],
+            "colors"  : "plasma",
+            "units"   : "phi <= 0: burned, phi > 0: unburned",
+            "title"   : "Phi",
+            "filename": f"org/pics/els_phi_{file_suffix}.png",
+        },
+        {
+            "matrix"  : output_matrices["fire_type"],
+            "colors"  : "viridis",
+            "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+            "title"   : "Fire Type",
+            "filename": f"org/pics/els_fire_type_{file_suffix}.png",
+            "vmin"    : 0,
+            "vmax"    : 3,
+            "ticks"   : [0,1,2,3],
+        },
+        {
+            "matrix"  : output_matrices["spread_rate"],
+            "colors"  : "hot",
+            "units"   : "m/min",
+            "title"   : "Spread Rate",
+            "filename": f"org/pics/els_spread_rate_{file_suffix}.png",
+        },
+        {
+            "matrix"  : output_matrices["spread_direction"],
+            "colors"  : "viridis",
+            "units"   : "degrees clockwise from North",
+            "title"   : "Spread Direction",
+            "filename": f"org/pics/els_spread_direction_{file_suffix}.png",
+            "vmin"    : 0,
+            "vmax"    : 360,
+            "ticks"   : [0,45,90,135,180,225,270,315,360]
+        },
+        {
+            "matrix"  : output_matrices["fireline_intensity"],
+            "colors"  : "hot",
+            "units"   : "kW/m",
+            "title"   : "Fireline Intensity",
+            "filename": f"org/pics/els_fireline_intensity_{file_suffix}.png",
+        },
+        {
+            "matrix"  : output_matrices["flame_length"],
+            "colors"  : "hot",
+            "units"   : "meters",
+            "title"   : "Flame Length",
+            "filename": f"org/pics/els_flame_length_{file_suffix}.png",
+        },
+    ]
+
+
+def get_contour_configs(output_matrices, file_suffix):
+    return [
+        {
+            "matrix"  : output_matrices["time_of_arrival"],
+            "title"   : "Time of Arrival",
+            "filename": f"org/pics/els_time_of_arrival_{file_suffix}.png",
+            "levels"  : int(start_time) + np.asarray(range(0, int(max_duration) + 1, 60)),
+        },
+    ]
+
+
+for (output_matrices, file_suffix) in [(output_matrices_low_res, "low_res"),
+                                       (output_matrices_high_res, "high_res")]:
+    for heatmap_config in get_heatmap_configs(output_matrices, file_suffix):
+        save_matrix_as_heatmap(**heatmap_config)
+
+    for contour_config in get_contour_configs(output_matrices, file_suffix):
+        save_matrix_as_contours(**contour_config)
+#+end_src
+
+#+NAME: fire-behavior-matplotlib-heatmaps-both-resolutions
+#+caption: Fire behavior attributes after 8 hours of spread (Left: 60m resolution | Right: 30m resolution)
+|----------------------------------------------+-----------------------------------------------|
+| file:pics/els_phi_low_res.png                | file:pics/els_phi_high_res.png                |
+| file:pics/els_fire_type_low_res.png          | file:pics/els_fire_type_high_res.png          |
+| file:pics/els_spread_rate_low_res.png        | file:pics/els_spread_rate_high_res.png        |
+| file:pics/els_spread_direction_low_res.png   | file:pics/els_spread_direction_high_res.png   |
+| file:pics/els_fireline_intensity_low_res.png | file:pics/els_fireline_intensity_high_res.png |
+| file:pics/els_flame_length_low_res.png       | file:pics/els_flame_length_high_res.png       |
+|----------------------------------------------+-----------------------------------------------|
+
+#+NAME: time-of-arrival-matplotlib-countours-both-resolutions
+#+caption: Time of arrival with hourly perimeters (Left: 60m resolution | Right: 30m resolution)
+|-------------------------------------------+--------------------------------------------|
+| file:pics/els_time_of_arrival_low_res.png | file:pics/els_time_of_arrival_high_res.png |
+|-------------------------------------------+--------------------------------------------|
+
+**** Create 3D Plots of the Spread State at Both Resolutions
+     :PROPERTIES:
+     :CUSTOM_ID: create-3d-plots-of-the-spread-state-at-both-resolutions
+     :END:
+
+#+NAME: run-spread-fire-with-phi-field-3d-plots-both-resolutions
+#+begin_src python :results silent
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+
+def save_3d_voxel_plot(time_of_arrival_matrix, fire_behavior_matrix, filename, title, units, colors,
+                       vmin=None, vmax=None, ticks=None):
+    # Get the dimensions of the arrays
+    (M, N) = fire_behavior_matrix.shape
+
+    # Create a grid of (X, Y) coordinates
+    (X, Y) = np.meshgrid(np.arange(N), np.arange(M))
+
+    # Flatten the matrices for 3D plotting
+    X_flat = X.flatten()
+    Y_flat = Y.flatten()
+    Z_flat = time_of_arrival_matrix.flatten()
+    V_flat = fire_behavior_matrix.flatten()
+
+    # Filter out the non-burned areas (assuming non-positive values mean no fire)
+    mask = ~np.isnan(Z_flat)
+    X_burned = X_flat[mask]
+    Y_burned = Y_flat[mask]
+    Z_burned = Z_flat[mask]
+    V_burned = V_flat[mask]
+
+    # Set up the figure and 3D axis
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Create a scatter plot
+    sc = ax.scatter(X_burned, Y_burned, Z_burned, c=V_burned, cmap=colors, marker='o', vmin=vmin, vmax=vmax)
+
+    # Add color bar to indicate fire intensity
+    cbar = plt.colorbar(sc, ax=ax, shrink=0.8, pad=0.15, orientation="vertical", ticks=ticks)
+    cbar.set_label(units)
+
+    # Set labels
+    ax.set_xlabel('X axis')
+    ax.set_ylabel('Y axis')
+    ax.set_zlabel('Time of Arrival')
+
+    # Add a title and save the file
+    plt.title(title)
+    plt.savefig(filename)
+    plt.close("all")
+
+
+# See https://matplotlib.org/stable/gallery/color/colormap_reference.html for the available options for "colors"
+def get_heatmap_configs(output_matrices, file_suffix):
+    return [
+        {
+            "matrix"  : output_matrices["phi"],
+            "colors"  : "plasma",
+            "units"   : "phi <= 0: burned, phi > 0: unburned",
+            "title"   : "Phi",
+            "filename": f"org/pics/els_phi_cube_{file_suffix}.png",
+        },
+        {
+            "matrix"  : output_matrices["fire_type"],
+            "colors"  : "viridis",
+            "units"   : "0=unburned, 1=surface, 2=passive_crown, 3=active_crown",
+            "title"   : "Fire Type",
+            "filename": f"org/pics/els_fire_type_cube_{file_suffix}.png",
+            "vmin"    : 0,
+            "vmax"    : 3,
+            "ticks"   : [0,1,2,3],
+        },
+        {
+            "matrix"  : output_matrices["spread_rate"],
+            "colors"  : "hot",
+            "units"   : "m/min",
+            "title"   : "Spread Rate",
+            "filename": f"org/pics/els_spread_rate_cube_{file_suffix}.png",
+        },
+        {
+            "matrix"  : output_matrices["spread_direction"],
+            "colors"  : "viridis",
+            "units"   : "degrees clockwise from North",
+            "title"   : "Spread Direction",
+            "filename": f"org/pics/els_spread_direction_cube_{file_suffix}.png",
+            "vmin"    : 0,
+            "vmax"    : 360,
+            "ticks"   : [0,45,90,135,180,225,270,315,360]
+        },
+        {
+            "matrix"  : output_matrices["fireline_intensity"],
+            "colors"  : "hot",
+            "units"   : "kW/m",
+            "title"   : "Fireline Intensity",
+            "filename": f"org/pics/els_fireline_intensity_cube_{file_suffix}.png",
+        },
+        {
+            "matrix"  : output_matrices["flame_length"],
+            "colors"  : "hot",
+            "units"   : "meters",
+            "title"   : "Flame Length",
+            "filename": f"org/pics/els_flame_length_cube_{file_suffix}.png",
+        },
+    ]
+
+
+for (output_matrices, file_suffix) in [(output_matrices_low_res, "low_res"),
+                                       (output_matrices_high_res, "high_res")]:
+    for heatmap_config in get_heatmap_configs(output_matrices, file_suffix):
+        save_3d_voxel_plot(output_matrices["time_of_arrival"],
+                           heatmap_config["matrix"],
+                           heatmap_config["filename"],
+                           heatmap_config["title"],
+                           heatmap_config["units"],
+                           heatmap_config["colors"],
+                           heatmap_config.get("vmin"),
+                           heatmap_config.get("vmax"),
+                           heatmap_config.get("ticks"))
+#+end_src
+
+#+NAME: fire-behavior-matplotlib-heatmap-cubes-both-resolutions
+#+caption: 3D fire behavior shapes after 8 hours of spread (Left: 60m resolution | Right: 30m resolution)
+|---------------------------------------------------+----------------------------------------------------|
+| file:pics/els_phi_cube_low_res.png                | file:pics/els_phi_cube_high_res.png                |
+| file:pics/els_fire_type_cube_low_res.png          | file:pics/els_fire_type_cube_high_res.png          |
+| file:pics/els_spread_rate_cube_low_res.png        | file:pics/els_spread_rate_cube_high_res.png        |
+| file:pics/els_spread_direction_cube_low_res.png   | file:pics/els_spread_direction_cube_high_res.png   |
+| file:pics/els_fireline_intensity_cube_low_res.png | file:pics/els_fireline_intensity_cube_high_res.png |
+| file:pics/els_flame_length_cube_low_res.png       | file:pics/els_flame_length_cube_high_res.png       |
+|---------------------------------------------------+----------------------------------------------------|
+
 * Fire Suppression Techniques (pyretechnics.suppression)
   :PROPERTIES:
   :CUSTOM_ID: fire-suppression-techniques-(pyretechnics.suppression)
