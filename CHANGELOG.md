@@ -1,3 +1,13 @@
+# Version 2026.5.15
+
+## Changes for Developers
+- Updated `guix.scm`, `pyproject.toml`, and `requirements.txt` to include `scipy` as a runtime dependency.
+
+## Changes for Users
+- Added `pyretechnics.eulerian_level_set.SpreadState.render_at_new_resolution`
+  - This enables fast upsampling/downsampling of fire spread results to a new resolution in post-processing.
+- Added section "How to Spread a Fire at Low Resolution and Upsample It to a Higher Resolution"
+
 # Version 2026.5.12
 
 ## Changes for Developers
