@@ -86,11 +86,18 @@
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 #     cpdef SpreadState copy(SpreadState self)
 #     cpdef SpreadState copy_with_new_shape(
-#           SpreadState self,
-#           (pyidx, pyidx, pyidx) new_cube_shape,
-#           coord_yx lower_left_corner_offset,
-#           float simulation_time_offset,
-#           )
+#         SpreadState self,
+#         (pyidx, pyidx, pyidx) new_cube_shape,
+#         coord_yx lower_left_corner_offset,
+#         float simulation_time_offset,
+#     )
+#     cpdef SpreadState render_at_new_resolution(
+#         SpreadState self,
+#         dict[str, ISpaceTimeCube] space_time_cubes,
+#         bint use_wind_limit=?,
+#         str surface_lw_ratio_model=?,
+#         float crown_max_lw_ratio=?,
+#     )
 #     cpdef SpreadState rewind_to_time(SpreadState self, float simulation_time)
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept

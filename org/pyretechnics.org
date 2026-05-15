@@ -8706,6 +8706,7 @@ model[fn:elmfire-website].
 import cython
 import cython as cy
 import numpy as np
+from scipy.interpolate import interpn
 from sortedcontainers import SortedDict
 if cython.compiled:
     from cython.cimports.numpy import ndarray
@@ -8716,6 +8717,7 @@ if cython.compiled:
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     from cython.cimports.pyretechnics.random import BufferedRandGen
     from cython.cimports.pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube
+    import cython.cimports.pyretechnics.burn_cells as bc
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.fuel_models as fm
@@ -8732,6 +8734,7 @@ else:
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
     from pyretechnics.random import BufferedRandGen
     from pyretechnics.space_time_cube import ISpaceTimeCube, SpaceTimeCube
+    import pyretechnics.burn_cells as bc
     import pyretechnics.conversion as conv
     import pyretechnics.vector_utils as vu
     import pyretechnics.fuel_models as fm
@@ -9762,7 +9765,6 @@ class SpreadState:
         return new_spread_state
 
 
-    # TODO: Allow for a new resolution to be used (should this be a separate function?)
     @cy.ccall
     def copy_with_new_shape(self, new_cube_shape: tuple[pyidx, pyidx, pyidx], lower_left_corner_offset: coord_yx,
                             simulation_time_offset: cy.float) -> SpreadState:
@@ -9841,6 +9843,116 @@ class SpreadState:
                 new_spread_state.fireline_intensity[y,x] = self.fireline_intensity[y_base,x_base]
                 new_spread_state.flame_length[y,x]       = self.flame_length[y_base,x_base]
                 new_spread_state.time_of_arrival[y,x]    = self.time_of_arrival[y_base,x_base]
+        # Return the initialized SpreadState object
+        return new_spread_state
+
+
+    # NOTE: The SpreadState and space_time_cubes must have the same extent but different cube shapes and resolutions.
+    @cy.ccall
+    def render_at_new_resolution(self,
+                                 space_time_cubes      : dict[str, ISpaceTimeCube],
+                                 use_wind_limit        : cy.bint = True,
+                                 surface_lw_ratio_model: str = "behave",
+                                 crown_max_lw_ratio    : cy.float = 1e10) -> SpreadState:
+        # Extract the SpreadState's cube_shape and cube_resolution
+        ss_bands        : pyidx    = self.cube_shape[0]
+        ss_rows         : pyidx    = self.cube_shape[1]
+        ss_cols         : pyidx    = self.cube_shape[2]
+        ss_band_duration: cy.float = self.cube_resolution[0]
+        ss_cell_height  : cy.float = self.cube_resolution[1]
+        ss_cell_width   : cy.float = self.cube_resolution[2]
+
+        # Extract the space_time_cubes' cube_shape
+        slope_cube: ISpaceTimeCube  = cy.cast(ISpaceTimeCube, space_time_cubes["slope"])
+        stc_bands : pyidx           = slope_cube.shape[0]
+        stc_rows  : pyidx           = slope_cube.shape[1]
+        stc_cols  : pyidx           = slope_cube.shape[2]
+
+        # Verify that space_time_cubes does not have the same cube_shape as the SpreadState
+        if ss_bands == stc_bands and ss_rows == stc_rows and ss_cols == stc_cols:
+            raise ValueError("The space_time_cubes must have a different cube_shape than the SpreadState object.")
+
+        # Compute the space_time_cubes' cube_resolution
+        stc_band_duration: cy.float = (ss_bands * ss_band_duration) / stc_bands
+        stc_cell_height  : cy.float = (ss_rows * ss_cell_height) / stc_rows
+        stc_cell_width   : cy.float = (ss_cols * ss_cell_width) / stc_cols
+
+        # Create an empty SpreadState object
+        new_spread_state: SpreadState = SpreadState(slope_cube.shape)
+
+        # Set its cube_resolution
+        new_spread_state.cube_resolution = (stc_band_duration,
+                                            stc_cell_height,
+                                            stc_cell_width)
+
+        # Set its simulation_time
+        new_spread_state.simulation_time = self.simulation_time
+
+        # Fill low-resolution time of arrival matrix with max time of arrival + phi field where cells are NaN
+        y                 : pyidx
+        x                 : pyidx
+        time_of_arrival   : cy.float
+        ss_time_of_arrival: ndarray = np.copy(self.time_of_arrival)
+        for y in range(ss_rows):
+            for x in range(ss_cols):
+                time_of_arrival = ss_time_of_arrival[y,x] # min
+                if time_of_arrival != time_of_arrival:
+                    # NaN value
+                    ss_time_of_arrival[y,x] = self.simulation_time + max(0.0, self.phi[2+y,2+x]) # min strictly greater than neighboring cells
+
+        # Calculate the SpreadState's grid coords
+        ss_y: ndarray = np.array(range(ss_rows)) # y-coordinates
+        ss_x: ndarray = np.array(range(ss_cols)) # x-coordinates
+
+        # Calculate the space_time_cubes's grid coords
+        stc_y     : ndarray       = np.linspace(0, ss_rows-1, stc_rows)
+        stc_x     : ndarray       = np.linspace(0, ss_cols-1, stc_cols)
+        stc_grid  : list[ndarray] = np.meshgrid(stc_y, stc_x, indexing="ij")
+        stc_coords: ndarray       = np.array(stc_grid).T.reshape(-1,2) # array of [y,x] coords
+
+        # Interpolate using interpn
+        stc_values: ndarray = interpn((ss_y, ss_x),
+                                      ss_time_of_arrival,
+                                      stc_coords,
+                                      method="linear",
+                                      bounds_error=False)
+
+        # Reshape the interpolated values back to the 2D grid shape
+        stc_time_of_arrival: ndarray = stc_values.reshape(stc_cols, stc_rows).T
+
+        # Compute the gradient of stc_time_of_arrival
+        time_of_arrival_gradient: list[ndarray] = np.gradient(stc_time_of_arrival)
+        dt_dy                   : ndarray       = time_of_arrival_gradient[0]
+        dt_dx                   : ndarray       = time_of_arrival_gradient[1]
+
+        # Compute the fire behavior for all cells with time_of_arrival > self.simulation_time
+        t                    : pyidx
+        azimuth              : cy.float
+        space_time_coordinate: coord_tyx
+        for y in range(stc_rows):
+            for x in range(stc_cols):
+                time_of_arrival = max(0.0, stc_time_of_arrival[y,x]) # min
+                if time_of_arrival <= self.simulation_time:
+                    # Calculate the new spread_behavior at this space_time_coordinate
+                    t                     = min(stc_bands, int(time_of_arrival / stc_band_duration))
+                    space_time_coordinate = (t, y, x)
+                    azimuth               = conv.cartesian_to_azimuthal(dt_dx[y,x], dt_dy[y,x])[1] # (r, azimuth)[1]
+                    spread_behavior       = bc.burn_cell_toward_azimuth(space_time_cubes,
+                                                                        space_time_coordinate,
+                                                                        azimuth,
+                                                                        use_wind_limit,
+                                                                        surface_lw_ratio_model,
+                                                                        crown_max_lw_ratio)
+                    # Store these values in the new_spread_state's arrays
+                    new_spread_state.phi[2+y,2+x]            = -1.0
+                    new_spread_state.phi_star[2+y,2+x]       = -1.0
+                    new_spread_state.fire_type[y,x]          = spread_behavior["fire_type"]
+                    new_spread_state.spread_rate[y,x]        = spread_behavior["spread_rate"]
+                    new_spread_state.spread_direction[y,x]   = vu.spread_direction_vector_to_angle(spread_behavior["spread_direction"])
+                    new_spread_state.fireline_intensity[y,x] = spread_behavior["fireline_intensity"]
+                    new_spread_state.flame_length[y,x]       = spread_behavior["flame_length"]
+                    new_spread_state.time_of_arrival[y,x]    = time_of_arrival
+
         # Return the initialized SpreadState object
         return new_spread_state
 
@@ -17857,11 +17969,18 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     cpdef dict get_full_matrices(SpreadState self, list layers=?)
 #     cpdef SpreadState copy(SpreadState self)
 #     cpdef SpreadState copy_with_new_shape(
-#           SpreadState self,
-#           (pyidx, pyidx, pyidx) new_cube_shape,
-#           coord_yx lower_left_corner_offset,
-#           float simulation_time_offset,
-#           )
+#         SpreadState self,
+#         (pyidx, pyidx, pyidx) new_cube_shape,
+#         coord_yx lower_left_corner_offset,
+#         float simulation_time_offset,
+#     )
+#     cpdef SpreadState render_at_new_resolution(
+#         SpreadState self,
+#         dict[str, ISpaceTimeCube] space_time_cubes,
+#         bint use_wind_limit=?,
+#         str surface_lw_ratio_model=?,
+#         float crown_max_lw_ratio=?,
+#     )
 #     cpdef SpreadState rewind_to_time(SpreadState self, float simulation_time)
 # cdef object encode_cell_index(pyidx y, pyidx x)
 # cdef coord_yx decode_cell_index(object encoded_cell_index) noexcept

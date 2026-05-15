@@ -10,7 +10,8 @@
                                                          python-wheel
                                                          python-pypa-build
                                                          python-pyparsing))
-  #:use-module ((gnu packages python-science)  #:select (python-distributed))
+  #:use-module ((gnu packages python-science)  #:select (python-distributed
+                                                         python-scipy))
   #:use-module ((gnu packages python-web)      #:select (python-tornado-6))
   #:use-module ((gnu packages python-xyz)      #:select (python-numpy
                                                          python-rasterio
@@ -149,6 +150,7 @@
    (propagated-inputs (list
                        ;; Runtime dependencies
                        python-numpy
+                       python-scipy
                        python-rasterio-next
                        python-sortedcontainers
                        python-cython-3))
