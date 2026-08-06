@@ -10,6 +10,7 @@ cdef float van_wagner_crowning_spread_rate(
     FireBehaviorMax surface_fire_max,
     float canopy_base_height,
     float foliar_moisture,
+    float canopy_cover,
     ) noexcept
 
 cpdef bint van_wagner_crown_fire_initiation(

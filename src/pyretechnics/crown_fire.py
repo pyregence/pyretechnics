@@ -2,14 +2,14 @@
 import cython
 import cython as cy
 if cython.compiled:
-    from cython.cimports.libc.math import sqrt, exp, pow
+    from cython.cimports.libc.math import sqrt, exp, pow, INFINITY as inf
     from cython.cimports.pyretechnics.cy_types import \
         vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     import cython.cimports.pyretechnics.conversion as conv
     import cython.cimports.pyretechnics.vector_utils as vu
     import cython.cimports.pyretechnics.surface_fire as sf
 else:
-    from math import sqrt, exp, pow
+    from math import sqrt, exp, pow, inf
     from pyretechnics.py_types import \
         vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     import pyretechnics.conversion as conv
@@ -38,13 +38,20 @@ def van_wagner_critical_fireline_intensity(canopy_base_height: cy.float, foliar_
 @cy.exceptval(check=False)
 def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
                                     canopy_base_height: cy.float,
-                                    foliar_moisture   : cy.float) -> cy.float:
+                                    foliar_moisture   : cy.float,
+                                    canopy_cover      : cy.float) -> cy.float:
     """
     Returns the surface spread rate above which crown fire occurs (m/min) given:
     - surface_fire_max   :: FireBehaviorMax struct
     - canopy_base_height :: m
     - foliar_moisture    :: kg moisture/kg ovendry weight
+    - canopy_cover       :: 0-1
+
+    If crowning is not possible (because canopy_cover is too low),
+    returns +inf.
     """
+    if canopy_cover <= 0.4:
+        return inf
     surface_max_fireline_intensity: cy.float = surface_fire_max.max_fireline_intensity
     if surface_max_fireline_intensity > 0.0:
         surface_max_spread_rate    : cy.float = surface_fire_max.max_spread_rate
