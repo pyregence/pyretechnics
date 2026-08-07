@@ -1365,26 +1365,11 @@ def dphi_dt_from_partialed_wavelet(wavelet            : PartialedEllWavelet,
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
-def ros_crowning_check(crowning_spread_rate: cy.float, front_normal_spread_rate: cy.float) -> cy.bint:
-    """
-    Checks whether crowning occurs, based on spread rate.
-
-    crowning_spread_rate is the one computed by function `crown_fire_spread_rate()`,
-    and may be +inf to signal that crowning is not possible.
-    """
-    if isinf(crowning_spread_rate):
-        return False
-    return front_normal_spread_rate > crowning_spread_rate
-
-
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
 def phi_aware_crowning_check(phi_magnitude_xyz_2 : cy.float,
                              surface_dphi_dt     : cy.float,
                              crowning_spread_rate: cy.float) -> cy.bint:
     """
-    Logically equivalent to ros_crowning_check(),
+    Logically equivalent to: (surface_spread_rate > crowning_spread_rate)
     but faster to compute and robust to zero phi gradient.
     """
     # If crowning_spread_rate is +inf, it means that crowning is not possible.
@@ -2079,7 +2064,7 @@ def resolve_combined_spread_behavior(spread_inputs        : SpreadInputs,
                                                                                               spread_direction)
         # Check whether a crown fire occurs
         crowning_spread_rate: cy.float = resolve_crowning_spread_rate(cell_inputs, surface_fire_max)
-        if not ros_crowning_check(crowning_spread_rate, surface_fire_max_simple.spread_rate):
+        if (surface_fire_max_simple.spread_rate <= crowning_spread_rate):
             return surface_fire_max_simple
         else:
             crown_fire_max       : FireBehaviorMax = resolve_crown_max_behavior(fb_opts, cell_inputs, fuel_model)
@@ -2099,7 +2084,7 @@ def resolve_combined_spread_behavior(spread_inputs        : SpreadInputs,
         surface_fire_normal: SpreadBehavior  = calc_fireline_normal_behavior(surface_fire_max, phi_gradient_xyz)
         # Check whether a crown fire occurs
         crowning_spread_rate: cy.float = resolve_crowning_spread_rate(cell_inputs, surface_fire_max)
-        if not ros_crowning_check(crowning_spread_rate, surface_fire_normal.spread_rate):
+        if (surface_fire_normal.spread_rate <= crowning_spread_rate):
             return surface_fire_normal
         else:
             crown_fire_max      : FireBehaviorMax = resolve_crown_max_behavior(fb_opts, cell_inputs, fuel_model)
