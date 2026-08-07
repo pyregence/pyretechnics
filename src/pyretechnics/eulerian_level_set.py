@@ -1375,7 +1375,8 @@ def phi_aware_crowning_check(phi_magnitude_xyz_2 : cy.float,
     # If crowning_spread_rate is +inf, it means that crowning is not possible.
     if isinf(crowning_spread_rate):
         return False
-    return (surface_dphi_dt * surface_dphi_dt) > (crowning_spread_rate * crowning_spread_rate * phi_magnitude_xyz_2)
+    else:
+        return (surface_dphi_dt * surface_dphi_dt) > (crowning_spread_rate * crowning_spread_rate * phi_magnitude_xyz_2)
 
 
 # NOTE: Changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.

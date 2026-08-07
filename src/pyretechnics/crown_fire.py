@@ -57,7 +57,7 @@ def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
         if surface_max_fireline_intensity > 0.0:
             surface_max_spread_rate    : cy.float = surface_fire_max.max_spread_rate
             critical_fireline_intensity: cy.float = van_wagner_critical_fireline_intensity(canopy_base_height,
-                                                                                        foliar_moisture)
+                                                                                           foliar_moisture)
             return (surface_max_spread_rate * critical_fireline_intensity / surface_max_fireline_intensity)
         else:
             return 0.0
