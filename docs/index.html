@@ -5141,14 +5141,14 @@ intensity and flame length.
 <pre class="src src-python" id="crown-fire-imports"><span class="org-keyword">import</span> cython
 <span class="org-keyword">import</span> cython <span class="org-keyword">as</span> cy
 <span class="org-keyword">if</span> cython.compiled:
-    <span class="org-keyword">from</span> cython.cimports.libc.math <span class="org-keyword">import</span> sqrt, exp, <span class="org-builtin">pow</span>
+    <span class="org-keyword">from</span> cython.cimports.libc.math <span class="org-keyword">import</span> sqrt, exp, <span class="org-builtin">pow</span>, INFINITY <span class="org-keyword">as</span> inf
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> \
         vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.conversion <span class="org-keyword">as</span> conv
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.vector_utils <span class="org-keyword">as</span> vu
     <span class="org-keyword">import</span> cython.cimports.pyretechnics.surface_fire <span class="org-keyword">as</span> sf
 <span class="org-keyword">else</span>:
-    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, exp, <span class="org-builtin">pow</span>
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> sqrt, exp, <span class="org-builtin">pow</span>, inf
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> \
         vec_xyz, ProjectedVectors, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
     <span class="org-keyword">import</span> pyretechnics.conversion <span class="org-keyword">as</span> conv
@@ -5217,21 +5217,29 @@ also calculate the surface fire spread rate at which crowning occurs.
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">van_wagner_crowning_spread_rate</span>(surface_fire_max  : FireBehaviorMax,
                                     canopy_base_height: cy.<span class="org-builtin">float</span>,
-                                    foliar_moisture   : cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
+                                    foliar_moisture   : cy.<span class="org-builtin">float</span>,
+                                    canopy_cover      : cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
     <span class="org-doc">"""</span>
 <span class="org-doc">    Returns the surface spread rate above which crown fire occurs (m/min) given:</span>
 <span class="org-doc">    - surface_fire_max   :: FireBehaviorMax struct</span>
 <span class="org-doc">    - canopy_base_height :: m</span>
 <span class="org-doc">    - foliar_moisture    :: kg moisture/kg ovendry weight</span>
+<span class="org-doc">    - canopy_cover       :: 0-1</span>
+
+<span class="org-doc">    If crowning is not possible (because canopy_cover is too low),</span>
+<span class="org-doc">    returns +inf.</span>
 <span class="org-doc">    """</span>
-    <span class="org-variable-name">surface_max_fireline_intensity</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> surface_fire_max.max_fireline_intensity
-    <span class="org-keyword">if</span> surface_max_fireline_intensity <span class="org-operator">&gt;</span> 0.0:
-        <span class="org-variable-name">surface_max_spread_rate</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> surface_fire_max.max_spread_rate
-        <span class="org-variable-name">critical_fireline_intensity</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> van_wagner_critical_fireline_intensity(canopy_base_height,
-                                                                                       foliar_moisture)
-        <span class="org-keyword">return</span> (surface_max_spread_rate <span class="org-operator">*</span> critical_fireline_intensity <span class="org-operator">/</span> surface_max_fireline_intensity)
+    <span class="org-keyword">if</span> canopy_cover <span class="org-operator">&lt;=</span> 0.4:
+        <span class="org-keyword">return</span> inf
     <span class="org-keyword">else</span>:
-        <span class="org-keyword">return</span> 0.0
+        <span class="org-variable-name">surface_max_fireline_intensity</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> surface_fire_max.max_fireline_intensity
+        <span class="org-keyword">if</span> surface_max_fireline_intensity <span class="org-operator">&gt;</span> 0.0:
+            <span class="org-variable-name">surface_max_spread_rate</span>    : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> surface_fire_max.max_spread_rate
+            <span class="org-variable-name">critical_fireline_intensity</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> van_wagner_critical_fireline_intensity(canopy_base_height,
+                                                                                           foliar_moisture)
+            <span class="org-keyword">return</span> (surface_max_spread_rate <span class="org-operator">*</span> critical_fireline_intensity <span class="org-operator">/</span> surface_max_fireline_intensity)
+        <span class="org-keyword">else</span>:
+            <span class="org-keyword">return</span> 0.0
 </pre>
 </div>
 
@@ -9689,7 +9697,7 @@ model<sup><a id="fnr.38.100" class="footref" href="#fn.38" role="doc-backlink">3
 <span class="org-keyword">if</span> cython.compiled:
     <span class="org-keyword">from</span> cython.cimports.numpy <span class="org-keyword">import</span> ndarray
     <span class="org-keyword">from</span> cython.cimports.libc.stdlib <span class="org-keyword">import</span> malloc, realloc, free
-    <span class="org-keyword">from</span> cython.cimports.libc.math <span class="org-keyword">import</span> pi, floor, sqrt, <span class="org-builtin">pow</span>, atan
+    <span class="org-keyword">from</span> cython.cimports.libc.math <span class="org-keyword">import</span> pi, floor, sqrt, <span class="org-builtin">pow</span>, atan, INFINITY <span class="org-keyword">as</span> inf, isinf
     <span class="org-keyword">from</span> cython.cimports.pyretechnics.cy_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
@@ -9706,7 +9714,7 @@ model<sup><a id="fnr.38.100" class="footref" href="#fn.38" role="doc-backlink">3
 <span class="org-keyword">else</span>:
     <span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Create equivalent Python functions for malloc, realloc, free</span>
     <span class="org-keyword">from</span> numpy <span class="org-keyword">import</span> ndarray
-    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> pi, floor, sqrt, <span class="org-builtin">pow</span>, atan
+    <span class="org-keyword">from</span> math <span class="org-keyword">import</span> pi, floor, sqrt, <span class="org-builtin">pow</span>, atan, inf, isinf
     <span class="org-keyword">from</span> pyretechnics.py_types <span class="org-keyword">import</span> pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
         fclaarr, FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
         PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
@@ -11440,7 +11448,11 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    Logically equivalent to: (surface_spread_rate &gt; crowning_spread_rate)</span>
 <span class="org-doc">    but faster to compute and robust to zero phi gradient.</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">return</span> (surface_dphi_dt <span class="org-operator">*</span> surface_dphi_dt) <span class="org-operator">&gt;</span> (crowning_spread_rate <span class="org-operator">*</span> crowning_spread_rate <span class="org-operator">*</span> phi_magnitude_xyz_2)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">If crowning_spread_rate is +inf, it means that crowning is not possible.</span>
+    <span class="org-keyword">if</span> isinf(crowning_spread_rate):
+        <span class="org-keyword">return</span> <span class="org-constant">False</span>
+    <span class="org-keyword">else</span>:
+        <span class="org-keyword">return</span> (surface_dphi_dt <span class="org-operator">*</span> surface_dphi_dt) <span class="org-operator">&gt;</span> (crowning_spread_rate <span class="org-operator">*</span> crowning_spread_rate <span class="org-operator">*</span> phi_magnitude_xyz_2)
 
 
 <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: Changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.</span>
@@ -12016,7 +12028,8 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <span class="org-doc">    """</span>
     <span class="org-keyword">return</span> cf.van_wagner_crowning_spread_rate(surface_fire_max,
                                               cell_inputs.canopy_base_height,
-                                              cell_inputs.foliar_moisture)
+                                              cell_inputs.foliar_moisture,
+                                              cell_inputs.canopy_cover)
 
 
 <span class="org-type">@cy.cfunc</span>
@@ -12036,7 +12049,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
     <span class="org-keyword">if</span> <span class="org-keyword">not</span> fuel_model.burnable:
         <span class="org-variable-name">surface_wavelet</span>      <span class="org-operator">=</span> zero_partialed_wavelet()
         <span class="org-variable-name">crown_wavelet</span>        <span class="org-operator">=</span> zero_partialed_wavelet()
-        <span class="org-variable-name">crowning_spread_rate</span> <span class="org-operator">=</span> 1234.5 <span class="org-comment-delimiter"># </span><span class="org-comment">arbitrary positive value - this threshold will never be reached.</span>
+        <span class="org-variable-name">crowning_spread_rate</span> <span class="org-operator">=</span> inf <span class="org-comment-delimiter"># </span><span class="org-comment">crowning is not possible</span>
     <span class="org-keyword">else</span>:
         <span class="org-variable-name">surface_fire_max</span>: FireBehaviorMax <span class="org-operator">=</span> resolve_surface_max_behavior(fb_opts,
                                                                          cell_inputs,
@@ -19040,6 +19053,7 @@ cdef <span class="org-builtin">float</span> van_wagner_crowning_spread_rate(
     FireBehaviorMax surface_fire_max,
     <span class="org-builtin">float</span> canopy_base_height,
     <span class="org-builtin">float</span> foliar_moisture,
+    <span class="org-builtin">float</span> canopy_cover,
     ) noexcept
 
 cpdef bint van_wagner_crown_fire_initiation(
