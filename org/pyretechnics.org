@@ -4575,7 +4575,7 @@ def van_wagner_crowning_spread_rate(surface_fire_max  : FireBehaviorMax,
         if surface_max_fireline_intensity > 0.0:
             surface_max_spread_rate    : cy.float = surface_fire_max.max_spread_rate
             critical_fireline_intensity: cy.float = van_wagner_critical_fireline_intensity(canopy_base_height,
-                                                                                        foliar_moisture)
+                                                                                           foliar_moisture)
             return (surface_max_spread_rate * critical_fireline_intensity / surface_max_fireline_intensity)
         else:
             return 0.0
@@ -10422,7 +10422,8 @@ def phi_aware_crowning_check(phi_magnitude_xyz_2 : cy.float,
     # If crowning_spread_rate is +inf, it means that crowning is not possible.
     if isinf(crowning_spread_rate):
         return False
-    return (surface_dphi_dt * surface_dphi_dt) > (crowning_spread_rate * crowning_spread_rate * phi_magnitude_xyz_2)
+    else:
+        return (surface_dphi_dt * surface_dphi_dt) > (crowning_spread_rate * crowning_spread_rate * phi_magnitude_xyz_2)
 
 
 # NOTE: Changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.
