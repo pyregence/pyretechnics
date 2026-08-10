@@ -4323,8 +4323,8 @@ according to Andrews 2012<sup><a id="fnr.18" class="footref" href="#fn.18" role=
 \begin{align}
   \text{WAF} &= \left\{
     \begin{array}{lr}
-      1.83 \ln(\frac{20.0 + 0.36 \text{FBD}}{0.13 \text{FBD}})^{-1} & CC = 0 \\
-      0.555 [\sqrt{\text{CH} (\text{CC}/3.0)} \ln(\frac{20 + 0.36 \text{CH}}{0.13 \text{CH}})]^{-1} & CC > 0
+      1.83 \ln(\frac{20.0 + 0.36 \text{FBD}}{0.13 \text{FBD}})^{-1} & CF \leq 0.05 \\
+      0.555 [\sqrt{\text{CH} (\text{CC}/3.0)} \ln(\frac{20 + 0.36 \text{CH}}{0.13 \text{CH}})]^{-1} & CF > 0.05
     \end{array}
   \right. \\
   \nonumber \\
@@ -4334,9 +4334,12 @@ according to Andrews 2012<sup><a id="fnr.18" class="footref" href="#fn.18" role=
 <p>
 where \(\text{WAF}\) is the unitless wind adjustment factor,
 \(\text{FBD}\) is the fuel bed depth in \(\text{ft}\), \(\text{CH}\) is the
-canopy height in \(\text{ft}\), and \(\text{CC}\) is the canopy cover
-fraction \((0-1)\).
+canopy height in \(\text{ft}\), \(\text{CC}\) is the canopy cover
+fraction \((0-1)\), and \(\text{CF} := \text{CC} / 3\) is the crown fill portion \((0-1)\).
+As in BehavePlus, the fuel bed is considered sheltered when the crown fill portion exceeds 5 percent<sup><a id="fnr.20" class="footref" href="#fn.20" role="doc-backlink">20</a></sup>;
+this almost always prevents the \(\text{WAF}\) being greater than 1.
 </p>
+
 
 <div class="org-src-container">
 <pre class="src src-python" id="midflame-wind-speed"><span class="org-type">@cy.cfunc</span>
@@ -4347,10 +4350,14 @@ fraction \((0-1)\).
 <span class="org-doc">    - fuel_bed_depth :: ft</span>
 <span class="org-doc">    - canopy_height  :: ft</span>
 <span class="org-doc">    - canopy_cover   :: 0-1</span>
+
+<span class="org-doc">    Note: The (un)sheltered threshold should match Behave+ (Andrews 2012).</span>
 <span class="org-doc">    """</span>
-    <span class="org-keyword">if</span> (canopy_cover <span class="org-operator">&gt;</span> 0.0) <span class="org-keyword">and</span> (canopy_height <span class="org-operator">&gt;</span> 0.0):
+    <span class="org-variable-name">crown_fill_portion</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> canopy_cover <span class="org-operator">/</span> 3.0
+    <span class="org-variable-name">is_sheltered</span>      : cy.bint  <span class="org-operator">=</span> (crown_fill_portion <span class="org-operator">&gt;=</span> 0.05 <span class="org-keyword">and</span> canopy_height <span class="org-operator">&gt;=</span> 6.0)
+    <span class="org-keyword">if</span> is_sheltered:
         <span class="org-comment-delimiter"># </span><span class="org-comment">sheltered: equation 2 based on CC and CH, CR=1 (Andrews 2012)</span>
-        <span class="org-variable-name">A</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt((canopy_cover <span class="org-operator">/</span> 3.0) <span class="org-operator">*</span> canopy_height)
+        <span class="org-variable-name">A</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> sqrt(crown_fill_portion <span class="org-operator">*</span> canopy_height)
         <span class="org-variable-name">B</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> log((20.0 <span class="org-operator">+</span> 0.36 <span class="org-operator">*</span> canopy_height) <span class="org-operator">/</span> (0.13 <span class="org-operator">*</span> canopy_height))
         <span class="org-keyword">return</span> 0.555 <span class="org-operator">/</span> (A <span class="org-operator">*</span> B)
     <span class="org-keyword">elif</span> (fuel_bed_depth <span class="org-operator">&gt;</span> 0.0):
@@ -4404,7 +4411,7 @@ aligned, the effects of cross-slope winds must be taken into effect.
 To accomplish this, Pyretechnics implements the vector addition
 procedure defined in Rothermel 1983 that combines the wind and slope
 vectors to calculate the maximum fire spread direction and
-magnitude.<sup><a id="fnr.20" class="footref" href="#fn.20" role="doc-backlink">20</a></sup>
+magnitude.<sup><a id="fnr.21" class="footref" href="#fn.21" role="doc-backlink">21</a></sup>
 </p>
 
 <p>
@@ -4412,7 +4419,7 @@ In order to address potential errors related to projecting the
 horizontal wind and slope azimuth vectors to and from the
 slope-tangential plane, upon which the equations from Rothermel 1983
 are defined, we incorporate the three-dimensional vector combination
-procedure provided by Waeselynck 2024.<sup><a id="fnr.21" class="footref" href="#fn.21" role="doc-backlink">21</a></sup>
+procedure provided by Waeselynck 2024.<sup><a id="fnr.22" class="footref" href="#fn.22" role="doc-backlink">22</a></sup>
 </p>
 
 <div class="org-src-container">
@@ -4475,7 +4482,7 @@ values calculated in earlier sections onto a two-dimensional plane,
 \(\frac{L}{W}\) of an ellipse that approximates the surface fire front.
 This length to width ratio is then converted into an eccentricity
 measure \(E\) of the ellipse using equation 8 from Albini and Chase
-1980.<sup><a id="fnr.22" class="footref" href="#fn.22" role="doc-backlink">22</a></sup>
+1980.<sup><a id="fnr.23" class="footref" href="#fn.23" role="doc-backlink">23</a></sup>
 </p>
 
 \begin{align}
@@ -4489,7 +4496,7 @@ the length to width ratio \(\frac{L}{W}\):
 
 <ol class="org-ol">
 <li><p>
-Using equation 9 from Rothermel 1991.<sup><a id="fnr.23" class="footref" href="#fn.23" role="doc-backlink">23</a></sup>
+Using equation 9 from Rothermel 1991.<sup><a id="fnr.24" class="footref" href="#fn.24" role="doc-backlink">24</a></sup>
 </p>
 
 \begin{align}
@@ -4501,7 +4508,7 @@ where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
 </p></li>
 
 <li><p>
-Using the formula implemented in the Missoula Fire Lab's <code>behave</code> C++ library<sup><a id="fnr.24" class="footref" href="#fn.24" role="doc-backlink">24</a></sup>
+Using the formula implemented in the Missoula Fire Lab's <code>behave</code> C++ library<sup><a id="fnr.25" class="footref" href="#fn.25" role="doc-backlink">25</a></sup>
 </p>
 
 \begin{align}
@@ -4574,7 +4581,7 @@ Rothermel 1972 defines a maximum effective wind speed, above which the
 predicted spread rate and intensity remains constant. However, a 2013
 publication by Andrews et al recommends instead that this wind speed
 limit not be imposed, in order to avoid possible spread rate
-underprediction.<sup><a id="fnr.25" class="footref" href="#fn.25" role="doc-backlink">25</a></sup><sup>, </sup><sup><a id="fnr.26" class="footref" href="#fn.26" role="doc-backlink">26</a></sup>
+underprediction.<sup><a id="fnr.26" class="footref" href="#fn.26" role="doc-backlink">26</a></sup><sup>, </sup><sup><a id="fnr.27" class="footref" href="#fn.27" role="doc-backlink">27</a></sup>
 </p>
 
 <p>
@@ -5165,7 +5172,7 @@ intensity and flame length.
 <p>
 In order to incorporate the effects of crown fire behavior,
 Pyretechnics includes the crown fire initiation routine from Van
-Wagner 1977.<sup><a id="fnr.27" class="footref" href="#fn.27" role="doc-backlink">27</a></sup> According to this approach, we begin
+Wagner 1977.<sup><a id="fnr.28" class="footref" href="#fn.28" role="doc-backlink">28</a></sup> According to this approach, we begin
 by calculating the <i>critical fireline intensity</i> as follows:
 </p>
 
@@ -5283,7 +5290,7 @@ transitions to a crown fire.
 <p>
 If crowning occurs, then the active crown fire spread rate is
 calculated from the following formula given in Cruz
-2005:<sup><a id="fnr.28" class="footref" href="#fn.28" role="doc-backlink">28</a></sup>
+2005:<sup><a id="fnr.29" class="footref" href="#fn.29" role="doc-backlink">29</a></sup>
 </p>
 
 \begin{align}
@@ -5319,7 +5326,7 @@ and \(\text{EFFM}\) is the estimated fine fuel moisture in \(\text{kg moisture/k
 
 <p>
 Next, we need to calculate the <i>critical spread rate</i> from Van Wagner
-1977<sup><a id="fnr.29" class="footref" href="#fn.29" role="doc-backlink">29</a></sup> as follows:
+1977<sup><a id="fnr.30" class="footref" href="#fn.30" role="doc-backlink">30</a></sup> as follows:
 </p>
 
 \begin{align}
@@ -5349,7 +5356,7 @@ If the active crown fire spread rate \(\text{CROS}_A\) is greater than
 the critical spread rate \(R^*\), then the crown fire will be active,
 otherwise passive. In the event of a passive crown fire, its spread
 rate is calculated using the following formula from Cruz
-2005:<sup><a id="fnr.30" class="footref" href="#fn.30" role="doc-backlink">30</a></sup>
+2005:<sup><a id="fnr.31" class="footref" href="#fn.31" role="doc-backlink">31</a></sup>
 </p>
 
 \begin{align}
@@ -5488,9 +5495,9 @@ analyses along with the combined surface and crown flame length
 As with surface fire spread, the wind speed (this time the 20-ft wind
 speed \(U_{20}\)) is used to compute the length to width ratio
 \(\frac{L}{W}\) of an ellipse that approximates the crown fire front
-using equation 10 from Rothermel 1991.<sup><a id="fnr.31" class="footref" href="#fn.31" role="doc-backlink">31</a></sup> This length
+using equation 10 from Rothermel 1991.<sup><a id="fnr.32" class="footref" href="#fn.32" role="doc-backlink">32</a></sup> This length
 to width ratio is then converted into an eccentricity measure of the
-ellipse using equation 8 from Albini and Chase 1980.<sup><a id="fnr.32" class="footref" href="#fn.32" role="doc-backlink">32</a></sup>
+ellipse using equation 8 from Albini and Chase 1980.<sup><a id="fnr.33" class="footref" href="#fn.33" role="doc-backlink">33</a></sup>
 Here are the formulas used:
 </p>
 
@@ -5545,7 +5552,7 @@ behavior values described in the previous sections. In order to
 accurately compare the crown fire behavior values from this section
 with the surface fire behavior values from section <a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">5.1.10</a>, the 10 meter wind vector
 must be projected onto the slope-tangential plane (using Waeselynck
-2024<sup><a id="fnr.33" class="footref" href="#fn.33" role="doc-backlink">33</a></sup>) before the crown fire's maximum spread rate
+2024<sup><a id="fnr.34" class="footref" href="#fn.34" role="doc-backlink">34</a></sup>) before the crown fire's maximum spread rate
 and associated elliptical parameters are calculated. This ensures that
 both the surface fire and crown fire ellipses are aligned with the
 slope-tangential plane for later comparison in section <a href="#combining-surface-and-crown-fire-behavior">6.1.8</a>.
@@ -6752,7 +6759,7 @@ Following Perryman 2012, Sardoy 2008, and Himoto 2005, we model
 \(\Delta_X\) and \(\Delta_Y\) to be independent, with \(\Delta_X\) following
 a log-normal distribution, and \(\Delta_Y\) following a zero-mean normal
 distribution, conditional on the fire behavior \(\Phi\) at the cell of
-origin:<sup><a id="fnr.34" class="footref" href="#fn.34" role="doc-backlink">34</a></sup><sup>, </sup><sup><a id="fnr.35" class="footref" href="#fn.35" role="doc-backlink">35</a></sup><sup>, </sup><sup><a id="fnr.36" class="footref" href="#fn.36" role="doc-backlink">36</a></sup>
+origin:<sup><a id="fnr.35" class="footref" href="#fn.35" role="doc-backlink">35</a></sup><sup>, </sup><sup><a id="fnr.36" class="footref" href="#fn.36" role="doc-backlink">36</a></sup><sup>, </sup><sup><a id="fnr.37" class="footref" href="#fn.37" role="doc-backlink">37</a></sup>
 </p>
 
 \begin{align}
@@ -6825,8 +6832,8 @@ these deltas by using trigonometric functions.
 <div class="outline-text-4" id="text-resolution-of-log-normal-parameters">
 <p>
 We now need to define the functions \(\mu_X(\Phi)\) and
-\(\sigma_X(\Phi)\). Here we depart from Sardoy 2008<sup><a id="fnr.37" class="footref" href="#fn.37" role="doc-backlink">37</a></sup> and
-reproduce the model of ELMFIRE<sup><a id="fnr.38" class="footref" href="#fn.38" role="doc-backlink">38</a></sup>, which models that
+\(\sigma_X(\Phi)\). Here we depart from Sardoy 2008<sup><a id="fnr.38" class="footref" href="#fn.38" role="doc-backlink">38</a></sup> and
+reproduce the model of ELMFIRE<sup><a id="fnr.39" class="footref" href="#fn.39" role="doc-backlink">39</a></sup>, which models that
 dependency using the following relationships between the moments of
 the distribution and the fireline intensity \(I\) and wind speed \(U\):
 </p>
@@ -7004,8 +7011,8 @@ the properties of the log-normal distribution:
 <p>
 For \(\sigma_Y\), we either let the user specify an explicit value with
 key <b>crosswind_distance_stdev</b> (in meters), which makes it equivalent
-to the model of Perryman 2012<sup><a id="fnr.39" class="footref" href="#fn.39" role="doc-backlink">39</a></sup>, or we default to
-deriving them from equation (28) of Himoto 2005<sup><a id="fnr.40" class="footref" href="#fn.40" role="doc-backlink">40</a></sup>, which
+to the model of Perryman 2012<sup><a id="fnr.40" class="footref" href="#fn.40" role="doc-backlink">40</a></sup>, or we default to
+deriving them from equation (28) of Himoto 2005<sup><a id="fnr.41" class="footref" href="#fn.41" role="doc-backlink">41</a></sup>, which
 is equivalent to:
 </p>
 
@@ -7103,21 +7110,21 @@ were obtained.
 <p>
 <b>CAUTION:</b> (FIXME REVIEW) We have found the above formula to be
 problematic when applied to the parameters values found in Sardoy
-2008<sup><a id="fnr.41" class="footref" href="#fn.41" role="doc-backlink">41</a></sup> because it tends to yield nonsensical \(\sigma_Y >
+2008<sup><a id="fnr.42" class="footref" href="#fn.42" role="doc-backlink">42</a></sup> because it tends to yield nonsensical \(\sigma_Y >
 \mathbb{E}[\Delta_X]\). In fact, it can be seen that \(\sigma_Y > s
 \mathbb{E}[\Delta_X]\) if and only if \(\sigma_X > \sqrt{\ln \left(1 +
 \frac{.88^2}{.92 \times .47} s \right)}\), in particular \(\sigma_X >
 1.013\) for \(s = 1\), which is unfortunately the case with the range of
-\(\sigma_X\) values in Sardoy 2008<sup><a id="fnr.42" class="footref" href="#fn.42" role="doc-backlink">42</a></sup>. This reflects a
-divergence between Himoto 2005<sup><a id="fnr.43" class="footref" href="#fn.43" role="doc-backlink">43</a></sup> and Sardoy
-2008<sup><a id="fnr.44" class="footref" href="#fn.44" role="doc-backlink">44</a></sup>, the latter allowing for more dispersed
+\(\sigma_X\) values in Sardoy 2008<sup><a id="fnr.43" class="footref" href="#fn.43" role="doc-backlink">43</a></sup>. This reflects a
+divergence between Himoto 2005<sup><a id="fnr.44" class="footref" href="#fn.44" role="doc-backlink">44</a></sup> and Sardoy
+2008<sup><a id="fnr.45" class="footref" href="#fn.45" role="doc-backlink">45</a></sup>, the latter allowing for more dispersed
 \(\Delta_X\) distributions (higher coefficient of variation
 \(\text{Var}[\Delta_X]^{\frac{1}{2}}/\mathbb{E}[\Delta_X] =
 \sqrt{e^{\sigma_X^2} - 1}\)), whereas the former typically predicts a
 low coefficient of variation, as is perceptible in figure 6 of Himoto
-2005<sup><a id="fnr.45" class="footref" href="#fn.45" role="doc-backlink">45</a></sup>. Figure 10 of Sardoy 2008<sup><a id="fnr.46" class="footref" href="#fn.46" role="doc-backlink">46</a></sup>
+2005<sup><a id="fnr.46" class="footref" href="#fn.46" role="doc-backlink">46</a></sup>. Figure 10 of Sardoy 2008<sup><a id="fnr.47" class="footref" href="#fn.47" role="doc-backlink">47</a></sup>
 suggests coefficients of variation ranging from 95% to 210%, whereas
-Figure 6 of Himoto 2005<sup><a id="fnr.47" class="footref" href="#fn.47" role="doc-backlink">47</a></sup> suggests coefficients of
+Figure 6 of Himoto 2005<sup><a id="fnr.48" class="footref" href="#fn.48" role="doc-backlink">48</a></sup> suggests coefficients of
 variation ranging from 30% to 70%. For this reason, we <b>strongly
 recommend to supply \(\sigma_Y\) directly</b> through the configuration key
 <b>crosswind_distance_stdev</b>.
@@ -7235,7 +7242,7 @@ exponential functions:
 <h4 id="spot-ignition-model"><span class="section-number-4">7.1.7.</span> Spot Ignition Model</h4>
 <div class="outline-text-4" id="text-spot-ignition-model">
 <p>
-The spot ignition model (Schroeder 1969)<sup><a id="fnr.48" class="footref" href="#fn.48" role="doc-backlink">48</a></sup> describes
+The spot ignition model (Schroeder 1969)<sup><a id="fnr.49" class="footref" href="#fn.49" role="doc-backlink">49</a></sup> describes
 the probability of a spot ignition based on the temperature and fine
 fuel moisture at the firebrand landing location as follows:
 </p>
@@ -7301,7 +7308,7 @@ Perryman 2012 uses this ignition probability but multiplies it by a
 flight survival probability based on the distance a firebrand lands
 from its casting source (using Albini 1979) and the number of
 firebrands that land in a cell (using Stauffer
-2008).<sup><a id="fnr.49" class="footref" href="#fn.49" role="doc-backlink">49</a></sup><sup>, </sup><sup><a id="fnr.50" class="footref" href="#fn.50" role="doc-backlink">50</a></sup><sup>, </sup><sup><a id="fnr.51" class="footref" href="#fn.51" role="doc-backlink">51</a></sup>
+2008).<sup><a id="fnr.50" class="footref" href="#fn.50" role="doc-backlink">50</a></sup><sup>, </sup><sup><a id="fnr.51" class="footref" href="#fn.51" role="doc-backlink">51</a></sup><sup>, </sup><sup><a id="fnr.52" class="footref" href="#fn.52" role="doc-backlink">52</a></sup>
 </p>
 
 \begin{align}
@@ -7372,14 +7379,14 @@ maximum vertical height \(t_v\), the amount of time required for the
 firebrand to descend from the maximum vertical height to the forest
 floor \(t_g\), and the amount of time required for a spot fire to ignite
 and build up to the steady-state \(t_I\). Perryman
-2012<sup><a id="fnr.52" class="footref" href="#fn.52" role="doc-backlink">52</a></sup> assumes \(t_v\) and \(t_g\) to be equal and uses
-the formula from Albini 1979<sup><a id="fnr.53" class="footref" href="#fn.53" role="doc-backlink">53</a></sup> to calculate it.
+2012<sup><a id="fnr.53" class="footref" href="#fn.53" role="doc-backlink">53</a></sup> assumes \(t_v\) and \(t_g\) to be equal and uses
+the formula from Albini 1979<sup><a id="fnr.54" class="footref" href="#fn.54" role="doc-backlink">54</a></sup> to calculate it.
 \(t_I\) is also assumed to be 20 min as used in McAlpine
-1991<sup><a id="fnr.54" class="footref" href="#fn.54" role="doc-backlink">54</a></sup>.
+1991<sup><a id="fnr.55" class="footref" href="#fn.55" role="doc-backlink">55</a></sup>.
 </p>
 
 <p>
-By Albini 1979<sup><a id="fnr.55" class="footref" href="#fn.55" role="doc-backlink">55</a></sup>, the time \(t_v\) for a firebrand to
+By Albini 1979<sup><a id="fnr.56" class="footref" href="#fn.56" role="doc-backlink">56</a></sup>, the time \(t_v\) for a firebrand to
 reach height \(z\) when the flame length is \(z_F\) is given by:
 </p>
 
@@ -7394,12 +7401,12 @@ reach height \(z\) when the flame length is \(z_F\) is given by:
 \end{align}
 
 <p>
-In the notation of Albini 1979<sup><a id="fnr.56" class="footref" href="#fn.56" role="doc-backlink">56</a></sup>, we would have \(t_v
+In the notation of Albini 1979<sup><a id="fnr.57" class="footref" href="#fn.57" role="doc-backlink">57</a></sup>, we would have \(t_v
 = \frac{2 z_F}{w_F}(t_T - t_o)\).
 </p>
 
 <p>
-Albini 1979<sup><a id="fnr.57" class="footref" href="#fn.57" role="doc-backlink">57</a></sup> also provides a formula - (D44) - for
+Albini 1979<sup><a id="fnr.58" class="footref" href="#fn.58" role="doc-backlink">58</a></sup> also provides a formula - (D44) - for
 the maximum height \(z_\text{max}\) that a firebrand can reach while
 still glowing when it hits the ground, as a function of the firebrand
 diameter \(D\) in a cylinder model:
@@ -9681,7 +9688,7 @@ space-time cube introduced in section <a href="#data-model">2</a>.
 <p>
 This section introduces the equations used in the Eulerian level set
 method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
-model<sup><a id="fnr.38.100" class="footref" href="#fn.38" role="doc-backlink">38</a></sup>.
+model<sup><a id="fnr.39.100" class="footref" href="#fn.39" role="doc-backlink">39</a></sup>.
 </p>
 </div>
 
@@ -19741,85 +19748,87 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 
 <div class="footdef"><sup><a id="fn.19" class="footnum" href="#fnr.19" role="doc-backlink">19</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Andrews2012</p></div></div>
 
-<div class="footdef"><sup><a id="fn.20" class="footnum" href="#fnr.20" role="doc-backlink">20</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1983</p></div></div>
+<div class="footdef"><sup><a id="fn.20" class="footnum" href="#fnr.20" role="doc-backlink">20</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Andrews2012</p></div></div>
 
-<div class="footdef"><sup><a id="fn.21" class="footnum" href="#fnr.21" role="doc-backlink">21</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
+<div class="footdef"><sup><a id="fn.21" class="footnum" href="#fnr.21" role="doc-backlink">21</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1983</p></div></div>
 
-<div class="footdef"><sup><a id="fn.22" class="footnum" href="#fnr.22" role="doc-backlink">22</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1980</p></div></div>
+<div class="footdef"><sup><a id="fn.22" class="footnum" href="#fnr.22" role="doc-backlink">22</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
 
-<div class="footdef"><sup><a id="fn.23" class="footnum" href="#fnr.23" role="doc-backlink">23</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1991</p></div></div>
+<div class="footdef"><sup><a id="fn.23" class="footnum" href="#fnr.23" role="doc-backlink">23</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1980</p></div></div>
 
-<div class="footdef"><sup><a id="fn.24" class="footnum" href="#fnr.24" role="doc-backlink">24</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<div class="footdef"><sup><a id="fn.24" class="footnum" href="#fnr.24" role="doc-backlink">24</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1991</p></div></div>
+
+<div class="footdef"><sup><a id="fn.25" class="footnum" href="#fnr.25" role="doc-backlink">25</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
 <a href="https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93">https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93</a>
 </p></div></div>
 
-<div class="footdef"><sup><a id="fn.25" class="footnum" href="#fnr.25" role="doc-backlink">25</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1972</p></div></div>
+<div class="footdef"><sup><a id="fn.26" class="footnum" href="#fnr.26" role="doc-backlink">26</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1972</p></div></div>
 
-<div class="footdef"><sup><a id="fn.26" class="footnum" href="#fnr.26" role="doc-backlink">26</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Andrews2013</p></div></div>
+<div class="footdef"><sup><a id="fn.27" class="footnum" href="#fnr.27" role="doc-backlink">27</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Andrews2013</p></div></div>
 
-<div class="footdef"><sup><a id="fn.27" class="footnum" href="#fnr.27" role="doc-backlink">27</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">VanWagner1977</p></div></div>
+<div class="footdef"><sup><a id="fn.28" class="footnum" href="#fnr.28" role="doc-backlink">28</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">VanWagner1977</p></div></div>
 
-<div class="footdef"><sup><a id="fn.28" class="footnum" href="#fnr.28" role="doc-backlink">28</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Cruz2005</p></div></div>
+<div class="footdef"><sup><a id="fn.29" class="footnum" href="#fnr.29" role="doc-backlink">29</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Cruz2005</p></div></div>
 
-<div class="footdef"><sup><a id="fn.29" class="footnum" href="#fnr.29" role="doc-backlink">29</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">VanWagner1977</p></div></div>
+<div class="footdef"><sup><a id="fn.30" class="footnum" href="#fnr.30" role="doc-backlink">30</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">VanWagner1977</p></div></div>
 
-<div class="footdef"><sup><a id="fn.30" class="footnum" href="#fnr.30" role="doc-backlink">30</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Cruz2005</p></div></div>
+<div class="footdef"><sup><a id="fn.31" class="footnum" href="#fnr.31" role="doc-backlink">31</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Cruz2005</p></div></div>
 
-<div class="footdef"><sup><a id="fn.31" class="footnum" href="#fnr.31" role="doc-backlink">31</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1991</p></div></div>
+<div class="footdef"><sup><a id="fn.32" class="footnum" href="#fnr.32" role="doc-backlink">32</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Rothermel1991</p></div></div>
 
-<div class="footdef"><sup><a id="fn.32" class="footnum" href="#fnr.32" role="doc-backlink">32</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1980</p></div></div>
+<div class="footdef"><sup><a id="fn.33" class="footnum" href="#fnr.33" role="doc-backlink">33</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1980</p></div></div>
 
-<div class="footdef"><sup><a id="fn.33" class="footnum" href="#fnr.33" role="doc-backlink">33</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
+<div class="footdef"><sup><a id="fn.34" class="footnum" href="#fnr.34" role="doc-backlink">34</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
 
-<div class="footdef"><sup><a id="fn.34" class="footnum" href="#fnr.34" role="doc-backlink">34</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+<div class="footdef"><sup><a id="fn.35" class="footnum" href="#fnr.35" role="doc-backlink">35</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
 
-<div class="footdef"><sup><a id="fn.35" class="footnum" href="#fnr.35" role="doc-backlink">35</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+<div class="footdef"><sup><a id="fn.36" class="footnum" href="#fnr.36" role="doc-backlink">36</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.36" class="footnum" href="#fnr.36" role="doc-backlink">36</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+<div class="footdef"><sup><a id="fn.37" class="footnum" href="#fnr.37" role="doc-backlink">37</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
 
-<div class="footdef"><sup><a id="fn.37" class="footnum" href="#fnr.37" role="doc-backlink">37</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+<div class="footdef"><sup><a id="fn.38" class="footnum" href="#fnr.38" role="doc-backlink">38</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.38" class="footnum" href="#fnr.38" role="doc-backlink">38</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<div class="footdef"><sup><a id="fn.39" class="footnum" href="#fnr.39" role="doc-backlink">39</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
 <a href="https://elmfire.io">https://elmfire.io</a>
 </p></div></div>
 
-<div class="footdef"><sup><a id="fn.39" class="footnum" href="#fnr.39" role="doc-backlink">39</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+<div class="footdef"><sup><a id="fn.40" class="footnum" href="#fnr.40" role="doc-backlink">40</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
 
-<div class="footdef"><sup><a id="fn.40" class="footnum" href="#fnr.40" role="doc-backlink">40</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
-
-<div class="footdef"><sup><a id="fn.41" class="footnum" href="#fnr.41" role="doc-backlink">41</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+<div class="footdef"><sup><a id="fn.41" class="footnum" href="#fnr.41" role="doc-backlink">41</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
 
 <div class="footdef"><sup><a id="fn.42" class="footnum" href="#fnr.42" role="doc-backlink">42</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.43" class="footnum" href="#fnr.43" role="doc-backlink">43</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+<div class="footdef"><sup><a id="fn.43" class="footnum" href="#fnr.43" role="doc-backlink">43</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.44" class="footnum" href="#fnr.44" role="doc-backlink">44</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+<div class="footdef"><sup><a id="fn.44" class="footnum" href="#fnr.44" role="doc-backlink">44</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
 
-<div class="footdef"><sup><a id="fn.45" class="footnum" href="#fnr.45" role="doc-backlink">45</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+<div class="footdef"><sup><a id="fn.45" class="footnum" href="#fnr.45" role="doc-backlink">45</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.46" class="footnum" href="#fnr.46" role="doc-backlink">46</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
+<div class="footdef"><sup><a id="fn.46" class="footnum" href="#fnr.46" role="doc-backlink">46</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
 
-<div class="footdef"><sup><a id="fn.47" class="footnum" href="#fnr.47" role="doc-backlink">47</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
+<div class="footdef"><sup><a id="fn.47" class="footnum" href="#fnr.47" role="doc-backlink">47</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Sardoy2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.48" class="footnum" href="#fnr.48" role="doc-backlink">48</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Schroeder1969</p></div></div>
+<div class="footdef"><sup><a id="fn.48" class="footnum" href="#fnr.48" role="doc-backlink">48</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Himoto2005</p></div></div>
 
-<div class="footdef"><sup><a id="fn.49" class="footnum" href="#fnr.49" role="doc-backlink">49</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+<div class="footdef"><sup><a id="fn.49" class="footnum" href="#fnr.49" role="doc-backlink">49</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Schroeder1969</p></div></div>
 
-<div class="footdef"><sup><a id="fn.50" class="footnum" href="#fnr.50" role="doc-backlink">50</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979</p></div></div>
+<div class="footdef"><sup><a id="fn.50" class="footnum" href="#fnr.50" role="doc-backlink">50</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
 
-<div class="footdef"><sup><a id="fn.51" class="footnum" href="#fnr.51" role="doc-backlink">51</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Stauffer2008</p></div></div>
+<div class="footdef"><sup><a id="fn.51" class="footnum" href="#fnr.51" role="doc-backlink">51</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979</p></div></div>
 
-<div class="footdef"><sup><a id="fn.52" class="footnum" href="#fnr.52" role="doc-backlink">52</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
+<div class="footdef"><sup><a id="fn.52" class="footnum" href="#fnr.52" role="doc-backlink">52</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Stauffer2008</p></div></div>
 
-<div class="footdef"><sup><a id="fn.53" class="footnum" href="#fnr.53" role="doc-backlink">53</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+<div class="footdef"><sup><a id="fn.53" class="footnum" href="#fnr.53" role="doc-backlink">53</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Perryman2012</p></div></div>
 
-<div class="footdef"><sup><a id="fn.54" class="footnum" href="#fnr.54" role="doc-backlink">54</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">McAlpine1991</p></div></div>
+<div class="footdef"><sup><a id="fn.54" class="footnum" href="#fnr.54" role="doc-backlink">54</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
 
-<div class="footdef"><sup><a id="fn.55" class="footnum" href="#fnr.55" role="doc-backlink">55</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+<div class="footdef"><sup><a id="fn.55" class="footnum" href="#fnr.55" role="doc-backlink">55</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">McAlpine1991</p></div></div>
 
 <div class="footdef"><sup><a id="fn.56" class="footnum" href="#fnr.56" role="doc-backlink">56</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
 
 <div class="footdef"><sup><a id="fn.57" class="footnum" href="#fnr.57" role="doc-backlink">57</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
+
+<div class="footdef"><sup><a id="fn.58" class="footnum" href="#fnr.58" role="doc-backlink">58</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Albini1979spot</p></div></div>
 
 
 </div>
