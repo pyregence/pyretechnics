@@ -44,7 +44,7 @@ extensions = [
 
 setup(
     name="pyretechnics",
-    version="2026.5.15",
+    version="2026.8.10",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     cmdclass={"build_ext": custom_build_ext},

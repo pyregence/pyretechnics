@@ -1,3 +1,12 @@
+# Version 2026.8.10
+
+## Changes for Developers
+- Fixed `pkginfo` mismatch by downgrading 1.12-->1.10.
+
+## Changes for Users
+- Match sheltered condition for `pyretechnics.surface_fire.calc_wind_adjustment_factor` to Behave+: `(CC/3 > 0.05 and CH > 6 ft)`
+- ROS-based crowning checks in `pyretechnics.eulerian_level_set.spread_fire_with_phi_field` now require `CC > 0.4` to crown.
+
 # Version 2026.5.15
 
 ## Changes for Developers
