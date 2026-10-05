@@ -314,6 +314,19 @@ files within this repository.
 
 Copyright © 2023-2026 Spatial Informatics Group, LLC.
 
-Pyretechnics is distributed by Spatial Informatics Group, LLC. under
-the terms of the Eclipse Public License version 2.0 (EPLv2). See
-[LICENSE](LICENSE) in this directory for more information.
+Pyretechnics is made available by Spatial Informatics Group, LLC
+("SIG") under two alternative licensing arrangements:
+
+### A. Pyretechnics Community License
+
+Available without a license fee for qualifying noncommercial,
+research, educational, governmental, nonprofit, evaluation, and other
+uses expressly authorized in [LICENSE.md](LICENSE.md).
+
+### B. Pyretechnics Commercial License
+
+Required for any Commercial Use of Pyretechnics, as defined in
+[LICENSE.md](LICENSE.md).
+
+Use of Pyretechnics outside the scope of the Community License
+requires a written Commercial License Agreement with SIG.
