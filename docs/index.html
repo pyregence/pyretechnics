@@ -4723,15 +4723,8 @@ off.
 <h4 id="surface-fire-behavior-in-any-direction"><span class="section-number-4">5.1.11.</span> Surface Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-surface-fire-behavior-in-any-direction">
 <p>
-Once we have calculated the maximum surface fire behavior values
-associated with a head fire, we can use the elliptical eccentricity
-\(E\) to project the maximum spread rate \(R_s\) and maximum fireline
-intensity \(I_s\) to any point along the fire front as follows:
-</p>
-
-<p>
 From Rothermel equations,
-we have computed the surface fire spread rate in the direction of fastest spread.
+we have computed the surface fire spread rate \(R_H\) in the direction of fastest spread.
 We now generalize this to any orientation of the fire front.
 This requires an additional modeling assumption;
 like FARSITE (and a long lineage of models),
@@ -4772,25 +4765,26 @@ which constrains \(R_B\) and \(L/W\) to be related to the ellipse's eccentricity
 </p>
 
 \begin{align}
-  R_B = \frac{1 - E}{1 + E} R_H
+  R_B = \frac{1 - E}{1 + E} R_H \\
+  \nonumber \\
   E = \sqrt{1 - (L/W)^{-2}}
 \end{align}
 
 <p>
-The, substituting and rearranging yields the following formula for the <i>adjustment factor</i> \(\eta\):
+Then, substituting and rearranging yields the following formula for computing a multiplier \(\eta\) on the maximum spread rate:
 </p>
 
 \begin{align}
-  \eta := \frac{R_s(\omega)}{R_s} = \frac{E \cos \omega}{1 + E} + \sqrt{\frac{1 - E}{1 + E} + \left(\frac{E \cos \omega}{1 + E}\right)^2}
+  \eta := \frac{R_s(\omega)}{R_H} = \frac{E \cos \omega}{1 + E} + \sqrt{\frac{1 - E}{1 + E} + \left(\frac{E \cos \omega}{1 + E}\right)^2}
 \end{align}
 
 <p>
-Then, the adjustment factor \(\eta\) enables us to compute not only the front-normal spread rate \(R_s(\omega)\),
+This enables us to compute not only the front-normal spread rate \(R_s(\omega)\),
 but also the fireline intensity \(I_s(\omega)\):
 </p>
 
 \begin{align}
-  R_s(\omega) &= R_s \, \eta \\
+  R_s(\omega) &= R_H \, \eta \\
   \nonumber \\
   I_s(\omega) &= I_s \, \eta
 \end{align}
@@ -4819,7 +4813,7 @@ so instead numerical code will use the dot product:
 </p>
 
 \begin{align}
-    \cos\omega = \vec{u_{\max}} \cdot \vec{u_{\omega}}
+  \cos\omega = \vec{u_{\max}} \cdot \vec{u_{\omega}}
 \end{align}
 
 <p>
