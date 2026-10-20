@@ -4729,38 +4729,103 @@ associated with a head fire, we can use the elliptical eccentricity
 intensity \(I_s\) to any point along the fire front as follows:
 </p>
 
+<p>
+From Rothermel equations,
+we have computed the surface fire spread rate in the direction of fastest spread.
+We now generalize this to any orientation of the fire front.
+This requires an additional modeling assumption;
+like FARSITE (and a long lineage of models),
+the chosen assumption consists of modeling front propagation by elliptical wavelets,
+following Huygens' Principle.
+This is where the previously computed elliptical dimensions come in,
+in particular the length-to-width ratio \(L/W\).
+</p>
+
+
+<p>
+If \(\omega\) is the angular offset from the direction of maximum fire spread
+(where angles are measured in the slope-tangential plane),
+then it can be seen (nontrivially) that the front-normal spread rate \(R_s(\omega)\) is given by:
+</p>
+
 \begin{align}
-  \eta &= \frac{1-E}{1-E\cos\omega} \\
-  \nonumber \\
+  R_s(\omega) = \frac{R_H - R_B}{2} \cos\omega + R_F \sqrt{1 + \left((L/W)^2 - 1 \right) \cos(\omega)^2}
+\end{align}
+
+<p>
+in which \(R_H\) is the maximum (heading) spread rate, \(R_B\) is the backing spread rate,
+and \(R_F\) is the flanking spread rate, which is deduced from the length-to-width ratio \(L/W\):
+</p>
+
+\begin{align}
+  R_F = \frac{R_H + R_B}{2 \left(L/W \right)}
+\end{align}
+
+<p>
+The above applies whether or not the ellipse grows from a focus point,
+as long as it grows from a point on its main axis.
+</p>
+
+<p>
+We now add the assumption that the ellipse grows from a focus point,
+which constrains \(R_B\) and \(L/W\) to be related to the ellipse's eccentricity \(E\):
+</p>
+
+\begin{align}
+  R_B = \frac{1 - E}{1 + E} R_H
+  E = \sqrt{1 - (L/W)^{-2}}
+\end{align}
+
+<p>
+The, substituting and rearranging yields the following formula for the <i>adjustment factor</i> \(\eta\):
+</p>
+
+\begin{align}
+  \eta := \frac{R_s(\omega)}{R_s} = \frac{E \cos \omega}{1 + E} + \sqrt{\frac{1 - E}{1 + E} + \left(\frac{E \cos \omega}{1 + E}\right)^2}
+\end{align}
+
+<p>
+Then, the adjustment factor \(\eta\) enables us to compute not only the front-normal spread rate \(R_s(\omega)\),
+but also the fireline intensity \(I_s(\omega)\):
+</p>
+
+\begin{align}
   R_s(\omega) &= R_s \, \eta \\
   \nonumber \\
   I_s(\omega) &= I_s \, \eta
 \end{align}
 
 <p>
-where \(\omega\) is the angular offset from the direction of maximum
-fire spread and \(R_s(\omega)\) and \(I_s(\omega)\) are the spread rate
-and fireline intensity in this direction respectively.
-</p>
-
-<p>
-Since the surface fire ellipse is defined on the slope-tangential
-plane, we must represent spread directions with three dimensional unit
-vectors aligned with this plane rather than with angles. Fortunately,
-we can use the relationship between the dot product of two vectors and
-the cosine of the angle between them to rewrite the \(\eta\) function
-above as follows:
+Note that the above \(R_s(\omega)\) is the <i>front-normal</i> spread rate,
+not to be confused with the <i>radial velocity</i> \(W_s(\omega)\) of the wavelet,
+which describes the shape of the wavelet in polar coordinates:
 </p>
 
 \begin{align}
-  \eta = \frac{1-E}{1-E(\vec{u_{\max}} \cdot \vec{u_{\omega}})}
+  W_s(\omega) = \frac{1 - E}{1 - E \cos\omega} R_H
 \end{align}
 
 <p>
-where \(\vec{u_{\max}}\) is the slope-tangential unit vector in the
-direction of maximum spread and \(\vec{u_{\omega}}\) is the
-slope-tangential unit vector rotated \(\omega\) degrees clockwise along
-this plane from \(\vec{u_{\max}}\).
+The above formula follows from assuming an elliptical wavelet growing from a focus point.
+To further clarify: \(R_s(\omega)\) is the speed at which a fire front advances
+when oriented in front-normal direction \(\omega\),
+while \(W_s(\omega)\) is the speed of a minimum-travel-time trajectory advancing in direction \(\omega\).
+This distinction corresponds to the duality between fronts and rays in optics.
+</p>
+
+<p>
+It is computationally impractical to use the angle \(\omega\) directly,
+so instead numerical code will use the dot product:
+</p>
+
+\begin{align}
+    \cos\omega = \vec{u_{\max}} \cdot \vec{u_{\omega}}
+\end{align}
+
+<p>
+where \(\vec{u_{\max}}\) is the unit vector in the direction of maximum spread
+and \(\vec{u_{\omega}}\) is the unit vector in the front-normal direction,
+both slope-tangential.
 </p>
 
 <div class="org-src-container">
@@ -4773,19 +4838,19 @@ this plane from \(\vec{u_{\max}}\).
 <span class="org-doc">    - surface_fire_max     :: FireBehaviorMax struct of max surface fire behavior values</span>
 <span class="org-doc">      - max_fire_type          :: 1 (surface)</span>
 <span class="org-doc">      - max_spread_rate        :: m/min</span>
-<span class="org-doc">      - max_spread_direction   :: (x, y, z) unit vector</span>
+<span class="org-doc">      - max_spread_direction   :: (x, y, z) unit vector, slope-tangential</span>
 <span class="org-doc">      - max_fireline_intensity :: kW/m</span>
 <span class="org-doc">      - max_flame_length       :: m</span>
 <span class="org-doc">      - length_to_width_ratio  :: unitless (1: circular spread, &gt; 1: elliptical spread)</span>
 <span class="org-doc">      - eccentricity           :: unitless (0: circular spread, &gt; 0: elliptical spread)</span>
 <span class="org-doc">      - critical_spread_rate   :: m/min</span>
-<span class="org-doc">    - spread_direction     :: 3D unit vector on the slope-tangential plane</span>
+<span class="org-doc">    - spread_direction     :: 3D unit vector representing the front-normal direction, must be slope-tangential</span>
 
 <span class="org-doc">    return a SpreadBehavior struct containing these keys:</span>
-<span class="org-doc">    - dphi_dt            :: phi/min</span>
+<span class="org-doc">    - dphi_dt            :: phi/min (irrelevant in this context, set to zero)</span>
 <span class="org-doc">    - fire_type          :: 1 (surface)</span>
 <span class="org-doc">    - spread_rate        :: m/min</span>
-<span class="org-doc">    - spread_direction   :: (x, y, z) unit vector</span>
+<span class="org-doc">    - spread_direction   :: (x, y, z) unit vector, same as input</span>
 <span class="org-doc">    - fireline_intensity :: kW/m</span>
 <span class="org-doc">    - flame_length       :: m</span>
 <span class="org-doc">    """</span>
@@ -4797,7 +4862,11 @@ this plane from \(\vec{u_{\max}}\).
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane</span>
     <span class="org-variable-name">cos_w</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vu.dot_3d(max_spread_direction, spread_direction)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate adjustment due to the offset angle from the max spread direction</span>
-    <span class="org-variable-name">adjustment</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (1.0 <span class="org-operator">-</span> eccentricity) <span class="org-operator">/</span> (1.0 <span class="org-operator">-</span> eccentricity <span class="org-operator">*</span> cos_w)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Pre-compute repeated quantities:</span>
+    <span class="org-variable-name">e1i</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1 <span class="org-operator">/</span> (1 <span class="org-operator">+</span> eccentricity)
+    <span class="org-variable-name">e_cos_w</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> eccentricity <span class="org-operator">*</span> cos_w
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Adjustment factor to max spread rate:</span>
+    <span class="org-variable-name">adjustment</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> e1i<span class="org-operator">*</span>e_cos_w <span class="org-operator">+</span> sqrt(e1i<span class="org-operator">*</span>(1 <span class="org-operator">-</span> eccentricity) <span class="org-operator">+</span> (e_cos_w<span class="org-operator">*</span>e1i)<span class="org-operator">**</span>2)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Update surface fire behavior values by the adjustment value</span>
     <span class="org-variable-name">fireline_intensity</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> max_fireline_intensity <span class="org-operator">*</span> adjustment
     <span class="org-keyword">return</span> SpreadBehavior(
@@ -5098,22 +5167,22 @@ Heading Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.050000000745058
 Flanking Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
 {'dphi_dt': 0.0,
  'fire_type': 1,
- 'fireline_intensity': 4.251122951507568,
- 'flame_length': 0.15074662864208221,
+ 'fireline_intensity': 8.600854873657227,
+ 'flame_length': 0.20846112072467804,
  'spread_direction': (0.7941977381706238,
                       -0.5865322351455688,
                       0.15883956849575043),
- 'spread_rate': 0.30012571811676025}
+ 'spread_rate': 0.6072131395339966}
 
 Backing Fire Behavior for Fuel Model GR1 with Fuel Moisture = (0.05000000074505806, 0.10000000149011612, 0.15000000596046448, 0.05000000074505806, 0.8999999761581421, 0.6000000238418579)
 {'dphi_dt': 0.0,
  'fire_type': 1,
- 'fireline_intensity': 2.27416729927063,
+ 'fireline_intensity': 2.274167060852051,
  'flame_length': 0.11305095255374908,
  'spread_direction': (-0.5751421451568604,
                       -0.80992591381073,
                       -0.11502843350172043),
- 'spread_rate': 0.16055430471897125}
+ 'spread_rate': 0.16055428981781006}
 </pre>
 </div>
 </div>
@@ -5645,44 +5714,14 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
 <h4 id="crown-fire-behavior-in-any-direction"><span class="section-number-4">6.1.7.</span> Crown Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-crown-fire-behavior-in-any-direction">
 <p>
-Once we have calculated the maximum crown fire behavior values
-associated with a head fire, we can use the elliptical eccentricity
-\(E\) to project the maximum spread rate \(R_c\) and maximum fireline
-intensity \(I_c\) to any point along the fire front as follows:
-</p>
-
-\begin{align}
-  \eta &= \frac{1-E}{1-E\cos\omega} \\
-  \nonumber \\
-  R_c(\omega) &= R_c \, \eta \\
-  \nonumber \\
-  I_c(\omega) &= I_c \, \eta
-\end{align}
-
-<p>
-where \(\omega\) is the angular offset from the direction of maximum
-fire spread and \(R_c(\omega)\) and \(I_c(\omega)\) are the spread rate
-and fireline intensity in this direction respectively.
+The calculation of front-normal spread rate and fire behavior in arbitrary front orientations
+is done as previously for surface spread,
+using an assumed elliptical wavelet for crown fire.
 </p>
 
 <p>
-Since the crown fire ellipse is defined on the slope-tangential plane,
-we must represent spread directions with three dimensional unit
-vectors aligned with this plane rather than with angles. Fortunately,
-we can use the relationship between the dot product of two vectors and
-the cosine of the angle between them to rewrite the \(\eta\) function
-above as follows:
-</p>
-
-\begin{align}
-  \eta = \frac{1-E}{1-E(\vec{u_{\max}} \cdot \vec{u_{\omega}})}
-\end{align}
-
-<p>
-where \(\vec{u_{\max}}\) is the slope-tangential unit vector in the
-direction of maximum spread and \(\vec{u_{\omega}}\) is the
-slope-tangential unit vector rotated \(\omega\) degrees clockwise along
-this plane from \(\vec{u_{\max}}\).
+The only difference is that we add calculations of the active vs passive crown fire type,
+based on Van Wagner's model as in previous sections.
 </p>
 
 <div class="org-src-container">
@@ -5695,19 +5734,19 @@ this plane from \(\vec{u_{\max}}\).
 <span class="org-doc">    - crown_fire_max     :: a FireBehaviorMax struct of max crown fire behavior values</span>
 <span class="org-doc">      - max_fire_type          :: 2 (passive_crown) or 3 (active_crown)</span>
 <span class="org-doc">      - max_spread_rate        :: m/min</span>
-<span class="org-doc">      - max_spread_direction   :: (x, y, z) unit vector</span>
+<span class="org-doc">      - max_spread_direction   :: (x, y, z) unit vector, slope-tangential</span>
 <span class="org-doc">      - max_fireline_intensity :: kW/m</span>
 <span class="org-doc">      - max_flame_length       :: m</span>
 <span class="org-doc">      - length_to_width_ratio  :: unitless (1: circular spread, &gt; 1: elliptical spread)</span>
 <span class="org-doc">      - eccentricity           :: unitless (0: circular spread, &gt; 0: elliptical spread)</span>
 <span class="org-doc">      - critical_spread_rate   :: m/min</span>
-<span class="org-doc">    - spread_direction   :: 3D unit vector on the slope-tangential plane</span>
+<span class="org-doc">    - spread_direction   :: 3D unit vector representing the front-normal direction, must be slope-tangential</span>
 
 <span class="org-doc">    return a SpreadBehavior struct containing these keys:</span>
-<span class="org-doc">    - dphi_dt            :: phi/min</span>
+<span class="org-doc">    - dphi_dt            :: phi/min (irrelevant in this context, set to zero)</span>
 <span class="org-doc">    - fire_type          :: 2 (passive_crown) or 3 (active_crown)</span>
 <span class="org-doc">    - spread_rate        :: m/min</span>
-<span class="org-doc">    - spread_direction   :: (x, y, z) unit vector</span>
+<span class="org-doc">    - spread_direction   :: (x, y, z) unit vector, same as input</span>
 <span class="org-doc">    - fireline_intensity :: kW/m</span>
 <span class="org-doc">    - flame_length       :: m</span>
 <span class="org-doc">    """</span>
@@ -5717,43 +5756,29 @@ this plane from \(\vec{u_{\max}}\).
     <span class="org-variable-name">max_spread_direction</span>  : vec_xyz  <span class="org-operator">=</span> crown_fire_max.max_spread_direction
     <span class="org-variable-name">max_fireline_intensity</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> crown_fire_max.max_fireline_intensity
     <span class="org-variable-name">eccentricity</span>          : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> crown_fire_max.eccentricity
-    <span class="org-variable-name">critical_spread_rate</span>  : cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> crown_fire_max.critical_spread_rate
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane</span>
     <span class="org-variable-name">cos_w</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> vu.dot_3d(max_spread_direction, spread_direction)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Calculate adjustment due to the offset angle from the max spread direction</span>
-    <span class="org-variable-name">adjustment</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> (1.0 <span class="org-operator">-</span> eccentricity) <span class="org-operator">/</span> (1.0 <span class="org-operator">-</span> eccentricity <span class="org-operator">*</span> cos_w)
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Pre-compute repeated quantities:</span>
+    <span class="org-variable-name">e1i</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> 1 <span class="org-operator">/</span> (1 <span class="org-operator">+</span> eccentricity)
+    <span class="org-variable-name">e_cos_w</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> eccentricity <span class="org-operator">*</span> cos_w
+    <span class="org-comment-delimiter"># </span><span class="org-comment">Adjustment factor to max spread rate:</span>
+    <span class="org-variable-name">adjustment</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> e1i<span class="org-operator">*</span>e_cos_w <span class="org-operator">+</span> sqrt(e1i<span class="org-operator">*</span>(1 <span class="org-operator">-</span> eccentricity) <span class="org-operator">+</span> (e_cos_w<span class="org-operator">*</span>e1i)<span class="org-operator">**</span>2)
     <span class="org-comment-delimiter"># </span><span class="org-comment">Adjust the spread rate (possibly switching from an active to passive crown fire)</span>
     <span class="org-variable-name">spread_rate</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> max_spread_rate <span class="org-operator">*</span> adjustment
-    <span class="org-keyword">if</span> spread_rate <span class="org-operator">&gt;</span> critical_spread_rate:
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Max spread rate was active and directional spread rate remains active</span>
-        <span class="org-keyword">return</span> SpreadBehavior(
-            dphi_dt            <span class="org-operator">=</span> 0.0,
-            fire_type          <span class="org-operator">=</span> 3, <span class="org-comment-delimiter"># </span><span class="org-comment">active_crown</span>
-            spread_rate        <span class="org-operator">=</span> spread_rate,
-            spread_direction   <span class="org-operator">=</span> spread_direction,
-            fireline_intensity <span class="org-operator">=</span> max_fireline_intensity <span class="org-operator">*</span> adjustment,
-            flame_length       <span class="org-operator">=</span> 0.0,
-        )
-    <span class="org-keyword">elif</span> max_fire_type <span class="org-operator">==</span> 2: <span class="org-comment-delimiter"># </span><span class="org-comment">passive_crown</span>
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Max spread rate was passive and directional spread rate remains passive</span>
-        <span class="org-keyword">return</span> SpreadBehavior(
-            dphi_dt            <span class="org-operator">=</span> 0.0,
-            fire_type          <span class="org-operator">=</span> 2, <span class="org-comment-delimiter"># </span><span class="org-comment">passive_crown</span>
-            spread_rate        <span class="org-operator">=</span> spread_rate,
-            spread_direction   <span class="org-operator">=</span> spread_direction,
-            fireline_intensity <span class="org-operator">=</span> max_fireline_intensity <span class="org-operator">*</span> adjustment,
-            flame_length       <span class="org-operator">=</span> 0.0,
-        )
-    <span class="org-keyword">else</span>:
-        <span class="org-comment-delimiter"># </span><span class="org-comment">Max spread rate was active and directional spread rate has become passive</span>
-        <span class="org-keyword">return</span> SpreadBehavior(
-            dphi_dt            <span class="org-operator">=</span> 0.0,
-            fire_type          <span class="org-operator">=</span> 2, <span class="org-comment-delimiter"># </span><span class="org-comment">passive_crown</span>
-            spread_rate        <span class="org-operator">=</span> cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
-            spread_direction   <span class="org-operator">=</span> spread_direction,
-            fireline_intensity <span class="org-operator">=</span> max_fireline_intensity <span class="org-operator">*</span> adjustment,
-            flame_length       <span class="org-operator">=</span> 0.0,
-        )
+    <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE previous implementations used to compare the critical_spread_rate to the spread_rate</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">to re-determine whether the fire_type was active or passive crowning,</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">and then modify the spread_rate in case of a transition to passive.</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">However, this was inconsistent with what front-propagation is doing;</span>
+    <span class="org-comment-delimiter"># </span><span class="org-comment">it was also incompatible with the assumption of elliptical crown fire shapes.</span>
+    <span class="org-keyword">return</span> SpreadBehavior(
+        dphi_dt            <span class="org-operator">=</span> 0.0,
+        fire_type          <span class="org-operator">=</span> max_fire_type,
+        spread_rate        <span class="org-operator">=</span> spread_rate,
+        spread_direction   <span class="org-operator">=</span> spread_direction,
+        fireline_intensity <span class="org-operator">=</span> max_fireline_intensity <span class="org-operator">*</span> adjustment,
+        flame_length       <span class="org-operator">=</span> 0.0,
+    )
 </pre>
 </div>
 </div>
@@ -6397,24 +6422,24 @@ Heading Fire Behavior
 Flanking Fire Behavior
 ============================================================
 {'dphi_dt': 0.0,
- 'fire_type': 2,
- 'fireline_intensity': 14763.076171875,
+ 'fire_type': 3,
+ 'fireline_intensity': 25338.951171875,
  'flame_length': 0.0,
  'spread_direction': (0.9486833214759827,
                       -0.10540930181741714,
                       0.2981424033641815),
- 'spread_rate': 3.265244722366333}
+ 'spread_rate': 10.08683967590332}
 
 Backing Fire Behavior
 ============================================================
 {'dphi_dt': 0.0,
- 'fire_type': 2,
+ 'fire_type': 3,
  'fireline_intensity': 8144.0576171875,
  'flame_length': 0.0,
  'spread_direction': (-8.293653053215166e-08,
                       -0.9428090453147888,
                       -0.3333333730697632),
- 'spread_rate': 2.344287633895874}
+ 'spread_rate': 3.241957664489746}
 </pre>
 </div>
 </div>
@@ -6567,10 +6592,10 @@ Fire Behavior from Surface Fire (No Crown Fire Occurred)
 ============================================================
 {'dphi_dt': 0.0,
  'fire_type': 1,
- 'fireline_intensity': 11.63843822479248,
- 'flame_length': 0.23957830667495728,
+ 'fireline_intensity': 25.04408073425293,
+ 'flame_length': 0.3408319354057312,
  'spread_direction': (0.8703882694244385, 0.0, 0.4923659861087799),
- 'spread_rate': 0.821664035320282}
+ 'spread_rate': 1.7680912017822266}
 </pre>
 </div>
 </div>
@@ -9177,22 +9202,22 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 1,
- 'fireline_intensity': 32.52825927734375,
- 'flame_length': 0.3843933939933777,
+ 'fireline_intensity': 32.52827072143555,
+ 'flame_length': 0.38439345359802246,
  'spread_direction': (0.4869149327278137,
                       0.6130024194717407,
                       0.6222072243690491),
- 'spread_rate': 2.2964677810668945}
+ 'spread_rate': 2.296468734741211}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 1,
- 'fireline_intensity': 50.6082878112793,
- 'flame_length': 0.4710617959499359,
+ 'fireline_intensity': 50.608314514160156,
+ 'flame_length': 0.47106191515922546,
  'spread_direction': (0.4869149327278137,
                       0.6130024194717407,
                       0.6222072243690491),
- 'spread_rate': 3.5729029178619385}
+ 'spread_rate': 3.5729048252105713}
 </pre>
 </div>
 </div>
@@ -9303,11 +9328,11 @@ Layer: fire_type
  [1 1 1 1 1]]
 
 Layer: spread_rate
-[[2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
- [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
- [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
- [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]
- [2.2964678 2.2964678 2.2964678 2.2964678 2.2964678]]
+[[2.2964687 2.2964687 2.2964687 2.2964687 2.2964687]
+ [2.2964687 2.2964687 2.2964687 2.2964687 2.2964687]
+ [2.2964687 2.2964687 2.2964687 2.2964687 2.2964687]
+ [2.2964687 2.2964687 2.2964687 2.2964687 2.2964687]
+ [2.2964687 2.2964687 2.2964687 2.2964687 2.2964687]]
 
 Layer: spread_direction
 [[38.46052 38.46052 38.46052 38.46052 38.46052]
@@ -9317,18 +9342,18 @@ Layer: spread_direction
  [38.46052 38.46052 38.46052 38.46052 38.46052]]
 
 Layer: fireline_intensity
-[[32.52826 32.52826 32.52826 32.52826 32.52826]
- [32.52826 32.52826 32.52826 32.52826 32.52826]
- [32.52826 32.52826 32.52826 32.52826 32.52826]
- [32.52826 32.52826 32.52826 32.52826 32.52826]
- [32.52826 32.52826 32.52826 32.52826 32.52826]]
+[[32.52827 32.52827 32.52827 32.52827 32.52827]
+ [32.52827 32.52827 32.52827 32.52827 32.52827]
+ [32.52827 32.52827 32.52827 32.52827 32.52827]
+ [32.52827 32.52827 32.52827 32.52827 32.52827]
+ [32.52827 32.52827 32.52827 32.52827 32.52827]]
 
 Layer: flame_length
-[[0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
- [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
- [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
- [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]
- [0.3843934 0.3843934 0.3843934 0.3843934 0.3843934]]
+[[0.38439345 0.38439345 0.38439345 0.38439345 0.38439345]
+ [0.38439345 0.38439345 0.38439345 0.38439345 0.38439345]
+ [0.38439345 0.38439345 0.38439345 0.38439345 0.38439345]
+ [0.38439345 0.38439345 0.38439345 0.38439345 0.38439345]
+ [0.38439345 0.38439345 0.38439345 0.38439345 0.38439345]]
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
 =========================================================================================================================
@@ -9341,11 +9366,11 @@ Layer: fire_type
  [1 1 1 1 1]]
 
 Layer: spread_rate
-[[3.572903 3.572903 3.572903 3.572903 3.572903]
- [3.572903 3.572903 3.572903 3.572903 3.572903]
- [3.572903 3.572903 3.572903 3.572903 3.572903]
- [3.572903 3.572903 3.572903 3.572903 3.572903]
- [3.572903 3.572903 3.572903 3.572903 3.572903]]
+[[3.5729048 3.5729048 3.5729048 3.5729048 3.5729048]
+ [3.5729048 3.5729048 3.5729048 3.5729048 3.5729048]
+ [3.5729048 3.5729048 3.5729048 3.5729048 3.5729048]
+ [3.5729048 3.5729048 3.5729048 3.5729048 3.5729048]
+ [3.5729048 3.5729048 3.5729048 3.5729048 3.5729048]]
 
 Layer: spread_direction
 [[38.46052 38.46052 38.46052 38.46052 38.46052]
@@ -9355,18 +9380,18 @@ Layer: spread_direction
  [38.46052 38.46052 38.46052 38.46052 38.46052]]
 
 Layer: fireline_intensity
-[[50.608288 50.608288 50.608288 50.608288 50.608288]
- [50.608288 50.608288 50.608288 50.608288 50.608288]
- [50.608288 50.608288 50.608288 50.608288 50.608288]
- [50.608288 50.608288 50.608288 50.608288 50.608288]
- [50.608288 50.608288 50.608288 50.608288 50.608288]]
+[[50.608315 50.608315 50.608315 50.608315 50.608315]
+ [50.608315 50.608315 50.608315 50.608315 50.608315]
+ [50.608315 50.608315 50.608315 50.608315 50.608315]
+ [50.608315 50.608315 50.608315 50.608315 50.608315]
+ [50.608315 50.608315 50.608315 50.608315 50.608315]]
 
 Layer: flame_length
-[[0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
- [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
- [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
- [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]
- [0.4710618 0.4710618 0.4710618 0.4710618 0.4710618]]
+[[0.47106192 0.47106192 0.47106192 0.47106192 0.47106192]
+ [0.47106192 0.47106192 0.47106192 0.47106192 0.47106192]
+ [0.47106192 0.47106192 0.47106192 0.47106192 0.47106192]
+ [0.47106192 0.47106192 0.47106192 0.47106192 0.47106192]
+ [0.47106192 0.47106192 0.47106192 0.47106192 0.47106192]]
 </pre>
 </div>
 </div>
@@ -9466,22 +9491,22 @@ pprint(combined_behavior_unlimited)
 Fire Behavior from Combined Surface and Crown Fire (with Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 1,
- 'fireline_intensity': 11.638436317443848,
- 'flame_length': 0.23957829177379608,
+ 'fireline_intensity': 25.044078826904297,
+ 'flame_length': 0.3408319056034088,
  'spread_direction': (0.8703882694244385,
                       -3.804587933586845e-08,
                       0.4923659861087799),
- 'spread_rate': 0.8216638565063477}
+ 'spread_rate': 1.768091082572937}
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coordinate (24, 100, 100)
 ====================================================================================================
 {'fire_type': 1,
- 'fireline_intensity': 13.899334907531738,
- 'flame_length': 0.2599639892578125,
+ 'fireline_intensity': 38.398006439208984,
+ 'flame_length': 0.4148756265640259,
  'spread_direction': (0.8703882694244385,
                       -3.804587933586845e-08,
                       0.4923659861087799),
- 'spread_rate': 0.9812814593315125}
+ 'spread_rate': 2.710867166519165}
 </pre>
 </div>
 </div>
@@ -9600,11 +9625,11 @@ Layer: fire_type
  [1 1 1 1 1]]
 
 Layer: spread_rate
-[[0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
- [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
- [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
- [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]
- [0.82166386 0.82166386 0.82166386 0.82166386 0.82166386]]
+[[1.7680911 1.7680911 1.7680911 1.7680911 1.7680911]
+ [1.7680911 1.7680911 1.7680911 1.7680911 1.7680911]
+ [1.7680911 1.7680911 1.7680911 1.7680911 1.7680911]
+ [1.7680911 1.7680911 1.7680911 1.7680911 1.7680911]
+ [1.7680911 1.7680911 1.7680911 1.7680911 1.7680911]]
 
 Layer: spread_direction
 [[90. 90. 90. 90. 90.]
@@ -9614,18 +9639,18 @@ Layer: spread_direction
  [90. 90. 90. 90. 90.]]
 
 Layer: fireline_intensity
-[[11.638436 11.638436 11.638436 11.638436 11.638436]
- [11.638436 11.638436 11.638436 11.638436 11.638436]
- [11.638436 11.638436 11.638436 11.638436 11.638436]
- [11.638436 11.638436 11.638436 11.638436 11.638436]
- [11.638436 11.638436 11.638436 11.638436 11.638436]]
+[[25.044079 25.044079 25.044079 25.044079 25.044079]
+ [25.044079 25.044079 25.044079 25.044079 25.044079]
+ [25.044079 25.044079 25.044079 25.044079 25.044079]
+ [25.044079 25.044079 25.044079 25.044079 25.044079]
+ [25.044079 25.044079 25.044079 25.044079 25.044079]]
 
 Layer: flame_length
-[[0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
- [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
- [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
- [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]
- [0.23957829 0.23957829 0.23957829 0.23957829 0.23957829]]
+[[0.3408319 0.3408319 0.3408319 0.3408319 0.3408319]
+ [0.3408319 0.3408319 0.3408319 0.3408319 0.3408319]
+ [0.3408319 0.3408319 0.3408319 0.3408319 0.3408319]
+ [0.3408319 0.3408319 0.3408319 0.3408319 0.3408319]
+ [0.3408319 0.3408319 0.3408319 0.3408319 0.3408319]]
 
 Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Space-Time Region (24, (100, 105), (100, 105))
 =========================================================================================================================
@@ -9638,11 +9663,11 @@ Layer: fire_type
  [1 1 1 1 1]]
 
 Layer: spread_rate
-[[0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
- [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
- [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
- [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]
- [0.98128146 0.98128146 0.98128146 0.98128146 0.98128146]]
+[[2.7108672 2.7108672 2.7108672 2.7108672 2.7108672]
+ [2.7108672 2.7108672 2.7108672 2.7108672 2.7108672]
+ [2.7108672 2.7108672 2.7108672 2.7108672 2.7108672]
+ [2.7108672 2.7108672 2.7108672 2.7108672 2.7108672]
+ [2.7108672 2.7108672 2.7108672 2.7108672 2.7108672]]
 
 Layer: spread_direction
 [[90. 90. 90. 90. 90.]
@@ -9652,18 +9677,18 @@ Layer: spread_direction
  [90. 90. 90. 90. 90.]]
 
 Layer: fireline_intensity
-[[13.899335 13.899335 13.899335 13.899335 13.899335]
- [13.899335 13.899335 13.899335 13.899335 13.899335]
- [13.899335 13.899335 13.899335 13.899335 13.899335]
- [13.899335 13.899335 13.899335 13.899335 13.899335]
- [13.899335 13.899335 13.899335 13.899335 13.899335]]
+[[38.398006 38.398006 38.398006 38.398006 38.398006]
+ [38.398006 38.398006 38.398006 38.398006 38.398006]
+ [38.398006 38.398006 38.398006 38.398006 38.398006]
+ [38.398006 38.398006 38.398006 38.398006 38.398006]
+ [38.398006 38.398006 38.398006 38.398006 38.398006]]
 
 Layer: flame_length
-[[0.259964 0.259964 0.259964 0.259964 0.259964]
- [0.259964 0.259964 0.259964 0.259964 0.259964]
- [0.259964 0.259964 0.259964 0.259964 0.259964]
- [0.259964 0.259964 0.259964 0.259964 0.259964]
- [0.259964 0.259964 0.259964 0.259964 0.259964]]
+[[0.41487563 0.41487563 0.41487563 0.41487563 0.41487563]
+ [0.41487563 0.41487563 0.41487563 0.41487563 0.41487563]
+ [0.41487563 0.41487563 0.41487563 0.41487563 0.41487563]
+ [0.41487563 0.41487563 0.41487563 0.41487563 0.41487563]
+ [0.41487563 0.41487563 0.41487563 0.41487563 0.41487563]]
 </pre>
 </div>
 </div>
@@ -13789,13 +13814,13 @@ Fire Type (0=unburned, 1=surface, 2=passive_crown, 3=active_crown)
 {'Min': 1, 'Max': 1, 'Mean': 1.0, 'Stdev': 0.0}
 
 Spread Rate (m/min)
-{'Min': 0.16055909, 'Max': 2.2964687, 'Mean': 1.4940217, 'Stdev': 0.68819606}
+{'Min': 0.16055909, 'Max': 2.2964687, 'Mean': 1.4940218, 'Stdev': 0.6881962}
 
 Spread Direction (degrees clockwise from North)
 {'Min': 0.6275849, 'Max': 359.89905, 'Mean': 164.18701, 'Stdev': 127.15898}
 
 Fireline Intensity (kW/m)
-{'Min': 2.274235, 'Max': 32.52827, 'Mean': 21.162033, 'Stdev': 9.747935}
+{'Min': 2.274235, 'Max': 32.52827, 'Mean': 21.162033, 'Stdev': 9.747937}
 
 Flame Length (meters)
 {'Min': 0.1130525, 'Max': 0.38439345, 'Mean': 0.30407032, 'Stdev': 0.07810408}
