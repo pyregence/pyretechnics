@@ -324,7 +324,6 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
     max_spread_direction  : vec_xyz  = crown_fire_max.max_spread_direction
     max_fireline_intensity: cy.float = crown_fire_max.max_fireline_intensity
     eccentricity          : cy.float = crown_fire_max.eccentricity
-    critical_spread_rate  : cy.float = crown_fire_max.critical_spread_rate
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
     cos_w: cy.float = vu.dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
@@ -335,37 +334,19 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
     adjustment: cy.float = e1i*e_cos_w + sqrt(e1i*(1 - eccentricity) + (e_cos_w*e1i)**2)
     # Adjust the spread rate (possibly switching from an active to passive crown fire)
     spread_rate: cy.float = max_spread_rate * adjustment
-    if spread_rate > critical_spread_rate:
-        # Max spread rate was active and directional spread rate remains active
-        return SpreadBehavior(
-            dphi_dt            = 0.0,
-            fire_type          = 3, # active_crown
-            spread_rate        = spread_rate,
-            spread_direction   = spread_direction,
-            fireline_intensity = max_fireline_intensity * adjustment,
-            flame_length       = 0.0,
-        )
-    elif max_fire_type == 2: # passive_crown
-        # Max spread rate was passive and directional spread rate remains passive
-        return SpreadBehavior(
-            dphi_dt            = 0.0,
-            fire_type          = 2, # passive_crown
-            spread_rate        = spread_rate,
-            spread_direction   = spread_direction,
-            fireline_intensity = max_fireline_intensity * adjustment,
-            flame_length       = 0.0,
-        )
-    else:
-        # Max spread rate was active and directional spread rate has become passive
-        return SpreadBehavior(
-            dphi_dt            = 0.0,
-            fire_type          = 2, # passive_crown
-            # TODO BUG this is inconsistent with what front-propagation is doing. We should just apply the adjustment factor.
-            spread_rate        = cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
-            spread_direction   = spread_direction,
-            fireline_intensity = max_fireline_intensity * adjustment,
-            flame_length       = 0.0,
-        )
+    # NOTE previous implementations used to compare the critical_spread_rate to the spread_rate
+    # to re-determine whether the fire_type was active or passive crowning,
+    # and then modify the spread_rate in case of a transition to passive.
+    # However, this was inconsistent with what front-propagation is doing;
+    # it was also incompatible with the assumption of elliptical crown fire shapes.
+    return SpreadBehavior(
+        dphi_dt            = 0.0,
+        fire_type          = max_fire_type,
+        spread_rate        = spread_rate,
+        spread_direction   = spread_direction,
+        fireline_intensity = max_fireline_intensity * adjustment,
+        flame_length       = 0.0,
+    )
 # crown-fire-behavior-in-direction ends here
 # [[file:../../org/pyretechnics.org::combined-fire-behavior][combined-fire-behavior]]
 @cy.ccall
