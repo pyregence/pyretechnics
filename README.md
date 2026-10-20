@@ -24,7 +24,7 @@ The cell-burning functions will return the fire behavior metrics for the burned 
 
 Since the library's main functions take and return Numpy arrays, you are free to create them as needed for your own projects. You can load arrays from numerous geospatial file formats using the Python `rasterio` library. You could grab data from a PostGIS raster using `psycopg2` or load in NetCDF files with the `netCDF4` library. You could also create your own arrays using Numpy or Scipy functions based on your needs. And, of course, you could use these same libraries to apply random noise, value perturbations, or other preprocessing steps on the arrays before initiating fire spread simulations.
 
-Similary, you can use any Python library or algorithm to post-process the output arrays into aggregate arrays (e.g., annual/conditional burn frequency), visualize them (e.g., with `matplotlib`), and/or write them out as raster files, CSVs, or any other format that you can think of.
+Similarly, you can use any Python library or algorithm to post-process the output arrays into aggregate arrays (e.g., annual/conditional burn frequency), visualize them (e.g., with `matplotlib`), and/or write them out as raster files, CSVs, or any other format that you can think of.
 
 Notably, Pyretechnics is written as a Literate Program, which you can read online here: https://pyregence.github.io/pyretechnics
 
