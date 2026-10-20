@@ -1,10 +1,24 @@
+# Version 2026.10.20
+
+## Changes for Developers
+- Replaced the EPLv2 `LICENSE` file with a custom, dual-license `LICENSE.md` file and updated `README.md` accordingly.
+
+## Changes for Users
+- Fixed underprediction in these directional fire behavior functions due to their elliptical adjustment factor (increasing spread rates, fireline intensities, and flame lengths calculated by these functions by up to 2x over the previous version):
+  - `pyretechnics.surface_fire.calc_surface_fire_behavior_in_direction`
+  - `pyretechnics.crown_fire.calc_crown_fire_behavior_in_direction`
+  - `pyretechnics.burn_cells.burn_cell_toward_azimuth`
+  - `pyretechnics.burn_cells.burn_all_cells_toward_azimuth`
+  - `pyretechnics.burn_cells.burn_cells_by_time_of_arrival`
+- Changed `pyretechnics.crown_fire.calc_crown_fire_behavior_in_direction` to not automatically transition a flanking or backing active crown fire to a passive crown fire if its directional spread rate is less than the critical crown fire spread rate.
+
 # Version 2026.8.10
 
 ## Changes for Developers
 - Fixed `pkginfo` mismatch by downgrading 1.12-->1.10.
 
 ## Changes for Users
-- Match sheltered condition for `pyretechnics.surface_fire.calc_wind_adjustment_factor` to Behave+: `(CC/3 > 0.05 and CH > 6 ft)`
+- Matched sheltered condition for `pyretechnics.surface_fire.calc_wind_adjustment_factor` to Behave+: `(CC/3 > 0.05 and CH > 6 ft)`
 - ROS-based crowning checks in `pyretechnics.eulerian_level_set.spread_fire_with_phi_field` now require `CC > 0.4` to crown.
 
 # Version 2026.5.15
