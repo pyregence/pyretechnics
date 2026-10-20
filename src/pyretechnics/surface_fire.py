@@ -733,19 +733,19 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
     - surface_fire_max     :: FireBehaviorMax struct of max surface fire behavior values
       - max_fire_type          :: 1 (surface)
       - max_spread_rate        :: m/min
-      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_direction   :: (x, y, z) unit vector, slope-tangential
       - max_fireline_intensity :: kW/m
       - max_flame_length       :: m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
       - critical_spread_rate   :: m/min
-    - spread_direction     :: 3D unit vector on the slope-tangential plane
+    - spread_direction     :: 3D unit vector representing the front-normal direction, must be slope-tangential
 
     return a SpreadBehavior struct containing these keys:
-    - dphi_dt            :: phi/min
+    - dphi_dt            :: phi/min (irrelevant in this context, set to zero)
     - fire_type          :: 1 (surface)
     - spread_rate        :: m/min
-    - spread_direction   :: (x, y, z) unit vector
+    - spread_direction   :: (x, y, z) unit vector, same as input
     - fireline_intensity :: kW/m
     - flame_length       :: m
     """
@@ -757,7 +757,11 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
     cos_w: cy.float = vu.dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment: cy.float = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    # Pre-compute repeated quantities:
+    e1i: cy.float = 1 / (1 + eccentricity)
+    e_cos_w: cy.float = eccentricity * cos_w
+    # Adjustment factor to max spread rate:
+    adjustment: cy.float = e1i*e_cos_w + sqrt(e1i*(1 - eccentricity) + (e_cos_w*e1i)**2)
     # Update surface fire behavior values by the adjustment value
     fireline_intensity: cy.float = max_fireline_intensity * adjustment
     return SpreadBehavior(
