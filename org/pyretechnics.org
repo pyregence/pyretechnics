@@ -4080,33 +4080,82 @@ associated with a head fire, we can use the elliptical eccentricity
 $E$ to project the maximum spread rate $R_s$ and maximum fireline
 intensity $I_s$ to any point along the fire front as follows:
 
+From Rothermel equations,
+we have computed the surface fire spread rate in the direction of fastest spread.
+We now generalize this to any orientation of the fire front.
+This requires an additional modeling assumption;
+like FARSITE (and a long lineage of models),
+the chosen assumption consists of modeling front propagation by elliptical wavelets,
+following Huygens' Principle.
+This is where the previously computed elliptical dimensions come in,
+in particular the length-to-width ratio $L/W$.
+
+
+If $\omega$ is the angular offset from the direction of maximum fire spread
+(where angles are measured in the slope-tangential plane),
+then it can be seen (nontrivially) that the front-normal spread rate $R_s(\omega)$ is given by:
+
 \begin{align}
-  \eta &= \frac{1-E}{1-E\cos\omega} \\
-  \nonumber \\
+  R_s(\omega) = \frac{R_H - R_B}{2} \cos\omega + R_F \sqrt{1 + \left((L/W)^2 - 1 \right) \cos(\omega)^2}
+\end{align}
+
+in which $R_H$ is the maximum (heading) spread rate, $R_B$ is the backing spread rate,
+and $R_F$ is the flanking spread rate, which is deduced from the length-to-width ratio $L/W$:
+
+\begin{align}
+  R_F = \frac{R_H + R_B}{2 \left(L/W \right)}
+\end{align}
+
+The above applies whether or not the ellipse grows from a focus point,
+as long as it grows from a point on its main axis.
+
+We now add the assumption that the ellipse grows from a focus point,
+which constrains $R_B$ and $L/W$ to be related to the ellipse's eccentricity $E$:
+
+\begin{align}
+  R_B = \frac{1 - E}{1 + E} R_H
+  E = \sqrt{1 - (L/W)^{-2}}
+\end{align}
+
+The, substituting and rearranging yields the following formula for the /adjustment factor/ $\eta$:
+
+\begin{align}
+  \eta := \frac{R_s(\omega)}{R_s} = \frac{E \cos \omega}{1 + E} + \sqrt{\frac{1 - E}{1 + E} + \left(\frac{E \cos \omega}{1 + E}\right)^2}
+\end{align}
+
+Then, the adjustment factor $\eta$ enables us to compute not only the front-normal spread rate $R_s(\omega)$,
+but also the fireline intensity $I_s(\omega)$:
+
+\begin{align}
   R_s(\omega) &= R_s \, \eta \\
   \nonumber \\
   I_s(\omega) &= I_s \, \eta
 \end{align}
 
-where $\omega$ is the angular offset from the direction of maximum
-fire spread and $R_s(\omega)$ and $I_s(\omega)$ are the spread rate
-and fireline intensity in this direction respectively.
-
-Since the surface fire ellipse is defined on the slope-tangential
-plane, we must represent spread directions with three dimensional unit
-vectors aligned with this plane rather than with angles. Fortunately,
-we can use the relationship between the dot product of two vectors and
-the cosine of the angle between them to rewrite the $\eta$ function
-above as follows:
+Note that the above $R_s(\omega)$ is the /front-normal/ spread rate,
+not to be confused with the /radial velocity/ $W_s(\omega)$ of the wavelet,
+which describes the shape of the wavelet in polar coordinates:
 
 \begin{align}
-  \eta = \frac{1-E}{1-E(\vec{u_{\max}} \cdot \vec{u_{\omega}})}
+  W_s(\omega) = \frac{1 - E}{1 - E \cos\omega} R_H
 \end{align}
 
-where $\vec{u_{\max}}$ is the slope-tangential unit vector in the
-direction of maximum spread and $\vec{u_{\omega}}$ is the
-slope-tangential unit vector rotated $\omega$ degrees clockwise along
-this plane from $\vec{u_{\max}}$.
+The above formula follows from assuming an elliptical wavelet growing from a focus point.
+To further clarify: $R_s(\omega)$ is the speed at which a fire front advances
+when oriented in front-normal direction $\omega$,
+while $W_s(\omega)$ is the speed of a minimum-travel-time trajectory advancing in direction $\omega$.
+This distinction corresponds to the duality between fronts and rays in optics.
+
+It is computationally impractical to use the angle $\omega$ directly,
+so instead numerical code will use the dot product:
+
+\begin{align}
+    \cos\omega = \vec{u_{\max}} \cdot \vec{u_{\omega}}
+\end{align}
+
+where $\vec{u_{\max}}$ is the unit vector in the direction of maximum spread
+and $\vec{u_{\omega}}$ is the unit vector in the front-normal direction,
+both slope-tangential.
 
 #+NAME: surface-fire-behavior-in-direction
 #+begin_src python
@@ -4119,19 +4168,19 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
     - surface_fire_max     :: FireBehaviorMax struct of max surface fire behavior values
       - max_fire_type          :: 1 (surface)
       - max_spread_rate        :: m/min
-      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_direction   :: (x, y, z) unit vector, slope-tangential
       - max_fireline_intensity :: kW/m
       - max_flame_length       :: m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
       - critical_spread_rate   :: m/min
-    - spread_direction     :: 3D unit vector on the slope-tangential plane
+    - spread_direction     :: 3D unit vector representing the front-normal direction, must be slope-tangential
 
     return a SpreadBehavior struct containing these keys:
-    - dphi_dt            :: phi/min
+    - dphi_dt            :: phi/min (irrelevant in this context, set to zero)
     - fire_type          :: 1 (surface)
     - spread_rate        :: m/min
-    - spread_direction   :: (x, y, z) unit vector
+    - spread_direction   :: (x, y, z) unit vector, same as input
     - fireline_intensity :: kW/m
     - flame_length       :: m
     """
@@ -4143,7 +4192,11 @@ def calc_surface_fire_behavior_in_direction(surface_fire_max: FireBehaviorMax,
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
     cos_w: cy.float = vu.dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment: cy.float = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    # Pre-compute repeated quantities:
+    e1i: cy.float = 1 / (1 + eccentricity)
+    e_cos_w: cy.float = eccentricity * cos_w
+    # Adjustment factor to max spread rate:
+    adjustment: cy.float = e1i*e_cos_w + sqrt(e1i*(1 - eccentricity) + (e_cos_w*e1i)**2)
     # Update surface fire behavior values by the adjustment value
     fireline_intensity: cy.float = max_fireline_intensity * adjustment
     return SpreadBehavior(
@@ -4957,38 +5010,12 @@ def calc_crown_fire_behavior_max(canopy_height               : cy.float,
     :CUSTOM_ID: crown-fire-behavior-in-any-direction
     :END:
 
-Once we have calculated the maximum crown fire behavior values
-associated with a head fire, we can use the elliptical eccentricity
-$E$ to project the maximum spread rate $R_c$ and maximum fireline
-intensity $I_c$ to any point along the fire front as follows:
+The calculation of front-normal spread rate and fire behavior in arbitrary front orientations
+is done as previously for surface spread,
+using an assumed elliptical wavelet for crown fire.
 
-\begin{align}
-  \eta &= \frac{1-E}{1-E\cos\omega} \\
-  \nonumber \\
-  R_c(\omega) &= R_c \, \eta \\
-  \nonumber \\
-  I_c(\omega) &= I_c \, \eta
-\end{align}
-
-where $\omega$ is the angular offset from the direction of maximum
-fire spread and $R_c(\omega)$ and $I_c(\omega)$ are the spread rate
-and fireline intensity in this direction respectively.
-
-Since the crown fire ellipse is defined on the slope-tangential plane,
-we must represent spread directions with three dimensional unit
-vectors aligned with this plane rather than with angles. Fortunately,
-we can use the relationship between the dot product of two vectors and
-the cosine of the angle between them to rewrite the $\eta$ function
-above as follows:
-
-\begin{align}
-  \eta = \frac{1-E}{1-E(\vec{u_{\max}} \cdot \vec{u_{\omega}})}
-\end{align}
-
-where $\vec{u_{\max}}$ is the slope-tangential unit vector in the
-direction of maximum spread and $\vec{u_{\omega}}$ is the
-slope-tangential unit vector rotated $\omega$ degrees clockwise along
-this plane from $\vec{u_{\max}}$.
+The only difference is that we add calculations of the active vs passive crown fire type,
+based on Van Wagner's model as in previous sections.
 
 #+NAME: crown-fire-behavior-in-direction
 #+begin_src python
@@ -5001,19 +5028,19 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
     - crown_fire_max     :: a FireBehaviorMax struct of max crown fire behavior values
       - max_fire_type          :: 2 (passive_crown) or 3 (active_crown)
       - max_spread_rate        :: m/min
-      - max_spread_direction   :: (x, y, z) unit vector
+      - max_spread_direction   :: (x, y, z) unit vector, slope-tangential
       - max_fireline_intensity :: kW/m
       - max_flame_length       :: m
       - length_to_width_ratio  :: unitless (1: circular spread, > 1: elliptical spread)
       - eccentricity           :: unitless (0: circular spread, > 0: elliptical spread)
       - critical_spread_rate   :: m/min
-    - spread_direction   :: 3D unit vector on the slope-tangential plane
+    - spread_direction   :: 3D unit vector representing the front-normal direction, must be slope-tangential
 
     return a SpreadBehavior struct containing these keys:
-    - dphi_dt            :: phi/min
+    - dphi_dt            :: phi/min (irrelevant in this context, set to zero)
     - fire_type          :: 2 (passive_crown) or 3 (active_crown)
     - spread_rate        :: m/min
-    - spread_direction   :: (x, y, z) unit vector
+    - spread_direction   :: (x, y, z) unit vector, same as input
     - fireline_intensity :: kW/m
     - flame_length       :: m
     """
@@ -5027,7 +5054,11 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
     # Calculate cos(w), where w is the offset angle between these unit vectors on the slope-tangential plane
     cos_w: cy.float = vu.dot_3d(max_spread_direction, spread_direction)
     # Calculate adjustment due to the offset angle from the max spread direction
-    adjustment: cy.float = (1.0 - eccentricity) / (1.0 - eccentricity * cos_w)
+    # Pre-compute repeated quantities:
+    e1i: cy.float = 1 / (1 + eccentricity)
+    e_cos_w: cy.float = eccentricity * cos_w
+    # Adjustment factor to max spread rate:
+    adjustment: cy.float = e1i*e_cos_w + sqrt(e1i*(1 - eccentricity) + (e_cos_w*e1i)**2)
     # Adjust the spread rate (possibly switching from an active to passive crown fire)
     spread_rate: cy.float = max_spread_rate * adjustment
     if spread_rate > critical_spread_rate:
@@ -5055,6 +5086,7 @@ def calc_crown_fire_behavior_in_direction(crown_fire_max  : FireBehaviorMax,
         return SpreadBehavior(
             dphi_dt            = 0.0,
             fire_type          = 2, # passive_crown
+            # TODO BUG this is inconsistent with what front-propagation is doing. We should just apply the adjustment factor.
             spread_rate        = cruz_passive_crown_fire_spread_rate(spread_rate, critical_spread_rate),
             spread_direction   = spread_direction,
             fireline_intensity = max_fireline_intensity * adjustment,
