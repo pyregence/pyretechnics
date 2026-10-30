@@ -17,6 +17,10 @@
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics-base.css" />
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="pyretechnics-custom.css" />
 #+INFOJS_OPT: view:info path:org-info.js
+#+bibliography: references.bib
+#+cite_export: csl
+
+# NOTE: `#+cite_export: csl` requires the Emacs package citeproc.
 
 # ================================
 # Code Block Settings
@@ -52,6 +56,284 @@ operating system. See [[file:../README.md][README.md]] for more details.
 
 [fn:lit-prog-wikipedia] https://en.wikipedia.org/wiki/Literate_programming
 [fn:guix-website] https://guix.gnu.org
+
+
+* Theoretical models
+
+FIXME overview for expert readers.
+
+** Fire front propagation
+
+*** Propagating fire fronts from spread rates
+
+At its core, Pyretechnics mdoels fire spread by calculating /spread rates/;
+a spread rate is the velocity at which an infinitesimal segment of the flaming front advances in the direction perpendicular to itself.
+That is, Pyretechnics calculates a function $V(\vec{n}, Z(\vec{x}, t), \theta)$, in which:
+
+1. $\vec{x}$ is the spatial location;
+2. $t$ is the time variable;
+3. $Z(\vec{x}, t)$ is a vector representing the local conditions (fuels, topography and weather variables);
+4. $\vec{n}$ is the unit vector normal to the fire front (pointing outward).
+5. $\theta$ is a vector of model parameters, i.e. settings that the user can adjust.
+6. $V(\vec{n}, Z, \theta)$ is the spread rate.
+
+The above is a widely adopted class of models, implemented e.g. in FARSITE [cite:@Finney2004FARSITE], ELMFIRE [cite:@Lautenberger2013elmfire], ForeFire, Prometheus [cite:@Tymstra2010Prometheus], FireStarrr.
+This is a broad class of models in that the function $V$ can vary significantly across models;
+however, this class is also quite narrow in some ways:
+1. $V$ does not use any curvature information or higher-order spatial variability of the fire front, only the front-normal vector $\vec{n}$.
+2. $V$ is only informed by the /local/ fuels and weather conditions.
+3. 2D space is partitioned in a binary fashion into burnt and unburnt regions, a simplification that makes the front infinitely thin and vertically uniform.
+
+Another limitation is that Pyretechnics does not capture fire-atmosphere coupling,
+i.e. Pyretechnics does not model the feedback of the fire on the atmosphere.
+Instead, weather are supplied as an input and fire progression is derived downstream of it.
+If coupling is desired, one approach would be to interleave small intervals of Pyretechnics front propagation
+with updates to the weather inputs, using an external weather model.
+
+
+*** Deriving the spread rate from Rothermel and crowning equations
+    :PROPERTIES:
+    :CUSTOM_ID: deriving-the-spread-rate-overview
+    :END:
+
+The Rothermel model [cite:@Rothermel1972; @andrews2018rothermel] is a widely adopted set of equations
+for computing the spread rate of surface fire in the direction of fastest spread, 
+sometimes called the /heading fire spread rate/ or /max spread rate/;
+the direction of fastest spread is typically a middle ground between the downwind and upslope directions.
+The Rothermel model alone is not sufficient for computing $V(\vec{n}, Z, \theta)$ in all front orientations,
+because:
+1. It does not predict the spread rate for non-heading front orientations;
+2. It does not predict crown fire spread rates.
+
+Similarly to FARSITE and ELMFIRE, Pyretechnics fills this gap as follows:
+1. Pyretechnics generalizes Rothermel spread rate to all front orientations by assuming that surface fire follows Huygens' Principle with an elliptical wavelet shape [cite:@Anderson1982ModellingSpread; @KnightColeman1993PerimeterExpansionHuygens; @Richards1995fire2dSpread]; the Rothermel model determines the maximum radial velocity of the wavelet, while another model computes the elliptical length-to-width ratio based on wind speed. Note that this generalization is different from the one use in WFR-Fire (FIXME cite) and ForeFire's default Rothermel implementation (FIXME cite), which instead project the wind and slope vectors onto the front-normal direction.
+2. Pyretechnics derives a fireline intensity from the surface fire spread rate and local conditions $Z$; then, based on canopy characteristics, it determines whether crown fire occurs. If so, the spread rate may be adjusted to be (much) higher than the surface spread rate. See section [[#crown-fire-initiation]] for more details.
+
+Let us formalize the above description.
+Huygens' Principle treats each in the burned region as a secondary point source ignition,
+expanding the burned region by an infinitesimal /wavelet/,
+which can be described by a /radial velocity/ function $(\vec{u} \mapsto W(\vec{u}, \vec{x}, t))$
+mapping each unit vector $\vec{u}$ to a speed (in m/s) describing the rate of expansion of the wavelet along that direction:
+for each point $\vec{x}$ in the burned region at $t$, and each unit vector $\vec{u}$
+the segment $[\vec{x}, \vec{x} + dt W(\vec{u}, \vec{x}, t) \vec{u}]$ is in the burned region at $(t + dt)$.
+Then, the spread rate can be deduced from $W$ and the front-normal unit vector $\vec{n}$ as:
+
+\begin{align}
+    V(\vec{n}) = \sup_{|\vec{u}| = 1}{W(\vec{u}) \vec{u} \cdot \vec{n}}
+\end{align}
+
+in which we have made the dependency on coordinates $(\vec{x}, t)$ implicit.
+
+Now, we add the assumption that the wavelet is shaped as an ellipse,
+with its origin (ignition point) on the main axis.
+The elliptical dimensions are specified by:
+
+1. A unit vector $\vec{u}_H$ describing the direction of fastest spread (``heading'');
+2. A maximum spread rate $V_H$, describing the radial velocity in direction $\vec{u}_H$;
+3. A backing spread rate $V_B$ (the ``rear length'' of the ellipse);
+4. A length-to-width ratio $(L/W) \geq 1$, such that the width of the ellipse is $(L/W)^{-1}(V_H + V_B)$
+
+Then, it can be seen (nontrivially [cite:@Richards1995fire2dSpread; @Catchpole1982intensityFirePerimeter]) that the front-normal spread rate induced by this wavelet is
+
+\begin{align}\label{eq:elliptical-ros}
+    V_{/}(\vec{n}) = \frac{V_H - V_B}{2}(\vec{u}_H \cdot \vec{n}) + V_H \sqrt{1 + \left((L/W)^2 - 1\right)\left( \vec{u}_H \cdot \vec{n} \right)^2}
+\end{align}
+
+in which $V_F$ is the /flanking spread rate/ that follows from the elliptical dimensions:
+
+\begin{align}
+    V_F := \frac{V_H + V_B}{2 (L/W)}
+\end{align}
+
+Like FARSITE [cite:@Finney2004FARSITE], Pyretechnics will further assume that the wavelet has its origin
+at a focus of the ellipse;
+this eliminates one degree of freedom by relating the elliptical dimensions to the excentricity $E$ of the ellipse:
+
+\begin{align}
+    E &= \sqrt{1 - (L/W)^{-2}} \\
+    V_B &= \frac{1-E}{1+E} V_H
+\end{align}
+
+_Remark:_ we adopted notation $V_{/}$ to signal that the above calculations
+hold /in the plane tangential to the slope/:
+all vectors considered are assumed to be in this slope-tangential plane,
+as in FARSITE [cite:@Finney2004FARSITE] or Prometheus [cite:@Tymstra2010Prometheus].
+Some corrections will be required ot translate from slope-tangential to horizontal spread rates,
+the latter being more practical in numerical code - see section [[#from-slope-tangential-to-horizontal]].
+
+
+With this general background on elliptical wavelets,
+we are now ready to formulate the spread rate calculations of Pyretechnics.
+Assuming a front-normal vector $\vec{n}$,
+here is how Pyretechnics calculates the front-normal spread rate at $(\vec{x}, t)$:
+
+1. Based on environmental conditions $Z(\vec{x}, t)$ (fuels, topography, surface wind and fuel moisture), Pyretechnics applies the Rothermel model with wind and slope vectoring [cite:@andrews2018rothermel], yielding maximum spread rate and direction $V_H^{(s)}, \vec{u}_H^{(s)}$ for surface fire. See code in section [[#surface-fire-behavior-in-the-direction-of-maximum-spread]].
+2. Pyretechnics further derives a length-to-width ratio $(L/W)^{(s)}$, using either equation 9 of Rothermel [cite:@Rothermel1991] or the formula in the Behave library; depending on parameter =surface_lw_ratio_model= (=rothermel= or =behave=). See code in section [[#surface-elliptical-eccentricity]].
+3. The above combine into elliptical dimensions for a surface fire wavelet, from which a front-normal spread rate $V^{(s)}(\vec{n})$ is derived using the above formulas. See code in section [[#surface-fire-behavior-in-any-direction]].
+4. Based on [cite:@VanWagner1977], Pyretechnics calculates a threshold of fireline intensity, and therefore of spread rate, to determine whether crown fire may occur (see [[#crown-fire-initiation]]). If $V^{(s)}(\vec{n})$ exceeds this threshold, an elliptical wavelet for crown fire is computed, using [cite:@Cruz2005] for the maximum velocity $V_H^{(c)}, \vec{u}_H^{(s)}$ for crown fire (see [[#crown-fire-behavior-in-the-direction-of-maximum-spread]]), and equation 10 of Rothermel [cite:@Rothermel1991] for the length-to-width ratio $(L/W)^{(c)}$ (see [[#crown-elliptical-eccentricity]]). Again, these elliptical dimensions are derived entirely from environmental conditions $Z(\vec{x}, t)$. See code in section [[#crown-fire-behavior-in-any-direction]]. This yields a crown fire spread rate $V^{(c)}(\vec{n})$.
+5. Then, the final spread rate is resolved as the fastest of the surface and crown spread rates, i.e. $V(\vec{n}) := \max (V^{(s)}(\vec{n}), V^{(c)}(\vec{n}))$. See code in section [[#combined-spread-rate-and-direction]].
+
+
+
+*** Mathematical formalization: level-set method and Hamilton-Jacobi equation
+
+Although the notion of front-normal spread rate is intuitive to many fire modelers,
+its mathematical formalization is not trivial:
+in particular, one difficulty is that the front-normal vector $\vec{n}$ may not exist
+at some points where the fire front forms sharp corners, 
+as can happen when two fronts merge.
+The approach that seems to have emerged among mathematicians is the /level-set method/ [cite:@Giga2002SurfaceEvolution; @Osher2004LevelSetMethods],
+which consist of representing the evolution of the fire using a Hamilton-Jacobi partial differential equation:
+
+\begin{align}\label{eq:hamilton-jacobi}
+    \frac{\partial}{\partial t}\phi(\vec{x}, t) = - H_V(\nabla \phi(\vec{x}, t), Z(\vec{x}, t), \theta)
+\end{align}
+
+In the above $\phi(\vec{x}, t) \in \mathbb{R}$ is a scalar field representing the state of the fire:
+at time $t$, the burned region is given by the /0-sublevel set/ $\{\vec{x} | \phi(\vec{x}, t) < 0 \}$.
+$\nabla \phi(\vec{x}, t)$ is the spatial gradient of $\phi$,
+and $H_V(\vec{p}, Z, \theta)$ is the /Hamiltonian/ function derived from $V$:
+
+\begin{align}\label{eq:hamiltonian}
+    H_V(\vec{p}, Z, \theta) := V(|\vec{p}|^{-1} \vec{p}, Z, \theta) |\vec{p}|
+\end{align}
+
+which is extended by continuity to $H_V(\vec{0}, Z, \theta) = 0$.
+We require that $\phi$ be a /viscosity solution/ [cite:@CrandallLions1983ViscositySolutions; @Koike2004BeginnerViscositySolutions] to the Hamilton-Jacobi equation;
+this notion of weak solution eliminates our ill-posedness difficulties related to $\vec{n}$ not being defined everywhere,
+while offering appealing properties in terms of existence, uniqueness and stability of solutions.
+
+Astute readers will observe that there is much arbitrariness in the choice of the $\phi$ function:
+indeed, for a given initial state of the fire front at $t = 0$,
+there is an infinity of initial fields $\phi |_{t=0}$ that are consistent with it.
+Thankfully, the choice of $\phi |_{t=0}$ does not change the predicted evolution of the burned region,
+a property known as /invariance/ [cite:@Giga2002SurfaceEvolution] in the level set method literature.
+
+An important question is whether the Hamiltonian $H_V$ is convex in variable $\vec{p}$,
+as that informs whether the front propagation satisfies Huygens' Principle [cite:@Waeselynck2026PointyHeadedFires; @Richards1995fire2dSpread],
+and which numerical schemes are viable for simulating front propagation.
+Like FARSITE and ELMFIRE, and unlike Prometheus,
+the Hamiltonian computed by Pyretechnics is convex for surface-only fires,
+but not in conditions that yield a transition from surface to crown fire [cite:@Waeselynck2026PointyHeadedFires].
+
+The level-set method is useful not only for mathematical conceptualization,
+but also as an approach to designing numerical solvers for the evolution of the fire front [cite:@Sethian1996FastMarchingMethods] FIXME CITE OTHERS,
+Indeed, at the time of writing, the numerical solver used by Pyretechnics is based on the level-set method,
+similarly to ELMFIRE (see section FIXME).
+
+
+*** Converting from slope-tangential to horizontal spread rates
+    :PROPERTIES:
+    :CUSTOM_ID: from-slope-tangential-to-horizontal
+    :END:
+
+As mentioned in section [[#deriving-the-spread-rate-overview]],
+model calculations naturally yield a spread rate in the slope-tangential plane,
+while numerical schemes typically need a spread rate in the horizontal plane.
+This section explains how to convert from one to the other.
+Readers should be warned that this geometry problem tends to defy visual intuition.
+In particular, it is not as simple as projecting the slope-tangential spread rate onto the horizontal plane, e.g.:
+1. The vertical projection does not preserve normality, e.g. projecting a slope-tangential vector that is perpendicular to the slope-tangential fireline does yield a vector that is not perpendicular to the horizontal fireline.
+2. Likewise, vertically projecting an ellipse does yield an ellipse, but does not generally preserve its main axis.
+
+
+
+
+
+In Pyretechnics, numerical code will not directly require the horizontal spread rate function $\underline{V}(\vec{n})$,
+but its generalization, the horizontal Hamiltonian $\underline{H}$:
+
+\begin{align}
+    \underline{H}(\vec{p}) := \underline{V}(|\vec{p}|^{-1} \vec{p}) |\vec{p}|
+\end{align}
+
+in which $\vec{p}$ is a horizontal vector.
+
+We assume that fire model calculations yield give us a slope-tangential Hamiltonian
+
+\begin{align}
+    H_{/}(\vec{p}_{/}) := V_{/}(|\vec{p}_{/}|^{-1} \vec{p}_{/}) |\vec{p}_{/}|
+\end{align}
+
+in which $\vec{p}_{/}$ must be a slope-tangential vector.
+
+Then, we can convert from slope-tangential to horizontal by:
+
+\begin{align}
+    \underline{H}(\vec{p}) = \underline{H}_{/}(\pi_{/}(\vec{p}))
+\end{align}
+
+in which $\pi_{/}(\cdot)$ denotes the orthogonal projector onto the slope-tangential plane,
+which can be expressed in terms of the slope-normal unit vector $\vec{n}_{/}$ as:
+
+\begin{align}
+    \pi_{/}(\vec{p}) = \vec{p} - (\vec{p} \cdot \vec{n}_{/}) \vec{n}_{/}
+\end{align}
+
+Note that $\vec{n}_{/}$ can be expressed from the gradient of the elevation map $h(\vec{x})$ as:
+
+\begin{align}
+    \vec{n}_{/} = \left( 1 + | \nabla h |^2 \right)^{-1/2} (\vec{u}_z - \nabla h)
+\end{align}
+
+where $\vec{u}_z$ is the unit vector in the vertical direction.
+Also note that $\nabla h$ is a horizonal vector, e.g. expressible in horizontal cartesian coordinates as:
+
+\begin{align}
+    \nabla h = \frac{\partial h}{\partial x} \vec{u}_x + \frac{\partial h}{\partial y} \vec{u}_y
+\end{align}
+
+The above calculations are equivalent to the slope calculations implemented in Prometheus and FARSITE [cite:@Finney2004FARSITE; @Tymstra2010Prometheus].
+
+
+
+** Fire intensity calculations
+
+Pyretechnics uses the formula from Byram [cite:@Byram1959] to compute the fireline intensity $I$ (in W/m).
+Flame length is then derived from fireline intensity.
+Fireline intensity is related to rate of spread $R$ (in m/s) and areal heat output $A$ (in J/m) as:
+
+\begin{align}
+    I = R \times A
+\end{align}
+
+$A$ is determined by environmental conditions.
+Therefore, given environmental conditions, fireline intensity is proportional to rate of spread.
+This fact enables to calculate some quantities directly from the rate of spread,
+which is used in some parts of the code.
+
+This overview is enough to reason about the model's fire behavior calculations at a high level.
+More details can be found in section [[#surface-fire-intensity-functions]].
+
+
+
+** Propagation-free calculations
+
+Pyretechnics also supports doing fire behavior calculations without simulating fire spread,
+for example by computing heading fire behavior metrics at every point of the landscape.
+To do this, Pyretechnics provides functions to compute fire behavior in any cell of the landscape
+with a user-supplied orientation of the fire front.
+See sections FIXME for details.
+
+
+
+** Long-rage spotting from firebrands
+
+Pyretechnics supports modeling long-rage spotting from firebrands - that is, secondary ignitions started by embers transported by the wind. Here is an overview of the approach:
+
+1. When a cell burned, an expected number $\nu$ of firebrands emitted by the cell is computed. Currently, this number is proportional to heat output; the proportionality factor is a user setting.
+2. The nubmer of emitted firebrands is a drawn as a Poisson random variable with mean $\nu$.
+3. A transport distribution (i.e. the distribution of where the firebrand will land) is computed based on the weather conditions and fire behavior at the site of emissions, along with some global user-settable parameters. This distribution is log-normal in the downwind direction, and normal in the crosswind direction, following the approach of (FIXME cite Sardoy).
+Each firebrand is flown independently by drawing from this distribution.
+4. Whether the firebrands ignities a spot fire is determined by a probability computed from the local conditions at the landing site. If so, the sport fire started after a fixed time interval after emission.
+
+Details and code will be provided in section FIXME.
+This model is quite crude; the rationale of the authors is that there is currently too much uncertainty in firebrands emissions and transport to benefit from a more sophisticated model.
+Users who find this model too limited might want to interleave their own spotting model with Pyretechnics execution.
+
+
+** FIXME suppression support
+
 
 * Data Model
   :PROPERTIES:
@@ -18668,3 +18950,10 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 #     dict[str, float] cube_refresh_rates=?,
 #     )
 #+end_src
+
+* References
+  :PROPERTIES:
+  :CUSTOM_ID: references
+  :END:
+
+#+print_bibliography:
