@@ -176,6 +176,9 @@ here is how Pyretechnics calculates the front-normal spread rate at $(\vec{x}, t
 
 
 *** Mathematical formalization: level-set method and Hamilton-Jacobi equation
+    :PROPERTIES:
+    :CUSTOM_ID: mathematical-formalization-level-set
+    :END:
 
 Although the notion of front-normal spread rate is intuitive to many fire modelers,
 its mathematical formalization is not trivial:
@@ -8981,6 +8984,7 @@ Layer: flame_length
   :PROPERTIES:
   :CUSTOM_ID: fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)
   :END:
+
 ** For Developers
    :PROPERTIES:
    :CUSTOM_ID: for-developers-fire-spread
@@ -8989,18 +8993,41 @@ Layer: flame_length
    :header-args:python+: :exports code
    :END:
 
-In order to simulate the spread of a fire from a starting point or
-perimeter, we will need to implement a model that projects the
-one-dimensional spread and intensity equations presented in sections
-[[Surface Fire Equations (pyretechnics.surface_fire)]] and [[Crown Fire
-Equations (pyretechnics.crown_fire)]] into the three-dimensional
-space-time cube introduced in section [[Data Model]].
 
-This section introduces the equations used in the Eulerian level set
-method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
-model[fn:elmfire-website].
+The level set method consists of simulating the propagation of the fire front
+by numerically solving the Hamilton-Jacobi equation mentioned in section [[#mathematical-formalization-level-set]]:
 
-[fn:elmfire-website] https://elmfire.io
+\begin{equation}
+  \frac{\partial \phi}{\partial t} + H(\nabla_\mathbf{x} \phi, \mathbf{x}, t) = 0
+\end{equation}
+
+in which $\phi(\mathbf{x}, t)$ is a scalar field, $\nabla_\mathbf{x} \phi = (\partial \phi / \partial x, \partial \phi / \partial y)$ is its front-normal spatial gradient,
+and $H(\vec{p}, \mathbf{x}, t)$ is the Hamiltonian, a function which is non-negative and 1-homogeneous in variable $\vec{p} \in \mathbb{R}^2$:
+if $\vec{n}$ is the front-normal unit vector, then $H(\vec{n}, \mathbf{x}, t)$ is the front-normal spread rate at space-time coordinates $(\mathbf{x}, t) \in \mathbb{R}^2 \times \mathbb{R}$.
+By definition, the burned region at time $t$ is the zero-sublevel set of $\phi(\cdot, t)$,
+i.e. the region where $\phi$ is negative or zero.
+Thus, the gradient $\nabla_\mathbf{x} \phi$ points outward in the front-normal direction
+(with the nuance that $\vec{n}$ is front-normal only in the horizontal plane,
+not the front-tangential plance, which means that $\vec{n}$ and $H(\vec{n})$ are somewhat unphysical;
+see section [[#from-slope-tangential-to-horizontal]] for converting them to the physical quantities in the slope-tangential plane.)
+
+The numerical strategy is to discretize the $\phi$ field into a cartesian grid,
+represent the initial burned region by a suitable field $\phi_0(\mathbf{x})$,
+then use a numerical scheme (2nd-order Runge-Kutta) with adaptive time steps
+to solve the Cauchy initial value problem:
+
+\begin{equation}
+    \begin{cases}
+        \dfrac{\partial \phi}{\partial t} & = -H(\nabla_\mathbf{x} \phi, \mathbf{x}, t) \\
+        \phi(\mathbf{x}, t_0) & = \phi_0(\mathbf{x})
+    \end{cases}
+\end{equation}
+
+The following sections will walk through the numerical implementation;
+note that the code has been optimized for computational efficiency,
+sometimes at the expense of readability and simplicity,
+as some optimizations require to conflate several aspects of the problem.
+
 
 *** Module Imports
     :PROPERTIES:
@@ -9049,6 +9076,407 @@ else:
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
 #+end_src
+
+
+*** Narrow band tracking
+
+An important numerical optimization consists of updating the $\phi$ field only in those cells
+that are close enough to the current fire front.
+This enables to make the computational cost of each time step proportional to the length of the fire perimeter.
+This technique is called the /narrow band/ method.
+
+Pyretechnics defines a concept of /frontier cell/ as a cell with a neighbor of opposite $\phi$ sign,
+with the further condition that at least one of them must be burnable.
+The narrow band consists of those cells in a 7x7 square centered on a frontier cell:
+this bandwidth is appropriate given the order of derivatives computed in the numerical scheme.
+
+Pyretechnics uses a custom data structure for representing the narrow band.
+This data structure is sparse but enables fast iteration and updates by representing the tracked cells in blocks with a flat memory layout:
+
+#+NAME: narrow-band-tracking
+#+begin_src python
+# FIXME detangle
+#+end_src
+
+Frontier cells will be represented as Python sets;
+cell coordinates are encoded as a single integer instead of a tuple,
+as that enables a more efficient usage of memory:
+
+#+NAME: frontier-cell-encoding
+#+begin_src python
+# FIXME detangle
+#+end_src
+
+
+As new cells are burned during the simulation,
+Pyretechnics will compute /diffs/ to the set of tracked cells;
+economically represented as sets of additions and removals.
+These updates are then applied to the =NarrowBandTracker= data structure.
+
+#+NAME: tracked-cells-update
+#+begin_src python
+# FIXME detangle
+#+end_src
+
+
+
+*** Flux limiter
+
+Similarly to ELMFIRE,
+Pyretechnics uses a Superbee flux limiter to prevent spurious oscillations in the numerical solution.
+the ELMFIRE documentation (https://elmfire.io/tech_ref.html#level-set-propagation) describes this as:
+
+1. computing a front-normal spread rate vector $U$, derived from the phi gradient $\ddot{\nabla}\phi$ computed with basic finite differences;
+2. using the Superbee flux limiter to compute an updated (flux-limited) gradient $\hat{\nabla} \phi$;
+3. computing $\partial{\phi}/{\partial t} = - U \cdot \hat{\nabla} \phi$.
+
+This description is faithful to the implementation of ELMFIRE (based on our study of the code).
+We observe that the front-normal spread rate vector $U$ need not represented.
+Since $U$ is positively proportional to $\ddot{\nabla} \phi$, and therefore to the unit vector $\frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|}$, we can compute the desired result as:
+
+\begin{equation}
+  \partial{\phi}/{\partial t} = - \hat{\nabla} \phi \cdot U = - (\hat{\nabla} \phi \cdot \frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|^2}) (\ddot{\nabla} \phi \cdot U) = -(\hat{\nabla} \phi \cdot \frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|^2}) H(\ddot{\nabla} \phi)
+\end{equation}
+
+In other words, flux-limiting boils down to scaling the Hamiltonian by a correction factor $(\hat{\nabla} \phi \cdot \frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|^2})$.
+
+The code computing the flux-limited gradient $\hat{\nabla} \phi$ is:
+
+#+NAME: superbee-flux-limiter
+#+begin_src python
+@cy.cfunc
+@cy.exceptval(check=False)
+def half_superbee_dphi_up(dphi_up: cy.float, dphi_loc: cy.float) -> cy.float:
+    """
+    Logically like calc_superbee_flux_limiter() but returns a result multiplied by (0.5 * dphi_loc).
+
+    NOTE: This is more numerically stable than calc_superbee_flux_limiter().
+    """
+    s_loc             : cy.float = 1.0 if dphi_loc >= 0.0 else -1.0
+    are_opposite_signs: cy.bint  = (s_loc * dphi_up) <= 0.0
+    if are_opposite_signs:
+        return 0.0
+    a_up : cy.float = abs(dphi_up)
+    a_loc: cy.float = abs(dphi_loc)
+    return s_loc * max(min(a_up / 2.0, a_loc),
+                       min(a_up, a_loc / 2.0))
+#+end_src
+
+#+NAME: phi-field-spatial-gradients
+#+begin_src python
+@cy.cfunc
+@cy.exceptval(check=False)
+def calc_dphi_flim_x(p00: cy.float, pw2: cy.float, pw1: cy.float, pe1: cy.float, pe2: cy.float) -> cy.float:
+    dphi_up : cy.float
+    dphi_loc: cy.float
+    phi_east: cy.float
+    phi_west: cy.float
+
+    dphi_loc = pe1 - p00
+    if pe1 >= pw1:
+        dphi_up  = p00 - pw1
+        phi_east = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
+    else:
+        dphi_up  = pe2 - pe1
+        phi_east = pe1 - half_superbee_dphi_up(dphi_up, dphi_loc)
+
+    dphi_loc = pw1 - p00
+    if pe1 >= pw1:
+        dphi_up  = pw2 - pw1
+        phi_west = pw1 - half_superbee_dphi_up(dphi_up, dphi_loc)
+    else:
+        dphi_up  = p00 - pe1
+        phi_west = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
+    return (phi_east - phi_west)
+
+# NOTE: This is actually the same function as the previous one. But
+#       who knows, maybe we get a performance gain by differentiating
+#       code sites.
+@cy.cfunc
+@cy.exceptval(check=False)
+def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float, pn2: cy.float) -> cy.float:
+    dphi_up  : cy.float
+    dphi_loc : cy.float
+    phi_north: cy.float
+    phi_south: cy.float
+
+    dphi_loc = pn1 - p00
+    if pn1 >= ps1:
+        dphi_up   = p00 - ps1
+        phi_north = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
+    else:
+        dphi_up   = pn2 - pn1
+        phi_north = pn1 - half_superbee_dphi_up(dphi_up, dphi_loc)
+
+    dphi_loc = ps1 - p00
+    if pn1 >= ps1:
+        dphi_up   = ps2 - ps1
+        phi_south = ps1 - half_superbee_dphi_up(dphi_up, dphi_loc)
+    else:
+        dphi_up   = p00 - pn1
+        phi_south = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
+
+    return (phi_north - phi_south)
+#+end_src
+
+The above code will be invoked in future sections that compute $\partial{\phi}/{\partial t}$.
+
+
+*** Hamiltonian from surface/crown elliptical wavelets
+
+This section describes how the Hamiltonian is efficiently computed by combining the elliptical dimensions of surface and crown wavelets.
+More precisely, the code directly computes the temporal derivative $\partial{\phi}/{\partial t} = - H(\nabla_\mathbf{x} \phi, \mathbf{x}, t)$.
+As described in section [[#deriving-the-spread-rate-overview]],
+this is on a combination of surface and crown fire ellipses.
+
+To account for slope, we conceive of the appropriate slope-tangential gradient $\tilde{\nabla} \phi = \pi_{/}(\nabla \phi)$, which is the projection of the $\phi$ gradient onto the slope-tangential plane,
+as described in section [[#from-slope-tangential-to-horizontal]].
+We will not need to represent this vector directly in memory.
+
+Then, elliptical dimensions are represented as a 3D heading spread vector $\vec{V}_h = (V_x, V_y, V_z)$, as well as 3 numbers $A, B, C$, such that $\partial{\phi}/{\partial t}$ for the elliptical wavelet can be computed as:
+
+\begin{equation}
+  \partial{\phi}/{\partial t} = A \Delta + B \sqrt{V_h^2 |\tilde{\nabla} \phi|^2 + C \Delta^2}
+\end{equation}
+
+in which $\Delta := \vec{V}_h \cdot \tilde{\nabla} \phi$ is the dot-product between the heading spread rate vector and the slope-tangential gradient. From basic geometry, $\Delta$ can be re-expressed in terms of horizontal coordinates as:
+
+\begin{equation}
+    \Delta = V_x \frac{\partial \phi}{\partial x} + V_y \frac{\partial \phi}{\partial y}
+\end{equation}
+
+The squared gradient norm $|\tilde{\nabla} \phi|^2$ is computed in terms of horizontal coordinates, using the elevation gradient $\nabla z = (\partial z / \partial x, \partial z / \partial y)$:
+
+\begin{equation}
+    |\tilde{\nabla} \phi|^2 = \left(\frac{\partial \phi}{\partial x}\right)^2 + \left(\frac{\partial \phi}{\partial y}\right)^2 - \frac{\left(\frac{\partial \phi}{\partial x}\frac{\partial z}{\partial x} + \frac{\partial \phi}{\partial y}\frac{\partial z}{\partial y}\right)^2}{1 + \left(\frac{\partial z}{\partial x}\right)^2 + \left(\frac{\partial z}{\partial y}\right)^2}
+\end{equation}
+
+The quantities $A, B, C$ are derived from elliptical dimensions as:
+
+\begin{align}
+    A &= -\frac{1}{2} \frac{V_h - V_b}{V_h} \\
+    B &= -\frac{V_f}{V_h} \\
+    C &= \left(\frac{V_h + V_b}{2 V_f}\right)^2 - 1
+\end{align}
+
+in which $V_f$ and $V_b$ are the flanking and backing spread rates, respectively.
+
+This representation of wavelets is stored into data structures that can be reused across several time steps,
+thus enabling some optimizations by caching.
+
+This calculation is done for both the surface and crown wavelets.
+The check for crowning initiation is reduced to a spread rate threshold,
+as explained in section [[#deriving-the-spread-rate-overview]].
+This requires the front-normal spread rate $V_{/}$ in the slope-tangial plane; observe that $V_{/}$ can be derived from previously computed quantities as:
+
+\begin{equation}
+    V_{/} = - \frac{\partial \phi}{\partial t} |\tilde{\nabla} \phi|^{-1}
+\end{equation}
+
+If $V_c$ denotes the spread rate threshold for crown fire initiation, 
+this means that the $(V_{/} > V_c)$ condition is equivalent to
+
+\begin{equation}
+   (V_{/} > V_c) \iff \left(\frac{\partial \phi}{\partial t}\right)^2 > V_c^2 |\tilde{\nabla} \phi|^2 
+\end{equation}
+
+which is robust to zero gradients.
+
+Readers might be surprised that the above formulas look so different from the code of ELMFIRE or FARSITE (FIXME cite), which rely much more on angles and trigonometric functions.
+The elliptical calculations in Pyretechnics are correct and mathematically equivalent to those other models (save for bugs in the latter).
+We have judged that the use of angles and trigonometric functions is suboptimal both conceptually and computationally,
+which is why our numerical implementation instead relies on vector algebra.
+As far as we know,Prometheuse (FIXME cite) adopts a similar approach.
+
+This logic is implemented in the following code:
+
+#+NAME: dphi-from-ellipses
+#+begin_src python
+@cy.cfunc
+@cy.exceptval(check=False)
+def calc_phi_magnitude_xyz_2(phi_gradient_xy   : vec_xy,
+                             elevation_gradient: vec_xy) -> cy.float:
+    """
+    Calculates the squared magnitude of the 3D slope-tangential phi gradient given:
+    - phi_gradient_xy    :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane
+    - elevation_gradient :: (dz_dx: rise/run, dz_dy: rise/run)
+    """
+    (dz_dx, dz_dy)     = elevation_gradient
+    (dphi_dx, dphi_dy) = phi_gradient_xy
+    dphi_dz: cy.float  = vu.dot_2d(phi_gradient_xy, elevation_gradient)
+    return (dphi_dx * dphi_dx + dphi_dy * dphi_dy - dphi_dz * dphi_dz / (1.0 + dz_dx * dz_dx + dz_dy * dz_dy))
+
+
+# TODO: Is it faster if we save this as a top-level constant?
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def zero_partialed_wavelet() -> PartialedEllWavelet:
+    return PartialedEllWavelet(
+        Vh_3d = (0.0, 0.0, 0.0),
+        ewc_A = 0.0,
+        ewc_B = 0.0,
+        ewc_C = 0.0,
+    )
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def prepare_partialed_wavelet(heading_spread_vector: vec_xyz,
+                              flanking_spread_rate : cy.float,
+                              backing_spread_rate  : cy.float) -> PartialedEllWavelet:
+    """
+    Partially evaluates the elliptical wavelet calculation given:
+    - heading_spread_vector :: (x: m/min, y: m/min, z: m/min)
+    - flanking_spread_rate  :: m/min
+    - backing_spread_rate   :: m/min
+
+    The returned data is meant to be passed to function `dphi_dt_from_partialed_wavelet()`.
+
+    NOTE: Accepting the (flanking_spread_rate, backing_spread_rate) pair is more robust than just eccentricity
+          (or equivalently length_to_width_ratio) because not all fire models use elliptical wavelets
+          that grow around their focus. For example, ELMFIRE defaults to something else.
+    """
+    heading_spread_rate: cy.float = vu.vector_magnitude_3d(heading_spread_vector)
+    if heading_spread_rate > 0.0:
+        heading_spread_rate_inv: cy.float = 1.0 / heading_spread_rate
+        length_to_width_ratio  : cy.float = (heading_spread_rate + backing_spread_rate) / (2.0 * flanking_spread_rate)
+        return PartialedEllWavelet(
+            Vh_3d = heading_spread_vector,
+            ewc_A = -0.5 * (heading_spread_rate - backing_spread_rate) * heading_spread_rate_inv,
+            ewc_B = -(flanking_spread_rate * heading_spread_rate_inv),
+            ewc_C = (length_to_width_ratio * length_to_width_ratio - 1.0),
+        )
+    else:
+        return zero_partialed_wavelet()
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def wavelet_from_FireBehaviorMax(fire_behavior_max: FireBehaviorMax) -> PartialedEllWavelet:
+    heading_spread_rate: cy.float = fire_behavior_max.max_spread_rate # m/min
+    if heading_spread_rate > 0.0:
+        heading_spread_direction: vec_xyz  = fire_behavior_max.max_spread_direction      # (x,y,z) unit vector
+        heading_spread_vector   : vec_xyz  = vu.scale_3d(heading_spread_rate,
+                                                         heading_spread_direction)       # (x,y,z) m/min vector
+        length_to_width_ratio   : cy.float = fire_behavior_max.length_to_width_ratio     # unitless
+        eccentricity            : cy.float = fire_behavior_max.eccentricity              # unitless
+        backing_adjustment      : cy.float = (1.0 - eccentricity) / (1.0 + eccentricity) # unitless
+        backing_spread_rate     : cy.float = heading_spread_rate * backing_adjustment    # m/min
+        flanking_spread_rate    : cy.float = ((heading_spread_rate + backing_spread_rate)
+                                              / (2.0 * length_to_width_ratio))           # m/min
+        return prepare_partialed_wavelet(heading_spread_vector, flanking_spread_rate, backing_spread_rate)
+    else:
+        return zero_partialed_wavelet()
+
+
+# TODO: Change local variable names
+@cy.cfunc
+@cy.exceptval(check=False)
+def dphi_dt_from_partialed_wavelet(wavelet            : PartialedEllWavelet,
+                                   phi_gradient_xy    : vec_xy,
+                                   phi_magnitude_xyz_2: cy.float) -> cy.float:
+    """
+    Calculates the dphi/dt (a negative number in phi/min) of one elliptical wavelet given:
+    - wavelet             :: PartialedEllWavelet struct
+      - Vh_3d                :: (m/min, m/min, m/min)
+      - ewc_A                :: unitless
+      - ewc_B                :: unitless
+      - ewc_C                :: unitless
+    - phi_gradient_xy     :: (dphi_dx: phi/m, dphi_dy: phi/m) 2D vector on the horizontal plane
+    - phi_magnitude_xyz_2 :: (phi/m)^2 squared magnitude of the 3D slope-tangential phi gradient
+    """
+    # Unpack vectors
+    (Vx, Vy, Vz)       = wavelet.Vh_3d
+    (dphi_dx, dphi_dy) = phi_gradient_xy
+    # Compute intermediate values
+    Vh2    : cy.float = (Vx * Vx + Vy * Vy + Vz * Vz) # NOTE: Pre-computing this doesn't appear to make it faster.
+    delta  : cy.float = (Vx * dphi_dx + Vy * dphi_dy) # dot-product between Vh_3d and slope-tangential phi gradient
+    # Compute dphi_dt
+    return (
+        wavelet.ewc_A * delta +
+        wavelet.ewc_B * sqrt(
+            Vh2 * phi_magnitude_xyz_2 +
+            wavelet.ewc_C * (delta * delta)
+        )
+    )
+
+
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def phi_aware_crowning_check(phi_magnitude_xyz_2 : cy.float,
+                             surface_dphi_dt     : cy.float,
+                             crowning_spread_rate: cy.float) -> cy.bint:
+    """
+    Logically equivalent to: (surface_spread_rate > crowning_spread_rate)
+    but faster to compute and robust to zero phi gradient.
+    """
+    # If crowning_spread_rate is +inf, it means that crowning is not possible.
+    if isinf(crowning_spread_rate):
+        return False
+    else:
+        return (surface_dphi_dt * surface_dphi_dt) > (crowning_spread_rate * crowning_spread_rate * phi_magnitude_xyz_2)
+
+
+# NOTE: Changing this function to accept a pointer to an EllipticalInfo did not yield appreciable performance gains.
+@cy.cfunc
+@cy.exceptval(check=False)
+def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: vec_xy) -> cy.float:
+    """
+    Calculates the dphi/dt (a negative number in phi/min) of the combined surface and crown elliptical wavelets.
+
+    NOTE: The reason for computing and returning only dphi/dt is efficiency.
+          Nothing else is needed in the front-propagating tight loop that iterates over tracked cells.
+    """
+    phi_gradient_xy_limited: vec_xy = phi_gradient_xy_unlimited
+    # (dphi_dx, dphi_dy)                = phi_gradient_xy_unlimited
+    # dphi_dx_limited        : cy.float = min(max(dphi_dx, -10.0), 10.0) # limited to [-10,10]
+    # dphi_dy_limited        : cy.float = min(max(dphi_dy, -10.0), 10.0) # limited to [-10,10]
+    # phi_gradient_xy_limited: vec_xy   = (dphi_dx_limited, dphi_dy_limited)
+
+    phi_magnitude_xyz_2: cy.float = calc_phi_magnitude_xyz_2(phi_gradient_xy_limited, ellipses.elevation_gradient)
+    surface_dphi_dt    : cy.float = dphi_dt_from_partialed_wavelet(ellipses.surface_wavelet,
+                                                                   phi_gradient_xy_limited,
+                                                                   phi_magnitude_xyz_2)
+    if phi_aware_crowning_check(phi_magnitude_xyz_2, surface_dphi_dt, ellipses.crowning_spread_rate):
+        crown_dphi_dt: cy.float = dphi_dt_from_partialed_wavelet(ellipses.crown_wavelet,
+                                                                 phi_gradient_xy_limited,
+                                                                 phi_magnitude_xyz_2)
+        return min(surface_dphi_dt, crown_dphi_dt) # NOTE: dphi_dt <= 0
+    else:
+        return surface_dphi_dt
+
+
+
+#+end_src
+
+
+*** FIXME Processing burned cells
+*** FIXME Collecting and caching inputs
+*** FIXME Runge-Kutta time marching
+
+CFL condition (Courant-FIXME-Levy).
+
+*** FIXME THE SpreadState class
+
+
+
+** For Developers OLD FIXME
+
+In order to simulate the spread of a fire from a starting point or
+perimeter, we will need to implement a model that projects the
+one-dimensional spread and intensity equations presented in sections
+[[Surface Fire Equations (pyretechnics.surface_fire)]] and [[Crown Fire
+Equations (pyretechnics.crown_fire)]] into the three-dimensional
+space-time cube introduced in section [[Data Model]].
+
+This section introduces the equations used in the Eulerian level set
+method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
+model[fn:elmfire-website].
+
+[fn:elmfire-website] https://elmfire.io
+
 
 *** The $\phi$ Field
     :PROPERTIES:

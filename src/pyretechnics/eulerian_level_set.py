@@ -40,7 +40,7 @@ else:
     import pyretechnics.narrow_band_tracking as nbt
 # eulerian-level-set-imports ends here
 # [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
-# NOTE: No longer used in tight loops.
+# NOTE: No longer used in tight loops. FIXME this whole block is useless.
 @cy.cfunc
 @cy.exceptval(check=False)
 def calc_dphi_dx_approx(phi_matrix: cy.float[:,::1], dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
@@ -1049,7 +1049,7 @@ class SpreadState:
         # Return the updated SpreadState object
         return self
 # burn-cell-toward-phi-gradient ends here
-# [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
+# [[file:../../org/pyretechnics.org::frontier-cell-encoding][frontier-cell-encoding]]
 @cy.cfunc
 @cy.inline
 def encode_cell_index(y: pyidx, x: pyidx) -> object: # ulong
@@ -1068,7 +1068,40 @@ def decode_cell_index(encoded_cell_index: object) -> coord_yx:
     x         : pyidx        = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
     return (y, x)
 
-
+@cy.cfunc
+def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
+    # Group the frontier_cells into burned and unburned lists
+    burned_ys         : list[pyidx] = []
+    burned_xs         : list[pyidx] = []
+    unburned_ys       : list[pyidx] = []
+    unburned_xs       : list[pyidx] = []
+    encoded_cell_index: object
+    cell_index        : coord_yx
+    y                 : pyidx
+    x                 : pyidx
+    for encoded_cell_index in frontier_cells:
+        cell_index = decode_cell_index(encoded_cell_index)
+        y          = cell_index[0]
+        x          = cell_index[1]
+        if (phi_matrix[2+y, 2+x] < 0.0):
+            burned_ys.append(y)
+            burned_xs.append(x)
+        else:
+            unburned_ys.append(y)
+            unburned_xs.append(x)
+    # Return a dictionary of 2D Numpy array indices
+    return {
+        "burned_cells": (
+            np.asarray(burned_ys, dtype=np.int32),
+            np.asarray(burned_xs, dtype=np.int32)
+        ),
+        "unburned_cells": (
+            np.asarray(unburned_ys, dtype=np.int32),
+            np.asarray(unburned_xs, dtype=np.int32)
+        ),
+    }
+# frontier-cell-encoding ends here
+# [[file:../../org/pyretechnics.org::frontier-cells-resolution][frontier-cells-resolution]]
 @cy.cfunc
 @cy.inline
 @cy.exceptval(check=False)
@@ -1130,7 +1163,8 @@ def identify_all_frontier_cells(phi_matrix     : cy.float[:,::1],
                                 rows           : pyidx,
                                 cols           : pyidx) -> set:
     """
-    TODO: Add docstring
+    Scans the entire phi matrix to identify all frontier cells,
+    returning them as a set of encoded cell indices.
     """
     frontier_cells: set = set()
     y             : pyidx
@@ -1139,9 +1173,11 @@ def identify_all_frontier_cells(phi_matrix     : cy.float[:,::1],
         for x in range(cols):
             if is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
                 frontier_cells.add(encode_cell_index(y, x))
-    return frontier_cells
+    return frontier_cells$
 
 
+# frontier-cells-resolution ends here
+# [[file:../../org/pyretechnics.org::phi-field-perimeter-tracking][phi-field-perimeter-tracking]]
 @cy.cfunc
 def identify_tracked_cells(frontier_cells: set,
                            buffer_width  : pyidx,
@@ -1160,38 +1196,7 @@ def identify_tracked_cells(frontier_cells: set,
     return tracked_cells
 
 
-@cy.cfunc
-def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
-    # Group the frontier_cells into burned and unburned lists
-    burned_ys         : list[pyidx] = []
-    burned_xs         : list[pyidx] = []
-    unburned_ys       : list[pyidx] = []
-    unburned_xs       : list[pyidx] = []
-    encoded_cell_index: object
-    cell_index        : coord_yx
-    y                 : pyidx
-    x                 : pyidx
-    for encoded_cell_index in frontier_cells:
-        cell_index = decode_cell_index(encoded_cell_index)
-        y          = cell_index[0]
-        x          = cell_index[1]
-        if (phi_matrix[2+y, 2+x] < 0.0):
-            burned_ys.append(y)
-            burned_xs.append(x)
-        else:
-            unburned_ys.append(y)
-            unburned_xs.append(x)
-    # Return a dictionary of 2D Numpy array indices
-    return {
-        "burned_cells": (
-            np.asarray(burned_ys, dtype=np.int32),
-            np.asarray(burned_xs, dtype=np.int32)
-        ),
-        "unburned_cells": (
-            np.asarray(unburned_ys, dtype=np.int32),
-            np.asarray(unburned_xs, dtype=np.int32)
-        ),
-    }
+
 # phi-field-perimeter-tracking ends here
 # [[file:../../org/pyretechnics.org::spread-phi-field][spread-phi-field]]
 # TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
@@ -1252,6 +1257,8 @@ def spot_from_burned_cell(spread_inputs   : SpreadInputs,
                 spot_ignitions[ignition_time] = ignited_cells
 
 
+# FIXME section separation.
+# [[file:../../org/pyretechnics.org::dphi-from-ellipses][dphi-from-ellipses]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def calc_phi_magnitude_xyz_2(phi_gradient_xy   : vec_xy,
@@ -1408,9 +1415,13 @@ def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: v
         return surface_dphi_dt
 
 
+#dphi-from-ellipses ends here
+# FIXME section separation.
+
+
+
 # TODO: Rename this constant
 p_CellInputs = cy.declare(pyidx, 17) # the number of input columns
-
 
 @cy.cclass
 class TrackedCellsArrays:
@@ -2479,6 +2490,7 @@ def ignite_from_spotting(spot_ignitions: SortedDict[float, set],
     return ignited_cells
 
 
+# [[file:../../org/pyretechnics.org::tracked-cells-update][tracked-cells-update]]
 @cy.cfunc
 @cy.exceptval(check=False)
 def route_cell_to_diff(frontier_cells_old: set,
@@ -2617,8 +2629,8 @@ def update_tracked_cells_with_frontier_diff(tracked_cells         : nbt.NarrowBa
         nbt.dec_square_around(tracked_cells, y, x, buffer_width)
     # Return updated tracked cells
     return tracked_cells
-
-
+# tracked-cells-update ends here
+# FIXME name snippet
 @cy.cfunc
 def spread_one_timestep(sim_state    : dict,
                         spread_inputs: SpreadInputs,
