@@ -2216,6 +2216,8 @@ class SpreadState:
         for y in range(rows):
             for x in range(cols):
                 if self.time_of_arrival[y,x] > simulation_time:
+                    # TODO: phi and phi_star are padded by 2 cells. These writes use (y, x)
+                    #       instead of (2+y, 2+x), so they edit the halo and leave the interior cells in place.
                     self.phi[y,x]                = 1.0
                     self.phi_star[y,x]           = 1.0
                     self.fire_type[y,x]          = 0
