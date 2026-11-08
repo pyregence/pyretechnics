@@ -320,7 +320,7 @@ See sections FIXME for details.
 
 
 
-** Long-rage spotting from firebrands
+** Long-range spotting from firebrands
 
 Pyretechnics supports modeling long-rage spotting from firebrands - that is, secondary ignitions started by embers transported by the wind. Here is an overview of the approach:
 
@@ -330,7 +330,7 @@ Pyretechnics supports modeling long-rage spotting from firebrands - that is, sec
 Each firebrand is flown independently by drawing from this distribution.
 4. Whether the firebrands ignities a spot fire is determined by a probability computed from the local conditions at the landing site. If so, the sport fire started after a fixed time interval after emission.
 
-Details and code will be provided in section FIXME.
+Details and code are in section [[#spot-fire-equations-(pyretechnics.spot_fire)]].
 This model is quite crude; the rationale of the authors is that there is currently too much uncertainty in firebrands emissions and transport to benefit from a more sophisticated model.
 Users who find this model too limited might want to interleave their own spotting model with Pyretechnics execution.
 
@@ -9742,6 +9742,8 @@ class SpreadState:
         for y in range(rows):
             for x in range(cols):
                 if self.time_of_arrival[y,x] > simulation_time:
+                    # TODO: phi and phi_star are padded by 2 cells. These writes use (y, x)
+                    #       instead of (2+y, 2+x), so they edit the halo and leave the interior cells in place.
                     self.phi[y,x]                = 1.0
                     self.phi_star[y,x]           = 1.0
                     self.fire_type[y,x]          = 0
@@ -9761,20 +9763,372 @@ class SpreadState:
 An important numerical optimization consists of updating the $\phi$ field only in those cells
 that are close enough to the current fire front.
 This enables to make the computational cost of each time step proportional to the length of the fire perimeter.
-This technique is called the /narrow band/ method.
+This technique is called the /narrow band/ method [cite:@AdalsteinssonSethian1995NarrowBand].
 
-Pyretechnics defines a concept of /frontier cell/ as a cell with a neighbor of opposite $\phi$ sign,
-with the further condition that at least one of them must be burnable.
-The narrow band consists of those cells in a 7x7 square centered on a frontier cell:
-this bandwidth is appropriate given the order of derivatives computed in the numerical scheme.
+Pyretechnics defines a /frontier cell/ as a burnable cell with a burnable cardinal neighbor of opposite $\phi$ sign.
+Diagonal neighbors are not considered.
+The narrow band is the Chebyshev square of radius =buffer_width= around each frontier cell.
+The default radius is 3, so the square is 7 by 7, which covers the flux-limiter stencil.
 
 Pyretechnics uses a custom data structure for representing the narrow band.
 This data structure is sparse but enables fast iteration and updates by representing the tracked cells in blocks with a flat memory layout:
 
 #+NAME: narrow-band-tracking
 #+begin_src python
-# FIXME detangle
+"""
+Custom data structures for keeping track of cells in the narrow band.
+
+The narrow band is defined as the set of _tracked_ cells:
+- a cell is _tracked_ iff it lies within a square buffer around a _frontier cell_;
+- a _frontier cell_ is a cell that has a neighbor of opposite phi sign,
+i.e. both cells lie on opposite sides of the fire front.
+
+`NarrowBandTracker` maintains the set of tracked cells by mapping each track cell to a count,
+the count of the frontier cells related to it.
+The intended use is that the surrounding algorithm will follow the additions and deletions
+to the set of frontier cells, and correspondingly call the functions
+`inc_square_around()` and `dec_square_around()`.
+`TrackedCellsIterator` allows to iterate over tracked cells
+(more efficiently than a regular Python iterator).
+"""
+import cython
+import cython as cy
+from sortedcontainers import SortedDict
+if cython.compiled:
+    from cython.cimports.pyretechnics.cy_types import pyidx, coord_yx
+else:
+    from pyretechnics.py_types import pyidx, coord_yx
+
+#===================================================================
+# Class CellsCountSegment
+#===================================================================
+
+@cy.cclass
+class CellsCountSegment:
+    """
+    For internal use by the NarrowBandTracker.
+
+    A CellsCountSegment maps each (y, x) for x from x0 (included) to x0+16 (excluded)
+    to a positive integer.
+    """
+    y     : pyidx
+    x0    : pyidx
+    counts: cy.ushort[16]
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def segment_is_empty(segment: CellsCountSegment) -> cy.bint:
+    counts: cy.ushort[16] = segment.counts
+    k: pyidx
+    for k in range(16):
+        if counts[k] > 0:
+            return False
+    return True
+
+
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def segment_is_pos_at(segment: CellsCountSegment, k: pyidx) -> cy.bint:
+    return segment.counts[k] > 0
+
+
+# FIXME: Why isn't this a class __init__ constructor? (Val: ensuring private functions, simplifying pxd declarations)
+@cy.cfunc
+def make_CellsCountSegment(y: pyidx, x0: pyidx) -> CellsCountSegment:
+    """
+    Creates an empty CellsCountSegment (with all counts set to zero).
+    """
+    ret: CellsCountSegment = CellsCountSegment()
+    ret.y  = y
+    ret.x0 = x0
+    return ret
+
+
+@cy.cfunc
+def __find_first_k(segment: CellsCountSegment) -> pyidx:
+    k: pyidx
+    for k in range(16):
+        if segment_is_pos_at(segment, k):
+            return k
+    raise ValueError("Segment is empty!")
+
+#===================================================================
+# Class NarrowBandTracker
+#===================================================================
+
+# TODO: OPTIM Maybe we can make this faster by making ys_list a raw array.
+@cy.cclass
+class NarrowBandTracker:
+    """
+    A custom data structure for keeping track of cells in the narrow band efficiently.
+    Logically, this class acts as a sorted dict from (y, x) -> n,
+    in which n is the number of frontier cells whose buffer contains (y, x).
+
+    Invariants:
+    - for all (y, x) in the keys, ys_offset <= y < ys_offset + len(ys_list)
+    - ys_list[i] logically represents the row for y := ys_offset + i
+    - ys_list[i] is either None or a non-empty SortedDict s
+    - ys_list[i] is None iff the row is empty
+    - the SortedDict s := ys_list[i] maps each (x // 16) value to a non-empty CellsCountSegment segment,
+      i.e. one of the counts in segment.counts will be > 0
+    - _rows_count is the number of entries in ys_list containing non-empty SortedDicts
+    """
+    num_tracked_cells: cy.int
+    y_high           : pyidx
+    x_high           : pyidx
+    ys_offset        : pyidx
+    ys_list          : list
+    _rows_count      : cy.int
+
+
+# FIXME: Why isn't this a class __init__ constructor? (Val: ensuring private functions, simplifying pxd declarations)
+@cy.cfunc
+def new_NarrowBandTracker(y_high: pyidx, x_high: pyidx) -> NarrowBandTracker:
+    ret: NarrowBandTracker = NarrowBandTracker()
+    ret.num_tracked_cells  = 0
+    ret.y_high             = y_high
+    ret.x_high             = x_high
+    return ret
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def __ensure_y(tracked_cells: NarrowBandTracker, y: pyidx) -> cy.void:
+    """
+    Ensures that index y is covered by ys_offset and ys_list.
+    """
+    # Ensure that the ys_offset and ys_list fields of tracked_cells are initialized
+    if tracked_cells.ys_list is None:
+        tracked_cells.ys_offset = y
+        tracked_cells.ys_list   = [None] * 8
+    # Grow the tracked_cells contents to the left or right if necessary
+    n: cy.int = len(tracked_cells.ys_list)
+    while y < tracked_cells.ys_offset:
+        # Double the size, extending left
+        tracked_cells.ys_list    = ([None] * n) + tracked_cells.ys_list
+        tracked_cells.ys_offset -= n # FIXME: What happens when this becomes negative?
+        n = 2*n
+    while y >= tracked_cells.ys_offset + n:
+        # Double the size, extending right
+        tracked_cells.ys_list = tracked_cells.ys_list + ([None] * n)
+        n = 2*n
+
+
+# TODO: OPTIM list and dict lookup operations require us to allocate
+#       tons of boxed integers on the heap. We can maybe make this
+#       faster by caching those integers in a native array. That said,
+#       I expect Python to keep doing reference-counting mutations
+#       during function calls...
+@cy.cfunc
+@cy.exceptval(check=False)
+def inc_y_segment(tracked_cells: NarrowBandTracker, y: pyidx, x_start: pyidx, segment_length: cy.int) -> cy.void:
+    __ensure_y(tracked_cells, y)
+    y_idx: int        = y - tracked_cells.ys_offset
+    s    : SortedDict = tracked_cells.ys_list[y_idx]
+    if s is None:
+        s                             = SortedDict()
+        tracked_cells.ys_list[y_idx]  = s
+        tracked_cells._rows_count    += 1
+    xk       : pyidx                  = (x_start // 16) - 1
+    segment0 : CellsCountSegment|None = None
+    segment  : CellsCountSegment
+    n_added  : cy.int                 = 0
+    old_count: cy.ushort
+    k        : pyidx
+    i        : pyidx
+    for i in range(segment_length):
+        if (x_start + i) // 16 != xk:
+            xk       = (x_start + i) // 16
+            segment0 = s.get(xk)
+            if segment0 is None:
+                segment0 = make_CellsCountSegment(y, xk*16)
+                s[xk]    = segment0
+        segment            = segment0
+        k                  = (x_start + i) % 16
+        old_count          = segment.counts[k]
+        segment.counts[k]  = old_count + 1
+        n_added           += (old_count == 0)
+    tracked_cells.num_tracked_cells += n_added
+
+
+@cy.cfunc
+def dec_y_segment(tracked_cells: NarrowBandTracker, y: pyidx, x_start: pyidx, segment_length: cy.int) -> cy.void:
+    y_idx: int        = y - tracked_cells.ys_offset
+    s    : SortedDict = tracked_cells.ys_list[y_idx]
+    if s is None:
+        raise ValueError("Empty SortedDict!")
+    xk      : pyidx                  = (x_start // 16)
+    segment0: CellsCountSegment|None = s.get(xk)
+    if segment0 is None:
+        raise ValueError("No CellsCountSegment found!")
+    segment  : CellsCountSegment
+    n_removed: cy.int = 0
+    old_count: cy.ushort
+    k        : pyidx
+    i        : pyidx
+    for i in range(segment_length):
+        k                  = (x_start + i) % 16
+        segment            = segment0
+        old_count          = segment.counts[k]
+        segment.counts[k]  = old_count - 1
+        n_removed         += (old_count == 1)
+        if segment_is_empty(segment):
+            del s[xk]
+        if (x_start + i + 1) // 16 != xk:
+            xk       = (x_start + i + 1) // 16
+            segment0 = s.get(xk)
+    if len(s) == 0:
+        tracked_cells.ys_list[y_idx]  = None
+        tracked_cells._rows_count    -= 1
+    tracked_cells.num_tracked_cells  -= n_removed
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def resolve_truncated_x_segment(tracked_cells: NarrowBandTracker,
+                                x            : pyidx,
+                                buffer_width : pyidx) -> tuple[pyidx, pyidx]:
+    x_start        : pyidx = max(0, x - buffer_width)
+    x_end          : pyidx = min(tracked_cells.x_high - 1, x + buffer_width)
+    width_truncated: pyidx = x_end - x_start
+    return (x_start, width_truncated)
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def inc_square_around(tracked_cells: NarrowBandTracker, y: pyidx, x: pyidx, buffer_width: pyidx) -> cy.void:
+    """
+    Mutates tracked_cells by incrementing all cells within `buffer_width` of (y, x).
+
+    For example, if buffer_width = 3, then 7*7=49 counts are updated.
+    """
+    (x_start, width_truncated) = resolve_truncated_x_segment(tracked_cells, x, buffer_width)
+    width: pyidx               = 2 * buffer_width + 1
+    i    : pyidx
+    for i in range(width):
+        y1: pyidx = y - buffer_width + i
+        if (y1 >= 0) and (y1 < tracked_cells.y_high):
+            inc_y_segment(tracked_cells, y1, x_start, width_truncated)
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def dec_square_around(tracked_cells: NarrowBandTracker, y: pyidx, x: pyidx, buffer_width: pyidx) -> cy.void:
+    """
+    Mutates tracked_cells by decrementing all cells within `buffer_width` of (y, x).
+
+    If buffer_width = 3, then 7*7=49 counts are updated.
+
+    The mutated cells MUST all have a positive count before this function is called.
+    """
+    (x_start, width_truncated) = resolve_truncated_x_segment(tracked_cells, x, buffer_width)
+    width: pyidx               = 2 * buffer_width + 1
+    i    : pyidx
+    for i in range(width):
+        y1: pyidx = y - buffer_width + i
+        if (y1 >= 0) and (y1 < tracked_cells.y_high):
+            dec_y_segment(tracked_cells, y1, x_start, width_truncated)
+
+
+@cy.cfunc
+@cy.inline
+@cy.exceptval(check=False)
+def nonempty_tracked_cells(tracked_cells: NarrowBandTracker) -> cy.bint:
+    return tracked_cells.num_tracked_cells > 0
+
+
+# Iterating over cells
+# NOTE: @cy.cfunc is not applicable here, due to yield.
+def iterate_segments(tracked_cells: NarrowBandTracker):
+    """
+    Returns a Python iterator over the CellsCountSegment-s in `tracked_cells`.
+    """
+    ys_list: list = tracked_cells.ys_list
+    if ys_list is not None:
+        for s in ys_list:
+            if s is not None:
+                for segment in s.values():
+                    yield segment
+
+
+# TODO: OPTIM Maybe we could make this even faster by iterating
+#       directly in NarrowBandTracker instead of relying on a Python
+#       iterator, effectively reimplementing iterate_segments()
+#       without yield. Basic testing suggests a 4x potential
+#       efficiency gain by getting rid of yield!
+@cy.cclass
+class TrackedCellsIterator:
+    """
+    An "Iterator-pattern" object for iterating efficiently over the cells of a NarrowBandTracker.
+    """
+    segment_iter   : object # A Python Iterator of CellsCountSegment. INVARIANT None iff iteration is exhausted.
+    current_segment: CellsCountSegment # INVARIANT never None
+    current_k      : pyidx # INVARIANT points to the index for the next cell to return.
+
+
+    # NOTE: This implementation relies on the fact that a CellsCountSegment is never empty.
+    def __cinit__(self, segment_iter):
+        self.segment_iter = segment_iter
+        try:
+            self.current_segment = next(segment_iter)
+            self.current_k       = __find_first_k(self.current_segment)
+        except StopIteration: # Only if the iterator started empty!
+            self.segment_iter    = None
+            self.current_segment = make_CellsCountSegment(-1, -1)
+            self.current_k       = 0
+
+
+    # TODO: OPTIM It may be faster to maintain an iteration index and compare it to num_tracked_cells.
+    @cy.cfunc
+    @cy.exceptval(check=False)
+    def has_next(self) -> cy.bint:
+        return self.segment_iter is not None
+
+
+    # FIXME: Cython uninitialized warning
+    @cy.cfunc
+    @cy.exceptval(check=False)
+    def next_cell(self) -> coord_yx:
+        segment: CellsCountSegment = self.current_segment
+        y      : pyidx             = segment.y
+        x      : pyidx             = segment.x0 + self.current_k
+        ret    : coord_yx          = (y, x)
+        __resolve_next(self)
+        return ret
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def __resolve_next(tc_iter: TrackedCellsIterator) -> cy.bint:
+    # At the end of this, either segment_iter is None (exhausted),
+    # or current_segment and current_k point to the next cell.
+    # Returns True if iteration was exhausted and False otherwise.
+    current_segment: CellsCountSegment = tc_iter.current_segment
+    k              : pyidx             = tc_iter.current_k + 1
+    while k < 16:
+        if segment_is_pos_at(current_segment, k):
+            tc_iter.current_k = k
+            return False
+        k += 1
+    # We exhausted the segment, beginning the next one:
+    try:
+        tc_iter.current_segment = next(tc_iter.segment_iter)
+    except StopIteration:
+        tc_iter.segment_iter = None
+        return True
+    tc_iter.current_k = __find_first_k(tc_iter.current_segment)
+    return False
+
+
+@cy.cfunc
+@cy.inline
+def tracked_cells_iterator(tracked_cells: NarrowBandTracker) -> TrackedCellsIterator:
+    return TrackedCellsIterator(iterate_segments(tracked_cells))
 #+end_src
+
+
 
 Frontier cells will be represented as Python sets;
 cell coordinates are encoded as a single integer instead of a tuple,
@@ -9782,7 +10136,56 @@ as that enables a more efficient usage of memory:
 
 #+NAME: frontier-cell-encoding
 #+begin_src python
-# FIXME detangle
+@cy.cfunc
+@cy.inline
+def encode_cell_index(y: pyidx, x: pyidx) -> object: # ulong
+    """
+    Encodes a (y, x) tuple into a single Python integer object.
+    This enables a more efficient memory layout than a tuple of Python integers.
+    """
+    return (cy.cast(cy.ulonglong, y) << 32) + cy.cast(cy.ulonglong, x)
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def decode_cell_index(encoded_cell_index: object) -> coord_yx:
+    cell_index: cy.ulonglong = encoded_cell_index
+    y         : pyidx        = cell_index >> 32
+    x         : pyidx        = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
+    return (y, x)
+
+@cy.cfunc
+def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
+    # Group the frontier_cells into burned and unburned lists
+    burned_ys         : list[pyidx] = []
+    burned_xs         : list[pyidx] = []
+    unburned_ys       : list[pyidx] = []
+    unburned_xs       : list[pyidx] = []
+    encoded_cell_index: object
+    cell_index        : coord_yx
+    y                 : pyidx
+    x                 : pyidx
+    for encoded_cell_index in frontier_cells:
+        cell_index = decode_cell_index(encoded_cell_index)
+        y          = cell_index[0]
+        x          = cell_index[1]
+        if (phi_matrix[2+y, 2+x] < 0.0):
+            burned_ys.append(y)
+            burned_xs.append(x)
+        else:
+            unburned_ys.append(y)
+            unburned_xs.append(x)
+    # Return a dictionary of 2D Numpy array indices
+    return {
+        "burned_cells": (
+            np.asarray(burned_ys, dtype=np.int32),
+            np.asarray(burned_xs, dtype=np.int32)
+        ),
+        "unburned_cells": (
+            np.asarray(unburned_ys, dtype=np.int32),
+            np.asarray(unburned_xs, dtype=np.int32)
+        ),
+    }
 #+end_src
 
 
@@ -9793,7 +10196,144 @@ These updates are then applied to the =NarrowBandTracker= data structure.
 
 #+NAME: tracked-cells-update
 #+begin_src python
-# FIXME detangle
+@cy.cfunc
+@cy.exceptval(check=False)
+def route_cell_to_diff(frontier_cells_old: set,
+                       frontier_additions: set,
+                       frontier_removals : set,
+                       phi_matrix        : cy.float[:,::1],
+                       fuel_model_cube   : ISpaceTimeCube,
+                       rows              : pyidx,
+                       cols              : pyidx,
+                       t                 : pyidx,
+                       y                 : pyidx,
+                       x                 : pyidx) -> cy.void:
+    """
+    Determines whether the cell `(y, x)` was just added or removed from the frontier cells,
+    mutating the sets `frontier_additions` and `frontier_removals` accordingly.
+    Idempotent.
+    """
+    if spot.is_in_bounds(y, x, rows, cols):
+        encoded_cell_index: object = encode_cell_index(y, x)
+        if is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
+            if not (encoded_cell_index in frontier_cells_old):
+                frontier_additions.add(encoded_cell_index)
+        else:
+            if (encoded_cell_index in frontier_cells_old):
+                frontier_removals.add(encoded_cell_index)
+
+
+@cy.cfunc
+def diff_frontier_cells(frontier_cells_old  : set,
+                        spread_ignited_cells: list[BurnedCellInfo],
+                        spot_ignited_cells  : list[BurnedCellInfo],
+                        phi_matrix          : cy.float[:,::1],
+                        fuel_model_cube     : ISpaceTimeCube,
+                        rows                : pyidx,
+                        cols                : pyidx,
+                        t                   : pyidx) -> tuple[set, set]:
+    """
+    Computes the bi-directional set difference between the old frontier cells and the new frontier cells,
+    based on newly burned cells. Returns a `(cells_added, cells_dropped)` tuple of sets, containing cell indices
+    encoded by `encode_cell_index`.
+    """
+    frontier_additions: set = set()
+    frontier_removals : set = set()
+    ignited_cells     : list[BurnedCellInfo]
+    # NOTE: We accept two lists below instead of one to avoid paying the cost of concatenating them.
+    for ignited_cells in [spread_ignited_cells, spot_ignited_cells]:
+        burned_cell: BurnedCellInfo
+        y          : pyidx
+        x          : pyidx
+        for burned_cell in ignited_cells:
+            (y, x) = burned_cell.cell_index
+            # NOTE: Only in the neighborhood of a burned cell can there be changes to frontier cells membership.
+            # FIXME: Should we be checking the diagonal directions as well?
+            route_cell_to_diff(frontier_cells_old,
+                               frontier_additions,
+                               frontier_removals,
+                               phi_matrix,
+                               fuel_model_cube,
+                               rows,
+                               cols,
+                               t,
+                               y,
+                               x)
+            route_cell_to_diff(frontier_cells_old,
+                               frontier_additions,
+                               frontier_removals,
+                               phi_matrix,
+                               fuel_model_cube,
+                               rows,
+                               cols,
+                               t,
+                               y-1,
+                               x)
+            route_cell_to_diff(frontier_cells_old,
+                               frontier_additions,
+                               frontier_removals,
+                               phi_matrix,
+                               fuel_model_cube,
+                               rows,
+                               cols,
+                               t,
+                               y+1,
+                               x)
+            route_cell_to_diff(frontier_cells_old,
+                               frontier_additions,
+                               frontier_removals,
+                               phi_matrix,
+                               fuel_model_cube,
+                               rows,
+                               cols,
+                               t,
+                               y,
+                               x-1)
+            route_cell_to_diff(frontier_cells_old,
+                               frontier_additions,
+                               frontier_removals,
+                               phi_matrix,
+                               fuel_model_cube,
+                               rows,
+                               cols,
+                               t,
+                               y,
+                               x+1)
+    return (frontier_additions, frontier_removals)
+
+
+@cy.cfunc
+def apply_frontier_diff(frontier_cells_old: set, frontier_additions: set, frontier_removals: set) -> set:
+    frontier_cells_new: set = frontier_cells_old.copy()
+    encoded_cell_index: object
+    for encoded_cell_index in frontier_additions:
+        frontier_cells_new.add(encoded_cell_index)
+    for encoded_cell_index in frontier_removals:
+        frontier_cells_new.discard(encoded_cell_index)
+    return frontier_cells_new
+
+
+@cy.cfunc
+def update_tracked_cells_with_frontier_diff(tracked_cells         : nbt.NarrowBandTracker,
+                                            frontier_cells_added  : set,
+                                            frontier_cells_dropped: set,
+                                            buffer_width          : pyidx) -> nbt.NarrowBandTracker:
+    """
+    TODO: Add docstring
+    """
+    # Increment reference counters for all cells within buffer_width of the added frontier cells
+    encoded_cell_index: object
+    y                 : pyidx
+    x                 : pyidx
+    for encoded_cell_index in frontier_cells_added:
+        (y, x) = decode_cell_index(encoded_cell_index)
+        nbt.inc_square_around(tracked_cells, y, x, buffer_width)
+    # Decrement reference counters for all cells within buffer_width of the dropped frontier cells
+    for encoded_cell_index in frontier_cells_dropped:
+        (y, x) = decode_cell_index(encoded_cell_index)
+        nbt.dec_square_around(tracked_cells, y, x, buffer_width)
+    # Return updated tracked cells
+    return tracked_cells
 #+end_src
 
 
@@ -9801,8 +10341,10 @@ These updates are then applied to the =NarrowBandTracker= data structure.
 *** Flux limiter
 
 Similarly to ELMFIRE,
-Pyretechnics uses a Superbee flux limiter to prevent spurious oscillations in the numerical solution.
-the ELMFIRE documentation (https://elmfire.io/tech_ref.html#level-set-propagation) describes this as:
+Pyretechnics uses a Superbee flux limiter [cite:@Sweby1984FluxLimiters] to prevent spurious oscillations in the numerical solution.
+The ELMFIRE documentation[fn:elmfire-level-set] describes this as:
+
+[fn:elmfire-level-set] https://elmfire.io/tech_ref.html#level-set-propagation
 
 1. computing a front-normal spread rate vector $U$, derived from the phi gradient $\ddot{\nabla}\phi$ computed with basic finite differences;
 2. using the Superbee flux limiter to compute an updated (flux-limited) gradient $\hat{\nabla} \phi$;
@@ -9960,11 +10502,11 @@ this means that the $(V_{/} > V_c)$ condition is equivalent to
 
 which is robust to zero gradients.
 
-Readers might be surprised that the above formulas look so different from the code of ELMFIRE or FARSITE (FIXME cite), which rely much more on angles and trigonometric functions.
+Readers might be surprised that the above formulas look so different from the code of ELMFIRE [cite:@Lautenberger2013elmfire] or FARSITE [cite:@Finney2004FARSITE], which rely much more on angles and trigonometric functions.
 The elliptical calculations in Pyretechnics are correct and mathematically equivalent to those other models (save for bugs in the latter).
 We have judged that the use of angles and trigonometric functions is suboptimal both conceptually and computationally,
 which is why our numerical implementation instead relies on vector algebra.
-As far as we know,Prometheuse (FIXME cite) adopts a similar approach.
+As far as we know, Prometheus [cite:@Tymstra2010Prometheus] adopts a similar approach.
 
 This logic is implemented in the following code:
 
@@ -10131,7 +10673,7 @@ def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: v
 
 *** Resolving elliptical dimensions
 
-The inputs to the previous calculations are elliptical dimensions derived from fuels and weather inputs using the fire behavior calcutions described in previous sections.
+The inputs to the previous calculations are elliptical dimensions derived from fuels and weather inputs, as described in sections [[#surface-fire-behavior-in-the-direction-of-maximum-spread]] and [[#crown-fire-behavior-in-the-direction-of-maximum-spread]].
 The following code acts as a bridge from these calculations to the front-propagating code,
 which involve efficient data structures:
 
@@ -10336,16 +10878,19 @@ def resolve_cell_elliptical_info(fb_opts         : FireBehaviorSettings,
 
 Like ELMFIRE, Pyretechnics uses a 2nd-order Runge-Kutta scheme to march the Hamilton-Jacobi equation forward in time.
 The update to the $\phi$ array happens in two passes.
-The first pass computes the spatial $\phi$ gradient $\nabla \phi$ and the ensuing temporal derivative $\partial{\phi}/{\partial t}$ for each tracked cell, from which it resolves a timestep $\Delta t$ based on a Courant-Friedrichs-Lewy (CFL) condition:
+The first pass computes the horizontal spatial gradient and the temporal derivative $\partial{\phi}/{\partial t}$ for each tracked cell, from which it resolves a timestep $\Delta t$ based on a Courant-Friedrichs-Lewy (CFL) condition.
+The front may advance by at most $C$ cells in either grid direction, and the step may not exceed =max_timestep=.
+The resolved step is the most restrictive value over the tracked cells:
 
 \begin{equation}
-    \Delta t = C \Delta L \max(|U_x|, |U_y|)
+    \Delta t = \min \left( \Delta t_{\max},\; \frac{C \, \Delta L}{|U_x|},\; \frac{C \, \Delta L}{|U_y|} \right)
 \end{equation}
 
-in which $C$ is the Courant number (=max_cells_per_timestep= in Pyretechnics code), $\Delta L$ is the grid spacing, and $U := (U_x, U_y)$ is the front-normal spread rate vector in the horizontal plane. Note that $U$ can be resolved as follows:
+$C$ is the Courant number (=max_cells_per_timestep=).
+The horizontal spread-rate vector $U = (U_x, U_y)$ is built from the unlimited derivative, before the flux-limiter correction, and from the unlimited horizontal gradient:
 
 \begin{equation}
-    U = - \frac{\partial \phi}{\partial t} |\tilde{\nabla} \phi|^{-2} \tilde{\nabla} \phi
+    U = - \frac{\partial \phi}{\partial t} |\nabla \phi|^{-2} \nabla \phi
 \end{equation}
 
 The first pass then yields a temporary update $\phi^\ast$, using the flux-limited derivative $\left(\partial{\phi}/{\partial t}\right)_1$ at the current $\phi$:
@@ -10571,8 +11116,8 @@ def runge_kutta_pass2(dy                : cy.float,
 
 
 The above code is supported by a =TrackedCellsArrays= data structure,
-which in particular the $\phi$ array, as well as other cached values,
-which use will become apparent in the following sections.
+complemented by the $\phi$ grids themselves held by the =SpreadState= class.
+For each tracked cell this structure holds a 9-point stencil of $\phi$, the sampled inputs, the no-wind no-slope behavior, the partialed wavelets, and the pass-1 output.
 
 #+NAME: intro-tracked-cells-arrays
 #+begin_src python
@@ -11094,7 +11639,8 @@ def sync_tracked_cells_arrays(spread_inputs: SpreadInputs,
 *** Spotting from firebrands
 
 As cells get burned by front propagation,
-they have the opportunity to cast firebrands which will ignite other cells.
+they have the opportunity to cast firebrands which will ignite other cells,
+as described in section [[#spot-ignition-model]].
 The set of in-flight firebrands is tracked as a sorted dictionary from ignition time to the set of target cells.
 
 #+NAME: els-spotting
@@ -13201,6 +13747,8 @@ class SpreadState:
         for y in range(rows):
             for x in range(cols):
                 if self.time_of_arrival[y,x] > simulation_time:
+                    # TODO: phi and phi_star are padded by 2 cells. These writes use (y, x)
+                    #       instead of (2+y, 2+x), so they edit the halo and leave the interior cells in place.
                     self.phi[y,x]                = 1.0
                     self.phi_star[y,x]           = 1.0
                     self.fire_type[y,x]          = 0
