@@ -306,7 +306,7 @@ We assume that fire model calculations yield give us a slope-tangential Hamilton
 
 in which $\vec{p}_{/}$ must be a slope-tangential vector.
 
-Then, we can convert from slope-tangential to horizontal by:
+Then, we can convert correctly from slope-tangential to horizontal Hamiltonian by:
 
 \begin{align}
     \underline{H}(\vec{p}) = \underline{H}_{/}(\pi_{/}(\vec{p}))
@@ -318,6 +318,10 @@ which can be expressed in terms of the slope-normal unit vector $\vec{n}_{/}$ as
 \begin{align}
     \pi_{/}(\vec{p}) = \vec{p} - (\vec{p} \cdot \vec{n}_{/}) \vec{n}_{/}
 \end{align}
+
+Perhaps the easiest way to see that the above conversion is correct is to reason about the Hamilton-Jacobi equation (section [[#mathematical-formalization-level-set]]) in both the horizontal and slope-tangential planes,
+and to observe that $\pi_{/}(\nabla \phi)$ is the correct way to obtain the slope-tangential gradient,
+being the only slope-tangential vector that agrees with the horizontal gradient $\nabla \phi$ in terms of dot-products with slope-tangential vectors.
 
 Note that $\vec{n}_{/}$ can be expressed from the gradient of the elevation map $h(\vec{x})$ as:
 
