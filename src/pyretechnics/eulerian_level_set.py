@@ -687,7 +687,7 @@ def identify_all_frontier_cells(phi_matrix     : cy.float[:,::1],
         for x in range(cols):
             if is_frontier_cell(phi_matrix, fuel_model_cube, rows, cols, t, y, x):
                 frontier_cells.add(encode_cell_index(y, x))
-    return frontier_cells$
+    return frontier_cells
 
 
 # frontier-cells-resolution ends here
