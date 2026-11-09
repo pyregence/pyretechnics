@@ -18045,8 +18045,12 @@ for (output_matrices, file_suffix) in [(output_matrices_low_res, "low_res"),
   :CUSTOM_ID: fire-suppression-techniques-(pyretechnics.suppression)
   :END:
 
+Pyretechnics provides utilities for simulating suppression by fireline construction.
+Pyretechnics enables users to search for contiguous segments of the fire front that satisfy a constrained optimization objective with user-provided priority and cost functions.
+More precisely, Pyretechnics lets users export a representation of the fire front as ordered lists of edges separating burned and unburned cells,
+then search for optimal segments given priorities and budget as represented by user-supplied functions.
+This is demonstrated in section [[#for-users-suppression]].
 
-FIXME technical overview.
 
 ** For Developers
    :PROPERTIES:
