@@ -259,24 +259,24 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#preface">1. Preface</a>
 <ul>
-<li><a href="#orgc2f3de7">1.1. Overview of Pyretechnics</a></li>
-<li><a href="#org79e6b91">1.2. About this documentation</a></li>
+<li><a href="#orga5f03af">1.1. Overview of Pyretechnics</a></li>
+<li><a href="#org47db263">1.2. About this documentation</a></li>
 </ul>
 </li>
 <li><a href="#theoretical-models">2. Theoretical models</a>
 <ul>
-<li><a href="#org22e1740">2.1. Fire front propagation</a>
+<li><a href="#org42977bd">2.1. Fire front propagation</a>
 <ul>
-<li><a href="#org13524c6">2.1.1. Propagating fire fronts from spread rates</a></li>
+<li><a href="#org177203c">2.1.1. Propagating fire fronts from spread rates</a></li>
 <li><a href="#deriving-the-spread-rate-overview">2.1.2. Deriving the spread rate from Rothermel and crowning equations</a></li>
 <li><a href="#mathematical-formalization-level-set">2.1.3. Mathematical formalization: level-set method and Hamilton-Jacobi equation</a></li>
 <li><a href="#from-slope-tangential-to-horizontal">2.1.4. Converting from slope-tangential to horizontal spread rates</a></li>
 </ul>
 </li>
-<li><a href="#orgb5116ba">2.2. Fire intensity calculations</a></li>
-<li><a href="#org606cf0c">2.3. Propagation-free calculations</a></li>
-<li><a href="#org00c0f99">2.4. Long-range spotting from firebrands</a></li>
-<li><a href="#org83b8388">2.5. Suppression by fireline construction</a></li>
+<li><a href="#orgad84a66">2.2. Fire intensity calculations</a></li>
+<li><a href="#orgbd8cf52">2.3. Propagation-free calculations</a></li>
+<li><a href="#orgeea1c8a">2.4. Long-range spotting from firebrands</a></li>
+<li><a href="#orgbef6ae5">2.5. Suppression by fireline construction</a></li>
 </ul>
 </li>
 <li><a href="#data-model">3. Data Model</a>
@@ -428,20 +428,20 @@ org_html_manager.setup();  // activate after the parameters are set
 <li><a href="#for-developers-fire-spread">10.1. For Developers</a>
 <ul>
 <li><a href="#module-imports-eulerian-level-set">10.1.1. Module Imports</a></li>
-<li><a href="#org15469ec">10.1.2. Inputs data structure</a></li>
-<li><a href="#orgd3e57ff">10.1.3. SpreadState data structure</a></li>
-<li><a href="#orgf4dcc70">10.1.4. Narrow band tracking</a></li>
-<li><a href="#org0c60eca">10.1.5. Flux limiter</a></li>
-<li><a href="#org3643fcf">10.1.6. Hamiltonian from surface/crown elliptical wavelets</a></li>
-<li><a href="#org3e61690">10.1.7. Resolving elliptical dimensions</a></li>
-<li><a href="#org41b71d6">10.1.8. Runge-Kutta scheme and CFL condition</a></li>
-<li><a href="#org3a01c6d">10.1.9. Loading and refreshing intermediate quantities</a></li>
-<li><a href="#org725089f">10.1.10. Spotting from firebrands</a></li>
-<li><a href="#org6f64794">10.1.11. Processing burned cells</a></li>
-<li><a href="#orga00e6f2">10.1.12. Full simulation loop</a></li>
+<li><a href="#orgd6fe33c">10.1.2. Inputs data structure</a></li>
+<li><a href="#orgb8d6c25">10.1.3. SpreadState data structure</a></li>
+<li><a href="#org0575bc9">10.1.4. Narrow band tracking</a></li>
+<li><a href="#org97849d9">10.1.5. Flux limiter</a></li>
+<li><a href="#org37fb12c">10.1.6. Hamiltonian from surface/crown elliptical wavelets</a></li>
+<li><a href="#orgdc0784b">10.1.7. Resolving elliptical dimensions</a></li>
+<li><a href="#org7c500e0">10.1.8. Runge-Kutta scheme and CFL condition</a></li>
+<li><a href="#orgb849ff9">10.1.9. Loading and refreshing intermediate quantities</a></li>
+<li><a href="#org2c87d9b">10.1.10. Spotting from firebrands</a></li>
+<li><a href="#org1d29e60">10.1.11. Processing burned cells</a></li>
+<li><a href="#org645d997">10.1.12. Full simulation loop</a></li>
 </ul>
 </li>
-<li><a href="#orgcd42d52">10.2. For Developers OLD FIXME</a>
+<li><a href="#orga06db20">10.2. For Developers OLD FIXME</a>
 <ul>
 <li><a href="#the-$\phi$-field">10.2.1. The \(\phi\) Field</a></li>
 <li><a href="#fire-front-normal-vector">10.2.2. Fire Front Normal Vector</a></li>
@@ -525,8 +525,8 @@ org_html_manager.setup();  // activate after the parameters are set
 <div class="outline-text-2" id="text-preface">
 </div>
 
-<div id="outline-container-orgc2f3de7" class="outline-3">
-<h3 id="orgc2f3de7"><span class="section-number-3">1.1.</span> Overview of Pyretechnics</h3>
+<div id="outline-container-orga5f03af" class="outline-3">
+<h3 id="orga5f03af"><span class="section-number-3">1.1.</span> Overview of Pyretechnics</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 Pyretechnics is a Python library for simulating wildland fires. Pyretechnics implements physical and empirical equations which predict the evolution of a fire front and compute related fire behavior metrics (e.g. rate of spread and flame length).
@@ -567,8 +567,8 @@ Pyretechnics puts a strong emphasis on computing efficiency, at the expense of s
 </div>
 
 
-<div id="outline-container-org79e6b91" class="outline-3">
-<h3 id="org79e6b91"><span class="section-number-3">1.2.</span> About this documentation</h3>
+<div id="outline-container-org47db263" class="outline-3">
+<h3 id="org47db263"><span class="section-number-3">1.2.</span> About this documentation</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 This document is a Literate Program<sup><a id="fnr.1" class="footref" href="#fn.1" role="doc-backlink">1</a></sup>, containing
@@ -627,12 +627,12 @@ These concepts will be detailed in the following sections.
 </p>
 </div>
 
-<div id="outline-container-org22e1740" class="outline-3">
-<h3 id="org22e1740"><span class="section-number-3">2.1.</span> Fire front propagation</h3>
+<div id="outline-container-org42977bd" class="outline-3">
+<h3 id="org42977bd"><span class="section-number-3">2.1.</span> Fire front propagation</h3>
 <div class="outline-text-3" id="text-2-1">
 </div>
-<div id="outline-container-org13524c6" class="outline-4">
-<h4 id="org13524c6"><span class="section-number-4">2.1.1.</span> Propagating fire fronts from spread rates</h4>
+<div id="outline-container-org177203c" class="outline-4">
+<h4 id="org177203c"><span class="section-number-4">2.1.1.</span> Propagating fire fronts from spread rates</h4>
 <div class="outline-text-4" id="text-2-1-1">
 <p>
 At its core, Pyretechnics mdoels fire spread by calculating <i>spread rates</i>;
@@ -891,7 +891,7 @@ in which \(\vec{p}_{/}\) must be a slope-tangential vector.
 </p>
 
 <p>
-Then, we can convert from slope-tangential to horizontal by:
+Then, we can convert correctly from slope-tangential to horizontal Hamiltonian by:
 </p>
 
 \begin{align}
@@ -906,6 +906,12 @@ which can be expressed in terms of the slope-normal unit vector \(\vec{n}_{/}\) 
 \begin{align}
     \pi_{/}(\vec{p}) = \vec{p} - (\vec{p} \cdot \vec{n}_{/}) \vec{n}_{/}
 \end{align}
+
+<p>
+Perhaps the easiest way to see that the above conversion is correct is to reason about the Hamilton-Jacobi equation (section <a href="#mathematical-formalization-level-set">2.1.3</a>) in both the horizontal and slope-tangential planes,
+and to observe that \(\pi_{/}(\nabla \phi)\) is the correct way to obtain the slope-tangential gradient,
+being the only slope-tangential vector that agrees with the horizontal gradient \(\nabla \phi\) in terms of dot-products with slope-tangential vectors.
+</p>
 
 <p>
 Note that \(\vec{n}_{/}\) can be expressed from the gradient of the elevation map \(h(\vec{x})\) as:
@@ -933,8 +939,8 @@ The above calculations are equivalent to the slope calculations implemented in P
 
 
 
-<div id="outline-container-orgb5116ba" class="outline-3">
-<h3 id="orgb5116ba"><span class="section-number-3">2.2.</span> Fire intensity calculations</h3>
+<div id="outline-container-orgad84a66" class="outline-3">
+<h3 id="orgad84a66"><span class="section-number-3">2.2.</span> Fire intensity calculations</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Pyretechnics uses the formula from Byram (<a href="#citeproc_bib_item_4">Byram 1959</a>) to compute the fireline intensity \(I\) (in W/m).
@@ -962,8 +968,8 @@ More details can be found in section <a href="#surface-fire-intensity-functions"
 
 
 
-<div id="outline-container-org606cf0c" class="outline-3">
-<h3 id="org606cf0c"><span class="section-number-3">2.3.</span> Propagation-free calculations</h3>
+<div id="outline-container-orgbd8cf52" class="outline-3">
+<h3 id="orgbd8cf52"><span class="section-number-3">2.3.</span> Propagation-free calculations</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 Pyretechnics also supports doing fire behavior calculations without simulating fire spread,
@@ -977,8 +983,8 @@ See section <a href="#how-to-calculate-the-combined-surface-and-crown-fire-behav
 
 
 
-<div id="outline-container-org00c0f99" class="outline-3">
-<h3 id="org00c0f99"><span class="section-number-3">2.4.</span> Long-range spotting from firebrands</h3>
+<div id="outline-container-orgeea1c8a" class="outline-3">
+<h3 id="orgeea1c8a"><span class="section-number-3">2.4.</span> Long-range spotting from firebrands</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 Pyretechnics supports modeling long-rage spotting from firebrands - that is, secondary ignitions started by embers transported by the wind. Here is an overview of the approach:
@@ -1005,8 +1011,8 @@ Users who find this model too limited might want to interleave their own spottin
 </div>
 
 
-<div id="outline-container-org83b8388" class="outline-3">
-<h3 id="org83b8388"><span class="section-number-3">2.5.</span> Suppression by fireline construction</h3>
+<div id="outline-container-orgbef6ae5" class="outline-3">
+<h3 id="orgbef6ae5"><span class="section-number-3">2.5.</span> Suppression by fireline construction</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
 Pyretechnics does not ship with one integrated suppression model;
@@ -1185,7 +1191,7 @@ various types of input datasets.
 <h4 id="module-imports-space-time-cube"><span class="section-number-4">4.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-space-time-cube">
 <div class="org-src-container">
-<pre class="src src-python" id="org3090e95"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="orgc19681b"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">from</span> functools <span style="font-weight: bold;">import</span> <span style="font-weight: bold;">reduce</span>
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
@@ -1204,7 +1210,7 @@ various types of input datasets.
 <h4 id="utility-functions-space-time-cube"><span class="section-number-4">4.1.2.</span> Utility Functions</h4>
 <div class="outline-text-4" id="text-utility-functions-space-time-cube">
 <div class="org-src-container">
-<pre class="src src-python" id="org74d1127"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgccb3949"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">is_pos_int</span>(x: <span style="font-weight: bold;">object</span>) -&gt; cy.bint:
@@ -1331,7 +1337,7 @@ polymorphism over these two child classes.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org2842115"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
+<pre class="src src-python" id="orgec521db"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
 <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">ISpaceTimeCube</span>:
     <span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
     <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
@@ -1375,7 +1381,7 @@ constant input dimensions.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org5df09de"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
+<pre class="src src-python" id="org3725a61"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
 <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">SpaceTimeCube</span>(ISpaceTimeCube):
     <span style="font-style: italic;">"""
     Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.
@@ -1771,7 +1777,7 @@ extents and/or finer resolutions than have been used previously.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0e79a16"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
+<pre class="src src-python" id="org0665505"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
 <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">LazySpaceTimeCube</span>(ISpaceTimeCube):
     <span style="font-style: italic;">"""
     Create an object that represents a 3D array with dimensions (T,Y,X) given by cube_shape.
@@ -2058,7 +2064,7 @@ in either case.
 <li><a id="create-a-spacetimecube-from-0d,-1d,-2d,-or-3d-input-data"></a>Create a SpaceTimeCube from 0D, 1D, 2D, or 3D Input Data<br>
 <div class="outline-text-5" id="text-create-a-spacetimecube-from-0d,-1d,-2d,-or-3d-input-data">
 <div class="org-src-container">
-<pre class="src src-python" id="org1e4aa24"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org5adeb2e"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 
 <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================
@@ -2112,7 +2118,7 @@ np.random.seed(0)
 <li><a id="stc-retrieve-a-scalar-value-at-a-space-time-coordinate"></a>Retrieve a Scalar Value at a Space-Time Coordinate<br>
 <div class="outline-text-5" id="text-stc-retrieve-a-scalar-value-at-a-space-time-coordinate">
 <div class="org-src-container">
-<pre class="src src-python" id="orgfd25885"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinate
+<pre class="src src-python" id="org718d8ea"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinate
 </span><span style="font-weight: bold; font-style: italic;">band</span> = 12
 <span style="font-weight: bold; font-style: italic;">row</span>  = 100
 <span style="font-weight: bold; font-style: italic;">col</span>  = 100
@@ -2150,7 +2156,7 @@ Value from Spatio-Temporal Data: Wind Speed
 <li><a id="stc-retrieve-a-time-series-at-a-spatial-coordinate"></a>Retrieve a Time Series at a Spatial Coordinate<br>
 <div class="outline-text-5" id="text-stc-retrieve-a-time-series-at-a-spatial-coordinate">
 <div class="org-src-container">
-<pre class="src src-python" id="orgcf4ec8c"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
+<pre class="src src-python" id="org2f0caba"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
 </span><span style="font-weight: bold; font-style: italic;">band_range</span> = (18,30)
 <span style="font-weight: bold; font-style: italic;">row</span>        = 100
 <span style="font-weight: bold; font-style: italic;">col</span>        = 100
@@ -2188,7 +2194,7 @@ Time Series from Spatio-Temporal Data: Wind Speed
 <li><a id="stc-retrieve-a-spatial-plane-at-a-temporal-coordinate"></a>Retrieve a Spatial Plane at a Temporal Coordinate<br>
 <div class="outline-text-5" id="text-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate">
 <div class="org-src-container">
-<pre class="src src-python" id="org1b915c2"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
+<pre class="src src-python" id="org6a25077"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
 </span><span style="font-weight: bold; font-style: italic;">band</span>      = 12
 <span style="font-weight: bold; font-style: italic;">row_range</span> = (95,105)
 <span style="font-weight: bold; font-style: italic;">col_range</span> = (95,105)
@@ -2262,7 +2268,7 @@ Spatial Plane from Spatio-Temporal Data: Wind Speed
 <li><a id="stc-retrieve-a-subcube-within-a-space-time-region"></a>Retrieve a Subcube within a Space-Time Region<br>
 <div class="outline-text-5" id="text-stc-retrieve-a-subcube-within-a-space-time-region">
 <div class="org-src-container">
-<pre class="src src-python" id="orgf5cbd36"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
+<pre class="src src-python" id="org410bd6a"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
 </span><span style="font-weight: bold; font-style: italic;">band_range</span> = (23,25)
 <span style="font-weight: bold; font-style: italic;">row_range</span>  = (95,105)
 <span style="font-weight: bold; font-style: italic;">col_range</span>  = (95,105)
@@ -2380,7 +2386,7 @@ Subcube from Spatio-Temporal Data: Wind Speed
 <li><a id="stc-plot-a-subcube-within-a-space-time-region"></a>Plot a Subcube within a Space-Time Region<br>
 <div class="outline-text-5" id="text-stc-plot-a-subcube-within-a-space-time-region">
 <div class="org-src-container">
-<pre class="src src-python" id="orga6e7ffb"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orga4336f7"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> mpl_toolkits.mplot3d <span style="font-weight: bold;">import</span> Axes3D
 <span style="font-weight: bold;">from</span> matplotlib.colors <span style="font-weight: bold;">import</span> Normalize
@@ -2463,7 +2469,7 @@ save_3d_voxel_plot(spatiotemporal_subcube, <span style="font-style: italic;">"or
 </pre>
 </div>
 
-<table id="orge69a94b">
+<table id="orgb91bc5b">
 <caption class="t-above"><span class="table-number">Table 1:</span> Example Subcube Plots of Constant, Time Series, Spatial, and Spatio-Temporal Space-Time Cubes</caption>
 
 <colgroup>
@@ -2496,7 +2502,7 @@ save_3d_voxel_plot(spatiotemporal_subcube, <span style="font-style: italic;">"or
 <li><a id="create-a-lazyspacetimecube-from-0d,-1d,-2d,-or-3d-input-data"></a>Create a LazySpaceTimeCube from 0D, 1D, 2D, or 3D Input Data<br>
 <div class="outline-text-5" id="text-create-a-lazyspacetimecube-from-0d,-1d,-2d,-or-3d-input-data">
 <div class="org-src-container">
-<pre class="src src-python" id="org5effa7d"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgf46ad39"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube, LazySpaceTimeCube
 
 <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================
@@ -2599,7 +2605,7 @@ np.random.seed(0)
 <li><a id="lazy-stc-retrieve-a-scalar-value-at-a-space-time-coordinate"></a>Retrieve a Scalar Value at a Space-Time Coordinate<br>
 <div class="outline-text-5" id="text-lazy-stc-retrieve-a-scalar-value-at-a-space-time-coordinate">
 <div class="org-src-container">
-<pre class="src src-python" id="orgdeef8f8"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinate
+<pre class="src src-python" id="org9d997dc"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinate
 </span><span style="font-weight: bold; font-style: italic;">band</span> = 12
 <span style="font-weight: bold; font-style: italic;">row</span>  = 100
 <span style="font-weight: bold; font-style: italic;">col</span>  = 100
@@ -2640,7 +2646,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 <li><a id="lazy-stc-retrieve-a-time-series-at-a-spatial-coordinate"></a>Retrieve a Time Series at a Spatial Coordinate<br>
 <div class="outline-text-5" id="text-lazy-stc-retrieve-a-time-series-at-a-spatial-coordinate">
 <div class="org-src-container">
-<pre class="src src-python" id="org4edc848"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
+<pre class="src src-python" id="org8874fac"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
 </span><span style="font-weight: bold; font-style: italic;">band_range</span> = (18,30)
 <span style="font-weight: bold; font-style: italic;">row</span>        = 100
 <span style="font-weight: bold; font-style: italic;">col</span>        = 100
@@ -2680,7 +2686,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 <li><a id="lazy-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate"></a>Retrieve a Spatial Plane at a Temporal Coordinate<br>
 <div class="outline-text-5" id="text-lazy-stc-retrieve-a-spatial-plane-at-a-temporal-coordinate">
 <div class="org-src-container">
-<pre class="src src-python" id="org4365af8"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
+<pre class="src src-python" id="org3671924"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
 </span><span style="font-weight: bold; font-style: italic;">band</span>      = 12
 <span style="font-weight: bold; font-style: italic;">row_range</span> = (95,105)
 <span style="font-weight: bold; font-style: italic;">col_range</span> = (95,105)
@@ -2760,7 +2766,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 <li><a id="lazy-stc-retrieve-a-subcube-within-a-space-time-region"></a>Retrieve a Subcube within a Space-Time Region<br>
 <div class="outline-text-5" id="text-lazy-stc-retrieve-a-subcube-within-a-space-time-region">
 <div class="org-src-container">
-<pre class="src src-python" id="orgc99cb4e"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
+<pre class="src src-python" id="org06b82be"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Space-Time Coordinates
 </span><span style="font-weight: bold; font-style: italic;">band_range</span> = (23,25)
 <span style="font-weight: bold; font-style: italic;">row_range</span>  = (95,105)
 <span style="font-weight: bold; font-style: italic;">col_range</span>  = (95,105)
@@ -2881,7 +2887,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
 <li><a id="lazy-stc-plot-a-subcube-within-a-space-time-region"></a>Plot a Subcube within a Space-Time Region<br>
 <div class="outline-text-5" id="text-lazy-stc-plot-a-subcube-within-a-space-time-region">
 <div class="org-src-container">
-<pre class="src src-python" id="org4b379e6"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org3004021"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> mpl_toolkits.mplot3d <span style="font-weight: bold;">import</span> Axes3D
 <span style="font-weight: bold;">from</span> matplotlib.colors <span style="font-weight: bold;">import</span> Normalize
@@ -2964,7 +2970,7 @@ save_3d_voxel_plot(spatiotemporal_subcube, <span style="font-style: italic;">"or
 </pre>
 </div>
 
-<table id="org9a6b642">
+<table id="org6847536">
 <caption class="t-above"><span class="table-number">Table 2:</span> Example Subcube Plots of Constant, Time Series, Spatial, and Spatio-Temporal Space-Time Cubes</caption>
 
 <colgroup>
@@ -3011,7 +3017,7 @@ of many fire behavior analyses.
 <h4 id="module-imports-fuel-models"><span class="section-number-4">5.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-fuel-models">
 <div class="org-src-container">
-<pre class="src src-python" id="org6fc7726"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org62b2b8d"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">if</span> cython.compiled:
     <span style="font-weight: bold;">from</span> cython.cimports.libc.math <span style="font-weight: bold;">import</span> exp
@@ -3047,10 +3053,10 @@ cope with this, fuels are classified into categories called "fuel
 models" which share similar burning characteristics. Each fuel model
 is then assigned a set of representative values for each of the
 thermally relevant physical properties shown in Table
-<a href="#org2137c5b">3</a>.
+<a href="#orgce3b80e">3</a>.
 </p>
 
-<table id="org2137c5b">
+<table id="orgce3b80e">
 <caption class="t-above"><span class="table-number">Table 3:</span> Physical properties assigned to each fuel model</caption>
 
 <colgroup>
@@ -3163,7 +3169,7 @@ user.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgfe715a5"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM Replace this dictionary with something more efficient
+<pre class="src src-python" id="org500e5d9"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM Replace this dictionary with something more efficient
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Lookup table including entries for each of the Anderson 13 and Scott &amp; Burgan 40 fuel models.
 </span><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">The fields have the following meanings:
@@ -3263,13 +3269,13 @@ Although this compact data structure contains all the properties that
 vary by fuel model (i.e., \(\delta\), \(w_o\), \(\sigma\),
 \(M_{x-\text{dead}}\), \(h\)), several of their values need to be
 multiplied by a coefficient to make their units match those listed in
-Table <a href="#org2137c5b">3</a>. We also need to add in the missing
+Table <a href="#orgce3b80e">3</a>. We also need to add in the missing
 \(\rho_p\), \(S_T\), and \(S_e\) values, which are constant across all of
 these fuel models, and to expand those properties whose values may
 vary by size class into lists with the following encoding:
 </p>
 
-<pre class="example" id="orgf1d7bfc">
+<pre class="example" id="orgc116dc7">
 [dead_1hr dead_10hr dead_100hr dead_herbaceous live_herbaceous live_woody]
 </pre>
 
@@ -3281,7 +3287,7 @@ models. Finally, we add two boolean properties (<code>dynamic</code> and
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org5280e82"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: We use this variable for X &gt; 0.0 comparisons to account for floating point precision issues.
+<pre class="src src-python" id="orgdcc043f"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: We use this variable for X &gt; 0.0 comparisons to account for floating point precision issues.
 </span><span style="font-weight: bold; font-style: italic;">almost_zero</span> = cy.declare(cy.<span style="font-weight: bold;">float</span>, 1e-6)
 
 
@@ -3489,7 +3495,7 @@ herbaceous surface-area-to-volume-ratio. In the following formula,
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org9e03101"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org4ba5152"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">add_dynamic_fuel_loading</span>(fuel_model: FuelModel, M_f: fclaarr) -&gt; FuelModel:
     <span style="font-style: italic;">"""
@@ -3542,7 +3548,7 @@ this text.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org358f856"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM pre-compute this conditional branching since it's fully determined by sigma.
+<pre class="src src-python" id="orgdfa3e63"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM pre-compute this conditional branching since it's fully determined by sigma.
 </span><span style="font-weight: bold; font-style: italic;">#       </span><span style="font-weight: bold; font-style: italic;">This information might be represented efficiently in bit flags.
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
@@ -3669,7 +3675,7 @@ size class \(c\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgece0056"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org8ba3484"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">add_live_moisture_of_extinction</span>(fuel_model: FuelModel) -&gt; FuelModel:
     <span style="font-style: italic;">"""
@@ -3735,7 +3741,7 @@ Pyretechnics provides the <code>moisturize</code> utility function.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0a4a9c9"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="org38be2df"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">moisturize</span>(fuel_model: FuelModel, fuel_moisture: fclaarr) -&gt; FuelModel:
     <span style="font-style: italic;">"""
@@ -3791,7 +3797,7 @@ fuel moisture.
 <h4 id="how-to-look-up-a-fuel-model's-properties"><span class="section-number-4">5.2.1.</span> How to Look Up a Fuel Model's Properties</h4>
 <div class="outline-text-4" id="text-how-to-look-up-a-fuel-model's-properties">
 <div class="org-src-container">
-<pre class="src src-python" id="org394aa31"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org9363c0a"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">from</span> pyretechnics.fuel_models <span style="font-weight: bold;">import</span> get_fuel_model
 
 <span style="font-weight: bold; font-style: italic;">static_fuel_model_number</span>  = 1   <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">R01
@@ -3889,7 +3895,7 @@ Dynamic Fuel Model: GR1
 <h4 id="how-to-apply-fuel-moisture-to-a-fuel-model"><span class="section-number-4">5.2.2.</span> How to Apply Fuel Moisture to a Fuel Model</h4>
 <div class="outline-text-4" id="text-how-to-apply-fuel-moisture-to-a-fuel-model">
 <div class="org-src-container">
-<pre class="src src-python" id="org9ecef28"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org71d4b0d"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">from</span> pyretechnics.fuel_models <span style="font-weight: bold;">import</span> get_fuel_model, moisturize
 
 <span style="font-weight: bold; font-style: italic;">static_fuel_model_number</span>  = 1   <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">R01
@@ -4031,7 +4037,7 @@ flame length.
 <h4 id="module-imports-surface-fire"><span class="section-number-4">6.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-surface-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="org4186f7b"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org7907d5d"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">if</span> cython.compiled:
     <span style="font-weight: bold;">from</span> cython.cimports.libc.math <span style="font-weight: bold;">import</span> sqrt, <span style="font-weight: bold;">pow</span>, log, exp
@@ -4080,10 +4086,10 @@ is described by the following formula:
 
 <p>
 where these terms have the meanings shown in Table
-<a href="#orgf383c57">4</a>.
+<a href="#orge2e675c">4</a>.
 </p>
 
-<table id="orgf383c57">
+<table id="orge2e675c">
 <caption class="t-above"><span class="table-number">Table 4:</span> Inputs to Rothermel's surface fire rate of spread equation</caption>
 
 <colgroup>
@@ -4180,7 +4186,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="utility-functions-surface-fire"></a>Utility Functions<br>
 <div class="outline-text-5" id="text-utility-functions-surface-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="org6362d87"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org55ccbe0"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">__dotp_in_category</span>(x_ij: fclaarr, y_ij: fclaarr) -&gt; fcatarr:
@@ -4217,7 +4223,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$"></a>Common Intermediate Calculations: \(\sigma', \beta, \beta_{op}\)<br>
 <div class="outline-text-5" id="text-common-intermediate-calculations:-$\sigma',-\beta,-\beta_{op}$">
 <div class="org-src-container">
-<pre class="src src-python" id="org8c3eaf7"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org6ea8696"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_surface_area_to_volume_ratio</span>(f_i: fcatarr, f_ij: fclaarr, sigma: fclaarr) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-weight: bold; font-style: italic;">sigma_prime</span>: fcatarr = __dotp_in_category(f_ij, sigma)
@@ -4255,7 +4261,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="reaction-intensity:-$i_r$"></a>Reaction Intensity: \(I_R\)<br>
 <div class="outline-text-5" id="text-reaction-intensity:-$i_r$">
 <div class="org-src-container">
-<pre class="src src-python" id="org771a047"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org5cacb59"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_mineral_damping_coefficients</span>(f_ij: fclaarr, S_e: fclaarr) -&gt; fcatarr:
     <span style="font-weight: bold; font-style: italic;">S_e_i</span>: fcatarr = __dotp_in_category(f_ij, S_e)
@@ -4369,7 +4375,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="propagating-flux-ratio:-$\xi$"></a>Propagating Flux Ratio: \(\xi\)<br>
 <div class="outline-text-5" id="text-propagating-flux-ratio:-$\xi$">
 <div class="org-src-container">
-<pre class="src src-python" id="orgfc03b61"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org192d574"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_propagating_flux_ratio</span>(sigma_prime: cy.<span style="font-weight: bold;">float</span>, beta: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4382,7 +4388,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="heat-source-(no-wind-no-slope):-$i_r-\,-\xi$"></a>Heat Source (No Wind No Slope): \(I_R \, \xi\)<br>
 <div class="outline-text-5" id="text-heat-source-(no-wind-no-slope):-$i_r-\,-\xi$">
 <div class="org-src-container">
-<pre class="src src-python" id="orgc8cea8a"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgf94e1ed"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_heat_source</span>(I_R: cy.<span style="font-weight: bold;">float</span>, xi: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4395,7 +4401,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="oven-dry-fuel-bed-bulk-density:-!$\rho_b$"></a>Oven-Dry Fuel Bed Bulk Density: \(\rho_b\)<br>
 <div class="outline-text-5" id="text-oven-dry-fuel-bed-bulk-density:-!$\rho_b$">
 <div class="org-src-container">
-<pre class="src src-python" id="orgaa5abf6"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgae7d2be"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_ovendry_bulk_density</span>(w_o: fclaarr, delta: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-weight: bold;">if</span> (delta &gt; 0.0):
@@ -4411,7 +4417,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="effective-heating-number-distribution:-!$\epsilon_{ij}$"></a>Effective Heating Number Distribution: \(\epsilon_{ij}\)<br>
 <div class="outline-text-5" id="text-effective-heating-number-distribution:-!$\epsilon_{ij}$">
 <div class="org-src-container">
-<pre class="src src-python" id="org5e04ca5"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgb915070"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">__sizeclass_heating_number</span>(sigma_i: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4438,7 +4444,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="heat-of-preignition-distribution:-!$(q_{ig})_{ij}$"></a>Heat of Preignition Distribution: \((Q_{ig})_{ij}\)<br>
 <div class="outline-text-5" id="text-heat-of-preignition-distribution:-!$(q_{ig})_{ij}$">
 <div class="org-src-container">
-<pre class="src src-python" id="org48925dc"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org330069c"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">__sizeclass_heat_of_preignition_distribution</span>(M_f_i: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-weight: bold; font-style: italic;">pos1</span>: cy.<span style="font-weight: bold;">float</span> = cy.cast(cy.<span style="font-weight: bold;">float</span>, (M_f_i &gt; 0.0))
@@ -4465,7 +4471,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="heat-sink:-$\rho_b-\,-\epsilon-\,-q_{ig}$"></a>Heat Sink: \(\rho_b \, \epsilon \, Q_{ig}\)<br>
 <div class="outline-text-5" id="text-heat-sink:-$\rho_b-\,-\epsilon-\,-q_{ig}$">
 <div class="org-src-container">
-<pre class="src src-python" id="org975ea08"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org5d8f336"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_heat_sink</span>(f_i: fcatarr, f_ij: fclaarr, rho_b: cy.<span style="font-weight: bold;">float</span>, epsilon_ij: fclaarr, Q_ig_ij: fclaarr) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-weight: bold; font-style: italic;">effective_heat_of_preignition_i</span>: fcatarr = (
@@ -4490,7 +4496,7 @@ combined together in a single function that computes \(R_0\).
 <li><a id="spread-rate-(no-wind-no-slope):-!$r_0$"></a>Spread Rate (No Wind No Slope): \(R_0\)<br>
 <div class="outline-text-5" id="text-spread-rate-(no-wind-no-slope):-!$r_0$">
 <div class="org-src-container">
-<pre class="src src-python" id="orga3e03da"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgc489f5d"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_spread_rate</span>(heat_source: cy.<span style="font-weight: bold;">float</span>, heat_sink: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4539,7 +4545,7 @@ depth in \(\text{ft}\), \(I_R\) is the reaction intensity in
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org7d22dba"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org0751981"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_residence_time</span>(sigma_prime: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4650,7 +4656,7 @@ and \(U_{\text{eff}}^{\max}\) is the maximum effective wind speed in
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orged34ffd"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgec8fb90"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_max_effective_wind_speed</span>(reaction_intensity: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4663,7 +4669,7 @@ and \(U_{\text{eff}}^{\max}\) is the maximum effective wind speed in
 <li><a id="slope-factor-function:-$\tan(\theta_s)-\mapsto-\phi_s$"></a>Slope Factor Function: \(\tan(\theta_S) \mapsto \phi_S\)<br>
 <div class="outline-text-5" id="text-slope-factor-function:-$\tan(\theta_s)-\mapsto-\phi_s$">
 <div class="org-src-container">
-<pre class="src src-python" id="org3efa90d"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org17aebac"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_phi_S</span>(surface_fire_min: FireBehaviorMin, slope: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4676,7 +4682,7 @@ and \(U_{\text{eff}}^{\max}\) is the maximum effective wind speed in
 <li><a id="wind-factor-function:-$u_{\text{mid}}-\mapsto-\phi_w$"></a>Wind Factor Function: \(U_{\text{mid}} \mapsto \phi_W\)<br>
 <div class="outline-text-5" id="text-wind-factor-function:-$u_{\text{mid}}-\mapsto-\phi_w$">
 <div class="org-src-container">
-<pre class="src src-python" id="orgb381989"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org02f9a3e"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_phi_W</span>(surface_fire_min: FireBehaviorMin, midflame_wind_speed: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4689,7 +4695,7 @@ and \(U_{\text{eff}}^{\max}\) is the maximum effective wind speed in
 <li><a id="wind-speed-function:-$\phi_w-\mapsto-u_{\text{mid}}$"></a>Wind Speed Function: \(\phi_W \mapsto U_{\text{mid}}\)<br>
 <div class="outline-text-5" id="text-wind-speed-function:-$\phi_w-\mapsto-u_{\text{mid}}$">
 <div class="org-src-container">
-<pre class="src src-python" id="org6442e0f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgb808d51"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_wind_speed</span>(surface_fire_min: FireBehaviorMin, phi_W: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -4705,7 +4711,7 @@ and \(U_{\text{eff}}^{\max}\) is the maximum effective wind speed in
 <h4 id="surface-fire-behavior-functions-(no-wind-no-slope)"><span class="section-number-4">6.1.6.</span> Surface Fire Behavior Functions (No Wind No Slope)</h4>
 <div class="outline-text-4" id="text-surface-fire-behavior-functions-(no-wind-no-slope)">
 <div class="org-src-container">
-<pre class="src src-python" id="org77094f3"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org2579423"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">make_surface_fire_min</span>(base_spread_rate        : cy.<span style="font-weight: bold;">float</span>,
                           base_fireline_intensity : cy.<span style="font-weight: bold;">float</span>,
@@ -4857,7 +4863,7 @@ this almost always prevents the \(\text{WAF}\) being greater than 1.
 
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga5ff22a"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgb54d712"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_wind_adjustment_factor</span>(fuel_bed_depth: cy.<span style="font-weight: bold;">float</span>, canopy_height: cy.<span style="font-weight: bold;">float</span>, canopy_cover: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -4938,7 +4944,7 @@ procedure provided by Waeselynck 2024.<sup><a id="fnr.22" class="footref" href="
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgca65fc3"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org50da2ce"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">project_wind_and_slope_vectors_3d</span>(wind_speed        : cy.<span style="font-weight: bold;">float</span>,
                                       downwind_direction: cy.<span style="font-weight: bold;">float</span>,
@@ -5036,7 +5042,7 @@ where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
 </ol>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orge10534b"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Change model from str to enumerated type
+<pre class="src src-python" id="org39a2324"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Change model from str to enumerated type
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">surface_length_to_width_ratio</span>(effective_wind_speed: cy.<span style="font-weight: bold;">float</span>, model: <span style="font-weight: bold;">str</span> = <span style="font-style: italic;">"behave"</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -5107,7 +5113,7 @@ off.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgffb684e"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org46e1fcf"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">maybe_limit_wind_speed</span>(use_wind_limit  : cy.bint,
                            max_wind_speed  : cy.<span style="font-weight: bold;">float</span>,
@@ -5338,7 +5344,7 @@ both slope-tangential.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org1171bb6"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="org2a86208"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_surface_fire_behavior_in_direction</span>(surface_fire_max: FireBehaviorMax,
                                             spread_direction: vec_xyz) -&gt; SpreadBehavior:
@@ -5430,7 +5436,7 @@ the full list of available vector manipulation functions.
 <h4 id="how-to-calculate-the-no-wind-no-slope-surface-fire-behavior"><span class="section-number-4">6.2.1.</span> How to Calculate the No-Wind-No-Slope Surface Fire Behavior</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-no-wind-no-slope-surface-fire-behavior">
 <div class="org-src-container">
-<pre class="src src-python" id="orgcc867ff"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="orge53cece"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.fuel_models <span style="font-weight: bold;">as</span> fm
 <span style="font-weight: bold;">import</span> pyretechnics.surface_fire <span style="font-weight: bold;">as</span> sf
 
@@ -5471,7 +5477,7 @@ No-Wind-No-Slope Surface Fire Behavior for Fuel Model GR1 with Fuel Moisture = (
 <h4 id="how-to-translate-the-10m-wind-speed-vector-into-the-midflame-wind-speed-vector"><span class="section-number-4">6.2.2.</span> How to Translate the 10m Wind Speed Vector into the Midflame Wind Speed Vector</h4>
 <div class="outline-text-4" id="text-how-to-translate-the-10m-wind-speed-vector-into-the-midflame-wind-speed-vector">
 <div class="org-src-container">
-<pre class="src src-python" id="orgccb3fec"><span style="font-weight: bold;">import</span> pyretechnics.conversion <span style="font-weight: bold;">as</span> conv
+<pre class="src src-python" id="orga9178d0"><span style="font-weight: bold;">import</span> pyretechnics.conversion <span style="font-weight: bold;">as</span> conv
 <span style="font-weight: bold;">import</span> pyretechnics.fuel_models <span style="font-weight: bold;">as</span> fm
 <span style="font-weight: bold;">import</span> pyretechnics.surface_fire <span style="font-weight: bold;">as</span> sf
 
@@ -5512,7 +5518,7 @@ Midflame Wind Speed and Direction for 10m Wind Speed = 20 km/hr, Upwind Directio
 <h4 id="how-to-calculate-the-surface-fire-behavior-in-the-direction-of-maximum-spread"><span class="section-number-4">6.2.3.</span> How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-surface-fire-behavior-in-the-direction-of-maximum-spread">
 <div class="org-src-container">
-<pre class="src src-python" id="orgd358eaf"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org80c02e1"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.fuel_models <span style="font-weight: bold;">as</span> fm
 <span style="font-weight: bold;">import</span> pyretechnics.surface_fire <span style="font-weight: bold;">as</span> sf
 
@@ -5598,7 +5604,7 @@ Surface Fire Behavior Max (Unlimited) for Fuel Model GR1 with Fuel Moisture = (0
 <h4 id="how-to-calculate-the-surface-fire-behavior-in-any-direction"><span class="section-number-4">6.2.4.</span> How to Calculate the Surface Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-surface-fire-behavior-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="org609bf05"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org8b1294c"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.fuel_models <span style="font-weight: bold;">as</span> fm
 <span style="font-weight: bold;">import</span> pyretechnics.surface_fire <span style="font-weight: bold;">as</span> sf
@@ -5723,7 +5729,7 @@ intensity and flame length.
 <h4 id="module-imports-crown-fire"><span class="section-number-4">7.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-crown-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="org328e929"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org1259aa7"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">if</span> cython.compiled:
     <span style="font-weight: bold;">from</span> cython.cimports.libc.math <span style="font-weight: bold;">import</span> sqrt, exp, <span style="font-weight: bold;">pow</span>, INFINITY <span style="font-weight: bold;">as</span> inf
@@ -5769,7 +5775,7 @@ height in meters, and \(I_s^*\) is the critical fireline intensity in
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org2378057"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org4dc5fe3"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">van_wagner_critical_fireline_intensity</span>(canopy_base_height: cy.<span style="font-weight: bold;">float</span>, foliar_moisture: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -5798,7 +5804,7 @@ also calculate the surface fire spread rate at which crowning occurs.
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgd8e6b8e"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org10e1002"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">van_wagner_crowning_spread_rate</span>(surface_fire_max  : FireBehaviorMax,
                                     canopy_base_height: cy.<span style="font-weight: bold;">float</span>,
@@ -5836,7 +5842,7 @@ transitions to a crown fire.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org69226c4"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="orga479087"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">van_wagner_crown_fire_initiation</span>(surface_fireline_intensity: cy.<span style="font-weight: bold;">float</span>,
@@ -5883,7 +5889,7 @@ and \(\text{EFFM}\) is the estimated fine fuel moisture in \(\text{kg moisture/k
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org7c1ec83"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org34d5291"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">cruz_active_crown_fire_spread_rate</span>(wind_speed_10m              : cy.<span style="font-weight: bold;">float</span>,
@@ -5917,7 +5923,7 @@ is the canopy bulk density in \(\text{kg/m}^3\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org7bf31ea"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orge306d28"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">van_wagner_critical_spread_rate</span>(canopy_bulk_density: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -5949,7 +5955,7 @@ in \(\text{m}/\min\), and \(R^*\) is the critical spread rate in
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgcd02b5f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgdb767d9"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">cruz_passive_crown_fire_spread_rate</span>(active_spread_rate: cy.<span style="font-weight: bold;">float</span>, critical_spread_rate: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -5969,7 +5975,7 @@ active, and its associated passive or active spread rate.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org4e97319"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orga1ea91e"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">cruz_crown_fire_spread_info</span>(wind_speed_10m              : cy.<span style="font-weight: bold;">float</span>,
                                 canopy_bulk_density         : cy.<span style="font-weight: bold;">float</span>,
@@ -6038,7 +6044,7 @@ analyses along with the combined surface and crown flame length
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org4525805"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb).
+<pre class="src src-python" id="org014e79f"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: heat_of_combustion is h from the fuel models (generally 8000 Btu/lb).
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: ELMFIRE hard-codes heat_of_combustion to 18000 kJ/kg = 7738.6 Btu/lb.
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
@@ -6090,7 +6096,7 @@ where \(U_{20}\) is the 20-ft wind speed in \(\text{mph}\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgcde2163"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Parameters for the linear model that computes LoW from wind speed.
+<pre class="src src-python" id="org512e00a"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Parameters for the linear model that computes LoW from wind speed.
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">crown_length_to_width_ratio</span>(wind_speed_10m: cy.<span style="font-weight: bold;">float</span>, max_length_to_width_ratio: cy.<span style="font-weight: bold;">float</span> = 1e10) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -6137,7 +6143,7 @@ slope-tangential plane for later comparison in section <a href="#combining-surfa
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org5902a65"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="org2f5f5bc"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_crown_fire_behavior_max</span>(canopy_height               : cy.<span style="font-weight: bold;">float</span>,
                                  canopy_base_height          : cy.<span style="font-weight: bold;">float</span>,
@@ -6234,7 +6240,7 @@ based on Van Wagner's model as in previous sections.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org45a5cb4"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="orgc8b8dd2"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_crown_fire_behavior_in_direction</span>(crown_fire_max  : FireBehaviorMax,
                                           spread_direction: vec_xyz) -&gt; SpreadBehavior:
@@ -6431,7 +6437,7 @@ follows:
 <li><a id="combined-fire-behavior-implementation"></a>Combined Fire Behavior Implementation<br>
 <div class="outline-text-5" id="text-combined-fire-behavior-implementation">
 <div class="org-src-container">
-<pre class="src src-python" id="orga8c5a4c"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="org3bd6484"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_combined_fire_behavior</span>(surface_fire_behavior: SpreadBehavior,
                                 crown_fire_behavior  : SpreadBehavior) -&gt; SpreadBehavior:
@@ -6560,7 +6566,7 @@ the full list of available vector manipulation functions.
 <h4 id="how-to-determine-whether-a-surface-fire-transitions-to-a-crown-fire"><span class="section-number-4">7.2.1.</span> How to Determine Whether a Surface Fire Transitions to a Crown Fire</h4>
 <div class="outline-text-4" id="text-how-to-determine-whether-a-surface-fire-transitions-to-a-crown-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="org9780670"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="orga9c8c12"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.crown_fire <span style="font-weight: bold;">as</span> cf
 
 <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Set tree canopy characteristics
@@ -6732,7 +6738,7 @@ A crown fire occurs with these input parameters:
 <h4 id="how-to-calculate-the-crown-fire-behavior-in-the-direction-of-maximum-spread"><span class="section-number-4">7.2.2.</span> How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-crown-fire-behavior-in-the-direction-of-maximum-spread">
 <div class="org-src-container">
-<pre class="src src-python" id="org95d4629"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org9fb7940"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.crown_fire <span style="font-weight: bold;">as</span> cf
 
 <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Set input parameters
@@ -6863,7 +6869,7 @@ Outputs:
 <h4 id="how-to-calculate-the-crown-fire-behavior-in-any-direction"><span class="section-number-4">7.2.3.</span> How to Calculate the Crown Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-crown-fire-behavior-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="org7f0e694"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org1342d46"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.crown_fire <span style="font-weight: bold;">as</span> cf
 <span style="font-weight: bold;">import</span> pyretechnics.vector_utils <span style="font-weight: bold;">as</span> vu
@@ -6957,7 +6963,7 @@ Backing Fire Behavior
 <h4 id="how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction"><span class="section-number-4">7.2.4.</span> How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="org78f0e2c"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="orge494933"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.conversion <span style="font-weight: bold;">as</span> conv
 <span style="font-weight: bold;">import</span> pyretechnics.crown_fire <span style="font-weight: bold;">as</span> cf
 <span style="font-weight: bold;">import</span> pyretechnics.fuel_models <span style="font-weight: bold;">as</span> fm
@@ -7137,7 +7143,7 @@ from a spark to a fire capable of spreading on its own.
 <h4 id="module-imports-spot-fire"><span class="section-number-4">8.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-spot-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="org9232dd0"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org5d7231d"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">if</span> cython.compiled:
     <span style="font-weight: bold;">from</span> cython.cimports.libc.math <span style="font-weight: bold;">import</span> <span style="font-weight: bold;">round</span>, sqrt, <span style="font-weight: bold;">pow</span>, log, exp, sin, cos
@@ -7216,7 +7222,7 @@ to cast per cell \(F_C\):
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgbf22d64"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org320798e"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">expected_firebrand_production</span>(fire_behavior           : SpreadBehavior,
                                   elevation_gradient      : vec_xy,
@@ -7318,7 +7324,7 @@ these deltas by using trigonometric functions.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgb6f1e48"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org52d64ba"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">delta_to_grid_dx</span>(cos_wdir: cy.<span style="font-weight: bold;">float</span>, sin_wdir: cy.<span style="font-weight: bold;">float</span>, delta_x: cy.<span style="font-weight: bold;">float</span>, delta_y: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -7380,10 +7386,10 @@ the distribution and the fireline intensity \(I\) and wind speed \(U\):
 
 <p>
 in which \(\Delta_1, e_I, e_U, r_\frac{V}{E}\) are configured by the
-keys shown in table <a href="#org88bd784">5</a>.
+keys shown in table <a href="#org1bd9086">5</a>.
 </p>
 
-<table id="org88bd784">
+<table id="org1bd9086">
 <caption class="t-above"><span class="table-number">Table 5:</span> Spotting parameters for the downwind distribution per the ELMFIRE model</caption>
 
 <colgroup>
@@ -7456,7 +7462,7 @@ the properties of the log-normal distribution:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org7d76753"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgf627bcd"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">resolve_exp_delta_x</span>(spot_config: SpotConfig, fireline_intensity: cy.<span style="font-weight: bold;">float</span>, wind_speed_20ft: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -7575,10 +7581,10 @@ formula for \(\sigma_Y\):
 \end{align}
 
 <p>
-Typical values are shown in table <a href="#orgdfa59c2">6</a>.
+Typical values are shown in table <a href="#org2ca0db5">6</a>.
 </p>
 
-<table id="orgdfa59c2">
+<table id="org2ca0db5">
 <caption class="t-above"><span class="table-number">Table 6:</span> Typical values for \(\vec{\Delta}\) distribution characteristics derived from Himoto2005</caption>
 
 <colgroup>
@@ -7665,7 +7671,7 @@ recommend to supply \(\sigma_Y\) directly</b> through the configuration key
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orge60c031"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">When will we have the default sigma_Y &gt; E[&#916;X]?
+<pre class="src src-python" id="orgd2d0ff3"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">When will we have the default sigma_Y &gt; E[&#916;X]?
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">It can be seen that this nonsensical situation
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">happens iff sigma_X exceeds the following number:
 </span><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">
@@ -7721,7 +7727,7 @@ exponential functions:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgd9dd19c"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgcc23a1f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">sample_normal</span>(rng: BufferedRandGen, mu: cy.<span style="font-weight: bold;">float</span>, sd: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -7796,7 +7802,7 @@ in degrees Celsius, and \(M\) is the fine fuel moisture in \(\text{kg moisture}/
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org4f4c0ba"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org8548cff"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">heat_of_preignition</span>(temperature: cy.<span style="font-weight: bold;">float</span>, fine_fuel_moisture: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -7878,7 +7884,7 @@ meter decreases \(P(I)_l\) by 0.5%.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org15ad629"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="org3339e1c"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">firebrand_flight_survival_probability</span>(spotting_distance: cy.<span style="font-weight: bold;">float</span>, decay_distance: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -7985,7 +7991,7 @@ length is 1.17m (100x smaller than \(z_\text{max}\)), \(t_v\) is about
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgefd69cb"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">FIXME: unused
+<pre class="src src-python" id="org59404f1"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">FIXME: unused
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
@@ -8056,7 +8062,7 @@ spot fires will be ignited.
 
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgaed8d17"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org58af71d"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">is_in_bounds</span>(y: pyidx, x: pyidx, rows: pyidx, cols: pyidx) -&gt; cy.bint:
@@ -8274,7 +8280,7 @@ spot fires will be ignited.
 <h4 id="how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models"><span class="section-number-4">8.2.1.</span> How to Estimate the Areal Heat Output for All Surface Fuel Models</h4>
 <div class="outline-text-4" id="text-how-to-estimate-the-areal-heat-output-for-all-surface-fuel-models">
 <div class="org-src-container">
-<pre class="src src-python" id="org32866e3"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
+<pre class="src src-python" id="org313b72b"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.fuel_models <span style="font-weight: bold;">as</span> fm
@@ -8377,21 +8383,21 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 </pre>
 
 
-<div id="org181bff5" class="figure">
+<div id="org938339e" class="figure">
 <p><img src="pics/fm_areal_heat_output_dry.png" alt="fm_areal_heat_output_dry.png">
 </p>
 <p><span class="figure-number">Figure 1: </span>Areal Heat Output for All Surface Fuel Models - Dry Conditions</p>
 </div>
 
 
-<div id="org4dde93e" class="figure">
+<div id="org40d5942" class="figure">
 <p><img src="pics/fm_areal_heat_output_mod.png" alt="fm_areal_heat_output_mod.png">
 </p>
 <p><span class="figure-number">Figure 2: </span>Areal Heat Output for All Surface Fuel Models - Mod Conditions</p>
 </div>
 
 
-<div id="org361dfb4" class="figure">
+<div id="orgdc11aca" class="figure">
 <p><img src="pics/fm_areal_heat_output_wet.png" alt="fm_areal_heat_output_wet.png">
 </p>
 <p><span class="figure-number">Figure 3: </span>Areal Heat Output for All Surface Fuel Models - Wet Conditions</p>
@@ -8406,7 +8412,7 @@ Max Areal Heat Output (kJ/m^2) for All Surface Fuel Models
 Several spotting parameters can be adjusted by the user:
 </p>
 
-<table id="org08a36a5">
+<table id="org5bbb15a">
 <caption class="t-above"><span class="table-number">Table 7:</span> User adjustable spotting parameters</caption>
 
 <colgroup>
@@ -8508,7 +8514,7 @@ meter resolution grid cells. This gives us a cell area of 900 \(\text{m}^2\).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orge980da4"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="orga6c4a02"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">import</span> pyretechnics.spot_fire <span style="font-weight: bold;">as</span> spot
 
 
@@ -8621,7 +8627,7 @@ above.
 <h4 id="how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics"><span class="section-number-4">8.2.3.</span> How to Estimate Typical Ranges for the \(\vec{\Delta}\) Distribution Characteristics</h4>
 <div class="outline-text-4" id="text-how-to-estimate-typical-ranges-for-the-$\vec{\delta}$-distribution-characteristics">
 <div class="org-src-container">
-<pre class="src src-python" id="org412cc0b"><span style="font-weight: bold;">from</span> math <span style="font-weight: bold;">import</span> sqrt, log
+<pre class="src src-python" id="orgdf09cb8"><span style="font-weight: bold;">from</span> math <span style="font-weight: bold;">import</span> sqrt, log
 
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">himoto_eq_28_values</span>(B_star):
     <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: The following value for D seems absurdly low, and so does
@@ -8733,7 +8739,7 @@ their combined surface and crown fire behavior.
 <h4 id="module-imports-burn-cells"><span class="section-number-4">9.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-burn-cells">
 <div class="org-src-container">
-<pre class="src src-python" id="orge70fbf6"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org8a77d79"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">if</span> cython.compiled:
@@ -8777,7 +8783,7 @@ surface fire behavior is returned.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgc3a3cf6"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgad38c34"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">SpreadBehavior_to_dict</span>(sb: SpreadBehavior) -&gt; <span style="font-weight: bold;">dict</span>:
     <span style="font-weight: bold;">return</span> {
@@ -9131,7 +9137,7 @@ azimuth direction is returned.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org9c51ca1"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
+<pre class="src src-python" id="org5e2904a"><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">burn_cell_toward_azimuth</span>(space_time_cubes      : <span style="font-weight: bold;">dict</span>[<span style="font-weight: bold;">str</span>, ISpaceTimeCube],
                              space_time_coordinate : coord_tyx,
                              azimuth               : cy.<span style="font-weight: bold;">float</span>,
@@ -9497,7 +9503,7 @@ fire spread simulation directly but in a fraction of the time.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0106f65"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Add an optional (dy,dx) offset to the ll_corner of the input matrices
+<pre class="src src-python" id="org472283c"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Add an optional (dy,dx) offset to the ll_corner of the input matrices
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.ccall</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">burn_cells_by_time_of_arrival</span>(space_time_cubes      : <span style="font-weight: bold;">dict</span>[<span style="font-weight: bold;">str</span>, ISpaceTimeCube],
                                   cube_resolution       : <span style="font-weight: bold;">tuple</span>[cy.<span style="font-weight: bold;">float</span>, cy.<span style="font-weight: bold;">float</span>, cy.<span style="font-weight: bold;">float</span>],
@@ -9628,7 +9634,7 @@ maximum spread and then in any direction.
 <h4 id="how-to-burn-a-single-cell-as-a-head-fire"><span class="section-number-4">9.2.1.</span> How to Burn a Single Cell as a Head Fire</h4>
 <div class="outline-text-4" id="text-how-to-burn-a-single-cell-as-a-head-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="orgaa45911"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org24f0cef"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.burn_cells <span style="font-weight: bold;">as</span> bc
 
@@ -9735,7 +9741,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 <h4 id="how-to-burn-a-region-of-cells-as-a-head-fire"><span class="section-number-4">9.2.2.</span> How to Burn a Region of Cells as a Head Fire</h4>
 <div class="outline-text-4" id="text-how-to-burn-a-region-of-cells-as-a-head-fire">
 <div class="org-src-container">
-<pre class="src src-python" id="org9d80697"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="orgef7a6ea"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.burn_cells <span style="font-weight: bold;">as</span> bc
 
@@ -9909,7 +9915,7 @@ Layer: flame_length
 <h4 id="how-to-burn-a-single-cell-in-any-direction"><span class="section-number-4">9.2.3.</span> How to Burn a Single Cell in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-burn-a-single-cell-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="orgb8c85eb"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org14e48a0"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.burn_cells <span style="font-weight: bold;">as</span> bc
 
@@ -10024,7 +10030,7 @@ Fire Behavior from Combined Surface and Crown Fire (without Wind Limit) at Coord
 <h4 id="how-to-burn-a-region-of-cells-in-any-direction"><span class="section-number-4">9.2.4.</span> How to Burn a Region of Cells in Any Direction</h4>
 <div class="outline-text-4" id="text-how-to-burn-a-region-of-cells-in-any-direction">
 <div class="org-src-container">
-<pre class="src src-python" id="org1f1bd1b"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
+<pre class="src src-python" id="org89a9b03"><span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.burn_cells <span style="font-weight: bold;">as</span> bc
 
@@ -10260,7 +10266,7 @@ as some optimizations require to conflate several aspects of the problem.
 <h4 id="module-imports-eulerian-level-set"><span class="section-number-4">10.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-eulerian-level-set">
 <div class="org-src-container">
-<pre class="src src-python" id="orgcde8e38"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="orgd305ba6"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> scipy.interpolate <span style="font-weight: bold;">import</span> interpn
@@ -10305,8 +10311,8 @@ as some optimizations require to conflate several aspects of the problem.
 </div>
 
 
-<div id="outline-container-org15469ec" class="outline-4">
-<h4 id="org15469ec"><span class="section-number-4">10.1.2.</span> Inputs data structure</h4>
+<div id="outline-container-orgd6fe33c" class="outline-4">
+<h4 id="orgd6fe33c"><span class="section-number-4">10.1.2.</span> Inputs data structure</h4>
 <div class="outline-text-4" id="text-10-1-2">
 <p>
 For efficiency in numerical loops,
@@ -10314,7 +10320,7 @@ an efficient <code>SpreadInputs</code> data structure is used to hold input data
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org76bcd83"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
+<pre class="src src-python" id="org56f1056"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
 <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">SpreadInputs</span>:
     <span style="font-style: italic;">"""
     A fast-access data structure for reading inputs in performance-critical code.
@@ -10516,8 +10522,8 @@ an efficient <code>SpreadInputs</code> data structure is used to hold input data
 </div>
 
 
-<div id="outline-container-orgd3e57ff" class="outline-4">
-<h4 id="orgd3e57ff"><span class="section-number-4">10.1.3.</span> SpreadState data structure</h4>
+<div id="outline-container-orgb8d6c25" class="outline-4">
+<h4 id="orgb8d6c25"><span class="section-number-4">10.1.3.</span> SpreadState data structure</h4>
 <div class="outline-text-4" id="text-10-1-3">
 <p>
 The long-lived state of the level-set simulation is stored in a <code>SpreadState</code> data structure.
@@ -10534,7 +10540,7 @@ and to travel backward in time.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org301c175"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
+<pre class="src src-python" id="orgdd9db72"><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
 <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">SpreadState</span>:
     <span style="font-style: italic;">"""
     Stores the stateful data associated with a fire spread simulation.
@@ -10997,8 +11003,8 @@ and to travel backward in time.
 
 
 
-<div id="outline-container-orgf4dcc70" class="outline-4">
-<h4 id="orgf4dcc70"><span class="section-number-4">10.1.4.</span> Narrow band tracking</h4>
+<div id="outline-container-org0575bc9" class="outline-4">
+<h4 id="org0575bc9"><span class="section-number-4">10.1.4.</span> Narrow band tracking</h4>
 <div class="outline-text-4" id="text-10-1-4">
 <p>
 An important numerical optimization consists of updating the \(\phi\) field only in those cells
@@ -11020,7 +11026,7 @@ This data structure is sparse but enables fast iteration and updates by represen
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org1450ce0"><span style="font-style: italic;">"""
+<pre class="src src-python" id="org7a4cfb3"><span style="font-style: italic;">"""
 Custom data structures for keeping track of cells in the narrow band.
 
 The narrow band is defined as the set of _tracked_ cells:
@@ -11383,7 +11389,7 @@ as that enables a more efficient usage of memory:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org3a70c2f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org6085405"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">encode_cell_index</span>(y: pyidx, x: pyidx) -&gt; <span style="font-weight: bold;">object</span>: <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">ulong
 </span>    <span style="font-style: italic;">"""
@@ -11445,7 +11451,7 @@ These updates are then applied to the <code>NarrowBandTracker</code> data struct
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgcea0f3a"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgc240a4f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">route_cell_to_diff</span>(frontier_cells_old: <span style="font-weight: bold;">set</span>,
                        frontier_additions: <span style="font-weight: bold;">set</span>,
@@ -11590,8 +11596,8 @@ These updates are then applied to the <code>NarrowBandTracker</code> data struct
 
 
 
-<div id="outline-container-org0c60eca" class="outline-4">
-<h4 id="org0c60eca"><span class="section-number-4">10.1.5.</span> Flux limiter</h4>
+<div id="outline-container-org97849d9" class="outline-4">
+<h4 id="org97849d9"><span class="section-number-4">10.1.5.</span> Flux limiter</h4>
 <div class="outline-text-4" id="text-10-1-5">
 <p>
 Similarly to ELMFIRE,
@@ -11624,7 +11630,7 @@ The code computing the flux-limited gradient \(\hat{\nabla} \phi\) is:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orge7f79ac"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org0720c1f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">half_superbee_dphi_up</span>(dphi_up: cy.<span style="font-weight: bold;">float</span>, dphi_loc: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -11644,7 +11650,7 @@ The code computing the flux-limited gradient \(\hat{\nabla} \phi\) is:
 </div>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga76026a"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org91c061f"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_dphi_flim_x</span>(p00: cy.<span style="font-weight: bold;">float</span>, pw2: cy.<span style="font-weight: bold;">float</span>, pw1: cy.<span style="font-weight: bold;">float</span>, pe1: cy.<span style="font-weight: bold;">float</span>, pe2: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     dphi_up : cy.<span style="font-weight: bold;">float</span>
@@ -11707,8 +11713,8 @@ The above code will be invoked in future sections that compute \(\partial{\phi}/
 </div>
 
 
-<div id="outline-container-org3643fcf" class="outline-4">
-<h4 id="org3643fcf"><span class="section-number-4">10.1.6.</span> Hamiltonian from surface/crown elliptical wavelets</h4>
+<div id="outline-container-org37fb12c" class="outline-4">
+<h4 id="org37fb12c"><span class="section-number-4">10.1.6.</span> Hamiltonian from surface/crown elliptical wavelets</h4>
 <div class="outline-text-4" id="text-10-1-6">
 <p>
 This section describes how the Hamiltonian is efficiently computed by combining the elliptical dimensions of surface and crown wavelets.
@@ -11803,7 +11809,7 @@ This logic is implemented in the following code:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org62108b1"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org078e46c"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_phi_magnitude_xyz_2</span>(phi_gradient_xy   : vec_xy,
                              elevation_gradient: vec_xy) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -11965,8 +11971,8 @@ This logic is implemented in the following code:
 </div>
 </div>
 
-<div id="outline-container-org3e61690" class="outline-4">
-<h4 id="org3e61690"><span class="section-number-4">10.1.7.</span> Resolving elliptical dimensions</h4>
+<div id="outline-container-orgdc0784b" class="outline-4">
+<h4 id="orgdc0784b"><span class="section-number-4">10.1.7.</span> Resolving elliptical dimensions</h4>
 <div class="outline-text-4" id="text-10-1-7">
 <p>
 The inputs to the previous calculations are elliptical dimensions derived from fuels and weather inputs, as described in sections <a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a> and <a href="#crown-fire-behavior-in-the-direction-of-maximum-spread">7.1.6</a>.
@@ -11975,7 +11981,7 @@ which involve efficient data structures:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgbce6a03"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Is it faster if we save this as a top-level constant?
+<pre class="src src-python" id="org6142e5e"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Is it faster if we save this as a top-level constant?
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">inputs_name_list</span>() -&gt; <span style="font-weight: bold;">list</span>[<span style="font-weight: bold;">str</span>]:
@@ -12173,8 +12179,8 @@ which involve efficient data structures:
 
 
 
-<div id="outline-container-org41b71d6" class="outline-4">
-<h4 id="org41b71d6"><span class="section-number-4">10.1.8.</span> Runge-Kutta scheme and CFL condition</h4>
+<div id="outline-container-org7c500e0" class="outline-4">
+<h4 id="org7c500e0"><span class="section-number-4">10.1.8.</span> Runge-Kutta scheme and CFL condition</h4>
 <div class="outline-text-4" id="text-10-1-8">
 <p>
 Like ELMFIRE, Pyretechnics uses a 2nd-order Runge-Kutta scheme to march the Hamilton-Jacobi equation forward in time.
@@ -12219,7 +12225,7 @@ During the second pass, newly burned cells are detected by monitoring sign chang
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org79e9db0"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org1fe9eea"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">runge_kutta_pass1</span>(max_cells_per_timestep: cy.<span style="font-weight: bold;">float</span>,
                       dy                    : cy.<span style="font-weight: bold;">float</span>,
@@ -12432,7 +12438,7 @@ For each tracked cell this structure holds a 9-point stencil of \(\phi\), the sa
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgd0630dd"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Rename this constant
+<pre class="src src-python" id="org34df9fd"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Rename this constant
 </span><span style="font-weight: bold; font-style: italic;">p_CellInputs</span> = cy.declare(pyidx, 17) <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">the number of input columns
 </span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
@@ -12562,8 +12568,8 @@ For each tracked cell this structure holds a 9-point stencil of \(\phi\), the sa
 </div>
 
 
-<div id="outline-container-org3a01c6d" class="outline-4">
-<h4 id="org3a01c6d"><span class="section-number-4">10.1.9.</span> Loading and refreshing intermediate quantities</h4>
+<div id="outline-container-orgb849ff9" class="outline-4">
+<h4 id="orgb849ff9"><span class="section-number-4">10.1.9.</span> Loading and refreshing intermediate quantities</h4>
 <div class="outline-text-4" id="text-10-1-9">
 <p>
 The following code is used to load and refresh intermediate quantities from the input space-time cube.
@@ -12572,7 +12578,7 @@ No-wind-no-slope fire behavior (costly) and elliptical dimensions (less costly) 
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgb1fbc83"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgd04f614"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">compare_cell_indexes</span>(c0: coord_yx, c1: coord_yx) -&gt; cy.<span style="font-weight: bold;">int</span>:
     <span style="font-style: italic;">"""
@@ -12955,8 +12961,8 @@ No-wind-no-slope fire behavior (costly) and elliptical dimensions (less costly) 
 </div>
 
 
-<div id="outline-container-org725089f" class="outline-4">
-<h4 id="org725089f"><span class="section-number-4">10.1.10.</span> Spotting from firebrands</h4>
+<div id="outline-container-org2c87d9b" class="outline-4">
+<h4 id="org2c87d9b"><span class="section-number-4">10.1.10.</span> Spotting from firebrands</h4>
 <div class="outline-text-4" id="text-10-1-10">
 <p>
 As cells get burned by front propagation,
@@ -12973,7 +12979,7 @@ especially in the case where most of them have a very low expectation.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org03f4407"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
+<pre class="src src-python" id="orgb88c83f"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">spot_from_burned_cell</span>(spread_inputs   : SpreadInputs,
@@ -13069,8 +13075,8 @@ especially in the case where most of them have a very low expectation.
 </div>
 </div>
 
-<div id="outline-container-org6f64794" class="outline-4">
-<h4 id="org6f64794"><span class="section-number-4">10.1.11.</span> Processing burned cells</h4>
+<div id="outline-container-org1d29e60" class="outline-4">
+<h4 id="org1d29e60"><span class="section-number-4">10.1.11.</span> Processing burned cells</h4>
 <div class="outline-text-4" id="text-10-1-11">
 <p>
 When a cell gets burned by front propagation,
@@ -13078,7 +13084,7 @@ more detailed fire behavior calculations are performed.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org8689e3f"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Move these to a shared module and use throughout the literate program
+<pre class="src src-python" id="org9eb7b98"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Move these to a shared module and use throughout the literate program
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: It would be better to use a cython enum here, but that's not supported in pure python syntax.
 </span><span style="font-weight: bold; font-style: italic;">fire_type_unburned</span>      = cy.declare(cy.<span style="font-weight: bold;">int</span>, 0)
 <span style="font-weight: bold; font-style: italic;">fire_type_surface</span>       = cy.declare(cy.<span style="font-weight: bold;">int</span>, 1)
@@ -13250,7 +13256,7 @@ more detailed fire behavior calculations are performed.
 
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgfd5a628"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: We're only going through these annoying calculations because
+<pre class="src src-python" id="org5f1b390"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: We're only going through these annoying calculations because
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">we are required to return a spread_direction unit vector, which is
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">of questionable value.
 </span><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">
@@ -13358,7 +13364,7 @@ and updating the output matrices):
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org221b197"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org3eb3ef0"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">process_burned_cells</span>(spread_inputs   : SpreadInputs,
                          fb_opts         : FireBehaviorSettings,
@@ -13415,15 +13421,15 @@ and updating the output matrices):
 </div>
 
 
-<div id="outline-container-orga00e6f2" class="outline-4">
-<h4 id="orga00e6f2"><span class="section-number-4">10.1.12.</span> Full simulation loop</h4>
+<div id="outline-container-org645d997" class="outline-4">
+<h4 id="org645d997"><span class="section-number-4">10.1.12.</span> Full simulation loop</h4>
 <div class="outline-text-4" id="text-10-1-12">
 <p>
 The previous sections all come together into the code that runs the simulation loop.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org158ddb5"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="orgb67a638"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">reset_phi_star</span>(tca               : TrackedCellsArrays,
                    spot_ignited_cells: <span style="font-weight: bold;">list</span>[BurnedCellInfo],
@@ -13843,8 +13849,8 @@ The previous sections all come together into the code that runs the simulation l
 
 
 
-<div id="outline-container-orgcd42d52" class="outline-3">
-<h3 id="orgcd42d52"><span class="section-number-3">10.2.</span> For Developers OLD FIXME</h3>
+<div id="outline-container-orga06db20" class="outline-3">
+<h3 id="orga06db20"><span class="section-number-3">10.2.</span> For Developers OLD FIXME</h3>
 <div class="outline-text-3" id="text-10-2">
 <p>
 In order to simulate the spread of a fire from a starting point or
@@ -13914,7 +13920,7 @@ node-centered central differences, represented by the values in the
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org46ee090"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: No longer used in tight loops.
+<pre class="src src-python" id="org5c16d1d"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: No longer used in tight loops.
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_dphi_dx_approx</span>(phi_matrix: cy.<span style="font-weight: bold;">float</span>[:,::1], dx: cy.<span style="font-weight: bold;">float</span>, x: pyidx, y: pyidx) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -13961,7 +13967,7 @@ the fire front normal vector as follows:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orga84f9e6"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Remove unused function
+<pre class="src src-python" id="org8ed5bd9"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Remove unused function
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
@@ -13995,7 +14001,7 @@ vector points:
 \end{equation}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org9eed3ec"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Remove unused function
+<pre class="src src-python" id="orgecb9e9b"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Remove unused function
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_phi_normal_azimuth</span>(phi_normal_vector: vec_xy) -&gt; cy.<span style="font-weight: bold;">float</span>:
@@ -14070,7 +14076,7 @@ First, we define the parameter \(r\) and the Superbee flux limiter
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0b87514"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org388507b"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">half_superbee_dphi_up</span>(dphi_up: cy.<span style="font-weight: bold;">float</span>, dphi_loc: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     <span style="font-style: italic;">"""
@@ -14102,7 +14108,7 @@ and "south" values as follows:
 \end{align}
 
 <div class="org-src-container">
-<pre class="src src-python" id="org3737afd"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org4e5d5e7"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">calc_dphi_flim_x</span>(p00: cy.<span style="font-weight: bold;">float</span>, pw2: cy.<span style="font-weight: bold;">float</span>, pw1: cy.<span style="font-weight: bold;">float</span>, pe1: cy.<span style="font-weight: bold;">float</span>, pe2: cy.<span style="font-weight: bold;">float</span>) -&gt; cy.<span style="font-weight: bold;">float</span>:
     dphi_up : cy.<span style="font-weight: bold;">float</span>
@@ -14264,7 +14270,7 @@ illustrated below.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org40b50b1"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Move these to a shared module and use throughout the literate program
+<pre class="src src-python" id="org3c5df2c"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Move these to a shared module and use throughout the literate program
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">NOTE: It would be better to use a cython enum here, but that's not supported in pure python syntax.
 </span><span style="font-weight: bold; font-style: italic;">fire_type_unburned</span>      = cy.declare(cy.<span style="font-weight: bold;">int</span>, 0)
 <span style="font-weight: bold; font-style: italic;">fire_type_surface</span>       = cy.declare(cy.<span style="font-weight: bold;">int</span>, 1)
@@ -14456,7 +14462,7 @@ is returned.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orge6ee913"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Turn this into a struct once its methods have been removed
+<pre class="src src-python" id="orgc787b6b"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: Turn this into a struct once its methods have been removed
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cclass</span>
 <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">SpreadInputs</span>:
     <span style="font-style: italic;">"""
@@ -15221,7 +15227,7 @@ near it, and decrement their tracking counter by 1. Upon reaching
 </dl>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org6010899"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
+<pre class="src src-python" id="org3758011"><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.inline</span>
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">encode_cell_index</span>(y: pyidx, x: pyidx) -&gt; <span style="font-weight: bold;">object</span>: <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">ulong
 </span>    <span style="font-style: italic;">"""
@@ -15401,7 +15407,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgae23102"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
+<pre class="src src-python" id="org8b64d78"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: OPTIM We might want to pass in the CellInputs and avoid looking up the SpreadInputs again here.
 </span><span style="font-weight: bold; text-decoration: underline;">@cy.cfunc</span>
 <span style="font-weight: bold; text-decoration: underline;">@cy.exceptval</span>(check=<span style="font-weight: bold; text-decoration: underline;">False</span>)
 <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">spot_from_burned_cell</span>(spread_inputs   : SpreadInputs,
@@ -17234,7 +17240,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <li><a id="configure-and-run-the-fire-spread-simulation"></a>Configure and Run the Fire Spread Simulation<br>
 <div class="outline-text-5" id="text-configure-and-run-the-fire-spread-simulation">
 <div class="org-src-container">
-<pre class="src src-python" id="org0bcb59d"><span style="font-weight: bold;">import</span> time
+<pre class="src src-python" id="org232e72f"><span style="font-weight: bold;">import</span> time
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.eulerian_level_set <span style="font-weight: bold;">as</span> els
@@ -17339,7 +17345,7 @@ $ \bar{U}_x = - \frac{d \varphi}{dt} \frac{1}{|\nabla \varphi|^2}  \frac{\partia
 <li><a id="display-summary-statistics-of-the-output-matrices"></a>Display Summary Statistics of the Output Matrices<br>
 <div class="outline-text-5" id="text-display-summary-statistics-of-the-output-matrices">
 <div class="org-src-container">
-<pre class="src src-python" id="org962ab90"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgb8a54a9"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 
 <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">============================================================================================
@@ -17427,7 +17433,7 @@ Time of Arrival (minutes)
 <li><a id="create-images-of-the-output-matrices"></a>Create Images of the Output Matrices<br>
 <div class="outline-text-5" id="text-create-images-of-the-output-matrices">
 <div class="org-src-container">
-<pre class="src src-python" id="org3a0d36b"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
+<pre class="src src-python" id="orgce35dcf"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 
 
@@ -17524,7 +17530,7 @@ Time of Arrival (minutes)
 </pre>
 </div>
 
-<table id="org1aab3e8">
+<table id="org7594179">
 <caption class="t-above"><span class="table-number">Table 8:</span> Fire behavior attributes after 8 hours of spread</caption>
 
 <colgroup>
@@ -17551,7 +17557,7 @@ Time of Arrival (minutes)
 </table>
 
 
-<div id="org0f6829f" class="figure">
+<div id="org61ee117" class="figure">
 <p><img src="pics/els_time_of_arrival.png" alt="els_time_of_arrival.png">
 </p>
 <p><span class="figure-number">Figure 4: </span>Time of arrival with hourly perimeters</p>
@@ -17562,7 +17568,7 @@ Time of Arrival (minutes)
 <li><a id="create-3d-plots-of-the-spread-state"></a>Create 3D Plots of the Spread State<br>
 <div class="outline-text-5" id="text-create-3d-plots-of-the-spread-state">
 <div class="org-src-container">
-<pre class="src src-python" id="orge407a62"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgbf94582"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> mpl_toolkits.mplot3d <span style="font-weight: bold;">import</span> Axes3D
 
@@ -17676,7 +17682,7 @@ Time of Arrival (minutes)
 </pre>
 </div>
 
-<table id="org8f3ef22">
+<table id="org8efc2a6">
 <caption class="t-above"><span class="table-number">Table 9:</span> 3D fire behavior shapes after 8 hours of spread</caption>
 
 <colgroup>
@@ -17715,7 +17721,7 @@ Time of Arrival (minutes)
 <li><a id="configure-and-run-the-fire-spread-simulation-with-spotting-enabled"></a>Configure and Run the Fire Spread Simulation with Spotting Enabled<br>
 <div class="outline-text-5" id="text-configure-and-run-the-fire-spread-simulation-with-spotting-enabled">
 <div class="org-src-container">
-<pre class="src src-python" id="org357fba6"><span style="font-weight: bold;">import</span> time
+<pre class="src src-python" id="orgdab9f78"><span style="font-weight: bold;">import</span> time
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.eulerian_level_set <span style="font-weight: bold;">as</span> els
@@ -17842,7 +17848,7 @@ Time of Arrival (minutes)
 <li><a id="display-summary-statistics-of-the-output-matrices-and-spot-ignitions"></a>Display Summary Statistics of the Output Matrices and Spot Ignitions<br>
 <div class="outline-text-5" id="text-display-summary-statistics-of-the-output-matrices-and-spot-ignitions">
 <div class="org-src-container">
-<pre class="src src-python" id="orgb8b6ca4"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgb28ce48"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 
 <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">============================================================================================
@@ -17997,7 +18003,7 @@ Future Spot Ignitions:
 <li><a id="create-images-of-the-output-matrices-with-spotting-enabled"></a>Create Images of the Output Matrices with Spotting Enabled<br>
 <div class="outline-text-5" id="text-create-images-of-the-output-matrices-with-spotting-enabled">
 <div class="org-src-container">
-<pre class="src src-python" id="org21b01a1"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
+<pre class="src src-python" id="orgfda16a5"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 
 
@@ -18094,7 +18100,7 @@ Future Spot Ignitions:
 </pre>
 </div>
 
-<table id="orgbaf7390">
+<table id="orge0b98d7">
 <caption class="t-above"><span class="table-number">Table 10:</span> Fire behavior attributes after 8 hours of spread with spotting enabled</caption>
 
 <colgroup>
@@ -18121,7 +18127,7 @@ Future Spot Ignitions:
 </table>
 
 
-<div id="org170d45c" class="figure">
+<div id="org68a7f79" class="figure">
 <p><img src="pics/els_spot_time_of_arrival.png" alt="els_spot_time_of_arrival.png">
 </p>
 <p><span class="figure-number">Figure 5: </span>Time of arrival with hourly perimeters with spotting enabled</p>
@@ -18132,7 +18138,7 @@ Future Spot Ignitions:
 <li><a id="create-3d-plots-of-the-spread-state-with-spotting-enabled"></a>Create 3D Plots of the Spread State with Spotting Enabled<br>
 <div class="outline-text-5" id="text-create-3d-plots-of-the-spread-state-with-spotting-enabled">
 <div class="org-src-container">
-<pre class="src src-python" id="orgb7a0384"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgc83536d"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> mpl_toolkits.mplot3d <span style="font-weight: bold;">import</span> Axes3D
 
@@ -18246,7 +18252,7 @@ Future Spot Ignitions:
 </pre>
 </div>
 
-<table id="org7d2b86a">
+<table id="org1f8ffe4">
 <caption class="t-above"><span class="table-number">Table 11:</span> 3D fire behavior shapes after 8 hours of spread</caption>
 
 <colgroup>
@@ -18285,7 +18291,7 @@ Future Spot Ignitions:
 <li><a id="configure-and-run-the-initial-fire-spread-simulation"></a>Configure and Run the Initial Fire Spread Simulation<br>
 <div class="outline-text-5" id="text-configure-and-run-the-initial-fire-spread-simulation">
 <div class="org-src-container">
-<pre class="src src-python" id="org217acc5"><span style="font-weight: bold;">import</span> time
+<pre class="src src-python" id="org35d65a5"><span style="font-weight: bold;">import</span> time
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.eulerian_level_set <span style="font-weight: bold;">as</span> els
@@ -18390,7 +18396,7 @@ Future Spot Ignitions:
 <li><a id="fork-and-run-two-fire-spread-scenarios"></a>Fork and Run Two Fire Spread Scenarios<br>
 <div class="outline-text-5" id="text-fork-and-run-two-fire-spread-scenarios">
 <div class="org-src-container">
-<pre class="src src-python" id="org8f16421"><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">============================================================================================
+<pre class="src src-python" id="orgd922ef9"><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">============================================================================================
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Fork the simulation by creating a copy of the space_time_cubes and spread_state
 </span><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">============================================================================================
 </span>
@@ -18487,7 +18493,7 @@ fuel_model_matrix[60:,60:][(<span style="font-weight: bold;">list</span>(<span s
 <li><a id="display-summary-statistics-of-the-two-scenarios'-outputs"></a>Display Summary Statistics of the Two Scenarios' Outputs<br>
 <div class="outline-text-5" id="text-display-summary-statistics-of-the-two-scenarios'-outputs">
 <div class="org-src-container">
-<pre class="src src-python" id="org7260ee2"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgd6ebafc"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pprint <span style="font-weight: bold;">import</span> pprint
 
 <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">============================================================================================
@@ -18625,7 +18631,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <li><a id="create-images-of-the-two-scenarios'-outputs"></a>Create Images of the Two Scenarios' Outputs<br>
 <div class="outline-text-5" id="text-create-images-of-the-two-scenarios'-outputs">
 <div class="org-src-container">
-<pre class="src src-python" id="orgf9d64bf"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
+<pre class="src src-python" id="org282e98c"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 
 
@@ -18794,7 +18800,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </pre>
 </div>
 
-<table id="org20a5291">
+<table id="orgf2cde39">
 <caption class="t-above"><span class="table-number">Table 12:</span> Fuel model [Left: Main, Right: Fork]</caption>
 
 <colgroup>
@@ -18810,7 +18816,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </tbody>
 </table>
 
-<table id="org7cf90df">
+<table id="org9392e15">
 <caption class="t-above"><span class="table-number">Table 13:</span> Fire behavior attributes after 12 hours of spread [Left: Main, Right: Fork]</caption>
 
 <colgroup>
@@ -18851,7 +18857,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </tbody>
 </table>
 
-<table id="orga5db61d">
+<table id="orgc2d3472">
 <caption class="t-above"><span class="table-number">Table 14:</span> Time of arrival with hourly perimeters [Left: Main, Right: Fork]</caption>
 
 <colgroup>
@@ -18872,7 +18878,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <li><a id="create-3d-plots-of-the-two-scenarios'-spread-states"></a>Create 3D Plots of the Two Scenarios' Spread States<br>
 <div class="outline-text-5" id="text-create-3d-plots-of-the-two-scenarios'-spread-states">
 <div class="org-src-container">
-<pre class="src src-python" id="orga4926c7"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org5e90755"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> mpl_toolkits.mplot3d <span style="font-weight: bold;">import</span> Axes3D
 
@@ -19067,7 +19073,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </pre>
 </div>
 
-<table id="org35bbf0b">
+<table id="org91d8fba">
 <caption class="t-above"><span class="table-number">Table 15:</span> 3D fuel model [Left: Main, Right: Fork]</caption>
 
 <colgroup>
@@ -19083,7 +19089,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </tbody>
 </table>
 
-<table id="org8db64e1">
+<table id="orgb306f52">
 <caption class="t-above"><span class="table-number">Table 16:</span> 3D fire behavior shapes after 12 hours of spread [Left: Main, Right: Fork]</caption>
 
 <colgroup>
@@ -19137,7 +19143,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <li><a id="configure-and-run-the-fire-spread-simulation-at-low-resolution"></a>Configure and Run the Fire Spread Simulation at Low Resolution<br>
 <div class="outline-text-5" id="text-configure-and-run-the-fire-spread-simulation-at-low-resolution">
 <div class="org-src-container">
-<pre class="src src-python" id="org4884fd1"><span style="font-weight: bold;">import</span> time
+<pre class="src src-python" id="orge9d02a0"><span style="font-weight: bold;">import</span> time
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 <span style="font-weight: bold;">import</span> pyretechnics.eulerian_level_set <span style="font-weight: bold;">as</span> els
@@ -19241,7 +19247,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <li><a id="upsample-low-resolution-results-to-a-higher-resolution"></a>Upsample Low Resolution Results to a Higher Resolution<br>
 <div class="outline-text-5" id="text-upsample-low-resolution-results-to-a-higher-resolution">
 <div class="org-src-container">
-<pre class="src src-python" id="org4fa1214"><span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
+<pre class="src src-python" id="org87feb2b"><span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 
 <span style="font-weight: bold; font-style: italic;">cube_shape_high_res</span> = (
     240, <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">bands: 10 days @ 1 hour/band
@@ -19280,7 +19286,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <li><a id="create-images-of-the-output-matrices-at-both-resolutions"></a>Create Images of the Output Matrices at Both Resolutions<br>
 <div class="outline-text-5" id="text-create-images-of-the-output-matrices-at-both-resolutions">
 <div class="org-src-container">
-<pre class="src src-python" id="org8cee48f"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
+<pre class="src src-python" id="org3996d01"><span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 
 
@@ -19380,7 +19386,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </pre>
 </div>
 
-<table id="org4ab0bf2">
+<table id="org4d7426d">
 <caption class="t-above"><span class="table-number">Table 17:</span> Fire behavior attributes after 8 hours of spread (Left: 60m resolution | Right: 30m resolution)</caption>
 
 <colgroup>
@@ -19421,7 +19427,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </tbody>
 </table>
 
-<table id="orgd26d243">
+<table id="orgf331ac4">
 <caption class="t-above"><span class="table-number">Table 18:</span> Time of arrival with hourly perimeters (Left: 60m resolution | Right: 30m resolution)</caption>
 
 <colgroup>
@@ -19442,7 +19448,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 <li><a id="create-3d-plots-of-the-spread-state-at-both-resolutions"></a>Create 3D Plots of the Spread State at Both Resolutions<br>
 <div class="outline-text-5" id="text-create-3d-plots-of-the-spread-state-at-both-resolutions">
 <div class="org-src-container">
-<pre class="src src-python" id="org447053d"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org0810434"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> mpl_toolkits.mplot3d <span style="font-weight: bold;">import</span> Axes3D
 
@@ -19559,7 +19565,7 @@ Fork: {'Min': 2081.852, 'Max': 2789.6057, 'Mean': 2539.8635, 'Stdev': 171.96436}
 </pre>
 </div>
 
-<table id="org1ffbdb3">
+<table id="orgab033fb">
 <caption class="t-above"><span class="table-number">Table 19:</span> 3D fire behavior shapes after 8 hours of spread (Left: 60m resolution | Right: 30m resolution)</caption>
 
 <colgroup>
@@ -19628,7 +19634,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <h4 id="module-imports-suppression"><span class="section-number-4">11.1.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-suppression">
 <div class="org-src-container">
-<pre class="src src-python" id="org10f9891"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="orgf71d5dd"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">if</span> cython.compiled:
@@ -19648,7 +19654,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <h4 id="ordering-the-frontier-cells"><span class="section-number-4">11.1.2.</span> Ordering the Frontier Cells</h4>
 <div class="outline-text-4" id="text-ordering-the-frontier-cells">
 <div class="org-src-container">
-<pre class="src src-python" id="org4f10cbe"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_ordered_sides</span>(y: cy.<span style="font-weight: bold;">int</span>, x: cy.<span style="font-weight: bold;">int</span>, is_burned: cy.bint) -&gt; <span style="font-weight: bold;">set</span>:
+<pre class="src src-python" id="org1667fa9"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_ordered_sides</span>(y: cy.<span style="font-weight: bold;">int</span>, x: cy.<span style="font-weight: bold;">int</span>, is_burned: cy.bint) -&gt; <span style="font-weight: bold;">set</span>:
     <span style="font-weight: bold; font-style: italic;">north</span>: cy.<span style="font-weight: bold;">float</span> = y + 0.5
     <span style="font-weight: bold; font-style: italic;">south</span>: cy.<span style="font-weight: bold;">float</span> = y - 0.5
     <span style="font-weight: bold; font-style: italic;">east</span> : cy.<span style="font-weight: bold;">float</span> = x + 0.5
@@ -19883,7 +19889,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <h4 id="selecting-frontier-cells-for-suppression"><span class="section-number-4">11.1.3.</span> Selecting Frontier Cells for Suppression</h4>
 <div class="outline-text-4" id="text-selecting-frontier-cells-for-suppression">
 <div class="org-src-container">
-<pre class="src src-python" id="orga78f2b4"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_frontier_distances</span>(frontier, cell_height, cell_width):
+<pre class="src src-python" id="orgc19bfbe"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">get_frontier_distances</span>(frontier, cell_height, cell_width):
     <span style="font-weight: bold; font-style: italic;">burned_cells</span>           = frontier[<span style="font-style: italic;">"burned_cells"</span>]
     <span style="font-weight: bold; font-style: italic;">burned_ys</span>              = burned_cells[0]
     <span style="font-weight: bold; font-style: italic;">burned_xs</span>              = burned_cells[1]
@@ -20019,7 +20025,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <h4 id="suppressing-frontier-cells"><span class="section-number-4">11.1.4.</span> Suppressing Frontier Cells</h4>
 <div class="outline-text-4" id="text-suppressing-frontier-cells">
 <div class="org-src-container">
-<pre class="src src-python" id="org34c8312"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">make_constant_value_fn</span>(value):
+<pre class="src src-python" id="org801f542"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">make_constant_value_fn</span>(value):
 
     <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">constant_value</span>(frontier):
         <span style="font-weight: bold; font-style: italic;">frontier_length</span> = <span style="font-weight: bold;">len</span>(frontier[<span style="font-style: italic;">"burned_cells"</span>][0])
@@ -20063,7 +20069,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <h4 id="example-suppression-priority-functions"><span class="section-number-4">11.1.5.</span> Example Suppression Priority Functions</h4>
 <div class="outline-text-4" id="text-example-suppression-priority-functions">
 <div class="org-src-container">
-<pre class="src src-python" id="orgbb3bc0d"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">make_sdi_suppression_priority_fn</span>(sdi_matrix):
+<pre class="src src-python" id="orgd581c5c"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">make_sdi_suppression_priority_fn</span>(sdi_matrix):
     <span style="font-weight: bold; font-style: italic;">max_sdi</span> = np.<span style="font-weight: bold;">max</span>(sdi_matrix) + 1.0
 
     <span style="font-weight: bold;">def</span> <span style="font-weight: bold;">sdi_suppression_priority</span>(frontier):
@@ -20098,7 +20104,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <ol class="org-ol">
 <li><a id="example-simple-elliptical-perimeter"></a>Example: Simple Elliptical Perimeter<br>
 <div class="outline-text-5" id="text-example-simple-elliptical-perimeter">
-<table id="orgfcc375c">
+<table id="org65205d3">
 <caption class="t-above"><span class="table-number">Table 20:</span> X = already burned, + = actively burning, . = unburned</caption>
 
 <colgroup>
@@ -20292,7 +20298,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </table>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0b772fb"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org2248211"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> pyretechnics.suppression <span style="font-weight: bold;">import</span> order_frontier_cells, score_frontier_cells, \
     select_frontier_cells_for_suppression, make_constant_value_fn
@@ -20455,7 +20461,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </pre>
 </div>
 
-<table id="orgf65f4e9">
+<table id="org25c3069">
 <caption class="t-above"><span class="table-number">Table 21:</span> Frontier cells before and after ordering</caption>
 
 <colgroup>
@@ -20471,7 +20477,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </tbody>
 </table>
 
-<table id="orgf14ad48">
+<table id="org0c6145f">
 <caption class="t-above"><span class="table-number">Table 22:</span> Frontier cells' suppression priority scores and fireline construction times</caption>
 
 <colgroup>
@@ -20488,7 +20494,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </table>
 
 
-<div id="orgbe511ec" class="figure">
+<div id="org356338d" class="figure">
 <p><img src="pics/selected_frontier_cells_se.png" alt="selected_frontier_cells_se.png">
 </p>
 <p><span class="figure-number">Figure 6: </span>Frontier cells selected by best combined suppression score</p>
@@ -20498,7 +20504,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 
 <li><a id="example-elliptical-perimeter-with-an-existing-(backburn)-fireline"></a>Example: Elliptical Perimeter with an Existing (Backburn) Fireline<br>
 <div class="outline-text-5" id="text-example-elliptical-perimeter-with-an-existing-(backburn)-fireline">
-<table id="org99d222b">
+<table id="orgab3ff0e">
 <caption class="t-above"><span class="table-number">Table 23:</span> X = already burned, + = actively burning, . = unburned</caption>
 
 <colgroup>
@@ -20692,7 +20698,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </table>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org0834906"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgd510ec4"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> pyretechnics.suppression <span style="font-weight: bold;">import</span> order_frontier_cells, score_frontier_cells, \
     select_frontier_cells_for_suppression, make_constant_value_fn
@@ -20854,7 +20860,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </pre>
 </div>
 
-<table id="org750b440">
+<table id="orge14e3de">
 <caption class="t-above"><span class="table-number">Table 24:</span> Frontier cells before and after ordering</caption>
 
 <colgroup>
@@ -20870,7 +20876,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </tbody>
 </table>
 
-<table id="org545a1d0">
+<table id="org9355a22">
 <caption class="t-above"><span class="table-number">Table 25:</span> Frontier cells' suppression priority scores and fireline construction times</caption>
 
 <colgroup>
@@ -20887,7 +20893,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </table>
 
 
-<div id="orgbcfba30" class="figure">
+<div id="org22a95c4" class="figure">
 <p><img src="pics/selected_frontier_cells_ewf.png" alt="selected_frontier_cells_ewf.png">
 </p>
 <p><span class="figure-number">Figure 7: </span>Frontier cells selected by best combined suppression score</p>
@@ -20898,7 +20904,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <li><a id="example-high-resolution-elliptical-perimeter"></a>Example: High-Resolution Elliptical Perimeter<br>
 <div class="outline-text-5" id="text-example-high-resolution-elliptical-perimeter">
 <div class="org-src-container">
-<pre class="src src-python" id="org93b497b"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgdcc3953"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">from</span> pyretechnics.suppression <span style="font-weight: bold;">import</span> order_frontier_cells, score_frontier_cells, \
     select_frontier_cells_for_suppression, make_constant_value_fn
@@ -21071,7 +21077,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </pre>
 </div>
 
-<table id="org58342ad">
+<table id="orge75556d">
 <caption class="t-above"><span class="table-number">Table 26:</span> Frontier cells before and after ordering</caption>
 
 <colgroup>
@@ -21087,7 +21093,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </tbody>
 </table>
 
-<table id="org003b080">
+<table id="orgd447d50">
 <caption class="t-above"><span class="table-number">Table 27:</span> Frontier cells' suppression priority scores and fireline construction times</caption>
 
 <colgroup>
@@ -21104,7 +21110,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </table>
 
 
-<div id="orgcc66103" class="figure">
+<div id="orgb4ebc6c" class="figure">
 <p><img src="pics/selected_frontier_cells.png" alt="selected_frontier_cells.png">
 </p>
 <p><span class="figure-number">Figure 8: </span>Frontier cells selected by best combined suppression score</p>
@@ -21118,7 +21124,7 @@ This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 <h4 id="how-to-suppress-cells-by-building-firelines"><span class="section-number-4">11.2.2.</span> How to Suppress Cells by Building Firelines</h4>
 <div class="outline-text-4" id="text-how-to-suppress-cells-by-building-firelines">
 <div class="org-src-container">
-<pre class="src src-python" id="org12f5ac6"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgf79d34d"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> matplotlib.pyplot <span style="font-weight: bold;">as</span> plt
 <span style="font-weight: bold;">import</span> pyretechnics.eulerian_level_set <span style="font-weight: bold;">as</span> els
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
@@ -21297,7 +21303,7 @@ spread_state.ignite_cell((20,20))
 </pre>
 </div>
 
-<table id="orgc2a0954">
+<table id="org53e1949">
 <caption class="t-above"><span class="table-number">Table 28:</span> Flame length evolution over 24 hours with suppression applied every 2 hours (Firelines shown on the right)</caption>
 
 <colgroup>
@@ -21380,7 +21386,7 @@ spread_state.ignite_cell((20,20))
 <h3 id="custom-types-(pyretechnics.py_types)"><span class="section-number-3">12.1.</span> Custom Types (pyretechnics.py_types)</h3>
 <div class="outline-text-3" id="text-custom-types-(pyretechnics.py_types)">
 <div class="org-src-container">
-<pre class="src src-python" id="org94ca10b"><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================
+<pre class="src src-python" id="org7bd5e16"><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Runtime-defined type aliases
 </span><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================
 </span>
@@ -21543,7 +21549,7 @@ spread_state.ignite_cell((20,20))
 <h3 id="units-conversion-functions-(pyretechnics.conversion)"><span class="section-number-3">12.2.</span> Units Conversion Functions (pyretechnics.conversion)</h3>
 <div class="outline-text-3" id="text-units-conversion-functions-(pyretechnics.conversion)">
 <div class="org-src-container">
-<pre class="src src-python" id="org2554134"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org92389af"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">if</span> cython.compiled:
     <span style="font-weight: bold;">from</span> cython.cimports.libc.math <span style="font-weight: bold;">import</span> pi, sqrt, sin, cos, tan, atan, atan2
@@ -21962,7 +21968,7 @@ spread_state.ignite_cell((20,20))
 <h3 id="vector-utility-functions-(pyretechnics.vector_utils)"><span class="section-number-3">12.3.</span> Vector Utility Functions (pyretechnics.vector_utils)</h3>
 <div class="outline-text-3" id="text-vector-utility-functions-(pyretechnics.vector_utils)">
 <div class="org-src-container">
-<pre class="src src-python" id="org84bf998"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="orgde891d1"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> cython <span style="font-weight: bold;">as</span> cy
 <span style="font-weight: bold;">if</span> cython.compiled:
     <span style="font-weight: bold;">from</span> cython.cimports.libc.math <span style="font-weight: bold;">import</span> sqrt, sin, cos
@@ -22142,7 +22148,7 @@ spread_state.ignite_cell((20,20))
 <h3 id="spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)"><span class="section-number-3">12.4.</span> SpaceTimeCube and LazySpaceTimeCube Tests (pyretechnics_test.test_space_time_cube)</h3>
 <div class="outline-text-3" id="text-spacetimecube-and-lazyspacetimecube-tests-(pyretechnics_test.test_space_time_cube)">
 <div class="org-src-container">
-<pre class="src src-python" id="orgd3a575e"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="org51d3a6b"><span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube <span style="font-weight: bold;">import</span> SpaceTimeCube
 
 <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================
@@ -22289,10 +22295,10 @@ of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
 provided by the US LANDFIRE program<sup><a id="fnr.3.100" class="footref" href="#fn.3" role="doc-backlink">3</a></sup> (see table
-<a href="#orgbb9629d">29</a> for details).
+<a href="#orgb1a1b1f">29</a> for details).
 </p>
 
-<table id="orgbb9629d">
+<table id="orgb1a1b1f">
 <caption class="t-above"><span class="table-number">Table 29:</span> 2022 LANDFIRE Raster Layers</caption>
 
 <colgroup>
@@ -22448,7 +22454,7 @@ raster layers from files on disk into a Python dictionary of
 <h4 id="module-imports-load-landfire"><span class="section-number-4">12.5.1.</span> Module Imports</h4>
 <div class="outline-text-4" id="text-module-imports-load-landfire">
 <div class="org-src-container">
-<pre class="src src-python" id="org9432b31"><span style="font-weight: bold;">import</span> cython
+<pre class="src src-python" id="org77b935d"><span style="font-weight: bold;">import</span> cython
 <span style="font-weight: bold;">import</span> numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">import</span> rasterio
 <span style="font-weight: bold;">from</span> rasterio.enums <span style="font-weight: bold;">import</span> Resampling
@@ -22476,7 +22482,7 @@ these keys:
 </dl>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org7b0e75a"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">raster_metadata</span>(raster):
+<pre class="src src-python" id="orgf4021e0"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">raster_metadata</span>(raster):
     <span style="font-weight: bold;">return</span> {
         <span style="font-style: italic;">"name"</span>      : raster.name,
         <span style="font-style: italic;">"bands"</span>     : raster.count,
@@ -22553,13 +22559,13 @@ these keys:
 <div class="outline-text-4" id="text-converting-landfire-units-and-datatypes">
 <p>
 The units and datatypes of our LANDFIRE GeoTIFFs are documented in
-Table <a href="#orgbb9629d">29</a>. In order to make them match those required
+Table <a href="#orgb1a1b1f">29</a>. In order to make them match those required
 by the Pyretechnics Fire Spread API, we need to apply some conversions
 during the layer loading process.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgd9348a2"><span style="font-weight: bold; font-style: italic;">landfire_array_conversions</span> = {
+<pre class="src src-python" id="org48a087d"><span style="font-weight: bold; font-style: italic;">landfire_array_conversions</span> = {
     <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================================
 </span>    <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Layer Name         : (New dtype, Mult), # New Units                [Min-Max]
 </span>    <span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==============================================================================
@@ -22611,7 +22617,7 @@ Below we implement functions to check these constraints:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org1f431b7"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">verify_cube_compatible_dimensions</span>(cube_shape, rasters):
+<pre class="src src-python" id="orgf609e7b"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">verify_cube_compatible_dimensions</span>(cube_shape, rasters):
     <span style="font-weight: bold; font-style: italic;">cube_shape_</span> = np.asarray(cube_shape)
     <span style="font-weight: bold;">for</span> r <span style="font-weight: bold;">in</span> rasters:
         <span style="font-weight: bold; font-style: italic;">raster_shape</span> = np.asarray((r[<span style="font-style: italic;">"metadata"</span>][<span style="font-style: italic;">"bands"</span>],
@@ -22665,7 +22671,7 @@ lookup calls.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="org404e0ac"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">convert_rasters_to_space_time_cubes</span>(cube_shape, raster_dict):
+<pre class="src src-python" id="org9245615"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">convert_rasters_to_space_time_cubes</span>(cube_shape, raster_dict):
     <span style="font-weight: bold; font-style: italic;">fn_dict</span> = {}
 
     <span style="font-weight: bold;">for</span> name, raster <span style="font-weight: bold;">in</span> raster_dict.items():
@@ -22689,7 +22695,7 @@ with a <code>SpaceTimeCube</code> object.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-python" id="orgdccd71d"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">read_landfire_rasters_as_space_time_cubes</span>(cube_shape, landfire_file_paths):
+<pre class="src src-python" id="org0c42e8b"><span style="font-weight: bold;">def</span> <span style="font-weight: bold;">read_landfire_rasters_as_space_time_cubes</span>(cube_shape, landfire_file_paths):
     <span style="font-weight: bold; font-style: italic;">landfire_rasters</span> = load_and_convert_landfire_rasters(landfire_file_paths)
     <span style="font-weight: bold;">if</span> verify_raster_constraints(cube_shape, landfire_rasters.values()):
         <span style="font-weight: bold;">return</span> convert_rasters_to_space_time_cubes(cube_shape, landfire_rasters)
@@ -22712,7 +22718,7 @@ by the Cython compiler to enable fast C-level linking between modules.
 <h4 id="pyretechnics-cy-types-pxd"><span class="section-number-4">12.6.1.</span> pyretechnics.cy_types</h4>
 <div class="outline-text-4" id="text-pyretechnics-cy-types-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="orgc53e008"><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==================================================
+<pre class="src src-python" id="org332577c"><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==================================================
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">Compile-time-defined type aliases
 </span><span style="font-weight: bold; font-style: italic;">#</span><span style="font-weight: bold; font-style: italic;">==================================================
 </span>
@@ -22842,7 +22848,7 @@ cdef struct Pass1CellOutput:
 <h4 id="pyretechnics-conversion-pxd"><span class="section-number-4">12.6.2.</span> pyretechnics.conversion</h4>
 <div class="outline-text-4" id="text-pyretechnics-conversion-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="orga60cea1"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xy
+<pre class="src src-python" id="orgf8910c8"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xy
 
 cpdef <span style="font-weight: bold;">float</span> rad_to_deg(<span style="font-weight: bold;">float</span> radians) noexcept
 cpdef <span style="font-weight: bold;">float</span> deg_to_rad(<span style="font-weight: bold;">float</span> degrees) noexcept
@@ -22902,7 +22908,7 @@ cpdef <span style="font-weight: bold;">float</span> wind_speed_20ft_to_wind_spee
 <h4 id="pyretechnics-vector-utils-pxd"><span class="section-number-4">12.6.3.</span> pyretechnics.vector_utils</h4>
 <div class="outline-text-4" id="text-pyretechnics-vector-utils-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org0db5a5a"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xy, vec_xyz
+<pre class="src src-python" id="orgf87b30c"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xy, vec_xyz
 
 cpdef <span style="font-weight: bold;">float</span> dot_2d(vec_xy vector1, vec_xy vector2) noexcept
 cpdef <span style="font-weight: bold;">float</span> dot_3d(vec_xyz vector1, vec_xyz vector2) noexcept
@@ -22929,7 +22935,7 @@ cpdef vec_xyz rotate_on_sloped_plane(vec_xyz vector, <span style="font-weight: b
 <h4 id="pyretechnics-random-pxd"><span class="section-number-4">12.6.4.</span> pyretechnics.random</h4>
 <div class="outline-text-4" id="text-pyretechnics-random-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="orgb1eb609"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx
+<pre class="src src-python" id="orgd8c744f"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx
 
 cdef <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">BufferedRandGen</span>:
     cdef <span style="font-weight: bold;">object</span> numpy_rand     <span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">TODO: object -&gt; Generator
@@ -22955,7 +22961,7 @@ cdef <span style="font-weight: bold;">class</span> <span style="font-weight: bol
 <h4 id="pyretechnics-space-time-cube-pxd"><span class="section-number-4">12.6.5.</span> pyretechnics.space_time_cube</h4>
 <div class="outline-text-4" id="text-pyretechnics-space-time-cube-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org64db667">cimport numpy <span style="font-weight: bold;">as</span> np
+<pre class="src src-python" id="orgee7d5a4">cimport numpy <span style="font-weight: bold;">as</span> np
 <span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx
 
 cdef bint is_pos_int(<span style="font-weight: bold;">object</span> x) noexcept
@@ -23013,7 +23019,7 @@ cdef <span style="font-weight: bold;">class</span> <span style="font-weight: bol
 <h4 id="pyretechnics-fuel-models-pxd"><span class="section-number-4">12.6.6.</span> pyretechnics.fuel_models</h4>
 <div class="outline-text-4" id="text-pyretechnics-fuel-models-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org3df7b8b"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
+<pre class="src src-python" id="org47899ce"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport fclaarr, CompactFuelModel, FuelModel
 
 cdef <span style="font-weight: bold;">dict</span>[<span style="font-weight: bold;">int</span>, CompactFuelModel] compact_fuel_model_table
 
@@ -23055,7 +23061,7 @@ cpdef FuelModel moisturize(FuelModel fuel_model, fclaarr fuel_moisture) noexcept
 <h4 id="pyretechnics-surface-fire-pxd"><span class="section-number-4">12.6.7.</span> pyretechnics.surface_fire</h4>
 <div class="outline-text-4" id="text-pyretechnics-surface-fire-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org2f9131f"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, \
+<pre class="src src-python" id="org93b2aed"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xyz, fcatarr, fclaarr, FuelModel, ProjectedVectors, \
      FireBehaviorMin, FireBehaviorMax, SpreadBehavior
 
 cdef <span style="font-weight: bold;">float</span> calc_surface_area_to_volume_ratio(fcatarr f_i, fclaarr f_ij, fclaarr sigma) noexcept
@@ -23182,7 +23188,7 @@ cpdef SpreadBehavior calc_surface_fire_behavior_in_direction(
 <h4 id="pyretechnics-crown-fire-pxd"><span class="section-number-4">12.6.8.</span> pyretechnics.crown_fire</h4>
 <div class="outline-text-4" id="text-pyretechnics-crown-fire-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org3f787c0"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
+<pre class="src src-python" id="orgcc1ffed"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport vec_xyz, FireBehaviorMax, SpreadBehavior, CrownSpreadInfo
 
 cdef <span style="font-weight: bold;">float</span> van_wagner_critical_fireline_intensity(
     <span style="font-weight: bold;">float</span> canopy_base_height,
@@ -23268,7 +23274,7 @@ cpdef SpreadBehavior calc_combined_fire_behavior(
 <h4 id="pyretechnics-spot-fire-pxd"><span class="section-number-4">12.6.9.</span> pyretechnics.spot_fire</h4>
 <div class="outline-text-4" id="text-pyretechnics-spot-fire-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org7eac2f4"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
+<pre class="src src-python" id="orgcee9059"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx, vec_xy, coord_yx, coord_tyx, SpreadBehavior, SpotConfig, JumpDistribution
 <span style="font-weight: bold;">from</span> pyretechnics.random cimport BufferedRandGen
 <span style="font-weight: bold;">from</span> pyretechnics.space_time_cube cimport ISpaceTimeCube
 
@@ -23376,7 +23382,7 @@ cdef <span style="font-weight: bold;">tuple</span> spread_firebrands(
 <h4 id="pyretechnics-burn-cells-pxd"><span class="section-number-4">12.6.10.</span> pyretechnics.burn_cells</h4>
 <div class="outline-text-4" id="text-pyretechnics-burn-cells-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="orgc43c6de"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx, coord_tyx
+<pre class="src src-python" id="org4ceb9b5"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx, coord_tyx
 
 cpdef <span style="font-weight: bold;">dict</span> burn_cell_as_head_fire(
     <span style="font-weight: bold;">dict</span> space_time_cubes,
@@ -23433,7 +23439,7 @@ cpdef <span style="font-weight: bold;">dict</span> burn_cells_by_time_of_arrival
 <h4 id="pyretechnics-narrow-band-tracking-pxd"><span class="section-number-4">12.6.11.</span> pyretechnics.narrow_band_tracking</h4>
 <div class="outline-text-4" id="text-pyretechnics-narrow-band-tracking-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="org299aebb"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx, coord_yx
+<pre class="src src-python" id="orgd64cc0a"><span style="font-weight: bold;">from</span> pyretechnics.cy_types cimport pyidx, coord_yx
 
 cdef <span style="font-weight: bold;">class</span> <span style="font-weight: bold; text-decoration: underline;">CellsCountSegment</span>:
     cdef <span style="font-weight: bold;">int</span> y
@@ -23477,7 +23483,7 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <h4 id="pyretechnics-eulerian-level-set-pxd"><span class="section-number-4">12.6.12.</span> pyretechnics.eulerian_level_set</h4>
 <div class="outline-text-4" id="text-pyretechnics-eulerian-level-set-pxd">
 <div class="org-src-container">
-<pre class="src src-python" id="orgaa4d12a"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">from pyretechnics.cy_types cimport pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
+<pre class="src src-python" id="org6418307"><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">from pyretechnics.cy_types cimport pyidx, vec_xy, vec_xyz, coord_yx, coord_tyx, \
 </span><span style="font-weight: bold; font-style: italic;">#      </span><span style="font-weight: bold; font-style: italic;">FuelModel, FireBehaviorMin, FireBehaviorMax, SpreadBehavior, SpotConfig, \
 </span><span style="font-weight: bold; font-style: italic;">#      </span><span style="font-weight: bold; font-style: italic;">PartialedEllWavelet, CellInputs, EllipticalInfo, Pass1CellOutput
 </span><span style="font-weight: bold; font-style: italic;"># </span><span style="font-weight: bold; font-style: italic;">from pyretechnics.space_time_cube cimport ISpaceTimeCube
