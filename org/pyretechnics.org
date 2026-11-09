@@ -2454,9 +2454,9 @@ These two topics are discussed in sections [[Dynamic Fuel Loading]] and
     :CUSTOM_ID: fuel-model-definitions
     :END:
 
-The fuel models supported by Pyretechnics include the standard 13 fuel
-models of Rothermel, Albini, and Anderson[fn::Anderson1982] and the
-additional 40 fuel models defined by Scott and Burgan[fn::Scott2005].
+The fuel models supported by Pyretechnics include the standard Anderson 13 fuel
+models [cite:@Anderson1982] and the
+additional Scott and Burgan 40 fuel models [cite:@ScottBurgan2005].
 These are all concisely encoded in an internal data structure, which
 may be updated to include additional custom fuel models desired by the
 user.
@@ -2753,7 +2753,7 @@ All of the Scott & Burgan 40 fuel models with a live herbaceous
 component are considered dynamic. In these models, a fraction of the
 live herbaceous load is transferred to a new dead herbaceous category
 as a function of live herbaceous moisture content (see equation
-below).[fn::Burgan1979] The dead herbaceous size class uses the dead 1
+below).[cite:@Burgan1979] The dead herbaceous size class uses the dead 1
 hour moisture content, dead moisture of extinction, and live
 herbaceous surface-area-to-volume-ratio. In the following formula,
 $M_f^{lh}$ is the live herbaceous moisture content.
@@ -2817,8 +2817,7 @@ def add_dynamic_fuel_loading(fuel_model: FuelModel, M_f: fclaarr) -> FuelModel:
     :END:
 
 Once the dynamic fuel loading is applied, we can compute the size
-class weighting factors expressed in equations 53-57 in Rothermel
-1972[fn::Rothermel1972]. For brevity, these formulas are elided from
+class weighting factors expressed in equations 53-57 [cite:@Rothermel1972]. For brevity, these formulas are elided from
 this text.
 
 #+NAME: add-weighting-factors
@@ -2921,9 +2920,9 @@ def add_weighting_factors(fuel_model: FuelModel) -> FuelModel:
 The live moisture of extinction for each fuel model is determined from
 the dead fuel moisture content, the dead moisture of extinction, and
 the ratio of dead fuel loading to live fuel loading using Equation 88
-from Rothermel 1972, adjusted according to Albini 1976 Appendix III to
+[cite:@Rothermel1972], adjusted according to Appendix III of [cite:@Albini1976] to
 match the behavior of Albini's original FIREMODS
-library.[fn::Rothermel1972][fn::Albini1976] Whenever the fuel moisture
+library. Whenever the fuel moisture
 content becomes greater than or equal to the moisture of extinction, a
 fire will no longer spread through that fuel. Here are the formulas
 referenced above:
@@ -3335,14 +3334,13 @@ else:
 To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
 BehavePlus), Pyretechnics adopts the surface fire spread and reaction
-intensity formulas from Rothermel's 1972 publication "A Mathematical
-Model for Predicting Fire Spread in Wildland Fuels", adjusted
-according to Albini 1976 Appendix III to match the behavior of
-Albini's original FIREMODS library.[fn::Rothermel1972][fn::Albini1976]
-This should align with the updated description provided in Patricia
-Andrews' 2018 publication "The Rothermel Surface Fire Spread Model and
+intensity formulas from "A Mathematical
+Model for Predicting Fire Spread in Wildland Fuels" [cite:@Rothermel1972], adjusted
+according to Appendix III of [cite:@Albini1976] to match the behavior of
+Albini's original FIREMODS library.
+This should align with the updated description in "The Rothermel Surface Fire Spread Model and
 Associated Developments: A Comprehensive
-Explanation".[fn::Andrews2018]
+Explanation" [cite:@andrews2018rothermel].
 
 Very briefly, the surface rate of spread of a fire's leading edge $R$
 is described by the following formula:
@@ -3730,10 +3728,10 @@ def calc_spread_rate(heat_source: cy.float, heat_sink: cy.float) -> cy.float:
 
 Using the surface fire spread rate and reaction intensity values, we
 can now calculate several surface fire intensity metrics by applying
-Anderson's residence time and flame depth formulas, Byram's fireline
-intensity and flame length equations, and Andrews & Rothermel's heat
+residence time and flame depth formulas [cite:@Anderson1969], fireline
+intensity and flame length equations [cite:@Byram1959], and the heat
 per unit area
-equation:[fn::Anderson1969][fn::Byram1959][fn::AndrewsRothermel1982]
+equation [cite:@AndrewsRothermel1982].
 
 \begin{align}
   t_{\text{res}} &= \frac{384}{\sigma'} \\
@@ -3849,8 +3847,8 @@ Model]]).
 The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
 $U_{\text{eff}}$. Following the recommendations given in Appendix III
-of Albini 1976, these midflame wind speeds are all limited by the
-reaction intensity $I_R$ as follows:[fn::Albini1976]
+of [cite:@Albini1976], these midflame wind speeds are all limited by the
+reaction intensity $I_R$ as follows:
 
 \begin{align}
   U_{\text{eff}}^{\max} = 0.9 \, I_R
@@ -4041,9 +4039,9 @@ $U_{\text{mid}}$. However, wind speed data is often collected at a
 height 20 feet (or 10 meters) above either unsheltered ground or a
 tree canopy layer if present. To convert this 20-ft wind speed
 $U_{20}$ to the required midflame wind speed value, Pyretechnics uses
-the wind adjustment factor formula from Albini & Baughman 1979,
+the wind adjustment factor formula [cite:@Albini1979],
 parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA
-according to Andrews 2012[fn::Albini1979][fn::Andrews2012].
+[cite:@Andrews2012].
 
 \begin{align}
   \text{WAF} &= \left\{
@@ -4060,7 +4058,7 @@ where $\text{WAF}$ is the unitless wind adjustment factor,
 $\text{FBD}$ is the fuel bed depth in $\text{ft}$, $\text{CH}$ is the
 canopy height in $\text{ft}$, $\text{CC}$ is the canopy cover
 fraction $(0-1)$, and $\text{CF} := \text{CC} / 3$ is the crown fill portion $(0-1)$.
-As in BehavePlus, the fuel bed is considered sheltered when the crown fill portion exceeds 5 percent[fn::Andrews2012];
+As in BehavePlus, the fuel bed is considered sheltered when the crown fill portion exceeds 5 percent[cite:@Andrews2012];
 this almost always prevents the $\text{WAF}$ being greater than 1.
 
 
@@ -4129,35 +4127,15 @@ Since Rothermel's original equations for computing the head fire
 spread rate assume that the wind direction and upslope direction are
 aligned, the effects of cross-slope winds must be taken into effect.
 To accomplish this, Pyretechnics implements the vector addition
-procedure defined in Rothermel 1983 that combines the wind and slope
+procedure defined in [cite:@Rothermel1983] that combines the wind and slope
 vectors to calculate the maximum fire spread direction and
-magnitude.[fn::Rothermel1983]
+magnitude.
 
 In order to address potential errors related to projecting the
 horizontal wind and slope azimuth vectors to and from the
-slope-tangential plane, upon which the equations from Rothermel 1983
-are defined, we incorporate the three-dimensional vector combination
-procedure provided by Waeselynck 2024.[fn::Waeselynck2024]
+slope-tangential plane, upon which those equations
+are defined, we incorporate the slope-tangential to horizon correction described in section [[#from-slope-tangential-to-horizontal]].
 
-#+NAME: surface-fire-combine-wind-and-slope-vectors
-#+begin_src python
-@cy.cfunc
-@cy.exceptval(check=False)
-def project_wind_and_slope_vectors_3d(wind_speed        : cy.float,
-                                      downwind_direction: cy.float,
-                                      slope             : cy.float,
-                                      upslope_direction : cy.float) -> ProjectedVectors:
-    """
-    Given these inputs:
-    - wind_speed         :: S
-    - downwind_direction :: degrees clockwise from North
-    - slope              :: rise/run
-    - upslope_direction  :: degrees clockwise from North
-
-    return a ProjectedVectors struct containing these keys:
-    - wind_vector_3d  :: (x: S, y: S, z: S)
-    - slope_vector_3d :: (x, y, z)
-    """
     # Convert wind and slope vectors from azimuthal to cartesian coordinates
     wind_vector_2d : vec_xy = conv.azimuthal_to_cartesian(wind_speed, downwind_direction)
     slope_vector_2d: vec_xy = conv.azimuthal_to_cartesian(slope, upslope_direction)
@@ -4195,8 +4173,7 @@ values calculated in earlier sections onto a two-dimensional plane,
 $U_{\text{eff}}$ is used to compute the length to width ratio
 $\frac{L}{W}$ of an ellipse that approximates the surface fire front.
 This length to width ratio is then converted into an eccentricity
-measure $E$ of the ellipse using equation 8 from Albini and Chase
-1980.[fn::Albini1980]
+measure $E$ of the ellipse using equation 8 [cite:@Albini1980].
 
 \begin{align}
   E = \frac{\sqrt{(\frac{L}{W})^2 - 1}}{\frac{L}{W}}
@@ -4205,7 +4182,7 @@ measure $E$ of the ellipse using equation 8 from Albini and Chase
 Currently Pyretechnics supports two different methods for computing
 the length to width ratio $\frac{L}{W}$:
 
-1. Using equation 9 from Rothermel 1991.[fn::Rothermel1991]
+1. Using equation 9 [cite:@Rothermel1991].
 
    \begin{align}
      \frac{L}{W} = 1 + 0.25 \, U_{\text{eff}}
@@ -4276,11 +4253,10 @@ associated with a head fire.
 A noteworthy decision for users is whether or not to limit the
 effective wind speed $U_{\text{eff}}$ in these calculations.
 
-Rothermel 1972 defines a maximum effective wind speed, above which the
-predicted spread rate and intensity remains constant. However, a 2013
-publication by Andrews et al recommends instead that this wind speed
+[cite:@Rothermel1972] defines a maximum effective wind speed, above which the
+predicted spread rate and intensity remains constant. However, [cite:@Andrews2013] recommends instead that this wind speed
 limit not be imposed, in order to avoid possible spread rate
-underprediction.[fn::Rothermel1972][fn::Andrews2013]
+underprediction.
 
 In order to support both use cases, the
 =calc_surface_fire_behavior_max= function includes an optional
@@ -4906,8 +4882,7 @@ else:
     :END:
 
 In order to incorporate the effects of crown fire behavior,
-Pyretechnics includes the crown fire initiation routine from Van
-Wagner 1977.[fn::VanWagner1977] According to this approach, we begin
+Pyretechnics includes the crown fire initiation routine [cite:@VanWagner1977]. According to this approach, we begin
 by calculating the /critical fireline intensity/ as follows:
 
 \begin{align}
@@ -5016,8 +4991,7 @@ def van_wagner_crown_fire_initiation(surface_fireline_intensity: cy.float,
     :END:
 
 If crowning occurs, then the active crown fire spread rate is
-calculated from the following formula given in Cruz
-2005:[fn::Cruz2005]
+calculated from the following formula [cite:@Cruz2005].
 
 \begin{align}
   \text{CROS}_A = 11.02 \, U_{10\text{m}}^{0.90} \, B_m^{0.19} \, e^{-17 \, \text{EFFM}} \\
@@ -5048,8 +5022,7 @@ def cruz_active_crown_fire_spread_rate(wind_speed_10m              : cy.float,
             * exp(-17.0 * estimated_fine_fuel_moisture))
 #+end_src
 
-Next, we need to calculate the /critical spread rate/ from Van Wagner
-1977[fn::VanWagner1977] as follows:
+Next, we need to calculate the /critical spread rate/ from [cite:@VanWagner1977] as follows:
 
 \begin{align}
   R^* = \frac{3.0}{B_m}
@@ -5074,8 +5047,7 @@ def van_wagner_critical_spread_rate(canopy_bulk_density: cy.float) -> cy.float:
 If the active crown fire spread rate $\text{CROS}_A$ is greater than
 the critical spread rate $R^*$, then the crown fire will be active,
 otherwise passive. In the event of a passive crown fire, its spread
-rate is calculated using the following formula from Cruz
-2005:[fn::Cruz2005]
+rate is calculated using the following formula [cite:@Cruz2005].
 
 \begin{align}
   \text{CROS}_P = \text{CROS}_A \, e^{-\text{CROS}_A / R^*}
@@ -5203,9 +5175,9 @@ def calc_crown_fireline_intensity(crown_spread_rate  : cy.float,
 As with surface fire spread, the wind speed (this time the 20-ft wind
 speed $U_{20}$) is used to compute the length to width ratio
 $\frac{L}{W}$ of an ellipse that approximates the crown fire front
-using equation 10 from Rothermel 1991.[fn::Rothermel1991] This length
+using equation 10 [cite:@Rothermel1991]. This length
 to width ratio is then converted into an eccentricity measure of the
-ellipse using equation 8 from Albini and Chase 1980.[fn::Albini1980]
+ellipse using equation 8 [cite:@Albini1980].
 Here are the formulas used:
 
 \begin{align}
@@ -6379,11 +6351,11 @@ in which $\vec{w}, \vec{w}_\perp$ are unit vectors respectively
 parallel and perpendicular to the wind direction, and $\Delta_X,
 \Delta_Y$ are the random variables for coordinates.
 
-Following Perryman 2012, Sardoy 2008, and Himoto 2005, we model
+Following [cite:@Perryman2012; @Sardoy2008FirebrandDistribution; @Himoto2005], we model
 $\Delta_X$ and $\Delta_Y$ to be independent, with $\Delta_X$ following
 a log-normal distribution, and $\Delta_Y$ following a zero-mean normal
 distribution, conditional on the fire behavior $\Phi$ at the cell of
-origin:[fn::Perryman2012][fn::Sardoy2008][fn::Himoto2005]
+origin:
 
 \begin{align}
   \ln (\Delta_X / \text{1m}) | \Phi \sim & \text{Normal}(\mu = \mu_X(\Phi), \sigma = \sigma_X(\Phi)) \\
@@ -6450,7 +6422,7 @@ def distance_to_n_cells(distance: cy.float, cell_size: cy.float) -> cy.int:
     :END:
 
 We now need to define the functions $\mu_X(\Phi)$ and
-$\sigma_X(\Phi)$. Here we depart from Sardoy 2008[fn::Sardoy2008] and
+$\sigma_X(\Phi)$. Here we depart from [cite:@Sardoy2008FirebrandDistribution] and
 reproduce the model of ELMFIRE[fn:elmfire-website], which models that
 dependency using the following relationships between the moments of
 the distribution and the fireline intensity $I$ and wind speed $U$:
@@ -6581,8 +6553,8 @@ def resolve_lognormal_params(spot_config       : SpotConfig,
 
 For $\sigma_Y$, we either let the user specify an explicit value with
 key *crosswind_distance_stdev* (in meters), which makes it equivalent
-to the model of Perryman 2012[fn::Perryman2012], or we default to
-deriving them from equation (28) of Himoto 2005[fn::Himoto2005], which
+to the model of [cite:@Perryman2012], or we default to
+deriving them from equation (28) of [cite:@Himoto2005], which
 is equivalent to:
 
 \begin{align}
@@ -6624,22 +6596,19 @@ Distribution Characteristics]] for more information on how these values
 were obtained.
 
 *CAUTION:* (FIXME REVIEW) We have found the above formula to be
-problematic when applied to the parameters values found in Sardoy
-2008[fn::Sardoy2008] because it tends to yield nonsensical $\sigma_Y >
+problematic when applied to the parameters values found in [cite:@Sardoy2008FirebrandDistribution] because it tends to yield nonsensical $\sigma_Y >
 \mathbb{E}[\Delta_X]$. In fact, it can be seen that $\sigma_Y > s
 \mathbb{E}[\Delta_X]$ if and only if $\sigma_X > \sqrt{\ln \left(1 +
 \frac{.88^2}{.92 \times .47} s \right)}$, in particular $\sigma_X >
 1.013$ for $s = 1$, which is unfortunately the case with the range of
-$\sigma_X$ values in Sardoy 2008[fn::Sardoy2008]. This reflects a
-divergence between Himoto 2005[fn::Himoto2005] and Sardoy
-2008[fn::Sardoy2008], the latter allowing for more dispersed
+$\sigma_X$ values in [cite:@Sardoy2008FirebrandDistribution]. This reflects a
+divergence between [cite:@Himoto2005] and [cite:@Sardoy2008FirebrandDistribution], the latter allowing for more dispersed
 $\Delta_X$ distributions (higher coefficient of variation
 $\text{Var}[\Delta_X]^{\frac{1}{2}}/\mathbb{E}[\Delta_X] =
 \sqrt{e^{\sigma_X^2} - 1}$), whereas the former typically predicts a
-low coefficient of variation, as is perceptible in figure 6 of Himoto
-2005[fn::Himoto2005]. Figure 10 of Sardoy 2008[fn::Sardoy2008]
+low coefficient of variation, as is perceptible in figure 6 of [cite:@Himoto2005]. Figure 10 of [cite:@Sardoy2008FirebrandDistribution]
 suggests coefficients of variation ranging from 95% to 210%, whereas
-Figure 6 of Himoto 2005[fn::Himoto2005] suggests coefficients of
+Figure 6 of [cite:@Himoto2005] suggests coefficients of
 variation ranging from 30% to 70%. For this reason, we *strongly
 recommend to supply $\sigma_Y$ directly* through the configuration key
 *crosswind_distance_stdev*.
@@ -6753,7 +6722,7 @@ def sample_crosswind_jump(jd: JumpDistribution, random_generator: BufferedRandGe
     :CUSTOM_ID: spot-ignition-model
     :END:
 
-The spot ignition model (Schroeder 1969)[fn::Schroeder1969] describes
+The spot ignition model [cite:@Schroeder1969] describes
 the probability of a spot ignition based on the temperature and fine
 fuel moisture at the firebrand landing location as follows:
 
@@ -6811,11 +6780,10 @@ def schroeder_ignition_probability(temperature: cy.float, fine_fuel_moisture: cy
     return min(P_I, 1.0)
 #+end_src
 
-Perryman 2012 uses this ignition probability but multiplies it by a
+[cite:@Perryman2012] uses this ignition probability but multiplies it by a
 flight survival probability based on the distance a firebrand lands
-from its casting source (using Albini 1979) and the number of
-firebrands that land in a cell (using Stauffer
-2008).[fn::Perryman2012][fn::Albini1979][fn::Stauffer2008]
+from its casting source (using [cite:@Albini1979]) and the number of
+firebrands that land in a cell [cite:@Stauffer2008].
 
 \begin{align}
   P(I)_l &= P(I)\exp(-\lambda_s l) \\
@@ -6883,13 +6851,11 @@ intervals: the amount of time required for the firebrand to reach its
 maximum vertical height $t_v$, the amount of time required for the
 firebrand to descend from the maximum vertical height to the forest
 floor $t_g$, and the amount of time required for a spot fire to ignite
-and build up to the steady-state $t_I$. Perryman
-2012[fn::Perryman2012] assumes $t_v$ and $t_g$ to be equal and uses
-the formula from Albini 1979[fn::Albini1979spot] to calculate it.
-$t_I$ is also assumed to be 20 min as used in McAlpine
-1991[fn::McAlpine1991].
+and build up to the steady-state $t_I$. [cite:@Perryman2012] assumes $t_v$ and $t_g$ to be equal and uses
+the formula from [cite:@Albini1979spot] to calculate it.
+$t_I$ is also assumed to be 20 min as used in [cite:@McAlpine1991].
 
-By Albini 1979[fn::Albini1979spot], the time $t_v$ for a firebrand to
+By [cite:@Albini1979spot], the time $t_v$ for a firebrand to
 reach height $z$ when the flame length is $z_F$ is given by:
 
 \begin{align}
@@ -6902,10 +6868,10 @@ reach height $z$ when the flame length is $z_F$ is given by:
   b   &=  a - 1.4 & \\
 \end{align}
 
-In the notation of Albini 1979[fn::Albini1979spot], we would have $t_v
+In the notation of [cite:@Albini1979spot], we would have $t_v
 = \frac{2 z_F}{w_F}(t_T - t_o)$.
 
-Albini 1979[fn::Albini1979spot] also provides a formula - (D44) - for
+[cite:@Albini1979spot] also provides a formula - (D44) - for
 the maximum height $z_\text{max}$ that a firebrand can reach while
 still glowing when it hits the ground, as a function of the firebrand
 diameter $D$ in a cylinder model:
