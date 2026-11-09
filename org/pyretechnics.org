@@ -37,6 +37,31 @@
   :CUSTOM_ID: preface
   :END:
 
+** Overview of Pyretechnics
+
+Pyretechnics is a Python library for simulating wildland fires. Pyretechnics implements physical and empirical equations which predict the evolution of a fire front and compute related fire behavior metrics (e.g. rate of spread and flame length).
+
+These computations involve 2 sorts of components:
+1. A theoretical /fire behavior model/ (section [[#theoretical-models]]), which specifies the equations that model the fire. This includes among other things the Rothermel model with elliptical Huygens wavelets.
+2. /Numerical algorithms/ which approximate the above by discrete data structures that computers can process. This includes the level-set method which will be described below.
+
+Pyretechnics is similar in scope to FARSITE [cite:@Finney2004FARSITE], Prometheus [cite:@Tymstra2010Prometheus], or ELMFIRE [cite:@Lautenberger2013elmfire].
+However, the ergonomics are different, because Pyretechnics is meant to be used as a Python library rather than as a standalone program.
+
+At the core of Pyretechnics is an algorithm for propagating fire fronts. This involves:
+1. The Rothermel model, which computes the spread rate and behavior metrics of surface fire in the heading direction only.
+2. Equations for /elliptical dimensions/, enabling the model to calculate the spread rate and behavior metrics of surface fire in the direction /normal/ to the fire front, by applying the Huygens principle.
+3. Crown fire equations, which extend the above to model the combustion of the canopy, which can make the fire front spread faster and more intensely. Currently, Pyretechnics implements equations of Cruz and Van Wagner [cite:@Cruz2005; @VanWagner1977].
+4. A spotting module, which models the ignition of long-range spot fires.
+5. A numerical solver for tracking the fire front. Currently, that's the Eulerian level-set method (section [[#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)]]), similarly to ELMFIRE.
+
+The inputs of Pyretechnics are rasters of fuels, topography and weather inputs with (at most) 2 spatial dimensions and 1 temporal dimension. Fuels inputs include a categorical raster of fuels (following the classification of Scott and Burgan), and 4 canopy-related metrics, which are used to resolve midflame wind speed of surface fire, and otherwise to compute crown fire behavior. Weather inputs include wind speed and direction, and fuel moistures for 6 fuel classes.
+
+Pyretechnics puts a strong emphasis on computing efficiency, at the expense of some physical accuracy. It is suitable for simulating hundreds of thousands of fire seasons on the scale of a country, with a pixel resolution on the order of 50m. Pyretechnics does not currently compute any feedback of the fire on the atmosphere, nor does it simulate suppression by firefighters or extinction .
+
+
+** About this documentation
+
 This document is a Literate Program[fn:lit-prog-wikipedia], containing
 both the source code of the software it describes as well as the
 rationale used in each step of its design and implementation. The
@@ -59,8 +84,29 @@ operating system. See [[file:../README.md][README.md]] for more details.
 
 
 * Theoretical models
+:PROPERTIES:
+:CUSTOM_ID: theoretical-models
+:END:
 
-FIXME overview for expert readers.
+This section gives an overview of the theoretical models underlying Pyretechnics.
+We provide only a high-level description that leaves out many details,
+as these will be covered by later sections that walk through the code.
+
+Let us start by giving an overview of Pyretechnics features for expert readers:
+
+1. Quasi-steady surface fire behavior and head fire rate of spread using the Rothermel model [cite:@Rothermel1972];
+2. Wind and slope vectoring [cite:@andrews2018rothermel];
+3. Generalization to non-heading front orientations by applying Huygens' Principle with elliptical wavelets [cite:@Anderson1982ModellingSpread; @KnightColeman1993PerimeterExpansionHuygens; @Richards1995fire2dSpread];
+4. Crown fire initiation and spread rates using equations of Cruz and Van Wagner [cite:@Cruz2005; @VanWagner1977].
+5. Crown fire elliptical dimensions based on [cite:@Rothermel1991].
+6. The transition from surface to crown fire can make the Hamiltonian non-convex [cite:@Waeselynck2026PointyHeadedFires].
+7. Long-range spotting from firebrands using equations of Sardoy [cite:@Sardoy2008FirebrandDistribution].
+8. Utilities for simulating suppression by fireline construction, using a generic framework of segment selection based on constrained optimization.
+9. Terrain-aware spread rate corrections (section [[#from-slope-tangential-to-horizontal]] - this is not a feature, but overlooking this aspect frequently causes bugs in fire growth models).
+10. Categorical fuel inputs using the Scott and Burgan classification [cite:@ScottBurgan2005].
+11. Pyretechnics does not provide fire-atmosphere coupling; users may interweave small intervals of Pyretechnics front propagation with updates to the weather inputs, using an external weather model.
+
+These concepts will be detailed in the following sections.
 
 ** Fire front propagation
 
@@ -68,7 +114,7 @@ FIXME overview for expert readers.
 
 At its core, Pyretechnics mdoels fire spread by calculating /spread rates/;
 a spread rate is the velocity at which an infinitesimal segment of the flaming front advances in the direction perpendicular to itself.
-That is, Pyretechnics calculates a function $V(\vec{n}, Z(\vec{x}, t), \theta)$, in which:
+That is, Pyretechnics calculates a spread rate function $V(\vec{n}, Z(\vec{x}, t), \theta)$, in which:
 
 1. $\vec{x}$ is the spatial location;
 2. $t$ is the time variable;
@@ -77,7 +123,7 @@ That is, Pyretechnics calculates a function $V(\vec{n}, Z(\vec{x}, t), \theta)$,
 5. $\theta$ is a vector of model parameters, i.e. settings that the user can adjust.
 6. $V(\vec{n}, Z, \theta)$ is the spread rate.
 
-The above is a widely adopted class of models, implemented e.g. in FARSITE [cite:@Finney2004FARSITE], ELMFIRE [cite:@Lautenberger2013elmfire], ForeFire, Prometheus [cite:@Tymstra2010Prometheus], FireStarrr.
+The above is a widely adopted class of models, implemented e.g. in FARSITE [cite:@Finney2004FARSITE], ELMFIRE [cite:@Lautenberger2013elmfire], ForeFire [cite:@ForeFireJOSS2025], Prometheus [cite:@Tymstra2010Prometheus].
 This is a broad class of models in that the function $V$ can vary significantly across models;
 however, this class is also quite narrow in some ways:
 1. $V$ does not use any curvature information or higher-order spatial variability of the fire front, only the front-normal vector $\vec{n}$.
@@ -106,7 +152,7 @@ because:
 2. It does not predict crown fire spread rates.
 
 Similarly to FARSITE and ELMFIRE, Pyretechnics fills this gap as follows:
-1. Pyretechnics generalizes Rothermel spread rate to all front orientations by assuming that surface fire follows Huygens' Principle with an elliptical wavelet shape [cite:@Anderson1982ModellingSpread; @KnightColeman1993PerimeterExpansionHuygens; @Richards1995fire2dSpread]; the Rothermel model determines the maximum radial velocity of the wavelet, while another model computes the elliptical length-to-width ratio based on wind speed. Note that this generalization is different from the one use in WFR-Fire (FIXME cite) and ForeFire's default Rothermel implementation (FIXME cite), which instead project the wind and slope vectors onto the front-normal direction.
+1. Pyretechnics generalizes Rothermel spread rate to all front orientations by assuming that surface fire follows Huygens' Principle with an elliptical wavelet shape [cite:@Anderson1982ModellingSpread; @KnightColeman1993PerimeterExpansionHuygens; @Richards1995fire2dSpread]; the Rothermel model determines the maximum radial velocity of the wavelet, while another model computes the elliptical length-to-width ratio based on wind speed. Note that this generalization is different from the one use in WRF-Fire [cite:@MunozEsparza2018WRFFire] and ForeFire's default Rothermel implementation [cite:@ForeFireJOSS2025], which instead project the wind and slope vectors onto the front-normal direction.
 2. Pyretechnics derives a fireline intensity from the surface fire spread rate and local conditions $Z$; then, based on canopy characteristics, it determines whether crown fire occurs. If so, the spread rate may be adjusted to be (much) higher than the surface spread rate. See section [[#crown-fire-initiation]] for more details.
 
 Let us formalize the above description.
@@ -133,7 +179,7 @@ The elliptical dimensions are specified by:
 3. A backing spread rate $V_B$ (the ``rear length'' of the ellipse);
 4. A length-to-width ratio $(L/W) \geq 1$, such that the width of the ellipse is $(L/W)^{-1}(V_H + V_B)$
 
-Then, it can be seen (nontrivially [cite:@Richards1995fire2dSpread; @Catchpole1982intensityFirePerimeter]) that the front-normal spread rate induced by this wavelet is
+Then, then, a non trivial derivation [cite:@Richards1995fire2dSpread; @Catchpole1982intensityFirePerimeter] shows that the front-normal spread rate induced by this wavelet is
 
 \begin{align}\label{eq:elliptical-ros}
     V_{/}(\vec{n}) = \frac{V_H - V_B}{2}(\vec{u}_H \cdot \vec{n}) + V_H \sqrt{1 + \left((L/W)^2 - 1\right)\left( \vec{u}_H \cdot \vec{n} \right)^2}
@@ -220,9 +266,9 @@ the Hamiltonian computed by Pyretechnics is convex for surface-only fires,
 but not in conditions that yield a transition from surface to crown fire [cite:@Waeselynck2026PointyHeadedFires].
 
 The level-set method is useful not only for mathematical conceptualization,
-but also as an approach to designing numerical solvers for the evolution of the fire front [cite:@Sethian1996FastMarchingMethods] FIXME CITE OTHERS,
+but also as an approach to designing numerical solvers for the evolution of the fire front [cite:@Sethian1996FastMarchingMethods; @Mallet2009FireLevelSet; @RehmMcDermott2009levelSet; @Lautenberger2013elmfire; @MunozEsparza2018WRFFire; @Mandikas2025HighResolutionScheme].
 Indeed, at the time of writing, the numerical solver used by Pyretechnics is based on the level-set method,
-similarly to ELMFIRE (see section FIXME).
+similarly to ELMFIRE (see section [[#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)]]).
 
 
 *** Converting from slope-tangential to horizontal spread rates
@@ -316,7 +362,7 @@ Pyretechnics also supports doing fire behavior calculations without simulating f
 for example by computing heading fire behavior metrics at every point of the landscape.
 To do this, Pyretechnics provides functions to compute fire behavior in any cell of the landscape
 with a user-supplied orientation of the fire front.
-See sections FIXME for details.
+See section [[#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction]] for details.
 
 
 
@@ -326,7 +372,7 @@ Pyretechnics supports modeling long-rage spotting from firebrands - that is, sec
 
 1. When a cell burned, an expected number $\nu$ of firebrands emitted by the cell is computed. Currently, this number is proportional to heat output; the proportionality factor is a user setting.
 2. The nubmer of emitted firebrands is a drawn as a Poisson random variable with mean $\nu$.
-3. A transport distribution (i.e. the distribution of where the firebrand will land) is computed based on the weather conditions and fire behavior at the site of emissions, along with some global user-settable parameters. This distribution is log-normal in the downwind direction, and normal in the crosswind direction, following the approach of (FIXME cite Sardoy).
+3. A transport distribution (i.e. the distribution of where the firebrand will land) is computed based on the weather conditions and fire behavior at the site of emissions, along with some global user-settable parameters. This distribution is log-normal in the downwind direction, and normal in the crosswind direction, following the approach of [cite:@Sardoy2008FirebrandDistribution].
 Each firebrand is flown independently by drawing from this distribution.
 4. Whether the firebrands ignities a spot fire is determined by a probability computed from the local conditions at the landing site. If so, the sport fire started after a fixed time interval after emission.
 
@@ -335,7 +381,15 @@ This model is quite crude; the rationale of the authors is that there is current
 Users who find this model too limited might want to interleave their own spotting model with Pyretechnics execution.
 
 
-** FIXME suppression support
+** Suppression by fireline construction
+
+Pyretechnics does not ship with one integrated suppression model;
+given the potential complexity of suppression,
+it was deemed better to instead provide a toolkit for users to implement their own suppression models as needed.
+A typical implementation will interleave Pyretechnics front-propagation runs with suppression that update the inputs.
+
+What Pyretechnics offers is a set of functions for constructing firelines based on user-provided objectives and constraints. The cells neighboring the fire front are indexed into contiguous sequences. Given a priority function, a construction rate, and a time budget, the model resolves the contiguous segment with the highest total priority that can be built within budget, and replaces the fuel model of the unburned cells along that segment so they no longer burn. Details and code are in section [[#fire-suppression-techniques-(pyretechnics.suppression)]].
+
 
 
 * Data Model
@@ -10344,8 +10398,6 @@ Similarly to ELMFIRE,
 Pyretechnics uses a Superbee flux limiter [cite:@Sweby1984FluxLimiters] to prevent spurious oscillations in the numerical solution.
 The ELMFIRE documentation[fn:elmfire-level-set] describes this as:
 
-[fn:elmfire-level-set] https://elmfire.io/tech_ref.html#level-set-propagation
-
 1. computing a front-normal spread rate vector $U$, derived from the phi gradient $\ddot{\nabla}\phi$ computed with basic finite differences;
 2. using the Superbee flux limiter to compute an updated (flux-limited) gradient $\hat{\nabla} \phi$;
 3. computing $\partial{\phi}/{\partial t} = - U \cdot \hat{\nabla} \phi$.
@@ -10874,7 +10926,7 @@ def resolve_cell_elliptical_info(fb_opts         : FireBehaviorSettings,
 
 
 
-*** Runge-Kutta time marching
+*** Runge-Kutta scheme and CFL condition
 
 Like ELMFIRE, Pyretechnics uses a 2nd-order Runge-Kutta scheme to march the Hamilton-Jacobi equation forward in time.
 The update to the $\phi$ array happens in two passes.
@@ -11640,8 +11692,13 @@ def sync_tracked_cells_arrays(spread_inputs: SpreadInputs,
 
 As cells get burned by front propagation,
 they have the opportunity to cast firebrands which will ignite other cells,
-as described in section [[#spot-ignition-model]].
+as described in section [[#spot-fire-equations-(pyretechnics.spot_fire)]].
 The set of in-flight firebrands is tracked as a sorted dictionary from ignition time to the set of target cells.
+
+The number of emitted firebrands is drawn as a Poisson random variable,
+with mean given by the expected number of firebrands.
+A special-purpose class =BufferedRandGen= was created to sample these Poisson variates efficiently,
+especially in the case where most of them have a very low expectation.
 
 #+NAME: els-spotting
 #+begin_src python
@@ -12513,6 +12570,8 @@ method of fire spread, operationalized in Chris Lautenberger's ELMFIRE
 model[fn:elmfire-website].
 
 [fn:elmfire-website] https://elmfire.io
+
+[fn:elmfire-level-set] https://elmfire.io/tech_ref.html#level-set-propagation
 
 
 *** The $\phi$ Field
@@ -17985,6 +18044,10 @@ for (output_matrices, file_suffix) in [(output_matrices_low_res, "low_res"),
   :PROPERTIES:
   :CUSTOM_ID: fire-suppression-techniques-(pyretechnics.suppression)
   :END:
+
+
+FIXME technical overview.
+
 ** For Developers
    :PROPERTIES:
    :CUSTOM_ID: for-developers-suppression
