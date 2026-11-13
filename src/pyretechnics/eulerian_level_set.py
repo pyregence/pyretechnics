@@ -478,8 +478,6 @@ def lookup_cell_inputs(spread_inputs: SpreadInputs, space_time_coordinate: coord
         fuel_spread_adjustment        = fuel_spread_adjustment,
         weather_spread_adjustment     = weather_spread_adjustment,
     )
-
-
 # spread-inputs ends here
 # burn-cell-toward-phi-gradient ends here
 # [[file:../../org/pyretechnics.org::frontier-cell-encoding][frontier-cell-encoding]]
@@ -786,8 +784,6 @@ def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: v
         return min(surface_dphi_dt, crown_dphi_dt) # NOTE: dphi_dt <= 0
     else:
         return surface_dphi_dt
-
-
 # dphi-from-ellipses ends here
 # [[file:../../org/pyretechnics.org::resolve-cell-fire-behavior][resolve-cell-fire-behavior]]
 # TODO: Is it faster if we save this as a top-level constant?
@@ -1105,8 +1101,6 @@ def collect_phi_cache(phi_matrix: cy.float[:,::1], tca: TrackedCellsArrays) -> c
         phi_cache[i, 6] = phi_matrix[2+y-1, 2+x]
         phi_cache[i, 7] = phi_matrix[2+y+1, 2+x]
         phi_cache[i, 8] = phi_matrix[2+y+2, 2+x]
-
-
 # intro-tracked-cells-arrays ends here
 # [[file:../../org/pyretechnics.org::refreshing-cached-values][refreshing-cached-values]]
 @cy.cfunc
@@ -1484,8 +1478,6 @@ def sync_tracked_cells_arrays(spread_inputs: SpreadInputs,
                                 # cell_new was not in tca_old
                                 load_tracked_cell_data(spread_inputs, fb_opts, cell_new, tca_new, i_new)
                             i_new += 1
-
-
 # refreshing-cached-values ends here
 # [[file:../../org/pyretechnics.org::runge-kutta][runge-kutta]]
 @cy.cfunc
@@ -1687,8 +1679,6 @@ def runge_kutta_pass2(dy                : cy.float,
                                    phi_gradient_xy = phi_gradient_xy_combined)
             )
     return burned_cells
-
-
 # runge-kutta ends here
 # [[file:../../org/pyretechnics.org::spread-state][spread-state]]
 @cy.cclass
@@ -2337,8 +2327,6 @@ def ignite_from_spotting(spot_ignitions: SortedDict[float, set],
                                            phi_gradient_xy = (0.0, 0.0))
                     )
     return ignited_cells
-
-
 # els-spotting ends here
 # [[file:../../org/pyretechnics.org::process-burned-cells][process-burned-cells]]
 @cy.cfunc
@@ -2390,8 +2378,6 @@ def process_burned_cells(spread_inputs   : SpreadInputs,
                                   random_generator,
                                   fb_opts.spot_config,
                                   spot_ignitions)
-
-
 # process-burned-cells ends here
 # [[file:../../org/pyretechnics.org::tracked-cells-update][tracked-cells-update]]
 @cy.cfunc

@@ -9129,6 +9129,7 @@ structure is used to hold input data.
 
 #+NAME: spread-inputs
 #+begin_src python
+# TODO: Turn this into a struct once its methods have been removed
 @cy.cclass
 class SpreadInputs:
     """
@@ -9323,8 +9324,6 @@ def lookup_cell_inputs(spread_inputs: SpreadInputs, space_time_coordinate: coord
         fuel_spread_adjustment        = fuel_spread_adjustment,
         weather_spread_adjustment     = weather_spread_adjustment,
     )
-
-
 #+end_src
 
 *** SpreadState data structure
@@ -10550,6 +10549,7 @@ def calc_dphi_flim_x(p00: cy.float, pw2: cy.float, pw1: cy.float, pe1: cy.float,
         phi_west = p00 + half_superbee_dphi_up(dphi_up, dphi_loc)
     return (phi_east - phi_west)
 
+
 # NOTE: This is actually the same function as the previous one. But
 #       who knows, maybe we get a performance gain by differentiating
 #       code sites.
@@ -10807,9 +10807,6 @@ def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: v
         return min(surface_dphi_dt, crown_dphi_dt) # NOTE: dphi_dt <= 0
     else:
         return surface_dphi_dt
-
-
-
 #+end_src
 
 *** Resolving elliptical dimensions
@@ -11250,9 +11247,6 @@ def runge_kutta_pass2(dy                : cy.float,
                                    phi_gradient_xy = phi_gradient_xy_combined)
             )
     return burned_cells
-
-
-
 #+end_src
 
 
@@ -11384,8 +11378,6 @@ def collect_phi_cache(phi_matrix: cy.float[:,::1], tca: TrackedCellsArrays) -> c
         phi_cache[i, 6] = phi_matrix[2+y-1, 2+x]
         phi_cache[i, 7] = phi_matrix[2+y+1, 2+x]
         phi_cache[i, 8] = phi_matrix[2+y+2, 2+x]
-
-
 #+end_src
 
 
@@ -11772,8 +11764,6 @@ def sync_tracked_cells_arrays(spread_inputs: SpreadInputs,
                                 # cell_new was not in tca_old
                                 load_tracked_cell_data(spread_inputs, fb_opts, cell_new, tca_new, i_new)
                             i_new += 1
-
-
 #+end_src
 
 
@@ -11880,8 +11870,6 @@ def ignite_from_spotting(spot_ignitions: SortedDict[float, set],
                                            phi_gradient_xy = (0.0, 0.0))
                     )
     return ignited_cells
-
-
 #+end_src
 
 *** Processing burned cells
@@ -12218,8 +12206,6 @@ def process_burned_cells(spread_inputs   : SpreadInputs,
                                   random_generator,
                                   fb_opts.spot_config,
                                   spot_ignitions)
-
-
 #+end_src
 
 
