@@ -39,59 +39,6 @@ else:
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
 # eulerian-level-set-imports ends here
-# [[file:../../org/pyretechnics.org::phi-field-spatial-gradients-approx][phi-field-spatial-gradients-approx]]
-# NOTE: No longer used in tight loops. FIXME this whole block is useless.
-@cy.cfunc
-@cy.exceptval(check=False)
-def calc_dphi_dx_approx(phi_matrix: cy.float[:,::1], dx: cy.float, x: pyidx, y: pyidx) -> cy.float:
-    """
-    Calculate the spatial gradient of `phi_matrix` in the x (west->east)
-    direction at grid cell (x,y) given the cell width `dx`.
-    """
-    east_x: pyidx = x + 1
-    west_x: pyidx = x - 1
-    return (phi_matrix[2+y, 2+east_x] - phi_matrix[2+y, 2+west_x]) / (2.0 * dx)
-
-
-# NOTE: No longer used in tight loops.
-@cy.cfunc
-@cy.exceptval(check=False)
-def calc_dphi_dy_approx(phi_matrix: cy.float[:,::1], dy: cy.float, x: pyidx, y: pyidx) -> cy.float:
-    """
-    Calculate the spatial gradient of `phi_matrix` in the y (south->north)
-    direction at grid cell (x,y) given the cell height `dy`.
-    """
-    north_y: pyidx = y + 1
-    south_y: pyidx = y - 1
-    return (phi_matrix[2+north_y, 2+x] - phi_matrix[2+south_y, 2+x]) / (2.0 * dy)
-
-
-# NOTE: No longer used in tight loops.
-@cy.cfunc
-@cy.exceptval(check=False)
-def calc_phi_gradient_approx(phi_matrix: cy.float[:,::1], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
-    """
-    Calculate the spatial gradient of `phi_matrix` at grid cell (x,y)
-    given the cell width `dx` and the cell height `dy`.
-    """
-    dphi_dx: cy.float = calc_dphi_dx_approx(phi_matrix, dx, x, y)
-    dphi_dy: cy.float = calc_dphi_dy_approx(phi_matrix, dy, x, y)
-    return (dphi_dx, dphi_dy)
-# phi-field-spatial-gradients-approx ends here
-# [[file:../../org/pyretechnics.org::phi-field-normal-vector][phi-field-normal-vector]]
-# TODO: Remove unused function
-@cy.cfunc
-@cy.inline
-@cy.exceptval(check=False)
-def calc_phi_normal_vector(phi_matrix: cy.float[:,::1], dx: cy.float, dy: cy.float, x: pyidx, y: pyidx) -> vec_xy:
-    """
-    Calculate the phi field normal vector in the x and y dimensions.
-
-    - n_x: eastward component of the unit normal vector
-    - n_y: northward component of the unit normal vector
-    """
-    return vu.as_unit_vector_2d(calc_phi_gradient_approx(phi_matrix, dx, dy, x, y)) # (n_x, n_y)
-# phi-field-normal-vector ends here
 # [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
 # TODO: Remove unused function
 @cy.cfunc
