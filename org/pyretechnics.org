@@ -9038,7 +9038,6 @@ Layer: flame_length
    :header-args:python+: :exports code
    :END:
 
-
 The level set method consists of simulating the propagation of the fire front
 by numerically solving the Hamilton-Jacobi equation mentioned in section [[#mathematical-formalization-level-set]]:
 
@@ -9955,7 +9954,7 @@ updates by representing the tracked cells in blocks with a flat memory
 layout:
 
 #+NAME: narrow-band-tracking
-#+begin_src python
+#+begin_src python :tangle ../src/pyretechnics/narrow_band_tracking.py
 """
 Custom data structures for keeping track of cells in the narrow band.
 
