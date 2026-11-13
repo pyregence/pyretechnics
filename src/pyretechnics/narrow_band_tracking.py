@@ -1,3 +1,4 @@
+# [[file:../../org/pyretechnics.org::narrow-band-tracking][narrow-band-tracking]]
 """
 Custom data structures for keeping track of cells in the narrow band.
 
@@ -349,3 +350,4 @@ def __resolve_next(tc_iter: TrackedCellsIterator) -> cy.bint:
 @cy.inline
 def tracked_cells_iterator(tracked_cells: NarrowBandTracker) -> TrackedCellsIterator:
     return TrackedCellsIterator(iterate_segments(tracked_cells))
+# narrow-band-tracking ends here
