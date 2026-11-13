@@ -9103,11 +9103,10 @@ else:
     import pyretechnics.narrow_band_tracking as nbt
 #+end_src
 
-
 *** Inputs data structure
 
-For efficiency in numerical loops,
-an efficient =SpreadInputs= data structure is used to hold input data.
+For efficiency in numerical loops, an efficient =SpreadInputs= data
+structure is used to hold input data.
 
 #+NAME: spread-inputs
 #+begin_src python
@@ -9309,18 +9308,18 @@ def lookup_cell_inputs(spread_inputs: SpreadInputs, space_time_coordinate: coord
 
 #+end_src
 
-
 *** SpreadState data structure
 
-The long-lived state of the level-set simulation is stored in a =SpreadState= data structure.
-This notably features the $\phi$ and $\phi^\ast$ arrays, as well as output matrices.
-This does not, however, feature the narrow-band tracker and the various caches.
-The meaning of these data structures will be explained in the following sections.
+The long-lived state of the level-set simulation is stored in a
+=SpreadState= data structure. This notably features the $\phi$ and
+$\phi^\ast$ arrays, as well as output matrices. This does not,
+however, feature the narrow-band tracker and the various caches. The
+meaning of these data structures will be explained in the following
+sections.
 
-Various read/write methods are provided with this class,
-in particular the ability to ignite cells,
-to resize the simulation grid,
-and to travel backward in time.
+Various read/write methods are provided with this class, in particular
+the ability to ignite cells, to resize the simulation grid, and to
+travel backward in time.
 
 #+NAME: spread-state
 #+begin_src python
@@ -9782,17 +9781,17 @@ class SpreadState:
         return self
 #+end_src
 
-
-
 *** Narrow band tracking
 
-An important numerical optimization consists of updating the $\phi$ field only in those cells
-that are close enough to the current fire front.
-This makes the computational cost of each time step proportional to the length of the fire perimeter.
-This technique is called the /narrow band/ method [cite:@AdalsteinssonSethian1995NarrowBand].
+An important numerical optimization consists of updating the $\phi$
+field only in those cells that are close enough to the current fire
+front. This makes the computational cost of each time step
+proportional to the length of the fire perimeter. This technique is
+called the /narrow band/ method [cite:@AdalsteinssonSethian1995NarrowBand].
 
-Pyretechnics defines a /frontier cell/ as a burnable cell with a burnable cardinal neighbor of opposite $\phi$ sign.
-Diagonal neighbors are not considered.
+Pyretechnics defines a /frontier cell/ as a burnable cell with a
+burnable cardinal neighbor of opposite $\phi$ sign. Diagonal neighbors
+are not considered.
 
 #+NAME: frontier-cells-resolution
 #+begin_src python
@@ -9870,11 +9869,72 @@ def identify_all_frontier_cells(phi_matrix     : cy.float[:,::1],
     return frontier_cells
 #+end_src
 
-The narrow band is the Chebyshev square of radius =buffer_width= around each frontier cell.
-The default radius is 3, so the square is 7 by 7, which covers the flux-limiter stencil.
+Frontier cells will be represented as Python sets; cell coordinates
+are encoded as a single integer instead of a tuple, as that enables a
+more efficient usage of memory:
 
-Pyretechnics uses a custom data structure for representing the narrow band.
-This data structure is sparse but enables fast iteration and updates by representing the tracked cells in blocks with a flat memory layout:
+#+NAME: frontier-cell-encoding
+#+begin_src python
+@cy.cfunc
+@cy.inline
+def encode_cell_index(y: pyidx, x: pyidx) -> object: # ulong
+    """
+    Encodes a (y, x) tuple into a single Python integer object.
+    This enables a more efficient memory layout than a tuple of Python integers.
+    """
+    return (cy.cast(cy.ulonglong, y) << 32) + cy.cast(cy.ulonglong, x)
+
+
+@cy.cfunc
+@cy.exceptval(check=False)
+def decode_cell_index(encoded_cell_index: object) -> coord_yx:
+    cell_index: cy.ulonglong = encoded_cell_index
+    y         : pyidx        = cell_index >> 32
+    x         : pyidx        = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
+    return (y, x)
+
+@cy.cfunc
+def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
+    # Group the frontier_cells into burned and unburned lists
+    burned_ys         : list[pyidx] = []
+    burned_xs         : list[pyidx] = []
+    unburned_ys       : list[pyidx] = []
+    unburned_xs       : list[pyidx] = []
+    encoded_cell_index: object
+    cell_index        : coord_yx
+    y                 : pyidx
+    x                 : pyidx
+    for encoded_cell_index in frontier_cells:
+        cell_index = decode_cell_index(encoded_cell_index)
+        y          = cell_index[0]
+        x          = cell_index[1]
+        if (phi_matrix[2+y, 2+x] < 0.0):
+            burned_ys.append(y)
+            burned_xs.append(x)
+        else:
+            unburned_ys.append(y)
+            unburned_xs.append(x)
+    # Return a dictionary of 2D Numpy array indices
+    return {
+        "burned_cells": (
+            np.asarray(burned_ys, dtype=np.int32),
+            np.asarray(burned_xs, dtype=np.int32)
+        ),
+        "unburned_cells": (
+            np.asarray(unburned_ys, dtype=np.int32),
+            np.asarray(unburned_xs, dtype=np.int32)
+        ),
+    }
+#+end_src
+
+The narrow band is the Chebyshev square of radius =buffer_width=
+around each frontier cell. The default radius is 3, so the square is 7
+by 7, which covers the flux-limiter stencil.
+
+Pyretechnics uses a custom data structure for representing the narrow
+band. This data structure is sparse but enables fast iteration and
+updates by representing the tracked cells in blocks with a flat memory
+layout:
 
 #+NAME: narrow-band-tracking
 #+begin_src python
@@ -10231,71 +10291,34 @@ def tracked_cells_iterator(tracked_cells: NarrowBandTracker) -> TrackedCellsIter
     return TrackedCellsIterator(iterate_segments(tracked_cells))
 #+end_src
 
+At the beginning of a spread simulation, Pyretechnics starts by
+identifying all cells within the narrow band of the frontier cells and
+calls these the tracked cells set.
 
-
-Frontier cells will be represented as Python sets;
-cell coordinates are encoded as a single integer instead of a tuple,
-as that enables a more efficient usage of memory:
-
-#+NAME: frontier-cell-encoding
+#+NAME: phi-field-perimeter-tracking
 #+begin_src python
 @cy.cfunc
-@cy.inline
-def encode_cell_index(y: pyidx, x: pyidx) -> object: # ulong
+def identify_tracked_cells(frontier_cells: set,
+                           buffer_width  : pyidx,
+                           rows          : pyidx,
+                           cols          : pyidx) -> nbt.NarrowBandTracker:
     """
-    Encodes a (y, x) tuple into a single Python integer object.
-    This enables a more efficient memory layout than a tuple of Python integers.
+    TODO: Add docstring
     """
-    return (cy.cast(cy.ulonglong, y) << 32) + cy.cast(cy.ulonglong, x)
-
-
-@cy.cfunc
-@cy.exceptval(check=False)
-def decode_cell_index(encoded_cell_index: object) -> coord_yx:
-    cell_index: cy.ulonglong = encoded_cell_index
-    y         : pyidx        = cell_index >> 32
-    x         : pyidx        = cy.cast(cy.uint, cell_index) # NOTE: faster than (cell_index & 0xFFFFFFFF)
-    return (y, x)
-
-@cy.cfunc
-def decode_frontier_cells(frontier_cells: set, phi_matrix: cy.float[:,::1]) -> dict:
-    # Group the frontier_cells into burned and unburned lists
-    burned_ys         : list[pyidx] = []
-    burned_xs         : list[pyidx] = []
-    unburned_ys       : list[pyidx] = []
-    unburned_xs       : list[pyidx] = []
+    tracked_cells     : nbt.NarrowBandTracker = nbt.new_NarrowBandTracker(rows, cols)
     encoded_cell_index: object
-    cell_index        : coord_yx
     y                 : pyidx
     x                 : pyidx
     for encoded_cell_index in frontier_cells:
-        cell_index = decode_cell_index(encoded_cell_index)
-        y          = cell_index[0]
-        x          = cell_index[1]
-        if (phi_matrix[2+y, 2+x] < 0.0):
-            burned_ys.append(y)
-            burned_xs.append(x)
-        else:
-            unburned_ys.append(y)
-            unburned_xs.append(x)
-    # Return a dictionary of 2D Numpy array indices
-    return {
-        "burned_cells": (
-            np.asarray(burned_ys, dtype=np.int32),
-            np.asarray(burned_xs, dtype=np.int32)
-        ),
-        "unburned_cells": (
-            np.asarray(unburned_ys, dtype=np.int32),
-            np.asarray(unburned_xs, dtype=np.int32)
-        ),
-    }
+        (y, x) = decode_cell_index(encoded_cell_index)
+        nbt.inc_square_around(tracked_cells, y, x, buffer_width)
+    return tracked_cells
 #+end_src
 
-
-As new cells are burned during the simulation,
-Pyretechnics will compute /diffs/ to the set of tracked cells;
-economically represented as sets of additions and removals.
-These updates are then applied to the =NarrowBandTracker= data structure.
+As new cells are burned during the simulation, Pyretechnics will
+compute /diffs/ to the set of tracked cells; economically represented
+as sets of additions and removals. These updates are then applied to
+the =NarrowBandTracker= data structure.
 
 #+NAME: tracked-cells-update
 #+begin_src python
@@ -10438,8 +10461,6 @@ def update_tracked_cells_with_frontier_diff(tracked_cells         : nbt.NarrowBa
     # Return updated tracked cells
     return tracked_cells
 #+end_src
-
-
 
 *** Flux limiter
 
