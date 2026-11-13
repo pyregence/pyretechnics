@@ -4138,6 +4138,25 @@ horizontal wind and slope azimuth vectors to and from the
 slope-tangential plane, upon which those equations
 are defined, we incorporate the slope-tangential to horizon correction described in section [[#from-slope-tangential-to-horizontal]].
 
+#+NAME: surface-fire-combine-wind-and-slope-vectors
+#+begin_src python
+@cy.cfunc
+@cy.exceptval(check=False)
+def project_wind_and_slope_vectors_3d(wind_speed        : cy.float,
+                                      downwind_direction: cy.float,
+                                      slope             : cy.float,
+                                      upslope_direction : cy.float) -> ProjectedVectors:
+    """
+    Given these inputs:
+    - wind_speed         :: S
+    - downwind_direction :: degrees clockwise from North
+    - slope              :: rise/run
+    - upslope_direction  :: degrees clockwise from North
+
+    return a ProjectedVectors struct containing these keys:
+    - wind_vector_3d  :: (x: S, y: S, z: S)
+    - slope_vector_3d :: (x, y, z)
+    """
     # Convert wind and slope vectors from azimuthal to cartesian coordinates
     wind_vector_2d : vec_xy = conv.azimuthal_to_cartesian(wind_speed, downwind_direction)
     slope_vector_2d: vec_xy = conv.azimuthal_to_cartesian(slope, upslope_direction)
