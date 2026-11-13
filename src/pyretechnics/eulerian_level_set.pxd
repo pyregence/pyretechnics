@@ -7,7 +7,6 @@
 # from pyretechnics.random cimport BufferedRandGen
 # cimport numpy as np
 #
-# cdef float calc_phi_normal_azimuth(vec_xy phi_normal_vector) noexcept
 # cdef float half_superbee_dphi_up(float dphi_up, float dphi_loc) noexcept
 # cdef float calc_dphi_flim_x(float p00, float pw2, float pw1, float pe1, float pe2) noexcept
 # cdef float calc_dphi_flim_y(float p00, float ps2, float ps1, float pn1, float pn2) noexcept
