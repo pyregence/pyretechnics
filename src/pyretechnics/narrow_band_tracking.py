@@ -350,4 +350,4 @@ def __resolve_next(tc_iter: TrackedCellsIterator) -> cy.bint:
 @cy.inline
 def tracked_cells_iterator(tracked_cells: NarrowBandTracker) -> TrackedCellsIterator:
     return TrackedCellsIterator(iterate_segments(tracked_cells))
-# narrow-band-tracking-imports ends here
+# narrow-band-tracking ends here
