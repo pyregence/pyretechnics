@@ -7,10 +7,6 @@
 # from pyretechnics.random cimport BufferedRandGen
 # cimport numpy as np
 #
-# cdef float calc_dphi_dx_approx(float[:,::1] phi_matrix, float dx, pyidx x, pyidx y) noexcept
-# cdef float calc_dphi_dy_approx(float[:,::1] phi_matrix, float dy, pyidx x, pyidx y) noexcept
-# cdef vec_xy calc_phi_gradient_approx(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
-# cdef vec_xy calc_phi_normal_vector(float[:,::1] phi_matrix, float dx, float dy, pyidx x, pyidx y) noexcept
 # cdef float calc_phi_normal_azimuth(vec_xy phi_normal_vector) noexcept
 # cdef float half_superbee_dphi_up(float dphi_up, float dphi_loc) noexcept
 # cdef float calc_dphi_flim_x(float p00, float pw2, float pw1, float pe1, float pe2) noexcept
