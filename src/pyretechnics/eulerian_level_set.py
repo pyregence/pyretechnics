@@ -39,34 +39,6 @@ else:
     import pyretechnics.spot_fire as spot
     import pyretechnics.narrow_band_tracking as nbt
 # eulerian-level-set-imports ends here
-# [[file:../../org/pyretechnics.org::phi-field-normal-vector-angle][phi-field-normal-vector-angle]]
-# TODO: Remove unused function
-@cy.cfunc
-@cy.exceptval(check=False)
-def calc_phi_normal_azimuth(phi_normal_vector: vec_xy) -> cy.float:
-    """
-    Calculate the angle (measured in degrees clockwise from North)
-    to which the phi field's normal vector points.
-    """
-    (n_x, n_y) = phi_normal_vector
-    angle: cy.float
-    if n_x > 0.0:
-        if n_y >= 0.0:
-            angle = 0.5 * pi - atan(n_y / n_x)
-        elif n_y < 0.0:
-            angle = 0.5 * pi + atan(abs(n_y) / n_x)
-    elif n_x < 0.0:
-        if n_y >= 0.0:
-            angle = 1.5 * pi + atan(n_y / abs(n_x))
-        elif n_y < 0.0:
-            angle = 1.5 * pi - atan(n_y / n_x)
-    else:
-        if n_y >= 0.0:
-            angle = 0.0
-        elif n_y < 0.0:
-            angle = pi
-    return conv.rad_to_deg(angle)
-# phi-field-normal-vector-angle ends here
 # [[file:../../org/pyretechnics.org::superbee-flux-limiter][superbee-flux-limiter]]
 @cy.cfunc
 @cy.exceptval(check=False)
