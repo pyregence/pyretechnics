@@ -269,7 +269,7 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#propagating-fire-fronts-from-spread-rates">2.1.1. Propagating Fire Fronts from Spread Rates</a></li>
 <li><a href="#deriving-the-spread-rate-overview">2.1.2. Deriving the Spread Rate from Rothermel and Crowning Equations</a></li>
-<li><a href="#mathematical-formalization-level-set">2.1.3. Mathematical Formalization: Level-set Method and Hamilton-Jacobi Equation</a></li>
+<li><a href="#mathematical-formalization-level-set">2.1.3. Mathematical Formalization: Level Set Method and Hamilton-Jacobi Equation</a></li>
 <li><a href="#from-slope-tangential-to-horizontal">2.1.4. Converting from Slope-tangential to Horizontal Spread Rates</a></li>
 </ul>
 </li>
@@ -516,39 +516,84 @@ org_html_manager.setup();  // activate after the parameters are set
 <h3 id="overview-of-pyretechnics"><span class="section-number-3">1.1.</span> Overview of Pyretechnics</h3>
 <div class="outline-text-3" id="text-overview-of-pyretechnics">
 <p>
-Pyretechnics is a Python library for simulating wildland fires. Pyretechnics implements physical and empirical equations which predict the evolution of a fire front and compute related fire behavior metrics (e.g. rate of spread and flame length).
+Pyretechnics is a Python library for simulating wildland fires. It
+implements a wide variety of physical and empirical equations, which
+together can be used to predict the evolution of a fire front and
+compute related fire behavior metrics (e.g., fire type, rate of
+spread, fireline intensity, and flame length).
 </p>
 
 <p>
 These computations involve 2 sorts of components:
 </p>
+
 <ol class="org-ol">
-<li>A theoretical <i>fire behavior model</i> (section <a href="#theoretical-models">2</a>), which specifies the equations that model the fire. This includes among other things the Rothermel model with elliptical Huygens wavelets.</li>
-<li><i>Numerical algorithms</i> which approximate the above by discrete data structures that computers can process. This includes the level-set method which will be described below.</li>
+<li>A theoretical <i>fire behavior model</i> (section <a href="#theoretical-models">2</a>),
+which specifies the equations that model the fire. This includes
+among other things the Rothermel model with elliptical Huygens
+wavelets.</li>
+<li><i>Numerical algorithms</i>, which approximate the above by discrete
+data structures that computers can process. This includes the
+level set method<sup><a id="fnr.elmfire-level-set" class="footref" href="#fn.elmfire-level-set" role="doc-backlink">1</a></sup>, which will be described
+below.</li>
 </ol>
 
 <p>
-Pyretechnics is similar in scope to FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>), Prometheus (<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>), or ELMFIRE (<a href="#citeproc_bib_item_24">Lautenberger 2013</a>).
-However, the ergonomics are different, because Pyretechnics is meant to be used as a Python library rather than as a standalone program.
+Pyretechnics is similar in scope to FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>),
+Prometheus (<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>), or ELMFIRE
+(<a href="#citeproc_bib_item_24">Lautenberger 2013</a>). However, the ergonomics are
+different, because Pyretechnics is meant to be used as a Python
+library rather than as a standalone program.
 </p>
 
 <p>
-At the core of Pyretechnics is an algorithm for propagating fire fronts. This involves:
+At the core of Pyretechnics is an algorithm for propagating fire
+fronts. This involves:
 </p>
+
 <ol class="org-ol">
-<li>The Rothermel model, which computes the spread rate and behavior metrics of surface fire in the heading direction only.</li>
-<li>Equations for <i>elliptical dimensions</i>, enabling the model to calculate the spread rate and behavior metrics of surface fire in the direction <i>normal</i> to the fire front, by applying the Huygens principle.</li>
-<li>Crown fire equations, which extend the above to model the combustion of the canopy, which can make the fire front spread faster and more intensely. Currently, Pyretechnics implements equations of Cruz and Van Wagner (<a href="#citeproc_bib_item_17">Cruz, Alexander, and Wakimoto 2005</a>; <a href="#citeproc_bib_item_44">Wagner 1977</a>).</li>
-<li>A spotting module, which models the ignition of long-range spot fires.</li>
-<li>A numerical solver for tracking the fire front. Currently, that's the Eulerian level-set method (section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">10</a>), similarly to ELMFIRE.</li>
+<li>The Rothermel model, which computes the spread rate and behavior
+metrics of surface fire in the heading direction only.</li>
+<li>Equations for <i>elliptical dimensions</i>, enabling the model to
+calculate the spread rate and behavior metrics of surface fire in
+the direction <i>normal</i> to the fire front, by applying the Huygens
+principle.</li>
+<li>Crown fire equations, which extend the above to model the
+combustion of the canopy, which can make the fire front spread
+faster and more intensely. Currently, Pyretechnics implements the
+equations of Cruz and Van Wagner (<a href="#citeproc_bib_item_17">Cruz, Alexander, and Wakimoto 2005</a>; <a href="#citeproc_bib_item_44">Wagner 1977</a>).</li>
+<li>A spotting module, which models the ignition of long-range spot
+fires.</li>
+<li>A numerical solver for tracking the fire front. Currently, that's
+the Eulerian level set method (section
+<a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">10</a>),
+similarly to ELMFIRE<sup><a id="fnr.elmfire-website" class="footref" href="#fn.elmfire-website" role="doc-backlink">2</a></sup>.</li>
 </ol>
 
 <p>
-The inputs of Pyretechnics are rasters of fuels, topography and weather inputs with (at most) 2 spatial dimensions and 1 temporal dimension. Fuels inputs include a categorical raster of fuels (following the classification of Scott and Burgan), and 4 canopy-related metrics, which are used to resolve midflame wind speed of surface fire, and otherwise to compute crown fire behavior. Weather inputs include wind speed and direction, and fuel moistures for 6 fuel classes.
+The inputs of Pyretechnics are rasters of fuels, topography, and
+weather with (at most) 2 spatial dimensions and 1 temporal dimension.
+Fuels inputs include a categorical raster of fuels (following the
+classification of Scott and Burgan), and 4 canopy-related metrics,
+which are used both to resolve the midflame wind speed of surface fire
+and to compute crown fire behavior. Topography inputs include
+DEM-derived slope and aspect rasters. Weather inputs include wind
+speed and direction as well as fuel moistures for 6 surface fuel
+classes and 1 canopy fuel class.
 </p>
 
 <p>
-Pyretechnics puts a strong emphasis on computing efficiency, at the expense of some physical accuracy. It is suitable for simulating hundreds of thousands of fire seasons on the scale of a country, with a pixel resolution on the order of 50m. Pyretechnics does not currently compute any feedback of the fire on the atmosphere, nor does it simulate suppression by firefighters or extinction .
+Pyretechnics puts a strong emphasis on computing efficiency at the
+expense of some physical accuracy. It is suitable for simulating
+hundreds of thousands of fire seasons on the scale of a country, with
+a pixel resolution on the order of 50m. Pyretechnics does not
+currently compute any feedback of the fire on the atmosphere, nor does
+it automatically simulate suppression by firefighters or extinction.
+However, users can inject firelines onto the landscape via Python
+scripting (see section
+<a href="#fire-suppression-techniques-(pyretechnics.suppression)">11</a>) and a
+weather-based spread rate adjustment can be used to slow or stop fire
+spread in response to changing conditions.
 </p>
 </div>
 </div>
@@ -556,7 +601,7 @@ Pyretechnics puts a strong emphasis on computing efficiency, at the expense of s
 <h3 id="about-this-documentation"><span class="section-number-3">1.2.</span> About this Documentation</h3>
 <div class="outline-text-3" id="text-about-this-documentation">
 <p>
-This document is a Literate Program<sup><a id="fnr.lit-prog-wikipedia" class="footref" href="#fn.lit-prog-wikipedia" role="doc-backlink">1</a></sup>, containing
+This document is a Literate Program<sup><a id="fnr.lit-prog-wikipedia" class="footref" href="#fn.lit-prog-wikipedia" role="doc-backlink">3</a></sup>, containing
 both the source code of the software it describes as well as the
 rationale used in each step of its design and implementation. The
 purpose of this approach is to enable both programmers and
@@ -569,7 +614,7 @@ system as the original programmer.
 <p>
 The source code repository containing this document provides a
 comprehensive reproducible development environment through the use of
-the open source GNU Guix<sup><a id="fnr.guix-website" class="footref" href="#fn.guix-website" role="doc-backlink">2</a></sup> transactional package
+the open source GNU Guix<sup><a id="fnr.guix-website" class="footref" href="#fn.guix-website" role="doc-backlink">4</a></sup> transactional package
 manager. This tool will automatically install all the software needed
 to tangle, detangle, weave, test, build, and install this library on
 your machine without conflicting with the main package manager of your
@@ -582,9 +627,10 @@ operating system. See <a href="../README.md">README.md</a> for more details.
 <h2 id="theoretical-models"><span class="section-number-2">2.</span> Theoretical Models</h2>
 <div class="outline-text-2" id="text-theoretical-models">
 <p>
-This section gives an overview of the theoretical models underlying Pyretechnics.
-We provide only a high-level description that leaves out many details,
-as these will be covered by later sections that walk through the code.
+This section gives an overview of the theoretical models underlying
+Pyretechnics. We provide only a high-level description that leaves out
+many details as these will be covered by later sections that walk
+through the code.
 </p>
 
 <p>
@@ -592,17 +638,31 @@ Let us start by giving an overview of Pyretechnics features for expert readers:
 </p>
 
 <ol class="org-ol">
-<li>Quasi-steady surface fire behavior and head fire rate of spread using the Rothermel model (<a href="#citeproc_bib_item_33">Rothermel 1972</a>);</li>
+<li>Quasi-steady surface fire behavior and head fire rate of spread
+using the Rothermel model (<a href="#citeproc_bib_item_33">Rothermel 1972</a>);</li>
 <li>Wind and slope vectoring (<a href="#citeproc_bib_item_9">Andrews 2018</a>);</li>
-<li>Generalization to non-heading front orientations by applying Huygens' Principle with elliptical wavelets (<a href="#citeproc_bib_item_6">Anderson et al. 1982</a>; <a href="#citeproc_bib_item_22">Knight and Coleman 1993</a>; <a href="#citeproc_bib_item_32">Richards 1995</a>);</li>
-<li>Crown fire initiation and spread rates using equations of Cruz and Van Wagner (<a href="#citeproc_bib_item_17">Cruz, Alexander, and Wakimoto 2005</a>; <a href="#citeproc_bib_item_44">Wagner 1977</a>).</li>
+<li>Generalization to non-heading front orientations by applying
+Huygens' Principle with elliptical wavelets
+(<a href="#citeproc_bib_item_6">Anderson et al. 1982</a>; <a href="#citeproc_bib_item_22">Knight and Coleman 1993</a>; <a href="#citeproc_bib_item_32">Richards 1995</a>);</li>
+<li>Crown fire initiation and spread rates using equations of Cruz and
+Van Wagner (<a href="#citeproc_bib_item_17">Cruz, Alexander, and Wakimoto 2005</a>; <a href="#citeproc_bib_item_44">Wagner 1977</a>).</li>
 <li>Crown fire elliptical dimensions based on (<a href="#citeproc_bib_item_34">Rothermel 1991</a>).</li>
-<li>The transition from surface to crown fire can make the Hamiltonian non-convex (<a href="#citeproc_bib_item_43">Waeselynck and Saah 2026</a>).</li>
-<li>Long-range spotting from firebrands using equations of Sardoy (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>).</li>
-<li>Utilities for simulating suppression by fireline construction, using a generic framework of segment selection based on constrained optimization.</li>
-<li>Terrain-aware spread rate corrections (section <a href="#from-slope-tangential-to-horizontal">2.1.4</a> - this is not a feature, but overlooking this aspect frequently causes bugs in fire growth models).</li>
-<li>Categorical fuel inputs using the Scott and Burgan classification (<a href="#citeproc_bib_item_38">Scott and Burgan 2005</a>).</li>
-<li>Pyretechnics does not provide fire-atmosphere coupling; users may interweave small intervals of Pyretechnics front propagation with updates to the weather inputs, using an external weather model.</li>
+<li>The transition from surface to crown fire can make the Hamiltonian
+non-convex (<a href="#citeproc_bib_item_43">Waeselynck and Saah 2026</a>).</li>
+<li>Long-range spotting from firebrands using equations of Sardoy
+(<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>).</li>
+<li>Utilities for simulating suppression by fireline construction,
+using a generic framework of segment selection based on constrained
+optimization.</li>
+<li>Terrain-aware spread rate corrections (section
+<a href="#from-slope-tangential-to-horizontal">2.1.4</a> - this is not a feature, but
+overlooking this aspect frequently causes bugs in fire growth
+models).</li>
+<li>Categorical fuel inputs using the Scott and Burgan classification
+(<a href="#citeproc_bib_item_38">Scott and Burgan 2005</a>).</li>
+<li>Pyretechnics does not provide fire-atmosphere coupling; users may
+interweave small intervals of Pyretechnics front propagation with
+updates to the weather inputs, using an external weather model.</li>
 </ol>
 
 <p>
@@ -617,37 +677,49 @@ These concepts will be detailed in the following sections.
 <h4 id="propagating-fire-fronts-from-spread-rates"><span class="section-number-4">2.1.1.</span> Propagating Fire Fronts from Spread Rates</h4>
 <div class="outline-text-4" id="text-propagating-fire-fronts-from-spread-rates">
 <p>
-At its core, Pyretechnics mdoels fire spread by calculating <i>spread rates</i>;
-a spread rate is the velocity at which an infinitesimal segment of the flaming front advances in the direction perpendicular to itself.
-That is, Pyretechnics calculates a spread rate function \(V(\vec{n}, Z(\vec{x}, t), \theta)\), in which:
+At its core, Pyretechnics models fire spread by calculating <i>spread
+rates</i>; a spread rate is the velocity at which an infinitesimal
+segment of the flaming front advances in the direction perpendicular
+to itself. That is, Pyretechnics calculates a spread rate function
+\(V(\vec{n}, Z(\vec{x}, t), \theta)\), in which:
 </p>
 
 <ol class="org-ol">
-<li>\(\vec{x}\) is the spatial location;</li>
-<li>\(t\) is the time variable;</li>
-<li>\(Z(\vec{x}, t)\) is a vector representing the local conditions (fuels, topography and weather variables);</li>
+<li>\(\vec{x}\) is the spatial location.</li>
+<li>\(t\) is the time variable.</li>
+<li>\(Z(\vec{x}, t)\) is a vector representing the local conditions (fuels, topography, and weather variables).</li>
 <li>\(\vec{n}\) is the unit vector normal to the fire front (pointing outward).</li>
-<li>\(\theta\) is a vector of model parameters, i.e. settings that the user can adjust.</li>
+<li>\(\theta\) is a vector of model parameters (i.e., settings that the user can adjust).</li>
 <li>\(V(\vec{n}, Z, \theta)\) is the spread rate.</li>
 </ol>
 
 <p>
-The above is a widely adopted class of models, implemented e.g. in FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>), ELMFIRE (<a href="#citeproc_bib_item_24">Lautenberger 2013</a>), ForeFire (<a href="#citeproc_bib_item_18">Filippi et al. 2025</a>), Prometheus (<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>).
-This is a broad class of models in that the function \(V\) can vary significantly across models;
-however, this class is also quite narrow in some ways:
+The above is a widely adopted class of models, implemented e.g. in
+FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>), ELMFIRE
+(<a href="#citeproc_bib_item_24">Lautenberger 2013</a>), ForeFire (<a href="#citeproc_bib_item_18">Filippi et al. 2025</a>),
+Prometheus (<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>). This is a broad class of
+models in that the function \(V\) can vary significantly across models.
+However, this class is also quite narrow in some ways:
 </p>
+
 <ol class="org-ol">
-<li>\(V\) does not use any curvature information or higher-order spatial variability of the fire front, only the front-normal vector \(\vec{n}\).</li>
+<li>\(V\) does not use any curvature information or higher-order spatial
+variability of the fire front, only the front-normal vector
+\(\vec{n}\).</li>
 <li>\(V\) is only informed by the <i>local</i> fuels and weather conditions.</li>
-<li>2D space is partitioned in a binary fashion into burnt and unburnt regions, a simplification that makes the front infinitely thin and vertically uniform.</li>
+<li>2D space is partitioned in a binary fashion into burnt and unburnt
+regions, a simplification that makes the front infinitely thin and
+vertically uniform.</li>
 </ol>
 
 <p>
-Another limitation is that Pyretechnics does not capture fire-atmosphere coupling,
-i.e. Pyretechnics does not model the feedback of the fire on the atmosphere.
-Instead, weather are supplied as an input and fire progression is derived downstream of it.
-If coupling is desired, one approach would be to interleave small intervals of Pyretechnics front propagation
-with updates to the weather inputs, using an external weather model.
+Another limitation is that Pyretechnics does not capture
+fire-atmosphere coupling (i.e., the feedback of the fire on the
+atmosphere). Instead, weather readings are supplied as inputs, and
+fire progression is derived downstream of it. If coupling is desired,
+one approach would be to interleave small intervals of Pyretechnics
+front propagation with updates to the weather inputs, using an
+external weather model.
 </p>
 </div>
 </div>
@@ -655,35 +727,61 @@ with updates to the weather inputs, using an external weather model.
 <h4 id="deriving-the-spread-rate-overview"><span class="section-number-4">2.1.2.</span> Deriving the Spread Rate from Rothermel and Crowning Equations</h4>
 <div class="outline-text-4" id="text-deriving-the-spread-rate-overview">
 <p>
-The Rothermel model (<a href="#citeproc_bib_item_33">Rothermel 1972</a>; <a href="#citeproc_bib_item_9">Andrews 2018</a>) is a widely adopted set of equations
-for computing the spread rate of surface fire in the direction of fastest spread, 
-sometimes called the <i>heading fire spread rate</i> or <i>max spread rate</i>;
-the direction of fastest spread is typically a middle ground between the downwind and upslope directions.
-The Rothermel model alone is not sufficient for computing \(V(\vec{n}, Z, \theta)\) in all front orientations,
-because:
+The Rothermel model (<a href="#citeproc_bib_item_33">Rothermel 1972</a>; <a href="#citeproc_bib_item_9">Andrews 2018</a>) is a
+widely adopted set of equations for computing the spread rate of
+surface fire in the direction of fastest spread, sometimes called the
+<i>heading fire spread rate</i> or <i>max spread rate</i>. The direction of
+fastest spread is typically a middle ground between the downwind and
+upslope directions. The Rothermel model alone is not sufficient for
+computing \(V(\vec{n}, Z, \theta)\) in all front orientations because:
 </p>
+
 <ol class="org-ol">
-<li>It does not predict the spread rate for non-heading front orientations;</li>
+<li>It does not predict the spread rate for non-heading front
+orientations.</li>
 <li>It does not predict crown fire spread rates.</li>
 </ol>
 
 <p>
-Similarly to FARSITE and ELMFIRE, Pyretechnics fills this gap as follows:
+Similarly to FARSITE and ELMFIRE, Pyretechnics fills this gap as
+follows:
 </p>
+
 <ol class="org-ol">
-<li>Pyretechnics generalizes Rothermel spread rate to all front orientations by assuming that surface fire follows Huygens' Principle with an elliptical wavelet shape (<a href="#citeproc_bib_item_6">Anderson et al. 1982</a>; <a href="#citeproc_bib_item_22">Knight and Coleman 1993</a>; <a href="#citeproc_bib_item_32">Richards 1995</a>); the Rothermel model determines the maximum radial velocity of the wavelet, while another model computes the elliptical length-to-width ratio based on wind speed. Note that this generalization is different from the one use in WRF-Fire (<a href="#citeproc_bib_item_28">Muñoz-Esparza et al. 2018</a>) and ForeFire's default Rothermel implementation (<a href="#citeproc_bib_item_18">Filippi et al. 2025</a>), which instead project the wind and slope vectors onto the front-normal direction.</li>
-<li>Pyretechnics derives a fireline intensity from the surface fire spread rate and local conditions \(Z\); then, based on canopy characteristics, it determines whether crown fire occurs. If so, the spread rate may be adjusted to be (much) higher than the surface spread rate. See section <a href="#crown-fire-initiation">7.1.2</a> for more details.</li>
+<li>Pyretechnics generalizes the Rothermel heading fire spread rate to
+all front orientations by assuming that surface fire follows
+Huygens' Principle with an elliptical wavelet shape
+(<a href="#citeproc_bib_item_6">Anderson et al. 1982</a>; <a href="#citeproc_bib_item_22">Knight and Coleman 1993</a>; <a href="#citeproc_bib_item_32">Richards 1995</a>); the Rothermel model determines the
+maximum radial velocity of the wavelet, while another model
+computes the elliptical length-to-width ratio based on wind speed.
+Note that this generalization is different from the one used in
+WRF-Fire (<a href="#citeproc_bib_item_28">Muñoz-Esparza et al. 2018</a>) and from ForeFire's
+default Rothermel implementation (<a href="#citeproc_bib_item_18">Filippi et al. 2025</a>), which
+instead project the wind and slope vectors onto the front-normal
+direction.</li>
+<li>Pyretechnics derives a fireline intensity from the surface fire
+spread rate and local conditions \(Z\); then, based on canopy
+characteristics, it determines whether crown fire occurs. If so,
+the spread rate may be adjusted to be (much) higher than the
+surface spread rate. See section <a href="#crown-fire-initiation">7.1.2</a> for more
+details.</li>
 </ol>
 
 <p>
 Let us formalize the above description.
-Huygens' Principle treats each in the burned region as a secondary point source ignition,
-expanding the burned region by an infinitesimal <i>wavelet</i>,
-which can be described by a <i>radial velocity</i> function \((\vec{u} \mapsto W(\vec{u}, \vec{x}, t))\)
-mapping each unit vector \(\vec{u}\) to a speed (in m/s) describing the rate of expansion of the wavelet along that direction:
-for each point \(\vec{x}\) in the burned region at \(t\), and each unit vector \(\vec{u}\)
-the segment \([\vec{x}, \vec{x} + dt W(\vec{u}, \vec{x}, t) \vec{u}]\) is in the burned region at \((t + dt)\).
-Then, the spread rate can be deduced from \(W\) and the front-normal unit vector \(\vec{n}\) as:
+</p>
+
+<p>
+Huygens' Principle treats each cell in the burned region as a
+secondary point source ignition, expanding the burned region by an
+infinitesimal <i>wavelet</i>, which can be described by a <i>radial velocity</i>
+function \((\vec{u} \mapsto W(\vec{u}, \vec{x}, t))\) mapping each unit
+vector \(\vec{u}\) to a speed (in m/s) describing the rate of expansion
+of the wavelet along that direction: for each point \(\vec{x}\) in the
+burned region at \(t\), and each unit vector \(\vec{u}\) the segment
+\([\vec{x}, \vec{x} + dt W(\vec{u}, \vec{x}, t) \vec{u}]\) is in the
+burned region at \((t + dt)\). Then, the spread rate can be deduced from
+\(W\) and the front-normal unit vector \(\vec{n}\) as:
 </p>
 
 \begin{align}
@@ -691,24 +789,29 @@ Then, the spread rate can be deduced from \(W\) and the front-normal unit vector
 \end{align}
 
 <p>
-in which we have made the dependency on coordinates \((\vec{x}, t)\) implicit.
+in which we have made the dependency on coordinates \((\vec{x}, t)\)
+implicit.
 </p>
 
 <p>
 Now, we add the assumption that the wavelet is shaped as an ellipse,
-with its origin (ignition point) on the main axis.
-The elliptical dimensions are specified by:
+with its origin (ignition point) on the main axis. The elliptical
+dimensions are specified by:
 </p>
 
 <ol class="org-ol">
-<li>A unit vector \(\vec{u}_H\) describing the direction of fastest spread (``heading'');</li>
-<li>A maximum spread rate \(V_H\), describing the radial velocity in direction \(\vec{u}_H\);</li>
+<li>A unit vector \(\vec{u}_H\) describing the direction of fastest
+spread (``heading'');</li>
+<li>A maximum spread rate \(V_H\), describing the radial velocity in
+direction \(\vec{u}_H\);</li>
 <li>A backing spread rate \(V_B\) (the ``rear length'' of the ellipse);</li>
-<li>A length-to-width ratio \((L/W) \geq 1\), such that the width of the ellipse is \((L/W)^{-1}(V_H + V_B)\)</li>
+<li>A length-to-width ratio \((L/W) \geq 1\), such that the width of the
+ellipse is \((L/W)^{-1}(V_H + V_B)\)</li>
 </ol>
 
 <p>
-Then, then, a non trivial derivation (<a href="#citeproc_bib_item_32">Richards 1995</a>; <a href="#citeproc_bib_item_15">Catchpole, Mestre, and Gill 1982</a>) shows that the front-normal spread rate induced by this wavelet is
+Then, a non-trivial derivation (<a href="#citeproc_bib_item_32">Richards 1995</a>; <a href="#citeproc_bib_item_15">Catchpole, Mestre, and Gill 1982</a>) shows that the front-normal
+spread rate induced by this wavelet is:
 </p>
 
 \begin{align}\label{eq:elliptical-ros}
@@ -724,9 +827,10 @@ in which \(V_F\) is the <i>flanking spread rate</i> that follows from the ellipt
 \end{align}
 
 <p>
-Like FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>), Pyretechnics will further assume that the wavelet has its origin
-at a focus of the ellipse;
-this eliminates one degree of freedom by relating the elliptical dimensions to the excentricity \(E\) of the ellipse:
+Like FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>), Pyretechnics will further
+assume that the wavelet has its origin at a focus of the ellipse. This
+eliminates one degree of freedom by relating the elliptical dimensions
+to the excentricity \(E\) of the ellipse:
 </p>
 
 \begin{align}
@@ -735,41 +839,79 @@ this eliminates one degree of freedom by relating the elliptical dimensions to t
 \end{align}
 
 <p>
-<span class="underline">Remark:</span> we adopted notation \(V_{/}\) to signal that the above calculations
-hold <i>in the plane tangential to the slope</i>:
-all vectors considered are assumed to be in this slope-tangential plane,
-as in FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>) or Prometheus (<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>).
-Some corrections will be required ot translate from slope-tangential to horizontal spread rates,
-the latter being more practical in numerical code - see section <a href="#from-slope-tangential-to-horizontal">2.1.4</a>.
+<b>Note:</b> We adopted notation \(V_{/}\) to signal that the above
+calculations hold <i>in the plane tangential to the slope</i>. All vectors
+considered are assumed to be in this slope-tangential plane, as in
+FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>) or Prometheus
+(<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>). Some corrections will be required to
+translate from slope-tangential to horizontal spread rates, the latter
+being more practical in numerical code - see section
+<a href="#from-slope-tangential-to-horizontal">2.1.4</a>.
 </p>
 
 <p>
-With this general background on elliptical wavelets,
-we are now ready to formulate the spread rate calculations of Pyretechnics.
-Assuming a front-normal vector \(\vec{n}\),
-here is how Pyretechnics calculates the front-normal spread rate at \((\vec{x}, t)\):
+With this general background on elliptical wavelets, we are now ready
+to formulate the spread rate calculations of Pyretechnics.
+</p>
+
+<p>
+Assuming a front-normal vector \(\vec{n}\), here is how Pyretechnics
+calculates the front-normal spread rate at \((\vec{x}, t)\):
 </p>
 
 <ol class="org-ol">
-<li>Based on environmental conditions \(Z(\vec{x}, t)\) (fuels, topography, surface wind and fuel moisture), Pyretechnics applies the Rothermel model with wind and slope vectoring (<a href="#citeproc_bib_item_9">Andrews 2018</a>), yielding maximum spread rate and direction \(V_H^{(s)}, \vec{u}_H^{(s)}\) for surface fire. See code in section <a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a>.</li>
-<li>Pyretechnics further derives a length-to-width ratio \((L/W)^{(s)}\), using either equation 9 of Rothermel (<a href="#citeproc_bib_item_34">Rothermel 1991</a>) or the formula in the Behave library; depending on parameter <code>surface_lw_ratio_model</code> (<code>rothermel</code> or <code>behave</code>). See code in section <a href="#surface-elliptical-eccentricity">6.1.9</a>.</li>
-<li>The above combine into elliptical dimensions for a surface fire wavelet, from which a front-normal spread rate \(V^{(s)}(\vec{n})\) is derived using the above formulas. See code in section <a href="#surface-fire-behavior-in-any-direction">6.1.11</a>.</li>
-<li>Based on (<a href="#citeproc_bib_item_44">Wagner 1977</a>), Pyretechnics calculates a threshold of fireline intensity, and therefore of spread rate, to determine whether crown fire may occur (see <a href="#crown-fire-initiation">7.1.2</a>). If \(V^{(s)}(\vec{n})\) exceeds this threshold, an elliptical wavelet for crown fire is computed, using (<a href="#citeproc_bib_item_17">Cruz, Alexander, and Wakimoto 2005</a>) for the maximum velocity \(V_H^{(c)}, \vec{u}_H^{(s)}\) for crown fire (see <a href="#crown-fire-behavior-in-the-direction-of-maximum-spread">7.1.6</a>), and equation 10 of Rothermel (<a href="#citeproc_bib_item_34">Rothermel 1991</a>) for the length-to-width ratio \((L/W)^{(c)}\) (see <a href="#crown-elliptical-eccentricity">7.1.5</a>). Again, these elliptical dimensions are derived entirely from environmental conditions \(Z(\vec{x}, t)\). See code in section <a href="#crown-fire-behavior-in-any-direction">7.1.7</a>. This yields a crown fire spread rate \(V^{(c)}(\vec{n})\).</li>
-<li>Then, the final spread rate is resolved as the fastest of the surface and crown spread rates, i.e. \(V(\vec{n}) := \max (V^{(s)}(\vec{n}), V^{(c)}(\vec{n}))\). See code in section <a href="#combined-spread-rate-and-direction">7.1.8.2</a>.</li>
+<li>Based on environmental conditions \(Z(\vec{x}, t)\) (fuels,
+topography, surface wind and fuel moisture), Pyretechnics applies
+the Rothermel model with wind and slope vectoring
+(<a href="#citeproc_bib_item_9">Andrews 2018</a>), yielding maximum spread rate and
+direction \(V_H^{(s)}, \vec{u}_H^{(s)}\) for surface fire. See code
+in section
+<a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a>.</li>
+<li>Pyretechnics further derives a length-to-width ratio \((L/W)^{(s)}\),
+using either equation 9 of Rothermel (<a href="#citeproc_bib_item_34">Rothermel 1991</a>) or the
+formula in the Behave library; depending on parameter
+<code>surface_lw_ratio_model</code> (<code>rothermel</code> or <code>behave</code>). See code in
+section <a href="#surface-elliptical-eccentricity">6.1.9</a>.</li>
+<li>The above combine into elliptical dimensions for a surface fire
+wavelet, from which a front-normal spread rate \(V^{(s)}(\vec{n})\)
+is derived using the above formulas. See code in section
+<a href="#surface-fire-behavior-in-any-direction">6.1.11</a>.</li>
+<li>Based on (<a href="#citeproc_bib_item_44">Wagner 1977</a>), Pyretechnics calculates a threshold
+of fireline intensity, and therefore of spread rate, to determine
+whether crown fire may occur (see <a href="#crown-fire-initiation">7.1.2</a>). If
+\(V^{(s)}(\vec{n})\) exceeds this threshold, an elliptical wavelet
+for crown fire is computed, using (<a href="#citeproc_bib_item_17">Cruz, Alexander, and Wakimoto 2005</a>) for the maximum
+velocity \(V_H^{(c)}, \vec{u}_H^{(s)}\) for crown fire (see
+<a href="#crown-fire-behavior-in-the-direction-of-maximum-spread">7.1.6</a>), and
+equation 10 of Rothermel (<a href="#citeproc_bib_item_34">Rothermel 1991</a>) for the
+length-to-width ratio \((L/W)^{(c)}\) (see
+<a href="#crown-elliptical-eccentricity">7.1.5</a>). Again, these elliptical dimensions
+are derived entirely from environmental conditions \(Z(\vec{x}, t)\).
+See code in section <a href="#crown-fire-behavior-in-any-direction">7.1.7</a>. This
+yields a crown fire spread rate \(V^{(c)}(\vec{n})\).</li>
+<li>Then, the final spread rate is resolved as the fastest of the
+surface and crown spread rates, i.e. \(V(\vec{n}) := \max
+   (V^{(s)}(\vec{n}), V^{(c)}(\vec{n}))\). See code in section
+<a href="#combined-spread-rate-and-direction">7.1.8.2</a>.</li>
 </ol>
 </div>
 </div>
 <div id="outline-container-mathematical-formalization-level-set" class="outline-4">
-<h4 id="mathematical-formalization-level-set"><span class="section-number-4">2.1.3.</span> Mathematical Formalization: Level-set Method and Hamilton-Jacobi Equation</h4>
+<h4 id="mathematical-formalization-level-set"><span class="section-number-4">2.1.3.</span> Mathematical Formalization: Level Set Method and Hamilton-Jacobi Equation</h4>
 <div class="outline-text-4" id="text-mathematical-formalization-level-set">
 <p>
-Although the notion of front-normal spread rate is intuitive to many fire modelers,
-its mathematical formalization is not trivial:
-in particular, one difficulty is that the front-normal vector \(\vec{n}\) may not exist
-at some points where the fire front forms sharp corners, 
+Although the notion of front-normal spread rate is intuitive to many
+fire modelers, its mathematical formalization is not trivial: in
+particular, one difficulty is that the front-normal vector \(\vec{n}\)
+may not exist at some points where the fire front forms sharp corners,
 as can happen when two fronts merge.
-The approach that seems to have emerged among mathematicians is the <i>level-set method</i> (<a href="#citeproc_bib_item_20">Giga 2002</a>; <a href="#citeproc_bib_item_29">Osher, Fedkiw, and Piechor 2004</a>),
-which consist of representing the evolution of the fire using a Hamilton-Jacobi partial differential equation:
+</p>
+
+<p>
+The approach that seems to have emerged among mathematicians is the
+<i>level set method</i> (<a href="#citeproc_bib_item_20">Giga 2002</a>; <a href="#citeproc_bib_item_29">Osher, Fedkiw, and Piechor 2004</a>), which consists of representing the
+evolution of the fire using a Hamilton-Jacobi partial differential
+equation:
 </p>
 
 \begin{align}\label{eq:hamilton-jacobi}
@@ -777,10 +919,12 @@ which consist of representing the evolution of the fire using a Hamilton-Jacobi 
 \end{align}
 
 <p>
-In the above \(\phi(\vec{x}, t) \in \mathbb{R}\) is a scalar field representing the state of the fire:
-at time \(t\), the burned region is given by the <i>0-sublevel set</i> \(\{\vec{x} | \phi(\vec{x}, t) < 0 \}\).
-\(\nabla \phi(\vec{x}, t)\) is the spatial gradient of \(\phi\),
-and \(H_V(\vec{p}, Z, \theta)\) is the <i>Hamiltonian</i> function derived from \(V\):
+In the above \(\phi(\vec{x}, t) \in \mathbb{R}\) is a scalar field
+representing the state of the fire: at time \(t\), the burned region is
+given by the <i>0-sublevel set</i> \(\{\vec{x} | \phi(\vec{x}, t) < 0 \}\).
+\(\nabla \phi(\vec{x}, t)\) is the spatial gradient of \(\phi\), and
+\(H_V(\vec{p}, Z, \theta)\) is the <i>Hamiltonian</i> function derived from
+\(V\):
 </p>
 
 \begin{align}\label{eq:hamiltonian}
@@ -789,33 +933,45 @@ and \(H_V(\vec{p}, Z, \theta)\) is the <i>Hamiltonian</i> function derived from 
 
 <p>
 which is extended by continuity to \(H_V(\vec{0}, Z, \theta) = 0\).
-We require that \(\phi\) be a <i>viscosity solution</i> (<a href="#citeproc_bib_item_16">Crandall and Lions 1983</a>; <a href="#citeproc_bib_item_23">Koike 2004</a>) to the Hamilton-Jacobi equation;
-this notion of weak solution eliminates our ill-posedness difficulties related to \(\vec{n}\) not being defined everywhere,
-while offering appealing properties in terms of existence, uniqueness and stability of solutions.
 </p>
 
 <p>
-Astute readers will observe that there is much arbitrariness in the choice of the \(\phi\) function:
-indeed, for a given initial state of the fire front at \(t = 0\),
-there is an infinity of initial fields \(\phi |_{t=0}\) that are consistent with it.
-Thankfully, the choice of \(\phi |_{t=0}\) does not change the predicted evolution of the burned region,
-a property known as <i>invariance</i> (<a href="#citeproc_bib_item_20">Giga 2002</a>) in the level set method literature.
+We require that \(\phi\) be a <i>viscosity solution</i>
+(<a href="#citeproc_bib_item_16">Crandall and Lions 1983</a>; <a href="#citeproc_bib_item_23">Koike 2004</a>) to the Hamilton-Jacobi equation;
+this notion of weak solution eliminates our ill-posedness difficulties
+related to \(\vec{n}\) not being defined everywhere, while offering
+appealing properties in terms of existence, uniqueness, and stability
+of solutions.
 </p>
 
 <p>
-An important question is whether the Hamiltonian \(H_V\) is convex in variable \(\vec{p}\),
-as that informs whether the front propagation satisfies Huygens' Principle (<a href="#citeproc_bib_item_43">Waeselynck and Saah 2026</a>; <a href="#citeproc_bib_item_32">Richards 1995</a>),
-and which numerical schemes are viable for simulating front propagation.
-Like FARSITE and ELMFIRE, and unlike Prometheus,
-the Hamiltonian computed by Pyretechnics is convex for surface-only fires,
-but not in conditions that yield a transition from surface to crown fire (<a href="#citeproc_bib_item_43">Waeselynck and Saah 2026</a>).
+Astute readers will observe that there is much arbitrariness in the
+choice of the \(\phi\) function: indeed, for a given initial state of
+the fire front at \(t = 0\), there is an infinity of initial fields
+\(\phi |_{t=0}\) that are consistent with it. Thankfully, the choice of
+\(\phi |_{t=0}\) does not change the predicted evolution of the burned
+region, a property known as <i>invariance</i>
+(<a href="#citeproc_bib_item_20">Giga 2002</a>) in the level set method literature.
 </p>
 
 <p>
-The level-set method is useful not only for mathematical conceptualization,
-but also as an approach to designing numerical solvers for the evolution of the fire front (<a href="#citeproc_bib_item_39">Sethian 1996</a>; <a href="#citeproc_bib_item_25">Mallet, Keyes, and Fendell 2009</a>; <a href="#citeproc_bib_item_31">Rehm and McDermott 2009</a>; <a href="#citeproc_bib_item_24">Lautenberger 2013</a>; <a href="#citeproc_bib_item_28">Muñoz-Esparza et al. 2018</a>; <a href="#citeproc_bib_item_26">Mandikas and Voulgarakis 2025</a>).
-Indeed, at the time of writing, the numerical solver used by Pyretechnics is based on the level-set method,
-similarly to ELMFIRE (see section <a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">10</a>).
+An important question is whether the Hamiltonian \(H_V\) is convex in
+variable \(\vec{p}\), as that informs whether the front propagation
+satisfies Huygens' Principle (<a href="#citeproc_bib_item_43">Waeselynck and Saah 2026</a>; <a href="#citeproc_bib_item_32">Richards 1995</a>) and which numerical schemes are viable for
+simulating front propagation. Like FARSITE and ELMFIRE, and unlike
+Prometheus, the Hamiltonian computed by Pyretechnics is convex for
+surface-only fires, but not in conditions that yield a transition from
+surface to crown fire (<a href="#citeproc_bib_item_43">Waeselynck and Saah 2026</a>).
+</p>
+
+<p>
+The level set method is useful not only for mathematical
+conceptualization, but also as an approach to designing numerical
+solvers for the evolution of the fire front
+(<a href="#citeproc_bib_item_39">Sethian 1996</a>; <a href="#citeproc_bib_item_25">Mallet, Keyes, and Fendell 2009</a>; <a href="#citeproc_bib_item_31">Rehm and McDermott 2009</a>; <a href="#citeproc_bib_item_24">Lautenberger 2013</a>; <a href="#citeproc_bib_item_28">Muñoz-Esparza et al. 2018</a>; <a href="#citeproc_bib_item_26">Mandikas and Voulgarakis 2025</a>). Indeed,
+at the time of writing, the numerical solver used by Pyretechnics is
+based on the level set method, similarly to ELMFIRE (see section
+<a href="#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)">10</a>).
 </p>
 </div>
 </div>
@@ -823,21 +979,32 @@ similarly to ELMFIRE (see section <a href="#fire-spread-algorithm:-eulerian-leve
 <h4 id="from-slope-tangential-to-horizontal"><span class="section-number-4">2.1.4.</span> Converting from Slope-tangential to Horizontal Spread Rates</h4>
 <div class="outline-text-4" id="text-from-slope-tangential-to-horizontal">
 <p>
-As mentioned in section <a href="#deriving-the-spread-rate-overview">2.1.2</a>,
-model calculations naturally yield a spread rate in the slope-tangential plane,
-while numerical schemes typically need a spread rate in the horizontal plane.
-This section explains how to convert from one to the other.
-Readers should be warned that this geometry problem tends to defy visual intuition.
-In particular, it is not as simple as projecting the slope-tangential spread rate onto the horizontal plane, e.g.:
+As mentioned in section <a href="#deriving-the-spread-rate-overview">2.1.2</a>, model
+calculations naturally yield a spread rate in the slope-tangential
+plane, while numerical schemes typically need a spread rate in the
+horizontal plane. This section explains how to convert from one to the
+other. Readers should be warned that this geometry problem tends to
+defy visual intuition.
 </p>
+
+<p>
+In particular, it is not as simple as projecting the slope-tangential
+spread rate onto the horizontal plane. This is because:
+</p>
+
 <ol class="org-ol">
-<li>The vertical projection does not preserve normality, e.g. projecting a slope-tangential vector that is perpendicular to the slope-tangential fireline does yield a vector that is not perpendicular to the horizontal fireline.</li>
-<li>Likewise, vertically projecting an ellipse does yield an ellipse, but does not generally preserve its main axis.</li>
+<li>The vertical projection does not preserve normality, e.g.
+projecting a slope-tangential vector that is perpendicular to the
+slope-tangential fireline yields a vector that is not perpendicular
+to the horizontal fireline.</li>
+<li>Likewise, vertically projecting an ellipse does yield an ellipse
+but does not generally preserve its main axis.</li>
 </ol>
 
 <p>
-In Pyretechnics, numerical code will not directly require the horizontal spread rate function \(\underline{V}(\vec{n})\),
-but its generalization, the horizontal Hamiltonian \(\underline{H}\):
+In Pyretechnics, numerical code will not directly require the
+horizontal spread rate function \(\underline{V}(\vec{n})\), but its
+generalization, the horizontal Hamiltonian \(\underline{H}\):
 </p>
 
 \begin{align}
@@ -849,7 +1016,8 @@ in which \(\vec{p}\) is a horizontal vector.
 </p>
 
 <p>
-We assume that fire model calculations yield give us a slope-tangential Hamiltonian
+We assume that fire model calculations yield a slope-tangential
+Hamiltonian:
 </p>
 
 \begin{align}
@@ -861,7 +1029,8 @@ in which \(\vec{p}_{/}\) must be a slope-tangential vector.
 </p>
 
 <p>
-Then, we can convert correctly from slope-tangential to horizontal Hamiltonian by:
+Then, we can convert correctly from slope-tangential to horizontal
+Hamiltonian by:
 </p>
 
 \begin{align}
@@ -878,13 +1047,18 @@ which can be expressed in terms of the slope-normal unit vector \(\vec{n}_{/}\) 
 \end{align}
 
 <p>
-Perhaps the easiest way to see that the above conversion is correct is to reason about the Hamilton-Jacobi equation (section <a href="#mathematical-formalization-level-set">2.1.3</a>) in both the horizontal and slope-tangential planes,
-and to observe that \(\pi_{/}(\nabla \phi)\) is the correct way to obtain the slope-tangential gradient,
-being the only slope-tangential vector that agrees with the horizontal gradient \(\nabla \phi\) in terms of dot-products with slope-tangential vectors.
+Perhaps the easiest way to see that the above conversion is correct is
+to reason about the Hamilton-Jacobi equation (section
+<a href="#mathematical-formalization-level-set">2.1.3</a>) in both the horizontal and
+slope-tangential planes, and to observe that \(\pi_{/}(\nabla \phi)\) is
+the correct way to obtain the slope-tangential gradient, being the
+only slope-tangential vector that agrees with the horizontal gradient
+\(\nabla \phi\) in terms of dot-products with slope-tangential vectors.
 </p>
 
 <p>
-Note that \(\vec{n}_{/}\) can be expressed from the gradient of the elevation map \(h(\vec{x})\) as:
+Note that \(\vec{n}_{/}\) can be expressed from the gradient of the
+elevation map \(h(\vec{x})\) as:
 </p>
 
 \begin{align}
@@ -893,7 +1067,11 @@ Note that \(\vec{n}_{/}\) can be expressed from the gradient of the elevation ma
 
 <p>
 where \(\vec{u}_z\) is the unit vector in the vertical direction.
-Also note that \(\nabla h\) is a horizonal vector, e.g. expressible in horizontal cartesian coordinates as:
+</p>
+
+<p>
+Also note that \(\nabla h\) is a horizonal vector, e.g. expressible in
+horizontal cartesian coordinates as:
 </p>
 
 \begin{align}
@@ -901,7 +1079,8 @@ Also note that \(\nabla h\) is a horizonal vector, e.g. expressible in horizonta
 \end{align}
 
 <p>
-The above calculations are equivalent to the slope calculations implemented in Prometheus and FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>; <a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>).
+The above calculations are equivalent to the slope calculations
+implemented in Prometheus and FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>; <a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>).
 </p>
 </div>
 </div>
@@ -910,9 +1089,10 @@ The above calculations are equivalent to the slope calculations implemented in P
 <h3 id="fire-intensity-calculations"><span class="section-number-3">2.2.</span> Fire Intensity Calculations</h3>
 <div class="outline-text-3" id="text-fire-intensity-calculations">
 <p>
-Pyretechnics uses the formula from Byram (<a href="#citeproc_bib_item_14">Byram 1959</a>) to compute the fireline intensity \(I\) (in W/m).
-Flame length is then derived from fireline intensity.
-Fireline intensity is related to rate of spread \(R\) (in m/s) and areal heat output \(A\) (in J/m) as:
+Pyretechnics uses the formula from Byram (<a href="#citeproc_bib_item_14">Byram 1959</a>) to compute
+the fireline intensity \(I\) (in W/m). Flame length is then derived from
+fireline intensity. Fireline intensity is related to rate of spread
+\(R\) (in m/s) and areal heat output \(A\) (in J/m) as:
 </p>
 
 \begin{align}
@@ -920,15 +1100,16 @@ Fireline intensity is related to rate of spread \(R\) (in m/s) and areal heat ou
 \end{align}
 
 <p>
-\(A\) is determined by environmental conditions.
-Therefore, given environmental conditions, fireline intensity is proportional to rate of spread.
-This fact enables to calculate some quantities directly from the rate of spread,
-which is used in some parts of the code.
+\(A\) is determined by environmental conditions. Therefore, given
+environmental conditions, fireline intensity is proportional to rate
+of spread. This fact enables us to calculate some quantities directly
+from the rate of spread, which is used in some parts of the code.
 </p>
 
 <p>
-This overview is enough to reason about the model's fire behavior calculations at a high level.
-More details can be found in section <a href="#surface-fire-intensity-functions">6.1.4</a>.
+This overview is enough to reason about the model's fire behavior
+calculations at a high level. More details can be found in section
+<a href="#surface-fire-intensity-functions">6.1.4</a>.
 </p>
 </div>
 </div>
@@ -936,11 +1117,14 @@ More details can be found in section <a href="#surface-fire-intensity-functions"
 <h3 id="propagation-free-calculations"><span class="section-number-3">2.3.</span> Propagation-free Calculations</h3>
 <div class="outline-text-3" id="text-propagation-free-calculations">
 <p>
-Pyretechnics also supports doing fire behavior calculations without simulating fire spread,
-for example by computing heading fire behavior metrics at every point of the landscape.
-To do this, Pyretechnics provides functions to compute fire behavior in any cell of the landscape
-with a user-supplied orientation of the fire front.
-See section <a href="#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction">7.2.4</a> for details.
+Pyretechnics also supports doing fire behavior calculations without
+simulating fire spread, for example by computing heading fire behavior
+metrics at every point of the landscape. To do this, Pyretechnics
+provides functions to compute fire behavior in any cell of the
+landscape with a user-supplied orientation of the fire front. See
+section
+<a href="#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction">7.2.4</a>
+for details.
 </p>
 </div>
 </div>
@@ -948,25 +1132,42 @@ See section <a href="#how-to-calculate-the-combined-surface-and-crown-fire-behav
 <h3 id="long-range-spotting-from-firebrands"><span class="section-number-3">2.4.</span> Long-range Spotting from Firebrands</h3>
 <div class="outline-text-3" id="text-long-range-spotting-from-firebrands">
 <p>
-Pyretechnics supports modeling long-rage spotting from firebrands - that is, secondary ignitions started by embers transported by the wind. Here is an overview of the approach:
+Pyretechnics supports modeling long-range spotting from firebrands -
+that is, secondary ignitions started by embers transported by the
+wind. Here is an overview of the approach:
 </p>
 
 <ol class="org-ol">
-<li>When a cell burned, an expected number \(\nu\) of firebrands emitted by the cell is computed. Currently, this number is proportional to heat output; the proportionality factor is a user setting.</li>
-<li>The nubmer of emitted firebrands is a drawn as a Poisson random variable with mean \(\nu\).</li>
-<li>A transport distribution (i.e. the distribution of where the firebrand will land) is computed based on the weather conditions and fire behavior at the site of emissions, along with some global user-settable parameters. This distribution is log-normal in the downwind direction, and normal in the crosswind direction, following the approach of (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>).</li>
-</ol>
-<p>
-Each firebrand is flown independently by drawing from this distribution.
-</p>
-<ol class="org-ol">
-<li>Whether the firebrands ignities a spot fire is determined by a probability computed from the local conditions at the landing site. If so, the sport fire started after a fixed time interval after emission.</li>
+<li>When a cell is burned, the expected number \(\nu\) of firebrands
+emitted by the cell is computed. Currently, this number is
+proportional to the cell's heat output; the proportionality factor
+is a user setting.</li>
+<li>The number of emitted firebrands is drawn as a Poisson random
+variable with mean \(\nu\).</li>
+<li>A transport distribution (i.e., the distribution of where the
+firebrand will land) is computed based on the weather conditions
+and fire behavior at the site of emissions, along with some global
+user-settable parameters. This distribution is log-normal in the
+downwind direction and normal in the crosswind direction, following
+the approach of (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>). Each
+firebrand is flown independently by drawing from this distribution.</li>
+<li>Whether the firebrands ignite a spot fire is determined by a
+probability computed from the local conditions at the landing site.
+If so, the spot fire starts after a fixed time interval after
+emission.</li>
 </ol>
 
 <p>
-Details and code are in section <a href="#spot-fire-equations-(pyretechnics.spot_fire)">8</a>.
-This model is quite crude; the rationale of the authors is that there is currently too much uncertainty in firebrands emissions and transport to benefit from a more sophisticated model.
-Users who find this model too limited might want to interleave their own spotting model with Pyretechnics execution.
+Details and code are in section
+<a href="#spot-fire-equations-(pyretechnics.spot_fire)">8</a>.
+</p>
+
+<p>
+This model is quite crude. The rationale of the authors is that there
+is currently too much uncertainty in firebrand emissions and transport
+to benefit from a more sophisticated model. Users who find this model
+too limited might want to interleave their own spotting model with
+Pyretechnics execution.
 </p>
 </div>
 </div>
@@ -974,14 +1175,24 @@ Users who find this model too limited might want to interleave their own spottin
 <h3 id="suppression-by-fireline-construction"><span class="section-number-3">2.5.</span> Suppression by Fireline Construction</h3>
 <div class="outline-text-3" id="text-suppression-by-fireline-construction">
 <p>
-Pyretechnics does not ship with one integrated suppression model;
-given the potential complexity of suppression,
-it was deemed better to instead provide a toolkit for users to implement their own suppression models as needed.
-A typical implementation will interleave Pyretechnics front-propagation runs with suppression that update the inputs.
+Pyretechnics does not ship with one integrated suppression model.
+Instead, given the potential complexity of suppression, it was deemed
+better to provide a toolkit for users to implement their own
+suppression models as needed. A typical implementation will interleave
+Pyretechnics front-propagation runs with suppression actions that
+update the inputs.
 </p>
 
 <p>
-What Pyretechnics offers is a set of functions for constructing firelines based on user-provided objectives and constraints. The cells neighboring the fire front are indexed into contiguous sequences. Given a priority function, a construction rate, and a time budget, the model resolves the contiguous segment with the highest total priority that can be built within budget, and replaces the fuel model of the unburned cells along that segment so they no longer burn. Details and code are in section <a href="#fire-suppression-techniques-(pyretechnics.suppression)">11</a>.
+What Pyretechnics offers is a set of functions for constructing
+firelines based on user-provided objectives and constraints. The cells
+neighboring the fire front are indexed into contiguous sequences.
+Given a priority function, a construction rate, and a time budget, the
+model resolves the contiguous segment with the highest total priority
+that can be built within the budget and then replaces the fuel model
+of the unburned cells along that segment so that they no longer burn.
+Details and code are in section
+<a href="#fire-suppression-techniques-(pyretechnics.suppression)">11</a>.
 </p>
 </div>
 </div>
@@ -1072,11 +1283,11 @@ length and intensity.</dd>
 
 <dt>Spatial</dt><dd>Variable in space but constant in time. <br>
 <b>Example</b>: A raster layer downloaded from
-LANDFIRE<sup><a id="fnr.landfire-website" class="footref" href="#fn.landfire-website" role="doc-backlink">3</a></sup> can be used to specify the spatial
+LANDFIRE<sup><a id="fnr.landfire-website" class="footref" href="#fn.landfire-website" role="doc-backlink">5</a></sup> can be used to specify the spatial
 distribution of FBFM40 fuel model values on a landscape.</dd>
 
 <dt>Spatio-temporal</dt><dd>Variable in both space and time. <br>
-<b>Example</b>: Hourly RTMA<sup><a id="fnr.rtma-website" class="footref" href="#fn.rtma-website" role="doc-backlink">4</a></sup> weather data can be loaded
+<b>Example</b>: Hourly RTMA<sup><a id="fnr.rtma-website" class="footref" href="#fn.rtma-website" role="doc-backlink">6</a></sup> weather data can be loaded
 from a multi-band raster and used to specify the spatio-temporal
 distribution of wind speed and direction throughout the simulation
 domain.</dd>
@@ -3090,12 +3301,11 @@ These two topics are discussed in sections <a href="#dynamic-fuel-loading">5.1.5
 <h4 id="fuel-model-definitions"><span class="section-number-4">5.1.3.</span> Fuel Model Definitions</h4>
 <div class="outline-text-4" id="text-fuel-model-definitions">
 <p>
-The fuel models supported by Pyretechnics include the standard Anderson 13 fuel
-models (<a href="#citeproc_bib_item_8">Anderson 1982</a>) and the
-additional Scott and Burgan 40 fuel models (<a href="#citeproc_bib_item_38">Scott and Burgan 2005</a>).
-These are all concisely encoded in an internal data structure, which
-may be updated to include additional custom fuel models desired by the
-user.
+The fuel models supported by Pyretechnics include the standard
+Anderson 13 fuel models (<a href="#citeproc_bib_item_8">Anderson 1982</a>) and the additional Scott
+and Burgan 40 fuel models (<a href="#citeproc_bib_item_38">Scott and Burgan 2005</a>). These are all
+concisely encoded in an internal data structure, which may be updated
+to include additional custom fuel models desired by the user.
 </p>
 
 <div class="org-src-container">
@@ -3404,8 +3614,8 @@ All of the Scott &amp; Burgan 40 fuel models with a live herbaceous
 component are considered dynamic. In these models, a fraction of the
 live herbaceous load is transferred to a new dead herbaceous category
 as a function of live herbaceous moisture content (see equation
-below).(<a href="#citeproc_bib_item_13">Burgan 1979</a>) The dead herbaceous size class uses the dead 1
-hour moisture content, dead moisture of extinction, and live
+below).(<a href="#citeproc_bib_item_13">Burgan 1979</a>) The dead herbaceous size class uses the dead
+1 hour moisture content, dead moisture of extinction, and live
 herbaceous surface-area-to-volume-ratio. In the following formula,
 \(M_f^{lh}\) is the live herbaceous moisture content.
 </p>
@@ -3469,7 +3679,8 @@ herbaceous surface-area-to-volume-ratio. In the following formula,
 <div class="outline-text-4" id="text-size-class-weighting-factors">
 <p>
 Once the dynamic fuel loading is applied, we can compute the size
-class weighting factors expressed in equations 53-57 (<a href="#citeproc_bib_item_33">Rothermel 1972</a>). For brevity, these formulas are elided from
+class weighting factors expressed in equations 53-57
+(<a href="#citeproc_bib_item_33">Rothermel 1972</a>). For brevity, these formulas are elided from
 this text.
 </p>
 
@@ -3573,12 +3784,11 @@ this text.
 The live moisture of extinction for each fuel model is determined from
 the dead fuel moisture content, the dead moisture of extinction, and
 the ratio of dead fuel loading to live fuel loading using Equation 88
-(<a href="#citeproc_bib_item_33">Rothermel 1972</a>), adjusted according to Appendix III of (<a href="#citeproc_bib_item_2">Albini 1976</a>) to
-match the behavior of Albini's original FIREMODS
-library. Whenever the fuel moisture
-content becomes greater than or equal to the moisture of extinction, a
-fire will no longer spread through that fuel. Here are the formulas
-referenced above:
+(<a href="#citeproc_bib_item_33">Rothermel 1972</a>), adjusted according to Appendix III of
+(<a href="#citeproc_bib_item_2">Albini 1976</a>) to match the behavior of Albini's original FIREMODS
+library. Whenever the fuel moisture content becomes greater than or
+equal to the moisture of extinction, a fire will no longer spread
+through that fuel. Here are the formulas referenced above:
 </p>
 
 \begin{align}
@@ -3983,13 +4193,13 @@ flame length.
 To simulate fire behavior in as similar a way as possible to the US
 government-sponsored fire models (e.g., FARSITE, FlamMap, FPA,
 BehavePlus), Pyretechnics adopts the surface fire spread and reaction
-intensity formulas from "A Mathematical
-Model for Predicting Fire Spread in Wildland Fuels" (<a href="#citeproc_bib_item_33">Rothermel 1972</a>), adjusted
-according to Appendix III of (<a href="#citeproc_bib_item_2">Albini 1976</a>) to match the behavior of
-Albini's original FIREMODS library.
-This should align with the updated description in "The Rothermel Surface Fire Spread Model and
-Associated Developments: A Comprehensive
-Explanation" (<a href="#citeproc_bib_item_9">Andrews 2018</a>).
+intensity formulas from "A Mathematical Model for Predicting Fire
+Spread in Wildland Fuels" (<a href="#citeproc_bib_item_33">Rothermel 1972</a>), adjusted according to
+Appendix III of (<a href="#citeproc_bib_item_2">Albini 1976</a>) to match the behavior of Albini's
+original FIREMODS library. This should align with the updated
+description in "The Rothermel Surface Fire Spread Model and Associated
+Developments: A Comprehensive Explanation"
+(<a href="#citeproc_bib_item_9">Andrews 2018</a>).
 </p>
 
 <p>
@@ -4421,8 +4631,7 @@ Using the surface fire spread rate and reaction intensity values, we
 can now calculate several surface fire intensity metrics by applying
 residence time and flame depth formulas (<a href="#citeproc_bib_item_7">Anderson 1969</a>), fireline
 intensity and flame length equations (<a href="#citeproc_bib_item_14">Byram 1959</a>), and the heat
-per unit area
-equation (<a href="#citeproc_bib_item_12">Andrews and Rothermel 1982</a>).
+per unit area equation (<a href="#citeproc_bib_item_12">Andrews and Rothermel 1982</a>).
 </p>
 
 \begin{align}
@@ -4544,8 +4753,8 @@ moisturized fuel model (see section <a href="#applying-fuel-moisture-to-a-fuel-m
 The midflame wind speed that would be required to produce the combined
 spread rate in a no-slope scenario is termed the effective windspeed
 \(U_{\text{eff}}\). Following the recommendations given in Appendix III
-of (<a href="#citeproc_bib_item_2">Albini 1976</a>), these midflame wind speeds are all limited by the
-reaction intensity \(I_R\) as follows:
+of (<a href="#citeproc_bib_item_2">Albini 1976</a>), these midflame wind speeds are all limited by
+the reaction intensity \(I_R\) as follows:
 </p>
 
 \begin{align}
@@ -4734,8 +4943,8 @@ Rothermel's formulas all expect a measure of midflame wind speed
 height 20 feet (or 10 meters) above either unsheltered ground or a
 tree canopy layer if present. To convert this 20-ft wind speed
 \(U_{20}\) to the required midflame wind speed value, Pyretechnics uses
-the wind adjustment factor formula (<a href="#citeproc_bib_item_4">Albini and Baughman 1979</a>),
-parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA
+the wind adjustment factor formula (<a href="#citeproc_bib_item_4">Albini and Baughman 1979</a>), parameterized
+as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA
 (<a href="#citeproc_bib_item_10">Andrews 2012</a>).
 </p>
 
@@ -4753,12 +4962,12 @@ parameterized as in BehavePlus, FARSITE, FlamMap, FSPro, and FPA
 <p>
 where \(\text{WAF}\) is the unitless wind adjustment factor,
 \(\text{FBD}\) is the fuel bed depth in \(\text{ft}\), \(\text{CH}\) is the
-canopy height in \(\text{ft}\), \(\text{CC}\) is the canopy cover
-fraction \((0-1)\), and \(\text{CF} := \text{CC} / 3\) is the crown fill portion \((0-1)\).
-As in BehavePlus, the fuel bed is considered sheltered when the crown fill portion exceeds 5 percent(<a href="#citeproc_bib_item_10">Andrews 2012</a>);
-this almost always prevents the \(\text{WAF}\) being greater than 1.
+canopy height in \(\text{ft}\), \(\text{CC}\) is the canopy cover fraction
+\((0-1)\), and \(\text{CF} := \text{CC} / 3\) is the crown fill portion
+\((0-1)\). As in BehavePlus, the fuel bed is considered sheltered when
+the crown fill portion exceeds 5 percent(<a href="#citeproc_bib_item_10">Andrews 2012</a>); this
+almost always prevents the \(\text{WAF}\) being greater than 1.
 </p>
-
 
 <div class="org-src-container">
 <pre class="src src-python" id="midflame-wind-speed"><span class="org-type">@cy.cfunc</span>
@@ -4770,7 +4979,7 @@ this almost always prevents the \(\text{WAF}\) being greater than 1.
 <span class="org-doc">    - canopy_height  :: ft</span>
 <span class="org-doc">    - canopy_cover   :: 0-1</span>
 
-<span class="org-doc">    Note: The (un)sheltered threshold should match Behave+ (Andrews 2012).</span>
+<span class="org-doc">    NOTE: The (un)sheltered threshold should match Behave+ (Andrews 2012).</span>
 <span class="org-doc">    """</span>
     <span class="org-variable-name">crown_fill_portion</span>: cy.<span class="org-builtin">float</span> <span class="org-operator">=</span> canopy_cover <span class="org-operator">/</span> 3.0
     <span class="org-variable-name">is_sheltered</span>      : cy.bint  <span class="org-operator">=</span> (crown_fill_portion <span class="org-operator">&gt;=</span> 0.05 <span class="org-keyword">and</span> canopy_height <span class="org-operator">&gt;=</span> 6.0)
@@ -4827,16 +5036,17 @@ Since Rothermel's original equations for computing the head fire
 spread rate assume that the wind direction and upslope direction are
 aligned, the effects of cross-slope winds must be taken into effect.
 To accomplish this, Pyretechnics implements the vector addition
-procedure defined in (<a href="#citeproc_bib_item_35">Rothermel 1983</a>) that combines the wind and slope
-vectors to calculate the maximum fire spread direction and
+procedure defined in (<a href="#citeproc_bib_item_35">Rothermel 1983</a>) that combines the wind and
+slope vectors to calculate the maximum fire spread direction and
 magnitude.
 </p>
 
 <p>
 In order to address potential errors related to projecting the
 horizontal wind and slope azimuth vectors to and from the
-slope-tangential plane, upon which those equations
-are defined, we incorporate the slope-tangential to horizon correction described in section <a href="#from-slope-tangential-to-horizontal">2.1.4</a>.
+slope-tangential plane, upon which those equations are defined, we
+incorporate the slope-tangential to horizon correction described in
+section <a href="#from-slope-tangential-to-horizontal">2.1.4</a>.
 </p>
 
 <div class="org-src-container">
@@ -4923,7 +5133,7 @@ where \(U_{\text{eff}}\) is the effective wind speed in \(\text{mph}\).
 </p></li>
 
 <li><p>
-Using the formula implemented in the Missoula Fire Lab's <code>behave</code> C++ library<sup><a id="fnr.behave-repo-lw-ratio" class="footref" href="#fn.behave-repo-lw-ratio" role="doc-backlink">5</a></sup>
+Using the formula implemented in the Missoula Fire Lab's <code>behave</code> C++ library<sup><a id="fnr.behave-repo-lw-ratio" class="footref" href="#fn.behave-repo-lw-ratio" role="doc-backlink">7</a></sup>
 </p>
 
 \begin{align}
@@ -4991,8 +5201,9 @@ effective wind speed \(U_{\text{eff}}\) in these calculations.
 </p>
 
 <p>
-(<a href="#citeproc_bib_item_33">Rothermel 1972</a>) defines a maximum effective wind speed, above which the
-predicted spread rate and intensity remains constant. However, (<a href="#citeproc_bib_item_11">Andrews, Cruz, and Rothermel 2013</a>) recommends instead that this wind speed
+(<a href="#citeproc_bib_item_33">Rothermel 1972</a>) defines a maximum effective wind speed, above
+which the predicted spread rate and intensity remains constant.
+However, (<a href="#citeproc_bib_item_11">Andrews, Cruz, and Rothermel 2013</a>) recommends instead that this wind speed
 limit not be imposed, in order to avoid possible spread rate
 underprediction.
 </p>
@@ -5150,7 +5361,7 @@ in particular the length-to-width ratio \(L/W\).
 <p>
 If \(\omega\) is the angular offset from the direction of maximum fire spread
 (where angles are measured in the slope-tangential plane),
-then it can be seen (nontrivially) that the front-normal spread rate \(R_s(\omega)\) is given by:
+then it can be seen (non-trivially) that the front-normal spread rate \(R_s(\omega)\) is given by:
 </p>
 
 \begin{align}
@@ -5638,8 +5849,9 @@ intensity and flame length.
 <div class="outline-text-4" id="text-crown-fire-initiation">
 <p>
 In order to incorporate the effects of crown fire behavior,
-Pyretechnics includes the crown fire initiation routine (<a href="#citeproc_bib_item_44">Wagner 1977</a>). According to this approach, we begin
-by calculating the <i>critical fireline intensity</i> as follows:
+Pyretechnics includes the crown fire initiation routine from
+(<a href="#citeproc_bib_item_44">Wagner 1977</a>). According to this approach, we begin by
+calculating the <i>critical fireline intensity</i> as follows:
 </p>
 
 \begin{align}
@@ -5789,7 +6001,8 @@ and \(\text{EFFM}\) is the estimated fine fuel moisture in \(\text{kg moisture/k
 </div>
 
 <p>
-Next, we need to calculate the <i>critical spread rate</i> from (<a href="#citeproc_bib_item_44">Wagner 1977</a>) as follows:
+Next, we need to calculate the <i>critical spread rate</i> from
+(<a href="#citeproc_bib_item_44">Wagner 1977</a>) as follows:
 </p>
 
 \begin{align}
@@ -5955,10 +6168,9 @@ analyses along with the combined surface and crown flame length
 As with surface fire spread, the wind speed (this time the 20-ft wind
 speed \(U_{20}\)) is used to compute the length to width ratio
 \(\frac{L}{W}\) of an ellipse that approximates the crown fire front
-using equation 10 (<a href="#citeproc_bib_item_34">Rothermel 1991</a>). This length
-to width ratio is then converted into an eccentricity measure of the
-ellipse using equation 8 (<a href="#citeproc_bib_item_5">Albini and Chase 1980</a>).
-Here are the formulas used:
+using equation 10 (<a href="#citeproc_bib_item_34">Rothermel 1991</a>). This length to width ratio is
+then converted into an eccentricity measure of the ellipse using
+equation 8 (<a href="#citeproc_bib_item_5">Albini and Chase 1980</a>). Here are the formulas used:
 </p>
 
 \begin{align}
@@ -6011,7 +6223,7 @@ behavior values described in the previous sections. In order to
 accurately compare the crown fire behavior values from this section
 with the surface fire behavior values from section <a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a>, the 10 meter wind vector
 must be projected onto the slope-tangential plane (using Waeselynck
-2024<sup><a id="fnr.6" class="footref" href="#fn.6" role="doc-backlink">6</a></sup>) before the crown fire's maximum spread rate
+2024<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>) before the crown fire's maximum spread rate
 and associated elliptical parameters are calculated. This ensures that
 both the surface fire and crown fire ellipses are aligned with the
 slope-tangential plane for later comparison in section <a href="#combining-surface-and-crown-fire-behavior">7.1.8</a>.
@@ -7154,11 +7366,10 @@ parallel and perpendicular to the wind direction, and \(\Delta_X,
 </p>
 
 <p>
-Following (<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>; <a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>; <a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>), we model
-\(\Delta_X\) and \(\Delta_Y\) to be independent, with \(\Delta_X\) following
-a log-normal distribution, and \(\Delta_Y\) following a zero-mean normal
-distribution, conditional on the fire behavior \(\Phi\) at the cell of
-origin:
+Following (<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>; <a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>; <a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>), we model \(\Delta_X\) and \(\Delta_Y\) to be independent,
+with \(\Delta_X\) following a log-normal distribution, and \(\Delta_Y\)
+following a zero-mean normal distribution, conditional on the fire
+behavior \(\Phi\) at the cell of origin:
 </p>
 
 \begin{align}
@@ -7230,10 +7441,11 @@ these deltas by using trigonometric functions.
 <div class="outline-text-4" id="text-resolution-of-log-normal-parameters">
 <p>
 We now need to define the functions \(\mu_X(\Phi)\) and
-\(\sigma_X(\Phi)\). Here we depart from (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>) and
-reproduce the model of ELMFIRE<sup><a id="fnr.elmfire-website" class="footref" href="#fn.elmfire-website" role="doc-backlink">7</a></sup>, which models that
-dependency using the following relationships between the moments of
-the distribution and the fireline intensity \(I\) and wind speed \(U\):
+\(\sigma_X(\Phi)\). Here we depart from
+(<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>) and reproduce the model of
+ELMFIRE<sup><a id="fnr.elmfire-website.2" class="footref" href="#fn.elmfire-website" role="doc-backlink">2</a></sup>, which models that dependency using the
+following relationships between the moments of the distribution and
+the fireline intensity \(I\) and wind speed \(U\):
 </p>
 
 \begin{align}
@@ -7408,9 +7620,8 @@ the properties of the log-normal distribution:
 <p>
 For \(\sigma_Y\), we either let the user specify an explicit value with
 key <b>crosswind_distance_stdev</b> (in meters), which makes it equivalent
-to the model of (<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>), or we default to
-deriving them from equation (28) of (<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>), which
-is equivalent to:
+to the model of (<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>), or we default to deriving them
+from equation (28) of (<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>), which is equivalent to:
 </p>
 
 \begin{align}
@@ -7506,22 +7717,26 @@ were obtained.
 
 <p>
 <b>CAUTION:</b> (FIXME REVIEW) We have found the above formula to be
-problematic when applied to the parameters values found in (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>) because it tends to yield nonsensical \(\sigma_Y >
-\mathbb{E}[\Delta_X]\). In fact, it can be seen that \(\sigma_Y > s
-\mathbb{E}[\Delta_X]\) if and only if \(\sigma_X > \sqrt{\ln \left(1 +
-\frac{.88^2}{.92 \times .47} s \right)}\), in particular \(\sigma_X >
-1.013\) for \(s = 1\), which is unfortunately the case with the range of
-\(\sigma_X\) values in (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>). This reflects a
-divergence between (<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>) and (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>), the latter allowing for more dispersed
-\(\Delta_X\) distributions (higher coefficient of variation
+problematic when applied to the parameters values found in
+(<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>) because it tends to yield
+nonsensical \(\sigma_Y > \mathbb{E}[\Delta_X]\). In fact, it can be seen
+that \(\sigma_Y > s \mathbb{E}[\Delta_X]\) if and only if \(\sigma_X >
+\sqrt{\ln \left(1 + \frac{.88^2}{.92 \times .47} s \right)}\), in
+particular \(\sigma_X > 1.013\) for \(s = 1\), which is unfortunately the
+case with the range of \(\sigma_X\) values in
+(<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>). This reflects a divergence
+between (<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>) and
+(<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>), the latter allowing for more
+dispersed \(\Delta_X\) distributions (higher coefficient of variation
 \(\text{Var}[\Delta_X]^{\frac{1}{2}}/\mathbb{E}[\Delta_X] =
 \sqrt{e^{\sigma_X^2} - 1}\)), whereas the former typically predicts a
-low coefficient of variation, as is perceptible in figure 6 of (<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>). Figure 10 of (<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>)
-suggests coefficients of variation ranging from 95% to 210%, whereas
-Figure 6 of (<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>) suggests coefficients of
-variation ranging from 30% to 70%. For this reason, we <b>strongly
-recommend to supply \(\sigma_Y\) directly</b> through the configuration key
-<b>crosswind_distance_stdev</b>.
+low coefficient of variation, as is perceptible in figure 6 of
+(<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>). Figure 10 of
+(<a href="#citeproc_bib_item_36">Sardoy et al. 2008</a>) suggests coefficients of
+variation ranging from 95% to 210%, whereas Figure 6 of
+(<a href="#citeproc_bib_item_21">Himoto and Tanaka 2005</a>) suggests coefficients of variation ranging from 30%
+to 70%. For this reason, we <b>strongly recommend to supply \(\sigma_Y\)
+directly</b> through the configuration key <b>crosswind_distance_stdev</b>.
 </p>
 
 <div class="org-src-container">
@@ -7634,9 +7849,9 @@ exponential functions:
 <h4 id="spot-ignition-model"><span class="section-number-4">8.1.7.</span> Spot Ignition Model</h4>
 <div class="outline-text-4" id="text-spot-ignition-model">
 <p>
-The spot ignition model (<a href="#citeproc_bib_item_37">Schroeder 1969</a>) describes
-the probability of a spot ignition based on the temperature and fine
-fuel moisture at the firebrand landing location as follows:
+The spot ignition model (<a href="#citeproc_bib_item_37">Schroeder 1969</a>) describes the
+probability of a spot ignition based on the temperature and fine fuel
+moisture at the firebrand landing location as follows:
 </p>
 
 \begin{align}
@@ -7696,10 +7911,10 @@ in degrees Celsius, and \(M\) is the fine fuel moisture in \(\text{kg moisture}/
 </div>
 
 <p>
-(<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>) uses this ignition probability but multiplies it by a
-flight survival probability based on the distance a firebrand lands
-from its casting source (using (<a href="#citeproc_bib_item_4">Albini and Baughman 1979</a>)) and the number of
-firebrands that land in a cell (<a href="#citeproc_bib_item_40">Stauffer 2008</a>).
+(<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>) uses this ignition probability but multiplies it
+by a flight survival probability based on the distance a firebrand
+lands from its casting source (using (<a href="#citeproc_bib_item_4">Albini and Baughman 1979</a>)) and the
+number of firebrands that land in a cell (<a href="#citeproc_bib_item_40">Stauffer 2008</a>).
 </p>
 
 \begin{align}
@@ -7768,14 +7983,15 @@ intervals: the amount of time required for the firebrand to reach its
 maximum vertical height \(t_v\), the amount of time required for the
 firebrand to descend from the maximum vertical height to the forest
 floor \(t_g\), and the amount of time required for a spot fire to ignite
-and build up to the steady-state \(t_I\). (<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>) assumes \(t_v\) and \(t_g\) to be equal and uses
-the formula from (<a href="#citeproc_bib_item_3">Albini 1979</a>) to calculate it.
-\(t_I\) is also assumed to be 20 min as used in (<a href="#citeproc_bib_item_27">McAlpine and Wakimoto 1991</a>).
+and build up to the steady-state \(t_I\). (<a href="#citeproc_bib_item_30">Perryman et al. 2012</a>) assumes
+\(t_v\) and \(t_g\) to be equal and uses the formula from
+(<a href="#citeproc_bib_item_3">Albini 1979</a>) to calculate it. \(t_I\) is also assumed to be 20
+min as used in (<a href="#citeproc_bib_item_27">McAlpine and Wakimoto 1991</a>).
 </p>
 
 <p>
-By (<a href="#citeproc_bib_item_3">Albini 1979</a>), the time \(t_v\) for a firebrand to
-reach height \(z\) when the flame length is \(z_F\) is given by:
+By (<a href="#citeproc_bib_item_3">Albini 1979</a>), the time \(t_v\) for a firebrand to reach
+height \(z\) when the flame length is \(z_F\) is given by:
 </p>
 
 \begin{align}
@@ -7789,14 +8005,14 @@ reach height \(z\) when the flame length is \(z_F\) is given by:
 \end{align}
 
 <p>
-In the notation of (<a href="#citeproc_bib_item_3">Albini 1979</a>), we would have \(t_v
-= \frac{2 z_F}{w_F}(t_T - t_o)\).
+In the notation of (<a href="#citeproc_bib_item_3">Albini 1979</a>), we would have \(t_v =
+\frac{2 z_F}{w_F}(t_T - t_o)\).
 </p>
 
 <p>
-(<a href="#citeproc_bib_item_3">Albini 1979</a>) also provides a formula - (D44) - for
-the maximum height \(z_\text{max}\) that a firebrand can reach while
-still glowing when it hits the ground, as a function of the firebrand
+(<a href="#citeproc_bib_item_3">Albini 1979</a>) also provides a formula - (D44) - for the
+maximum height \(z_\text{max}\) that a firebrand can reach while still
+glowing when it hits the ground, as a function of the firebrand
 diameter \(D\) in a cylinder model:
 </p>
 
@@ -10050,8 +10266,9 @@ Layer: flame_length
 <h3 id="for-developers-fire-spread"><span class="section-number-3">10.1.</span> For Developers</h3>
 <div class="outline-text-3" id="text-for-developers-fire-spread">
 <p>
-The level set method consists of simulating the propagation of the fire front
-by numerically solving the Hamilton-Jacobi equation mentioned in section <a href="#mathematical-formalization-level-set">2.1.3</a>:
+The level set method consists of simulating the propagation of the
+fire front by numerically solving the Hamilton-Jacobi equation
+mentioned in section <a href="#mathematical-formalization-level-set">2.1.3</a>:
 </p>
 
 \begin{equation}
@@ -10059,22 +10276,34 @@ by numerically solving the Hamilton-Jacobi equation mentioned in section <a href
 \end{equation}
 
 <p>
-in which \(\phi(\mathbf{x}, t)\) is a scalar field, \(\nabla_\mathbf{x} \phi = (\partial \phi / \partial x, \partial \phi / \partial y)\) is its front-normal spatial gradient,
-and \(H(\vec{p}, \mathbf{x}, t)\) is the Hamiltonian, a function which is non-negative and 1-homogeneous in variable \(\vec{p} \in \mathbb{R}^2\):
-if \(\vec{n}\) is the front-normal unit vector, then \(H(\vec{n}, \mathbf{x}, t)\) is the front-normal spread rate at space-time coordinates \((\mathbf{x}, t) \in \mathbb{R}^2 \times \mathbb{R}\).
-By definition, the burned region at time \(t\) is the zero-sublevel set of \(\phi(\cdot, t)\),
-i.e. the region where \(\phi\) is negative or zero.
-Thus, the gradient \(\nabla_\mathbf{x} \phi\) points outward in the front-normal direction
-(with the nuance that \(\vec{n}\) is front-normal only in the horizontal plane,
-not the front-tangential plance, which means that \(\vec{n}\) and \(H(\vec{n})\) are somewhat unphysical;
-see section <a href="#from-slope-tangential-to-horizontal">2.1.4</a> for converting them to the physical quantities in the slope-tangential plane.)
+in which \(\phi(\mathbf{x}, t)\) is a scalar field, \(\nabla_\mathbf{x}
+\phi = (\partial \phi / \partial x, \partial \phi / \partial y)\) is
+its front-normal spatial gradient, and \(H(\vec{p}, \mathbf{x}, t)\) is
+the Hamiltonian, a function which is non-negative and 1-homogeneous in
+variable \(\vec{p} \in \mathbb{R}^2\): if \(\vec{n}\) is the front-normal
+unit vector, then \(H(\vec{n}, \mathbf{x}, t)\) is the front-normal
+spread rate at space-time coordinates \((\mathbf{x}, t) \in
+\mathbb{R}^2 \times \mathbb{R}\).
 </p>
 
 <p>
-The numerical strategy is to discretize the \(\phi\) field into a cartesian grid,
-represent the initial burned region by a suitable field \(\phi_0(\mathbf{x})\),
-then use a numerical scheme (2nd-order Runge-Kutta) with adaptive time steps
-to solve the Cauchy initial value problem:
+By definition, the burned region at time \(t\) is the zero-sublevel set
+of \(\phi(\cdot, t)\) (i.e., the region where \(\phi\) is negative or
+zero). Thus, the gradient \(\nabla_\mathbf{x} \phi\) points outward in
+the front-normal direction (with the nuance that \(\vec{n}\) is
+front-normal only in the horizontal plane, not the front-tangential
+plane, which means that \(\vec{n}\) and \(H(\vec{n})\) are somewhat
+unphysical; see section <a href="#from-slope-tangential-to-horizontal">2.1.4</a> for
+converting them to the physical quantities in the slope-tangential
+plane.)
+</p>
+
+<p>
+The numerical strategy is to discretize the \(\phi\) field into a
+cartesian grid, represent the initial burned region by a suitable
+field \(\phi_0(\mathbf{x})\), then use a numerical scheme (2nd-order
+Runge-Kutta) with adaptive time steps to solve the Cauchy initial
+value problem:
 </p>
 
 \begin{equation}
@@ -10085,10 +10314,13 @@ to solve the Cauchy initial value problem:
 \end{equation}
 
 <p>
-The following sections will walk through the numerical implementation;
-note that the code has been optimized for computational efficiency,
-sometimes at the expense of readability and simplicity,
-as some optimizations require to conflate several aspects of the problem.
+The following sections will walk through the numerical implementation.
+</p>
+
+<p>
+<b>Note:</b> The code below has been optimized for computational
+efficiency, sometimes at the expense of readability and simplicity, as
+some optimizations require conflating several aspects of the problem.
 </p>
 </div>
 <div id="outline-container-module-imports-eulerian-level-set" class="outline-4">
@@ -10142,7 +10374,7 @@ as some optimizations require to conflate several aspects of the problem.
 <h4 id="spreadinputs-data-structure"><span class="section-number-4">10.1.2.</span> SpreadInputs Data Structure</h4>
 <div class="outline-text-4" id="text-spreadinputs-data-structure">
 <p>
-For efficiency in numerical loops, an efficient <code>SpreadInputs</code> data
+For efficiency in numerical loops, a dedicated <code>SpreadInputs</code> data
 structure is used to hold input data.
 </p>
 
@@ -10350,12 +10582,11 @@ structure is used to hold input data.
 <h4 id="spreadstate-data-structure"><span class="section-number-4">10.1.3.</span> SpreadState Data Structure</h4>
 <div class="outline-text-4" id="text-spreadstate-data-structure">
 <p>
-The long-lived state of the level-set simulation is stored in a
+The long-lived state of the level set simulation is stored in a
 <code>SpreadState</code> data structure. This notably features the \(\phi\) and
-\(\phi^\ast\) arrays, as well as output matrices. This does not,
-however, feature the narrow-band tracker and the various caches. The
-meaning of these data structures will be explained in the following
-sections.
+\(\phi^\ast\) arrays, as well as output matrices. However, this does not
+include the narrow-band tracker nor the various caches. The meaning of
+these data structures will be explained in the following sections.
 </p>
 
 <p>
@@ -10834,7 +11065,8 @@ An important numerical optimization consists of updating the \(\phi\)
 field only in those cells that are close enough to the current fire
 front. This makes the computational cost of each time step
 proportional to the length of the fire perimeter. This technique is
-called the <i>narrow band</i> method (<a href="#citeproc_bib_item_1">Adalsteinsson and Sethian 1995</a>).
+called the <i>narrow band</i> method
+(<a href="#citeproc_bib_item_1">Adalsteinsson and Sethian 1995</a>).
 </p>
 
 <p>
@@ -10920,9 +11152,9 @@ are not considered.
 </div>
 
 <p>
-Frontier cells will be represented as Python sets; cell coordinates
-are encoded as a single integer instead of a tuple, as that enables a
-more efficient usage of memory:
+Frontier cells will be represented as Python sets. Notably, cell
+coordinates are encoded as a single integer instead of a tuple, as
+that enables a more efficient usage of memory:
 </p>
 
 <div class="org-src-container">
@@ -11528,21 +11760,29 @@ the <code>NarrowBandTracker</code> data structure.
 <h4 id="flux-limiter"><span class="section-number-4">10.1.5.</span> Flux Limiter</h4>
 <div class="outline-text-4" id="text-flux-limiter">
 <p>
-Similarly to ELMFIRE,
-Pyretechnics uses a Superbee flux limiter (<a href="#citeproc_bib_item_41">Sweby 1984</a>) to prevent spurious oscillations in the numerical solution.
-The ELMFIRE documentation<sup><a id="fnr.elmfire-level-set" class="footref" href="#fn.elmfire-level-set" role="doc-backlink">8</a></sup> describes this as:
+Similarly to ELMFIRE, Pyretechnics uses a Superbee flux limiter
+(<a href="#citeproc_bib_item_41">Sweby 1984</a>) to prevent spurious oscillations in the
+numerical solution. The ELMFIRE documentation<sup><a id="fnr.elmfire-level-set.1" class="footref" href="#fn.elmfire-level-set" role="doc-backlink">1</a></sup>
+describes this as:
 </p>
 
 <ol class="org-ol">
-<li>computing a front-normal spread rate vector \(U\), derived from the phi gradient \(\ddot{\nabla}\phi\) computed with basic finite differences;</li>
-<li>using the Superbee flux limiter to compute an updated (flux-limited) gradient \(\hat{\nabla} \phi\);</li>
-<li>computing \(\partial{\phi}/{\partial t} = - U \cdot \hat{\nabla} \phi\).</li>
+<li>computing a front-normal spread rate vector \(U\), derived from the
+phi gradient \(\ddot{\nabla}\phi\) computed with basic finite
+differences;</li>
+<li>using the Superbee flux limiter to compute an updated
+(flux-limited) gradient \(\hat{\nabla} \phi\);</li>
+<li>computing \(\partial{\phi}/{\partial t} = - U \cdot \hat{\nabla}
+   \phi\).</li>
 </ol>
 
 <p>
-This description is faithful to the implementation of ELMFIRE (based on our study of the code).
-We observe that the front-normal spread rate vector \(U\) need not represented.
-Since \(U\) is positively proportional to \(\ddot{\nabla} \phi\), and therefore to the unit vector \(\frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|}\), we can compute the desired result as:
+This description is faithful to the implementation of ELMFIRE (based
+on our study of the code). We observe that the front-normal spread
+rate vector \(U\) need not be represented. Since \(U\) is positively
+proportional to \(\ddot{\nabla} \phi\), and therefore to the unit vector
+\(\frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|}\), we can compute the
+desired result as:
 </p>
 
 \begin{equation}
@@ -11550,7 +11790,9 @@ Since \(U\) is positively proportional to \(\ddot{\nabla} \phi\), and therefore 
 \end{equation}
 
 <p>
-In other words, flux-limiting boils down to scaling the Hamiltonian by a correction factor \((\hat{\nabla} \phi \cdot \frac{\ddot{\nabla} \phi}{|\ddot{\nabla} \phi|^2})\).
+In other words, flux-limiting boils down to scaling the Hamiltonian by
+a correction factor \((\hat{\nabla} \phi \cdot \frac{\ddot{\nabla}
+\phi}{|\ddot{\nabla} \phi|^2})\).
 </p>
 
 <p>
@@ -11636,7 +11878,8 @@ The code computing the flux-limited gradient \(\hat{\nabla} \phi\) is:
 </div>
 
 <p>
-The above code will be invoked in future sections that compute \(\partial{\phi}/{\partial t}\).
+The above code will be invoked in future sections that compute
+\(\partial{\phi}/{\partial t}\).
 </p>
 </div>
 </div>
@@ -11644,20 +11887,27 @@ The above code will be invoked in future sections that compute \(\partial{\phi}/
 <h4 id="hamiltonian-from-surface/crown-elliptical-wavelets"><span class="section-number-4">10.1.6.</span> Hamiltonian from Surface/Crown Elliptical Wavelets</h4>
 <div class="outline-text-4" id="text-hamiltonian-from-surface/crown-elliptical-wavelets">
 <p>
-This section describes how the Hamiltonian is efficiently computed by combining the elliptical dimensions of surface and crown wavelets.
-More precisely, the code directly computes the temporal derivative \(\partial{\phi}/{\partial t} = - H(\nabla_\mathbf{x} \phi, \mathbf{x}, t)\).
-As described in section <a href="#deriving-the-spread-rate-overview">2.1.2</a>,
-this is on a combination of surface and crown fire ellipses.
+This section describes how the Hamiltonian is efficiently computed by
+combining the elliptical dimensions of surface and crown wavelets.
+More precisely, the code directly computes the temporal derivative
+\(\partial{\phi}/{\partial t} = - H(\nabla_\mathbf{x} \phi, \mathbf{x},
+t)\). As described in section <a href="#deriving-the-spread-rate-overview">2.1.2</a>, this
+is based on a combination of surface and crown fire ellipses.
 </p>
 
 <p>
-To account for slope, we conceive of the appropriate slope-tangential gradient \(\tilde{\nabla} \phi = \pi_{/}(\nabla \phi)\), which is the projection of the \(\phi\) gradient onto the slope-tangential plane,
-as described in section <a href="#from-slope-tangential-to-horizontal">2.1.4</a>.
-We will not need to represent this vector directly in memory.
+To account for slope, we conceive of the appropriate slope-tangential
+gradient \(\tilde{\nabla} \phi = \pi_{/}(\nabla \phi)\), which is the
+projection of the \(\phi\) gradient onto the slope-tangential plane, as
+described in section <a href="#from-slope-tangential-to-horizontal">2.1.4</a>. We will not
+need to represent this vector directly in memory.
 </p>
 
 <p>
-Then, elliptical dimensions are represented as a 3D heading spread vector \(\vec{V}_h = (V_x, V_y, V_z)\), as well as 3 numbers \(A, B, C\), such that \(\partial{\phi}/{\partial t}\) for the elliptical wavelet can be computed as:
+Then, elliptical dimensions are represented as a 3D heading spread
+vector \(\vec{V}_h = (V_x, V_y, V_z)\), as well as 3 numbers \(A, B, C\),
+such that \(\partial{\phi}/{\partial t}\) for the elliptical wavelet can
+be computed as:
 </p>
 
 \begin{equation}
@@ -11665,7 +11915,10 @@ Then, elliptical dimensions are represented as a 3D heading spread vector \(\vec
 \end{equation}
 
 <p>
-in which \(\Delta := \vec{V}_h \cdot \tilde{\nabla} \phi\) is the dot-product between the heading spread rate vector and the slope-tangential gradient. From basic geometry, \(\Delta\) can be re-expressed in terms of horizontal coordinates as:
+in which \(\Delta := \vec{V}_h \cdot \tilde{\nabla} \phi\) is the
+dot-product between the heading spread rate vector and the
+slope-tangential gradient. From basic geometry, \(\Delta\) can be
+re-expressed in terms of horizontal coordinates as:
 </p>
 
 \begin{equation}
@@ -11673,7 +11926,9 @@ in which \(\Delta := \vec{V}_h \cdot \tilde{\nabla} \phi\) is the dot-product be
 \end{equation}
 
 <p>
-The squared gradient norm \(|\tilde{\nabla} \phi|^2\) is computed in terms of horizontal coordinates, using the elevation gradient \(\nabla z = (\partial z / \partial x, \partial z / \partial y)\):
+The squared gradient norm \(|\tilde{\nabla} \phi|^2\) is computed in
+terms of horizontal coordinates, using the elevation gradient \(\nabla
+z = (\partial z / \partial x, \partial z / \partial y)\):
 </p>
 
 \begin{equation}
@@ -11695,15 +11950,18 @@ in which \(V_f\) and \(V_b\) are the flanking and backing spread rates, respecti
 </p>
 
 <p>
-This representation of wavelets is stored into data structures that can be reused across several time steps,
-thus enabling some optimizations by caching.
+This representation of wavelets is stored into data structures that
+can be reused across several time steps, thus enabling some
+optimizations by caching.
 </p>
 
 <p>
-This calculation is done for both the surface and crown wavelets.
-The check for crowning initiation is reduced to a spread rate threshold,
-as explained in section <a href="#deriving-the-spread-rate-overview">2.1.2</a>.
-This requires the front-normal spread rate \(V_{/}\) in the slope-tangial plane; observe that \(V_{/}\) can be derived from previously computed quantities as:
+This calculation is done for both the surface and crown wavelets. The
+check for crowning initiation is reduced to a spread rate threshold,
+as explained in section <a href="#deriving-the-spread-rate-overview">2.1.2</a>. This
+requires the front-normal spread rate \(V_{/}\) to be in the
+slope-tangential plane; observe that \(V_{/}\) can be derived from
+previously computed quantities as:
 </p>
 
 \begin{equation}
@@ -11711,12 +11969,12 @@ This requires the front-normal spread rate \(V_{/}\) in the slope-tangial plane;
 \end{equation}
 
 <p>
-If \(V_c\) denotes the spread rate threshold for crown fire initiation, 
-this means that the \((V_{/} > V_c)\) condition is equivalent to
+If \(V_c\) denotes the spread rate threshold for crown fire initiation,
+this means that the \((V_{/} > V_c)\) condition is equivalent to:
 </p>
 
 \begin{equation}
-   (V_{/} > V_c) \iff \left(\frac{\partial \phi}{\partial t}\right)^2 > V_c^2 |\tilde{\nabla} \phi|^2 
+   (V_{/} > V_c) \iff \left(\frac{\partial \phi}{\partial t}\right)^2 > V_c^2 |\tilde{\nabla} \phi|^2
 \end{equation}
 
 <p>
@@ -11724,11 +11982,16 @@ which is robust to zero gradients.
 </p>
 
 <p>
-Readers might be surprised that the above formulas look so different from the code of ELMFIRE (<a href="#citeproc_bib_item_24">Lautenberger 2013</a>) or FARSITE (<a href="#citeproc_bib_item_19">Finney 2004</a>), which rely much more on angles and trigonometric functions.
-The elliptical calculations in Pyretechnics are correct and mathematically equivalent to those other models (save for bugs in the latter).
-We have judged that the use of angles and trigonometric functions is suboptimal both conceptually and computationally,
-which is why our numerical implementation instead relies on vector algebra.
-As far as we know, Prometheus (<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>) adopts a similar approach.
+Readers might be surprised that the above formulas look so different
+from the code of ELMFIRE (<a href="#citeproc_bib_item_24">Lautenberger 2013</a>) or FARSITE
+(<a href="#citeproc_bib_item_19">Finney 2004</a>), which rely much more on angles and
+trigonometric functions. The elliptical calculations in Pyretechnics
+are correct and mathematically equivalent to those other models (save
+for bugs in the latter). We have judged that the use of angles and
+trigonometric functions is suboptimal both conceptually and
+computationally, which is why our numerical implementation instead
+relies on vector algebra. As far as we know, Prometheus
+(<a href="#citeproc_bib_item_42">Tymstra et al. 2010</a>) adopts a similar approach.
 </p>
 
 <p>
@@ -11898,9 +12161,12 @@ This logic is implemented in the following code:
 <h4 id="resolving-elliptical-dimensions"><span class="section-number-4">10.1.7.</span> Resolving Elliptical Dimensions</h4>
 <div class="outline-text-4" id="text-resolving-elliptical-dimensions">
 <p>
-The inputs to the previous calculations are elliptical dimensions derived from fuels and weather inputs, as described in sections <a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a> and <a href="#crown-fire-behavior-in-the-direction-of-maximum-spread">7.1.6</a>.
-The following code acts as a bridge from these calculations to the front-propagating code,
-which involve efficient data structures:
+The inputs to the previous calculations are elliptical dimensions
+derived from fuels and weather inputs, as described in sections
+<a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a> and
+<a href="#crown-fire-behavior-in-the-direction-of-maximum-spread">7.1.6</a>. The following
+code acts as a bridge from these calculations to the front-propagating
+code, which involve efficient data structures:
 </p>
 
 <div class="org-src-container">
@@ -12105,11 +12371,15 @@ which involve efficient data structures:
 <h4 id="runge-kutta-scheme-and-cfl-condition"><span class="section-number-4">10.1.8.</span> Runge-Kutta Scheme and CFL Condition</h4>
 <div class="outline-text-4" id="text-runge-kutta-scheme-and-cfl-condition">
 <p>
-Like ELMFIRE, Pyretechnics uses a 2nd-order Runge-Kutta scheme to march the Hamilton-Jacobi equation forward in time.
-The update to the \(\phi\) array happens in two passes.
-The first pass computes the horizontal spatial gradient and the temporal derivative \(\partial{\phi}/{\partial t}\) for each tracked cell, from which it resolves a timestep \(\Delta t\) based on a Courant-Friedrichs-Lewy (CFL) condition.
-The front may advance by at most \(C\) cells in either grid direction, and the step may not exceed <code>max_timestep</code>.
-The resolved step is the most restrictive value over the tracked cells:
+Like ELMFIRE, Pyretechnics uses a 2nd-order Runge-Kutta scheme to
+march the Hamilton-Jacobi equation forward in time. The update to the
+\(\phi\) array happens in two passes. The first pass computes the
+horizontal spatial gradient and the temporal derivative
+\(\partial{\phi}/{\partial t}\) for each tracked cell, from which it
+resolves a timestep \(\Delta t\) based on a Courant-Friedrichs-Lewy
+(CFL) condition. The front may advance by at most \(C\) cells in either
+grid direction, and the step may not exceed <code>max_timestep</code>. The
+resolved step is the most restrictive value over the tracked cells:
 </p>
 
 \begin{equation}
@@ -12117,8 +12387,13 @@ The resolved step is the most restrictive value over the tracked cells:
 \end{equation}
 
 <p>
-\(C\) is the Courant number (<code>max_cells_per_timestep</code>).
-The horizontal spread-rate vector \(U = (U_x, U_y)\) is built from the unlimited derivative, before the flux-limiter correction, and from the unlimited horizontal gradient:
+where \(C\) is the Courant number (<code>max_cells_per_timestep</code>).
+</p>
+
+<p>
+The horizontal spread-rate vector \(U = (U_x, U_y)\) is built from the
+unlimited derivative, before the flux-limiter correction, and from the
+unlimited horizontal gradient:
 </p>
 
 \begin{equation}
@@ -12126,7 +12401,9 @@ The horizontal spread-rate vector \(U = (U_x, U_y)\) is built from the unlimited
 \end{equation}
 
 <p>
-The first pass then yields a temporary update \(\phi^\ast\), using the flux-limited derivative \(\left(\partial{\phi}/{\partial t}\right)_1\) at the current \(\phi\):
+The first pass then yields a temporary update \(\phi^\ast\), using the
+flux-limited derivative \(\left(\partial{\phi}/{\partial t}\right)_1\)
+at the current \(\phi\):
 </p>
 
 \begin{equation}
@@ -12134,8 +12411,9 @@ The first pass then yields a temporary update \(\phi^\ast\), using the flux-limi
 \end{equation}
 
 <p>
-The second pass recomputes derivatives on \(\phi^\ast\), at \((t + \Delta t)\).
-The final update averages the two derivatives, starting again from \(\phi\):
+The second pass recomputes derivatives on \(\phi^\ast\), at \((t + \Delta
+t)\). The final update averages the two derivatives, starting again
+from \(\phi\):
 </p>
 
 \begin{equation}
@@ -12143,7 +12421,8 @@ The final update averages the two derivatives, starting again from \(\phi\):
 \end{equation}
 
 <p>
-During the second pass, newly burned cells are detected by monitoring sign changes in the \(\phi\) array.
+During the second pass, newly burned cells are detected by monitoring
+sign changes in the \(\phi\) array.
 </p>
 
 <div class="org-src-container">
@@ -12349,11 +12628,12 @@ During the second pass, newly burned cells are detected by monitoring sign chang
 </pre>
 </div>
 
-
 <p>
 The above code is supported by a <code>TrackedCellsArrays</code> data structure,
-complemented by the \(\phi\) grids themselves held by the <code>SpreadState</code> class.
-For each tracked cell this structure holds a 9-point stencil of \(\phi\), the sampled inputs, the no-wind no-slope behavior, the partialed wavelets, and the pass-1 output.
+complemented by the \(\phi\) grids themselves held by the <code>SpreadState</code>
+class. For each tracked cell this structure holds a 9-point stencil of
+\(\phi\), the sampled inputs, the no-wind no-slope behavior, the
+partialed wavelets, and the pass-1 output.
 </p>
 
 <div class="org-src-container">
@@ -12488,9 +12768,10 @@ For each tracked cell this structure holds a 9-point stencil of \(\phi\), the sa
 <h4 id="loading-and-refreshing-intermediate-quantities"><span class="section-number-4">10.1.9.</span> Loading and Refreshing Intermediate Quantities</h4>
 <div class="outline-text-4" id="text-loading-and-refreshing-intermediate-quantities">
 <p>
-The following code is used to load and refresh intermediate quantities from the input space-time cube.
-This involves a configurable refresh rate for each input variable.
-No-wind-no-slope fire behavior (costly) and elliptical dimensions (less costly) are recomputed as needed.
+The following code is used to load and refresh intermediate quantities
+from the input space-time cubes. This involves a configurable refresh
+rate for each input variable. No-wind-no-slope fire behavior (costly)
+and elliptical dimensions (less costly) are recomputed as needed.
 </p>
 
 <div class="org-src-container">
@@ -12878,17 +13159,19 @@ No-wind-no-slope fire behavior (costly) and elliptical dimensions (less costly) 
 <h4 id="spotting-from-firebrands"><span class="section-number-4">10.1.10.</span> Spotting from Firebrands</h4>
 <div class="outline-text-4" id="text-spotting-from-firebrands">
 <p>
-As cells get burned by front propagation,
-they have the opportunity to cast firebrands which will ignite other cells,
-as described in section <a href="#spot-fire-equations-(pyretechnics.spot_fire)">8</a>.
-The set of in-flight firebrands is tracked as a sorted dictionary from ignition time to the set of target cells.
+As cells get burned by front propagation, they have the opportunity to
+cast firebrands which will ignite other cells, as described in section
+<a href="#spot-fire-equations-(pyretechnics.spot_fire)">8</a>. The set of in-flight
+firebrands is tracked as a sorted dictionary from ignition time to the
+set of target cells.
 </p>
 
 <p>
-The number of emitted firebrands is drawn as a Poisson random variable,
-with mean given by the expected number of firebrands.
-A special-purpose class <code>BufferedRandGen</code> was created to sample these Poisson variates efficiently,
-especially in the case where most of them have a very low expectation.
+The number of emitted firebrands is drawn as a Poisson random
+variable, with mean given by the expected number of firebrands. A
+special-purpose class <code>BufferedRandGen</code> was created to sample these
+Poisson variates efficiently, especially in the case where most of
+them have a very low expectation.
 </p>
 
 <div class="org-src-container">
@@ -12987,8 +13270,8 @@ especially in the case where most of them have a very low expectation.
 <h4 id="processing-burned-cells"><span class="section-number-4">10.1.11.</span> Processing Burned Cells</h4>
 <div class="outline-text-4" id="text-processing-burned-cells">
 <p>
-When a cell gets burned by front propagation,
-more detailed fire behavior calculations are performed.
+When a cell gets burned by front propagation, more detailed fire
+behavior calculations are performed.
 </p>
 
 <div class="org-src-container">
@@ -13034,9 +13317,6 @@ more detailed fire behavior calculations are performed.
         <span class="org-keyword">return</span> (dphi_dx_on_slope, dphi_dy_on_slope, dphi_dz_on_slope)
 
 
-<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate &lt; critical_spread_rate?</span>
-<span class="org-comment-delimiter">#        </span><span class="org-comment">Did I do this correctly in calc_crown_fire_behavior_in_direction?</span>
-<span class="org-comment-delimiter"># </span><span class="org-comment">FIXME I think we want to move this.</span>
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
 <span class="org-keyword">def</span> <span class="org-function-name">calc_fireline_normal_behavior</span>(fire_behavior_max: FireBehaviorMax, phi_gradient_xyz: vec_xyz) <span class="org-operator">-&gt;</span> SpreadBehavior:
@@ -13266,9 +13546,9 @@ more detailed fire behavior calculations are performed.
 
 
 <p>
-These calculations are invoked on the list of newly burned cells,
-to then update the state of the simulation (casting firebrands for spotting, 
-and updating the output matrices):
+These calculations are invoked on the list of newly burned cells, to
+then update the state of the simulation (casting firebrands for
+spotting, and updating the output matrices):
 </p>
 
 <div class="org-src-container">
@@ -13329,7 +13609,8 @@ and updating the output matrices):
 <h4 id="full-simulation-loop"><span class="section-number-4">10.1.12.</span> Full Simulation Loop</h4>
 <div class="outline-text-4" id="text-full-simulation-loop">
 <p>
-The previous sections all come together into the code that runs the simulation loop.
+The previous sections all come together into the code that runs the
+simulation loop.
 </p>
 
 <div class="org-src-container">
@@ -13364,7 +13645,7 @@ The previous sections all come together into the code that runs the simulation l
                         fb_opts      : FireBehaviorSettings,
                         max_timestep : cy.<span class="org-builtin">float</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
     <span class="org-doc">"""</span>
-<span class="org-doc">    Spreads the fire for one iteration using the eulerian level-set method, returning an updated `sim_state`.</span>
+<span class="org-doc">    Spreads the fire for one iteration using the eulerian level set method, returning an updated `sim_state`.</span>
 <span class="org-doc">    """</span>
     <span class="org-comment-delimiter"># </span><span class="org-comment">Unpack sim_state</span>
     <span class="org-variable-name">start_time</span>      : cy.<span class="org-builtin">float</span>               <span class="org-operator">=</span> sim_state[<span class="org-string">"simulation_time"</span>]
@@ -16119,10 +16400,15 @@ spread_state.set_start_time(start_time)
 <h2 id="fire-suppression-techniques-(pyretechnics.suppression)"><span class="section-number-2">11.</span> Fire Suppression Techniques (pyretechnics.suppression)</h2>
 <div class="outline-text-2" id="text-fire-suppression-techniques-(pyretechnics.suppression)">
 <p>
-Pyretechnics provides utilities for simulating suppression by fireline construction.
-Pyretechnics enables users to search for contiguous segments of the fire front that satisfy a constrained optimization objective with user-provided priority and cost functions.
-More precisely, Pyretechnics lets users export a representation of the fire front as ordered lists of edges separating burned and unburned cells,
-then search for optimal segments given priorities and budget as represented by user-supplied functions.
+Pyretechnics provides utilities for simulating suppression by fireline
+construction, which enable users to search for contiguous segments of
+the fire front that satisfy a constrained optimization objective with
+user-provided priority and cost functions. More precisely,
+Pyretechnics exports a representation of the fire front as ordered
+lists of edges separating burned and unburned cells. Users can then
+define functions that assign priorities and fireline construction
+rates to each edge, which Pyretechnics will use to identify an optimal
+contiguous segment for suppression given a user-supplied time budget.
 This is demonstrated in section <a href="#for-users-suppression">11.2</a>.
 </p>
 </div>
@@ -18779,7 +19065,7 @@ first create a collection of <code>SpaceTimeCube</code> objects, representing al
 of the input layers that are needed to describe the simulation
 environment. A popular source of data for the space-varying
 topography, fuels, and vegetation layers are the 30m raster layers
-provided by the US LANDFIRE program<sup><a id="fnr.landfire-website.3" class="footref" href="#fn.landfire-website" role="doc-backlink">3</a></sup> (see table
+provided by the US LANDFIRE program<sup><a id="fnr.landfire-website.5" class="footref" href="#fn.landfire-website" role="doc-backlink">5</a></sup> (see table
 <a href="#tab:landfire-layers">29</a> for details).
 </p>
 
@@ -20353,35 +20639,35 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <h2 class="footnotes">Footnotes: </h2>
 <div id="text-footnotes">
 
-<div class="footdef"><sup><a id="fn.lit-prog-wikipedia" class="footnum" href="#fnr.lit-prog-wikipedia" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-<a href="https://en.wikipedia.org/wiki/Literate_programming">https://en.wikipedia.org/wiki/Literate_programming</a>
+<div class="footdef"><sup><a id="fn.elmfire-level-set" class="footnum" href="#fnr.elmfire-level-set" role="doc-backlink">1</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://elmfire.io/tech_ref.html#level-set-propagation">https://elmfire.io/tech_ref.html#level-set-propagation</a>
 </p></div></div>
 
-<div class="footdef"><sup><a id="fn.guix-website" class="footnum" href="#fnr.guix-website" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-<a href="https://guix.gnu.org">https://guix.gnu.org</a>
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.landfire-website" class="footnum" href="#fnr.landfire-website" role="doc-backlink">3</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-<a href="https://landfire.gov">https://landfire.gov</a>
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.rtma-website" class="footnum" href="#fnr.rtma-website" role="doc-backlink">4</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-<a href="https://www.nco.ncep.noaa.gov/pmb/products/rtma/">https://www.nco.ncep.noaa.gov/pmb/products/rtma/</a>
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.behave-repo-lw-ratio" class="footnum" href="#fnr.behave-repo-lw-ratio" role="doc-backlink">5</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-<a href="https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93">https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93</a>
-</p></div></div>
-
-<div class="footdef"><sup><a id="fn.6" class="footnum" href="#fnr.6" role="doc-backlink">6</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
-
-<div class="footdef"><sup><a id="fn.elmfire-website" class="footnum" href="#fnr.elmfire-website" role="doc-backlink">7</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<div class="footdef"><sup><a id="fn.elmfire-website" class="footnum" href="#fnr.elmfire-website" role="doc-backlink">2</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
 <a href="https://elmfire.io">https://elmfire.io</a>
 </p></div></div>
 
-<div class="footdef"><sup><a id="fn.elmfire-level-set" class="footnum" href="#fnr.elmfire-level-set" role="doc-backlink">8</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
-<a href="https://elmfire.io/tech_ref.html#level-set-propagation">https://elmfire.io/tech_ref.html#level-set-propagation</a>
+<div class="footdef"><sup><a id="fn.lit-prog-wikipedia" class="footnum" href="#fnr.lit-prog-wikipedia" role="doc-backlink">3</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://en.wikipedia.org/wiki/Literate_programming">https://en.wikipedia.org/wiki/Literate_programming</a>
 </p></div></div>
+
+<div class="footdef"><sup><a id="fn.guix-website" class="footnum" href="#fnr.guix-website" role="doc-backlink">4</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://guix.gnu.org">https://guix.gnu.org</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.landfire-website" class="footnum" href="#fnr.landfire-website" role="doc-backlink">5</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://landfire.gov">https://landfire.gov</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.rtma-website" class="footnum" href="#fnr.rtma-website" role="doc-backlink">6</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://www.nco.ncep.noaa.gov/pmb/products/rtma/">https://www.nco.ncep.noaa.gov/pmb/products/rtma/</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.behave-repo-lw-ratio" class="footnum" href="#fnr.behave-repo-lw-ratio" role="doc-backlink">7</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
+<a href="https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93">https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93</a>
+</p></div></div>
+
+<div class="footdef"><sup><a id="fn.8" class="footnum" href="#fnr.8" role="doc-backlink">8</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
 
 
 </div>
