@@ -20,8 +20,6 @@
 #+bibliography: references.bib
 #+cite_export: csl
 
-# NOTE: `#+cite_export: csl` requires the Emacs package citeproc.
-
 # ================================
 # Code Block Settings
 # ================================
@@ -38,6 +36,9 @@
   :END:
 
 ** Overview of Pyretechnics
+   :PROPERTIES:
+   :CUSTOM_ID: overview-of-pyretechnics
+   :END:
 
 Pyretechnics is a Python library for simulating wildland fires. Pyretechnics implements physical and empirical equations which predict the evolution of a fire front and compute related fire behavior metrics (e.g. rate of spread and flame length).
 
@@ -59,8 +60,10 @@ The inputs of Pyretechnics are rasters of fuels, topography and weather inputs w
 
 Pyretechnics puts a strong emphasis on computing efficiency, at the expense of some physical accuracy. It is suitable for simulating hundreds of thousands of fire seasons on the scale of a country, with a pixel resolution on the order of 50m. Pyretechnics does not currently compute any feedback of the fire on the atmosphere, nor does it simulate suppression by firefighters or extinction .
 
-
-** About this documentation
+** About this Documentation
+   :PROPERTIES:
+   :CUSTOM_ID: about-this-documentation
+   :END:
 
 This document is a Literate Program[fn:lit-prog-wikipedia], containing
 both the source code of the software it describes as well as the
@@ -84,11 +87,10 @@ operating system. See [[file:../README.md][README.md]] for more details.
 [fn:elmfire-website] https://elmfire.io
 [fn:elmfire-level-set] https://elmfire.io/tech_ref.html#level-set-propagation
 
-
-* Theoretical models
-:PROPERTIES:
-:CUSTOM_ID: theoretical-models
-:END:
+* Theoretical Models
+  :PROPERTIES:
+  :CUSTOM_ID: theoretical-models
+  :END:
 
 This section gives an overview of the theoretical models underlying Pyretechnics.
 We provide only a high-level description that leaves out many details,
@@ -110,9 +112,14 @@ Let us start by giving an overview of Pyretechnics features for expert readers:
 
 These concepts will be detailed in the following sections.
 
-** Fire front propagation
-
-*** Propagating fire fronts from spread rates
+** Fire Front Propagation
+   :PROPERTIES:
+   :CUSTOM_ID: fire-front-propagation
+   :END:
+*** Propagating Fire Fronts from Spread Rates
+   :PROPERTIES:
+   :CUSTOM_ID: propagating-fire-fronts-from-spread-rates
+   :END:
 
 At its core, Pyretechnics mdoels fire spread by calculating /spread rates/;
 a spread rate is the velocity at which an infinitesimal segment of the flaming front advances in the direction perpendicular to itself.
@@ -138,8 +145,7 @@ Instead, weather are supplied as an input and fire progression is derived downst
 If coupling is desired, one approach would be to interleave small intervals of Pyretechnics front propagation
 with updates to the weather inputs, using an external weather model.
 
-
-*** Deriving the spread rate from Rothermel and crowning equations
+*** Deriving the Spread Rate from Rothermel and Crowning Equations
     :PROPERTIES:
     :CUSTOM_ID: deriving-the-spread-rate-overview
     :END:
@@ -209,7 +215,6 @@ as in FARSITE [cite:@Finney2004FARSITE] or Prometheus [cite:@Tymstra2010Promethe
 Some corrections will be required ot translate from slope-tangential to horizontal spread rates,
 the latter being more practical in numerical code - see section [[#from-slope-tangential-to-horizontal]].
 
-
 With this general background on elliptical wavelets,
 we are now ready to formulate the spread rate calculations of Pyretechnics.
 Assuming a front-normal vector $\vec{n}$,
@@ -221,9 +226,7 @@ here is how Pyretechnics calculates the front-normal spread rate at $(\vec{x}, t
 4. Based on [cite:@VanWagner1977], Pyretechnics calculates a threshold of fireline intensity, and therefore of spread rate, to determine whether crown fire may occur (see [[#crown-fire-initiation]]). If $V^{(s)}(\vec{n})$ exceeds this threshold, an elliptical wavelet for crown fire is computed, using [cite:@Cruz2005] for the maximum velocity $V_H^{(c)}, \vec{u}_H^{(s)}$ for crown fire (see [[#crown-fire-behavior-in-the-direction-of-maximum-spread]]), and equation 10 of Rothermel [cite:@Rothermel1991] for the length-to-width ratio $(L/W)^{(c)}$ (see [[#crown-elliptical-eccentricity]]). Again, these elliptical dimensions are derived entirely from environmental conditions $Z(\vec{x}, t)$. See code in section [[#crown-fire-behavior-in-any-direction]]. This yields a crown fire spread rate $V^{(c)}(\vec{n})$.
 5. Then, the final spread rate is resolved as the fastest of the surface and crown spread rates, i.e. $V(\vec{n}) := \max (V^{(s)}(\vec{n}), V^{(c)}(\vec{n}))$. See code in section [[#combined-spread-rate-and-direction]].
 
-
-
-*** Mathematical formalization: level-set method and Hamilton-Jacobi equation
+*** Mathematical Formalization: Level-set Method and Hamilton-Jacobi Equation
     :PROPERTIES:
     :CUSTOM_ID: mathematical-formalization-level-set
     :END:
@@ -272,8 +275,7 @@ but also as an approach to designing numerical solvers for the evolution of the 
 Indeed, at the time of writing, the numerical solver used by Pyretechnics is based on the level-set method,
 similarly to ELMFIRE (see section [[#fire-spread-algorithm:-eulerian-level-set-method-(pyretechnics.eulerian_level_set)]]).
 
-
-*** Converting from slope-tangential to horizontal spread rates
+*** Converting from Slope-tangential to Horizontal Spread Rates
     :PROPERTIES:
     :CUSTOM_ID: from-slope-tangential-to-horizontal
     :END:
@@ -286,10 +288,6 @@ Readers should be warned that this geometry problem tends to defy visual intuiti
 In particular, it is not as simple as projecting the slope-tangential spread rate onto the horizontal plane, e.g.:
 1. The vertical projection does not preserve normality, e.g. projecting a slope-tangential vector that is perpendicular to the slope-tangential fireline does yield a vector that is not perpendicular to the horizontal fireline.
 2. Likewise, vertically projecting an ellipse does yield an ellipse, but does not generally preserve its main axis.
-
-
-
-
 
 In Pyretechnics, numerical code will not directly require the horizontal spread rate function $\underline{V}(\vec{n})$,
 but its generalization, the horizontal Hamiltonian $\underline{H}$:
@@ -340,9 +338,10 @@ Also note that $\nabla h$ is a horizonal vector, e.g. expressible in horizontal 
 
 The above calculations are equivalent to the slope calculations implemented in Prometheus and FARSITE [cite:@Finney2004FARSITE; @Tymstra2010Prometheus].
 
-
-
-** Fire intensity calculations
+** Fire Intensity Calculations
+   :PROPERTIES:
+   :CUSTOM_ID: fire-intensity-calculations
+   :END:
 
 Pyretechnics uses the formula from Byram [cite:@Byram1959] to compute the fireline intensity $I$ (in W/m).
 Flame length is then derived from fireline intensity.
@@ -360,9 +359,10 @@ which is used in some parts of the code.
 This overview is enough to reason about the model's fire behavior calculations at a high level.
 More details can be found in section [[#surface-fire-intensity-functions]].
 
-
-
-** Propagation-free calculations
+** Propagation-free Calculations
+   :PROPERTIES:
+   :CUSTOM_ID: propagation-free-calculations
+   :END:
 
 Pyretechnics also supports doing fire behavior calculations without simulating fire spread,
 for example by computing heading fire behavior metrics at every point of the landscape.
@@ -370,9 +370,10 @@ To do this, Pyretechnics provides functions to compute fire behavior in any cell
 with a user-supplied orientation of the fire front.
 See section [[#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction]] for details.
 
-
-
-** Long-range spotting from firebrands
+** Long-range Spotting from Firebrands
+   :PROPERTIES:
+   :CUSTOM_ID: long-range-spotting-from-firebrands
+   :END:
 
 Pyretechnics supports modeling long-rage spotting from firebrands - that is, secondary ignitions started by embers transported by the wind. Here is an overview of the approach:
 
@@ -386,8 +387,10 @@ Details and code are in section [[#spot-fire-equations-(pyretechnics.spot_fire)]
 This model is quite crude; the rationale of the authors is that there is currently too much uncertainty in firebrands emissions and transport to benefit from a more sophisticated model.
 Users who find this model too limited might want to interleave their own spotting model with Pyretechnics execution.
 
-
-** Suppression by fireline construction
+** Suppression by Fireline Construction
+   :PROPERTIES:
+   :CUSTOM_ID: suppression-by-fireline-construction
+   :END:
 
 Pyretechnics does not ship with one integrated suppression model;
 given the potential complexity of suppression,
@@ -395,8 +398,6 @@ it was deemed better to instead provide a toolkit for users to implement their o
 A typical implementation will interleave Pyretechnics front-propagation runs with suppression that update the inputs.
 
 What Pyretechnics offers is a set of functions for constructing firelines based on user-provided objectives and constraints. The cells neighboring the fire front are indexed into contiguous sequences. Given a priority function, a construction rate, and a time budget, the model resolves the contiguous segment with the highest total priority that can be built within budget, and replaces the fuel model of the unburned cells along that segment so they no longer burn. Details and code are in section [[#fire-suppression-techniques-(pyretechnics.suppression)]].
-
-
 
 * Data Model
   :PROPERTIES:
@@ -9072,7 +9073,6 @@ note that the code has been optimized for computational efficiency,
 sometimes at the expense of readability and simplicity,
 as some optimizations require to conflate several aspects of the problem.
 
-
 *** Module Imports
     :PROPERTIES:
     :CUSTOM_ID: module-imports-eulerian-level-set
@@ -9121,7 +9121,10 @@ else:
     import pyretechnics.narrow_band_tracking as nbt
 #+end_src
 
-*** Inputs data structure
+*** SpreadInputs Data Structure
+    :PROPERTIES:
+    :CUSTOM_ID: spreadinputs-data-structure
+    :END:
 
 For efficiency in numerical loops, an efficient =SpreadInputs= data
 structure is used to hold input data.
@@ -9325,7 +9328,10 @@ def lookup_cell_inputs(spread_inputs: SpreadInputs, space_time_coordinate: coord
     )
 #+end_src
 
-*** SpreadState data structure
+*** SpreadState Data Structure
+    :PROPERTIES:
+    :CUSTOM_ID: spreadstate-data-structure
+    :END:
 
 The long-lived state of the level-set simulation is stored in a
 =SpreadState= data structure. This notably features the $\phi$ and
@@ -9798,7 +9804,10 @@ class SpreadState:
         return self
 #+end_src
 
-*** Narrow band tracking
+*** Narrow Band Tracking
+    :PROPERTIES:
+    :CUSTOM_ID: narrow-band-tracking
+    :END:
 
 An important numerical optimization consists of updating the $\phi$
 field only in those cells that are close enough to the current fire
@@ -10479,7 +10488,10 @@ def update_tracked_cells_with_frontier_diff(tracked_cells         : nbt.NarrowBa
     return tracked_cells
 #+end_src
 
-*** Flux limiter
+*** Flux Limiter
+    :PROPERTIES:
+    :CUSTOM_ID: flux-limiter
+    :END:
 
 Similarly to ELMFIRE,
 Pyretechnics uses a Superbee flux limiter [cite:@Sweby1984FluxLimiters] to prevent spurious oscillations in the numerical solution.
@@ -10581,8 +10593,10 @@ def calc_dphi_flim_y(p00: cy.float, ps2: cy.float, ps1: cy.float, pn1: cy.float,
 
 The above code will be invoked in future sections that compute $\partial{\phi}/{\partial t}$.
 
-
-*** Hamiltonian from surface/crown elliptical wavelets
+*** Hamiltonian from Surface/Crown Elliptical Wavelets
+    :PROPERTIES:
+    :CUSTOM_ID: hamiltonian-from-surface/crown-elliptical-wavelets
+    :END:
 
 This section describes how the Hamiltonian is efficiently computed by combining the elliptical dimensions of surface and crown wavelets.
 More precisely, the code directly computes the temporal derivative $\partial{\phi}/{\partial t} = - H(\nabla_\mathbf{x} \phi, \mathbf{x}, t)$.
@@ -10808,7 +10822,10 @@ def dphi_dt_from_ellipses(ellipses: EllipticalInfo, phi_gradient_xy_unlimited: v
         return surface_dphi_dt
 #+end_src
 
-*** Resolving elliptical dimensions
+*** Resolving Elliptical Dimensions
+    :PROPERTIES:
+    :CUSTOM_ID: resolving-elliptical-dimensions
+    :END:
 
 The inputs to the previous calculations are elliptical dimensions derived from fuels and weather inputs, as described in sections [[#surface-fire-behavior-in-the-direction-of-maximum-spread]] and [[#crown-fire-behavior-in-the-direction-of-maximum-spread]].
 The following code acts as a bridge from these calculations to the front-propagating code,
@@ -11009,9 +11026,10 @@ def resolve_cell_elliptical_info(fb_opts         : FireBehaviorSettings,
     )
 #+end_src
 
-
-
-*** Runge-Kutta scheme and CFL condition
+*** Runge-Kutta Scheme and CFL Condition
+    :PROPERTIES:
+    :CUSTOM_ID: runge-kutta-scheme-and-cfl-condition
+    :END:
 
 Like ELMFIRE, Pyretechnics uses a 2nd-order Runge-Kutta scheme to march the Hamilton-Jacobi equation forward in time.
 The update to the $\phi$ array happens in two passes.
@@ -11379,8 +11397,10 @@ def collect_phi_cache(phi_matrix: cy.float[:,::1], tca: TrackedCellsArrays) -> c
         phi_cache[i, 8] = phi_matrix[2+y+2, 2+x]
 #+end_src
 
-
-*** Loading and refreshing intermediate quantities
+*** Loading and Refreshing Intermediate Quantities
+    :PROPERTIES:
+    :CUSTOM_ID: loading-and-refreshing-intermediate-quantities
+    :END:
 
 The following code is used to load and refresh intermediate quantities from the input space-time cube.
 This involves a configurable refresh rate for each input variable.
@@ -11765,8 +11785,10 @@ def sync_tracked_cells_arrays(spread_inputs: SpreadInputs,
                             i_new += 1
 #+end_src
 
-
-*** Spotting from firebrands
+*** Spotting from Firebrands
+    :PROPERTIES:
+    :CUSTOM_ID: spotting-from-firebrands
+    :END:
 
 As cells get burned by front propagation,
 they have the opportunity to cast firebrands which will ignite other cells,
@@ -11871,7 +11893,10 @@ def ignite_from_spotting(spot_ignitions: SortedDict[float, set],
     return ignited_cells
 #+end_src
 
-*** Processing burned cells
+*** Processing Burned Cells
+    :PROPERTIES:
+    :CUSTOM_ID: processing-burned-cells
+    :END:
 
 When a cell gets burned by front propagation,
 more detailed fire behavior calculations are performed.
@@ -12207,8 +12232,10 @@ def process_burned_cells(spread_inputs   : SpreadInputs,
                                   spot_ignitions)
 #+end_src
 
-
-*** Full simulation loop
+*** Full Simulation Loop
+    :PROPERTIES:
+    :CUSTOM_ID: full-simulation-loop
+    :END:
 
 The previous sections all come together into the code that runs the simulation loop.
 
@@ -12627,8 +12654,6 @@ def spread_fire_with_phi_field(space_time_cubes      : dict[str, ISpaceTimeCube]
         "random_generator": sim_state["random_generator"],
     } if spot_config else {})
 #+end_src
-
-
 
 ** For Users
    :PROPERTIES:
@@ -14800,7 +14825,6 @@ Pyretechnics enables users to search for contiguous segments of the fire front t
 More precisely, Pyretechnics lets users export a representation of the fire front as ordered lists of edges separating burned and unburned cells,
 then search for optimal segments given priorities and budget as represented by user-supplied functions.
 This is demonstrated in section [[#for-users-suppression]].
-
 
 ** For Developers
    :PROPERTIES:
