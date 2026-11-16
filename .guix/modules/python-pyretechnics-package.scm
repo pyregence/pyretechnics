@@ -40,7 +40,7 @@
                                                          git-fetch
                                                          git-reference
                                                          git-file-name))
-  #:use-module ((guix licenses)                #:select (epl2.0 bsd-3 expat))
+  #:use-module ((guix licenses)                #:select (epl2.0 bsd-3 expat gpl3))
   #:use-module ((guix packages)                #:select (package
                                                          origin
                                                          base32
@@ -144,7 +144,7 @@
    (description
     "citeproc-el is a library for rendering citations and bibliographies in styles
 described in the Citation Style Language (CSL).")
-   (license #f)))
+   (license gpl3)))
 
 ;;============================================================
 ;; The Pyretechnics Package
