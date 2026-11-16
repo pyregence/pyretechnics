@@ -489,7 +489,7 @@ def calc_wind_adjustment_factor(fuel_bed_depth: cy.float, canopy_height: cy.floa
     - canopy_height  :: ft
     - canopy_cover   :: 0-1
 
-    Note: The (un)sheltered threshold should match Behave+ (Andrews 2012).
+    NOTE: The (un)sheltered threshold should match Behave+ (Andrews 2012).
     """
     crown_fill_portion: cy.float = canopy_cover / 3.0
     is_sheltered      : cy.bint  = (crown_fill_portion >= 0.05 and canopy_height >= 6.0)

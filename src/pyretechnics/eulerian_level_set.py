@@ -2241,9 +2241,6 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
         return (dphi_dx_on_slope, dphi_dy_on_slope, dphi_dz_on_slope)
 
 
-# FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
-#        Did I do this correctly in calc_crown_fire_behavior_in_direction?
-# FIXME I think we want to move this.
 @cy.cfunc
 @cy.exceptval(check=False)
 def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient_xyz: vec_xyz) -> SpreadBehavior:
@@ -2549,7 +2546,7 @@ def spread_one_timestep(sim_state    : dict,
                         fb_opts      : FireBehaviorSettings,
                         max_timestep : cy.float) -> dict:
     """
-    Spreads the fire for one iteration using the eulerian level-set method, returning an updated `sim_state`.
+    Spreads the fire for one iteration using the eulerian level set method, returning an updated `sim_state`.
     """
     # Unpack sim_state
     start_time      : cy.float               = sim_state["simulation_time"]
