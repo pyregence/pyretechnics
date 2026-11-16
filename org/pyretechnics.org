@@ -151,7 +151,7 @@ with updates to the weather inputs, using an external weather model.
     :END:
 
 The Rothermel model [cite:@Rothermel1972; @andrews2018rothermel] is a widely adopted set of equations
-for computing the spread rate of surface fire in the direction of fastest spread, 
+for computing the spread rate of surface fire in the direction of fastest spread,
 sometimes called the /heading fire spread rate/ or /max spread rate/;
 the direction of fastest spread is typically a middle ground between the downwind and upslope directions.
 The Rothermel model alone is not sufficient for computing $V(\vec{n}, Z, \theta)$ in all front orientations,
@@ -234,7 +234,7 @@ here is how Pyretechnics calculates the front-normal spread rate at $(\vec{x}, t
 Although the notion of front-normal spread rate is intuitive to many fire modelers,
 its mathematical formalization is not trivial:
 in particular, one difficulty is that the front-normal vector $\vec{n}$ may not exist
-at some points where the fire front forms sharp corners, 
+at some points where the fire front forms sharp corners,
 as can happen when two fronts merge.
 The approach that seems to have emerged among mathematicians is the /level-set method/ [cite:@Giga2002SurfaceEvolution; @Osher2004LevelSetMethods],
 which consist of representing the evolution of the fire using a Hamilton-Jacobi partial differential equation:
@@ -1489,13 +1489,13 @@ print(spatiotemporal_cube.get(band, row, col))
 #+RESULTS: space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
-0.699999988079071 
+0.699999988079071
 
 Value from Time Series Data: Spread Rate Adjustment
-1.0 
+1.0
 
 Value from Spatial Data: Elevation
-564.0 
+564.0
 
 Value from Spatio-Temporal Data: Wind Speed
 32.0
@@ -1530,13 +1530,13 @@ print(spatiotemporal_cube.getTimeSeries(band_range, row, col))
 #+RESULTS: space-time-cube-get-time-series
 #+begin_example
 Time Series from Constant Data: Foliar Moisture
-[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7] 
+[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
 
 Time Series from Time Series Data: Spread Rate Adjustment
-[1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
+[1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ]
 
 Time Series from Spatial Data: Elevation
-[564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.] 
+[564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.]
 
 Time Series from Spatio-Temporal Data: Wind Speed
 [32. 32. 32. 32. 32. 32. 37. 37. 37. 37. 37. 37.]
@@ -1580,7 +1580,7 @@ Spatial Plane from Constant Data: Foliar Moisture
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
- [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]] 
+ [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]]
 
 Spatial Plane from Time Series Data: Spread Rate Adjustment
 [[1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
@@ -1592,7 +1592,7 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
- [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
+ [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]]
 
 Spatial Plane from Spatial Data: Elevation
 [[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
@@ -1604,7 +1604,7 @@ Spatial Plane from Spatial Data: Elevation
  [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
  [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
  [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
- [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]] 
+ [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
 [[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
@@ -1668,7 +1668,7 @@ Subcube from Constant Data: Foliar Moisture
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
-  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]]] 
+  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]]]
 
 Subcube from Time Series Data: Spread Rate Adjustment
 [[[0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
@@ -1691,7 +1691,7 @@ Subcube from Time Series Data: Spread Rate Adjustment
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
-  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]] 
+  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]]
 
 Subcube from Spatial Data: Elevation
 [[[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
@@ -1714,7 +1714,7 @@ Subcube from Spatial Data: Elevation
   [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
   [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
   [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
-  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]] 
+  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]]
 
 Subcube from Spatio-Temporal Data: Wind Speed
 [[[31. 31. 31. 31. 31. 31. 31. 31. 31. 31.]
@@ -1973,15 +1973,15 @@ print(spatiotemporal_cube.get(band, row, col))
 #+RESULTS: lazy-space-time-cube-get-point
 #+begin_example
 Value from Constant Data: Foliar Moisture
-0.699999988079071 
+0.699999988079071
 
 Value from Time Series Data: Spread Rate Adjustment
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
-1.0 
+1.0
 
 Value from Spatial Data: Elevation
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
-564.0 
+564.0
 
 Value from Spatio-Temporal Data: Wind Speed
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
@@ -2017,14 +2017,14 @@ print(spatiotemporal_cube.getTimeSeries(band_range, row, col))
 #+RESULTS: lazy-space-time-cube-get-time-series
 #+begin_example
 Time Series from Constant Data: Foliar Moisture
-[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7] 
+[0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
 
 Time Series from Time Series Data: Spread Rate Adjustment
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
-[1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ] 
+[1.   1.   0.66 0.33 0.   0.   0.   0.   0.   0.   0.   0.  ]
 
 Time Series from Spatial Data: Elevation
-[564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.] 
+[564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564. 564.]
 
 Time Series from Spatio-Temporal Data: Wind Speed
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
@@ -2069,7 +2069,7 @@ Spatial Plane from Constant Data: Foliar Moisture
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
- [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]] 
+ [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]]
 
 Spatial Plane from Time Series Data: Spread Rate Adjustment
 [[1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
@@ -2081,7 +2081,7 @@ Spatial Plane from Time Series Data: Spread Rate Adjustment
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
  [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
- [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]] 
+ [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]]
 
 Spatial Plane from Spatial Data: Elevation
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
@@ -2096,7 +2096,7 @@ WARNING: Input data is not a Numpy float32 array. Data will be copied into Space
  [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
  [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
  [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
- [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]] 
+ [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]
 
 Spatial Plane from Spatio-Temporal Data: Wind Speed
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
@@ -2163,7 +2163,7 @@ Subcube from Constant Data: Foliar Moisture
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
   [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]
-  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]]] 
+  [0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7 0.7]]]
 
 Subcube from Time Series Data: Spread Rate Adjustment
 [[[0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
@@ -2186,7 +2186,7 @@ Subcube from Time Series Data: Spread Rate Adjustment
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
   [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
-  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]] 
+  [0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]]]
 
 Subcube from Spatial Data: Elevation
 [[[574. 369. 544. 310. 517. 488. 565. 549. 450. 470.]
@@ -2209,7 +2209,7 @@ Subcube from Spatial Data: Elevation
   [454. 500. 276. 487. 447. 591. 413. 378. 458. 508.]
   [573. 890. 485. 501. 357. 413. 356. 635. 374. 618.]
   [535. 558. 491. 482. 539. 572. 598. 703. 463. 329.]
-  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]] 
+  [487. 555. 580. 492. 462. 484. 495. 396. 711. 356.]]]
 
 Subcube from Spatio-Temporal Data: Wind Speed
 WARNING: Input data is not a Numpy float32 array. Data will be copied into SpaceTimeCube.
@@ -10649,11 +10649,11 @@ This requires the front-normal spread rate $V_{/}$ in the slope-tangial plane; o
     V_{/} = - \frac{\partial \phi}{\partial t} |\tilde{\nabla} \phi|^{-1}
 \end{equation}
 
-If $V_c$ denotes the spread rate threshold for crown fire initiation, 
+If $V_c$ denotes the spread rate threshold for crown fire initiation,
 this means that the $(V_{/} > V_c)$ condition is equivalent to
 
 \begin{equation}
-   (V_{/} > V_c) \iff \left(\frac{\partial \phi}{\partial t}\right)^2 > V_c^2 |\tilde{\nabla} \phi|^2 
+   (V_{/} > V_c) \iff \left(\frac{\partial \phi}{\partial t}\right)^2 > V_c^2 |\tilde{\nabla} \phi|^2
 \end{equation}
 
 which is robust to zero gradients.
@@ -11949,9 +11949,6 @@ def calc_phi_gradient_on_slope(phi_gradient_xy: vec_xy, elevation_gradient: vec_
         return (dphi_dx_on_slope, dphi_dy_on_slope, dphi_dz_on_slope)
 
 
-# FIXME: Do I switch to cruz_passive_crown_fire_spread_rate() if the normal_spread_rate < critical_spread_rate?
-#        Did I do this correctly in calc_crown_fire_behavior_in_direction?
-# FIXME I think we want to move this.
 @cy.cfunc
 @cy.exceptval(check=False)
 def calc_fireline_normal_behavior(fire_behavior_max: FireBehaviorMax, phi_gradient_xyz: vec_xyz) -> SpreadBehavior:
@@ -12180,7 +12177,7 @@ def resolve_combined_spread_behavior(spread_inputs        : SpreadInputs,
 
 
 These calculations are invoked on the list of newly burned cells,
-to then update the state of the simulation (casting firebrands for spotting, 
+to then update the state of the simulation (casting firebrands for spotting,
 and updating the output matrices):
 
 #+NAME: process-burned-cells
