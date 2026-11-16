@@ -10520,6 +10520,7 @@ travel backward in time.
     <span class="org-keyword">def</span> <span class="org-function-name">get_cube_resolution</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> <span class="org-builtin">tuple</span>[cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>, cy.<span class="org-builtin">float</span>]:
         <span class="org-keyword">return</span> <span class="org-keyword">self</span>.cube_resolution
 
+
     <span class="org-type">@cy.ccall</span>
     <span class="org-keyword">def</span> <span class="org-function-name">get_simulation_time</span>(<span class="org-keyword">self</span>) <span class="org-operator">-&gt;</span> cy.<span class="org-builtin">float</span>:
         <span class="org-keyword">return</span> <span class="org-keyword">self</span>.simulation_time
@@ -10942,6 +10943,7 @@ more efficient usage of memory:
     <span class="org-variable-name">y</span>         : pyidx        <span class="org-operator">=</span> cell_index <span class="org-operator">&gt;&gt;</span> 32
     <span class="org-variable-name">x</span>         : pyidx        <span class="org-operator">=</span> cy.cast(cy.uint, cell_index) <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: faster than (cell_index &amp; 0xFFFFFFFF)</span>
     <span class="org-keyword">return</span> (y, x)
+
 
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">decode_frontier_cells</span>(frontier_cells: <span class="org-builtin">set</span>, phi_matrix: cy.<span class="org-builtin">float</span>[:,::1]) <span class="org-operator">-&gt;</span> <span class="org-builtin">dict</span>:
@@ -11926,6 +11928,7 @@ which involve efficient data structures:
         <span class="org-string">"weather_spread_adjustment"</span>,
     ]
 
+
 <span class="org-type">@cy.cclass</span>
 <span class="org-keyword">class</span> <span class="org-type">FireBehaviorSettings</span>:
     <span class="org-doc">"""</span>
@@ -11968,6 +11971,7 @@ which involve efficient data structures:
         <span class="org-variable-name">inputs_names</span>: <span class="org-builtin">list</span> <span class="org-operator">=</span> inputs_name_list()
         <span class="org-keyword">for</span> k <span class="org-keyword">in</span> <span class="org-builtin">range</span>(17):
             <span class="org-keyword">self</span>.<span class="org-variable-name">cube_refresh_rates</span>[k] <span class="org-operator">=</span> cube_refresh_rates[inputs_names[k]]
+
 
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
@@ -12356,6 +12360,7 @@ For each tracked cell this structure holds a 9-point stencil of \(\phi\), the sa
 <pre class="src src-python" id="intro-tracked-cells-arrays"><span class="org-comment-delimiter"># </span><span class="org-comment">TODO: Rename this constant</span>
 <span class="org-variable-name">p_CellInputs</span> <span class="org-operator">=</span> cy.declare(pyidx, 17) <span class="org-comment-delimiter"># </span><span class="org-comment">the number of input columns</span>
 
+
 <span class="org-type">@cy.cclass</span>
 <span class="org-keyword">class</span> <span class="org-type">TrackedCellsArrays</span>:
     <span class="org-doc">"""</span>
@@ -12540,6 +12545,7 @@ No-wind-no-slope fire behavior (costly) and elliptical dimensions (less costly) 
     <span class="org-comment-delimiter"># </span><span class="org-comment">NOTE: tca_old.pass1_cache does not need to be copied over given how it will get used.</span>
     tca_new.<span class="org-variable-name">sfmin_cache</span>[i_new]   <span class="org-operator">=</span> tca_old.sfmin_cache[i_old]
     tca_new.<span class="org-variable-name">ellipse_cache</span>[i_new] <span class="org-operator">=</span> tca_old.ellipse_cache[i_old]
+
 
 <span class="org-type">@cy.cfunc</span>
 <span class="org-type">@cy.exceptval</span>(check<span class="org-operator">=</span><span class="org-constant">False</span>)
@@ -12942,8 +12948,6 @@ especially in the case where most of them have a very low expectation.
                 <span class="org-variable-name">spot_ignitions</span>[ignition_time] <span class="org-operator">=</span> <span class="org-builtin">set</span>.union(ignited_cells, concurrent_ignited_cells)
             <span class="org-keyword">else</span>:
                 <span class="org-variable-name">spot_ignitions</span>[ignition_time] <span class="org-operator">=</span> ignited_cells
-
-
 
 
 <span class="org-type">@cy.cfunc</span>
@@ -13448,6 +13452,7 @@ The previous sections all come together into the code that runs the simulation l
         <span class="org-string">"spot_ignitions"</span>           : spot_ignitions,
         <span class="org-string">"random_generator"</span>         : random_generator,
     }
+
 
 <span class="org-type">@cy.cfunc</span>
 <span class="org-keyword">def</span> <span class="org-function-name">check_space_time_cubes</span>(space_time_cubes: <span class="org-builtin">dict</span>, spot_config: <span class="org-builtin">dict</span><span class="org-operator">|</span><span class="org-constant">None</span> <span class="org-operator">=</span> <span class="org-constant">None</span>) <span class="org-operator">-&gt;</span> cy.void:
