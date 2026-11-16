@@ -3,8 +3,16 @@
   #:use-module ((gnu packages certs)           #:select (nss-certs))
   #:use-module ((gnu packages check)           #:select (python-pytest
                                                          python-pytest-cov))
-  #:use-module ((gnu packages emacs)           #:select (emacs-minimal))
-  #:use-module ((gnu packages emacs-xyz)       #:select (emacs-htmlize))
+  #:use-module ((gnu packages emacs)           #:select (emacs-no-x))
+  #:use-module ((gnu packages emacs-build)     #:select (emacs-dash
+                                                         emacs-s
+                                                         emacs-f
+                                                         emacs-compat))
+  #:use-module ((gnu packages emacs-xyz)       #:select (emacs-htmlize
+                                                         emacs-queue
+                                                         emacs-string-inflection
+                                                         emacs-org
+                                                         emacs-parsebib))
   #:use-module ((gnu packages python)          #:select (python-wrapper))
   #:use-module ((gnu packages python-build)    #:select (python-setuptools-next
                                                          python-wheel
@@ -23,11 +31,15 @@
                                                          python-fsspec))
   #:use-module ((gnu packages tls)             #:select (openssl))
   #:use-module ((gnu packages version-control) #:select (git))
+  #:use-module ((guix build-system emacs)      #:select (emacs-build-system))
   #:use-module ((guix build-system python)     #:select (pypi-uri))
   #:use-module ((guix build-system pyproject)  #:select (pyproject-build-system))
   #:use-module ((guix download)                #:select (url-fetch))
   #:use-module ((guix gexp)                    #:select (local-file))
-  #:use-module ((guix git-download)            #:select (git-predicate))
+  #:use-module ((guix git-download)            #:select (git-predicate
+                                                         git-fetch
+                                                         git-reference
+                                                         git-file-name))
   #:use-module ((guix licenses)                #:select (epl2.0 bsd-3 expat))
   #:use-module ((guix packages)                #:select (package
                                                          origin
@@ -105,6 +117,35 @@
                                (package-native-inputs python-rasterio)
                                "python-cython"))))))
 
+(define-public emacs-citeproc
+  (package
+   (name "emacs-citeproc")
+   (version "20261110.914")
+   (source
+    (origin
+     (method git-fetch)
+     (uri (git-reference
+           (url "https://github.com/andras-simonyi/citeproc-el")
+           (commit "fdcc71160492dbdd2395325bc37f9aa943b82e43")))
+     (file-name (git-file-name name version))
+     (sha256
+      (base32 "14ak77wip6bp051s95sm1q38bda82ri3bmyvcyqp9h9w72cxwlv1"))))
+   (build-system emacs-build-system)
+   (propagated-inputs (list emacs-dash
+                            emacs-s
+                            emacs-f
+                            emacs-queue
+                            emacs-string-inflection
+                            emacs-org
+                            emacs-parsebib
+                            emacs-compat))
+   (home-page "https://github.com/andras-simonyi/citeproc-el")
+   (synopsis "A CSL 1.0.2 Citation Processor")
+   (description
+    "citeproc-el is a library for rendering citations and bibliographies in styles
+described in the Citation Style Language (CSL).")
+   (license #f)))
+
 ;;============================================================
 ;; The Pyretechnics Package
 ;;============================================================
@@ -130,8 +171,9 @@
                    openssl
                    nss-certs
                    ;; Literate programming
-                   emacs-minimal
+                   emacs-no-x
                    emacs-htmlize
+                   emacs-citeproc
                    git ; used by emacs
                    ;; Python3
                    python-wrapper
