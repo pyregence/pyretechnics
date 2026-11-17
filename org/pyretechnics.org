@@ -296,7 +296,7 @@ Then, a non-trivial derivation [cite:@Richards1995fire2dSpread;
 spread rate induced by this wavelet is:
 
 \begin{align}\label{eq:elliptical-ros}
-    V_{/}(\vec{n}) = \frac{V_H - V_B}{2}(\vec{u}_H \cdot \vec{n}) + V_H \sqrt{1 + \left((L/W)^2 - 1\right)\left( \vec{u}_H \cdot \vec{n} \right)^2}
+    V_{/}(\vec{n}) = \frac{V_H - V_B}{2}(\vec{u}_H \cdot \vec{n}) + V_F \sqrt{1 + \left((L/W)^2 - 1\right)\left( \vec{u}_H \cdot \vec{n} \right)^2}
 \end{align}
 
 in which $V_F$ is the /flanking spread rate/ that follows from the elliptical dimensions:
@@ -478,7 +478,7 @@ Then, we can convert correctly from slope-tangential to horizontal
 Hamiltonian by:
 
 \begin{align}
-    \underline{H}(\vec{p}) = \underline{H}_{/}(\pi_{/}(\vec{p}))
+    \underline{H}(\vec{p}) = H_{/}(\pi_{/}(\vec{p}))
 \end{align}
 
 in which $\pi_{/}(\cdot)$ denotes the orthogonal projector onto the slope-tangential plane,
