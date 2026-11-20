@@ -1,3 +1,16 @@
+# Version 2026.11.20
+
+## Changes for Developers
+- Removed unused functions from `eulerian_level_set.{py,pxd}`.
+- Replaced `emacs-minimal` with `emacs-no-x` (for `libxml` support) and added `emacs-citeproc` in `guix.scm` to support woven docs with the new bibliography exporter.
+
+## Changes for Users
+- Added "Overview of Pyretechnics" and "Helpful Links for Common Use Cases" sections to the "Preface".
+- Added a "Theoretical Models" section to provide an overview of the mathematics and scientific literature implemented in Pyretechnics.
+- Rewrote the "For Developers" section under "Fire Spread Algorithm (ELMFIRE): Eulerian Level Set Method (pyretechnics.eulerian_level_set)" to more clearly describe the data structures and algorithms implemented in that module.
+- Added some introductory text to "Fire Suppression Techniques (pyretechnics.suppression)".
+- Added a "References" section with all citations from the literate program.
+
 # Version 2026.10.20
 
 ## Changes for Developers

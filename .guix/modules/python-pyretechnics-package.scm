@@ -153,7 +153,7 @@ described in the Citation Style Language (CSL).")
 (define-public python-pyretechnics
   (package
    (name "python-pyretechnics")
-   (version "2026.10.20")
+   (version "2026.11.20")
    (source (local-file "../.."
                        "pyretechnics-checkout"
                        #:recursive? #t
