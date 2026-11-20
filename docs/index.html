@@ -261,6 +261,14 @@ org_html_manager.setup();  // activate after the parameters are set
 <ul>
 <li><a href="#overview-of-pyretechnics">1.1. Overview of Pyretechnics</a></li>
 <li><a href="#about-this-documentation">1.2. About this Documentation</a></li>
+<li><a href="#helpful-links-for-common-use-cases">1.3. Helpful Links for Common Use Cases</a>
+<ul>
+<li><a href="#preparing-input-data-for-wildfire-modeling">1.3.1. Preparing Input Data for Wildfire Modeling</a></li>
+<li><a href="#calculating-surface-and-crown-fire-behavior-in-a-single-location">1.3.2. Calculating Surface and Crown Fire Behavior in a Single Location</a></li>
+<li><a href="#burning-cells-on-a-grid-under-fixed-weather-conditions">1.3.3. Burning Cells on a Grid under Fixed Weather Conditions</a></li>
+<li><a href="#simulating-fire-spread-through-space-time">1.3.4. Simulating Fire Spread through Space-Time</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#theoretical-models">2. Theoretical Models</a>
@@ -612,6 +620,17 @@ system as the original programmer.
 </p>
 
 <p>
+Each section starting from <a href="#loading-data-into-the-3d-space-time-cube-(pyretechnics.space_time_cube)">4</a> generally corresponds to one Python
+module. Each such module section contains two subsections with the
+following contents:
+</p>
+
+<dl class="org-dl">
+<dt>For Developers</dt><dd>Literate Program documentation of the module's code.</dd>
+<dt>For Users</dt><dd>Notebook programs demonstrating how to use the module's public API.</dd>
+</dl>
+
+<p>
 The source code repository containing this document provides a
 comprehensive reproducible development environment through the use of
 the open source GNU Guix<sup><a id="fnr.guix-website" class="footref" href="#fn.guix-website" role="doc-backlink">4</a></sup> transactional package
@@ -620,6 +639,56 @@ to tangle, detangle, weave, test, build, and install this library on
 your machine without conflicting with the main package manager of your
 operating system. See <a href="../README.md">README.md</a> for more details.
 </p>
+</div>
+</div>
+<div id="outline-container-helpful-links-for-common-use-cases" class="outline-3">
+<h3 id="helpful-links-for-common-use-cases"><span class="section-number-3">1.3.</span> Helpful Links for Common Use Cases</h3>
+<div class="outline-text-3" id="text-helpful-links-for-common-use-cases">
+</div>
+<div id="outline-container-preparing-input-data-for-wildfire-modeling" class="outline-4">
+<h4 id="preparing-input-data-for-wildfire-modeling"><span class="section-number-4">1.3.1.</span> Preparing Input Data for Wildfire Modeling</h4>
+<div class="outline-text-4" id="text-preparing-input-data-for-wildfire-modeling">
+<ul class="org-ul">
+<li><a href="#how-to-use-spacetimecube">4.2.1</a></li>
+<li><a href="#how-to-use-lazyspacetimecube">4.2.2</a></li>
+<li><a href="#loading-landfire-inputs-(pyretechnics.load_landfire)">12.5</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-calculating-surface-and-crown-fire-behavior-in-a-single-location" class="outline-4">
+<h4 id="calculating-surface-and-crown-fire-behavior-in-a-single-location"><span class="section-number-4">1.3.2.</span> Calculating Surface and Crown Fire Behavior in a Single Location</h4>
+<div class="outline-text-4" id="text-calculating-surface-and-crown-fire-behavior-in-a-single-location">
+<ul class="org-ul">
+<li><a href="#how-to-calculate-the-surface-fire-behavior-in-the-direction-of-maximum-spread">6.2.3</a></li>
+<li><a href="#how-to-calculate-the-surface-fire-behavior-in-any-direction">6.2.4</a></li>
+<li><a href="#how-to-calculate-the-crown-fire-behavior-in-the-direction-of-maximum-spread">7.2.2</a></li>
+<li><a href="#how-to-calculate-the-crown-fire-behavior-in-any-direction">7.2.3</a></li>
+<li><a href="#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction">7.2.4</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-burning-cells-on-a-grid-under-fixed-weather-conditions" class="outline-4">
+<h4 id="burning-cells-on-a-grid-under-fixed-weather-conditions"><span class="section-number-4">1.3.3.</span> Burning Cells on a Grid under Fixed Weather Conditions</h4>
+<div class="outline-text-4" id="text-burning-cells-on-a-grid-under-fixed-weather-conditions">
+<ul class="org-ul">
+<li><a href="#how-to-burn-a-single-cell-as-a-head-fire">9.2.1</a></li>
+<li><a href="#how-to-burn-a-region-of-cells-as-a-head-fire">9.2.2</a></li>
+<li><a href="#how-to-burn-a-single-cell-in-any-direction">9.2.3</a></li>
+<li><a href="#how-to-burn-a-region-of-cells-in-any-direction">9.2.4</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-simulating-fire-spread-through-space-time" class="outline-4">
+<h4 id="simulating-fire-spread-through-space-time"><span class="section-number-4">1.3.4.</span> Simulating Fire Spread through Space-Time</h4>
+<div class="outline-text-4" id="text-simulating-fire-spread-through-space-time">
+<ul class="org-ul">
+<li><a href="#how-to-spread-a-fire-from-a-point-ignition">10.2.1</a></li>
+<li><a href="#how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled">10.2.2</a></li>
+<li><a href="#how-to-spread-a-fire,-pause,-fork,-and-continue">10.2.3</a></li>
+<li><a href="#how-to-spread-a-fire-at-low-resolution-and-upsample-it-to-a-higher-resolution">10.2.4</a></li>
+<li><a href="#how-to-suppress-cells-by-building-firelines">11.2.2</a></li>
+</ul>
+</div>
 </div>
 </div>
 </div>
