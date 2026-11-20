@@ -6222,11 +6222,12 @@ This section introduces a function that computes all of the crown fire
 behavior values described in the previous sections. In order to
 accurately compare the crown fire behavior values from this section
 with the surface fire behavior values from section <a href="#surface-fire-behavior-in-the-direction-of-maximum-spread">6.1.10</a>, the 10 meter wind vector
-must be projected onto the slope-tangential plane (using Waeselynck
-2024<sup><a id="fnr.8" class="footref" href="#fn.8" role="doc-backlink">8</a></sup>) before the crown fire's maximum spread rate
-and associated elliptical parameters are calculated. This ensures that
-both the surface fire and crown fire ellipses are aligned with the
-slope-tangential plane for later comparison in section <a href="#combining-surface-and-crown-fire-behavior">7.1.8</a>.
+must be projected onto the slope-tangential plane (see section
+<a href="#from-slope-tangential-to-horizontal">2.1.4</a>) before the crown fire's maximum
+spread rate and associated elliptical parameters are calculated. This
+ensures that both the surface fire and crown fire ellipses are aligned
+with the slope-tangential plane for later comparison in section
+<a href="#combining-surface-and-crown-fire-behavior">7.1.8</a>.
 </p>
 
 <div class="org-src-container">
@@ -20666,8 +20667,6 @@ cdef TrackedCellsIterator tracked_cells_iterator(NarrowBandTracker tracked_cells
 <div class="footdef"><sup><a id="fn.behave-repo-lw-ratio" class="footnum" href="#fnr.behave-repo-lw-ratio" role="doc-backlink">7</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">
 <a href="https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93">https://github.com/firelab/behave/blob/00b90853182031c9e22e33f22bb0ac497bad9415/src/behave/fireSize.cpp#L93</a>
 </p></div></div>
-
-<div class="footdef"><sup><a id="fn.8" class="footnum" href="#fnr.8" role="doc-backlink">8</a></sup> <div class="footpara" role="doc-footnote"><p class="footpara">Waeselynck2024</p></div></div>
 
 
 </div>

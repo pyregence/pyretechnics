@@ -5463,12 +5463,12 @@ behavior values described in the previous sections. In order to
 accurately compare the crown fire behavior values from this section
 with the surface fire behavior values from section [[Surface Fire
 Behavior in the Direction of Maximum Spread]], the 10 meter wind vector
-must be projected onto the slope-tangential plane (using Waeselynck
-2024[fn::Waeselynck2024]) before the crown fire's maximum spread rate
-and associated elliptical parameters are calculated. This ensures that
-both the surface fire and crown fire ellipses are aligned with the
-slope-tangential plane for later comparison in section [[Combining
-Surface and Crown Fire Behavior]].
+must be projected onto the slope-tangential plane (see section
+[[#from-slope-tangential-to-horizontal]]) before the crown fire's maximum
+spread rate and associated elliptical parameters are calculated. This
+ensures that both the surface fire and crown fire ellipses are aligned
+with the slope-tangential plane for later comparison in section
+[[Combining Surface and Crown Fire Behavior]].
 
 #+NAME: crown-fire-behavior-max
 #+begin_src python
