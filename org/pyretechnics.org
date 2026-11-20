@@ -119,7 +119,7 @@ through the text and code. By the time they have reached the end of
 this document, the reader should have just as strong a grasp of the
 system as the original programmer.
 
-Each section starting from [[Loading Data into the 3D Space-Time Cube
+Each section starting from [[Loading Data into the 3D Space-Time Cube (pyretechnics.space_time_cube)][Loading Data into the 3D Space-Time Cube
 (pyretechnics.space_time_cube)]] generally corresponds to one Python
 module. Each such module section contains two subsections with the
 following contents:
@@ -149,41 +149,41 @@ operating system. See [[file:../README.md][README.md]] for more details.
     :CUSTOM_ID: preparing-input-data-for-wildfire-modeling
     :END:
 
-- [[How to Use SpaceTimeCube]]
-- [[How to Use LazySpaceTimeCube]]
-- [[Loading LANDFIRE Inputs (pyretechnics.load_landfire)]]
+- [[How to Use SpaceTimeCube][How to Use SpaceTimeCube]]
+- [[How to Use LazySpaceTimeCube][How to Use LazySpaceTimeCube]]
+- [[Loading LANDFIRE Inputs (pyretechnics.load_landfire)][Loading LANDFIRE Inputs (pyretechnics.load_landfire)]]
 
 *** Calculating Surface and Crown Fire Behavior in a Single Location
     :PROPERTIES:
     :CUSTOM_ID: calculating-surface-and-crown-fire-behavior-in-a-single-location
     :END:
 
-- [[How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread]]
-- [[How to Calculate the Surface Fire Behavior in Any Direction]]
-- [[How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread]]
-- [[How to Calculate the Crown Fire Behavior in Any Direction]]
-- [[How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction]]
+- [[How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread][How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread]]
+- [[How to Calculate the Surface Fire Behavior in Any Direction][How to Calculate the Surface Fire Behavior in Any Direction]]
+- [[How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread][How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread]]
+- [[How to Calculate the Crown Fire Behavior in Any Direction][How to Calculate the Crown Fire Behavior in Any Direction]]
+- [[How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction][How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction]]
 
 *** Burning Cells on a Grid under Fixed Weather Conditions
     :PROPERTIES:
     :CUSTOM_ID: burning-cells-on-a-grid-under-fixed-weather-conditions
     :END:
 
-- [[How to Burn a Single Cell as a Head Fire]]
-- [[How to Burn a Region of Cells as a Head Fire]]
-- [[How to Burn a Single Cell in Any Direction]]
-- [[How to Burn a Region of Cells in Any Direction]]
+- [[How to Burn a Single Cell as a Head Fire][How to Burn a Single Cell as a Head Fire]]
+- [[How to Burn a Region of Cells as a Head Fire][How to Burn a Region of Cells as a Head Fire]]
+- [[How to Burn a Single Cell in Any Direction][How to Burn a Single Cell in Any Direction]]
+- [[How to Burn a Region of Cells in Any Direction][How to Burn a Region of Cells in Any Direction]]
 
 *** Simulating Fire Spread through Space-Time
     :PROPERTIES:
     :CUSTOM_ID: simulating-fire-spread-through-space-time
     :END:
 
-- [[How to Spread a Fire from a Point Ignition]]
-- [[How to Spread a Fire from a Point Ignition with Spotting Enabled]]
-- [[How to Spread a Fire, Pause, Fork, and Continue]]
-- [[How to Spread a Fire at Low Resolution and Upsample It to a Higher Resolution]]
-- [[How to Suppress Cells by Building Firelines]]
+- [[How to Spread a Fire from a Point Ignition][How to Spread a Fire from a Point Ignition]]
+- [[How to Spread a Fire from a Point Ignition with Spotting Enabled][How to Spread a Fire from a Point Ignition with Spotting Enabled]]
+- [[How to Spread a Fire, Pause, Fork, and Continue][How to Spread a Fire, Pause, Fork, and Continue]]
+- [[How to Spread a Fire at Low Resolution and Upsample It to a Higher Resolution][How to Spread a Fire at Low Resolution and Upsample It to a Higher Resolution]]
+- [[How to Suppress Cells by Building Firelines][How to Suppress Cells by Building Firelines]]
 
 * Theoretical Models
   :PROPERTIES:

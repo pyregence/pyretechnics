@@ -620,7 +620,8 @@ system as the original programmer.
 </p>
 
 <p>
-Each section starting from <a href="#loading-data-into-the-3d-space-time-cube-(pyretechnics.space_time_cube)">4</a> generally corresponds to one Python
+Each section starting from <a href="#loading-data-into-the-3d-space-time-cube-(pyretechnics.space_time_cube)">Loading Data into the 3D Space-Time Cube
+(pyretechnics.space_time_cube)</a> generally corresponds to one Python
 module. Each such module section contains two subsections with the
 following contents:
 </p>
@@ -649,9 +650,9 @@ operating system. See <a href="../README.md">README.md</a> for more details.
 <h4 id="preparing-input-data-for-wildfire-modeling"><span class="section-number-4">1.3.1.</span> Preparing Input Data for Wildfire Modeling</h4>
 <div class="outline-text-4" id="text-preparing-input-data-for-wildfire-modeling">
 <ul class="org-ul">
-<li><a href="#how-to-use-spacetimecube">4.2.1</a></li>
-<li><a href="#how-to-use-lazyspacetimecube">4.2.2</a></li>
-<li><a href="#loading-landfire-inputs-(pyretechnics.load_landfire)">12.5</a></li>
+<li><a href="#how-to-use-spacetimecube">How to Use SpaceTimeCube</a></li>
+<li><a href="#how-to-use-lazyspacetimecube">How to Use LazySpaceTimeCube</a></li>
+<li><a href="#loading-landfire-inputs-(pyretechnics.load_landfire)">Loading LANDFIRE Inputs (pyretechnics.load_landfire)</a></li>
 </ul>
 </div>
 </div>
@@ -659,11 +660,11 @@ operating system. See <a href="../README.md">README.md</a> for more details.
 <h4 id="calculating-surface-and-crown-fire-behavior-in-a-single-location"><span class="section-number-4">1.3.2.</span> Calculating Surface and Crown Fire Behavior in a Single Location</h4>
 <div class="outline-text-4" id="text-calculating-surface-and-crown-fire-behavior-in-a-single-location">
 <ul class="org-ul">
-<li><a href="#how-to-calculate-the-surface-fire-behavior-in-the-direction-of-maximum-spread">6.2.3</a></li>
-<li><a href="#how-to-calculate-the-surface-fire-behavior-in-any-direction">6.2.4</a></li>
-<li><a href="#how-to-calculate-the-crown-fire-behavior-in-the-direction-of-maximum-spread">7.2.2</a></li>
-<li><a href="#how-to-calculate-the-crown-fire-behavior-in-any-direction">7.2.3</a></li>
-<li><a href="#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction">7.2.4</a></li>
+<li><a href="#how-to-calculate-the-surface-fire-behavior-in-the-direction-of-maximum-spread">How to Calculate the Surface Fire Behavior in the Direction of Maximum Spread</a></li>
+<li><a href="#how-to-calculate-the-surface-fire-behavior-in-any-direction">How to Calculate the Surface Fire Behavior in Any Direction</a></li>
+<li><a href="#how-to-calculate-the-crown-fire-behavior-in-the-direction-of-maximum-spread">How to Calculate the Crown Fire Behavior in the Direction of Maximum Spread</a></li>
+<li><a href="#how-to-calculate-the-crown-fire-behavior-in-any-direction">How to Calculate the Crown Fire Behavior in Any Direction</a></li>
+<li><a href="#how-to-calculate-the-combined-surface-and-crown-fire-behavior-in-any-direction">How to Calculate the Combined Surface and Crown Fire Behavior in Any Direction</a></li>
 </ul>
 </div>
 </div>
@@ -671,10 +672,10 @@ operating system. See <a href="../README.md">README.md</a> for more details.
 <h4 id="burning-cells-on-a-grid-under-fixed-weather-conditions"><span class="section-number-4">1.3.3.</span> Burning Cells on a Grid under Fixed Weather Conditions</h4>
 <div class="outline-text-4" id="text-burning-cells-on-a-grid-under-fixed-weather-conditions">
 <ul class="org-ul">
-<li><a href="#how-to-burn-a-single-cell-as-a-head-fire">9.2.1</a></li>
-<li><a href="#how-to-burn-a-region-of-cells-as-a-head-fire">9.2.2</a></li>
-<li><a href="#how-to-burn-a-single-cell-in-any-direction">9.2.3</a></li>
-<li><a href="#how-to-burn-a-region-of-cells-in-any-direction">9.2.4</a></li>
+<li><a href="#how-to-burn-a-single-cell-as-a-head-fire">How to Burn a Single Cell as a Head Fire</a></li>
+<li><a href="#how-to-burn-a-region-of-cells-as-a-head-fire">How to Burn a Region of Cells as a Head Fire</a></li>
+<li><a href="#how-to-burn-a-single-cell-in-any-direction">How to Burn a Single Cell in Any Direction</a></li>
+<li><a href="#how-to-burn-a-region-of-cells-in-any-direction">How to Burn a Region of Cells in Any Direction</a></li>
 </ul>
 </div>
 </div>
@@ -682,11 +683,11 @@ operating system. See <a href="../README.md">README.md</a> for more details.
 <h4 id="simulating-fire-spread-through-space-time"><span class="section-number-4">1.3.4.</span> Simulating Fire Spread through Space-Time</h4>
 <div class="outline-text-4" id="text-simulating-fire-spread-through-space-time">
 <ul class="org-ul">
-<li><a href="#how-to-spread-a-fire-from-a-point-ignition">10.2.1</a></li>
-<li><a href="#how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled">10.2.2</a></li>
-<li><a href="#how-to-spread-a-fire,-pause,-fork,-and-continue">10.2.3</a></li>
-<li><a href="#how-to-spread-a-fire-at-low-resolution-and-upsample-it-to-a-higher-resolution">10.2.4</a></li>
-<li><a href="#how-to-suppress-cells-by-building-firelines">11.2.2</a></li>
+<li><a href="#how-to-spread-a-fire-from-a-point-ignition">How to Spread a Fire from a Point Ignition</a></li>
+<li><a href="#how-to-spread-a-fire-from-a-point-ignition-with-spotting-enabled">How to Spread a Fire from a Point Ignition with Spotting Enabled</a></li>
+<li><a href="#how-to-spread-a-fire,-pause,-fork,-and-continue">How to Spread a Fire, Pause, Fork, and Continue</a></li>
+<li><a href="#how-to-spread-a-fire-at-low-resolution-and-upsample-it-to-a-higher-resolution">How to Spread a Fire at Low Resolution and Upsample It to a Higher Resolution</a></li>
+<li><a href="#how-to-suppress-cells-by-building-firelines">How to Suppress Cells by Building Firelines</a></li>
 </ul>
 </div>
 </div>
