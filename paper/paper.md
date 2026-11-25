@@ -277,6 +277,8 @@ to quickly start using the library.
 
 ## TODO: Include evidence of realized impact (publications, external use, integrations) or credible near-term significance (benchmarks, reproducible materials, community-readiness signals). The evidence should be compelling and specific, not aspirational.
 
+Testing automatic PDF building...
+
 # AI usage disclosure
 
 No generative AI tools were used in the development of this software,
