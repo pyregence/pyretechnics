@@ -219,19 +219,20 @@ as for modeling suppression (`pyretechnics.suppression`) or feedback
 loops between the fire and the surrounding environment.
 
 Notably, Pyretechnics is written as a Literate Program, which can be
-read online here: https://pyregence.github.io/pyretechnics
+read online here: [https://pyregence.github.io/pyretechnics](https://pyregence.github.io/pyretechnics)
 
 Each Python module has its own dedicated chapter, with two subsections:
-- For Developers
-- For Users
 
-The `For Developers` section contains the **literate programming**
+- **For Developers**
+- **For Users**
+
+The **For Developers** section contains the **literate programming**
 implementation of the module's equations and algorithms for those
 interested in understanding the science and engineering decisions used
 within it.
 
-The `For Users` section contains **notebook programming** examples of
-how to use the public functions in each module along with their
+The **For Users** section contains **notebook programming** examples
+of how to use the public functions in each module along with their
 computed outputs. Users can read these sections and cut-and-paste
 their example scripts into their own Python files or Jupyter notebooks
 to quickly start using the library.
