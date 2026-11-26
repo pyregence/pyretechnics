@@ -233,7 +233,14 @@ to quickly start using the library.
 
 # Research impact statement
 
-## TODO: Include evidence of realized impact (publications, external use, integrations) or credible near-term significance (benchmarks, reproducible materials, community-readiness signals). The evidence should be compelling and specific, not aspirational.
+Pyretechnics has been and is being used to support various research and applied efforts:
+
+- @Waeselynck2026PointyHeadedFires used Pyretechnics to demonstrate the convex duality between fire shapes and spread rates, heading fire collapse, and related numerical difficulties.
+- The Million Acres Strategy project used Pyretechnics to simulate 300,000 California fire seasons for the California Wildfire and Forest Resilience Task Force [@CaliforniaWildfireTaskForce2022RoadmapMillionAcres; @SIG2025MAS].
+- Pyretechnics was used in the Wildfire Risk Modeling Exercise [@Pyregence2026WildfireRiskExercise] that informed a report from UL Research Institutes [@Harned2026ULRiskModelingExercise].
+- The PyroStack paper uses Pyretechnics as its reference semi-empirical model for comparison with a machine-learning approach [@Kondur2026PyroStack].
+- @Waeselynck2026WildfireVerification uses Pyretechnics to illustrate methods for verification of front propagation algorithms.
+
 
 # AI usage disclosure
 
