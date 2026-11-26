@@ -27,24 +27,22 @@ bibliography: paper.bib
 # Summary
 
 `Pyretechnics` is a Python library (implemented in Cython for
-performance) for simulating wildland fire spread and behavior. It can
-be used by itself or in combination with other Python libraries and
-tools as part of larger data science workflows. Its public API enables
-users to perform a wide variety of scientific analyses from simple,
-targeted questions like "how does the spread rate vary when the wind
-speed changes" all the way up to large scale Monte Carlo simulations
-of fire spread and behavior over delimited regions of space-time,
-producing outputs such as annual burn probabilities and fire type and
-intensity distributions.
+performance) for simulating wildland fire spread and behavior. Its
+public API enables users to perform a wide variety of scientific
+analyses from simple, targeted questions like "how does the spread
+rate vary as the wind speed changes" up through landscape scale Monte
+Carlo simulations of fire spread and behavior, producing outputs such
+as annual burn probabilities and distributions of fire type and
+intensity.
 
-Because individual fires are events with clearly defined start and end
-times and which only burn a finite region of space, Pyretechnics
-models their evolution from ignition point or perimeter to final
-burned area as the rendering of a three-dimensional shape in
-space-time, wherein the X-Y plane represents space and the Z index
-represents time.
+Because fires are events that burn finite regions of space within
+clearly defined start and end times, Pyretechnics models their
+evolution from ignition point or perimeter to final burned area as the
+rendering of a three-dimensional shape in space-time, wherein the X-Y
+plane represents space and the Z index represents time.
 
-![Example Fireline Intensity in a Space-Time Cube](pics/els_fireline_intensity_main_cube.png){ width=40% }
+![Example Fireline Intensity on a 2D Spatial Plane](pics/els_fireline_intensity_main.png){ width=50% }
+![Example Fireline Intensity in a 3D Space-Time Cube](pics/els_fireline_intensity_main_cube.png){ width=50% }
 
 Users wishing to simulate fire spread and behavior begin by loading
 rasters (2D or 3D arrays) of landscape measurements, such as slope,
@@ -58,14 +56,14 @@ function calls are new Numpy arrays, containing per-cell values for
 the fire type, spread rate, spread direction, flame length, fireline
 intensity, and time of arrival over the final burned area.
 
-Importantly, the outputs of the fire spread functions can be fed back
-into themselves to resume a "paused" simulation from where it left off
-and allow the fire to continue burning until the user's next stop
-condition is reached. This design enables user-extensible workflows
-which alternate between Pyretechnics' fire spread algorithms and
-user-supplied modifications to the landscape or model parameters, such
-as for modeling suppression or feedback loops between the fire and the
-surrounding environment.
+In order to support scientific transparency and encourage critical
+feedback from its community of users, Pyretechnics is written as a
+**literate program**, meaning that its source code and its
+documentation (complete with tables, figures, equations, and
+citations) are both generated from the same underlying document. This
+literate program documentation can be read here:
+
+[https://pyregence.github.io/pyretechnics](https://pyregence.github.io/pyretechnics)
 
 # Statement of need
 
@@ -74,59 +72,43 @@ equations, which together can be used to predict the evolution of a
 fire front and compute related fire behavior metrics (e.g., fire type,
 spread rate and direction, fireline intensity, and flame length).
 
-These computations involve 2 sorts of components:
-
-1. A theoretical *fire behavior model*, which specifies the equations
-   that model the fire. This includes among other things the Rothermel
-   model with elliptical Huygens wavelets.
-
-2. *Numerical algorithms*, which approximate the above by discrete
-   data structures that computers can process. An example of this is
-   the Eulerian level set method, which Pyretechnics uses for fire
-   front tracking in spread simulations.
-
 At the core of Pyretechnics is an algorithm for propagating fire
 fronts. This involves:
 
-1. The Rothermel model [@Rothermel1972], which computes the
+1. Implementations of the standard FBFM13 [@Anderson1982] and FBFM40
+   [@ScottBurgan2005] surface fuel models and their related equations
+   for calculating dynamic fuel loading, size class weighting factors,
+   and live moisture of extinction.
+
+2. The Rothermel model [@Rothermel1972], which computes the
    spread rate and behavior metrics of surface fire in the heading
    direction only.
 
-2. Equations for *elliptical dimensions*, enabling the model to
+3. Equations for *elliptical dimensions*, enabling the model to
    calculate the spread rate and behavior metrics of surface fire in
    the direction *normal* to the fire front, by applying the Huygens
    principle [@Anderson1982ModellingSpread;
    @KnightColeman1993PerimeterExpansionHuygens;
    @Richards1995fire2dSpread].
 
-3. Crown fire equations, which extend the above to model the
+4. Crown fire equations, which extend the above to model the
    combustion of the canopy, which can make the fire front spread
    faster and more intensely. Currently, Pyretechnics implements the
    equations of Cruz and Van Wagner [@Cruz2005; @VanWagner1977].
 
-4. A spotting module, which models the ignition of long-range spot
+5. A spotting module, which models the ignition of long-range spot
    fires using equations of Sardoy
    [@Sardoy2008FirebrandDistribution].
 
-5. A numerical solver for tracking the fire front. Currently, that's
+6. A numerical solver for tracking the fire front. Currently, that's
    the Eulerian level set method [@Giga2002SurfaceEvolution;
    @Osher2004LevelSetMethods], similarly to ELMFIRE
    ([https://elmfire.io/](https://elmfire.io/)).
 
-The inputs of Pyretechnics are rasters of fuels, topography, and
-weather with (at most) 2 spatial dimensions and 1 temporal dimension.
-Fuels inputs include a categorical raster of fuels (following the
-classification of Scott and Burgan [@ScottBurgan2005]), and 4
-canopy-related metrics, which are used both to resolve the midflame
-wind speed of surface fire and to compute crown fire behavior.
-Topography inputs include DEM-derived slope and aspect rasters.
-Weather inputs include wind speed and direction as well as fuel
-moistures for 6 surface fuel classes and 1 canopy fuel class.
-
 Pyretechnics puts a strong emphasis on computing efficiency at the
 expense of some physical accuracy. It is suitable for simulating
 hundreds of thousands of fire seasons on the scale of a country, with
-a pixel resolution on the order of 50m. Pyretechnics does not
+a pixel resolution on the order of 30m. Pyretechnics does not
 currently compute any feedback of the fire on the atmosphere, nor does
 it automatically simulate suppression by firefighters or extinction.
 However, users can inject firelines onto the landscape via Python
@@ -161,9 +143,9 @@ This distinction provides a number of important benefits, including:
    other Python libraries, tools, and frameworks as part of larger
    data science workflows or compute pipelines. There is no software
    to manually compile or install, no config file syntax to learn, and
-   no custom input or output file formats to work around. Just load
-   input data into Numpy arrays, call Python functions on them, and
-   get Python collections, scalar values, and Numpy arrays back.
+   no custom input or output file formats to work around. Users just
+   load input data into Numpy arrays, call Python functions on them,
+   and get Python collections, scalar values, and Numpy arrays back.
 
 3. **Efficiency:** Because fire modeling is computationally intensive,
    Pyretechnics is implemented almost entirely in Cython for
@@ -177,16 +159,14 @@ This distinction provides a number of important benefits, including:
    and then deserialize them back into the next step of a computation.
 
 4. **File Format Support:** Unlike most existing fire models, which
-   only support a few input and output file formats (that are
-   frequently incompatible with one another), Pyretechnics only
-   expects its functions' input data to be provided as Numpy arrays.
-   Since Python already provides libraries that can be used to read
-   all prominent GIS formats into Numpy arrays, modify them after
-   reading, or even generate new Numpy arrays programmatically,
-   Pyretechnics can easily be used with any file formats supported by
-   Python. For the same reason, Pyretechnics outputs can be written
-   into any output file format, whether spatial or aspatial, that is
-   supported by Python.
+   only support a few input and output file formats, Pyretechnics only
+   requires its inputs to be represented as Numpy arrays. Since Python
+   includes libraries that can read all prominent GIS formats into
+   Numpy arrays, modify them after reading, or even generate new Numpy
+   arrays programmatically, Pyretechnics can be used with any file
+   formats supported by Python. Similarly, Pyretechnics outputs can be
+   written into any (spatial or aspatial) output file format supported
+   by Python.
 
 # Software design
 
@@ -210,50 +190,28 @@ fire modeling, perform verification or validation experiments with
 them, or even build their own higher level spread algorithms on top of
 them.
 
-This offers a great deal of flexibility over existing fire modeling
-applications, which typically read their inputs, simulate fire spread
-and behavior in its entirety, and write their outputs back to disk.
-Parameterizing these models is usually done by setting parameters in
-their configuration files, and experimenting with or reusing their
-internal functions may involve significantly more development effort.
+In addition, Pyretechnics provides a module for unifying 0D
+(constant), 1D (temporal), 2D (spatial), and 3D (spatiotemporal) input
+datasets (of potentially different resolutions) for fuels, topography,
+wind, and moisture called `pyretechnics.space_time_cube`. These inputs
+can be provided as Python scalars, Python lists, or Numpy arrays for
+maximum flexibility.
 
-In addition to these core wildland fire science modules, Pyretechnics
-provides a module for unifying 0D (constant), 1D (temporal), 2D
-(spatial), and 3D (spatiotemporal) input datasets (of potentially
-different resolutions) for fuels, topography, wind, and moisture
-called `pyretechnics.space_time_cube`.
+Most of the code in Pyretechnics is written in a functional
+programming style, in order to simplify the testing and use of its API
+functions. Objects are used only in performance sensitive parts of the
+code, where controlled state mutation provides a significant speed-up.
+With a few notable exceptions, the public API functions are designed
+to take and return only Python scalars and collections.
 
-The user of this library simply loads in their input datasets as Numpy
-arrays, wraps them in `SpaceTimeCube` objects to make all of their
-dimensions and resolutions match, and feeds them into the functions
-for burning cells (`pyretechnics.burn_cells`) or spreading a fire from
-a point or existing burn scar (`pyretechnics.eulerian_level_set`). The
-cell-burning functions will return the fire behavior metrics for the
-burned cell (i.e., fire type, spread rate, spread direction, fireline
-intensity, flame length) as a Python dictionary. The fire spreading
-functions return a dictionary containing these same metrics (+ time of
-arrival) in Numpy arrays, covering the simulation area.
-
-If a user wishes to model active fire suppression in a spread
-simulation, they can either use the functions in the
-`pyretechnics.suppression` module or write their own Python functions
-to burn firelines into the input fuel rasters.
-
-Since the library's main functions take and return Numpy arrays, users
-are free to create them as needed for their projects. They can load
-arrays from numerous geospatial file formats using the Python
-`rasterio` library. They could grab data from a PostGIS raster using
-`psycopg2` or load in NetCDF files with the `netCDF4` library. They
-could also create arrays using Numpy or Scipy functions directly
-and/or use them to apply random noise, value perturbations, or other
-preprocessing steps on the arrays before initiating fire spread
-simulations.
-
-Similarly, any Python library or algorithm can be used to post-process
-the output arrays into aggregate arrays (e.g., annual/conditional burn
-frequency), visualize them (e.g., with `matplotlib`), and/or write
-them out as raster files, CSVs, or any other format required by the
-user.
+Importantly, the outputs of the fire spread functions can be fed back
+into themselves to resume a "paused" simulation from where it left off
+and allow the fire to continue burning until the user's next stop
+condition is reached. This design enables user-extensible workflows
+which alternate between Pyretechnics' fire spread algorithms and
+user-supplied modifications to the landscape or model parameters, such
+as for modeling suppression or feedback loops between the fire and the
+surrounding environment.
 
 Notably, Pyretechnics is written as a Literate Program, which can be
 read online here: https://pyregence.github.io/pyretechnics
@@ -276,8 +234,6 @@ to quickly start using the library.
 # Research impact statement
 
 ## TODO: Include evidence of realized impact (publications, external use, integrations) or credible near-term significance (benchmarks, reproducible materials, community-readiness signals). The evidence should be compelling and specific, not aspirational.
-
-Testing automatic PDF building...
 
 # AI usage disclosure
 
