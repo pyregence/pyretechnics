@@ -67,18 +67,20 @@ literate program documentation can be read here:
 
 # Statement of need
 
-`Pyretechnics` implements a wide variety of physical and empirical
-equations, which together can be used to predict the evolution of a
-fire front and compute related fire behavior metrics (e.g., fire type,
-spread rate and direction, fireline intensity, and flame length).
+Many applications require simulating the spread and behavior of real
+or hypothetical wildland fires, including fire risk modeling, wildland
+firefighting, emergency response planning, fire insurance valuation,
+and fuel treatment siting. In the USA, where Pyretechnics is designed
+to be run, several wildland fire models are already used operationally
+for these purposes (e.g., FARSITE [@Finney2004FARSITE], ELMFIRE
+[@Lautenberger2013elmfire]). Like them, Pyretechnics implements a
+variety of physical and empirical equations, which together can be
+used to predict the evolution of a fire front and compute related fire
+behavior metrics. These include:
 
-At the core of Pyretechnics is an algorithm for propagating fire
-fronts. This involves:
-
-1. Implementations of the standard FBFM13 [@Anderson1982] and FBFM40
-   [@ScottBurgan2005] surface fuel models and their related equations
-   for calculating dynamic fuel loading, size class weighting factors,
-   and live moisture of extinction.
+1. The standard FBFM13 [@Anderson1982] and FBFM40 [@ScottBurgan2005]
+   surface fuel models, including dynamic fuel loading, size class
+   weighting factors, and live moisture of extinction.
 
 2. The Rothermel model [@Rothermel1972], which computes the
    spread rate and behavior metrics of surface fire in the heading
@@ -93,28 +95,31 @@ fronts. This involves:
 
 4. Crown fire equations, which extend the above to model the
    combustion of the canopy, which can make the fire front spread
-   faster and more intensely. Currently, Pyretechnics implements the
-   equations of Cruz and Van Wagner [@Cruz2005; @VanWagner1977].
+   faster and more intensely [@Cruz2005; @VanWagner1977].
 
 5. A spotting module, which models the ignition of long-range spot
-   fires using equations of Sardoy
-   [@Sardoy2008FirebrandDistribution].
+   fires using equations of Sardoy [@Sardoy2008FirebrandDistribution].
 
-6. A numerical solver for tracking the fire front. Currently, that's
-   the Eulerian level set method [@Giga2002SurfaceEvolution;
-   @Osher2004LevelSetMethods], similarly to ELMFIRE
-   ([https://elmfire.io/](https://elmfire.io/)).
+6. A computationally efficient and numerically precise solver for
+   tracking the fire front, using the Eulerian level set method
+   [@Giga2002SurfaceEvolution; @Osher2004LevelSetMethods], similarly
+   to ELMFIRE ([https://elmfire.io/](https://elmfire.io/)).
 
-Pyretechnics puts a strong emphasis on computing efficiency at the
-expense of some physical accuracy. It is suitable for simulating
-hundreds of thousands of fire seasons on the scale of a country, with
-a pixel resolution on the order of 30m. Pyretechnics does not
-currently compute any feedback of the fire on the atmosphere, nor does
-it automatically simulate suppression by firefighters or extinction.
-However, users can inject firelines onto the landscape via Python
-scripting (see `pyretechnics.suppression`), and a weather-based spread
-rate adjustment can be used to slow or stop fire spread in response to
-changing conditions.
+Unlike existing fire modeling applications, which only allow limited
+customizability, Pyretechnics is designed as a toolkit of functions
+for fire modeling. Users can inspect its code and explore its modules
+interactively. They can then design their analyses around its API,
+building new algorithms and compute pipelines on top of its
+foundation.
+
+Pyretechnics is suitable for simulating hundreds of thousands of fire
+seasons on the scale of a country, with a pixel resolution on the
+order of 30m. It does not currently compute any feedback of the fire
+on the atmosphere, nor does it automatically simulate suppression by
+firefighters or extinction. However, users can inject firelines onto
+the landscape via Python scripting (see `pyretechnics.suppression`),
+and a weather-based spread rate adjustment can be used to slow or stop
+fire spread in response to environmental conditions.
 
 # State of the field
 
@@ -210,8 +215,8 @@ and allow the fire to continue burning until the user's next stop
 condition is reached. This design enables user-extensible workflows
 which alternate between Pyretechnics' fire spread algorithms and
 user-supplied modifications to the landscape or model parameters, such
-as for modeling suppression or feedback loops between the fire and the
-surrounding environment.
+as for modeling suppression (`pyretechnics.suppression`) or feedback
+loops between the fire and the surrounding environment.
 
 Notably, Pyretechnics is written as a Literate Program, which can be
 read online here: https://pyregence.github.io/pyretechnics
@@ -233,14 +238,32 @@ to quickly start using the library.
 
 # Research impact statement
 
-Pyretechnics has been and is being used to support various research and applied efforts:
+Pyretechnics has been and is being used to support various research
+and applied efforts:
 
-- @Waeselynck2026PointyHeadedFires used Pyretechnics to demonstrate the convex duality between fire shapes and spread rates, heading fire collapse, and related numerical difficulties.
-- The Million Acres Strategy project used Pyretechnics to simulate 300,000 California fire seasons for the California Wildfire and Forest Resilience Task Force [@CaliforniaWildfireTaskForce2022RoadmapMillionAcres; @SIG2025MAS].
-- Pyretechnics was used in the Wildfire Risk Modeling Exercise [@Pyregence2026WildfireRiskExercise] that informed a report from UL Research Institutes [@Harned2026ULRiskModelingExercise].
-- The PyroStack paper uses Pyretechnics as its reference semi-empirical model for comparison with a machine-learning approach [@Kondur2026PyroStack].
-- @Waeselynck2026WildfireVerification uses Pyretechnics to illustrate methods for verification of front propagation algorithms.
+- @Waeselynck2026PointyHeadedFires used Pyretechnics to demonstrate
+  the convex duality between fire shapes and spread rates, heading
+  fire collapse, and related numerical difficulties.
 
+- The Million Acres Strategy project used Pyretechnics to simulate
+  300,000 California fire seasons for the California Wildfire and
+  Forest Resilience Task Force
+  [@CaliforniaWildfireTaskForce2022RoadmapMillionAcres; @SIG2025MAS].
+
+- Pyretechnics was used in the Wildfire Risk Modeling Exercise
+  [@Pyregence2026WildfireRiskExercise] that informed a report from UL
+  Research Institutes [@Harned2026ULRiskModelingExercise].
+
+- The PyroStack paper uses Pyretechnics as its reference
+  semi-empirical model for comparison with a machine-learning approach
+  [@Kondur2026PyroStack].
+
+- @Waeselynck2026WildfireVerification uses Pyretechnics to illustrate
+  methods for verification of front propagation algorithms.
+
+- The PyreCast ([https://pyrecast.org/](https://pyrecast.org/))
+  near-term fire forecasting platform is incorporating Pyretechnics
+  into its active fire and risk forecasts.
 
 # AI usage disclosure
 
