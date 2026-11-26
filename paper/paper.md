@@ -35,12 +35,6 @@ Carlo simulations of fire spread and behavior, producing outputs such
 as annual burn probabilities and distributions of fire type and
 intensity.
 
-Because fires are events that burn finite regions of space within
-clearly defined start and end times, Pyretechnics models their
-evolution from ignition point or perimeter to final burned area as the
-rendering of a three-dimensional shape in space-time, wherein the X-Y
-plane represents space and the Z index represents time.
-
 ![Example Fireline Intensity on a 2D Spatial Plane](pics/els_fireline_intensity_main.png){ width=50% }
 ![Example Fireline Intensity in a 3D Space-Time Cube](pics/els_fireline_intensity_main_cube.png){ width=50% }
 
@@ -101,9 +95,9 @@ behavior metrics. These include:
    fires using equations of Sardoy [@Sardoy2008FirebrandDistribution].
 
 6. A computationally efficient and numerically precise solver for
-   tracking the fire front, using the Eulerian level set method
-   [@Giga2002SurfaceEvolution; @Osher2004LevelSetMethods], similarly
-   to ELMFIRE ([https://elmfire.io/](https://elmfire.io/)).
+   tracking the fire front, using the level set method
+   [@Osher2004LevelSetMethods], similarly to ELMFIRE
+   ([https://elmfire.io/](https://elmfire.io/)).
 
 Unlike existing fire modeling applications, which only allow limited
 customizability, Pyretechnics is designed as a toolkit of functions
@@ -132,16 +126,17 @@ format.
 
 This distinction provides a number of important benefits, including:
 
-1. **Flexibility:** Rather than being constrained by the fixed set of
-   options in these models' config files (each of which essentially
-   specifies a unique and non-trivial DSL for fire modeling),
-   Pyretechnics lets its users craft their experimental designs using
-   the full power of the Python programming language. In particular,
-   its users can create analytical workflows that its authors did not
-   anticipate because they can combine its public API functions in
-   novel ways. Notably, its design enables users to interleave their
-   own computations into its fire spread simulations by passing
-   control back and forth between Pyretechnics and the user.
+1. **Flexibility and Observability:** Rather than being constrained by
+   the fixed set of options in these models' config files (each of
+   which essentially specifies a unique and non-trivial DSL for fire
+   modeling), Pyretechnics lets its users craft their experimental
+   designs using the full power of the Python programming language. In
+   particular, users can create analytical workflows that its authors
+   did not anticipate because they can explore its public API
+   functions interactively and then re-combine them in novel ways.
+   Notably, its design enables users to interleave their own
+   computations into its fire spread simulations by passing control
+   back and forth between Pyretechnics and the user.
 
 2. **Ease of Installation and Use:** Pyretechnics can be easily
    imported into any existing Python environment and combined with
