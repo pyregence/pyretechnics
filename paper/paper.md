@@ -204,6 +204,14 @@ code, where controlled state mutation provides a significant speed-up.
 With a few notable exceptions, the public API functions are designed
 to take and return only Python scalars and collections.
 
+Significant engineering effort went into optimizing the level set
+implementation: this involved designing an ad hoc data structure for
+tracking the narrow band using a semi-contiguous memory layout. Where
+possible, mathematical shortcuts were used to avoid over-computing. In
+particular, compared to other models, Pyretechnics relies less on
+trigonometric functions, favoring equivalent but less expensive vector
+algebra.
+
 Importantly, the outputs of the fire spread functions can be fed back
 into themselves to resume a "paused" simulation from where it left off
 and allow the fire to continue burning until the user's next stop
